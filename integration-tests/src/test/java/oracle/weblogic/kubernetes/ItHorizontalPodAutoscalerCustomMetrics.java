@@ -101,40 +101,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-sequential")
 @Tag("kind-parallel")
 public class ItHorizontalPodAutoscalerCustomMetrics {
-  private static String domainNamespace = null;
-  static int replicaCount = 2;
-  static String wlClusterName = "cluster-1";
-  static String clusterResName = "hpacustomcluster";
-
-  private static String adminSecretName;
-  private static String encryptionSecretName;
-  private static final String domainUid = "hpacustomdomain";
-  private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-  private static String managedServerPrefix = String.format("%s-%s-%s",
-      domainUid, wlClusterName, MANAGED_SERVER_NAME_BASE);
-  static DomainResource domain = null;
-
-  private static String opServiceAccount = null;
-  private static String opNamespace = null;
-
-  private static LoggingFacade logger = null;
-  private static  String monitoringExporterDir;
-  private static  String monitoringExporterSrcDir;
-  private static  String monitoringExporterAppDir;
-  private static NginxParams nginxHelmParams = null;
-  private static int nodeportshttp = 0;
-  private static String nginxNamespace = null;
-  private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
+  private static final String MONEXP_MODEL_FILE = "model.monexp.custommetrics.yaml";
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
   private static final String SESSMIGR_APP_WAR_NAME = "sessmigr-war";
   private static final String SESSMIGT_APP_URL = SESSMIGR_APP_WAR_NAME + "/?getCounter";
+  private static final String domainUid = "hpacustomdomain";
+
+  private static String domainNamespace = null;
+  private static String wlClusterName = "cluster-1";
+  private static String clusterResName = "hpacustomcluster";
+  private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+  private static String managedServerPrefix = String.format("%s-%s-%s",
+      domainUid, wlClusterName, MANAGED_SERVER_NAME_BASE);
+  private static LoggingFacade logger = null;
+  private static  String monitoringExporterDir;
+  private static NginxParams nginxHelmParams = null;
+  private static int nodeportshttp = 0;
   private static String monitoringNS = null;
-  static PrometheusParams promHelmParams = null;
+  private static PrometheusParams promHelmParams = null;
   private static String releaseSuffix = "hpatest";
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String prometheusAdapterReleaseName = "prometheus-adapter" + releaseSuffix;
-  private static String hostPortPrometheus = null;
   private static String prometheusDomainRegexValue = null;
   private static int nodeportPrometheus;
   private Path targetHPAFile;
@@ -150,13 +138,14 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
-    monitoringExporterDir = Paths.get(RESULTS_ROOT,
-        "ItMonitoringExporterWebApp", "monitoringexp").toString();
-    monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
-    monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
+    int replicaCount = 2;
+    String className = ItHorizontalPodAutoscalerCustomMetrics.class.getSimpleName();
+
+    monitoringExporterDir = Paths.get(RESULTS_ROOT, className, "monitoringexp").toString();
+    String monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
@@ -165,13 +154,12 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     monitoringNS = namespaces.get(2);
 
-    logger.info("Get a unique namespace for nginx");
+    logger.info("Get a unique namespace for Nginx");
     assertNotNull(namespaces.get(3), "Namespace list is null");
-    nginxNamespace = namespaces.get(3);
+    String nginxNamespace = namespaces.get(3);
 
     // set the service account name for the operator
-    opServiceAccount = opNamespace + "-sa";
-
+    String opServiceAccount = opNamespace + "-sa";
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
 
@@ -182,17 +170,19 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
-    adminSecretName = "weblogic-credentials";
+    String adminSecretName = "weblogic-credentials";
     createSecretWithUsernamePassword(adminSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
-    encryptionSecretName = "encryptionsecret";
+    String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
+
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
+
     logger.info("create and verify WebLogic domain image using model in image with model files");
     String miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir,
         MODEL_DIR + "/" + MONEXP_MODEL_FILE,
@@ -200,7 +190,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
-    String className = "ItMonitoringExporterWebApp";
 
     logger.info("create pv and pvc for monitoring");
     assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
@@ -208,7 +197,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     cleanupPromGrafanaClusterRoles(prometheusReleaseName, null);
     cleanupPrometheusAdapterClusterRoles();
 
-    domain = createDomainResource(
+    DomainResource domain = createDomainResource(
         domainUid,
         domainNamespace,
         miiImage,
@@ -349,7 +338,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
           logger.info("HPA scaled down managed server 2");
           --numberOfManagedSvs;
         } else if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 3)
-            || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 2)) {
+            || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 3)) {
           logger.info("HPA scaled down managed server 3");
           --numberOfManagedSvs;
         }
@@ -384,9 +373,21 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f " + targetHPAFile);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 0,
-        "Failed to create hpa or autoscale, result " + result);
-    assertTrue(verifyHPA(domainNamespace, "custommetrics-hpa"));
+    assertEquals(0, result.exitValue(), "Failed to create hpa or autoscale, result " + result);
+    /* check if hpa output does not contain <unknown>
+     * kubectl get hpa --all-namespaces
+     * NAMESPACE   NAME                REFERENCE                  TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+     * ns-qsjlcw   custommetrics-hpa   Cluster/hpacustomcluster   0/5        2         3         2          52s
+     *
+     * when its not ready, it looks
+     * NAMESPACE   NAME                REFERENCE                  TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+     * ns-qsjlcw   custommetrics-hpa   Cluster/hpacustomcluster   <unknown>/5    2         4         2          18m
+     */
+    testUntil(withLongRetryPolicy,
+        () -> verifyHPA(domainNamespace, "custommetrics-hpa"),
+        logger,
+        "hpa is ready in namespace {0}",
+        domainNamespace);
   }
 
   // verify hpa is getting the metrics
@@ -396,7 +397,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     logger.info(result.stdout());
-    return result.stdout().contains(expectedOutput);
+    return result.stdout().contains(expectedOutput) && !result.stdout().contains("unknown");
   }
 
   // verify custom metrics is exposed via prometheus adapter
@@ -426,7 +427,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
-      hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -455,8 +455,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " delete -f " + targetHPAFile);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 0,
-        "Failed to delete hpa , result " + result);
+    assertEquals(0, result.exitValue(), "Failed to delete hpa , result " + result);
     if (prometheusAdapterHelmParams != null) {
       Helm.uninstall(prometheusAdapterHelmParams);
     }
