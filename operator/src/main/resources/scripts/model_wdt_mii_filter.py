@@ -408,7 +408,7 @@ def isAdministrationPortEnabledForServer(server, model):
   else:
     administrationPortEnabled = isAdministrationPortEnabledForDomain(model)
 
-  if isinstance(administrationPortEnabled, str):
+  if isinstance(administrationPortEnabled, str) or isinstance(administrationPortEnabled, unicode):
     return Boolean.valueOf(administrationPortEnabled)
   else:
     return administrationPortEnabled
@@ -424,7 +424,7 @@ def isAdministrationPortEnabledForDomain(model):
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
     administrationPortEnabled = isSecureModeEnabledForDomain(model)
 
-  if isinstance(administrationPortEnabled, str):
+  if isinstance(administrationPortEnabled, str) or isinstance(administrationPortEnabled, unicode):
     return Boolean.valueOf(administrationPortEnabled)
   else:
     return administrationPortEnabled
@@ -449,7 +449,7 @@ def isSecureModeEnabledForDomain(model):
       is_production_mode_enabled = topology['ProductionModeEnabled']
     secureModeEnabled = is_production_mode_enabled and not env.wlsVersionEarlierThan("14.1.2.0")
 
-  if isinstance(secureModeEnabled, str):
+  if isinstance(secureModeEnabled, str) or isinstance(secureModeEnabled, unicode):
     return Boolean.valueOf(secureModeEnabled)
   else:
     return secureModeEnabled
