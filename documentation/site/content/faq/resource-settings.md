@@ -115,7 +115,7 @@ In later versions of Kubernetes, it is possible to fine tune scheduling and evic
 ### Java heap size and memory resource considerations
 
 {{% notice note %}}
-Oracle recommends configuring Java heap sizes for WebLogic JVMs instead of relying on the defaults.
+Oracle recommends configuring Java heap sizes for WebLogic JVMs instead of relying on the defaults. For detailed information about memory settings when running WLST from the pod where the WLS server is running, see [Use `kubectl exec`]({{< relref "/managing-domains/accessing-the-domain/wlst#use-kubectl-exec" >}}).
 {{% /notice %}}
 
 #### Importance of setting heap size and memory resources
@@ -204,7 +204,7 @@ There's no memory or CPU limit configured by default in samples and so the defau
 If you wish to set resource requests or limits differently on a sample Domain or Cluster YAML file or template, see [Setting resource requests and limits in a Domain or Cluster resource](#setting-resource-requests-and-limits-in-a-domain-or-cluster-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
 
 #### Burstable pods and JDK active processor count calculation
-If you have [Burstable Pods](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-burstable) that configure the CPU resource requests but have no CPU limits, then the JDK can incorrectly calculate the active processor count. The JDK interprets the value of the `--cpu-shares` parameter (which maps to `spec.containers[].resources.requests.cpu`) to limit how many CPUs the current process can use, as explained in [JDK-8288367](https://bugs.openjdk.org/browse/JDK-8288367). This might cause the JVM to use fewer CPUs than available, leading to an under utilization of CPU resources when running in a Kubernetes environment. Updating the JDK to newer versions, `JDK 8u371` or `JDK 11.0.17`, fixes this. 
+If you have [Burstable Pods](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-burstable) that configure the CPU resource requests but have no CPU limits, then the JDK can incorrectly calculate the active processor count. The JDK interprets the value of the `--cpu-shares` parameter (which maps to `spec.containers[].resources.requests.cpu`) to limit how many CPUs the current process can use, as explained in [JDK-8288367](https://bugs.openjdk.org/browse/JDK-8288367). This might cause the JVM to use fewer CPUs than available, leading to an under utilization of CPU resources when running in a Kubernetes environment. Updating the JDK to newer versions, `JDK 8u371` or `JDK 11.0.17`, fixes this.
 
 {{% notice note %}}
 To override the number of CPUs that the JVM automatically detects and uses when creating threads for various subsystems, use the `-XX:ActiveProcessorCount` Java option.
