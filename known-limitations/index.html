@@ -9,7 +9,7 @@
 
     <link rel="icon" href="https://oracle.github.io/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Deprecated functionality :: WebLogic Kubernetes Operator</title>
+    <title>Known limitations :: WebLogic Kubernetes Operator</title>
 
     
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1702601325" rel="stylesheet">
@@ -39,7 +39,7 @@
     </style>
     
   </head>
-  <body class="" data-url="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/">
+  <body class="" data-url="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/">
     <nav id="sidebar" class="">
 
 
@@ -3748,7 +3748,7 @@
     
     <li data-nav-id="/deprecated-functionality/" title="Deprecated functionality" class="dd-item
         
-        active
+        
         
         ">
       <a href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/">
@@ -3772,7 +3772,7 @@
     
     <li data-nav-id="/known-limitations/" title="Known limitations" class="dd-item
         
-        
+        active
         
         ">
       <a href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/">
@@ -3834,7 +3834,7 @@
             
           
           
-            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > Deprecated functionality
+            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > Known limitations
           
         
           
@@ -3849,9 +3849,7 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#domain-in-image">Domain in Image</a></li>
-        <li><a href="#model-in-image-without-auxiliary-images">Model in Image without auxiliary images</a></li>
-        <li><a href="#model-in-image-for-jrf-domains">Model in Image for JRF domains</a></li>
+        <li><a href="#nginx-ssl-passthrough-ingress-service-does-not-work-with-kubernetes-headless-service">NGINX SSL passthrough ingress service does not work with Kubernetes headless service</a></li>
       </ul>
     </li>
   </ul>
@@ -3871,7 +3869,7 @@
           
             <h1>
               
-              Deprecated functionality
+              Known limitations
             </h1>
           
 
@@ -3879,13 +3877,51 @@
 
 
 
-	<p>The following functionality has been deprecated and no longer is supported in WebLogic Kubernetes Operator.</p>
-<h4 id="domain-in-image">Domain in Image</h4>
-<p>The Domain in Image <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a> is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.</p>
-<h4 id="model-in-image-without-auxiliary-images">Model in Image without auxiliary images</h4>
-<p>The Model in Image domain home source type <em>without</em> auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image <em>with</em> <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>.</p>
-<h4 id="model-in-image-for-jrf-domains">Model in Image for JRF domains</h4>
-<p>The Model in Image domain home source type for JRF domains is deprecated in WebLogic Kubernetes Operator version 4.1.0. For JRF domains, use <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/">Domain on PV</a> instead.</p>
+	<p>The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.</p>
+<h4 id="nginx-ssl-passthrough-ingress-service-does-not-work-with-kubernetes-headless-service">NGINX SSL passthrough ingress service does not work with Kubernetes headless service</h4>
+<p><strong>ISSUE</strong>:
+When installing NGINX ingress controller with SSL passthrough enabled <code>--set &quot;controller.extraArgs.enable-ssl-passthrough=true&quot;</code>, any ingress rule created subsequently, using SSL passthrough to the individual server service, will fail.</p>
+<pre tabindex="0"><code>$ kubectl -n nginx get services
+NAME                                                TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)                      AGE
+nginx-operator-ingress-nginx-controller-admission   ClusterIP      10.43.234.82    &lt;none&gt;          443/TCP                      3m3s
+nginx-operator-ingress-nginx-controller             LoadBalancer   10.43.193.149   192.168.106.2   80:32315/TCP,443:31710/TCP   3m3s
+</code></pre><p>For example, after creating the domain, the operator creates a headless Kubernetes service for each server and a headed service for the cluster.  The individual service for each server is headless as the <code>CLUSTER-IP</code> is <code>None</code>;  the cluster service is headed as the <code>CLUSTER-IP</code> has a valid IP address.</p>
+<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns get services
+NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)             AGE
+sample-domain1-admin-server          ClusterIP   None            &lt;none&gt;        7001/TCP,7002/TCP   23h
+sample-domain1-cluster-cluster-1     ClusterIP   10.43.108.163   &lt;none&gt;        8001/TCP,7002/TCP   23h
+sample-domain1-managed-server1       ClusterIP   None            &lt;none&gt;        8001/TCP,7002/TCP   23h
+</code></pre><p>If you create a passthrough ingress rule to use SSL passthrough to access the admin server, for example:</p>
+<pre tabindex="0"><code>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: console-ssl-passthru
+  namespace: sample-domain1-ns
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-passthrough: &#39;true&#39;
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: sample-domain1-admin-server
+                port:
+                  number: 7002
+            path: /
+            pathType: Prefix
+      host: localk8s.com
+</code></pre><p>Accessing the WebLogic Console on the admin server, through the ingress controller, will result in an error.</p>
+<pre tabindex="0"><code>curl -k -v -L https://localk8s.com:31710/console
+*   Trying 192.168.106.2:31710...
+* Connected to localk8s.com (192.168.106.2) port 31710 (#0)
+* ALPN: offers h2,http/1.1
+* (304) (OUT), TLS handshake, Client hello (1):
+* LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to localk8s.com:31710
+* Closing connection 0
+curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to localk8s.com:31710
+</code></pre><p>This is currently reported as an NGINX bug in <a href="https://github.com/kubernetes/ingress-nginx/issues/1718">https://github.com/kubernetes/ingress-nginx/issues/1718</a></p>
 
 
 
@@ -6421,7 +6457,6 @@
             
                 
                     
-                    
                 
                 
 
@@ -6438,8 +6473,6 @@
             
                 
                     
-                        
-                        
                     
                 
                 
@@ -6461,10 +6494,10 @@
 	 
 	 
 		
-			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/" title="Scheduling pods to particular nodes"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/" title="Deprecated functionality"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/" title="Known limitations" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/" title="Quick Start" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
