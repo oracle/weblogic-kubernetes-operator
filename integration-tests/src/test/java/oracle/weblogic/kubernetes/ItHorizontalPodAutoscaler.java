@@ -282,7 +282,7 @@ public class ItHorizontalPodAutoscaler {
 
     // the command to increase cpu load is ran for 30 sec, after that
     // it takes some time to autoscale down the cluster
-    for (int i = 3; i <= 4; i++) {
+    for (int i = 4; i <= 3; i--) {
       final int j = i;
       testUntil(withLongRetryPolicy,
           assertDoesNotThrow(() -> checkHPAAndpodDoesNotExist(
