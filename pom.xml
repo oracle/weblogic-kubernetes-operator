@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2024, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -624,14 +624,14 @@
     <maven-jar-plugin-version>3.3.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.3.1</maven-resources-plugin-version>
     <maven-site-plugin-version>3.12.1</maven-site-plugin-version>
-    <maven-surefire-plugin-version>3.2.2</maven-surefire-plugin-version>
+    <maven-surefire-plugin-version>3.2.3</maven-surefire-plugin-version>
     <maven-checkstyle-plugin-version>3.3.1</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.0.1</maven-release-plugin-version>
-    <maven-javadoc-plugin-version>3.6.2</maven-javadoc-plugin-version>
-    <maven-failsafe-plugin-version>3.2.2</maven-failsafe-plugin-version>
+    <maven-javadoc-plugin-version>3.6.3</maven-javadoc-plugin-version>
+    <maven-failsafe-plugin-version>3.2.3</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.6.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.1.1</exec-maven-plugin-version>
-    <spotbugs-maven-plugin-version>4.8.1.0</spotbugs-maven-plugin-version>
+    <spotbugs-maven-plugin-version>4.8.2.0</spotbugs-maven-plugin-version>
     <spotbugs-version>4.8.3</spotbugs-version>
     <checkstyle-version>10.12.5</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
@@ -654,7 +654,7 @@
     <commons.io.version>2.15.1</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>16.0.3</client-java-version>
-    <kotlin-stdlib-version>1.9.21</kotlin-stdlib-version>
+    <kotlin-stdlib-version>1.9.22</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
     <okio-version>3.6.0</okio-version>
     <bc-jdk18on-version>1.77</bc-jdk18on-version>
