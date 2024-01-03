@@ -689,7 +689,7 @@
     <jsonpath-version>2.8.0</jsonpath-version>
     <mojo-build-helper-version>3.5.0</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <assertj.core.version>3.24.2</assertj.core.version>
+    <assertj.core.version>3.25.1</assertj.core.version>
     <commons.io.version>2.15.1</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>19.0.0</client-java-version>
