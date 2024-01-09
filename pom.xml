@@ -635,7 +635,7 @@
     <spotbugs-version>4.8.3</spotbugs-version>
     <checkstyle-version>10.12.5</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
-    <maven-jxr-plugin-version>3.3.1</maven-jxr-plugin-version>
+    <maven-jxr-plugin-version>3.3.2</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.1.0</maven-gpg-plugin-version>
     <hamcrest-junit-version>2.0.0.0</hamcrest-junit-version>
     <simplestub-version>1.3.2</simplestub-version>
@@ -650,13 +650,13 @@
     <jsonpath-version>2.8.0</jsonpath-version>
     <mojo-build-helper-version>3.5.0</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <assertj.core.version>3.24.2</assertj.core.version>
+    <assertj.core.version>3.25.1</assertj.core.version>
     <commons.io.version>2.15.1</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>16.0.3</client-java-version>
     <kotlin-stdlib-version>1.9.22</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
-    <okio-version>3.6.0</okio-version>
+    <okio-version>3.7.0</okio-version>
     <bc-jdk18on-version>1.77</bc-jdk18on-version>
     <junit.jupiter.version>5.10.1</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
@@ -664,9 +664,9 @@
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>3.1.5</jersey-version>
-    <jackson-version>2.16.0</jackson-version>
+    <jackson-version>2.16.1</jackson-version>
     <snakeyaml-version>1.33</snakeyaml-version>
-    <jackson-databind-version>2.16.0</jackson-databind-version>
+    <jackson-databind-version>2.16.1</jackson-databind-version>
     <dependency-check-version>9.0.7</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
