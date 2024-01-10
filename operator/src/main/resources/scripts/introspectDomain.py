@@ -284,7 +284,7 @@ class OfflineWlstEnv(object):
           ret = cmo
     except:
       trace("Ignoring cd() exception for cluster '" + cluster.getName() + "' in getDynamicServerOrNone() and returning None.")
-    return ret;
+    return ret
 
   def addGeneratedFile(self, filePath):
     self.generatedFiles.append(filePath)
@@ -2046,10 +2046,13 @@ def isSecureModeEnabledForDomain(domain):
   cd('/SecurityConfiguration/' + domain.getName())
   childs = ls(returnType='c', returnMap='true')
   if 'SecureMode' in childs:
-    cd('SecureMode/NO_NAME_0')
-    attributes = ls(returnType='a', returnMap='true')
-    if attributes['SecureModeEnabled']:
-      secureModeEnabled = True
+    cd('SecureMode')
+    child_objs = ls(returnMap='true', returnType='c')
+    if not child_objs.isEmpty():
+      cd(child_objs[0])
+      attributes = ls(returnType='a', returnMap='true')
+      if attributes['SecureModeEnabled']:
+        secureModeEnabled = True
   else:
     secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
 
