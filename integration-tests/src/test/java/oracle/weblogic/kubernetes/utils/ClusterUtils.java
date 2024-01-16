@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -16,6 +18,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -297,6 +301,83 @@ public class ClusterUtils {
         return true;
       }
     }
+    return false;
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param nameSpace namespace of the pod
+   * @param podName pod name to which the command should be sent to
+   * @param podPort pod port number
+   * @param decodedToken decoded secret token from operator sa
+   * @param expectedMsg expected message in the http response
+   * @param hasAuthHeader true or false to include auth header
+   * @param hasHeader    true or false to include header
+   * @return true if REST call generate expected response message, false otherwise
+   */
+  public static boolean scaleClusterWithRestApiInPod(String domainUid,
+                                                     String clusterName,
+                                                     int numOfServers,
+                                                     String nameSpace,
+                                                     String podName,
+                                                     int podPort,
+                                                     String decodedToken,
+                                                     String expectedMsg,
+                                                     boolean hasHeader,
+                                                     boolean hasAuthHeader) {
+    LoggingFacade logger = getLogger();
+
+    // build the curl command to scale the cluster
+    StringBuffer command = new StringBuffer(KUBERNETES_CLI)
+        .append(" exec -n ")
+        .append(nameSpace)
+        .append("  ")
+        .append(podName)
+        .append(" -- curl --user ")
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(":")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" --noproxy '*' -v -k ");
+    if (hasAuthHeader) {
+      command.append("-H \"Authorization:Bearer ").append(decodedToken).append("\" ");
+    }
+    command.append("-H Accept:application/json ").append("-H Content-Type:application/json ");
+    if (hasHeader) {
+      command.append("-H X-Requested-By:MyClient ");
+    }
+    command.append("-d '{\"spec\": {\"replicas\": ")
+        .append(numOfServers)
+        .append("}}' ")
+        .append("-X POST https://")
+        .append(podName)
+        .append(":")
+        .append(podPort)
+        .append("/operator/latest/domains/")
+        .append(domainUid)
+        .append("/clusters/")
+        .append(clusterName)
+        .append("/scale");
+
+    ExecResult result = null;
+    try {
+      logger.info("Calling curl to scale the cluster");
+      result = ExecCommand.exec(command.toString(), true);
+      logger.info("result is: {0}", result.toString());
+      logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
+      if (result != null) {
+        logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
+        if (result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg)) {
+          return true;
+        }
+      }
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+
     return false;
   }
 

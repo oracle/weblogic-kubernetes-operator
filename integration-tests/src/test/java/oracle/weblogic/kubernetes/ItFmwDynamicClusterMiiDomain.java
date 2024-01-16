@@ -35,9 +35,12 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -61,9 +64,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Test to Create a FMW Dynamic Domain with Dynamic Cluster using model in image")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-fmw-cert")
+@Tag("oke-gate")
 class ItFmwDynamicClusterMiiDomain {
 
   private static String dbNamespace = null;
@@ -143,10 +146,21 @@ class ItFmwDynamicClusterMiiDomain {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
-    // Expose the admin service external node port as  a route for OKD
-    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost);
+
+    if (OKE_CLUSTER) {
+      final String resourcePath = "/em";
+      testUntil(
+          isAppInServerPodReady(domainNamespace,
+              adminServerPodName, 7001, resourcePath, ""),
+          logger, "verify EM console access {0} in server {1}",
+          resourcePath, adminServerPodName);
+    } else {
+      // Expose the admin service external node port as  a route for OKD
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+      verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost);
+    }
   }
+
 
   private void createFmwDomainAndVerify() {
     // Create the repo secret to pull the image
