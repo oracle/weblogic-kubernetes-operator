@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -29,6 +30,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -47,9 +49,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify that server in newly added dynamic cluster is started successfully")
 @IntegrationTest
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
+@Tag("oke-gate")
 class ItAddNewDynamicClusterUsingWlst {
 
   // domain constants
@@ -111,20 +113,26 @@ class ItAddNewDynamicClusterUsingWlst {
 
     // In OKD cluster, we need to get the routeHost for the external admin service
     String routeHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    
+
     logger.info("Validating WebLogic admin server access by login to console");
-    testUntil(
-        assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
-        }, "Access to admin server node port failed"),
-        logger,
-        "Console login validation");
+    if (OKE_CLUSTER) {
+      testUntil(isAppInServerPodReady(domainNamespace,
+          adminServerPodName, 7001, "/console/login/LoginForm.jsp", "Copyright"),
+          logger, "Validating WebLogic admin server access by login to console");
+    } else {
+      testUntil(
+          assertDoesNotThrow(() -> {
+            return adminNodePortAccessible(serviceNodePort,
+                ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
+          }, "Access to admin server node port failed"), logger, "Console login validation");
+    }
 
     // create a new dynamic cluster using an online WLST script
     createNewDynamicCluster();
 
     // verify the managed server pod in newly added dynamic cluster comes up
     checkPodReadyAndServiceExists(newManagedServerPodPrefix + 1, domainUid, domainNamespace);
+
   }
 
   private void createNewDynamicCluster() {

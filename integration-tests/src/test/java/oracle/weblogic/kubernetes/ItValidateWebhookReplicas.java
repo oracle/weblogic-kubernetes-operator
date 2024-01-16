@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -94,9 +95,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to verify the validating webhook for domain or cluster resource replicas count")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItValidateWebhookReplicas {
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -222,6 +223,7 @@ class ItValidateWebhookReplicas {
    */
   @Test
   @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic cluster size will be rejected")
+  @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
   void testScaleClusterReplicasTooHighUsingRest() {
     // scale the cluster with replicas value more than max cluster size using REST
     ExecResult execResult = scaleClusterWithRestApiAndReturnResult(domainUid, clusterName, replicaCountToPatch,
