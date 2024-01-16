@@ -646,7 +646,7 @@
     <maven-failsafe-plugin-version>3.2.5</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.6.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.1.1</exec-maven-plugin-version>
-    <spotbugs-maven-plugin-version>4.8.2.0</spotbugs-maven-plugin-version>
+    <spotbugs-maven-plugin-version>4.8.3.0</spotbugs-maven-plugin-version>
     <spotbugs-version>4.8.3</spotbugs-version>
     <checkstyle-version>10.12.7</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
@@ -684,7 +684,7 @@
     <jose4j-version>0.9.4</jose4j-version>
     <snakeyaml-version>1.33</snakeyaml-version>
     <jackson-databind-version>2.16.1</jackson-databind-version>
-    <dependency-check-version>9.0.7</dependency-check-version>
+    <dependency-check-version>9.0.8</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
