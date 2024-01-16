@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 usage() {
@@ -33,7 +33,7 @@ while getopts "t:" optname; do
   esac
 done
 
-IMAGE_NAME=${name:-ghcr.io/oracle/weblogic-kubernetes-operator:3.4.12-SNAPSHOT}
+IMAGE_NAME=${name:-ghcr.io/oracle/weblogic-kubernetes-operator:3.4.12}
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # Proxy settings

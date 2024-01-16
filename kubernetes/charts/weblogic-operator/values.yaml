@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
@@ -63,7 +63,7 @@ domainNamespaces:
 enableClusterRoleBinding: false
 
 # image specifies the container image containing the operator.
-image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.4.12-SNAPSHOT"
+image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.4.12"
 
 # imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent
