@@ -12,20 +12,20 @@
     <title>Domain and Cluster resources :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1705548098" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1705548098" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1705610196" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1705610196" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1705548098"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1705610196"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1705548098"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1705548098"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1705610196"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1705610196"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1705548098"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1705610196"></script>
 
     
   </div>
@@ -4105,7 +4105,7 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
 <li><code>JAVA_OPTIONS</code>: Java options for starting WebLogic Server.</li>
 <li><code>USER_MEM_ARGS</code>: JVM memory arguments for starting WebLogic Server.</li>
 <li><code>NODEMGR_JAVA_OPTIONS</code>: Java options for starting a Node Manager instance.</li>
-<li><code>NODEMGR_MEM_ARGS</code>: JVM memory arguments for starting a Node Manager instance.</li>
+<li><code>NODEMGR_MEM_ARGS</code>: JVM memory arguments for starting a Node Manager instance; this will take precedence over <code>JAVA_OPTIONS</code> and <code>USER_MEM_ARGS</code>.</li>
 <li><code>WLST_PROPERTIES</code>: System properties for WLST commands in introspector jobs or WebLogic Server instance containers.</li>
 <li><code>WLST_EXTRA_PROPERTIES</code>: System properties appended to WLST_PROPERTIES for  WLST commands in introspector jobs or WebLogic Server instance containers.</li>
 <li><code>WLSDEPLOY_PROPERTIES</code>: System properties for WebLogic Deploy Tooling commands during Model in Image introspector jobs or WebLogic Server instance containers.</li>
@@ -4117,7 +4117,8 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
 <li>The following behavior occurs depending on whether or not <code>NODEMGR_JAVA_OPTIONS</code> and <code>NODEMGR_MEM_ARGS</code> are defined:
 <ul>
 <li>If <code>NODEMGR_JAVA_OPTIONS</code> is not defined and <code>JAVA_OPTIONS</code> is defined, then the <code>JAVA_OPTIONS</code> value will be applied to the Node Manager instance.</li>
-<li>If <code>NODEMGR_MEM_ARGS</code> is not defined, then default memory and Java security property values (<code>-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom</code>) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain or Cluster YAML file using the <code>env</code> attribute under the <code>serverPod</code> configuration.</li>
+<li>If <code>NODEMGR_MEM_ARGS</code> is not defined and <code>USER_MEM_ARGS</code> is defined, then the <code>USER_MEM_ARGS</code> value will be applied to the Node Manager instance.</li>
+<li>If nothing else is specified, then the default Java property values (<code>-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom</code>) will be applied to the Node Manager instance.</li>
 </ul>
 </li>
 <li>The <code>USER_MEM_ARGS</code> and <code>WLST_EXTRA_PROPERTIES</code> environment variables both default to <code>-Djava.security.egd=file:/dev/./urandom</code> in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain or Cluster YAML file using the <code>env</code> attribute under the <code>serverPod</code> configuration.</li>
@@ -6821,19 +6822,19 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1705548098"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1705548098"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1705548098"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1705548098"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1705548098"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1705548098"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1705610197"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1705610197"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1705610197"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1705610197"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1705610197"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1705610197"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1705548098"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1705548098"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1705548098"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1705610197"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1705610197"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1705610197"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1705548098"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1705610197"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
