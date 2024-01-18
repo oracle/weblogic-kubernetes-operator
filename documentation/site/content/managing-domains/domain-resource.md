@@ -236,7 +236,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `JAVA_OPTIONS`: Java options for starting WebLogic Server.
 * `USER_MEM_ARGS`: JVM memory arguments for starting WebLogic Server.
 * `NODEMGR_JAVA_OPTIONS`: Java options for starting a Node Manager instance.
-* `NODEMGR_MEM_ARGS`: JVM memory arguments for starting a Node Manager instance.
+* `NODEMGR_MEM_ARGS`: JVM memory arguments for starting a Node Manager instance; this will take precedence over `JAVA_OPTIONS` and `USER_MEM_ARGS`.
 * `WLST_PROPERTIES`: System properties for WLST commands in introspector jobs or WebLogic Server instance containers.
 * `WLST_EXTRA_PROPERTIES`: System properties appended to WLST_PROPERTIES for  WLST commands in introspector jobs or WebLogic Server instance containers.
 * `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tooling commands during Model in Image introspector jobs or WebLogic Server instance containers.
@@ -247,7 +247,8 @@ You can use the following environment variables to specify JVM memory and JVM op
 
 * The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
   * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
-  * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain or Cluster YAML file using the `env` attribute under the `serverPod` configuration.
+  * If `NODEMGR_MEM_ARGS` is not defined and `USER_MEM_ARGS` is defined, then the `USER_MEM_ARGS` value will be applied to the Node Manager instance.
+  * If nothing else is specified, then the default Java property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance.
 * The `USER_MEM_ARGS` and `WLST_EXTRA_PROPERTIES` environment variables both default to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain or Cluster YAML file using the `env` attribute under the `serverPod` configuration.
 * Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command.
 * For a detailed description of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
