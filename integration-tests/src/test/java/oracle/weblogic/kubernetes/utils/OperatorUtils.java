@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -10,6 +10,7 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -433,12 +434,14 @@ public class OperatorUtils {
     LoggingFacade logger = getLogger();
 
     // Create a service account for the unique opNamespace
-    logger.info("Creating service account");
-    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(new V1ObjectMeta()
-            .namespace(opNamespace)
-            .name(opServiceAccount))));
-    logger.info("Created service account: {0}", opServiceAccount);
+    if (!ServiceAccount.serviceAccountExists(opServiceAccount, opNamespace)) {
+      logger.info("Creating service account");
+      assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
+          .metadata(new V1ObjectMeta()
+              .namespace(opNamespace)
+              .name(opServiceAccount))));
+      logger.info("Created service account: {0}", opServiceAccount);
+    }
 
     operatorImage = getOperatorImageName();
 
@@ -636,13 +639,14 @@ public class OperatorUtils {
     LoggingFacade logger = getLogger();
 
     // Create a service account for the unique opNamespace
-    logger.info("Creating service account");
-    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(new V1ObjectMeta()
-            .namespace(opNamespace)
-            .name(opServiceAccount))));
-    logger.info("Created service account: {0}", opServiceAccount);
-
+    if (!ServiceAccount.serviceAccountExists(opServiceAccount, opNamespace)) {
+      logger.info("Creating service account");
+      assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
+          .metadata(new V1ObjectMeta()
+              .namespace(opNamespace)
+              .name(opServiceAccount))));
+      logger.info("Created service account: {0}", opServiceAccount);
+    }
 
     // get operator image name
     String operatorImage = getOperatorImageName();
