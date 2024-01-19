@@ -1,10 +1,11 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class ServiceAccount {
@@ -30,5 +31,23 @@ public class ServiceAccount {
    */
   public static boolean delete(String name, String namespace) {
     return Kubernetes.deleteServiceAccount(name, namespace);
+  }
+
+  /**
+   * Verify whether the service account exists in the namespace.
+   * @param name name of the service account
+   * @param namespace namespace where the service account exits
+   * @return true if the service account exists, false otherwise
+   */
+  public static boolean serviceAccountExists(String name, String namespace) {
+    V1ServiceAccountList sas = Kubernetes.listServiceAccounts(namespace);
+    if (sas != null) {
+      for (V1ServiceAccount sa : sas.getItems()) {
+        if (sa.getMetadata().getName().equals(name)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }
