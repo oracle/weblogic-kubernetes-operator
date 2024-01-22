@@ -22,6 +22,19 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-02.txt" >}}
 
+#### Prepare parameters
+
+Set parameters.
+
+```shell
+# Used to generate resource names.
+export TIMESTAMP=`date +%s`
+export AKS_CLUSTER_NAME="${NAME_PREFIX}aks${TIMESTAMP}"
+export AKS_PERS_RESOURCE_GROUP="${NAME_PREFIX}resourcegroup${TIMESTAMP}"
+export AKS_PERS_LOCATION=eastus
+
+export BASE_DIR=~
+```
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
@@ -30,11 +43,11 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.4.2, but should work with the latest release.
 
 ```shell
-$ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
+$ cd $BASE_DIR
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git --branch v{{< latestVersion >}}
 ```
-```shell
-$ cd weblogic-kubernetes-operator
-```
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
@@ -144,29 +157,24 @@ If you have an image built with domain models following [Model in Image]({{< rel
 
    ```shell
    $ mkdir /tmp/mii-sample
-    ```
-    ```shell
-   $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image
-    ```
-    ```shell
-   $ cp -r * /tmp/mii-sample
+   ```
+
+   ```shell
+   $ cp -r $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
 
    **NOTE**: We will refer to this working copy of the sample as `/tmp/mii-sample`, (`mii` is short for model in image); however, you can use a different location.
 
 1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image images.
 
-   ```shell
-   $ cd /tmp/mii-sample/model-images
-    ```
     ```shell
    $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
     ```
     ```shell
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
-     -o /tmp/mii-sample/model-images/imagetool.zip
-   ```
+    $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
+      -o /tmp/mii-sample/model-images/imagetool.zip
+    ```
 
 
    To set up the WebLogic Image Tool, run the following commands:
@@ -174,10 +182,10 @@ If you have an image built with domain models following [Model in Image]({{< rel
    $ cd /tmp/mii-sample/model-images
     ```
     ```shell
-   $ unzip imagetool.zip
+   $ unzip imagetool.zip -d $BASE_DIR
     ```
     ```shell
-   $ ./imagetool/bin/imagetool.sh cache addInstaller \
+   $ $BASE_DIR/imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
      --version latest \
      --path /tmp/mii-sample/model-images/weblogic-deploy.zip
@@ -316,15 +324,12 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` wit
 Run the following commands to create the model image and verify that it worked:
 
 ```shell
-$ cd /tmp/mii-sample/model-images
-```
-```shell
-$ ./imagetool/bin/imagetool.sh update \
+$ $BASE_DIR/imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
   --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-  --wdtModel      ./model-in-image__WLS-v1/model.10.yaml \
-  --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
-  --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
+  --wdtModel      /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml \
+  --wdtVariables  /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties \
+  --wdtArchive    /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip \
   --wdtModelOnly \
   --wdtDomainType WLS \
   --chown oracle:root
@@ -499,10 +504,7 @@ Now, you create a Domain YAML file. Think of the Domain YAML file as the way to 
 We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
 
 ```shell
-$ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS
-```
-```shell
-$ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
+$ cp $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
 
 Modify the Domain YAML with your values.
@@ -634,16 +636,13 @@ spec:
 Create the load balancer services using the following command:
 
 ```shell
-$ cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image
-```
-```shell
-$ kubectl apply -f admin-lb.yaml
+$ kubectl apply -f $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml
 ```
 ```
 service/sample-domain1-admin-server-external-lb created
 ```
 ```shell
-$ kubectl  apply -f cluster-lb.yaml
+$ kubectl  apply -f $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml
 ```
 ```
 service/sample-domain1-cluster-1-external-lb created
