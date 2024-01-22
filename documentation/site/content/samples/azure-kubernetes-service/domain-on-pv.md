@@ -98,14 +98,7 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 ```
 
-#### Create Resource Group
-
-```shell
-$ cd $BASE_DIR/weblogic-kubernetes-operator
-$ az extension add --name resource-graph
-$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
-```
-
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 

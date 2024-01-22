@@ -6,7 +6,6 @@ This sample requires that you disable the AKS addon `http_application_routing` b
 Run the following commands to create the AKS cluster instance.
 
 ```shell
-
 $ az aks create \
    --resource-group $AKS_PERS_RESOURCE_GROUP \
    --name $AKS_CLUSTER_NAME \
