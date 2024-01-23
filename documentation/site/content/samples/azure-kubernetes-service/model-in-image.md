@@ -27,11 +27,20 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 Set parameters.
 
 ```shell
+# Change these parameters as needed for your own environment
+export ORACLE_SSO_EMAIL=<replace with your oracle account email>
+export ORACLE_SSO_PASSWORD=<replace with your oracle password>
+
 # Used to generate resource names.
 export TIMESTAMP=`date +%s`
-export AKS_CLUSTER_NAME="${NAME_PREFIX}aks${TIMESTAMP}"
-export AKS_PERS_RESOURCE_GROUP="${NAME_PREFIX}resourcegroup${TIMESTAMP}"
+export ACR_NAME="acr${TIMESTAMP}"
+export AKS_CLUSTER_NAME="aks${TIMESTAMP}"
+export AKS_PERS_RESOURCE_GROUP="resourcegroup${TIMESTAMP}"
 export AKS_PERS_LOCATION=eastus
+
+export WEBLOGIC_USERNAME=weblogic
+export WEBLOGIC_PASSWORD=Secret123456
+export WEBLOGIC_WDT_PASSWORD=Secret123456
 
 export BASE_DIR=~
 ```
@@ -44,7 +53,7 @@ Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/we
 
 ```shell
 $ cd $BASE_DIR
-$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git --branch v{{< latestVersion >}}
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
@@ -92,7 +101,7 @@ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-ope
 ```
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:4.0.6 \
+  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:4.1.7 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
@@ -111,7 +120,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.0.6` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.1.7` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -122,7 +131,7 @@ $ helm list -A
 ```
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
-weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.0.6  4.0.6
+weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.1.7  4.1.7
 ```
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
@@ -160,42 +169,43 @@ If you have an image built with domain models following [Model in Image]({{< rel
    ```
 
    ```shell
-   $ cp -r $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
+   $ cp -r $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/mii-sample
    ```
 
    **NOTE**: We will refer to this working copy of the sample as `/tmp/mii-sample`, (`mii` is short for model in image); however, you can use a different location.
 
-1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image images.
+1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/wdt-model-files` directory. Both WDT and WIT are required to create your Model in Image images.
+
+   ```shell
+   export WDT_DOMEL_FILES_PATH=/tmp/mii-sample/wdt-model-files
+   ```
 
     ```shell
    $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
-     -o /tmp/mii-sample/model-images/weblogic-deploy.zip
+     -o ${WDT_DOMEL_FILES_PATH}/weblogic-deploy.zip
     ```
     ```shell
     $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
-      -o /tmp/mii-sample/model-images/imagetool.zip
+      -o ${WDT_DOMEL_FILES_PATH}/imagetool.zip
     ```
 
 
    To set up the WebLogic Image Tool, run the following commands:
-   ```shell
-   $ cd /tmp/mii-sample/model-images
+    ```shell
+   $ unzip ${WDT_DOMEL_FILES_PATH}/imagetool.zip -d ${WDT_DOMEL_FILES_PATH}
     ```
     ```shell
-   $ unzip imagetool.zip -d $BASE_DIR
-    ```
-    ```shell
-   $ $BASE_DIR/imagetool/bin/imagetool.sh cache addInstaller \
+   $ ${WDT_DOMEL_FILES_PATH}/imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
      --version latest \
-     --path /tmp/mii-sample/model-images/weblogic-deploy.zip
+     --path ${WDT_DOMEL_FILES_PATH}/weblogic-deploy.zip
    ```
 
-   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
+   These steps will install WIT to the `${WDT_DOMEL_FILES_PATH}/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
 
 ##### Image creation - Introduction
 
-The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`.
+The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/wdt-model-files/WLS-v1/`.
 The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
 A "Model in Image" image contains the following elements:
@@ -221,27 +231,22 @@ The application displays important details about the WebLogic Server instance th
 
 ##### Staging a ZIP file of the archive
 
-When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
+When you create the image, you will use the files in the staging directory, `${WDT_DOMEL_FILES_PATH}/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```
-# Delete existing archive.zip in case we have an old leftover version
-```
 ```shell
-$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
+# Delete existing archive.zip in case we have an old leftover version
+$ rm -f ${WDT_DOMEL_FILES_PATH}/WLS-v1/archive.zip
 ```
-```
-# Move to the directory which contains the source files for our archive
-```
+Zip the archive to the location will later use when we run the WebLogic Image Tool.
+
 ```shell
 $ cd /tmp/mii-sample/archives/archive-v1
 ```
-```
-# Zip the archive to the location will later use when we run the WebLogic Image Tool
-```
 ```shell
-$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+# Zip the archive to the location will later use when we run the WebLogic Image Tool
+$ zip -r ${WDT_DOMEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
 
 ##### Staging model files
@@ -312,10 +317,10 @@ A Model in Image image can contain multiple properties files, archive ZIP files,
 
 At this point, you have staged all of the files needed for the image `model-in-image:WLS-v1`; they include:
 
-  - `/tmp/mii-sample/model-images/weblogic-deploy.zip`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
+  - `/tmp/mii-sample/wdt-model-files/weblogic-deploy.zip`
+  - `/tmp/mii-sample/wdt-model-files/WLS-v1/model.10.yaml`
+  - `/tmp/mii-sample/wdt-model-files/WLS-v1/model.10.properties`
+  - `/tmp/mii-sample/wdt-model-files/WLS-v1/archive.zip`
 
 If you don’t see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites](#image-creation-prerequisites).
 
@@ -324,12 +329,12 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` wit
 Run the following commands to create the model image and verify that it worked:
 
 ```shell
-$ $BASE_DIR/imagetool/bin/imagetool.sh update \
+$ ${WDT_DOMEL_FILES_PATH}/imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
   --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-  --wdtModel      /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml \
-  --wdtVariables  /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties \
-  --wdtArchive    /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip \
+  --wdtModel      ${WDT_DOMEL_FILES_PATH}/WLS-v1/model.10.yaml \
+  --wdtVariables  ${WDT_DOMEL_FILES_PATH}/WLS-v1/model.10.properties \
+  --wdtArchive    ${WDT_DOMEL_FILES_PATH}/WLS-v1/archive.zip \
   --wdtModelOnly \
   --wdtDomainType WLS \
   --chown oracle:root
@@ -371,7 +376,7 @@ AKS can pull images from any container registry, but the easiest integration is 
 Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.
 
 ```shell
-$ az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_PERS_RESOURCE_GROUP --sku Basic --admin-enabled true
+$ az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name $ACR_NAME --sku Basic --admin-enabled true
 ```
 
 Closely examine the JSON output from this command. Save the value of the `loginServer` property aside. It will look something like the following.
@@ -383,7 +388,7 @@ Closely examine the JSON output from this command. Save the value of the `loginS
 Use this value to sign in to the ACR instance. Note that because you are signing in with the `az` cli, you do not need a password because your identity is already conveyed by having done `az login` previously.
 
 ```shell
-$ export AKS_PERS_ACR=<you-ACR-loginServer>
+$ export AKS_PERS_ACR=$(az acr show -n $ACR_NAME --query "loginServer" -o tsv)
 ```
 ```shell
 $ az acr login --name $AKS_PERS_ACR
@@ -405,7 +410,7 @@ The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/model
 Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS, see [Configure ACR integration for existing AKS clusters](https://docs.microsoft.com/en-us/azure/aks/cluster-container-registry-integration#configure-acr-integration-for-existing-aks-clusters).
 
 ```shell
-$ az aks update --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr $AKS_PERS_RESOURCE_GROUP
+$ az aks update --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr $ACR_NAME
 ```
 
 If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
@@ -434,9 +439,9 @@ Create a namespace that can host one or more domains:
 ```shell
 $ kubectl create namespace sample-domain1-ns
 ```
-```
-## label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
-```
+
+Label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
+
 ```shell
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
@@ -450,8 +455,8 @@ Run the following `kubectl` commands to deploy the required secrets:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
-   --from-literal=username=<wl admin username> \
-   --from-literal=password=<wl admin password>
+   --from-literal=username=${WEBLOGIC_USERNAME} \
+   --from-literal=password=${WEBLOGIC_PASSWORD}
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -461,7 +466,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
-   --from-literal=password=<mii runtime encryption pass>
+   --from-literal=password=${WEBLOGIC_WDT_PASSWORD}
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -472,10 +477,10 @@ $ kubectl -n sample-domain1-ns label  secret \
   Some important details about these secrets:
 
   - Choosing passwords and usernames:
-    - Replace `<wl admin username>` and `<wl admin password>` with a username and password of your choice.
+    - Set variables `WEBLOGIC_USERNAME` and `WEBLOGIC_PASSWORD` with a username and password of your choice.
       The password should be at least eight characters long and include at least one digit.
       Remember what you specified. These credentials may be needed again later.
-    - Replace `<mii runtime encryption pass>` with a password of your choice.
+    - Set variable `WEBLOGIC_WDT_PASSWORD` with a password of your choice.
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
@@ -501,10 +506,10 @@ $ kubectl -n sample-domain1-ns label  secret \
 
 Now, you create a Domain YAML file. Think of the Domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
-We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
+We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
 
 ```shell
-$ cp $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
+$ cp $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
 
 Modify the Domain YAML with your values.

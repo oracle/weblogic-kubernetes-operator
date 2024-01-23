@@ -1,7 +1,7 @@
 
 #### Create the AKS cluster
 
-This sample requires that you disable the AKS addon `http_application_routing` by default.  If you want to enable  `http_application_routing`, then follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+This sample doesn't enable application routing. If you want to enable application routing, follow [Managed nginx Ingress with the application routing add-on in AKS](https://learn.microsoft.com/azure/aks/app-routing?tabs=default%2Cdeploy-app-default).
 
 Run the following commands to create the AKS cluster instance.
 
