@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 #  This script is to be run inside a model in image pod that has JDK, WebLogic and WDT in it.
@@ -18,11 +18,16 @@ encrypt_decrypt_model() {
   
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
   local WDT_OUTPUT=/tmp/output.log
-  local WDT_BINDIR=/u01/wdt/weblogic-deploy/bin
+  if [ -d /tmp/weblogic-deploy ] ; then
+    local WDT_HOME=/tmp/weblogic-deploy
+  else
+    local WDT_HOME=/u01/wdt
+  fi
+
   local JAVA_PROPS="${JAVA_PROPS} -Dpython.cachedir.skip=true"
   local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
   local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Dpython.verbose=debug"
-  local CP="${ORACLE_SERVER_DIR}/server/lib/weblogic.jar:/u01/wdt/weblogic-deploy/lib/weblogic-deploy-core.jar:/tmpmount/code.jar"
+  local CP="${ORACLE_SERVER_DIR}/server/lib/weblogic.jar:$WDT_HOME/lib/weblogic-deploy-core.jar"
   ${JAVA_HOME}/bin/java -cp ${CP} \
 	  ${JAVA_PROPS} org.python.util.jython /tmp/model-encryption-util.py  $1 $(cat $2) $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
@@ -40,3 +45,4 @@ trace() {
 }
 
 encrypt_decrypt_model $*
+

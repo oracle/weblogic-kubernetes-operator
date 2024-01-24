@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script show the model in image merged model of the running domain in clear text
@@ -9,6 +9,7 @@ DOMAIN_UID=sample-domain1
 PASSWORD=my_runtime_password
 IMAGE=model-in-image:JRF-v1
 IMAGEPULLPOLICY=IfNotPresent
+WDT_INSTALLER=$HOME/Downloads/weblogic-deploy.zip
 IMAGEPULLSECRETSTAG=''
 IMGPS=''
 IMGPSN=''
@@ -28,8 +29,7 @@ cat << EOF
     -n namespace           - Namespace, default is "$NAMESPACE".
     -p password            - Password, default is "$PASSWORD".
     -d domain uid          - Domain UID, default is "${DOMAIN_UID}"
-
-    You can specify -f, -m, and -s more than once.
+    -w wdt installer       - WDT Installer location, default is "${WDT_INSTALLER} - $HOME/Downloads/weblogic-deploy.zip"
 
   Sample usage:
   
@@ -40,7 +40,7 @@ EOF
   exit 1
 }
 
-while getopts i:n:p:l:s:d:h OPT
+while getopts i:n:p:l:s:w:d:h OPT
 do
   case $OPT in
   i) IMAGE=$OPTARG
@@ -57,6 +57,8 @@ do
   n) DOMAIN_NAMESPACE=$OPTARG
      ;;
   d) DOMAIN_UID=$OPTARG
+     ;;
+  w) WDT_INSTALLER=$OPTARG
      ;;
   h) usage_exit
      ;;
@@ -101,6 +103,11 @@ ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get configmap ${DOMAIN_UID}-weblogic-do
 ${KUBERNETES_CLI} cp encrypted_model.json ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
 ${KUBERNETES_CLI} cp decrypt_model.sh ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
 ${KUBERNETES_CLI} cp model-encryption-util.py ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
+if [ -f ${WDT_INSTALLER} ] ; then
+  ${KUBERNETES_CLI} cp ${WDT_INSTALLER} ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
+  INSTALLER=$(basename ${WDT_INSTALLER})
+  ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "cd /tmp && unzip ${INSTALLER}"
+fi
 ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "/tmp/decrypt_model.sh decrypt /tmp/encrypted_model.json ${PASSWORD} /tmp/decrypted_model.json &&  base64 -d /tmp/decrypted_model.json | gunzip "
 ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} delete -f decrypt_model.yaml
 
