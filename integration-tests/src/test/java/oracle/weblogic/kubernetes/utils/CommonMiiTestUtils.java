@@ -811,7 +811,7 @@ public class CommonMiiTestUtils {
                 .runtimeEncryptionSecret(encryptionSecretName)
                 .onlineUpdate(new OnlineUpdate()
                     .enabled(onlineUpdateEnabled)))
-            .introspectorJobActiveDeadlineSeconds(300L));
+            .introspectorJobActiveDeadlineSeconds(600L));
 
     if (setDataHome) {
       domainSpec.dataHome(uniquePath + "/data");
