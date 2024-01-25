@@ -325,7 +325,7 @@ class ItMiiDomain {
             resourcePath,
             adminServerPodName);
       } else {
-        String curlCmd2 = "curl -s --show-error --noproxy '*' "
+        String curlCmd2 = "curl -skg --show-error --noproxy '*' "
             + " http://" + hostAndPort
             + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
         logger.info("Executing default nodeport curl command {0}", curlCmd2);
