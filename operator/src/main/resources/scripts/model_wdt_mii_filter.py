@@ -158,9 +158,15 @@ class OfflineWlstEnv(object):
   def wlsVersionEarlierThan(self, version):
     # unconventional import within function definition for unit testing
     from weblogic.management.configuration import LegalHelper
+    import weblogic.version as version_helper
+    ver = version_helper.getReleaseBuildVersion()
+    if isinstance(ver, unicode):
+      actual_version = unicode( ver, 'UTF8', 'strict')
+    else:
+      actual_version = str(ver)
     # WLS Domain versions supported by operator are 12.2.1.3 + patches, 12.2.1.4
     # and 14.1.1.0 so current version will only be one of these that are listed.
-    return LegalHelper.versionEarlierThan("14.1.1.0", version)
+    return LegalHelper.versionEarlierThan(actual_version, version)
 
 class SecretManager(object):
 
@@ -545,7 +551,7 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
   admin_server_port = _get_default_listen_port(server)
 
   model = env.getModel()
-
+  secure_mode = isSecureModeEnabledForDomain(model)
   if 'NetworkAccessPoint' not in server:
     server['NetworkAccessPoint'] = {}
 
@@ -563,7 +569,8 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
     _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
                                      listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
   elif index == 0:
-    _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+    if not secure_mode:
+       _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
 
     ssl = getSSLOrNone(server)
     ssl_listen_port = None
@@ -571,7 +578,7 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
       ssl_listen_port = ssl['ListenPort']
       if ssl_listen_port is None:
         ssl_listen_port = "7002"
-    elif ssl is None and isSecureModeEnabledForDomain(model):
+    elif ssl is None and secure_mode:
       ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
