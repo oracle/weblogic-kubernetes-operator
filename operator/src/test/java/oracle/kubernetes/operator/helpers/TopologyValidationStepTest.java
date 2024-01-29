@@ -34,6 +34,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionFailureInfo;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.lang3.StringUtils;
@@ -533,7 +534,8 @@ class TopologyValidationStepTest {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     final OffsetDateTime initialTime = SystemClock.now();
     final String message = getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
-    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH).withMessage(message));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH)
+        .withFailureInfo(domain.getSpec()).withMessage(message));
 
     SystemClockTestSupport.increment();
     defineScenario(TopologyCase.CONFIGURATION)
@@ -541,7 +543,8 @@ class TopologyValidationStepTest {
           .build();
     runTopologyValidationStep();
 
-    assertThat(domain, hasCondition(FAILED).withMessageContaining(message).atTime(initialTime));
+    assertThat(domain, hasCondition(FAILED).withMessageContaining(message)
+        .withFailureInfo(new DomainConditionFailureInfo(domain.getSpec())).atTime(initialTime));
   }
 
   // Name length validation tests ensure that the total number of characters in the UID and server/cluster names,
