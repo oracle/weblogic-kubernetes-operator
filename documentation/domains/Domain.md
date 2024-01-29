@@ -192,6 +192,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `failureInfo` | [Domain Condition Failure Info](#domain-condition-failure-info) | Details about the failure. This field will only be set when the condition type is Failed. |
 | `lastTransitionTime` | DateTime | Last time the condition transitioned from one status to another. |
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |
@@ -305,6 +306,14 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
 | `message` | string | Human-readable message indicating details about last transition. |
 | `status` | string | The status of the condition. Can be True, False. |
 | `type` | string | The type of the condition. Valid types are Completed, Available, Failed, and Rolling. |
+
+### Domain Condition Failure Info
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `introspectImage` | string | The image used by the introspector when the Failed condition occurred. |
+| `introspectVersion` | string | The introspectVersion set when the Failed condition occurred. |
+| `restartVersion` | string | The restartVersion set when the Failed condition occurred. |
 
 ### Server Health
 

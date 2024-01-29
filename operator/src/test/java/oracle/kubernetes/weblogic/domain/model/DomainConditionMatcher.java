@@ -40,6 +40,11 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<DomainReso
     return this;
   }
 
+  public DomainConditionMatcher withFailureInfo(DomainConditionFailureInfo failureInfo) {
+    statusMatcher.withFailureInfo(failureInfo);
+    return this;
+  }
+
   @Override
   protected boolean matchesSafely(DomainResource item, Description mismatchDescription) {
     return statusMatcher.matchesSafely(item.getStatus(), mismatchDescription);

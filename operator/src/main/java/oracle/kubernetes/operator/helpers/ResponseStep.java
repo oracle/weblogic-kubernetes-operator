@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -233,7 +233,7 @@ public abstract class ResponseStep<T> extends Step {
 
   private void updateFailureStatus(
       @Nonnull DomainResource domain, RequestParams requestParams, ApiException apiException) {
-    DomainCondition condition = new DomainCondition(FAILED).withReason(KUBERNETES)
+    DomainCondition condition = new DomainCondition(FAILED).withFailureInfo(domain.getSpec()).withReason(KUBERNETES)
         .withMessage(createMessage(requestParams, apiException));
     addFailureStatus(domain, condition);
   }
