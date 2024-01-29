@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -14,7 +14,6 @@ import java.util.List;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -526,12 +525,12 @@ class ItMiiDynamicUpdatePart1 {
    *          with the provided count value.
    **/
   boolean checkMinThreadsConstraintRuntime(int count) {
-    ExecResult result = readMinThreadsConstraintRuntimeForWorkManager(helper.adminSvcExtHost,
+    String result = readMinThreadsConstraintRuntimeForWorkManager(helper.adminSvcExtHost,
         helper.domainNamespace, helper.adminServerPodName,
         MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
       logger.info("readMinThreadsConstraintRuntime read " + result.toString());
-      return (result.stdout() != null && result.stdout().contains("\"count\": " + count));
+      return (result != null && result.contains("\"count\": " + count));
     }
     logger.info("readMinThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;
@@ -578,12 +577,12 @@ class ItMiiDynamicUpdatePart1 {
    *          with the provided count value.
    **/
   boolean checkMaxThreadsConstraintRuntime(int count) {
-    ExecResult result = readMaxThreadsConstraintRuntimeForWorkManager(helper.adminSvcExtHost,
+    String result = readMaxThreadsConstraintRuntimeForWorkManager(helper.adminSvcExtHost,
         helper.domainNamespace, helper.adminServerPodName,
         MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
       logger.info("readMaxThreadsConstraintRuntime read " + result.toString());
-      return (result.stdout() != null && result.stdout().contains("\"count\": " + count));
+      return (result != null && result.contains("\"count\": " + count));
     }
     logger.info("readMaxThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;

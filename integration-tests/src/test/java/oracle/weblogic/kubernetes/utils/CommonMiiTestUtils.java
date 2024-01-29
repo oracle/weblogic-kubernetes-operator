@@ -1,8 +1,10 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +13,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.kubernetes.client.custom.Quantity;
@@ -44,6 +47,8 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
+import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -65,6 +70,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
@@ -78,6 +84,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
@@ -88,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVeri
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
@@ -427,6 +435,37 @@ public class CommonMiiTestUtils {
       int replicaCount,
       List<String> clusterNames,
       boolean prefixDomainName) {
+    return createDomainResource(domainResourceName, domNamespace, imageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterNames, prefixDomainName, 0);
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount replica count of the cluster
+   * @param clusterNames names of cluster resources to create
+   * @param prefixDomainName prefix the domainUID to cluster resource name
+   * @param nodePort Node port
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String[] repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      boolean prefixDomainName,
+      int nodePort) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -464,7 +503,7 @@ public class CommonMiiTestUtils {
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(nodePort))))
             .configuration(new oracle.weblogic.domain.Configuration()
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
@@ -908,7 +947,7 @@ public class CommonMiiTestUtils {
    * @param resourcesName Name of the JDBC system resource for which that mbean data to be queried
    * @return An ExecResult containing the output of the REST API exec request
    */
-  public static ExecResult readJdbcRuntime(
+  public static String readJdbcRuntime(
       String adminSvcExtHost,
       String domainNamespace, String adminServerPodName, String resourcesName) {
     return readRuntimeResource(
@@ -930,7 +969,7 @@ public class CommonMiiTestUtils {
    *                       min threads constraint runtime mbean data to be queried
    * @return An ExecResult containing the output of the REST API exec request
    */
-  public static ExecResult readMinThreadsConstraintRuntimeForWorkManager(
+  public static String readMinThreadsConstraintRuntimeForWorkManager(
       String adminSvcExtHost, String domainNamespace, String adminServerPodName,
       String serverName, String workManagerName) {
     return readRuntimeResource(
@@ -956,7 +995,7 @@ public class CommonMiiTestUtils {
    *                       max threads constraint runtime mbean data to be queried
    * @return An ExecResult containing the output of the REST API exec request
    */
-  public static ExecResult readMaxThreadsConstraintRuntimeForWorkManager(
+  public static String readMaxThreadsConstraintRuntimeForWorkManager(
       String adminSvcExtHost, String domainNamespace, String adminServerPodName,
       String serverName, String workManagerName) {
     return readRuntimeResource(
@@ -1033,10 +1072,10 @@ public class CommonMiiTestUtils {
         expectedStatusCode);
   }
 
-  private static ExecResult readRuntimeResource(String adminSvcExtHost, String domainNamespace,
+  private static String readRuntimeResource(String adminSvcExtHost, String domainNamespace,
       String adminServerPodName, String resourcePath, String callerName) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
+    String result = null;
     String curlString = null;
     if (OKE_CLUSTER_PRIVATEIP) {
       String protocol = "http";
@@ -1044,31 +1083,61 @@ public class CommonMiiTestUtils {
 
       curlString = String.format(
           KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- curl -g -k %s://"
-              + ADMIN_USERNAME_DEFAULT
-              + ":"
-              + ADMIN_PASSWORD_DEFAULT
-              + "@" + adminServerPodName + ":%s/%s", protocol, port, resourcePath);
+          + ADMIN_USERNAME_DEFAULT
+          + ":"
+          + ADMIN_PASSWORD_DEFAULT
+          + "@" + adminServerPodName + ":%s/%s", protocol, port, resourcePath);
       curlString = curlString + " --silent --show-error ";
-    } else {
-      int adminServiceNodePort
-          = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
+    } else if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      int port = getServicePort(domainNamespace, adminServerPodName, "internal-t3");
+      String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
+      String serviceName = ADMIN_SERVER_NAME_BASE;
+      String ingressName = domainNamespace + "-" + domainName + "-" + serviceName;
+      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
+      Optional<String> ingressFound;
+      try {
+        List<String> ingresses = TestActions.listIngresses(domainNamespace);
+        ingressFound = ingresses.stream().filter(ingress -> ingress.equals(ingressName)).findAny();
+        if (ingressFound.isEmpty()) {
+          createIngressHostRouting(domainNamespace, domainName, serviceName, port);
+        }
+      } catch (Exception ex) {
+        logger.severe(ex.getMessage());
       }
-      String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
-      logger.info("hostAndPort = {0} ", hostAndPort);
-      curlString = String.format(
-          "curl -g --user "
-              + ADMIN_USERNAME_DEFAULT
-              + ":"
-              + ADMIN_PASSWORD_DEFAULT
-              + " http://%s%s/ --silent --show-error ", hostAndPort, resourcePath);
+      String hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      Map<String, String> headers = new HashMap<>();
+      headers.put("host", hostHeader);
+      headers.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
+      String url = "http://" + hostAndPort + resourcePath;
+      HttpResponse<String> response;
+      try {
+        response = OracleHttpClient.get(url, headers, true);
+        assertEquals(200, response.statusCode());
+        return response.body();
+      } catch (Exception ex) {
+        return null;
+      }
     }
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    curlString = String.format(
+        "curl -g --user "
+        + ADMIN_USERNAME_DEFAULT
+        + ":"
+        + ADMIN_PASSWORD_DEFAULT
+        + " http://%s%s/ --silent --show-error ", hostAndPort, resourcePath);
+
     logger.info(callerName + ": curl command {0}", curlString);
     try {
-      result = exec(curlString, true);
+      result = exec(curlString, true).stdout();
       logger.info(callerName + ": exec curl command {0} got: {1}", curlString, result);
     } catch (Exception ex) {
       logger.info(callerName + ": caught unexpected exception {0}", ex);
@@ -1157,11 +1226,11 @@ public class CommonMiiTestUtils {
     }
     int adminServiceNodePort;
     if (isSecureMode) {
-      adminServiceNodePort =
-          getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), sslChannelName);
+      adminServiceNodePort
+          = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), sslChannelName);
     } else {
-      adminServiceNodePort =
-          getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+      adminServiceNodePort
+          = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     }
 
     StringBuffer curlString;
@@ -1178,17 +1247,50 @@ public class CommonMiiTestUtils {
     String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    curlString.append(hostAndPort)
-        .append(resourcePath)
-        .append(" -g --silent --show-error ")
-        .append(" -o /dev/null ")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    return Command
-        .withParams(new CommandParams()
-            .command(curlString.toString()))
-        .executeAndVerify(expectedStatusCode);
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      int port = getServicePort(domainNamespace, adminServerPodName, "internal-t3");
+      String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
+      String serviceName = ADMIN_SERVER_NAME_BASE;
+      String ingressName = domainNamespace + "-" + domainName + "-" + serviceName;      
+      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
+      Optional<String> ingressFound;
+      try {
+        List<String> ingresses = TestActions.listIngresses(domainNamespace);
+        ingressFound = ingresses.stream().filter(ingress -> ingress.equals(ingressName)).findAny();
+        if (ingressFound.isEmpty()) {
+          createIngressHostRouting(domainNamespace, domainName, serviceName, port);
+        } else {
+          logger.info("Ingress {0} found, skipping ingress resource creation...", ingressFound);
+        }
+      } catch (Exception ex) {
+        logger.severe(ex.getMessage());
+      }
+      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      Map<String, String> headers = new HashMap<>();
+      headers.put("host", hostHeader);
+      headers.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
+      String url = "http://" + hostAndPort + resourcePath;
+      HttpResponse<String> response;
+      try {
+        response = OracleHttpClient.get(url, headers, true);
+        return Integer.parseInt(expectedStatusCode) == response.statusCode();
+      } catch (IOException | InterruptedException | NumberFormatException ex) {
+        return false;
+      }
+    } else {
+      curlString.append(hostAndPort)
+          .append(resourcePath)
+          .append(" -g --silent --show-error ")
+          .append(" -o /dev/null ")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
+      logger.info("checkSystemResource: curl command {0}", new String(curlString));
+      return Command
+          .withParams(new CommandParams()
+              .command(curlString.toString()))
+          .executeAndVerify(expectedStatusCode);
+    }
   }
 
   /**
@@ -1476,11 +1578,6 @@ public class CommonMiiTestUtils {
     String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace));
     checkPodReady(introspectorPodName, domainUid, domainNamespace);
 
-    logger.info("Introspector pod log START");
-    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPodName,
-        domainNamespace, domainUid + "-introspector", null, null, true), "Could not get introspector pod log");
-    logger.info(introspectorLog);
-    logger.info("Introspector pod log END");
     checkPodDoesNotExist(introspectorPodName, domainUid, domainNamespace);
   }
 

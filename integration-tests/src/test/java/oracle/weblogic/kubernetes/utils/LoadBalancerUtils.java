@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -132,7 +132,7 @@ public class LoadBalancerUtils {
   public static NginxParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
-    return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION);
+    return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION, null);
   }
 
   /**
@@ -142,12 +142,14 @@ public class LoadBalancerUtils {
    * @param nodeportshttp the http nodeport of NGINX
    * @param nodeportshttps the https nodeport of NGINX
    * @param chartVersion the chart version of NGINX
+   * @param type type of service LoadBalancer or NodePort
    * @return the NGINX Helm installation parameters
    */
   public static NginxParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps,
-                                                 String chartVersion) {
+                                                 String chartVersion,
+                                                 String type) {
     LoggingFacade logger = getLogger();
     createTestRepoSecret(nginxNamespace);
 
@@ -172,6 +174,9 @@ public class LoadBalancerUtils {
       nginxParams
           .nodePortsHttp(nodeportshttp)
           .nodePortsHttps(nodeportshttps);
+    }
+    if (type != null) {
+      nginxParams.type(type);
     }
     if (K8S_NODEPORT_HOST.contains(":")) {
       nginxParams.ipFamilies(Arrays.asList("IPv6"));
@@ -211,9 +216,24 @@ public class LoadBalancerUtils {
    * @param nodeportshttps the websecure nodeport of Traefik
    * @return the Traefik Helm installation parameters
    */
-  public static HelmParams installAndVerifyTraefik(String traefikNamespace,
+  public static TraefikParams installAndVerifyTraefik(String traefikNamespace,
+      int nodeportshttp,
+      int nodeportshttps) {
+    return installAndVerifyTraefik(traefikNamespace, nodeportshttp, nodeportshttps, null);
+  }
+  
+  /** Install Traefik and wait for up to five minutes for the Traefik pod to be ready.
+   *
+   * @param traefikNamespace the namespace in which the Traefik ingress controller is installed
+   * @param nodeportshttp the web nodeport of Traefik
+   * @param nodeportshttps the websecure nodeport of Traefik
+   * @param type NodePort or LoadBalancer
+   * @return the Traefik Helm installation parameters
+   */
+  public static TraefikParams installAndVerifyTraefik(String traefikNamespace,
                                                    int nodeportshttp,
-                                                   int nodeportshttps) {
+                                                   int nodeportshttps,
+                                                   String type) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams traefikHelmParams = new HelmParams()
@@ -229,6 +249,9 @@ public class LoadBalancerUtils {
     traefikParams
         .nodePortsHttp(nodeportshttp)
         .nodePortsHttps(nodeportshttps);
+    if (type != null) {
+      traefikParams.type(type);
+    }
 
     // install Traefik
     assertThat(installTraefik(traefikParams))
@@ -252,7 +275,7 @@ public class LoadBalancerUtils {
         "Traefik to be ready in namespace {0}",
         traefikNamespace);
 
-    return traefikHelmParams;
+    return traefikParams;
   }
 
   /** Upgrade Traefik and wait for up to five minutes for the Traefik pod to be ready.

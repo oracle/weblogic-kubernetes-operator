@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -10,9 +10,6 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
@@ -44,7 +41,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -117,7 +113,6 @@ class ItMiiMultiModel {
   private static final String dsName3 = "TestDataSource3";
 
   private static LoggingFacade logger = null;
-  private static String ingressHost = null;
 
   /**
    * Perform initialization for all the tests in this class.
@@ -241,7 +236,6 @@ class ItMiiMultiModel {
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
             domainUid1, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
-    ingressHost = null;
   }
 
   /**
@@ -291,7 +285,6 @@ class ItMiiMultiModel {
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid2, domainNamespace, dsName2));
 
-    ingressHost = null;
   }
 
   /**
@@ -372,7 +365,6 @@ class ItMiiMultiModel {
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid3, domainNamespace, dsName2));
 
-    ingressHost = null;
   }
 
   /**
@@ -456,12 +448,7 @@ class ItMiiMultiModel {
                                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(getNextFreePort()))))
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))                    
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")

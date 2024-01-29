@@ -1,9 +1,11 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
@@ -201,6 +203,14 @@ public interface TestConstants {
       "sha256:314435f9465a7b2973e3aa4f2edad7465cc7bcdc8304be5d146d70e4da136e51";
   public static final String TEST_NGINX_IMAGE_NAME = TEST_IMAGES_TENANCY + "/test-images/ingress-nginx/controller";
   public static final String NGINX_INGRESS_IMAGE_TAG = "v1.2.0";
+  public static final String NGINX_NAMESPACE = "ns-nginx";
+  public static final int NGINX_INGRESS_HTTP_NODEPORT = 30880;
+  public static final int NGINX_INGRESS_HTTPS_NODEPORT = 30443;
+  public static final int NGINX_INGRESS_HTTP_HOSTPORT = 2080;
+  public static final int NGINX_INGRESS_HTTPS_HOSTPORT = 2443;
+  
+  public static final Path INGRESS_CLASS_FILE_NAME = assertDoesNotThrow(()
+      -> Files.createTempFile("ingressclass", ".name"));  
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://helm.traefik.io/traefik";
@@ -211,6 +221,11 @@ public interface TestConstants {
   public static final String TRAEFIK_INGRESS_IMAGE_REGISTRY = TEST_IMAGES_REPO;
 
   public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.10.5";
+  public static final String TRAEFIK_NAMESPACE = "ns-traefik";
+  public static final int TRAEFIK_INGRESS_HTTP_NODEPORT = 30880;
+  public static final int TRAEFIK_INGRESS_HTTPS_NODEPORT = 30443;
+  public static final int TRAEFIK_INGRESS_HTTP_HOSTPORT = 2080;
+  public static final int TRAEFIK_INGRESS_HTTPS_HOSTPORT = 2443;  
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
@@ -340,6 +355,8 @@ public interface TestConstants {
 
   public static final String ISTIO_VERSION =
       getNonEmptySystemProperty("wko.it.istio.version", "1.13.2");
+  public static final int ISTIO_HTTP_HOSTPORT = 2480;
+  public static final int ISTIO_HTTPS_HOSTPORT = 2490;  
 
   //MySQL database constants
   public static final String MYSQL_IMAGE = BASE_IMAGES_PREFIX + "test-images/database/mysql";
@@ -449,4 +466,8 @@ public interface TestConstants {
   public static final String LARGE_DOMAIN_TESTING_PROPS_FILE =
       "largedomaintesting.props";
   
+  //node ports used by the integration tests
+  public static final int ITEXTERNALNODEPORTSERVICE_CONAINERPORT = 32156;
+  public static final int ITEXTERNALNODEPORTSERVICE_HOSTPORT = 2156;
+
 }

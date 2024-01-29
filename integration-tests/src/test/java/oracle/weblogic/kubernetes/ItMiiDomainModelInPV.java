@@ -1,10 +1,9 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +13,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -34,7 +32,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -55,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -68,8 +66,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -89,7 +89,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -109,7 +108,7 @@ public class ItMiiDomainModelInPV {
   private static String domainNamespace = null;
 
   // domain constants
-  private static Map<String, String> params = new HashMap<>();
+  private static List<Parameters> params = new ArrayList<>();
   private static String domainUid1 = "domain1";
   private static String domainUid2 = "domain2";
   private static String adminServerName = "admin-server";
@@ -136,6 +135,7 @@ public class ItMiiDomainModelInPV {
   private static boolean isUseSecret;
 
   private static String adminSvcExtHost = null;
+  private static String hostHeader;
 
   /**
    * 1. Get namespaces for operator and WebLogic domain.
@@ -177,8 +177,8 @@ public class ItMiiDomainModelInPV {
     // build a new MII image with custom wdtHome
     buildMIIandPushToRepo(MII_BASIC_IMAGE_NAME, miiImageTagCustom, modelMountPath + "/model");
 
-    params.put("domain2", miiImageCustom);
-    params.put("domain1", miiImagePV);
+    params.add(new Parameters("domain2", miiImageCustom, 30500));
+    params.add(new Parameters("domain1", miiImagePV, 30501));
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -250,17 +250,20 @@ public class ItMiiDomainModelInPV {
   @DisplayName("Create MII domain with model and application file from PV and custom wdtModelHome")
   @Tag("gate")
   @Tag("crio")
-  void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
+  void testMiiDomainWithModelAndApplicationInPV(Parameters params) {
 
-    String domainUid = params.getKey();
-    String image = params.getValue();
+    String domainUid = params.domainUid;
+    String image = params.image;
 
     // create domain custom resource and verify all the pods came up
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
         domainUid, image);
+
+    // HERE -- looking for where nodePort value is set
+
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, createSecretsForImageRepos(domainNamespace), encryptionSecretName,
-        2, List.of(clusterName), true);
+        2, List.of(clusterName), true, params.nodePort);
     domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
@@ -282,15 +285,21 @@ public class ItMiiDomainModelInPV {
     for (int i = 1; i <= replicaCount; i++) {
       managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
     }
-
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, 7001);
+      assertDoesNotThrow(() -> verifyAdminServerRESTAccess("localhost", 
+          TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    }
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
   }
 
+  private record Parameters(String domainUid, String image, int nodePort) {}
+
   // generates the stream of objects used by parametrized test.
-  private static Stream<Entry<String, String>> paramProvider() {
-    return params.entrySet().stream();
+  private static Stream<Parameters> paramProvider() {
+    return params.stream();
   }
 
   // create domain resource and verify all the server pods are ready
@@ -316,67 +325,90 @@ public class ItMiiDomainModelInPV {
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
-      String user, String password) {
+      String user, String code) {
 
     logger.info("Checking the health of servers in cluster");
 
-    testUntil(
-        () -> {
-          if (OKE_CLUSTER) {
-            // In internal OKE env, verifyMemberHealth in admin server pod
-            int adminPort = 7001;
-            final String command = KUBERNETES_CLI + " exec -n "
-                + domainNamespace + "  " + adminServerPodName + " -- curl http://"
-                + adminServerPodName + ":"
-                + adminPort + "/clusterview/ClusterViewServlet"
-                + "\"?user=" + user
-                + "&password=" + password + "\"";
+    testUntil(() -> {
+      if (OKE_CLUSTER) {
+        // In internal OKE env, verifyMemberHealth in admin server pod
+        int adminPort = 7001;
+        final String command = KUBERNETES_CLI + " exec -n "
+            + domainNamespace + "  " + adminServerPodName + " -- curl http://"
+            + adminServerPodName + ":"
+            + adminPort + "/clusterview/ClusterViewServlet"
+            + "\"?user=" + user
+            + "&password=" + code + "\"";
 
-            ExecResult result = null;
-            try {
-              result = ExecCommand.exec(command, true);
-            } catch (IOException | InterruptedException ex) {
-              logger.severe(ex.getMessage());
-            }
-            String response = result.stdout().trim();
-            logger.info(response);
-            boolean health = true;
-            for (String managedServer : managedServerNames) {
-              health = health && response.contains(managedServer + ":HEALTH_OK");
-              if (health) {
-                logger.info(managedServer + " is healthy");
-              } else {
-                logger.info(managedServer + " health is not OK or server not found");
-              }
-            }
-            return health;
+        ExecResult result = null;
+        try {
+          result = ExecCommand.exec(command, true);
+        } catch (IOException | InterruptedException ex) {
+          logger.severe(ex.getMessage());
+        }
+        String response = result.stdout().trim();
+        logger.info(response);
+        boolean health = true;
+        for (String managedServer : managedServerNames) {
+          health = health && response.contains(managedServer + ":HEALTH_OK");
+          if (health) {
+            logger.info(managedServer + " is healthy");
           } else {
-            // In non-internal OKE env, verifyMemberHealth using adminSvcExtHost by sending HTTP request from local VM
-            adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-            logger.info("admin svc host = {0}", adminSvcExtHost);
-
-            logger.info("Getting node port for default channel");
-            int serviceNodePort = assertDoesNotThrow(()
-                -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-                    "Getting admin server node port failed");
-            String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
-
-            String url = "http://" + hostAndPort
-                + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
-            HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-            assertEquals(200, response.statusCode(), "Status code not equals to 200");
-            boolean health = true;
-            for (String managedServer : managedServerNames) {
-              health = health && response.body().contains(managedServer + ":HEALTH_OK");
-              if (health) {
-                logger.info(managedServer + " is healthy");
-              } else {
-                logger.info(managedServer + " health is not OK or server not found");
-              }
-            }
-            return health;
+            logger.info(managedServer + " health is not OK or server not found");
           }
-        },
+        }
+        return health;
+      } else {
+        // In non-internal OKE env, verifyMemberHealth using adminSvcExtHost by sending HTTP request from local VM
+
+        // TEST, HERE
+        String extSvcPodName = getExternalServicePodName(adminServerPodName);
+        logger.info("**** adminServerPodName={0}", adminServerPodName);
+        logger.info("**** extSvcPodName={0}", extSvcPodName);
+
+        adminSvcExtHost = createRouteForOKD(extSvcPodName, domainNamespace);
+        logger.info("**** adminSvcExtHost={0}", adminSvcExtHost);
+        logger.info("admin svc host = {0}", adminSvcExtHost);
+
+        logger.info("Getting node port for default channel");
+        int serviceNodePort = assertDoesNotThrow(()
+            -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+            "Getting admin server node port failed");
+        String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+
+        StringBuffer curlCmd = new StringBuffer("curl -vkg --noproxy '*' ");
+        if (TestConstants.KIND_CLUSTER
+            && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+          hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+          curlCmd.append(" -H 'host: " + hostHeader + "' ");
+        }
+        logger.info("**** hostAndPort={0}", hostAndPort);
+        String url = "\"http://" + hostAndPort
+            + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code + "\"";
+        curlCmd.append(url);
+        logger.info("**** url={0}", curlCmd);
+
+        ExecResult result = null;
+        try {
+          result = ExecCommand.exec(new String(curlCmd), true);
+          getLogger().info("exitCode: {0}, \nstdout:\n{1}, \nstderr:\n{2}",
+              result.exitValue(), result.stdout(), result.stderr());
+        } catch (IOException | InterruptedException ex) {
+          getLogger().info("Exception in curl request {0}", ex);
+        }
+
+        boolean health = true;
+        for (String managedServer : managedServerNames) {
+          health = health && result.stdout().contains(managedServer + ":HEALTH_OK");
+          if (health) {
+            logger.info(managedServer + " is healthy");
+          } else {
+            logger.info(managedServer + " health is not OK or server not found");
+          }
+        }
+        return health;
+      }
+    },
         logger,
         "Verifying the health of all cluster members");
   }
@@ -491,4 +523,5 @@ public class ItMiiDomainModelInPV {
           image);
     }
   }
+
 }

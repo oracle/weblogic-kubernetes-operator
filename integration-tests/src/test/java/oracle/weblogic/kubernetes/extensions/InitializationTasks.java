@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -23,9 +23,12 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -50,6 +53,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
@@ -59,6 +63,10 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYP
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -67,6 +75,9 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -104,6 +115,8 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -296,6 +309,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         
         //install webhook to prevent every operator installation trying to update crd
         installWebHookOnlyOperator("DomainOnPvSimplification=true");
+        //install traefik when running with podman container runtime
+        if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+          installTraefikLB();
+        }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
@@ -630,5 +647,44 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         "null" // domainNamespace
     );
   }
+  
+  private void installNginxLB() {
+    deleteNamespace(NGINX_NAMESPACE);
+    assertDoesNotThrow(() -> new Namespace().name(NGINX_NAMESPACE).create());
+    getLogger().info("Installing NGINX in namespace {0}", NGINX_NAMESPACE);
+    NginxParams params = installAndVerifyNginx(NGINX_NAMESPACE, NGINX_INGRESS_HTTP_NODEPORT,
+        NGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, "NodePort");
+    assertDoesNotThrow(() -> Files.writeString(INGRESS_CLASS_FILE_NAME, params.getIngressClassName()));
+    String cmd = KUBERNETES_CLI + " get all -A";
+    try {
+      ExecCommand.exec(cmd, true);
+    } catch (IOException | InterruptedException ex) {
+      getLogger().info("Exception in get all {0}", ex);
+    }
+    //TO-DO for OKD to use NGINX for all service access
+    //expose NGINX node port service and get route host
+    //oc -n ns-abcdef expose service nginx-release-nginx-ingress-nginx-controller
+    //oc -n ns-abcdef get routes nginx-release-nginx-ingress-nginx-controller '-o=jsonpath={.spec.host}'
+  }
+  
+  private void installTraefikLB() {
+    deleteNamespace(TRAEFIK_NAMESPACE);
+    assertDoesNotThrow(() -> new Namespace().name(TRAEFIK_NAMESPACE).create());
+    getLogger().info("Installing traefik in namespace {0}", TRAEFIK_NAMESPACE);
+    TraefikParams traefikParams = installAndVerifyTraefik(TRAEFIK_NAMESPACE, TRAEFIK_INGRESS_HTTP_NODEPORT,
+        TRAEFIK_INGRESS_HTTPS_NODEPORT, "NodePort");    
+    assertDoesNotThrow(() -> Files.writeString(INGRESS_CLASS_FILE_NAME, traefikParams.getIngressClassName()));    
+    String cmd = KUBERNETES_CLI + " get all -A";
+    try {
+      ExecResult result = ExecCommand.exec(cmd, true);
+      getLogger().info(result.stdout());
+    } catch (IOException | InterruptedException ex) {
+      getLogger().info("Exception in get all {0}", ex);
+    }
+    //TO-DO for OKD to use traefik for all service access
+    //expose traefik node port service and get route host
+    //oc -n ns-abcdef expose service nginx-release-nginx-ingress-nginx-controller
+    //oc -n ns-abcdef get routes nginx-release-nginx-ingress-nginx-controller '-o=jsonpath={.spec.host}'
+  }  
 
 }
