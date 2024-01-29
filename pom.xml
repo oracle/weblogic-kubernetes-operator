@@ -648,7 +648,7 @@
     <exec-maven-plugin-version>3.1.1</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.8.3.0</spotbugs-maven-plugin-version>
     <spotbugs-version>4.8.3</spotbugs-version>
-    <checkstyle-version>10.12.7</checkstyle-version>
+    <checkstyle-version>10.13.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.2</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.1.0</maven-gpg-plugin-version>
