@@ -265,6 +265,10 @@
           "description": "Human-readable message indicating details about last transition.",
           "type": "string"
         },
+        "failureInfo": {
+          "description": "Details about the failure. This field will only be set when the condition type is Failed.",
+          "$ref": "#/definitions/DomainConditionFailureInfo"
+        },
         "status": {
           "description": "The status of the condition. Can be True, False, Unknown.",
           "type": "string"
@@ -274,6 +278,23 @@
         "type",
         "status"
       ]
+    },
+    "DomainConditionFailureInfo": {
+      "type": "object",
+      "properties": {
+        "introspectVersion": {
+          "description": "The introspectVersion set when the Failed condition occurred.",
+          "type": "string"
+        },
+        "introspectImage": {
+          "description": "The image used by the introspector when the Failed condition occurred.",
+          "type": "string"
+        },
+        "restartVersion": {
+          "description": "The restartVersion set when the Failed condition occurred.",
+          "type": "string"
+        }
+      }
     },
     "DomainCreationImage": {
       "type": "object",
