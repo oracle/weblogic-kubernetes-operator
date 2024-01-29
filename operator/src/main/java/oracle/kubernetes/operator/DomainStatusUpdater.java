@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -577,7 +577,8 @@ public class DomainStatusUpdater {
     void addFailure(DomainStatus status, DomainCondition condition) {
       addFailureCondition(status, condition);
       if (hasReachedRetryLimit(status, condition)) {
-        addFailureCondition(status, new DomainCondition(FAILED).withReason(ABORTED).withMessage(getFatalMessage()));
+        addFailureCondition(status, new DomainCondition(FAILED).withReason(ABORTED)
+            .withFailureInfo(getDomain().getSpec()).withMessage(getFatalMessage()));
       }
     }
 
@@ -748,11 +749,14 @@ public class DomainStatusUpdater {
         newConditions.apply();
 
         if (isHasFailedPod()) {
-          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodFailedMessage()));
+          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
+              .withFailureInfo(getDomain().getSpec()).withMessage(getPodFailedMessage()));
         } else if (hasPodNotRunningInTime()) {
-          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodNotRunningMessage()));
+          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
+              .withFailureInfo(getDomain().getSpec()).withMessage(getPodNotRunningMessage()));
         } else if (hasPodNotReadyInTime()) {
-          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodNotReadyMessage()));
+          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
+              .withFailureInfo(getDomain().getSpec()).withMessage(getPodNotReadyMessage()));
         } else {
           status.removeConditionsMatching(c -> c.hasType(FAILED) && SERVER_POD == c.getReason());
           if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
@@ -1586,7 +1590,8 @@ public class DomainStatusUpdater {
       @Override
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
-        addFailure(status, status.createAdjustedFailedCondition(reason, message, isInitializeDomainOnPV()));
+        addFailure(status, status.createAdjustedFailedCondition(reason, message, isInitializeDomainOnPV(),
+            getDomain().getSpec()));
         status.addCondition(new DomainCondition(COMPLETED).withStatus(false), isInitializeDomainOnPV());
         Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
