@@ -92,6 +92,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionFailureInfo;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -514,6 +515,48 @@ class DomainProcessorTest {
     domainConfigurator.withRestartVersion("17");
 
     processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  // HERE
+
+  @Test
+  void whenDomainSpecMatchesFailureInfoAndProcessingAborted_dontRunUpdateThread() {
+    DomainResource localDomain = DomainProcessorTestSetup.createTestDomain();
+    DomainConfigurator localConfigurator = configureDomain(localDomain);
+    localConfigurator.withRestartVersion("17");
+    DomainPresenceInfo localInfo = new DomainPresenceInfo(localDomain);
+
+    processor.registerDomainPresenceInfo(localInfo);
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED)
+        .withFailureInfo(new DomainConditionFailureInfo().withRestartVersion("17")).withMessage("ugh"));
+    domainConfigurator.withRestartVersion("17");
+
+    processor.createMakeRightOperation(localInfo).execute();
+
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  void whenDomainSpecLeadsFailureInfoAndProcessingAborted_runUpdateThread() {
+    // This test assumes a missed watch event or related situation where the
+    // spec has been updated to a new restart version ("18") but where the
+    // original failure and the related abort occurred at a different version ("17")
+
+    DomainResource localDomain = DomainProcessorTestSetup.createTestDomain();
+    localDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED)
+        .withFailureInfo(new DomainConditionFailureInfo().withRestartVersion("17")).withMessage("ugh"));
+    DomainConfigurator localConfigurator = configureDomain(localDomain);
+    localConfigurator.withRestartVersion("18");
+    DomainPresenceInfo localInfo = new DomainPresenceInfo(localDomain);
+
+    processor.registerDomainPresenceInfo(localInfo);
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED)
+        .withFailureInfo(new DomainConditionFailureInfo().withRestartVersion("17")).withMessage("ugh"));
+    domainConfigurator.withRestartVersion("18");
+
+    processor.createMakeRightOperation(localInfo).execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }

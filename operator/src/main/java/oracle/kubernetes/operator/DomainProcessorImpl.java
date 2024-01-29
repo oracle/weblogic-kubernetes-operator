@@ -390,7 +390,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else if (isDeleting(operation)) {
       return true;
     } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
-      return false;
+      return liveInfo.isMustDomainProcessingRestart();
     } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)
         || liveInfo.isDomainGenerationChanged(cachedInfo)) {
       return true;

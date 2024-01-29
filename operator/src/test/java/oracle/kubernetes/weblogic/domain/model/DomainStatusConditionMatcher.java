@@ -20,6 +20,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
   private DomainFailureReason expectedReason;
   private String expectedMessage;
   private OffsetDateTime expectedTransitionTime;
+  private DomainConditionFailureInfo expectedFailureInfo;
 
   private DomainStatusConditionMatcher(@Nonnull DomainConditionType expectedType) {
     this.expectedType = expectedType;
@@ -49,6 +50,11 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
     return this;
   }
 
+  public DomainStatusConditionMatcher withFailureInfo(DomainConditionFailureInfo failureInfo) {
+    expectedFailureInfo = failureInfo;
+    return this;
+  }
+
   @Override
   protected boolean matchesSafely(DomainStatus item, Description mismatchDescription) {
     for (DomainCondition condition : item.getConditions()) {
@@ -73,6 +79,9 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
       return false;
     }
     if (expectedTransitionTime != null && !expectedTransitionTime.equals(condition.getLastTransitionTime())) {
+      return false;
+    }
+    if (expectedFailureInfo != null && !expectedFailureInfo.equals(condition.getFailureInfo())) {
       return false;
     }
     return expectedReason == null || expectedReason == condition.getReason();
@@ -105,6 +114,9 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
     }
     if (expectedTransitionTime != null) {
       expectations.add(expectation("lastTransitionTime", expectedTransitionTime));
+    }
+    if (expectedFailureInfo != null) {
+      expectations.add(expectation("failureInfo", expectedFailureInfo.toString()));
     }
     description
         .appendText(commentPrefix)
