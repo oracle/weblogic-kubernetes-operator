@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
@@ -398,7 +398,7 @@ pipeline {
                             fi
 
                             docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
-                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2
+                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2.8.2
                             echo "Registry Host: ${registry_host}"
                         '''
                     }

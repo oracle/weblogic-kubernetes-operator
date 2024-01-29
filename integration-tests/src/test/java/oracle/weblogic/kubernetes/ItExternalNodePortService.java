@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -42,6 +42,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ITEXTERNALNODEPORTSERVICE_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
@@ -153,10 +154,16 @@ class ItExternalNodePortService {
 
     // Prepare the config map sparse model file from the template by replacing
     // Public Address of the custom channel with K8S_NODEPORT_HOST
-    nextFreePort = getNextFreePort();
-    Map<String, String> configTemplateMap  = new HashMap<>();
-    configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
-    configTemplateMap.put("FREE_PORT", String.valueOf(nextFreePort));
+    Map<String, String> configTemplateMap = new HashMap<>();
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      configTemplateMap.put("INGRESS_HOST", "localhost");
+      configTemplateMap.put("FREE_PORT", String.valueOf(ITEXTERNALNODEPORTSERVICE_HOSTPORT));
+    } else {
+      nextFreePort = getNextFreePort();
+      configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+      configTemplateMap.put("FREE_PORT", String.valueOf(nextFreePort));
+    }
 
     Path srcFile = Paths.get(RESOURCE_DIR,
         "wdt-models", "nodeport.tunneling.model.template.yaml");
@@ -221,8 +228,14 @@ class ItExternalNodePortService {
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
-    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
-    templateMap.put("FREE_PORT", String.valueOf(nextFreePort));
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      templateMap.put("INGRESS_HOST", "localhost");
+      templateMap.put("FREE_PORT", String.valueOf(ITEXTERNALNODEPORTSERVICE_HOSTPORT));
+    } else {
+      templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+      templateMap.put("FREE_PORT", String.valueOf(nextFreePort));
+    }
 
     Path srcTunnelingFile = Paths.get(RESOURCE_DIR,
         "tunneling", "nodeport.tunneling.template.yaml");

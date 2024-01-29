@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -61,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainRe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
@@ -126,6 +128,8 @@ class ItDBOperator {
   private static LoggingFacade logger = null;
 
   private String fmwDomainUid = "fmwdomain-mii-db";
+  private String adminServerName = "admin-server";
+  private static int adminPort = 7001;  
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
   private int replicaCount = 2;
@@ -149,6 +153,8 @@ class ItDBOperator {
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
   private final String fmwClusterResName = fmwDomainUid + "-" + clusterName;
   private final String wlsClusterResName = wlsDomainUid + "-" + clusterName;
+  
+  private static String hostHeader;
 
   /**
    * Start DB service and create RCU schema.
@@ -280,7 +286,14 @@ class ItDBOperator {
     verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(fmwAdminServerPodName), fmwDomainNamespace);
-    verifyEMconsoleAccess(fmwDomainNamespace, fmwDomainUid, adminSvcExtHost);
+
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(fmwDomainNamespace, fmwDomainUid, adminServerName, adminPort);
+      verifyEMconsoleAccess(fmwDomainNamespace, fmwDomainUid, adminSvcExtHost, hostHeader);
+    } else {
+      verifyEMconsoleAccess(fmwDomainNamespace, fmwDomainUid, adminSvcExtHost);
+    }
 
     //Reuse the same RCU schema to restart JRF domain
     testReuseRCUschemaToRestartDomain();
@@ -374,6 +387,10 @@ class ItDBOperator {
       checkPodReadyAndServiceExists(wlsManagedServerPrefix + i, wlsDomainUid, wlsDomainNamespace);
     }
 
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(wlsDomainNamespace, wlsDomainUid, adminServerName, adminPort);
+    }
     //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
   }
@@ -547,6 +564,11 @@ class ItDBOperator {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      curlString.append(" -H 'host: " + hostHeader + "' ");
+    }
     curlString.append("http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
@@ -578,6 +600,11 @@ class ItDBOperator {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      curlString.append(" -H 'host: " + hostHeader + "' ");
+    }    
     curlString.append("http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
@@ -611,6 +638,11 @@ class ItDBOperator {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer curlString = new StringBuffer("curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      curlString.append(" -H 'host: " + hostHeader + "' ");
+    }
     curlString.append("\"http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)

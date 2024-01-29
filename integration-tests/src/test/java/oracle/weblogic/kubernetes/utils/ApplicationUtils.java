@@ -1,8 +1,9 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import org.awaitility.core.ConditionFactory;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
@@ -449,4 +451,88 @@ public class ApplicationUtils {
       logger.info("WebLogic console is not accessible");
     }
   }
+
+  /**
+   * Verify admin server is accessible through REST interface.
+   *
+   * @param host host name to connect to
+   * @param port the port configured to access admin server
+   * @param secure is https
+   * @param hostHeader header to pass in curl
+   * @return true if REST interface is accessible
+   * @throws IOException when connection to admin server fails
+   */
+  public static boolean verifyAdminServerRESTAccess(String host, int port, boolean secure, String hostHeader)
+      throws IOException {
+    getLogger().info("Check REST interface availability");
+    StringBuffer curlCmd = new StringBuffer("status=$(curl -vkg --noproxy '*'");
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    curlCmd.append(" -H 'host: ")
+        .append(hostHeader)
+        .append("' ")
+        .append("--user ")
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(":")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" ")
+        .append(secure ? " https://" : "http://")
+        .append(host)
+        .append(":")
+        .append(port)
+        .append("/management/tenant-monitoring/servers/ --show-error -w %{http_code}); ")
+        .append("echo ${status}");
+    getLogger().info("checkRestConsole : curl command {0}", new String(curlCmd));
+    try {
+      ExecResult result = ExecCommand.exec(new String(curlCmd), true);
+      String response = result.stdout().trim();
+      getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      return response.contains("RUNNING");
+    } catch (IOException | InterruptedException ex) {
+      getLogger().info("Exception in checkRestConsole {0}", ex);
+      return false;
+    }
+  }
+  
+  /**
+   * Verify admin server is accessible through REST interface inside admin server pod.
+   *
+   * @param adminServerPodName admin server pod name
+   * @param adminPort the port configured to access admin server
+   * @param namespace namespace in which admin server pod is running
+   * @param userName admin server user name
+   * @param password admin server admin password
+   * @return true if REST interface is accessible
+   * @throws IOException when connection to admin server fails
+   */
+  public static boolean verifyAdminServerRESTAccessInAdminPod(String adminServerPodName, String adminPort,
+      String namespace, String userName, String password)
+      throws IOException {
+    LoggingFacade logger = getLogger();
+    logger.info("Checking REST Console");
+    StringBuffer curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
+        + namespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl -g --user ")
+        .append(userName)
+        .append(":")
+        .append(password)
+        .append(" http://" + adminServerPodName + ":" + adminPort)
+        .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code} && ")
+        .append("echo ${status}");
+    logger.info("checkRestConsole : curl command {0}", new String(curlCmd));
+    try {
+      ExecResult result = ExecCommand.exec(new String(curlCmd), true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      return response.contains("200");
+    } catch (IOException | InterruptedException ex) {
+      logger.info("Exception in checkRestConsole {0}", ex);
+      return false;
+    }
+  }
+  
 }

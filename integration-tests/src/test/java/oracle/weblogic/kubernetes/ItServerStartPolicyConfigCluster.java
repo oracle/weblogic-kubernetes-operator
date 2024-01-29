@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -23,7 +23,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -77,7 +76,6 @@ class ItServerStartPolicyConfigCluster {
   private static final String clusterResourceName = DYNAMIC_CLUSTER;
   private static LoggingFacade logger = null;
   private static final String samplePath = "sample-testing-config-cluster";
-  private static String ingressHost = null; //only used for OKD
 
   /**
    * Install Operator.
@@ -99,9 +97,6 @@ class ItServerStartPolicyConfigCluster {
     domainNamespace = namespaces.get(1);
 
     prepare(domainNamespace, domainUid, opNamespace, samplePath);
-
-    // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
-    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
   }
 
   /**

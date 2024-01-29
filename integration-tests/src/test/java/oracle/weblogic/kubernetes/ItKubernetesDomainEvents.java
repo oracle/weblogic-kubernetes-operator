@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -23,9 +23,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -113,7 +110,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -836,12 +832,7 @@ class ItKubernetesDomainEvents {
                                             .claimName(pvcName)))
                             .addVolumeMountsItem(new V1VolumeMount()
                                     .mountPath("/shared")
-                                    .name(pvName)))
-                    .adminServer(new AdminServer() //admin server
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(getNextFreePort()))))));
+                                    .name(pvName)))));
     setPodAntiAffinity(domain);
     domain = createClusterResourceAndAddReferenceToDomain(
         cluster1Name, cluster1Name, domainNamespace, domain, replicaCount);
@@ -895,7 +886,7 @@ class ItKubernetesDomainEvents {
 
     logger.info("Getting port for default channel");
     int adminServerPort
-        = getServicePort(domainNamespace3, getExternalServicePodName(adminServerPodName), "default");
+        = getServicePort(domainNamespace3, adminServerPodName, "default");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),

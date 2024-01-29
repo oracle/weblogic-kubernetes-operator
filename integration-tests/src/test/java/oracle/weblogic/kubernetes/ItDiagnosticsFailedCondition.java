@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -537,12 +537,7 @@ class ItDiagnosticsFailedCondition {
                           .claimName(pvcName)))
                   .addVolumeMountsItem(new V1VolumeMount()
                       .mountPath("/shared")
-                      .name(pvName)))
-              .adminServer(new AdminServer() //admin server
-                  .adminService(new AdminService()
-                      .addChannelsItem(new Channel()
-                          .channelName("default")
-                          .nodePort(getNextFreePort())))));
+                      .name(pvName))));
       setPodAntiAffinity(domain);
 
       ClusterResource cluster = createClusterResource(clusterResName, wlClusterName, domainNamespace, replicaCount);
@@ -893,11 +888,7 @@ class ItDiagnosticsFailedCondition {
             .adminServer(new AdminServer()
                 .serverService(new ServerService()
                     .annotations(keyValueMap)
-                    .labels(keyValueMap))
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
+                    .labels(keyValueMap)))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -946,11 +937,6 @@ class ItDiagnosticsFailedCondition {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")

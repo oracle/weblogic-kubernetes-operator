@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_12213;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -88,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -142,6 +144,7 @@ class ItConfigDistributionStrategy {
   final String clusterName = "mycluster";
   final String clusterResName = domainUid + "-" + clusterName;
   final String adminServerName = "admin-server";
+  final int adminPort = 7001;
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
   final int managedServerPort = 8001;
@@ -167,6 +170,7 @@ class ItConfigDistributionStrategy {
   String dsName1 = "JdbcTestDataSource-1";
   String dsSecret = domainUid.concat("-mysql-secret");
   String adminSvcExtHost = null;
+  static String hostHeader;  
 
   private static LoggingFacade logger = null;
 
@@ -266,16 +270,22 @@ class ItConfigDistributionStrategy {
         -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
-    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
-
-    logger.info("Checking if the clusterview app in admin server is accessible after restart");
-    String baseUri = "http://" + hostAndPort + "/clusterview/";
-    String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
-
     testUntil(
         withLongRetryPolicy,
         () -> {
-          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+          logger.info("Checking if the clusterview app in admin server is accessible after restart");
+          String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+          Map<String, String> headers = null;
+          if (TestConstants.KIND_CLUSTER
+              && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+            hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+            headers = new HashMap<>();
+            headers.put("host", hostHeader);
+          }
+          String baseUri = "http://" + hostAndPort + "/clusterview/";
+          String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT
+              + "&password=" + ADMIN_PASSWORD_DEFAULT;
+          HttpResponse<String> response = OracleHttpClient.get(baseUri + serverListUri, headers, true);
           return response.statusCode() == 200;
         },
         logger,
@@ -655,19 +665,25 @@ class ItConfigDistributionStrategy {
             "default"),
         "Getting admin server node port failed");
 
-    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
-    //verify server attribute MaxMessageSize
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attributeTest=true&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
-    String url = "http://" + hostAndPort + appURI;
-
     return (()
         -> {
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+      String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+      logger.info("hostAndPort = {0} ", hostAndPort);
+
+      //verify server attribute MaxMessageSize
+      String appURI = "/clusterview/ConfigServlet?"
+          + "attributeTest=true&"
+          + "serverType=adminserver&"
+          + "serverName=" + adminServerName;
+      Map<String, String> headers = null;
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        headers = new HashMap<>();
+        headers.put("host", hostHeader);
+      }
+      String url = "http://" + hostAndPort + appURI;
+      HttpResponse<String> response = OracleHttpClient.get(url, headers, true);
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       return response.body().contains("MaxMessageSize=".concat(maxMessageSize));
     });
@@ -677,19 +693,23 @@ class ItConfigDistributionStrategy {
 
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
-    String baseUri = "http://" + hostAndPort + "/clusterview/";
-
-    //verify server attribute MaxMessageSize
-    String configUri = "ConfigServlet?"
-        + "attributeTest=true"
-        + "&serverType=adminserver"
-        + "&serverName=" + adminServerName;
-    
     testUntil(() -> {
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+      logger.info("hostAndPort = {0} ", hostAndPort);
+      //verify server attribute MaxMessageSize
+      String configUri = "ConfigServlet?"
+          + "attributeTest=true"
+          + "&serverType=adminserver"
+          + "&serverName=" + adminServerName;
+      Map<String, String> headers = null;
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        headers = new HashMap<>();
+        headers.put("host", hostHeader);
+      }
+      String baseUri = "http://" + hostAndPort + "/clusterview/";
+      HttpResponse<String> response = OracleHttpClient.get(baseUri + configUri, headers, true);
       if (response.statusCode() != 200) {
         logger.info("Response code is not 200 retrying...");
         return false;
@@ -701,7 +721,6 @@ class ItConfigDistributionStrategy {
       }
     }, logger, "clusterview app in admin server is accessible after restart");
 
-
   }
 
   //use the http client and access the clusterview application to get server configuration
@@ -711,18 +730,22 @@ class ItConfigDistributionStrategy {
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
-    String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
-
-    //verify datasource attributes of JdbcTestDataSource-0
-    String appURI = "resTest=true&resName=" + dsName0;
-    String dsOverrideTestUrl = baseUri + appURI;
-
     testUntil(
         () -> {
-          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+          String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+          Map<String, String> headers = null;
+          if (TestConstants.KIND_CLUSTER
+              && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+            hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+            headers = new HashMap<>();
+            headers.put("host", hostHeader);
+          }
+          logger.info("hostAndPort = {0} ", hostAndPort);
+          String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
+          //verify datasource attributes of JdbcTestDataSource-0
+          String appURI = "resTest=true&resName=" + dsName0;
+          String dsOverrideTestUrl = baseUri + appURI;
+          HttpResponse<String> response = OracleHttpClient.get(dsOverrideTestUrl, headers, true);
           if (response.statusCode() != 200) {
             logger.info("Response code is not 200 retrying...");
             return false;
@@ -750,40 +773,42 @@ class ItConfigDistributionStrategy {
         },
         logger,
         "clusterview app in admin server is accessible after restart");
-    /*
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
-      assertTrue(response.body().contains("getInitialCapacity:2"), "Did get getInitialCapacity:2");
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-    }
-    */
 
     //test connection pool in all managed servers of dynamic cluster
     for (int i = 1; i <= replicaCount; i++) {
-      appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
-      String dsConnectionPoolTestUrl = baseUri + appURI;
-      testUntil(
-          () -> {
-            HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl,
-                true));
-            if (response.statusCode() != 200) {
-              logger.info("Response code is not 200 retrying...");
-              return false;
-            }
-            if (!(response.body().contains("Connection successful"))) {
-              logger.info("Didn't get Connection successful retrying...");
-              return false;
-            }
-
-            return true;
-        },
-          logger, "All managed servers get JDBC connection");
+      String appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
+      testDatasource(appURI);
     }
+  }
+  
+  private void testDatasource(String appURI) {
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    testUntil(
+        () -> {
+          String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+          Map<String, String> headers = null;
+          if (TestConstants.KIND_CLUSTER
+              && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+            hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+            headers = new HashMap<>();
+            headers.put("host", hostHeader);
+          }
+          logger.info("hostAndPort = {0} ", hostAndPort);
+          String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
+          
+          String dsConnectionPoolTestUrl = baseUri + appURI;
+          HttpResponse<String> response = OracleHttpClient.get(dsConnectionPoolTestUrl, headers, true);
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
+          if (!(response.body().contains("Connection successful"))) {
+            logger.info("Didn't get Connection successful retrying...");
+            return false;
+          }
+          return true;
+        },
+        logger, "All managed servers get JDBC connection");
   }
 
   //use the http client and access the clusterview application to get server configuration
@@ -793,17 +818,25 @@ class ItConfigDistributionStrategy {
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
-    logger.info("hostAndPort = {0} ", hostAndPort);
 
-    String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
-
-    //verify datasource attributes of JdbcTestDataSource-0
-    String appURI = "resTest=true&resName=" + dsName1;
-    String dsOverrideTestUrl = baseUri + appURI;
     testUntil(
         () -> {
-          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+          String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+          logger.info("hostAndPort = {0} ", hostAndPort);
+
+          Map<String, String> headers = null;
+          if (TestConstants.KIND_CLUSTER
+              && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+            hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+            headers = new HashMap<>();
+            headers.put("host", hostHeader);
+          }
+          String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
+
+          //verify datasource attributes of JdbcTestDataSource-0
+          String appURI = "resTest=true&resName=" + dsName1;
+          String dsOverrideTestUrl = baseUri + appURI;          
+          HttpResponse<String> response = OracleHttpClient.get(dsOverrideTestUrl, headers, true);
           if (response.statusCode() != 200) {
             logger.info("Response code is not 200 retrying...");
             return false;
@@ -842,13 +875,20 @@ class ItConfigDistributionStrategy {
 
     //test connection pool in all managed servers of dynamic cluster
     for (int i = 1; i <= replicaCount; i++) {
-      appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
+      String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+      logger.info("hostAndPort = {0} ", hostAndPort);
+
+      Map<String, String> headers = null;
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        headers = new HashMap<>();
+        headers.put("host", hostHeader);
+      }
+      String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
+      String appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
-      testUntil(() -> {
-        HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
-        logger.info("Http response status code {0} \n Http response body {1} ", response.statusCode(), response.body());
-        return response.statusCode() == 200 && response.body().contains("Connection successful");
-      }, logger, "http response code 200 and message Connection successful");
+      testDatasource(appURI);
     }
   }
 
@@ -1012,6 +1052,10 @@ class ItConfigDistributionStrategy {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, adminPort);
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -34,6 +34,7 @@ public class NginxParams {
   private static final String IMAGE_PULL_SECRET = "imagePullSecrets[0].name";
   private static final String IP_FAMILY_POLICY = "controller.service.ipFamilyPolicy";
   private static final String IP_FAMILIES = "controller.service.ipFamilies";
+  private static final String TYPE = "controller.service.type";
   
 
   // Adding some of the most commonly used params for now
@@ -49,6 +50,7 @@ public class NginxParams {
   private String imageRepoSecret;
   private List<String> ipFamilies;
   private String ipFamilyPolicy = "SingleStack";
+  private String type;
 
   public NginxParams() {
     ingressClassName = UniqueName.uniqueName("nginx-");
@@ -110,7 +112,16 @@ public class NginxParams {
   public NginxParams ipFamilyPolicy(String ipFamilyPolicy) {
     this.ipFamilyPolicy = ipFamilyPolicy;
     return this;
-  }   
+  }
+  
+  public NginxParams type(String type) {
+    this.type = type;
+    return this;
+  }
+  
+  public String getType() {
+    return type;
+  }
 
   public NginxParams helmParams(HelmParams helmParams) {
     this.helmParams = helmParams;
@@ -143,6 +154,7 @@ public class NginxParams {
     }
     values.put(IP_FAMILY_POLICY, ipFamilyPolicy);
     values.put(IP_FAMILIES, ipFamilies);
+    values.put(TYPE, type);
     values.values().removeIf(Objects::isNull);
     return values;
   }
