@@ -1,0 +1,184 @@
+# Copyright (c) 2024, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+rbac:
+  create: true
+
+podSecurityPolicy:
+  enabled: false
+
+serviceAccounts:
+  pushgateway:
+    create: false
+
+alertmanager:
+  enabled: true
+
+  persistentVolume:
+    existingClaim: pvc-alertmanager
+  service:
+    type: NodePort
+    nodePort: 32500
+  # securityContext:
+  #   runAsNonRoot: false
+  #  runAsUser: 0
+  image:
+    repository: prometheus_alertmanager_image
+    tag: prometheus_alertmanager_tag
+    pullPolicy: IfNotPresent
+  securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
+    runAsGroup: 1000
+
+#nodeExporter:
+prometheus-node-exporter:
+  enabled: false
+  ## node-exporter container image
+  ##
+  image:
+    repository: prometheus_node_exporter_image
+    tag: prometheus_node_exporter_tag
+    pullPolicy: IfNotPresent
+
+configmapReload:
+  prometheus:
+    ## If false, the configmap-reload container will not be deployed
+    ##
+    enabled: true
+
+    ## configmap-reload container name
+    ##
+    name: configmap-reload
+
+    ## configmap-reload container image
+    ##
+    image:
+      repository: prometheus_configmap_reload_image
+      tag: prometheus_configmap_reload_tag
+      # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
+      digest: ""
+      pullPolicy: IfNotPresent
+  alertmanager:
+    ## If false, the configmap-reload container will not be deployed
+    ##
+    enabled: true
+
+    ## configmap-reload container name
+    ##
+    name: configmap-reload
+
+    ## configmap-reload container image
+    ##
+    image:
+      repository: prometheus_configmap_reload_image
+      tag: prometheus_configmap_reload_tag
+      pullPolicy: IfNotPresent
+
+server:
+  persistentVolume:
+    existingClaim: pvc-prometheus
+  service:
+    type: ClusterIP
+    ports:
+    - port: 9090
+      protocol: TCP
+      targetPort: 9090
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  initContainers:
+    - command: [ "chown","-R","1000:1000","/data" ]
+      image: busybox
+      name: prometheus-data-permission-fix
+      volumeMounts:
+        - mountPath: /data
+          name: storage-volume
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+
+  volumes:
+    - name: storage-volume
+      persistentVolumeClaim:
+        claimName: pvc-prometheus
+
+  global:
+    evaluation_interval: 1m
+    scrape_interval: 10s
+    scrape_timeout: 5s
+  image:
+    repository: prometheus_image
+    tag: prometheus_tag
+    pullPolicy: IfNotPresent
+
+kubeStateMetrics:
+  ## If false, kube-state-metrics sub-chart will not be installed
+  ##
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+  image:
+    repository: pushgateway_image
+    tag: pushgateway_tag
+    pullPolicy: IfNotPresent
+alertmanagerFiles:
+  alertmanager.yml:
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ['alertname']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 1h
+      receiver: 'logging-webhook'
+    receivers:
+      - name: 'logging-webhook'
+        webhook_configs:
+          - url: 'http://webhook.webhook.svc.cluster.local:8080/log'
+
+serverFiles:
+  alerts:
+    groups:
+      - name: node_rules
+        rules:
+          - alert: ClusterWarning
+            for: 15s
+            expr: sum by(weblogic_domainUID, weblogic_clusterName) (up{weblogic_domainUID=~'.+'}) == 1
+            labels:
+              severity: page
+            annotations:
+              description: 'Some WLS cluster has only one running server for more than 1 minutes.'
+              summary: 'Some wls cluster is in warning state.'
+
+extraScrapeConfigs: |
+  - job_name: 'wls-domain1'
+    kubernetes_sd_configs:
+    - role: pod
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_weblogic_domainUID, __meta_kubernetes_pod_label_weblogic_clusterName]
+      action: keep
+      regex: default;domain1;(.+)
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
+    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      target_label: __address__
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    - source_labels: [__meta_kubernetes_pod_name]
+      action: replace
+      target_label: pod
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: namespace
+    basic_auth:
+      username: weblogic
+      password: welcome1

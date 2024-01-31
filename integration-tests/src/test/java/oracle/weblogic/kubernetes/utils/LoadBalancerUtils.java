@@ -569,9 +569,34 @@ public class LoadBalancerUtils {
     LoggingFacade logger = getLogger();
     logger.info("Creating Traefik ingress resource");
 
+    Path dstFile = Paths.get(RESULTS_ROOT, ingressResourceFileName);
+    return createTraefikIngressRoutingRules(domainNamespace,
+        traefikNamespace,
+        ingressResourceFileName,
+        dstFile,
+        domainUids);
+  }
+
+  /**
+   * Create an ingress Resource.
+   *
+   * @param domainNamespace namespace of the domain
+   * @param traefikNamespace namespace in which the ingress will be created
+   * @param ingressResourceFileName ingress resource file path and name
+   * @param ingressResourceFilePath ingress resource file path and name
+   * @param domainUids uids of the domains
+   */
+  public static boolean createTraefikIngressRoutingRules(String domainNamespace,
+                                                         String traefikNamespace,
+                                                         String ingressResourceFileName,
+                                                         Path ingressResourceFilePath,
+                                                         String... domainUids) {
+    LoggingFacade logger = getLogger();
+    logger.info("Creating Traefik ingress resource");
+
     // prepare Traefik ingress resource file
     Path srcFile = Paths.get(RESOURCE_DIR, ingressResourceFileName);
-    Path dstFile = Paths.get(RESULTS_ROOT, ingressResourceFileName);
+    Path dstFile = ingressResourceFilePath;
 
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);

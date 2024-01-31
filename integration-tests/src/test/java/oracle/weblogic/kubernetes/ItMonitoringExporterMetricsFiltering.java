@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -20,8 +20,9 @@ import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -37,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -45,21 +47,21 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressPathRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyDomain;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.deleteMonitoringExporterTempDir;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
@@ -76,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify WebLogic Metric is processed and filtered as expected by MonitoringExporter")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-sequential")
+@Tag("oke-gate")
 @Tag("kind-sequential")
 @Tag("okd-wls-mrg")
 class ItMonitoringExporterMetricsFiltering {
@@ -84,12 +86,16 @@ class ItMonitoringExporterMetricsFiltering {
   // domain constants
   private static String domain1Namespace = null;
   private static String domain1Uid = "monexp-domain-4";
-  private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
-  private static int nodeportshttps = 0;
+  private static String host = null;
+  private static String ingressIP = null;
   private static List<String> ingressHost1List = null;
 
   private static String monitoringNS = null;
+  private static String traefikNamespace = null;
+  private static HelmParams traefikHelmParams = null;
+  private static TraefikParams traefikParams;
+  private static String ingressClassName;
   static PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
   private static String monitoringExporterEndToEndDir = null;
@@ -120,7 +126,7 @@ class ItMonitoringExporterMetricsFiltering {
 
 
   /**
-   * Install operator and NGINX. Create model in image domain with multiple clusters.
+   * Install operator . Create model in image domain with multiple clusters.
    * Create ingress for the domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -144,9 +150,9 @@ class ItMonitoringExporterMetricsFiltering {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     monitoringNS = namespaces.get(1);
 
-    logger.info("Get a unique namespace for NGINX");
+    logger.info("Get a unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
-    final String nginxNamespace = namespaces.get(2);
+    traefikNamespace = namespaces.get(2);
     
 
     logger.info("Get a unique namespace for domain1");
@@ -166,27 +172,30 @@ class ItMonitoringExporterMetricsFiltering {
     modelList.add(MODEL_DIR + "/" + JDBC_MODEL_FILE);
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, modelList,
         STICKYSESS_APP_NAME, SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
-    if (!OKD) {
-      // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-
-      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-      logger.info("NGINX service name: {0}", nginxServiceName);
-      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+    host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
     }
-    logger.info("NGINX http node port: {0}", nodeportshttp);
-    logger.info("NGINX https node port: {0}", nodeportshttps);
+    if (!OKD) {
+      // install and verify Traefik
+      // install Traefik ingress controller for all test cases using Traefik
+      installTraefikIngressController();
+    }
+
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(cluster1Name, managedServerPort);
     clusterNameMsPortMap.put(cluster2Name, managedServerPort);
     clusterNames.add(cluster1Name);
     clusterNames.add(cluster2Name);
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    nodeportshttp = getTraefikLbNodePort(false);
     exporterUrl = String.format("http://%s:%s/wls-exporter/", host, nodeportshttp);
+    logger.info("exporter url: " + exporterUrl);
+    if (OKE_CLUSTER_PRIVATEIP) {
+      String ingressServiceName = traefikHelmParams.getReleaseName();
+      ingressIP = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : K8S_NODEPORT_HOST;
+      exporterUrl = String.format("http://%s/wls-exporter", ingressIP);
+    }
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
@@ -468,14 +477,9 @@ class ItMonitoringExporterMetricsFiltering {
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
     String adminServerPodName = domainUid + "-admin-server";
     String clusterService = domainUid + "-cluster-cluster-1";
-    if (!OKD) {
-      String ingressClassName = nginxHelmParams.getIngressClassName();
-      ingressHost1List
-          = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
-          false, ingressClassName, false, 0);
-      verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
-      // Need to expose the admin server external service to access the console in OKD cluster only
-    } else {
+
+    // Need to expose the admin server external service to access the console in OKD cluster only
+    if (OKD) {
       String hostName = createRouteForOKD(clusterService, domainNamespace);
       logger.info("hostName = {0} ", hostName);
       verifyMonExpAppAccess(1,hostName);
@@ -486,6 +490,14 @@ class ItMonitoringExporterMetricsFiltering {
           domainNamespace,
           domainUid);
     }
+
+    createIngressPathRouting(domainNamespace, "/wls-exporter",
+        domainUid + "-cluster-cluster-1", 8001, ingressClassName);
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' " + exporterUrl
+        + " --write-out %{http_code} -o /dev/null";
+    getLogger().info("Executing curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+
   }
   
   /**
@@ -507,25 +519,18 @@ class ItMonitoringExporterMetricsFiltering {
           promChartVersion,
           prometheusRegexValue, promHelmValuesFileDir);
       assertNotNull(promHelmParams, " Failed to install prometheus");
-      prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
       String host = K8S_NODEPORT_HOST;
       if (host.contains(":")) {
         host = "[" + host + "]";
       }
       hostPortPrometheus = host + ":" + nodeportPrometheus;
-      if (OKD) {
-        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
-            + "-service", monitoringNS) + ":" + nodeportPrometheus;
+
+      if (OKE_CLUSTER_PRIVATEIP) {
+        hostPortPrometheus = ingressIP;
       }
     }
-    //if prometheus already installed change CM for specified domain
-    if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
-      logger.info("update prometheus Config Map with domain info");
-      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue, monitoringNS,
-          prometheusReleaseName + "-server");
-      prometheusDomainRegexValue = prometheusRegexValue;
-    }
+
     logger.info("Prometheus is running");
     if (grafanaHelmParams == null) {
       String grafanaHelmValuesFileDir =  Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
@@ -535,28 +540,43 @@ class ItMonitoringExporterMetricsFiltering {
           grafanaHelmValuesFileDir,
           grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
-      if (OKD) {
-        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
-      }
+
     }
     logger.info("Grafana is running");
+    // create ingress rules with non-tls host routing, tls host routing and path routing for Traefik
+    /*
+    createTraefikIngressRoutingRulesForMonitoring(monitoringNS, prometheusReleaseName + "-server",
+        "traefik/traefik-ingress-rules-monitoring.yaml");
+
+     */
+
+    createIngressPathRouting(monitoringNS, "/api",
+        prometheusReleaseName + "-server", 80, ingressClassName);
+
   }
 
 
   @AfterAll
   public void tearDownAll() {
 
-    // uninstall NGINX release
-    logger.info("Uninstalling NGINX");
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
-          .as("Test uninstallNginx1 returns true")
-          .withFailMessage("uninstallNginx() did not return true")
+    // uninstall Traefik release
+
+    if (traefikHelmParams != null) {
+      logger.info("Uninstalling Traefik");
+      /*
+      Path dstFileProm = Paths.get(TestConstants.RESULTS_ROOT,
+          monitoringNS,
+          prometheusReleaseName + "-server",
+          "traefik", "traefik-ingress-rules-monitoring.yaml");
+      deleteTraefikIngressRoutingRules(dstFileProm);
+      Path dstFileDomain = Paths.get(TestConstants.RESULTS_ROOT,
+          domain1Namespace, domain1Uid, "traefik-ingress-rules-exporter.yaml");
+      deleteTraefikIngressRoutingRules(dstFileDomain);
+
+       */
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstall traefik returns true")
+          .withFailMessage("uninstallTraefik() did not return true")
           .isTrue();
     }
     // delete mii domain images created
@@ -589,11 +609,16 @@ class ItMonitoringExporterMetricsFiltering {
   private HtmlPage submitConfigureForm(
       String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
     // Get the first page
+    logger.info("exporterULR " + exporterUrl);
+
     HtmlPage page1 = webClient.getPage(exporterUrl);
+
     if (page1 == null) {
       //try again
       page1 = webClient.getPage(exporterUrl);
     }
+    logger.info("exporter page " + page1.asNormalizedText());
+
     assertNotNull(page1, "can't retrieve exporter dashboard page");
     assertTrue((page1.asNormalizedText()).contains("Oracle WebLogic Monitoring Exporter"));
 
@@ -724,6 +749,22 @@ class ItMonitoringExporterMetricsFiltering {
     HtmlPage page = submitConfigureForm(exporterUrl, "append", configFile);
     assertTrue(page.asNormalizedText().contains("Unable to Update Configuration"),
         "Page does not contain expected Unable to Update Configuration");
+  }
+
+
+  private static void installTraefikIngressController() {
+    // install and verify Traefik
+    logger.info("Installing Traefik controller using helm");
+    traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    traefikHelmParams = traefikParams.getHelmParams();
+    ingressClassName = traefikParams.getIngressClassName();
+  }
+
+  private int getTraefikLbNodePort(boolean isHttps) {
+    logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
+    return assertDoesNotThrow(() ->
+            getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
+        "Getting web node port for Traefik loadbalancer failed");
   }
 }
 
