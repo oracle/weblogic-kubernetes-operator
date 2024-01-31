@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -102,6 +102,8 @@ public abstract class BasePodStepContext extends StepContextBase {
   abstract List<V1Container> getContainers();
 
   abstract List<V1Volume> getFluentdVolumes();
+
+  abstract List<V1Volume> getFluentbitVolumes();
 
   protected V1Container createPrimaryContainer() {
     return new V1Container()
@@ -222,6 +224,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     return new V1PodSpec()
         .containers(getContainers())
         .volumes(getFluentdVolumes())
+        .volumes(getFluentbitVolumes())
         .addContainersItem(createPrimaryContainer())
         .affinity(getServerSpec().getAffinity())
         .topologySpreadConstraints(getTopologySpreadConstraints())

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -749,6 +749,14 @@ public class JobStepContext extends BasePodStepContext {
           }
         });
 
+    Optional.ofNullable(getDomain().getFluentbitSpecification())
+            .ifPresent(fluentbit -> {
+              if (Boolean.TRUE.equals(fluentbit.getWatchIntrospectorLogs())) {
+                FluentbitHelper.addFluentbitContainer(fluentbit,
+                        containers, getDomain(), true);
+              }
+            });
+
     return containers;
 
   }
@@ -763,6 +771,18 @@ public class JobStepContext extends BasePodStepContext {
                 .defaultMode(420))));
     return volumes;
   }
+
+  protected List<V1Volume> getFluentbitVolumes() {
+    List<V1Volume> volumes = new ArrayList<>();
+    Optional.ofNullable(getDomain())
+            .map(DomainResource::getFluentbitSpecification)
+            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTBIT_CONFIGMAP_VOLUME)
+                    .configMap(new V1ConfigMapVolumeSource()
+                            .name(getDomainUid() + FLUENTBIT_CONFIGMAP_NAME_SUFFIX)
+                            .defaultMode(420))));
+    return volumes;
+  }
+
 
   protected String getDomainHome() {
     return getDomain().getDomainHome();

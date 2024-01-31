@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -107,6 +107,7 @@ import static oracle.kubernetes.operator.helpers.AffinityHelper.DOMAIN_UID_VARIA
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
+import static oracle.kubernetes.operator.helpers.FluentbitHelper.addFluentbitContainer;
 import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
@@ -781,6 +782,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     exporterContext.addContainer(containers);
     Optional.ofNullable(getDomain().getFluentdSpecification())
         .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false));
+    Optional.ofNullable(getDomain().getFluentbitSpecification())
+            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(), false));
     return containers;
   }
 
@@ -792,6 +795,17 @@ public abstract class PodStepContext extends BasePodStepContext {
             .configMap(new V1ConfigMapVolumeSource()
                 .name(getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX)
                 .defaultMode(420))));
+    return volumes;
+  }
+
+  protected List<V1Volume> getFluentbitVolumes() {
+    List<V1Volume> volumes = new ArrayList<>();
+    Optional.ofNullable(getDomain())
+            .map(DomainResource::getFluentbitSpecification)
+            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTBIT_CONFIGMAP_VOLUME)
+                    .configMap(new V1ConfigMapVolumeSource()
+                            .name(getDomainUid() + FLUENTBIT_CONFIGMAP_NAME_SUFFIX)
+                            .defaultMode(420))));
     return volumes;
   }
 

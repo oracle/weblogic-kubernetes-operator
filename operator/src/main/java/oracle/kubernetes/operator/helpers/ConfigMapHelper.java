@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -61,6 +61,8 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OLD_FLUENTD_CONFIGMAP_NAME;
@@ -792,7 +794,8 @@ public class ConfigMapHelper {
       return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid))
           || (domainUid + FLUENTD_CONFIGMAP_NAME_SUFFIX).equals(name)
           // Match old, undecorated name of config map to clean-up
-          || OLD_FLUENTD_CONFIGMAP_NAME.equals(name);
+          || OLD_FLUENTD_CONFIGMAP_NAME.equals(name)
+          || (domainUid + FLUENTBIT_CONFIGMAP_NAME_SUFFIX).equals(name);
     }
 
     @Nonnull
@@ -1073,6 +1076,111 @@ public class ConfigMapHelper {
 
     private boolean isOutdated(DomainPresenceInfo info, String existingConfigData) {
       return !existingConfigData.equals(info.getDomain().getFluentdSpecification().getFluentdConfiguration());
+    }
+  }
+
+  /**
+   * Create or replace fluentbit configuration map.
+   * @return next step
+   */
+  public static Step createOrReplaceFluentbitConfigMapStep() {
+    return new CreateOrReplaceFluentbitConfigMapStep();
+  }
+
+  private static class CreateOrReplaceFluentbitConfigMapStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (hasNoFluentbitSpecification(packet)) {
+        return doNext(packet);
+      } else {
+        return doNext(createNextStep(DomainPresenceInfo.fromPacket(packet).orElseThrow()), packet);
+      }
+    }
+
+    private boolean hasNoFluentbitSpecification(Packet packet) {
+      return DomainPresenceInfo.fromPacket(packet)
+              .map(DomainPresenceInfo::getDomain)
+              .map(DomainResource::getFluentbitSpecification)
+              .isEmpty();
+    }
+
+    private Step createNextStep(DomainPresenceInfo info) {
+      return new CallBuilder().readConfigMapAsync(
+              info.getDomainUid() + FLUENTBIT_CONFIGMAP_NAME_SUFFIX,
+              info.getNamespace(),
+              info.getDomainUid(),
+              new ReadFluentbitConfigMapResponseStep(getNext()));
+    }
+  }
+
+  private static class CreateFluentbitConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    CreateFluentbitConfigMapResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      LOGGER.info(MessageKeys.FLUENTBIT_CONFIGMAP_CREATED);
+      return doNext(packet);
+    }
+
+  }
+
+  private static class ReplaceFluentbitConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    ReplaceFluentbitConfigMapResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      LOGGER.info(MessageKeys.FLUENTBIT_CONFIGMAP_REPLACED);
+      return doNext(packet);
+    }
+
+  }
+
+  private static class ReadFluentbitConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+    ReadFluentbitConfigMapResponseStep(Step next) {
+      super(next);
+    }
+
+    private static Step createFluentbitConfigMap(DomainPresenceInfo info, Step next) {
+      return new CallBuilder()
+              .createConfigMapAsync(info.getNamespace(),
+                      FluentbitHelper.getFluentbitConfigMap(info),
+                      new CreateFluentbitConfigMapResponseStep(next));
+    }
+
+    private static Step replaceFluentbitConfigMap(DomainPresenceInfo info, Step next) {
+      return new CallBuilder()
+              .replaceConfigMapAsync(
+                      info.getDomainUid() + FLUENTBIT_CONFIGMAP_NAME_SUFFIX,
+                      info.getNamespace(),
+                      FluentbitHelper.getFluentbitConfigMap(info),
+                      new ReplaceFluentbitConfigMapResponseStep(next));
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      String existingConfigMapData = Optional.ofNullable(callResponse.getResult())
+              .map(V1ConfigMap::getData)
+              .map(c -> c.get(FLUENTBIT_CONFIG_DATA_NAME))
+              .orElse(null);
+
+      if (existingConfigMapData == null) {
+        return doNext(createFluentbitConfigMap(info, getNext()), packet);
+      } else if (isOutdated(info, existingConfigMapData)) {
+        return doNext(replaceFluentbitConfigMap(info, getNext()), packet);
+      }
+      return doNext(packet);
+    }
+
+    private boolean isOutdated(DomainPresenceInfo info, String existingConfigData) {
+      return !existingConfigData.equals(info.getDomain().getFluentbitSpecification().getFluentbitConfiguration());
     }
   }
 
