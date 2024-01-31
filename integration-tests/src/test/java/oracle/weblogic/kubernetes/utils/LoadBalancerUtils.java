@@ -252,6 +252,7 @@ public class LoadBalancerUtils {
     if (type != null) {
       traefikParams.type(type);
     }
+    logger.info("ingressClass name: {0}", traefikParams.getIngressClassName());
 
     // install Traefik
     assertThat(installTraefik(traefikParams))

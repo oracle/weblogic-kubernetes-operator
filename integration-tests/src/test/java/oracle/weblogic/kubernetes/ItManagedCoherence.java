@@ -20,6 +20,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -92,6 +93,7 @@ class ItManagedCoherence {
   private static String domainNamespace = null;
 
   private static HelmParams traefikHelmParams = null;
+  private static TraefikParams traefikParams = null;
   private static LoggingFacade logger = null;
 
   /**
@@ -125,7 +127,8 @@ class ItManagedCoherence {
 
     // install and verify Traefik if not running on OKD
     if (!OKD) {
-      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0, "NodePort").getHelmParams();
+      traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0, "NodePort");
+      traefikHelmParams = traefikParams.getHelmParams();
     }
 
     // install and verify operator
@@ -175,7 +178,7 @@ class ItManagedCoherence {
       // clusterNameMsPortMap.put(clusterName, managedServerPort);
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
       createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true, null,
-          traefikHelmParams.getReleaseName());
+          traefikParams.getIngressClassName());
 
       String clusterHostname = domainUid + "." + domainNamespace + ".cluster-1.test";
       // get ingress service Name and Nodeport
