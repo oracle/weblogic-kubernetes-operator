@@ -1,9 +1,10 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +35,7 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
@@ -71,6 +73,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANC
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
@@ -119,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -369,14 +373,13 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for prometheus");
 
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for prometheus");
-
-    logger.info("copy the promvalues.yaml to staging location");
-    Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
+    String promValuesFile = OKE_CLUSTER_PRIVATEIP ? "promvaluesoke.yaml" : "promvalues.yaml";
+    logger.info("copy the " + promValuesFile + "  to staging location");
+    Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", promValuesFile);
     Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
         StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     String oldValue = "regex: default;domain1";
-    logger.info("copy the promvalues.yaml to staging location");
     assertDoesNotThrow(() -> {
       replaceStringInFile(targetPromFile.toString(),
           oldValue,
@@ -451,8 +454,10 @@ public class MonitoringUtils {
     // prometheus chart values to override
     PrometheusParams prometheusParams = new PrometheusParams()
         .helmParams(promHelmParams)
-        .nodePortServer(promServerNodePort)
         .nodePortAlertManager(alertManagerNodePort);
+    if (!OKE_CLUSTER_PRIVATEIP) {
+      prometheusParams.nodePortServer(promServerNodePort);
+    }
 
     if (OKD) {
       addSccToDBSvcAccount(prometheusReleaseName + "-server", promNamespace);
@@ -484,7 +489,10 @@ public class MonitoringUtils {
         logger,
         "prometheus to be running in namespace {0}",
         promNamespace);
-
+    String command1 = KUBERNETES_CLI + " get svc -n " + promNamespace;
+    assertDoesNotThrow(() -> ExecCommand.exec(command1,true));
+    String command2 = KUBERNETES_CLI + " describe svc -n " + promNamespace;
+    assertDoesNotThrow(() -> ExecCommand.exec(command2, true));
     return prometheusParams;
   }
 
@@ -559,14 +567,14 @@ public class MonitoringUtils {
                                                       String grafanaHelmValuesFileDir,
                                                       String grafanaVersion) {
     LoggingFacade logger = getLogger();
-    logger.info("create a staging location for prometheus scripts");
+    logger.info("create a staging location for grafana scripts");
     Path fileTemp = Paths.get(grafanaHelmValuesFileDir);
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for grafana");
 
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for grafana");
-
-    logger.info("copy the grafanavalues.yaml to staging location");
-    Path srcGrafanaFile = Paths.get(RESOURCE_DIR, "exporter", "grafanavalues.yaml");
+    String grafanavaluesFile = OKE_CLUSTER_PRIVATEIP ? "grafanavaluesoke.yaml" : "grafanavalues.yaml";
+    logger.info("copy the " + grafanavaluesFile + " to staging location");
+    Path srcGrafanaFile = Paths.get(RESOURCE_DIR, "exporter", grafanavaluesFile);
     Path targetGrafanaFile = Paths.get(fileTemp.toString(), "grafanavalues.yaml");
     assertDoesNotThrow(() -> Files.copy(srcGrafanaFile, targetGrafanaFile,
             StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
@@ -617,13 +625,19 @@ public class MonitoringUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort();
-    logger.info("Installing grafana with node port {0}", grafanaNodePort);
     assertDoesNotThrow(() -> logger.info(Files.readString(targetGrafanaFile)));
-    // grafana chart values to override
-    GrafanaParams grafanaParams = new GrafanaParams()
-        .helmParams(grafanaHelmParams)
-        .nodePort(grafanaNodePort);
+    GrafanaParams grafanaParams = null;
+    if (!OKE_CLUSTER_PRIVATEIP) {
+      int grafanaNodePort = getNextFreePort();
+      logger.info("Installing grafana with node port {0}", grafanaNodePort);
+      // grafana chart values to override
+      grafanaParams = new GrafanaParams()
+          .helmParams(grafanaHelmParams)
+          .nodePort(grafanaNodePort);
+    } else {
+      grafanaParams = new GrafanaParams()
+          .helmParams(grafanaHelmParams);
+    }
     boolean isGrafanaInstalled = false;
     if (OKD) {
       addSccToDBSvcAccount(grafanaReleaseName,grafanaNamespace);
@@ -1262,5 +1276,62 @@ public class MonitoringUtils {
             .command(command))
         .execute(), "Failed to build monitoring exporter");
     return createImageAndPushToRepo(srcDir, baseImageName, namespace, secretName, extraImageBuilderArgs);
+  }
+
+  /**
+   * Create Traefik Ingress routing rules for prometheus.
+   *
+   * @param namespace            namespace of prometheus
+   * @param serviceName          name of exposed service
+   * @param ingressRulesFileName ingress rules file name
+   */
+  public static void createTraefikIngressRoutingRulesForMonitoring(String namespace, String serviceName,
+                                                                   String ingressRulesFileName) {
+    logger.info("Creating ingress rules for prometheus traffic routing");
+    Path srcFile = Paths.get(ActionConstants.RESOURCE_DIR, ingressRulesFileName);
+    Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, namespace, serviceName, ingressRulesFileName);
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+      Files.createDirectories(dstFile.getParent());
+      Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", namespace)
+          .replaceAll("@servicename@", serviceName)
+          .getBytes(StandardCharsets.UTF_8));
+    });
+    String command = KUBERNETES_CLI + " apply -f " + dstFile;
+    logger.info("Running {0}", command);
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+  }
+
+  /**
+   * Delete Traefik Ingress routing rules for prometheus.
+   *
+   * @param dstFile            path for ingress rule deployment
+   */
+  public static void deleteTraefikIngressRoutingRules(Path dstFile) {
+
+    String command = KUBERNETES_CLI + " delete -f " + dstFile;
+    logger.info("Running {0}", command);
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+    });
   }
 }
