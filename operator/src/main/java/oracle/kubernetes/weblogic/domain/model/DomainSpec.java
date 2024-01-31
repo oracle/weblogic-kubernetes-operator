@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -423,6 +423,39 @@ public class DomainSpec extends BaseConfiguration {
     fluentdSpecification.setFluentdConfiguration(fluentdConfig);
     fluentdSpecification.setContainerArgs(args);
     fluentdSpecification.setContainerCommand(command);
+    return this;
+  }
+
+  /**
+   *  FluentBit configuration.
+   */
+  @Description("Automatic fluent-bit sidecar injection. If "
+          + "specified, the operator "
+          + "will deploy a sidecar container alongside each WebLogic Server instance that runs the fluent-bit, "
+          + "Optionally, the introspector job pod can be enabled to deploy with the fluent-bit sidecar container. "
+          + "WebLogic Server instances that are already running when the `fluentbitSpecification` field is created "
+          + "or deleted, will not be affected until they are restarted. When any given server "
+          + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
+          + " will have the fluent-bit sidecar or not, as appropriate")
+  private FluentbitSpecification fluentbitSpecification;
+
+  public FluentbitSpecification getFluentbitSpecification() {
+    return fluentbitSpecification;
+  }
+
+  DomainSpec withFluentbitConfiguration(boolean watchIntrospectorLog,
+                                        String credentialName, String fluentbitConfig,
+                                        String parserConfig,
+                                        List<String> args, List<String> command) {
+    if (fluentbitSpecification == null) {
+      fluentbitSpecification = new FluentbitSpecification();
+    }
+    fluentbitSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
+    fluentbitSpecification.setElasticSearchCredentials(credentialName);
+    fluentbitSpecification.setFluentbitConfiguration(fluentbitConfig);
+    fluentbitSpecification.setParserConfiguration(parserConfig);
+    fluentbitSpecification.setContainerArgs(args);
+    fluentbitSpecification.setContainerCommand(command);
     return this;
   }
 
@@ -1107,7 +1140,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("fluentdSpecification", fluentdSpecification)
-            .append("replaceVariablesInJavaOptions", replaceVariablesInJavaOptions);
+            .append("replaceVariablesInJavaOptions", replaceVariablesInJavaOptions)
+                .append("fluentbitSpecification", fluentbitSpecification);
 
     return builder.toString();
   }
@@ -1140,7 +1174,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
             .append(fluentdSpecification)
-            .append(replaceVariablesInJavaOptions);
+            .append(replaceVariablesInJavaOptions)
+                .append(fluentbitSpecification);
 
     return builder.toHashCode();
   }
@@ -1180,6 +1215,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
             .append(getMaxClusterUnavailable(), rhs.getMaxClusterUnavailable())
             .append(fluentdSpecification, rhs.getFluentdSpecification())
+                .append(fluentbitSpecification, rhs.getFluentbitSpecification())
             .append(replaceVariablesInJavaOptions, rhs.replaceVariablesInJavaOptions);
     return builder.isEquals();
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -424,6 +424,11 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
                                                               String credentialName, String fluentdConfig,
                                                               List<String> args, List<String> command);
+
+  public abstract DomainConfigurator withFluentbitConfiguration(boolean watchIntrospectorLog,
+                                                                String credentialName, String fluentbitConfig,
+                                                                String parserConfig,
+                                                                List<String> args, List<String> command);
 
   public abstract DomainConfigurator withServerPodShutdownSpec(Shutdown shutdown);
 
