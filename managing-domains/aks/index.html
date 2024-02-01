@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1706757657" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1706757657" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1706803154" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1706803154" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1706757657"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1706803154"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1706757657"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1706757657"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1706803154"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1706803154"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1706757657"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1706803154"></script>
 
     
   </div>
@@ -3958,13 +3958,16 @@
   </ul>
 </nav></div>
 <h3 id="introduction">Introduction</h3>
+<p>This document is the reference documentation for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service. The offer makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type.</p>
+<p>To deploy the offer from the Azure portal, see <a href="https://aka.ms/wls-aks-portal">WebLogic Server on Azure</a>.</p>
 
 <p>Azure Kubernetes Service (AKS) makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You manage and maintain only the agent nodes. As a managed Kubernetes service, AKS is free - you pay for only the agent nodes within your clusters, not for the masters.</p>
 <p>To learn more, see <a href="https://docs.microsoft.com/azure/aks/intro-kubernetes">What is Azure Kubernetes Service?</a></p>
 
 
-<p>This document describes the Azure Marketplace offer that makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type. For complete details on domain home source types, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
+<p>For complete details on domain home source types, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
 <p>It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/">Azure Kubernetes Service</a>.</p>
+<p>The remaining steps on this page document the user experience for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service.</p>
 <h3 id="basics">Basics</h3>
 <p>Use the <strong>Basics</strong> blade to provide the basic configuration details for deploying an Oracle WebLogic Server configured cluster. To do this, enter the values for the fields listed in the following tables.</p>
 <h4 id="project-details">Project details</h4>
@@ -4094,11 +4097,11 @@
 </tr>
 <tr>
 <td>Enable Container insights</td>
-<td>If selected, configure the necessary settings to integrate with Container insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see <a href="https://aka.ms/wls-aks-container-insights">Container insights overview</a>.</td>
+<td>If selected, cause the deployment to create an Azure Monitoring workspace and connect it to the AKS cluster as the Azure Monitoring Agent. Azure Monitoring Agent is a tool that collects data and sends it to Azure Container Insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/azure/azure-monitor/agents/agents-overview">Azure Monitor Agent overview</a> and <a href="https://aka.ms/wls-aks-container-insights">Container insights overview</a>.</td>
 </tr>
 <tr>
 <td>Create Persistent Volume using Azure File share service</td>
-<td>If selected, an Azure Storage Account and an Azure Files share will be provisioned; static persistent volume with the Azure Files share will be mounted to the nodes of the AKS cluster. For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/">Oracle WebLogic Server persistent storage</a> and <a href="https://docs.microsoft.com/azure/aks/azure-files-volume">persistent volume with Azure Files share on AKS</a>.</td>
+<td>If selected, an Azure Storage Account and an Azure Files share will be provisioned. The file system type is NFS. The name of the Azure Files share is <strong>weblogic</strong>. The mount point is <code>/shared</code> as a persistent volume in the nodes of the AKS cluster. For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/">Oracle WebLogic Server persistent storage</a> and <a href="https://docs.microsoft.com/azure/aks/azure-files-volume">persistent volume with Azure Files share on AKS</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -4569,11 +4572,11 @@
 </tr>
 <tr>
 <td><code>adminConsoleInternalUrl</code></td>
-<td>The fully qualified, private link to the Administration Console portal. You can access it only inside the AKS cluster. <br />Sample value: <code>http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7001/console</code>.</td>
+<td>The fully qualified, private link to the Administration Console portal. You can access it only inside the AKS cluster. <br />Sample value: <code>http://contoso.com:7001/console</code>.</td>
 </tr>
 <tr>
 <td><code>adminConsoleExternalUrl</code></td>
-<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br /> <br />This is a fully qualified, public link to the Administration Console portal. You can access it from the public Internet. <br />Sample value: <code>http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/console</code>.</td>
+<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br /> <br />This is a fully qualified, public link to the Administration Console portal. You can access it from the public Internet. <br />Sample value: <code>http://contoso.com/console</code>.</td>
 </tr>
 <tr>
 <td><code>adminConsoleExternalSecuredUrl</code></td>
@@ -4581,7 +4584,7 @@
 </tr>
 <tr>
 <td><code>adminRemoteConsoleUrl</code></td>
-<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br /><br />This is a fully qualified, public link to the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/remote-admin-console/">WebLogic Server Remote Console</a>. You can access it from the public Internet.<br />Sample value: <code>http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/remoteconsole</code>.</td>
+<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br /><br />This is a fully qualified, public link to the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/remote-admin-console/">WebLogic Server Remote Console</a>. You can access it from the public Internet.<br />Sample value: <code>http://contoso.azure.com/remoteconsole</code>.</td>
 </tr>
 <tr>
 <td><code>adminRemoteConsoleSecuredUrl</code></td>
@@ -4589,7 +4592,7 @@
 </tr>
 <tr>
 <td><code>adminServerT3InternalUrl</code></td>
-<td>This output is not always present:<br />1. You must <a href="https://oracle.github.io/weblogic-azure/aks/">create/update the WLS cluster with advanced configuration</a>.<br /> 2. You must enable custom T3 channel by setting <code>enableAdminT3Tunneling=true</code>.<br /><br />This is a fully qualified, private link to custom T3 channel of the Administration Server.<br />Sample value: <code>http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7005/console</code>.</td>
+<td>This output is not always present:<br />1. You must <a href="https://oracle.github.io/weblogic-azure/aks/">create/update the WLS cluster with advanced configuration</a>.<br /> 2. You must enable custom T3 channel by setting <code>enableAdminT3Tunneling=true</code>.<br /><br />This is a fully qualified, private link to custom T3 channel of the Administration Server.<br />Sample value: <code>http://contoso.com:7005/console</code>.</td>
 </tr>
 <tr>
 <td><code>adminServerT3ExternalUrl</code></td>
@@ -4597,15 +4600,15 @@
 </tr>
 <tr>
 <td><code>clusterInternalUrl</code></td>
-<td>The fully qualified, private link to the WLS cluster. You are able to access your application with <code>${clusterInternalUrl}&lt;your-app-path&gt;</code> inside AKS cluster.<br />Sample value: <code>http://sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local:8001/</code>.</td>
+<td>The fully qualified, private link to the WLS cluster. You are able to access your application with <code>${clusterInternalUrl}&lt;your-app-path&gt;</code> inside AKS cluster.<br />Sample value: <code>http://contoso.com:8001/</code>.</td>
 </tr>
 <tr>
 <td><code>clusterExternalUrl</code></td>
-<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.<br /><br />This is a fully qualified, public link to the WLS cluster. You can access your application with <code>${clusterExternalUrl}&lt;your-app-path&gt;</code> from the public Internet.<br />Sample value: <code>http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/</code>.</td>
+<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.<br /><br />This is a fully qualified, public link to the WLS cluster. You can access your application with <code>${clusterExternalUrl}&lt;your-app-path&gt;</code> from the public Internet.<br />Sample value: <code>http://contoso.azure.com/</code>.</td>
 </tr>
 <tr>
 <td><code>clusterExternalSecuredUrl</code></td>
-<td>This output is not always present:<br />1. You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.<br />2. The TLS/SSL certificate used is configured by filling out <a href="#tlsssl-configuration">TLS/SSL configuration</a>.<br /><br />This is a fully qualified, public link to the WLS cluster. You can access your application with <code>${clusterExternalUrl}&lt;your-app-path&gt;</code> from the public Internet.<br />Sample value: <code>https://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/</code>.</td>
+<td>This output is not always present:<br />1. You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.<br />2. The TLS/SSL certificate used is configured by filling out <a href="#tlsssl-configuration">TLS/SSL configuration</a>.<br /><br />This is a fully qualified, public link to the WLS cluster. You can access your application with <code>${clusterExternalUrl}&lt;your-app-path&gt;</code> from the public Internet.<br />Sample value: <code>https://contoso.azure.com/</code>.</td>
 </tr>
 <tr>
 <td><code>clusterT3InternalUrl</code></td>
@@ -4617,7 +4620,7 @@
 </tr>
 <tr>
 <td><code>shellCmdtoConnectAks</code></td>
-<td>AZ CLI command to connect to the AKS cluster.<br />Sample value: <br /><code>az account set --subscription xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx; az aks get-credentials --resource-group contoso-rg --name contosoakscluster</code></td>
+<td>AZ CLI command to connect to the AKS cluster.<br />Sample value: <br /><code>az account set<br /> --subscription &lt;id&gt;;<br /> az aks get-credentials --resource-group contoso-rg<br /> --name contosoakscluster</code></td>
 </tr>
 <tr>
 <td><code>shellCmdtoOutputWlsDomainYaml</code></td>
@@ -7264,19 +7267,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1706757657"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1706757657"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1706757657"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1706757657"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1706757657"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1706757657"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1706803154"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1706803154"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1706803154"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1706803154"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1706803154"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1706803154"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1706757657"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1706757657"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1706757657"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1706803154"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1706803154"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1706803154"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1706757657"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1706803154"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
