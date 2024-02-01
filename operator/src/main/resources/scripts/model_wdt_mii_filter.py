@@ -531,8 +531,8 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
     _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
                                      listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
   elif index == 0:
-    if not secure_mode:
-       _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+    if not secure_mode and is_listenport_enabled(server):
+      _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
 
     ssl = getSSLOrNone(server)
     ssl_listen_port = None
@@ -545,6 +545,19 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
 
     if ssl_listen_port is not None:
       _writeAdminChannelPortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
+
+
+def is_listenport_enabled(server):
+  if 'ListenPortEnabled' in server:
+    val = server['ListenPortEnabled']
+    if isinstance(val, str) or isinstance(val, unicode):
+      is_listen_port_enabled = Boolean.valueOf(val)
+    else:
+      is_listen_port_enabled = val
+  else:
+    is_listen_port_enabled = True
+  return is_listen_port_enabled
+
 
 def _writeAdminChannelPortForwardNAP(name, server, listen_port, protocol):
 

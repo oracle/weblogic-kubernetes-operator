@@ -1550,9 +1550,10 @@ class SitConfigGenerator(Generator):
                                             listen_port=getAdministrationPort(server, self.env.getDomain()),
                                             protocol='admin')
     elif index == 0:
-      admin_server_port = getRealListenPort(server)
-      self._writeAdminChannelPortForwardNAP(name='internal-t3', server=server,
-                                            listen_port=admin_server_port, protocol='t3')
+      if isListenPortEnabledForServer(server, self.env.getDomain(), False):
+        admin_server_port = getRealListenPort(server)
+        self._writeAdminChannelPortForwardNAP(name='internal-t3', server=server,
+                                              listen_port=admin_server_port, protocol='t3')
 
       ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
 
