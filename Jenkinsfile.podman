@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
@@ -22,11 +22,17 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-
+CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=wls-srg'''
 pipeline {
     agent { label 'large-ol9' }
     options {
         timeout(time: 800, unit: 'MINUTES')
+    }
+
+    triggers {
+        // timer trigger for "nightly build"
+        parameterizedCron(env.JOB_NAME == 'wko-kind-main-nightly-podman' ?
+        CRON_SETTINGS : '')
     }
 
     tools {
@@ -55,6 +61,11 @@ pipeline {
     }
 
     parameters {
+        string(name: 'BRANCH',
+               description: 'The branch to run the tests on',
+               defaultValue: 'main'
+        )
+
         choice(name: 'MAVEN_PROFILE_NAME',
                 description: 'Profile to use in mvn command to run the tests. Possible values are wls-srg (the default), integration-tests, toolkits-srg, kind-sequential and kind-upgrade. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
@@ -188,15 +199,7 @@ pipeline {
     }
 
     stages {
-        stage('Filter unwanted branches') {
-            when {
-                anyOf {
-                    changeRequest()
-                    branch 'main'
-                    branch 'release/4.0'
-                    branch 'release/3.4'
-                }
-            }
+            stage('Prepare the environment and run integration tests') {
             stages {
                 stage('Workaround JENKINS-41929 Parameters bug') {
                     steps {
