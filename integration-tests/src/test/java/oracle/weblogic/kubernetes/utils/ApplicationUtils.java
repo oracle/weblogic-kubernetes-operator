@@ -43,7 +43,7 @@ public class ApplicationUtils {
     if (hostHeader != null) {
       headerString = new StringBuffer("-H 'host: ");
       headerString.append(hostHeader)
-          .append(" ' ");
+          .append("' ");
     } else {
       headerString = new StringBuffer("");
     }

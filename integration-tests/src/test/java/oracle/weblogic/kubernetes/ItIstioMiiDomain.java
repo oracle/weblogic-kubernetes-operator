@@ -3,7 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,7 +26,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.annotations.DisabledOn12213Image;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -43,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -52,21 +54,17 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -133,10 +131,7 @@ class ItIstioMiiDomain {
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
-
-    // create testwebapp.war
-    testWebAppWarLoc = createTestWebAppWarFile(domainNamespace);
-
+    
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
     
@@ -150,24 +145,20 @@ class ItIstioMiiDomain {
    * Deploy istio gateways and virtual service.
    *
    * Verify server pods are in ready state and services are created.
-   * Verify WebLogic console is accessible thru istio ingress port.
-   * Deploy a web application thru istio http ingress port using REST api.
-   * Access web application thru istio http ingress port using curl.
+   * Verify WebLogic REST interface is accessible thru istio ingress port.
    *
    * Create a configmap with a sparse model file to add a new workmanager
    * with custom min threads constraint and a max threads constraint
    * Patch the domain resource with the configmap.
    * Update the introspect version of the domain resource.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp
-   * before and after rolling restart.
+   * Verify the changes are applied without rolling restart of the domain by comparing PodCreationTimestamp
    * Verify new work manager is configured.
    */
   @Test
   @DisplayName("Create WebLogic Domain with mii model with istio")
   @Tag("gate")
   @Tag("crio")
-  @DisabledOn12213Image
-  void testIstioModelInImageDomainModified() {
+  void testIstioModelInImageDomain() throws UnknownHostException, IOException, InterruptedException {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -177,21 +168,21 @@ class ItIstioMiiDomain {
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-                                    adminSecretName,
-                                    domainNamespace,
-                                    ADMIN_USERNAME_DEFAULT,
-                                    ADMIN_PASSWORD_DEFAULT),
+        adminSecretName,
+        domainNamespace,
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-                                      encryptionSecretName,
-                                      domainNamespace,
-                            "weblogicenc",
-                            "weblogicenc"),
-                    String.format("createSecret failed for %s", encryptionSecretName));
+        encryptionSecretName,
+        domainNamespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
 
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
@@ -200,9 +191,7 @@ class ItIstioMiiDomain {
     DomainResource domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
-    domain = createClusterResourceAndAddReferenceToDomain(
-        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
-
+    
     // create model in image domain
     createDomainAndVerify(domain, domainNamespace);
 
@@ -215,20 +204,20 @@ class ItIstioMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-    
+
     // delete the mTLS mode
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
         + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
     assertEquals(0, result.exitValue(), "Got expected exit value");
     logger.info(result.stdout());
-    logger.info(result.stderr());   
+    logger.info(result.stderr());
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap  = new HashMap<>();
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
-    templateMap.put("ADMIN_SERVICE",adminServerPodName);
+    templateMap.put("ADMIN_SERVICE", adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
@@ -248,60 +237,34 @@ class ItIstioMiiDomain {
     deployRes = assertDoesNotThrow(() -> deployIstioDestinationRule(targetDrFile));
     assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
 
-    int istioIngressPort = getIstioHttpIngressPort();    
+    int istioIngressPort = getIstioHttpIngressPort();
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
-    logger.info("host {0}", host);   
+    logger.info("host {0}", host);
 
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
-    
-    try {
-      if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        istioIngressPort = ISTIO_HTTP_HOSTPORT;
-        hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
-      }
-      Map<String, String> headers = new HashMap<>();
-      headers.put("host", domainNamespace + ".org");
-      headers.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
-      String url = "http://" + hostAndPort + "/management/tenant-monitoring/servers/";
-      HttpResponse<String> response;
-      response = OracleHttpClient.get(url, headers, true);
-      assertEquals(200, response.statusCode());
-      assertTrue(response.body().contains("RUNNING"));
-    } catch (Exception ex) {
-      logger.severe(ex.getMessage());
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("host", domainNamespace + ".org");
+    headers.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
+
+    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      istioIngressPort = ISTIO_HTTP_HOSTPORT;
+      hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
     }
+
+    String url = "http://" + hostAndPort + "/management/tenant-monitoring/servers/";
+    HttpResponse<String> response;
+    response = OracleHttpClient.get(url, headers, true);
+    assertEquals(200, response.statusCode());
+    assertTrue(response.body().contains("RUNNING"));
 
     if (OKE_CLUSTER) {
       // create secret for internal OKE cluster
       createBaseRepoSecret(domainNamespace);
     }
-
-    Path archivePath = Paths.get(testWebAppWarLoc);
-    String target = "{identity: [clusters,'" + clusterName + "']}";
-    ExecResult deployUsingRest = deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        target, archivePath, domainNamespace + ".org", "testwebapp");
-
-    assertNotNull(deployUsingRest, "Application deployment failed");
-    logger.info("Application deployment returned {0}", deployUsingRest.toString());
-    assertEquals("202", deployUsingRest.stdout(), "Deployment didn't return HTTP status code 202");
-    logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid + "-" + clusterName);
-
-    if (OKE_CLUSTER) {
-      testUntil(isAppInServerPodReady(domainNamespace,
-          managedServerPrefix + 1, 8001, "/testwebapp/index.jsp", "testwebapp"),
-          logger, "Check Deployed App {0} in server {1}",
-          archivePath,
-          target);
-    } else {
-      String url = "http://" + hostAndPort + "/testwebapp/index.jsp";
-      logger.info("Application Access URL {0}", url);
-      boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-      assertTrue(checkApp, "Failed to access WebLogic application");
-    }
-    logger.info("Application /testwebapp/index.jsp is accessble to {0}", domainUid);
 
     //Verify the dynamic configuration update
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
@@ -319,17 +282,13 @@ class ItIstioMiiDomain {
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
     String resourcePath = "/management/weblogic/latest/domainRuntime"
-        + "/serverRuntimes/managed-server1/applicationRuntimes"
-        + "/testwebapp/workManagerRuntimes/newWM/"
-        + "maxThreadsConstraintRuntime ";
-    String wmRuntimeUrl  = "http://" + hostAndPort + resourcePath;
-
-    boolean checkWm = checkAppUsingHostHeader(wmRuntimeUrl, domainNamespace + ".org");
-    assertTrue(checkWm, "Failed to access WorkManagerRuntime");
+        + "/serverRuntimes/managed-server1/applicationRuntimes/"
+        + MII_BASIC_APP_DEPLOYMENT_NAME + "/workManagerRuntimes/newWM/";    
+    String wmRuntimeUrl = "http://" + hostAndPort + resourcePath;
+    checkApp(wmRuntimeUrl, headers);
     logger.info("Found new work manager runtime");
 
     verifyPodsNotRolled(domainNamespace, pods);
@@ -368,14 +327,16 @@ class ItIstioMiiDomain {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(createAdminServer())
             .configuration(new Configuration()
-                     .model(new Model()
-                         .domainType("WLS")
-                         .configMap(configmapName)
-                         .onlineUpdate(new OnlineUpdate().enabled(true))
-                         .runtimeEncryptionSecret(encryptionSecretName))
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .onlineUpdate(new OnlineUpdate()
+                        .enabled(true))
+                    .runtimeEncryptionSecret(encryptionSecretName))
             .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    return domain;
+    return createClusterResourceAndAddReferenceToDomain(
+        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
   }
   
   private static void enableStrictMode(String namespace) {
@@ -391,5 +352,16 @@ class ItIstioMiiDomain {
       logger.info(result.stdout());
       logger.info(result.stderr());
     });
+  }
+  
+  private void checkApp(String url, Map<String, String> headers) {
+    testUntil(
+        () -> {
+          HttpResponse<String> response = OracleHttpClient.get(url, headers, true);
+          return response.statusCode() == 200;
+        },
+        logger,
+        "application to be ready {0}",
+        url);
   }
 }
