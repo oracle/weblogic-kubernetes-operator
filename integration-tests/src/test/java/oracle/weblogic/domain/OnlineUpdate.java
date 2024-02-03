@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class OnlineUpdate {
 
   @ApiModelProperty("Enable online update.")
-  private Boolean enabled = false;
+  public Boolean enabled = false;
 
   @ApiModelProperty("If set to true, it will rollback the changes if the update require domain restart. "
       + "All changes are rolled back, the domain continues to run without interruption. "

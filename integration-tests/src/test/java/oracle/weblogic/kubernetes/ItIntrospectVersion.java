@@ -1396,12 +1396,12 @@ class ItIntrospectVersion {
   private void verifyConnectionBetweenClusterMembers(String serverName, List<String> managedServerNames) {
     String podName = domainUid + "-" + serverName;
     final String command = String.format(
-        KUBERNETES_CLI + " exec -n " + introDomainNamespace + "  " + podName + " -- curl http://"
+        KUBERNETES_CLI + " exec -n " + introDomainNamespace + "  " + podName + " -- curl \"http://"
             + wlsUserName
             + ":"
             + wlsPassword
             + "@" + podName + ":%s/clusterview/ClusterViewServlet"
-            + "\"?user=" + wlsUserName
+            + "?user=" + wlsUserName
             + "&password=" + wlsPassword + "\"",managedServerPort);
     verifyServerCommunication(command, serverName, managedServerNames);
   }
