@@ -144,9 +144,7 @@ fi
 
 if [ ${RESTORE_WALLET} -eq 1 ] ; then
   echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}', domain uid '${DOMAIN_UID}'."
-  $SCRIPTDIR/create-secret.sh \
-    -n ${DOMAIN_NAMESPACE} \
-    -d ${DOMAIN_UID} \
-    -s ${WALLET_SECRET} \
-    -f walletFile=${WALLET_FILE}
+  ${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} create secret generic \
+    ${WALLET_SECRET} \
+    --from-file=walletFile=${WALLET_FILE}
 fi
