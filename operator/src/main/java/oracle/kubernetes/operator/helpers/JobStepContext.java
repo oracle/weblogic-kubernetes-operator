@@ -71,6 +71,7 @@ import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
 import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -98,9 +99,11 @@ public class JobStepContext extends BasePodStepContext {
   private static final CommonUtils.CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
   private V1Job jobModel;
   private Step conflictStep;
+  private Packet packet;
 
   JobStepContext(Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
+    this.packet = packet;
     domainTopology = packet.getValue(ProcessingConstants.DOMAIN_TOPOLOGY);
     init();
   }
@@ -540,8 +543,23 @@ public class JobStepContext extends BasePodStepContext {
     return uid + ":" + gid;
   }
 
+  private Integer getSpecifiedNumConfigMaps() {
+    return Optional.ofNullable(packet.<String>getValue(NUM_CONFIG_MAPS)).map(this::parseOrNull).orElse(null);
+  }
+
+  private Integer parseOrNull(String count) {
+    try {
+      return Integer.parseInt(count);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
   @Override
   protected V1PodSpec createPodSpec() {
+
+    Integer numOfConfigMaps = getSpecifiedNumConfigMaps();
+
     V1PodSpec podSpec = super.createPodSpec()
             .activeDeadlineSeconds(getActiveDeadlineSeconds())
             .restartPolicy("Never")
@@ -552,7 +570,17 @@ public class JobStepContext extends BasePodStepContext {
             .addVolumesItem(
                 new V1Volume()
                     .name("mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
-                    .configMap(getIntrospectMD5VolumeSource()));
+                    .configMap(getIntrospectMD5VolumeSource(0)));
+
+    if (numOfConfigMaps != null && numOfConfigMaps > 1) {
+      for (int i = 1; i < numOfConfigMaps; i++) {
+        podSpec.addVolumesItem(
+                new V1Volume()
+                        .name("mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + '-' + i)
+                        .configMap(getIntrospectMD5VolumeSource(i)));
+      }
+    }
+
     if (getOpssWalletPasswordSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
           getOpssWalletPasswordSecretVolume()));
@@ -649,6 +677,7 @@ public class JobStepContext extends BasePodStepContext {
 
   @Override
   protected V1Container createPrimaryContainer() {
+    Integer numOfConfigMaps = getSpecifiedNumConfigMaps();
     V1Container container = super.createPrimaryContainer()
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
@@ -657,6 +686,16 @@ public class JobStepContext extends BasePodStepContext {
               "mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
               "/weblogic-operator/introspectormii")
               .readOnly(false));
+
+    if (numOfConfigMaps != null && numOfConfigMaps > 1) {
+      for (int i = 1; i < numOfConfigMaps; i++) {
+        container.addVolumeMountsItem(
+                volumeMount(
+                  "mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + '-' + i,
+                    "/weblogic-operator/introspectormii" + '-' + i)
+                                .readOnly(false));
+      }
+    }
 
     if (getOpssWalletPasswordSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
@@ -806,10 +845,14 @@ public class JobStepContext extends BasePodStepContext {
           .defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  private V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
+  private V1ConfigMapVolumeSource getIntrospectMD5VolumeSource(int index) {
+    String suffix = "";
+    if (index > 0) {
+      suffix = "-" + index;
+    }
     V1ConfigMapVolumeSource result =
         new V1ConfigMapVolumeSource()
-            .name(getDomainUid() + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+            .name(getDomainUid() + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + suffix)
             .defaultMode(ALL_READ_AND_EXECUTE);
     result.setOptional(true);
     return result;
