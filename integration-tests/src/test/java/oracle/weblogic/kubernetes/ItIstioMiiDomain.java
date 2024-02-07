@@ -44,7 +44,6 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -101,8 +100,6 @@ class ItIstioMiiDomain {
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final int replicaCount = 2;
-
-  private static String testWebAppWarLoc = null;
 
   private static final String istioNamespace = "istio-system";
   private static final String istioIngressServiceName = "istio-ingressgateway";
@@ -250,6 +247,8 @@ class ItIstioMiiDomain {
     headers.put("host", domainNamespace + ".org");
     headers.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
 
+    String workManagers = "/management/weblogic/latest/domainConfig/selfTuning/workManagers/";
+    String newWM = workManagers + "newWM/";
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       istioIngressPort = ISTIO_HTTP_HOSTPORT;
       hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
@@ -260,6 +259,9 @@ class ItIstioMiiDomain {
     response = OracleHttpClient.get(url, headers, true);
     assertEquals(200, response.statusCode());
     assertTrue(response.body().contains("RUNNING"));
+    
+    String wmUrl = "http://" + hostAndPort + workManagers;
+    checkApp(wmUrl, headers);    
 
     if (OKE_CLUSTER) {
       // create secret for internal OKE cluster
@@ -284,11 +286,10 @@ class ItIstioMiiDomain {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
-    String resourcePath = "/management/weblogic/latest/domainRuntime"
-        + "/serverRuntimes/managed-server1/applicationRuntimes/"
-        + MII_BASIC_APP_DEPLOYMENT_NAME + "/workManagerRuntimes/newWM/";    
-    String wmRuntimeUrl = "http://" + hostAndPort + resourcePath;
-    checkApp(wmRuntimeUrl, headers);
+    wmUrl = "http://" + hostAndPort + workManagers;
+    checkApp(wmUrl, headers);
+    wmUrl = "http://" + hostAndPort + newWM;
+    checkApp(wmUrl, headers);
     logger.info("Found new work manager runtime");
 
     verifyPodsNotRolled(domainNamespace, pods);
