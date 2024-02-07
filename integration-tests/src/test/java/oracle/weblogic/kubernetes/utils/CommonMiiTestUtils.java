@@ -1577,7 +1577,11 @@ public class CommonMiiTestUtils {
     logger.info("Verifying introspector pod is created, runs and deleted");
     String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace));
     checkPodReady(introspectorPodName, domainUid, domainNamespace);
-
+    logger.info("Introspector pod log START");
+    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPodName,
+        domainNamespace, domainUid + "-introspector", null, null, true), "Could not get introspector pod log");
+    logger.info(introspectorLog);
+    logger.info("Introspector pod log END");
     checkPodDoesNotExist(introspectorPodName, domainUid, domainNamespace);
   }
 
