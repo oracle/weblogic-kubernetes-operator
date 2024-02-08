@@ -2,10 +2,10 @@
 title: "Model in Image"
 date: 2020-11-24T18:22:31-05:00
 weight: 3
-description: "Sample for creating a WebLogic cluster on the Azure Kubernetes Service with model in image approach."
+description: "Sample for creating a WebLogic cluster on the Azure Kubernetes Service with model in image domain home source type."
 ---
 
-This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
+This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image domain home source type. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
 
 #### Contents
 
@@ -29,7 +29,7 @@ Set parameters.
 ```shell
 # Change these parameters as needed for your own environment
 export ORACLE_SSO_EMAIL=<replace with your oracle account email>
-export ORACLE_SSO_PASSWORD=<replace with your oracle password>
+export ORACLE_SSO_PASSWORD="<replace with your oracle password.>"
 
 # Used to generate resource names.
 export TIMESTAMP=`date +%s`
@@ -54,7 +54,11 @@ Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/we
 ```shell
 $ cd $BASE_DIR
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+$ cd weblogic-kubernetes-operator
+$ git checkout v4.1.8
 ```
+
+If you see a message about being in "detached HEAD" state, this message is safe to ignore. It just means you have checked out a tag.
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
 
@@ -162,7 +166,7 @@ If you have an image built with domain models following [Model in Image]({{< rel
 
 ##### Image creation prerequisites
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
-1. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`.
+1. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`. In the directory name, `mii` is short for "model in image". Model in image is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
 
    ```shell
    $ mkdir /tmp/mii-sample
@@ -172,44 +176,44 @@ If you have an image built with domain models following [Model in Image]({{< rel
    $ cp -r $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/mii-sample
    ```
 
-   **NOTE**: We will refer to this working copy of the sample as `/tmp/mii-sample`, (`mii` is short for model in image); however, you can use a different location.
+   **NOTE**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
 1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/wdt-model-files` directory. Both WDT and WIT are required to create your Model in Image images.
 
    ```shell
-   export WDT_DOMEL_FILES_PATH=/tmp/mii-sample/wdt-model-files
+   export WDT_MODEL_FILES_PATH=/tmp/mii-sample/wdt-model-files
    ```
 
     ```shell
    $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
-     -o ${WDT_DOMEL_FILES_PATH}/weblogic-deploy.zip
+     -o ${WDT_MODEL_FILES_PATH}/weblogic-deploy.zip
     ```
     ```shell
     $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
-      -o ${WDT_DOMEL_FILES_PATH}/imagetool.zip
+      -o ${WDT_MODEL_FILES_PATH}/imagetool.zip
     ```
 
 
    To set up the WebLogic Image Tool, run the following commands:
     ```shell
-   $ unzip ${WDT_DOMEL_FILES_PATH}/imagetool.zip -d ${WDT_DOMEL_FILES_PATH}
+   $ unzip ${WDT_MODEL_FILES_PATH}/imagetool.zip -d ${WDT_MODEL_FILES_PATH}
     ```
     ```shell
-   $ ${WDT_DOMEL_FILES_PATH}/imagetool/bin/imagetool.sh cache addInstaller \
+   $ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
      --version latest \
-     --path ${WDT_DOMEL_FILES_PATH}/weblogic-deploy.zip
+     --path ${WDT_MODEL_FILES_PATH}/weblogic-deploy.zip
    ```
 
-   These steps will install WIT to the `${WDT_DOMEL_FILES_PATH}/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
+   These steps will install WIT to the `${WDT_MODEL_FILES_PATH}/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
 
 ##### Image creation - Introduction
 
-The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/wdt-model-files/WLS-v1/`.
+The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image tagged as `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/wdt-model-files/WLS-v1/`.
 The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
 A "Model in Image" image contains the following elements:
-* A WebLogic Server installation and a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory.
+* A WebLogic Server installation (including operating system and JDK) and a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory.
 * If you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory.
 * If you have WDT model YAML file and properties files, then they go in in the same `/u01/wdt/models` directory. If you do not specify a WDT model YAML file in your `/u01/wdt/models` directory, then the model YAML file must be supplied dynamically using a Kubernetes `ConfigMap` that is referenced by your Domain `spec.model.configMap` field.
 
@@ -231,13 +235,13 @@ The application displays important details about the WebLogic Server instance th
 
 ##### Staging a ZIP file of the archive
 
-When you create the image, you will use the files in the staging directory, `${WDT_DOMEL_FILES_PATH}/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
+When you create the image, you will use the files in the staging directory, `${WDT_MODEL_FILES_PATH}/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
 ```shell
 # Delete existing archive.zip in case we have an old leftover version
-$ rm -f ${WDT_DOMEL_FILES_PATH}/WLS-v1/archive.zip
+$ rm -f ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
 ```
 Zip the archive to the location will later use when we run the WebLogic Image Tool.
 
@@ -246,7 +250,7 @@ $ cd /tmp/mii-sample/archives/archive-v1
 ```
 ```shell
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
-$ zip -r ${WDT_DOMEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
+$ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
 
 ##### Staging model files
@@ -329,12 +333,12 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` wit
 Run the following commands to create the model image and verify that it worked:
 
 ```shell
-$ ${WDT_DOMEL_FILES_PATH}/imagetool/bin/imagetool.sh update \
+$ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
   --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-  --wdtModel      ${WDT_DOMEL_FILES_PATH}/WLS-v1/model.10.yaml \
-  --wdtVariables  ${WDT_DOMEL_FILES_PATH}/WLS-v1/model.10.properties \
-  --wdtArchive    ${WDT_DOMEL_FILES_PATH}/WLS-v1/archive.zip \
+  --wdtModel      ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.yaml \
+  --wdtVariables  ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.properties \
+  --wdtArchive    ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip \
   --wdtModelOnly \
   --wdtDomainType WLS \
   --chown oracle:root
@@ -393,6 +397,8 @@ $ export AKS_PERS_ACR=$(az acr show -n $ACR_NAME --query "loginServer" -o tsv)
 ```shell
 $ az acr login --name $AKS_PERS_ACR
 ```
+
+Successful output will include `Login Succeeded`.
 
 Ensure Docker is running on your local machine.  Run the following commands to tag and push the image to your ACR.
 
