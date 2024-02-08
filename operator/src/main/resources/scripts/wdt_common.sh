@@ -84,7 +84,8 @@ wdtRotateAndCopyLogFile() {
 
   logFileRotate "${WDT_OUTPUT_DIR}/${logFileName}" "${WDT_LOG_FILE_MAX:-11}"
 
-  cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
+  WDT_LOG_ROOT="${WLSDEPLOY_LOG_DIRECTORY:-$(echo $WDT_ROOT/logs)}"
+  cp "${WDT_LOG_ROOT}/${logFileName}" ${WDT_OUTPUT_DIR}/
 }
 
 
