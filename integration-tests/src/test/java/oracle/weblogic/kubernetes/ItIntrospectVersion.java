@@ -497,7 +497,8 @@ class ItIntrospectVersion {
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    verifyMemberHealth(adminServerPodName, managedServerNames, 
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // verify each managed server can see other member in the cluster
     for (String managedServerName : managedServerNames) {
@@ -1319,11 +1320,12 @@ class ItIntrospectVersion {
     testUntil(() -> {
       if (OKE_CLUSTER) {
         // In internal OKE env, verifyMemberHealth in admin server pod
-        int adminPort = 7001;
+        int servicePort = getServicePort(introDomainNamespace, 
+            getExternalServicePodName(adminServerPodName), "default");
         final String command = KUBERNETES_CLI + " exec -n "
             + introDomainNamespace + "  " + adminServerPodName + " -- curl http://"
             + adminServerPodName + ":"
-            + adminPort + "/clusterview/ClusterViewServlet"
+            + servicePort + "/clusterview/ClusterViewServlet"
             + "\"?user=" + user
             + "&password=" + code + "\"";
 
@@ -1335,6 +1337,8 @@ class ItIntrospectVersion {
         }
         String response = result.stdout().trim();
         logger.info(response);
+        logger.info(result.stderr());
+        logger.info("{0}", result.exitValue());
         boolean health = true;
         for (String managedServer : managedServerNames) {
           health = health && response.contains(managedServer + ":HEALTH_OK");
@@ -1395,14 +1399,12 @@ class ItIntrospectVersion {
 
   private void verifyConnectionBetweenClusterMembers(String serverName, List<String> managedServerNames) {
     String podName = domainUid + "-" + serverName;
+    boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
     final String command = String.format(
         KUBERNETES_CLI + " exec -n " + introDomainNamespace + "  " + podName + " -- curl \"http://"
-            + wlsUserName
-            + ":"
-            + wlsPassword
-            + "@" + podName + ":%s/clusterview/ClusterViewServlet"
-            + "?user=" + wlsUserName
-            + "&password=" + wlsPassword + "\"",managedServerPort);
+        + podName + ":%s/clusterview/ClusterViewServlet"
+        + "?user=" + wlsUserName
+        + "&password=" + wlsPassword + "&ipv6=" + ipv6 + "\"", managedServerPort);
     verifyServerCommunication(command, serverName, managedServerNames);
   }
 
