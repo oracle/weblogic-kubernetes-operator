@@ -50,6 +50,7 @@ public class ClusterViewServlet extends HttpServlet {
   DomainRuntimeMBean domainRuntime;
   String adminUser;
   String adminPassword;
+  boolean ipv6;
   List<JMXConnector> jmxConnectors;
 
   @Override
@@ -110,6 +111,7 @@ public class ClusterViewServlet extends HttpServlet {
       jmxConnectors = new ArrayList<>();
       adminUser = request.getParameter("user");
       adminPassword = request.getParameter("password");
+      ipv6 = Boolean.valueOf(request.getParameter("ipv6"));
 
       // print the domain name in which this server resides in
       printDomainName(out);
@@ -278,12 +280,18 @@ public class ClusterViewServlet extends HttpServlet {
     ServerLifeCycleRuntimeMBean[] serverLifeCycleRuntimes = domainRuntime.getServerLifeCycleRuntimes();
     for (ServerLifeCycleRuntimeMBean serverLifeCycleRuntime : serverLifeCycleRuntimes) {
       //check state and get the url only if its running, also make sure the url is not null
+      System.out.println("++++++++START++++++++");
+      System.out.println("getName():" + serverLifeCycleRuntime.getName());
+      System.out.println("getType():" + serverLifeCycleRuntime.getType());
+      System.out.println("getIPv[6]URL(t3):" + serverLifeCycleRuntime.getIPv6URL("t3"));
+      System.out.println("getIPv[4]URL(t3):" + serverLifeCycleRuntime.getIPv4URL("t3"));
       String t3Url =
-          host.contains(":") ? serverLifeCycleRuntime.getIPv6URL("t3") : serverLifeCycleRuntime.getIPv4URL("t3");
+          ipv6 ? serverLifeCycleRuntime.getIPv6URL("t3") : serverLifeCycleRuntime.getIPv4URL("t3");
       if (t3Url != null && serverLifeCycleRuntime.getState().equals("RUNNING")) {
         serverUrls.add(t3Url);
         System.out.println("getIPv[4|6]URL(t3):" + t3Url);
       }
+      System.out.println("++++++++END++++++++");
     }
 
     return serverUrls;
