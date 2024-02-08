@@ -430,13 +430,13 @@ In this section, you will deploy the new image to the namespace `sample-domain1-
 
 - Create a namespace for the WebLogic domain.
 - Upgrade the operator to manage the WebLogic domain namespace.
-- Create a Secret containing your WebLogic administrator user name and password.
-- Create a Secret containing your Model in Image runtime encryption password:
+- Create a secret containing your WebLogic administrator user name and password.
+- Create a secret containing your Model in Image runtime encryption password:
     - All Model in Image domains must supply a runtime encryption Secret with a `password` value.
     - The runtime encryption password is used to encrypt configuration that is passed around internally by the operator.
     - The value must be kept private but can be arbitrary; you can optionally supply a different secret value every time you restart the domain.
-- Deploy a Domain YAML file that references the new image.
-- Wait for the domain’s Pods to start and reach their ready state.
+- Deploy a domain YAML file that references the new image.
+- Wait for the domain’s pods to start and reach their ready state.
 
 ##### Namespace
 
@@ -446,7 +446,7 @@ Create a namespace that can host one or more domains:
 $ kubectl create namespace sample-domain1-ns
 ```
 
-Label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
+Label the domain namespace so that the operator can autodetect and create WebLogic Server pods. Without this step, the operator cannot see the namespace.
 
 ```shell
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
@@ -461,8 +461,8 @@ Run the following `kubectl` commands to deploy the required secrets:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
-   --from-literal=username=${WEBLOGIC_USERNAME} \
-   --from-literal=password=${WEBLOGIC_PASSWORD}
+   --from-literal=username="${WEBLOGIC_USERNAME}" \
+   --from-literal=password="${WEBLOGIC_PASSWORD}"
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -472,7 +472,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
-   --from-literal=password=${WEBLOGIC_WDT_PASSWORD}
+   --from-literal=password="${WEBLOGIC_WDT_PASSWORD}"
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -480,37 +480,38 @@ $ kubectl -n sample-domain1-ns label  secret \
   weblogic.domainUID=sample-domain1
 ```
 
-  Some important details about these secrets:
+   Some important details about these secrets:
 
-  - Choosing passwords and usernames:
-    - Set variables `WEBLOGIC_USERNAME` and `WEBLOGIC_PASSWORD` with a username and password of your choice.
-      The password should be at least eight characters long and include at least one digit.
-      Remember what you specified. These credentials may be needed again later.
-    - Set variable `WEBLOGIC_WDT_PASSWORD` with a password of your choice.
+   - Make sure to enclose your values in double quotes and perform necessary escaping to prevent the shell from modifying the values before the secret values are set.
+   - Choosing passwords and usernames:
+      - Set variables `WEBLOGIC_USERNAME` and `WEBLOGIC_PASSWORD` with a username and password of your choice.
+        The password should be at least eight characters long and include at least one digit.
+        Remember what you specified. These credentials may be needed again later.
+      - Set variable `WEBLOGIC_WDT_PASSWORD` with a password of your choice.
 
-  - The WebLogic credentials secret:
-    - It is required and must contain `username` and `password` fields.
-    - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain resource YAML file.  For complete details about the `Domain` resource, see the [Domain resource reference](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#domain-spec).
-    - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your `model.10.yaml` file.
+   - The WebLogic credentials secret:
+      - It is required and must contain `username` and `password` fields.
+      - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain resource YAML file.  For complete details about the `Domain` resource, see the [Domain resource reference](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#domain-spec).
+      - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your `model.10.yaml` file.
 
-  - The Model WDT runtime encrytion secret:
-    - This is a special secret required by Model in Image.
-    - It must contain a `password` field.
-    - It must be referenced using the `spec.model.runtimeEncryptionSecret` field in your Domain resource YAML file.
-    - It must remain the same for as long as the domain is deployed to Kubernetes but can be changed between deployments.
-    - It is used to encrypt data as it's internally passed using log files from the domain's introspector job and on to its WebLogic Server pods.
+   - The Model WDT runtime encrytion secret:
+      - This is a special secret required by Model in Image.
+      - It must contain a `password` field.
+      - It must be referenced using the `spec.model.runtimeEncryptionSecret` field in your Domain resource YAML file.
+      - It must remain the same for as long as the domain is deployed to Kubernetes but can be changed between deployments.
+      - It is used to encrypt data as it's internally passed using log files from the domain's introspector job and on to its WebLogic Server pods.
 
-  - Deleting and recreating the secrets:
-    - You must delete a secret before creating it, otherwise the `create` command will fail if the secret already exists.
-    - This allows you to change the secret when using the `kubectl create secret` command.
+   - Deleting and recreating the secrets:
+      - You must delete a secret before creating it, otherwise the `create` command will fail if the secret already exists.
+      - This allows you to change the secret when using the `kubectl create secret` command.
 
-  - You name and label secrets using their associated `domainUID` for two reasons:
-    - To make it obvious which secrets belong to which domains.
-    - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+   - You name and label secrets using their associated `domainUID` for two reasons:
+      - To make it obvious which secrets belong to which domains.
+      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
 ##### Domain resource
 
-Now, you create a Domain YAML file. Think of the Domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+Now, you create a domain YAML file. Think of the domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
 
@@ -542,6 +543,8 @@ Verify the WebLogic Server pods are all running:
 ```shell
 $ kubectl get pods -n sample-domain1-ns --watch
 ```
+
+Output will look similar to the following.
 ```
 NAME                                READY   STATUS              RESTARTS   AGE
 sample-domain1-introspector-xwpbn   0/1     ContainerCreating   0          0s
