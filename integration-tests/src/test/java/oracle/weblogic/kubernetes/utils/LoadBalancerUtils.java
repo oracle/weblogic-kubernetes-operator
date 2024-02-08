@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikRead
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 //import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -444,7 +445,7 @@ public class LoadBalancerUtils {
           host = "[" + host + "]";
         }
         String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + host + ":" + nodeport
+            + "' http://" + getHostAndPort(host, nodeport)
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);

@@ -1,14 +1,16 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -41,14 +43,19 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -57,13 +64,17 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
@@ -111,6 +122,7 @@ class ItMultiDomainModelsScale {
 
   // domain constants
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
+  private static final String adminServerName = "admin-server";
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int ADMIN_SERVER_PORT = 7001;
@@ -131,7 +143,6 @@ class ItMultiDomainModelsScale {
   private static String opServiceAccount = null;
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
-  private static int externalRestHttpsPort = 0;
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
   private static String domainInImageNamespace = null;
@@ -139,6 +150,7 @@ class ItMultiDomainModelsScale {
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
   private String curlCmd = null;
+  private static String hostHeader = null;
 
   /**
    * Install operator and NGINX.
@@ -178,10 +190,8 @@ class ItMultiDomainModelsScale {
     miiImage = createAndPushMiiImage();
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
+    installAndVerifyOperator(opNamespace, opServiceAccount, true, OPERATOR_EXTERNAL_REST_HTTPSPORT,
         miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace);
-
-    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough
@@ -192,12 +202,17 @@ class ItMultiDomainModelsScale {
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
     if (!OKD) {
-      // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-      logger.info("NGINX service name: {0}", nginxServiceName);
-      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-      logger.info("NGINX http node port: {0}", nodeportshttp);
+      if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        // install and verify NGINX
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+        String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+        logger.info("NGINX service name: {0}", nginxServiceName);
+        nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+        logger.info("NGINX http node port: {0}", nodeportshttp);
+      } else {
+        // if not using docker, use pre-installed Traefik controller
+        nodeportshttp = TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      }
     }
   }
 
@@ -247,11 +262,16 @@ class ItMultiDomainModelsScale {
           numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
     }
 
-    // verify admin console login using admin node port
-    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
-
-    // verify admin console login using ingress controller
-    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+    // verify admin console login
+    if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
+      assertDoesNotThrow(()
+          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    } else {
+      verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
+      // verify admin console login using ingress controller
+      verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+    }
 
     final String hostName = "localhost";
     String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
@@ -293,7 +313,7 @@ class ItMultiDomainModelsScale {
     curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        replicaCount, numberOfServers, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
 
     // then scale cluster back to 2 servers
@@ -301,14 +321,19 @@ class ItMultiDomainModelsScale {
         clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
     managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        numberOfServers, replicaCount, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
 
-    // verify admin console login using admin node port
-    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
-
-    // verify admin console login using ingress controller
-    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+    // verify admin console login
+    if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
+      assertDoesNotThrow(()
+          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    } else {
+      verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
+      // verify admin console login using ingress controller
+      verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+    }
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -349,7 +374,7 @@ class ItMultiDomainModelsScale {
     logger.info("BR: curlCmdForWLDFScript = {0}", curlCmdForWLDFScript);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, replicaCount + 1, false, 0, opNamespace, opServiceAccount,
+        replicaCount, replicaCount + 1, false, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
         true, domainHome, "scaleUp", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 
@@ -363,11 +388,16 @@ class ItMultiDomainModelsScale {
         true, domainHome, "scaleDown", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 
-    // verify admin console login using admin node port
-    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
-
-    // verify admin console login using ingress controller
-    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+    // verify admin console login
+    if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
+      assertDoesNotThrow(()
+          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    } else {
+      verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
+      // verify admin console login using ingress controller
+      verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+    }
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -560,9 +590,9 @@ class ItMultiDomainModelsScale {
       if (host.contains(":")) {
         host = "[" + host + "]";
       }
-      return String.format("curl -g -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
+      return String.format("curl -g -v --show-error --noproxy '*' -H 'host: %s' http://%s/%s/index.jsp",
           domainUid + "." + domainNamespace + "." + clusterName + ".test",
-          host, nodeportshttp, appContextRoot);
+          getHostAndPort(host, nodeportshttp), appContextRoot);
     }
   }
 
@@ -712,8 +742,14 @@ class ItMultiDomainModelsScale {
 
     if (!OKD) {
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-      createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
-          true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
+      if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
+            true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
+      } else {
+        assertDoesNotThrow(()
+            -> createIngressForDomainAndVerify(domainUid, domainNamespace, TRAEFIK_INGRESS_HTTP_HOSTPORT,
+            clusterNameMsPortMap, true, Files.readString(INGRESS_CLASS_FILE_NAME), true, ADMIN_SERVER_PORT));
+      }
     }
   }
 
@@ -810,4 +846,19 @@ class ItMultiDomainModelsScale {
     }
   }
 
+  private String  createIngressHostRoutingIfNotExists(String domainNamespace,
+                                                      String domainUid) {
+    String ingressName = domainNamespace + "-" + domainUid + "-" + adminServerName;
+    String hostHeader = "";
+    try {
+      List<String> ingresses = listIngresses(domainNamespace);
+      Optional<String> ingressFound = ingresses.stream().filter(ingress -> ingress.equals(ingressName)).findAny();
+      if (ingressFound.isEmpty()) {
+        hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, 7001);
+      }
+    } catch (Exception ex) {
+      logger.severe(ex.getMessage());
+    }
+    return hostHeader;
+  }
 }
