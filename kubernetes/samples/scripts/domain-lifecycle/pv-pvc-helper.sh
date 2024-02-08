@@ -173,7 +173,6 @@ createPod() {
   template=$(echo "$template" | sed -e "s:%NAMESPACE%:${namespace}:g;\
     s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g;\
     s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${pullsecret}:g;\
-    s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${pullsecretPrefix}:g;\
     s:%CLAIM_NAME%:${claimName}:g;s:%VOLUME_MOUNT_PATH%:${mountPath}:g;\
     s:%RUN_AS_ROOT_PREFIX%:${runAsRoot}:g;\
     s?image:.*?image: ${image}?g")
