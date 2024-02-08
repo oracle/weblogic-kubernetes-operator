@@ -13,7 +13,7 @@ spec:
   - args:
     - sleep
     - infinity
-    image: ghcr.io/oracle/oraclelinux:8-slim
+    image: ghcr.io/oracle/oraclelinux:8
     imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
     name: pvhelper
     volumeMounts:
@@ -31,5 +31,5 @@ spec:
   - name: pv-volume
     persistentVolumeClaim:
       claimName: %CLAIM_NAME%
-  %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-  %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
+  imagePullSecrets:
+  - name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
