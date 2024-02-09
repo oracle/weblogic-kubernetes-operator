@@ -193,7 +193,6 @@ If you have an image built with domain models following [Model in Image]({{< rel
       -o ${WDT_MODEL_FILES_PATH}/imagetool.zip
     ```
 
-
    To set up the WebLogic Image Tool, run the following commands:
     ```shell
    $ unzip ${WDT_MODEL_FILES_PATH}/imagetool.zip -d ${WDT_MODEL_FILES_PATH}
@@ -545,6 +544,7 @@ $ kubectl get pods -n sample-domain1-ns --watch
 ```
 
 Output will look similar to the following.
+
 ```
 NAME                                READY   STATUS              RESTARTS   AGE
 sample-domain1-introspector-xwpbn   0/1     ContainerCreating   0          0s
@@ -567,32 +567,20 @@ sample-domain1-managed-server2      0/1     Running             0          3s
 sample-domain1-managed-server2      1/1     Running             0          40s
 sample-domain1-managed-server1      0/1     Running             0          53s
 sample-domain1-managed-server1      1/1     Running             0          93s
-
-# The success deployment should be:
 ```
-```shell
-$ kubectl get all -n sample-domain1-ns
+
+When the system stabilizes with the following state, it is safe to proceed.
+
 ```
-```
-NAME                                 READY   STATUS    RESTARTS   AGE
-pod/sample-domain1-admin-server      1/1     Running   0          4m30s
-pod/sample-domain1-managed-server1   1/1     Running   0          3m28s
-pod/sample-domain1-managed-server2   1/1     Running   0          3m28s
-
-NAME                                              TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
-service/sample-domain1-admin-server               ClusterIP      None           <none>          7001/TCP         4m30s
-service/sample-domain1-cluster-cluster-1          ClusterIP      10.0.246.176   <none>          8001/TCP         3m29s
-service/sample-domain1-managed-server1            ClusterIP      None           <none>          8001/TCP         3m29s
-service/sample-domain1-managed-server2            ClusterIP      None           <none>          8001/TCP         3m29s
-
-NAME                                    AGE
-domain.weblogic.oracle/sample-domain1   6m15s
-
-NAME                                               AGE
-cluster.weblogic.oracle/sample-domain1-cluster-1   6m15s
+NAME                             READY   STATUS    RESTARTS   AGE
+sample-domain1-admin-server      1/1     Running   0          2m
+sample-domain1-managed-server1   1/1     Running   0          83s
+sample-domain1-managed-server2   1/1     Running   0          83s
 ```
 
 It may take you up to 10 minutes to deploy all pods, please wait and make sure everything is ready.
+
+If the system does not reach this state, troubleshoot and resolve the problem before continuing. See [Troubleshooting](#troubleshooting) for hints.
 
 #### Invoke the web application
 
@@ -874,6 +862,10 @@ Found 0 local data sources:
 
 Naturally, you will want to deploy newer versions of the EAR application, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`. To learn how to do this, follow the steps in [Update 3]({{< relref "/samples/domains/model-in-image/update3" >}}).
 
+#### Database connection
+
+For guidance on how to connect a database to your WLS on AKS app, see [Deploy a Java application with WebLogic Server on an Azure Kubernetes Service (AKS) cluster](https://learn.microsoft.com/en-us/azure/aks/howto-deploy-java-wls-app).
+
 #### Clean up resources
 
 Run the following commands to clean up resources.
@@ -888,3 +880,4 @@ For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kub
 
 - [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation
 - [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample
+- [Deploy a Java application with WebLogic Server on an Azure Kubernetes Service (AKS) cluster](https://learn.microsoft.com/en-us/azure/aks/howto-deploy-java-wls-app)
