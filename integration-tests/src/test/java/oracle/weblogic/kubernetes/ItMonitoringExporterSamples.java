@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -68,8 +69,10 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.delet
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogForKey;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressPathRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
@@ -105,7 +108,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via Prometheus
  */
 @DisplayName("Verify end to end sample, provided in the Monitoring Exporter github project")
-@Tag("oke-sequential")
+@Tag("oke-gate")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @IntegrationTest
@@ -129,6 +132,7 @@ class ItMonitoringExporterSamples {
   private static String webhookNS = null;
   PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
+  private static String ingressIP = null;
 
   private static V1Service webhookService = null;
   private static V1Deployment webhookDepl = null;
@@ -222,6 +226,8 @@ class ItMonitoringExporterSamples {
       // install and verify NGINX
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+      ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
+          ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST;
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
@@ -270,7 +276,11 @@ class ItMonitoringExporterSamples {
             = createIngressForDomainAndVerify(domain2Uid, domain2Namespace, 0, clusterNameMsPortMap,
                 false, nginxHelmParams.getIngressClassName(), false, 0);
         logger.info("verify access to Monitoring Exporter");
-        verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
+        if (OKE_CLUSTER_PRIVATEIP) {
+          verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, ingressIP);
+        } else {
+          verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
+        }
       } else {
         String clusterService = domain2Uid + "-cluster-cluster-1";
         String hostName = createRouteForOKD(clusterService, domain2Namespace);
@@ -374,10 +384,16 @@ class ItMonitoringExporterSamples {
         host = "[" + host + "]";
       }
       hostPortPrometheus = host + ":" + nodeportPrometheus;
+      if (OKE_CLUSTER_PRIVATEIP) {
+        hostPortPrometheus = ingressIP;
+      }
       if (OKD) {
         hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
             + "-service", monitoringNS) + ":" + nodeportPrometheus;
       }
+      String ingressClassName = nginxHelmParams.getIngressClassName();
+      createIngressPathRouting(monitoringNS, "/api",
+          prometheusReleaseName + "-server", 80, ingressClassName);
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
