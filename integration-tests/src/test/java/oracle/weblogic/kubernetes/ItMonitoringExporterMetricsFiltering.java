@@ -544,11 +544,6 @@ class ItMonitoringExporterMetricsFiltering {
     }
     logger.info("Grafana is running");
     // create ingress rules with non-tls host routing, tls host routing and path routing for Traefik
-    /*
-    createTraefikIngressRoutingRulesForMonitoring(monitoringNS, prometheusReleaseName + "-server",
-        "traefik/traefik-ingress-rules-monitoring.yaml");
-
-     */
 
     createIngressPathRouting(monitoringNS, "/api",
         prometheusReleaseName + "-server", 80, ingressClassName);
@@ -563,17 +558,7 @@ class ItMonitoringExporterMetricsFiltering {
 
     if (traefikHelmParams != null) {
       logger.info("Uninstalling Traefik");
-      /*
-      Path dstFileProm = Paths.get(TestConstants.RESULTS_ROOT,
-          monitoringNS,
-          prometheusReleaseName + "-server",
-          "traefik", "traefik-ingress-rules-monitoring.yaml");
-      deleteTraefikIngressRoutingRules(dstFileProm);
-      Path dstFileDomain = Paths.get(TestConstants.RESULTS_ROOT,
-          domain1Namespace, domain1Uid, "traefik-ingress-rules-exporter.yaml");
-      deleteTraefikIngressRoutingRules(dstFileDomain);
 
-       */
       assertThat(uninstallTraefik(traefikHelmParams))
           .as("Test uninstall traefik returns true")
           .withFailMessage("uninstallTraefik() did not return true")

@@ -1154,6 +1154,34 @@ public class MonitoringUtils {
   /**
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    *
+   * @param nginxHost nginx host name
+   * @param replicaCount number of managed servers
+   * @param hostPort  host:port combo or host string
+   */
+  public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount, String hostPort) {
+
+    List<String> managedServerNames = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
+    }
+
+    // check that NGINX can access the sample apps from all managed servers in the domain
+    String curlCmd =
+        String.format("curl -g --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s/wls-exporter/metrics",
+            nginxHost,
+            ADMIN_USERNAME_DEFAULT,
+            ADMIN_PASSWORD_DEFAULT,
+            hostPort);
+    testUntil(withLongRetryPolicy,
+        callTestWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50),
+        logger,
+        "Verify NGINX can access the monitoring exporter metrics \n"
+            + "from all managed servers in the domain via http");
+  }
+
+  /**
+   * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
+   *
    * @param replicaCount number of managed servers
    * @param hostPort  host:port combination to access app
    */
