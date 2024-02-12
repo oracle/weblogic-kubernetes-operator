@@ -955,6 +955,7 @@ wdtCreatePrimordialDomain() {
   fi
 
   wdtRotateAndCopyLogFile "${WDT_CREATE_DOMAIN_LOG}"
+  wdtRotateAndCopyOutFile
 
   # restore trap
   start_trap
