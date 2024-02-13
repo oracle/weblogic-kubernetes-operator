@@ -19,8 +19,9 @@ IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
 WDT_ROOT="/auxiliary/weblogic-deploy"
 WDT_OUTPUT_DIR="${LOG_HOME:-/tmp}"
 WDT_OUTPUT="${WDT_OUTPUT_DIR}/wdt_output.log"
-WDT_CREATE_DOMAIN_LOGROOT="${WLSDEPLOY_LOG_DIRECTORY:-$(echo ${WDT_ROOT}/logs)}"
-WDT_CREATE_DOMAIN_LOG="${WDT_CREATE_DOMAIN_LOGROOT}/createDomain.log"
+WDT_CREATE_DOMAIN_LOG=createDomain.log
+
+
 WDT_BINDIR="${WDT_ROOT}/bin"
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
@@ -236,20 +237,17 @@ createDomainFromWDTModel() {
     # We need to prevent retries with a "FatalIntrospectorError".  We are not retrying create domain for now.
     #
     trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create domain failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
-
     cat ${WDT_OUTPUT}
-
-    if [ -d "$LOG_HOME" ] ; then
-      cp "$WDT_CREATE_DOMAIN_LOG" "$LOG_HOME"
-      if ls $WDT_ROOT/logs/*.out &> /dev/null ; then (cp $WDT_ROOT/logs/*.out $LOG_HOME) ; fi
-      trace "WDT log files have been copied to '$LOG_HOME'.  Additional RCU log files if any can be found under '$LOG_HOME/rculogdir'"
-    fi
-
     exitOrLoop
   else
     trace "WDT Create Domain Succeeded, ret=${ret}:"
     cat ${WDT_OUTPUT}
   fi
+
+  wdtRotateAndCopyLogFile "${WDT_CREATE_DOMAIN_LOG}"
+  wdtRotateAndCopyOutFile
+
+  trace "WDT log files have been copied to '$LOG_HOME'.  Additional RCU log files if any can be found under '$LOG_HOME/rculogdir'"
 
   # restore trap
   start_trap
