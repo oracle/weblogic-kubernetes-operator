@@ -168,6 +168,7 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 
 ```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+$ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator
 ```
 

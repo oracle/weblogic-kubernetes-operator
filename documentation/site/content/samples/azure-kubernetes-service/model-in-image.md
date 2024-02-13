@@ -102,14 +102,16 @@ Install the operator. The operator’s Helm chart is located in the kubernetes/c
 ```
 helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
+
+Update repo to get the latest helm charts. It is a best practice to do this every time before installing a new operator version. In this example, we are using a pinned version, but you may also find success if you use the latest version. In this case, you can omit the `--version` argument. Be warned that these instructions have only been tested with the exact version shown.
+
+
 ```
+$ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --version 4.1.7 \
   --set serviceAccount=sample-weblogic-operator-sa \
-  --set "enableClusterRoleBinding=true" \
-  --set "domainNamespaceSelectionStrategy=LabelSelector" \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
 ```
 
