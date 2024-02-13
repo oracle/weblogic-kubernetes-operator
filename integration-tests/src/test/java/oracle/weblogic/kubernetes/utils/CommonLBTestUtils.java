@@ -842,24 +842,18 @@ public class CommonLBTestUtils {
     // access application in managed servers through load balancer
     getLogger().info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
+    String uri = "clusterview/ClusterViewServlet" + "\"?user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT + (host.contains(":") ? "&ipv6=true" : "&ipv6=false") + "\"";
     if (hostRouting) {
       curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
-          + "-H 'host: %s' %s://%s/clusterview/ClusterViewServlet"
-          + "\"?user=" + ADMIN_USERNAME_DEFAULT
-          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", ingressHostName, protocol, host)
-        : String.format("curl --show-error -ks --noproxy '*' "
-          + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-          + "\"?user=" + ADMIN_USERNAME_DEFAULT
-          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", ingressHostName, protocol, host, lbPort);
+          + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, host)
+        : String.format("curl -g --show-error -ks --noproxy '*' "
+          + "-H 'host: %s' %s://%s:%s/" + uri, ingressHostName, protocol, host, lbPort);
     } else {
       curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
-          + "%s://%s" + locationString + "/clusterview/ClusterViewServlet"
-          + "\"?user=" + ADMIN_USERNAME_DEFAULT
-          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", protocol, host)
-        : String.format("curl --show-error -ks --noproxy '*' "
-          + "%s://%s:%s" + locationString + "/clusterview/ClusterViewServlet"
-          + "\"?user=" + ADMIN_USERNAME_DEFAULT
-          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", protocol, host, lbPort);
+          + "%s://%s" + locationString + "/" + uri, protocol, host)
+        : String.format("curl -g --show-error -ks --noproxy '*' "
+          + "%s://%s:%s" + locationString + "/" + uri, protocol, host, lbPort);
     }
 
     List<String> managedServers = new ArrayList<>();
