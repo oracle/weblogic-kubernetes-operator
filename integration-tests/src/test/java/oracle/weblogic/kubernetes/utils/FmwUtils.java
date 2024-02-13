@@ -352,7 +352,7 @@ public class FmwUtils {
     String curlCmd1 = "curl -s -L --show-error --noproxy '*' "
         + hostHeader
         + " http://" + hostAndPort
-        + "/em --write-out %{http_code} -o /dev/null";
+        + "/em/faces/targetauth/emasLogin --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd1);
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
