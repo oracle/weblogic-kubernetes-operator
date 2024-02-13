@@ -55,7 +55,7 @@ Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/we
 $ cd $BASE_DIR
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 $ cd weblogic-kubernetes-operator
-$ git checkout <ROSEMARY_MAKE_A_TAG_PUT_IT_HERE>
+$ git checkout f44e7e93c2
 ```
 
 If you see a message about being in "detached HEAD" state, this message is safe to ignore. It just means you have checked out a tag.
