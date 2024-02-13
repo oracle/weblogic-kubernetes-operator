@@ -105,7 +105,7 @@ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-ope
 ```
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:4.1.7 \
+  --version 4.1.7 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
