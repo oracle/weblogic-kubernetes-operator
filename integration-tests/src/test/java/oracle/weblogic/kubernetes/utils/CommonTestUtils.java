@@ -1093,6 +1093,7 @@ public class CommonTestUtils {
             // check the response contains managed server name
             ExecResult result = null;
             try {
+              logger.info("Sending request {0}", curlRequest);
               result = ExecCommand.exec(curlRequest, true);
             } catch (IOException | InterruptedException ex) {
               logger.severe(ex.getMessage());
