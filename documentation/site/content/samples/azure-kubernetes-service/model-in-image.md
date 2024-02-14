@@ -92,7 +92,7 @@ Install the operator. The operator’s Helm chart is located in the kubernetes/c
 helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 
-Update repo to get the latest helm charts. It is a best practice to do this every time before installing a new operator version. In this example, we are using a pinned version, but you may also find success if you use the latest version. In this case, you can omit the `--version` argument. Be warned that these instructions have only been tested with the exact version shown.
+Update repo to get the latest Helm charts. It is a best practice to do this every time before installing a new operator version. In this example, we are using a pinned version, but you may also find success if you use the latest version. In this case, you can omit the `--version` argument. Be warned that these instructions have only been tested with the exact version shown.
 
 
 ```
@@ -115,7 +115,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.1.7` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.1.7` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -157,7 +157,7 @@ If you have an image built with domain models following [Model in Image]({{< rel
 
 ##### Image creation prerequisites
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
-1. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`. In the directory name, `mii` is short for "model in image". Model in image is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
+1. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`. In the directory name, `mii` is short for "model in image". Model in image is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
    ```shell
    $ mkdir /tmp/mii-sample
@@ -233,13 +233,11 @@ Run the following commands to create your application archive ZIP file and put i
 # Delete existing archive.zip in case we have an old leftover version
 $ rm -f ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
 ```
-Zip the archive to the location will later use when we run the WebLogic Image Tool.
+
+Create a ZIP file of the archive in the location that we will use when we run the WebLogic Image Tool.
 
 ```shell
 $ cd /tmp/mii-sample/archives/archive-v1
-```
-```shell
-# Zip the archive to the location will later use when we run the WebLogic Image Tool
 $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
 
@@ -472,12 +470,12 @@ $ kubectl -n sample-domain1-ns label  secret \
 
    Some important details about these secrets:
 
-   - Make sure to enclose your values in double quotes and perform necessary escaping to prevent the shell from modifying the values before the secret values are set.
-   - Choosing passwords and usernames:
-      - Set variables `WEBLOGIC_USERNAME` and `WEBLOGIC_PASSWORD` with a username and password of your choice.
+   - Make sure to enclose your values in double quotes and perform the necessary escaping to prevent the shell from modifying the values before the secret values are set.
+   - Choosing passwords and user names:
+      - Set the variables `WEBLOGIC_USERNAME` and `WEBLOGIC_PASSWORD` with a user name and password of your choice.
         The password should be at least eight characters long and include at least one digit.
         Remember what you specified. These credentials may be needed again later.
-      - Set variable `WEBLOGIC_WDT_PASSWORD` with a password of your choice.
+      - Set the variable `WEBLOGIC_WDT_PASSWORD` with a password of your choice.
 
    - The WebLogic credentials secret:
       - It is required and must contain `username` and `password` fields.
@@ -855,7 +853,7 @@ Naturally, you will want to deploy newer versions of the EAR application, locate
 
 #### Database connection
 
-For guidance on how to connect a database to your WLS on AKS app, see [Deploy a Java application with WebLogic Server on an Azure Kubernetes Service (AKS) cluster](https://learn.microsoft.com/en-us/azure/aks/howto-deploy-java-wls-app).
+For guidance on how to connect a database to your AKS with WebLogic Server app, see [Deploy a Java application with WebLogic Server on an Azure Kubernetes Service (AKS) cluster](https://learn.microsoft.com/en-us/azure/aks/howto-deploy-java-wls-app).
 
 #### Clean up resources
 

@@ -369,4 +369,4 @@ As shown in the example, you can use `standard_a2`; pay attention to the CPU and
 
 #### `exec /weblogic-operator/scripts/introspectDomain.sh: exec format error`
 
-This error happens if you run the `imagetool.sh` command to build the docker image under macOS with Apple Silicon. This is not supported.  See [this issue in the WebLogic Image Tool issue tracker](https://github.com/oracle/weblogic-image-tool/issues/478).
+This error happens if you run the `imagetool.sh` command to build the Docker image under macOS with Apple Silicon. This is not supported.  See [this issue in the WebLogic Image Tool issue tracker](https://github.com/oracle/weblogic-image-tool/issues/478).
