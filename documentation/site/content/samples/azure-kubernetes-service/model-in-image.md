@@ -47,18 +47,7 @@ export BASE_DIR=~
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
-##### Clone WebLogic Kubernetes Operator repository
-
-Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.4.2, but should work with the latest release.
-
-```shell
-$ cd $BASE_DIR
-$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
-$ cd weblogic-kubernetes-operator
-$ git checkout f44e7e93c2
-```
-
-If you see a message about being in "detached HEAD" state, this message is safe to ignore. It just means you have checked out a tag.
+{{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
 
@@ -175,7 +164,7 @@ If you have an image built with domain models following [Model in Image]({{< rel
    ```
 
    ```shell
-   $ cp -r $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/mii-sample
+   $ cp -r $BASE_DIR/sample-scripts/create-weblogic-domain/wdt-artifacts/* /tmp/mii-sample
    ```
 
    **NOTE**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
