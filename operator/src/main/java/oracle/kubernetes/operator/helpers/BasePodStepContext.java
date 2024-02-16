@@ -221,10 +221,8 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected V1PodSpec createPodSpec() {
-    return new V1PodSpec()
+    V1PodSpec podSpec = new V1PodSpec()
         .containers(getContainers())
-        .volumes(getFluentdVolumes())
-        .volumes(getFluentbitVolumes())
         .addContainersItem(createPrimaryContainer())
         .affinity(getServerSpec().getAffinity())
         .topologySpreadConstraints(getTopologySpreadConstraints())
@@ -239,6 +237,16 @@ public abstract class BasePodStepContext extends StepContextBase {
         .restartPolicy(getServerSpec().getRestartPolicy())
         .securityContext(getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
+
+    for (V1Volume additionalVolume : getFluentdVolumes()) {
+      podSpec.addVolumesItem(additionalVolume);
+    }
+
+    for (V1Volume additionalVolume : getFluentbitVolumes()) {
+      podSpec.addVolumesItem(additionalVolume);
+    }
+
+    return podSpec;
   }
 
   abstract V1PodSecurityContext getPodSecurityContext();

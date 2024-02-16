@@ -113,7 +113,9 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INIT_DOMAIN_ON_PV_CONTAINER;
@@ -501,6 +503,46 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenFluentdWatchIntrospectLogsEnable_jobPodShouldHaveFluentdVolume() {
+    configureDomain().withFluentdConfiguration(true, "dummy-cred",
+            null, null, null);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    Optional<Object> list  = Optional.ofNullable(jobSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec)
+            .map(V1PodSpec::getVolumes)
+            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                    .equals(FLUENTD_CONFIGMAP_VOLUME)).findAny().orElse(null));
+
+    assertThat(list, notNullValue());
+
+    assertThat(list, not(Optional.empty()));
+
+  }
+
+  @Test
+  void whenFluentbitWatchIntrospectLogsEnable_jobPodShouldHaveFluentbitVolume() {
+    configureDomain().withFluentbitConfiguration(true,"dummy-cred", "",
+            "", null,null);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    Optional<Object> list = Optional.ofNullable(jobSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec)
+            .map(V1PodSpec::getVolumes)
+            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                    .equals(FLUENTBIT_CONFIGMAP_VOLUME)).findAny().orElse(null));
+
+    assertThat(list, notNullValue());
+
+    assertThat(list, not(Optional.empty()));
+
+  }
+
+  @Test
   void whenFluentdWatchIntrospectLogsDisable_jobPodShouldHaveFluentdSidecar() {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
           null, null, null);
@@ -515,6 +557,7 @@ class JobHelperTest extends DomainValidationTestBase {
                 .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), equalTo(Optional.empty()));
 
   }
+
 
   @Test
   void whenNoFluentdConfigmap_createIt() {
