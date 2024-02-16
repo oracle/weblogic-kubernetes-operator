@@ -13,6 +13,7 @@ You will need an Oracle account. The following steps will direct you to accept t
      in _Securing a Production Environment for Oracle WebLogic Server_.
   - Ensure that Docker is running.  Find and then pull the WebLogic 12.2.1.4 installation image:
      ```shell
+     $ docker login container-registry.oracle.com -u ${ORACLE_SSO_EMAIL} -p ${ORACLE_SSO_PASSWORD}
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```
 
