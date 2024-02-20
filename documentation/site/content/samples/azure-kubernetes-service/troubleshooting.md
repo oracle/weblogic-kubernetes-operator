@@ -366,3 +366,7 @@ ResourceNotFoundError: The Resource 'Microsoft.ContainerService/managedClusters/
 ```
 
 As shown in the example, you can use `standard_a2`; pay attention to the CPU and memory of that size; make sure it meets your memory requirements.
+
+#### `exec /weblogic-operator/scripts/introspectDomain.sh: exec format error`
+
+This error happens if you run the `imagetool.sh` command to build the Docker image under macOS with Apple Silicon. This is not supported.  See [this issue in the WebLogic Image Tool issue tracker](https://github.com/oracle/weblogic-image-tool/issues/478).

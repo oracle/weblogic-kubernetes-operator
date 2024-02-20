@@ -88,24 +88,9 @@ export ACR_ACCOUNT_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 ```
 
-#### Clone WKO repository
+{{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
 
-If you have not already done so, clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. You will use several scripts in this repository to create a WebLogic domain. This sample was tested with v4.1.1, but should work later releases.
-
-```shell
-$ cd $BASE_DIR
-$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
-
-```
-
-#### Create Resource Group
-
-```shell
-$ cd $BASE_DIR/weblogic-kubernetes-operator
-$ az extension add --name resource-graph
-$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
-```
-
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
@@ -175,6 +160,7 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 
 ```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+$ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator
 ```
 
@@ -214,10 +200,10 @@ Now that you have created the AKS cluster, installed the operator, and verified 
 
 ##### Create secrets
 
-You will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:
+You will use the `$BASE_DIR/sample-scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:
 
 ```
-cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
+cd $BASE_DIR/sample-scripts/create-weblogic-domain-credentials
 ```
 ```shell
 $ ./create-weblogic-credentials.sh -u ${WEBLOGIC_USERNAME} -p ${WEBLOGIC_PASSWORD} -d domain1
@@ -232,7 +218,7 @@ The secret domain1-weblogic-credentials has been successfully created in the def
 You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
 ``` shell
-$ cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-kubernetes-secrets
+$ cd $BASE_DIR/sample-scripts/create-kubernetes-secrets
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e ${ORACLE_SSO_EMAIL} -p ${ORACLE_SSO_PASSWORD} -u ${ORACLE_SSO_EMAIL}
 ```
 ```
@@ -270,7 +256,7 @@ Now, you deploy a `sample-domain1` domain resource and an associated `sample-dom
 - Run the following command to generate resource files.
 
     ```shell
-    cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service  
+    cd $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service  
 
     bash create-domain-on-aks-generate-yaml.sh
     ```
@@ -406,9 +392,11 @@ Now that you have WLS running in AKS, you can test the cluster by deploying the 
 
 First, package the application with the following command:
 
-```bash
-cd $BASE_DIR/weblogic-kubernetes-operator/integration-tests/src/test/resources/bash-scripts
-bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
+```shell
+$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.7.zip -o ${BASE_DIR}/v4.1.7.zip
+$ unzip v4.1.7.zip "weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts/build-war-app.sh" "weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/apps/testwebapp/*"
+$ cd $BASE_DIR/weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts
+$ bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
 ```
 
 Successful output will look similar to the following:
