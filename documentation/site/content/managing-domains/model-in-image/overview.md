@@ -52,6 +52,44 @@ When you deploy a Model in Image domain resource YAML file:
     - The operator subsequently boots your domain's WebLogic Server pods.
     - The pods will obtain their domain home from the ConfigMap.
 
+### Using demo SSL certificates in v14.1.2.0.0 or later
+
+{{% notice note %}}
+Beginning with WebLogic Server version 14.1.2.0.0, when a domain is `production` mode enabled, it is automatically `secure mode` enabled, therefore, all communications with the domain are using SSL channels and non-secure listening ports are disabled.  If there are no custom certificates configured for the SSL channels, then the server uses the demo SSL certificates.
+The demo SSL certificates are now domain specific and generated when the domain is first created,
+unlike previous releases, which were distributed with the WebLogic product installation.  Oracle recommends using custom SSL
+certificates in a production environment.
+{{% /notice %}}
+
+The certificates are created under the domain home `security` folder.
+
+```
+-rw-r-----  1 oracle oracle  1275 Feb 15 15:55 democakey.der
+-rw-r-----  1 oracle oracle  1070 Feb 15 15:55 democacert.der
+-rw-r-----  1 oracle oracle  1478 Feb 15 15:55 DemoTrust.p12
+-rw-r-----  1 oracle oracle  1267 Feb 15 15:55 demokey.der
+-rw-r-----  1 oracle oracle  1099 Feb 15 15:55 democert.der
+-rw-r-----  1 oracle oracle  1144 Feb 15 15:55 DemoCerts.props
+-rw-r-----  1 oracle oracle  2948 Feb 15 15:55 DemoIdentity.p12
+```
+
+For Model in Image domains, whenever you change any security credentials including, but not limited to, the Administration Server credentials, RCU credentials, and such, the domain will
+be recreated and a new set of demo SSL certificates will be generated. The certificates are valid for 180 days, then they expire.
+
+
+If you have any external client that needs to communicate with WebLogic Servers using SSL, then you need to import the current self-signing CA cert, `democacert.der`,
+into your local trust store; previously imported certificates will _not_ work.
+
+```shell
+ keytool -importcert -keystore <keystore path> -alias wlscacert  -file $HOME/Downloads/democacer.der
+```
+
+If you are using the WebLogic Scripting Tool, before starting the WLST session, you can set the following system properties.
+
+```shell
+ export WLST_PROPERTIES="-Dweblogic.security.TrustKeyStore=DemoTrust -Dweblogic.security.SSL.ignoreHostnameVerification=true"
+```
+
 ### Runtime updates
 
 Model updates can be applied at runtime by changing an image, secrets, a domain resource, or a WDT model ConfigMap after initial deployment.
