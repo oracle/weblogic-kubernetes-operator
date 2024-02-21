@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -15,6 +16,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -22,15 +24,18 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccessInAdminPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -56,7 +61,9 @@ class ItAddNewDynamicClusterUsingWlst {
 
   // domain constants
   private static final String domainUid = "dynasconfigcluster-domain-1";
-  private static final String adminServerPodName = domainUid + "-admin-server";
+  private static final String adminServerName = "admin-server";
+  private static final String adminServerPodName = domainUid + "-" + adminServerName;
+  private static final int adminPort = 7001;
   private static final String newManagedServerPrefix = "new-managed-server";
   private static final String newManagedServerPodPrefix = domainUid + "-" + newManagedServerPrefix;
   private static final String clusterName = "cluster-1";
@@ -64,6 +71,7 @@ class ItAddNewDynamicClusterUsingWlst {
   private static final int replicaCount = 2;
   private static final String wlSecretName = "weblogic-credentials";
   private static String domainNamespace = null;
+  private static String hostHeader;
 
   private static LoggingFacade logger = null;
 
@@ -104,6 +112,13 @@ class ItAddNewDynamicClusterUsingWlst {
     DomainResource domain = createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
         clusterName, replicaCount, ItAddNewDynamicClusterUsingWlst.class.getSimpleName());
     assertDomainNotNull(domain);
+    
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, adminPort);
+      assertDoesNotThrow(() -> verifyAdminServerRESTAccess("localhost", 
+          TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    }    
 
     // get admin service node port
     logger.info("Getting node port for default channel");
@@ -116,15 +131,16 @@ class ItAddNewDynamicClusterUsingWlst {
 
     logger.info("Validating WebLogic admin server access by login to console");
     if (OKE_CLUSTER) {
-      testUntil(isAppInServerPodReady(domainNamespace,
-          adminServerPodName, 7001, "/console/login/LoginForm.jsp", "Copyright"),
-          logger, "Validating WebLogic admin server access by login to console");
-    } else {
-      testUntil(
-          assertDoesNotThrow(() -> {
-            return adminNodePortAccessible(serviceNodePort,
-                ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
-          }, "Access to admin server node port failed"), logger, "Console login validation");
+      testUntil(() -> verifyAdminServerRESTAccessInAdminPod(adminServerPodName, "7001",
+          domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+          logger, "Validating WebLogic admin server access using REST api");
+    } else if (OKD) {
+      testUntil(() -> {
+        String url = "http://" + routeHost + ":" + serviceNodePort + "/management/tenant-monitoring/servers/";
+        HttpResponse<String> response;
+        response = OracleHttpClient.get(url, null, true);
+        return response.body().contains("RUNNING");
+      }, logger, "Access to admin server failed");
     }
 
     // create a new dynamic cluster using an online WLST script
@@ -143,7 +159,7 @@ class ItAddNewDynamicClusterUsingWlst {
     // get port for default channel
     logger.info("Getting port for default channel");
     int defaultChannelPort = assertDoesNotThrow(()
-        -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        -> getServicePort(domainNamespace, adminServerPodName, "default"),
         "Getting admin server default port failed");
     assertNotEquals(-1, defaultChannelPort, "Couldn't get valid port for default channel");
     logger.info("default channel port: {0}", defaultChannelPort);

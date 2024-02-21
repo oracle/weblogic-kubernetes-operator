@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -10,7 +10,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -45,12 +47,15 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -67,7 +72,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -91,6 +95,7 @@ class ItT3Channel {
   private final String adminServerName = ADMIN_SERVER_NAME_BASE;
   private final String adminServerPodName = domainUid + "-" + adminServerName;
   private final String managedServerPodPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+  private static String hostHeader;
 
   private static LoggingFacade logger = null;
 
@@ -265,17 +270,10 @@ class ItT3Channel {
     }
 
     // deploy application and verify all servers functions normally
-    logger.info("Getting node port for T3 channel");
-    int t3ChannelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server t3channel node port failed");
-    logger.info("t3channel channel node port: {0}", t3ChannelNodePort);
-    assertNotEquals(-1, t3ChannelNodePort, "admin server t3ChannelNodePort is not valid");
-
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    deployUsingWlst(adminServerPodName, Integer.toString(t3ChannelNodePort),
+    deployUsingWlst(adminServerPodName, Integer.toString(t3ChannelPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         domainNamespace);
 
@@ -283,6 +281,13 @@ class ItT3Channel {
     for (int i = 1; i <= replicaCount; i++) {
       managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
     }
+    
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, t3ChannelPort);
+      assertDoesNotThrow(() -> verifyAdminServerRESTAccess("localhost", 
+          TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    }        
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
@@ -311,37 +316,41 @@ class ItT3Channel {
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
-      String user, String password) {
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
+      String user, String code) {
 
     logger.info("Checking the health of servers in cluster");
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String url = "http://" + host + ":" + serviceNodePort
-        + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
+    testUntil(() -> {
+      logger.info("Getting node port for default channel");
+      int serviceNodePort = assertDoesNotThrow(()
+          -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+          "Getting admin server node port failed");
+      String host = K8S_NODEPORT_HOST;
+      String hostAndPort = host + ":" + serviceNodePort;
+      Map<String, String> headers = null;
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        headers = new HashMap<>();
+        headers.put("host", hostHeader);
+      }
+      String url = "http://" + hostAndPort
+          + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code;
+      HttpResponse<String> response;
+      response = OracleHttpClient.get(url, headers, true);
 
-    testUntil(
-        () -> {
-          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-          assertEquals(200, response.statusCode(), "Status code not equals to 200");
-          boolean health = true;
-          for (String managedServer : managedServerNames) {
-            health = health && response.body().contains(managedServer + ":HEALTH_OK");
-            if (health) {
-              logger.info(managedServer + " is healthy");
-            } else {
-              logger.info(managedServer + " health is not OK or server not found");
-            }
-          }
-          return health;
-        },
+      boolean health = true;
+      for (String managedServer : managedServerNames) {
+        health = health && response.body().contains(managedServer + ":HEALTH_OK");
+        if (health) {
+          logger.info(managedServer + " is healthy");
+        } else {
+          logger.info(managedServer + " health is not OK or server not found");
+        }
+      }
+      return health;
+    },
         logger,
         "Verifying the health of all cluster members");
   }
+
 }

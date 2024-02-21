@@ -470,5 +470,8 @@ public interface TestConstants {
   //node ports used by the integration tests
   public static final int ITEXTERNALNODEPORTSERVICE_CONAINERPORT = 32156;
   public static final int ITEXTERNALNODEPORTSERVICE_HOSTPORT = 2156;
+  public static final int IT_DEDICATED_MODE_CONAINERPORT = 32159;
+  public static final int IT_DEDICATED_MODE_HOSTPORT = 2160;
+  
 
 }

@@ -497,7 +497,36 @@ public class CommonTestUtils {
               clusterName, domainUid, domainNamespace))
           .isTrue();
     }
-
+    verifyClusterAfterScaling(domainUid, domainNamespace, manageServerPodNamePrefix,
+        replicasBeforeScale, replicasAfterScale, curlCmd, expectedServerNames, listOfPodCreationTimestamp);
+  }
+  
+  /**
+   * Verify the number of servers are as expected after Scale.
+   * Verify the sample app can be accessed through NGINX if curlCmd is not null.
+   *
+   * @param domainUid the domain to which the cluster belongs
+   * @param domainNamespace the namespace in which the domain exists
+   * @param manageServerPodNamePrefix managed server pod name prefix
+   * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
+   * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
+   * @param listOfPodCreationTimestamp list of pod creation timestamps
+   * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
+   *                in the cluster, if curlCmd is null, the method will not verify the accessibility of the sample app
+   *                through ingress controller
+   * @param expectedServerNames list of managed servers in the cluster before scale, if curlCmd is null,
+   *                            set expectedServerNames to null too
+   */
+  public static void verifyClusterAfterScaling(
+                                           String domainUid,
+                                           String domainNamespace,
+                                           String manageServerPodNamePrefix,
+                                           int replicasBeforeScale,
+                                           int replicasAfterScale,
+                                           String curlCmd,
+                                           List<String> expectedServerNames,
+                                           List<OffsetDateTime> listOfPodCreationTimestamp) {
+    LoggingFacade logger = getLogger();
     if (replicasBeforeScale <= replicasAfterScale) {
 
       // scale up
@@ -582,6 +611,7 @@ public class CommonTestUtils {
       }
     }
   }
+  
 
   /**
    * Check that the given credentials are valid to access the WebLogic domain.
