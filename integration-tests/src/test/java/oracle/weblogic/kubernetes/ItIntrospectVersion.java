@@ -163,7 +163,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential1")
 @Tag("oke-arm")
 class ItIntrospectVersion {
 

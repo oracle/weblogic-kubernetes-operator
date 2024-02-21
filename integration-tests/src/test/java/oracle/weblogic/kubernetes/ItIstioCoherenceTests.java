@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-gate")
+@Tag("oke-sequential1")
 @Tag("oke-arm")
 class ItIstioCoherenceTests {
 

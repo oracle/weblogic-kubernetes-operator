@@ -1,12 +1,15 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
+
+CRON_SETTINGS = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
+                   H 1 * * * % MAVEN_PROFILE_NAME=oke-sequential1;CLUSTER_NAME=seqtwo;PARALLEL_RUN=false'''
 
 pipeline {
     agent { label 'large' }
     options {
         timeout(time: 1800, unit: 'MINUTES')
-        disableConcurrentBuilds()
+        //disableConcurrentBuilds()
     }
 
     tools {
@@ -49,12 +52,9 @@ pipeline {
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
-
-        CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'parcluster' : 'seqcluster'}"
         kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
-        MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-gate' : 'oke-gate'}"
         availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
-        PARALLEL_RUN = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? true : false}"
+
     }
 
     parameters {
@@ -63,6 +63,11 @@ pipeline {
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
+
+        booleanParam(name: 'PARALLEL_RUN',
+                             description: 'Runs tests in parallel. Default is false.',
+                             defaultValue: false
+                )
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
@@ -95,7 +100,22 @@ pipeline {
                    '1.9.9'
                ]
         )
-
+        choice(name: 'CLUSTER_NAME',
+                       description: 'Oke cluster name.',
+                       choices: [
+                           'parone',
+                           'seqone',
+                           'seqtwo'
+                       ]
+                )
+                choice(name: 'MAVEN_PROFILE_NAME',
+                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-gate, oke-sequential1,oke-parallelnew. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                        choices: [
+                                'oke-gate',
+                                'oke-sequential1',
+                                'oke-parallelnew'
+                        ]
+                )
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
                defaultValue: "3"
@@ -391,6 +411,7 @@ EOF
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
 
                             clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == '\"$CLUSTER_NAME}\"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
+
                             echo "clusterIp : $clusterIP"
                             clusterPublicIP=${clusterIP:1:-6}
                             echo " clusterPublicIP : ${clusterPublicIP}"
@@ -455,12 +476,13 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         clusterName = "${CLUSTER_NAME}"
-                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15"
+                        FSS_DIR = "/oketest1,/oketest2,/oketest3"
 
                     }
                     steps {
                          script {
                              def res = 0
+                             currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME}"
                              res = sh(script: '''
                                      if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                         echo 'ERROR: All tests cannot be run with integration-tests profile'
@@ -505,17 +527,25 @@ EOF
                                 fi
 
                                 export K8S_NODEPORT_HOST=${NODE_IP}
+                                export AVAILABILITY_DOMAIN=${availability_domain}
                                 NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| head -n2 | tail -n1`
                                 echo "second node external IP ${NODE_IP}"
                                 export NODE_IP=${NODE_IP}
 
                                 mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
+                                # Check if the mt_privateip_id is an array
+                                if [ "$(declare -p mt_privateip_id 2>/dev/null | grep -o 'declare -a')" == "declare -a" ]; then
+                                    # Select first
+                                    mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id[0]}" | jq -r '.data | ."ip-address"'`
+                                else
+                                    mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
+                                fi
 
-                                mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
+
 
                                 if [ -z "${mt_private_ip}" ]; then
                                    echo "Mount Target was not setup properly , clean up Kubernetes cluster"
-                                   sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                                   sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
                                    exit -1
                                 fi
                                 export NFS_SERVER=$mt_private_ip
@@ -554,7 +584,7 @@ EOF
                                 echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
-				echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
+				                echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
 
                                 echo "${WORKSPACE}/.mvn/maven.config contents:"
                                 cat "${WORKSPACE}/.mvn/maven.config"
@@ -592,11 +622,12 @@ EOF
                                 export PATH="${WORKSPACE}/bin:${PATH}"
                                 export KUBECONFIG=${kubeconfig_file}
                                 export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
+                                export AVAILABILITY_DOMAIN=${availability_domain}
                                 export OCI_CLI_PROFILE=${oci_profile}
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                                ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                                ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
 
                             '''
 
@@ -612,11 +643,19 @@ EOF
                     sh '''
                         export PATH="${WORKSPACE}/bin:${PATH}"
                         export KUBECONFIG=${kubeconfig_file}
+                        export AVAILABILITY_DOMAIN=${availability_domain}
 
                         echo 'Remove old OKE cluster (if any)...'
 
                         if [ -f "$OCI_PROP_FILE" ] && [ -f "${WORKSPACE}/terraform/oke.delete.sh" ]; then
-                            ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                            ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
+                        fi
+
+                        if [ "${MAVEN_PROFILE_NAME}" = "oke-gate" ]; then
+                            compname="wkt"
+                            wkt_compartment_ocid=$(oci iam compartment list --compartment-id-in-subtree true --all | jq --arg compname "$compname" '.data[] | select(."name"==$compname)' | jq -r ."id")
+                            sec_list_id=$(oci network security-list list --compartment-id="$wkt_compartment_ocid" --display-name=Security-List-wktiso1 | jq -r '.data[] | ."id"')
+                            oci network security-list update --security-list-id="$sec_list_id" --ingress-security-rules='[{"description": "east west","icmp-options": null,"is-stateless": false,"protocol": "all","source": "10.196.0.0/16","source-type": "CIDR_BLOCK","tcp-options": null,"udp-options": null},{"description": null,"icmp-options": {"code": null,"type": 3},"is-stateless": false,"protocol": "1", "source": "10.196.0.0/16", "source-type": "CIDR_BLOCK","tcp-options": null, "udp-options": null}, {"description": null, "icmp-options": {"code": 4, "type": 3},"is-stateless": false, "protocol": "1", "source": "0.0.0.0/0","source-type": "CIDR_BLOCK", "tcp-options": null, "udp-options": null}, {"description": null, "icmp-options": null, "is-stateless": false, "protocol": "6","source": "0.0.0.0/0", "source-type": "CIDR_BLOCK", "tcp-options": null, "udp-options": null}, {"description": null, "icmp-options": null, "is-stateless": false,"protocol": "6", "source": "0.0.0.0/0", "source-type": "CIDR_BLOCK", "tcp-options": {"destination-port-range": {"max": 22, "min": 22}, "source-port-range": null}, "udp-options": null}]' --egress-security-rules='[{"description": null, "destination": "0.0.0.0/0", "destinationType": "CIDR_BLOCK", "icmpOptions": null, "isStateless": false, "protocol": "all", "tcpOptions": null, "udpOptions": null}, {"description": null, "destination": "oci-phx-objectstorage", "destinationType": "SERVICE_CIDR_BLOCK", "icmpOptions": null, "isStateless": false, "protocol": "6", "tcpOptions": null, "udpOptions": null}]' --force
                         fi
                         rm -f ${jenkins_home_directory}/.oci/config
                         rm -f ${jenkins_home_directory}/.oci/oci-signing-key.pem

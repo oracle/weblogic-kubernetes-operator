@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.delet
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressPathRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
@@ -479,10 +480,7 @@ class ItMonitoringExporterSideCar {
 
       if (!OKE_CLUSTER_PRIVATEIP) {
         nodeportPrometheus = promHelmParams.getNodePortServer();
-        String host = K8S_NODEPORT_HOST;
-        if (host.contains(":")) {
-          host = "[" + host + "]";
-        }
+        String host = formatIPv6Host(K8S_NODEPORT_HOST);
         hostPortPrometheus = host + ":" + nodeportPrometheus;
 
       }
@@ -513,10 +511,8 @@ class ItMonitoringExporterSideCar {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
+
       String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
       if (OKE_CLUSTER_PRIVATEIP) {
         hostPortGrafana = "http://" + ingressIP + "/" + "grafana";

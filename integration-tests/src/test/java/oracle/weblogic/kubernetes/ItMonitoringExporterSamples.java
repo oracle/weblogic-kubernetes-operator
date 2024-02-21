@@ -71,6 +71,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogF
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressPathRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -379,10 +380,8 @@ class ItMonitoringExporterSamples {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
+
       hostPortPrometheus = host + ":" + nodeportPrometheus;
       if (OKE_CLUSTER_PRIVATEIP) {
         hostPortPrometheus = ingressIP;
@@ -412,10 +411,8 @@ class ItMonitoringExporterSamples {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
+
       String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();

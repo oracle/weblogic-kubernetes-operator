@@ -105,6 +105,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVeri
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
@@ -1133,10 +1134,7 @@ public class MonitoringUtils {
     }
 
     // check that NGINX can access the sample apps from all managed servers in the domain
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
     String curlCmd =
         String.format("curl -g --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
             nginxHost,
