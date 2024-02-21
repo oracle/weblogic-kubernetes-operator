@@ -1,7 +1,7 @@
 +++
 title = "Domain debugging"
 date = 2020-03-11T16:45:16-05:00
-weight = 14
+weight = 16
 pre = "<b> </b>"
 description = "Debug deployed domains."
 +++
