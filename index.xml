@@ -361,7 +361,7 @@ $ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-
       <pubDate>Tue, 24 Nov 2020 18:22:31 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image/</guid>
-      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
+      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image domain home source type. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
 Contents Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operator Create Docker image Create WebLogic domain Invoke the web application Rolling updates Clean up resource Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
     </item>
     

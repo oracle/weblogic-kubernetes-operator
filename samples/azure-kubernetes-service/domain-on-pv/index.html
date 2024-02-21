@@ -12,20 +12,20 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1708485628" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1708485628" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1708524563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1708524563" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1708485628"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1708524563"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1708485628"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1708485628"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1708524563"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1708524563"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1708485628"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1708524563"></script>
 
     
   </div>
@@ -3867,8 +3867,6 @@
           </ul>
         </li>
         <li><a href="#prepare-parameters">Prepare parameters</a></li>
-        <li><a href="#clone-wko-repository">Clone WKO repository</a></li>
-        <li><a href="#create-resource-group">Create Resource Group</a></li>
         <li><a href="#create-the-azure-container-registry-and-connect-it-to-the-aks-cluster">Create the Azure Container Registry and connect it to the AKS cluster</a></li>
         <li><a href="#install-weblogic-kubernetes-operator-into-the-aks-cluster">Install WebLogic Kubernetes Operator into the AKS cluster</a></li>
         <li><a href="#create-weblogic-domain">Create WebLogic domain</a>
@@ -3983,7 +3981,8 @@ or create your images using the <a href="https://oracle.github.io/weblogic-image
 see <a href="https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&amp;id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2">Apply the Latest Patches and Updates</a>
 in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 <li>Ensure that Docker is running.  Find and then pull the WebLogic 12.2.1.4 installation image:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker login container-registry.oracle.com -u <span style="color:#e6db74">${</span>ORACLE_SSO_EMAIL<span style="color:#e6db74">}</span> -p <span style="color:#e6db74">${</span>ORACLE_SSO_PASSWORD<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
 </span></span></code></pre></div></li>
 </ul>
 <p>If you have problems accessing the Oracle Container Registry, you can build your own images from the <a href="https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles">Oracle GitHub repository</a>.</p>
@@ -4035,20 +4034,27 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 </span></span><span style="display:flex;"><span>export AKS_PERS_SHARE_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">-weblogic-</span><span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>export SECRET_NAME_DOCKER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">regcred&#34;</span>
 </span></span><span style="display:flex;"><span>export ACR_ACCOUNT_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">acr</span><span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</span></span></code></pre></div><h4 id="clone-wko-repository">Clone WKO repository</h4>
-<p>If you have not already done so, clone the <a href="https://github.com/oracle/weblogic-kubernetes-operator">WebLogic Kubernetes Operator repository</a> to your machine. You will use several scripts in this repository to create a WebLogic domain. This sample was tested with v4.1.1, but should work later releases.</p>
+</span></span></code></pre></div>
+<h5 id="download-the-weblogic-kubernetes-operator-sample">Download the WebLogic Kubernetes Operator sample.</h5>
+<p>Download the WebLogic Kubernetes Operator sample ZIP file. We will use several scripts in this zip file to create a WebLogic domain. This sample was tested with v4.1.7, but should work with the latest release.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd $BASE_DIR
-</span></span><span style="display:flex;"><span>$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
-</span></span></code></pre></div><h4 id="create-resource-group">Create Resource Group</h4>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd $BASE_DIR/weblogic-kubernetes-operator
-</span></span><span style="display:flex;"><span>$ az extension add --name resource-graph
+</span></span><span style="display:flex;"><span>$ mkdir sample-scripts
+</span></span><span style="display:flex;"><span>$ curl -m <span style="color:#ae81ff">120</span> -fL https://github.com/oracle/weblogic-kubernetes-operator/releases/download/v4.1.7/sample-scripts.zip <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>      -o <span style="color:#e6db74">${</span>BASE_DIR<span style="color:#e6db74">}</span>/sample-scripts/sample-scripts.zip
+</span></span><span style="display:flex;"><span>$ unzip <span style="color:#e6db74">${</span>BASE_DIR<span style="color:#e6db74">}</span>/sample-scripts/sample-scripts.zip -d <span style="color:#e6db74">${</span>BASE_DIR<span style="color:#e6db74">}</span>/sample-scripts
+</span></span></code></pre></div>
+
+
+<h4 id="create-resource-group">Create Resource Group</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ az extension add --name resource-graph
 </span></span><span style="display:flex;"><span>$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 </span></span></code></pre></div>
+
+
 <h4 id="create-the-aks-cluster">Create the AKS cluster</h4>
-<p>This sample requires that you disable the AKS addon <code>http_application_routing</code> by default.  If you want to enable  <code>http_application_routing</code>, then follow <a href="https://docs.microsoft.com/azure/aks/http-application-routing">HTTP application routing</a>.</p>
+<p>This sample doesn&rsquo;t enable application routing. If you want to enable application routing, follow <a href="https://learn.microsoft.com/azure/aks/app-routing?tabs=default%2Cdeploy-app-default">Managed nginx Ingress with the application routing add-on in AKS</a>.</p>
 <p>Run the following commands to create the AKS cluster instance.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>$ az aks create <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ az aks create <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --resource-group $AKS_PERS_RESOURCE_GROUP <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --name $AKS_CLUSTER_NAME <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --node-count <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
@@ -4064,7 +4070,8 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>Merged <span style="color:#e6db74">&#34;wlsaks1596087429&#34;</span> as current context in /home/username/.kube/config
 </span></span></code></pre></div><p>After your Kubernetes cluster is up and running, run the following commands to make sure <code>kubectl</code> can access the Kubernetes cluster:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get nodes -o wide
-</span></span><span style="display:flex;"><span>NAME                                STATUS   ROLES   AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+</span></span></code></pre></div><p>Successful output will look like the following.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>NAME                                STATUS   ROLES   AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
 </span></span><span style="display:flex;"><span>aks-nodepool1-15679926-vmss000000   Ready    agent   118s   v1.25.6   10.224.0.4    &lt;none&gt;        Ubuntu 22.04.2 LTS   5.15.0-1041-azure   containerd://1.7.1+azure-1
 </span></span><span style="display:flex;"><span>aks-nodepool1-15679926-vmss000001   Ready    agent   2m8s   v1.25.6   10.224.0.5    &lt;none&gt;        Ubuntu 22.04.2 LTS   5.15.0-1041-azure   containerd://1.7.1+azure-1
 </span></span></code></pre></div>
@@ -4324,6 +4331,7 @@ The following command enables access from AKS subnet to the storage account:</p>
 <p>The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.</p>
 <p>Kubernetes Operators use <a href="https://helm.sh/">Helm</a> to manage Kubernetes applications. The operator’s Helm chart is located in the <code>kubernetes/charts/weblogic-operator</code> directory. Please install the operator by running the corresponding command.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+</span></span><span style="display:flex;"><span>$ helm repo update
 </span></span><span style="display:flex;"><span>$ helm install weblogic-operator weblogic-operator/weblogic-operator
 </span></span></code></pre></div><p>The output will show something similar to the following:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install weblogic-operator weblogic-operator/weblogic-operator
@@ -4350,14 +4358,14 @@ weblogic-operator-webhook-868db5875b-55v7r   1/1     Running   0          86s
 </ul>
 <p>Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can ask the operator to create a WLS domain.</p>
 <h5 id="create-secrets">Create secrets</h5>
-<p>You will use the <code>kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh</code> script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:</p>
-<pre tabindex="0"><code>cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
+<p>You will use the <code>$BASE_DIR/sample-scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh</code> script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:</p>
+<pre tabindex="0"><code>cd $BASE_DIR/sample-scripts/create-weblogic-domain-credentials
 </code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./create-weblogic-credentials.sh -u <span style="color:#e6db74">${</span>WEBLOGIC_USERNAME<span style="color:#e6db74">}</span> -p <span style="color:#e6db74">${</span>WEBLOGIC_PASSWORD<span style="color:#e6db74">}</span> -d domain1
 </span></span></code></pre></div><pre tabindex="0"><code>secret/domain1-weblogic-credentials created
 secret/domain1-weblogic-credentials labeled
 The secret domain1-weblogic-credentials has been successfully created in the default namespace.
 </code></pre><p>You will use the <code>kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh</code> script to create the Docker credentials as a Kubernetes secret. Please run:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-kubernetes-secrets
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd $BASE_DIR/sample-scripts/create-kubernetes-secrets
 </span></span><span style="display:flex;"><span>$ ./create-docker-credentials-secret.sh -s <span style="color:#e6db74">${</span>SECRET_NAME_DOCKER<span style="color:#e6db74">}</span> -e <span style="color:#e6db74">${</span>ORACLE_SSO_EMAIL<span style="color:#e6db74">}</span> -p <span style="color:#e6db74">${</span>ORACLE_SSO_PASSWORD<span style="color:#e6db74">}</span> -u <span style="color:#e6db74">${</span>ORACLE_SSO_EMAIL<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><pre tabindex="0"><code>secret/wlsregcred created
 The secret wlsregcred has been successfully created in the default namespace.
@@ -4378,7 +4386,7 @@ wlsregcred                                kubernetes.io/dockerconfigjson   1    
 <ul>
 <li>
 <p>Run the following command to generate resource files.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service  
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cd $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service  
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>bash create-domain-on-aks-generate-yaml.sh
 </span></span></code></pre></div></li>
@@ -4485,8 +4493,10 @@ To interact with the cluster using <code>kubectl</code>, use <code>az aks get-cr
 <h4 id="deploy-sample-application">Deploy sample application</h4>
 <p>Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository.</p>
 <p>First, package the application with the following command:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd $BASE_DIR/weblogic-kubernetes-operator/integration-tests/src/test/resources/bash-scripts
-</span></span><span style="display:flex;"><span>bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl -m <span style="color:#ae81ff">120</span> -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.7.zip -o <span style="color:#e6db74">${</span>BASE_DIR<span style="color:#e6db74">}</span>/v4.1.7.zip
+</span></span><span style="display:flex;"><span>$ unzip v4.1.7.zip <span style="color:#e6db74">&#34;weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts/build-war-app.sh&#34;</span> <span style="color:#e6db74">&#34;weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/apps/testwebapp/*&#34;</span>
+</span></span><span style="display:flex;"><span>$ cd $BASE_DIR/weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts
+</span></span><span style="display:flex;"><span>$ bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
 </span></span></code></pre></div><p>Successful output will look similar to the following:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Found source at ../apps/testwebapp/
 </span></span><span style="display:flex;"><span>build /tmp/testwebapp/testwebapp.war with command jar -cvf /tmp/testwebapp/testwebapp.war *
@@ -7230,19 +7240,19 @@ Replace <code>${WEBLOGIC_USERNAME}</code> and <code>${WEBLOGIC_PASSWORD}</code> 
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1708485628"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1708485628"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1708485628"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1708485628"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1708485628"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1708485628"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1708524563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1708524563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1708524563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1708524563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1708524563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1708524563"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1708485628"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1708485628"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1708485628"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1708524563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1708524563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1708524563"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1708485628"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1708524563"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
