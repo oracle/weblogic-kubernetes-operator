@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -178,6 +179,10 @@ class ItIstioManagedCoherence {
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = "localhost:" + ISTIO_HTTP_HOSTPORT;
+    }
   }
 
   /**
@@ -215,9 +220,6 @@ class ItIstioManagedCoherence {
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-
     // Make sure ready app is accessible thru Istio Ingress Port
     String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
@@ -226,7 +228,7 @@ class ItIstioManagedCoherence {
 
     // test adding data to the cache and retrieving them from the cache
     boolean testCompletedSuccessfully = assertDoesNotThrow(()
-          -> coherenceCacheTest(istioIngressPort), "Test Coherence cache failed");
+          -> coherenceCacheTest(), "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 
@@ -263,9 +265,6 @@ class ItIstioManagedCoherence {
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-
     // Make sure ready app is accessible thru Istio Ingress Port
     String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
@@ -274,7 +273,7 @@ class ItIstioManagedCoherence {
 
     // test adding data to the cache and retrieving them from the cache
     boolean testCompletedSuccessfully = assertDoesNotThrow(()
-        -> coherenceCacheTest(istioIngressPort), "Test Coherence cache failed");
+        -> coherenceCacheTest(), "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 
@@ -378,7 +377,7 @@ class ItIstioManagedCoherence {
 
     // test adding data to the cache and retrieving them from the cache
     boolean testCompletedSuccessfully = assertDoesNotThrow(()
-        -> coherenceCacheTest(istioIngressPort), "Test Coherence cache failed");
+        -> coherenceCacheTest(), "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 
@@ -496,7 +495,7 @@ class ItIstioManagedCoherence {
         + "for %s in namespace %s", domainUid, domainInImageNamespace));
   }
 
-  private boolean coherenceCacheTest(int ingressServiceNodePort) {
+  private boolean coherenceCacheTest() {
     // add the data to cache
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};

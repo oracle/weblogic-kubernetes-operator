@@ -1,8 +1,10 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -29,6 +31,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATED_MODE_CONAINERPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATED_MODE_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -38,10 +42,11 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.impl.Domain.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyClusterAfterScaling;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -81,6 +86,7 @@ class ItDedicatedMode {
        domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private final String managedServerPodPrefix =
        domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+  private static int externalRestHttpsPort = IT_DEDICATED_MODE_CONAINERPORT;
 
   // operator constants
   private static HelmParams opHelmParams;
@@ -138,7 +144,7 @@ class ItDedicatedMode {
     // domainNamespaces parameter to something other than Operator ns (say wls)
     logger.info("Installing and verifying operator");
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        true, 0, opHelmParams, domainNamespaceSelectionStrategy,
+        true, externalRestHttpsPort, opHelmParams, domainNamespaceSelectionStrategy,
         false, domain2Namespace);
     logger.info("Operator installed on namespace {0} and domainNamespaces set to {1} ", opNamespace, domain2Namespace);
 
@@ -180,16 +186,33 @@ class ItDedicatedMode {
     verifyDomainRunning(domain1Namespace);
     logger.info("WebLogic domain is managed in operator namespace Only");
 
+    List<OffsetDateTime> listOfPodCreationTimestamp = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPodPrefix + i;
+      OffsetDateTime originalCreationTimestamp
+          = assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  managedServerPodName, domain1Namespace));
+      listOfPodCreationTimestamp.add(originalCreationTimestamp);
+    }  
     // Scale up cluster-1 in domain1Namespace and verify it succeeds
-    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+    String externalRestHttpshost;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      externalRestHttpshost = "localhost";
+      externalRestHttpsPort = IT_DEDICATED_MODE_HOSTPORT;
+      logger.info("Running in podman using Operator hostport {0}:{1}", externalRestHttpshost, externalRestHttpsPort);
+    } else {
+      logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+      externalRestHttpshost = null;
+    }
 
     logger.info("scaling the cluster from {0} servers to {1} servers", replicaCount, replicaCount + 1);
-    scaleAndVerifyCluster(clusterName, domainUid, domain1Namespace,
-        managedServerPodPrefix, replicaCount, replicaCount + 1,
-        true, externalRestHttpsPort, opNamespace, opNamespace + "-sa",
-        false, "", "", 0, "",
-        "", null, null);
+    scaleClusterWithRestApi(domainUid, clusterName, replicaCount + 1,
+        externalRestHttpshost, externalRestHttpsPort, opNamespace, opServiceAccount);
+
+    verifyClusterAfterScaling(domainUid, domain1Namespace, managedServerPodPrefix,
+        replicaCount, replicaCount + 1, null, null, listOfPodCreationTimestamp);
   }
 
   private void createDomain(String domainNamespace) {

@@ -42,6 +42,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ITEXTERNALNODEPORTSERVICE_CONAINERPORT;
 import static oracle.weblogic.kubernetes.TestConstants.ITEXTERNALNODEPORTSERVICE_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
@@ -153,15 +154,14 @@ class ItExternalNodePortService {
             "weblogicenc", "weblogicenc");
 
     // Prepare the config map sparse model file from the template by replacing
-    // Public Address of the custom channel with K8S_NODEPORT_HOST
+    // Public Address of the custom channel with K8S_NODEPORT_HOST    
     Map<String, String> configTemplateMap = new HashMap<>();
+    configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      configTemplateMap.put("INGRESS_HOST", "localhost");
-      configTemplateMap.put("FREE_PORT", String.valueOf(ITEXTERNALNODEPORTSERVICE_HOSTPORT));
+      configTemplateMap.put("FREE_PORT", String.valueOf(ITEXTERNALNODEPORTSERVICE_CONAINERPORT));
     } else {
-      nextFreePort = getNextFreePort();
-      configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+      nextFreePort = getNextFreePort();      
       configTemplateMap.put("FREE_PORT", String.valueOf(nextFreePort));
     }
 
@@ -230,8 +230,7 @@ class ItExternalNodePortService {
     templateMap.put("CLUSTER", clusterName);
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      templateMap.put("INGRESS_HOST", "localhost");
-      templateMap.put("FREE_PORT", String.valueOf(ITEXTERNALNODEPORTSERVICE_HOSTPORT));
+      templateMap.put("FREE_PORT", String.valueOf(ITEXTERNALNODEPORTSERVICE_CONAINERPORT));
     } else {
       templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
       templateMap.put("FREE_PORT", String.valueOf(nextFreePort));
@@ -263,7 +262,13 @@ class ItExternalNodePortService {
 
     // This test uses JMSclient which gets an InitialContext. For this, we need to specify the http port that
     // the client can access to get the Initial context.
-    String hostAndPort = getHostAndPort(clusterSvcRouteHost + ":80", httpTunnelingPort);
+    String hostAndPort;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = getHostAndPort(clusterSvcRouteHost + ":80", ITEXTERNALNODEPORTSERVICE_HOSTPORT);
+    } else {
+      hostAndPort = getHostAndPort(clusterSvcRouteHost + ":80", httpTunnelingPort);
+    }
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works from RMI client outside of k8s cluster

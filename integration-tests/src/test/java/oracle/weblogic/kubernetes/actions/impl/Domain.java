@@ -383,8 +383,31 @@ public class Domain {
    * @return true if REST call succeeds, false otherwise
    */
   public static boolean scaleClusterWithRestApi(String domainUid,
+      String clusterName,
+      int numOfServers,
+      int externalRestHttpsPort,
+      String opNamespace,
+      String opServiceAccount) {
+    return scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
+        null, externalRestHttpsPort, opNamespace, opServiceAccount);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param host REST endpoint host
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @return true if REST call succeeds, false otherwise
+   */
+  public static boolean scaleClusterWithRestApi(String domainUid,
                                                 String clusterName,
                                                 int numOfServers,
+                                                String host,
                                                 int externalRestHttpsPort,
                                                 String opNamespace,
                                                 String opServiceAccount) {
@@ -417,6 +440,10 @@ public class Domain {
         secretName, opServiceAccount, opNamespace, decodedToken);
 
     assertNotNull(decodedToken, "Couldn't get secret, token is null");
+    String hostAndPort = getHostAndPort(opExternalSvc, externalRestHttpsPort);
+    if (host != null) {
+      hostAndPort = host + ":" + externalRestHttpsPort;
+    }
 
     // build the curl command to scale the cluster
     String command = new StringBuffer()
@@ -431,7 +458,7 @@ public class Domain {
         .append(numOfServers)
         .append("} }' ")
         .append("-X POST https://")
-        .append(getHostAndPort(opExternalSvc, externalRestHttpsPort))
+        .append(hostAndPort)
         .append("/operator/latest/domains/")
         .append(domainUid)
         .append("/clusters/")
@@ -451,7 +478,7 @@ public class Domain {
         "Calling curl command");
     return true;
   }
-
+  
   /**
    * Scale the cluster of the domain in the specified namespace with REST API.
    *

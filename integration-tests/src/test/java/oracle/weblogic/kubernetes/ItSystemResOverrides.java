@@ -5,12 +5,14 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -59,10 +62,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.exeAppInServerPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -113,6 +118,8 @@ class ItSystemResOverrides {
   final String managedServerNameBase = "ms-";
   final int managedServerPort = 8001;
   int t3ChannelPort;
+  private static int adminPort = 7001;
+  private static String hostHeader;  
   final String pvName = getUniqueName(domainUid + "-pv-");
   final String pvcName = getUniqueName(domainUid + "-pvc-");
   final String wlSecretName = "weblogic-credentials";
@@ -222,36 +229,41 @@ class ItSystemResOverrides {
           logger,
           "jms server configuration to be updated");
     }
-
-    verifyJMSResourceOverride();
-    verifyWLDFResourceOverride();
+    assertDoesNotThrow(() -> verifyJMSResourceOverride());
+    assertDoesNotThrow(() -> verifyWLDFResourceOverride());
   }
 
   private Callable<Boolean> configUpdated() {
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
-            "default"),
-        "Getting admin server node port failed");
-
-    //verify server attribute MaxMessageSize
-    String appURI = "/sitconfig/SitconfigServlet";
-
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    }
-    logger.info("admin svc host = {0}", adminSvcExtHost);
-    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
-    String url = "http://" + hostAndPort + appURI;
-
     return (()
         -> {
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+      logger.info("Getting node port for default channel");
+      int serviceNodePort = assertDoesNotThrow(()
+          -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+              "default"),
+          "Getting admin server node port failed");
+
+      //verify server attribute MaxMessageSize
+      String appURI = "/sitconfig/SitconfigServlet";
+
+      if (adminSvcExtHost == null) {
+        adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+      }
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+      String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+      Map<String, String> headers = null;
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        headers = new HashMap<>();
+        headers.put("host", hostHeader);
+      }
+      String url = "http://" + hostAndPort + appURI;
+      HttpResponse<String> response = OracleHttpClient.get(url, headers, true);
       return (response.statusCode() == 200) && response.body().contains("ExpirationPolicy:Discard");
     });
   }
 
-  private void verifyJMSResourceOverride() {
+  private void verifyJMSResourceOverride() throws IOException, InterruptedException {
     String resourcePath = "/sitconfig/SitconfigServlet";
 
     if (OKE_CLUSTER) {
@@ -267,9 +279,15 @@ class ItSystemResOverrides {
       }
       logger.info("admin svc host = {0}", adminSvcExtHost);
       String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+      Map<String, String> headers = null;
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        headers = new HashMap<>();
+        headers.put("host", hostHeader);
+      }
       String uri = "http://" + hostAndPort + resourcePath;
-
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
+      HttpResponse<String> response = OracleHttpClient.get(uri, headers, true);
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       assertTrue(response.body().contains("ExpirationPolicy:Discard"), "Didn't get ExpirationPolicy:Discard");
       assertTrue(response.body().contains("RedeliveryLimit:20"), "Didn't get RedeliveryLimit:20");
@@ -277,7 +295,7 @@ class ItSystemResOverrides {
     }
   }
 
-  private void verifyWLDFResourceOverride() {
+  private void verifyWLDFResourceOverride() throws IOException, InterruptedException {
     String resourcePath = "/sitconfig/SitconfigServlet";
 
     if (OKE_CLUSTER) {
@@ -297,9 +315,15 @@ class ItSystemResOverrides {
       }
       logger.info("admin svc host = {0}", adminSvcExtHost);
       String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+      Map<String, String> headers = null;
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        headers = new HashMap<>();
+        headers.put("host", hostHeader);
+      }
       String uri = "http://" + hostAndPort + resourcePath;
-
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
+      HttpResponse<String> response = OracleHttpClient.get(uri, headers, true);
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       assertTrue(response.body().contains("MONITORS:PASSED"), "Didn't get MONITORS:PASSED");
       assertTrue(response.body().contains("HARVESTORS:PASSED"), "Didn't get HARVESTORS:PASSED");
@@ -476,6 +500,12 @@ class ItSystemResOverrides {
       adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     }
     logger.info("admin svc host = {0}", adminSvcExtHost);
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, adminPort);
+      assertDoesNotThrow(() -> verifyAdminServerRESTAccess("localhost", 
+          TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    }     
   }
 
   //deploy application sitconfig.war to domain

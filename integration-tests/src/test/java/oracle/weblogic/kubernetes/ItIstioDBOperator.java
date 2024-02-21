@@ -1,8 +1,12 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +38,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -52,6 +57,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -59,7 +65,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -69,7 +74,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
@@ -77,13 +81,12 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
@@ -94,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
@@ -171,6 +173,7 @@ class ItIstioDBOperator {
   private static String testWebAppWarLoc = null;
 
   private static String hostHeader;
+  Map<String, String> httpHeaders;
 
   /**
    * Start DB service and create RCU schema.
@@ -242,7 +245,7 @@ class ItIstioDBOperator {
    */
   @Test
   @DisplayName("Create Istio enabled FMW Domain model in image domain")
-  void  testIstioEnabledFmwModelInImageWithDbOperator() {
+  void  testIstioEnabledFmwModelInImageWithDbOperator() throws IOException, InterruptedException {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -328,84 +331,43 @@ class ItIstioDBOperator {
     int istioIngressPort = enableIstio(clusterName, fmwDomainUid, fmwDomainNamespace, fmwAdminServerPodName);
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, fmwDomainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console");
-      logger.info("WebLogic console is accessible");
-      String localhost = "localhost";
-      String forwardPort =
-           startPortForwardProcess(localhost, fmwDomainNamespace,
-           fmwDomainUid, 7001);
-      assertNotNull(forwardPort, "port-forward command fails to assign local port");
-      logger.info("Forwarded local port is {0}", forwardPort);
-      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole =
-          checkAppUsingHostHeader(consoleUrl, fmwDomainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
-      logger.info("WebLogic console is accessible thru port forwarding");
-      stopPortForwardProcess(fmwDomainNamespace);
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
+    String hostAndPort = host + ":" + istioIngressPort;
+
+    httpHeaders = new HashMap<>();
+    httpHeaders.put("host", fmwDomainNamespace + ".org");
+    httpHeaders.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
+
+    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      istioIngressPort = ISTIO_HTTP_HOSTPORT;
+      host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      hostAndPort = host + ":" + istioIngressPort;
     }
 
+    String url = "http://" + hostAndPort + "/management/tenant-monitoring/servers/";
+    checkApp(url, httpHeaders, "RUNNING");
+
     if (isWebLogicPsuPatchApplied()) {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      String curlCmd2 = "curl -g -j -sk --show-error --noproxy '*' "
-          + " -H 'Host: " + fmwDomainNamespace + ".org'"
-          + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-          + " --url http://" + host + ":" + istioIngressPort
-          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
-          + "link=none";
-
-      ExecResult result = null;
-      logger.info("curl command {0}", curlCmd2);
-      result = assertDoesNotThrow(
-        () -> exec(curlCmd2, true));
-
-      if (result.exitValue() == 0) {
-        logger.info("curl command returned {0}", result.toString());
-        assertTrue(result.stdout().contains("SecurityValidationWarnings"),
-                "Could not access the Security Warning Tool page");
-        assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
-        logger.info("No minimum umask warning reported");
-      } else {
-        assertTrue(false, "Curl command failed to get DomainSecurityRuntime");
-      }
+      url = "http://" + hostAndPort + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?link=none";
+      checkApp(url, httpHeaders, "SecurityValidationWarnings");
     } else {
       logger.info("Skipping Security warning check, since Security Warning tool "
-            + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
+          + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
     }
 
     Path archivePath = Paths.get(testWebAppWarLoc);
     ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
-        String.valueOf(istioIngressPort),
+
+    result = deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         clusterName, archivePath, fmwDomainNamespace + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    url = "http://" + hostAndPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
-    hostHeader = fmwDomainNamespace + ".org";
-    boolean checkApp = checkAppUsingHostHeader(url, hostHeader);
-    assertTrue(checkApp, "Failed to access WebLogic application");
+    checkApp(url, httpHeaders);
   }
 
   /**
@@ -413,7 +375,7 @@ class ItIstioDBOperator {
    * migration and service logs.
    */
   @Test
-  void  testIstioWlsModelInImageWithDbOperator() {
+  void  testIstioWlsModelInImageWithDbOperator() throws UnknownHostException {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -486,8 +448,12 @@ class ItIstioDBOperator {
   /**
    * Verify JMS/JTA Service is migrated to an available active server.
    */
-  private void testMiiJmsJtaServiceMigration() {
-
+  private void testMiiJmsJtaServiceMigration() throws UnknownHostException {
+    
+    httpHeaders = new HashMap<>();
+    httpHeaders.put("host", wlsDomainNamespace + ".org");
+    httpHeaders.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
+    
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
     assertDoesNotThrow(() -> copyFileToPod(wlsDomainNamespace,
@@ -632,25 +598,15 @@ class ItIstioDBOperator {
    * @param managedServer name of the managed server to look for JMSServerRuntime
    * @returns true if MBean is found otherwise false
    **/
-  private boolean checkJmsServerRuntime(String jmsServer, String managedServer) {
+  private boolean checkJmsServerRuntime(String jmsServer, String managedServer) throws UnknownHostException {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
-    StringBuffer curlString = new StringBuffer("status=$(curl -g --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-        + " -H 'host: " + hostHeader + " ' ");
-    curlString.append("http://" + hostAndPort)
-        .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
-        .append(managedServer)
-        .append("/JMSRuntime/JMSServers/")
-        .append(jmsServer)
-        .append(" --silent --show-error ")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkJmsServerRuntime: curl command {0}", new String(curlString));
-    testUntil(
-        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true).stdout().contains("200")),
-        logger,
-        "JMS Server Service to migrate");
+    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + ISTIO_HTTP_HOSTPORT;
+    }
+    String url = "http://" + hostAndPort + "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+        + managedServer + "/JMSRuntime/JMSServers/" + jmsServer;
+    logger.info("Waiting for JMS Server service to migrate");
+    checkApp(url, httpHeaders);
     return true;
   }
 
@@ -661,25 +617,15 @@ class ItIstioDBOperator {
    * @param managedServer name of the managed server to look for StoreRuntime
    * @returns true if MBean is found otherwise false
    **/
-  private boolean checkStoreRuntime(String storeName, String managedServer) {
+  private boolean checkStoreRuntime(String storeName, String managedServer) throws UnknownHostException {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
-    StringBuffer curlString = new StringBuffer("status=$(curl -g --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " "
-        + " -H 'host: " + hostHeader + " ' ");
-    curlString.append("http://" + hostAndPort)
-        .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
-        .append(managedServer)
-        .append("/persistentStoreRuntimes/")
-        .append(storeName)
-        .append(" --silent --show-error ")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkStoreRuntime: curl command {0}", new String(curlString));
-    testUntil(
-        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true).stdout().contains("200")),
-        logger,
-        "PersistentStoreRuntimes Service to migrate");
+    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + ISTIO_HTTP_HOSTPORT;
+    }
+    logger.info("PersistentStoreRuntimes Service to migrate");
+    String url = "http://" + hostAndPort + "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+        + managedServer + "/persistentStoreRuntimes/" + storeName;
+    checkApp(url, httpHeaders);
     return true;
   }
 
@@ -692,24 +638,17 @@ class ItIstioDBOperator {
    * @param active is the recovery active (true or false )
    * @returns true if MBean is found otherwise false
    **/
-  private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
+  private boolean checkJtaRecoveryServiceRuntime(String managedServer,
+      String recoveryService, String active) throws UnknownHostException {
+    
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
-    StringBuffer curlString = new StringBuffer("curl -g --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-        + " -H 'host: " + hostHeader + " ' ");
-    curlString.append("\"http://" + hostAndPort)
-        .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
-        .append(managedServer)
-        .append("/JTARuntime/recoveryRuntimeMBeans/")
-        .append(recoveryService)
-        .append("?fields=active&links=none\"")
-        .append(" --show-error ");
-    logger.info("checkJtaRecoveryServiceRuntime: curl command {0}", new String(curlString));
-    testUntil(
-        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true)
-        .stdout().contains("{\"active\": " + active + "}")),
-        logger,
-        "JTA Recovery Service to migrate");
+    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + ISTIO_HTTP_HOSTPORT;
+    }
+    logger.info("JTA Recovery Service to migrate");
+    String url = "http://" + hostAndPort + "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+        + managedServer + "/JTARuntime/recoveryRuntimeMBeans/" + recoveryService + "?fields=active&links=none";
+    checkApp(url, httpHeaders, "{\"active\": " + active + "}");
     return true;
   }
 
@@ -881,4 +820,16 @@ class ItIstioDBOperator {
     return domain;
   }
 
+  private void checkApp(String url, Map<String, String> headers, String... expectedResponse) {
+    testUntil(
+        () -> {
+          HttpResponse<String> response = OracleHttpClient.get(url, headers, true);
+          
+          return response.statusCode() == 200
+              && (expectedResponse.length == 0 ? true : response.body().contains(expectedResponse[0]));
+        },
+        logger,
+        "application to be ready {0}",
+        url);
+  }  
 }

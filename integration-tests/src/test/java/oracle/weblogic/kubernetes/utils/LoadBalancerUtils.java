@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -504,6 +505,10 @@ public class LoadBalancerUtils {
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
         String host = K8S_NODEPORT_HOST;
+        if (TestConstants.KIND_CLUSTER
+            && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+          host = "localhost";
+        }
         if (host.contains(":")) {
           host = "[" + host + "]";
         }
