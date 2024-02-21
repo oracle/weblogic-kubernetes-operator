@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -98,7 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test for initializeDomainOnPV when user per-creates RCU")
 @IntegrationTest
 @Tag("kind-sequential")
-@Tag("oke-gate")
+@Tag("oke-sequential1")
 public class ItFmwDomainInPvUserCreateRcu {
 
   private static String opNamespace = null;

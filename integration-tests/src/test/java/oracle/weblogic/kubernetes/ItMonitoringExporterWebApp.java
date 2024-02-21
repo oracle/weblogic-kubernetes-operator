@@ -60,6 +60,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyF
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressPathRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
@@ -211,10 +212,8 @@ class ItMonitoringExporterWebApp {
     clusterNames.add(cluster1Name);
     clusterNames.add(cluster2Name);
 
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
+
     exporterUrl = String.format("http://%s:%s/wls-exporter/", host, nodeportshttp);
     if (OKE_CLUSTER_PRIVATEIP) {
       exporterUrl = String.format("http://%s/wls-exporter/", ingressIP);
@@ -433,10 +432,7 @@ class ItMonitoringExporterWebApp {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
       hostPortPrometheus = host + ":" + nodeportPrometheus;
       if (OKE_CLUSTER_PRIVATEIP) {
         hostPortPrometheus = ingressIP;
@@ -466,10 +462,8 @@ class ItMonitoringExporterWebApp {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
+
       String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
