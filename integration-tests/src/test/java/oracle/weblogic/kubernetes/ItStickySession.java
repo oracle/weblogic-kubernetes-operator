@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +137,8 @@ class ItStickySession {
     domainNamespace = namespaces.get(2);
 
     // install and verify Traefik
-    if (!OKD) {
+    if (!OKD && !(TestConstants.KIND_CLUSTER
+            && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
       traefikHelmParams =
           installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
     }
@@ -180,12 +182,19 @@ class ItStickySession {
   @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testSameSessionStickinessUsingTraefik() {
-    final String ingressServiceName = traefikHelmParams.getReleaseName();
+    
     final String channelName = "web";
 
     // create Traefik ingress resource
     final String ingressResourceFileName = "traefik/traefik-ingress-rules-stickysession.yaml";
-    createTraefikIngressRoutingRules(domainNamespace, traefikNamespace, ingressResourceFileName, domainUid);
+    String traefikns;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      traefikns = TestConstants.TRAEFIK_NAMESPACE;
+    } else {
+      traefikns = traefikNamespace;
+    }
+    createTraefikIngressRoutingRules(domainNamespace, traefikns, ingressResourceFileName, domainUid);
 
     String hostName = new StringBuffer()
         .append(domainUid)
@@ -196,8 +205,15 @@ class ItStickySession {
         .append(".test").toString();
 
     // get Traefik ingress service Nodeport
-    int ingressServiceNodePort =
-        getIngressServiceNodePort(traefikNamespace, ingressServiceName, channelName);
+    int ingressServiceNodePort;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      ingressServiceNodePort = TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+    } else {
+      final String ingressServiceName = traefikHelmParams.getReleaseName();
+      ingressServiceNodePort
+          = getIngressServiceNodePort(traefikNamespace, ingressServiceName, channelName);
+    }
 
     // verify that two HTTP connections are sticky to the same server
     sendHttpRequestsToTestSessionStickinessAndVerify(hostName, ingressServiceNodePort);
@@ -461,14 +477,17 @@ class ItStickySession {
       final String httpHeaderFile = LOGS_DIR + "/headers";
       logger.info("Build a curl command with hostname {0} and port {1}", hostName, servicePort);
 
-      if (!OKD) {
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()
+            + ":" + TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT);
+      } else if (OKD) {
+        hostAndPort = getHostAndPort(hostName, servicePort);
+      } else {
         final String ingressServiceName = traefikHelmParams.getReleaseName();
         hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
             ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, servicePort);
-      } else {
-        hostAndPort = getHostAndPort(hostName, servicePort);
       }
-
 
       curlCmd.append(" --noproxy '*' -H 'host: ")
           .append(hostName)
