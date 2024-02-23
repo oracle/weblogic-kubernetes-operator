@@ -1,14 +1,14 @@
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 domainInfo:
   AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
   AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
   ServerStartMode: prod
+
 topology:
   Name: '@@PROP:domainName@@'
   AdminServerName: '@@PROP:adminServerName@@'
-  ProductionModeEnabled: '@@PROP:productionModeEnabled@@'
   Cluster:
     '@@PROP:clusterName@@':
       DynamicServers:
