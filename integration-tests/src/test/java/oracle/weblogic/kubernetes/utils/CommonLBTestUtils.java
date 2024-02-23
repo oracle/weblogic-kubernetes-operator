@@ -17,10 +17,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -50,8 +46,6 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.copy;
@@ -73,7 +67,6 @@ import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
@@ -445,14 +438,13 @@ public class CommonLBTestUtils {
    */
   private static boolean adminNodePortAccessible(int nodePort)
       throws IOException {
-    if (WEBLOGIC_SLIM) {
-      getLogger().info("Check REST Console for WebLogic slim image");
-      StringBuffer curlCmd = new StringBuffer("status=$(curl -g --user ");
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      curlCmd.append(ADMIN_USERNAME_DEFAULT)
+    getLogger().info("Check REST Console for WebLogic Image");
+    StringBuffer curlCmd = new StringBuffer("status=$(curl -g --user ");
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    curlCmd.append(ADMIN_USERNAME_DEFAULT)
           .append(":")
           .append(ADMIN_PASSWORD_DEFAULT)
           .append(" http://")
@@ -461,72 +453,36 @@ public class CommonLBTestUtils {
           .append(nodePort)
           .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}); ")
           .append("echo ${status}");
-      getLogger().info("checkRestConsole : curl command {0}", new String(curlCmd));
-      try {
-        ExecResult result = ExecCommand.exec(new String(curlCmd), true);
-        String response = result.stdout().trim();
-        getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+    getLogger().info("checkRestConsole : curl command {0}", new String(curlCmd));
+    try {
+      ExecResult result = ExecCommand.exec(new String(curlCmd), true);
+      String response = result.stdout().trim();
+      getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
             result.exitValue(), response, result.stderr());
-        return response.contains("200");
-      } catch (IOException | InterruptedException ex) {
-        getLogger().info("Exception in checkRestConsole {0}", ex);
-        return false;
-      }
-    } else {
-      // generic/dev Image
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      getLogger().info("Check administration Console for generic/dev image");
-      String consoleUrl = new StringBuffer()
-          .append("http://")
-          .append(host)
-          .append(":")
-          .append(nodePort)
-          .append("/console/login/LoginForm.jsp").toString();
-
-      boolean adminAccessible = false;
-      for (int i = 1; i <= 10; i++) {
-        getLogger().info("Iteration {0} out of 10: Accessing WebLogic console with url {1}", i, consoleUrl);
-        final WebClient webClient = new WebClient();
-        webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-        final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
-            "connection to the WebLogic admin console failed");
-        HtmlForm form = loginPage.getFormByName("loginData");
-        form.getInputByName("j_username").type(ADMIN_USERNAME_DEFAULT);
-        form.getInputByName("j_password").type(ADMIN_PASSWORD_DEFAULT);
-        HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
-        getLogger().info("Clicking login button");
-        HtmlPage home = submit.click();
-        if (home.asNormalizedText().contains("Persistent Stores")) {
-          getLogger().info("Console login passed");
-          adminAccessible = true;
-          break;
-        }
-      }
-      return adminAccessible;
+      return response.contains("200");
+    } catch (IOException | InterruptedException ex) {
+      getLogger().info("Exception in checkRestConsole {0}", ex);
+      return false;
     }
   }
 
   /**
-   * Verify admin console is accessible by login to WebLogic console.
+   * Verify REST console is accessible by login to WebLogic Server.
    *
    * @param adminServerPodName admin server pod
    * @param adminPort admin port
    * @param namespace admin server pod namespace
    * @param userName WebLogic administration server user name
    * @param password WebLogic administration server password
-   * @return true if login to WebLogic administration console is successful
+   * @return true if login to WebLogic REST console is successful
    * @throws IOException when connection to console fails
    */
   public static boolean adminLoginPageAccessible(String adminServerPodName, String adminPort, String namespace,
                                                  String userName, String password)
       throws IOException {
     LoggingFacade logger = getLogger();
-    if (WEBLOGIC_SLIM) {
-      logger.info("Check REST Console for WebLogic slim image");
-      StringBuffer curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
+    logger.info("Check REST Console for WebLogic Image");
+    StringBuffer curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
           + namespace + " " + adminServerPodName)
           .append(" -- /bin/bash -c \"")
           .append("curl -g --user ")
@@ -535,48 +491,17 @@ public class CommonLBTestUtils {
           .append(password)
           .append(" http://" + adminServerPodName + ":" + adminPort)
           .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code} && ")
-          .append("echo ${status}");
-      logger.info("checkRestConsole : curl command {0}", new String(curlCmd));
-      try {
-        ExecResult result = ExecCommand.exec(new String(curlCmd), true);
-        String response = result.stdout().trim();
-        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          .append("echo ${status}\"");
+    logger.info("checkRestConsole : k8s exec command {0}", new String(curlCmd));
+    try {
+      ExecResult result = ExecCommand.exec(new String(curlCmd), true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
             result.exitValue(), response, result.stderr());
-        return response.contains("200");
-      } catch (IOException | InterruptedException ex) {
-        logger.info("Exception in checkRestConsole {0}", ex);
-        return false;
-      }
-    } else {
-      // generic/dev Image
-      logger.info("Check administration Console for generic/dev image");
-      String curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
-          + namespace + " " + adminServerPodName)
-          .append(" -- /bin/bash -c \"")
-          .append("curl --user ")
-          .append(userName)
-          .append(":")
-          .append(password)
-          .append(" http://" + adminServerPodName + ":" + adminPort)
-          .append("/console/login/LoginForm.jsp")
-          .append("\"").toString();
-
-      boolean adminAccessible = false;
-      String expectedValue = "Oracle WebLogic Server Administration Console";
-      for (int i = 1; i <= 10; i++) {
-        logger.info("Iteration {0} out of 10: Accessing WebLogic console ", i);
-        logger.info("check administration console: curl command {0} expectedValue {1}", curlCmd, expectedValue);
-        adminAccessible = Command
-            .withParams(new CommandParams()
-                .command(curlCmd))
-            .executeAndVerify(expectedValue);
-
-        if (adminAccessible) {
-          getLogger().info("Console login passed");
-          break;
-        }
-      }
-      return adminAccessible;
+      return response.contains("200");
+    } catch (IOException | InterruptedException ex) {
+      logger.info("Exception in checkRestConsole {0}", ex);
+      return false;
     }
   }
 
@@ -923,7 +848,7 @@ public class CommonLBTestUtils {
       consoleUrl.append(pathLocation);
     }
 
-    consoleUrl.append("/console/login/LoginForm.jsp");
+    consoleUrl.append("/weblogic/ready");
     String curlCmd;
     if (isHostRouting) {
       curlCmd = String.format("curl -g -ks --show-error --noproxy '*' -H 'host: %s' %s",

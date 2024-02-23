@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -88,7 +88,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The test verifies the enablement of ProductionSecureMode in WebLogic Operator
  * environment. Make sure all the servers in the domain comes up and WebLogic
- * console is accessible thru default-admin NodePort service
+ * readyapp is accessible thru default-admin NodePort service
  * In order to enable ProductionSecureMode in WebLogic Operator environment
  * (a) add channel called `default-admin` to domain resource
  * (b) JAVA_OPTIONS to -Dweblogic.security.SSL.ignoreHostnameVerification=true
@@ -208,7 +208,7 @@ class ItProductionSecureMode {
    * Create a WebLogic domain with ProductionModeEnabled.
    * Create a domain resource with a channel with the name `default-admin`.
    * Verify a NodePort service is available thru default-admin channel.
-   * Verify WebLogic console is accessible through the `default-admin` service.
+   * Verify WebLogic readyapp is accessible through the `default-admin` service.
    * Verify no NodePort service is available thru default channel since
    * clear text default port (7001) is disabled.
    * Check the `default-secure` and `default-admin` port on cluster service.
@@ -241,7 +241,7 @@ class ItProductionSecureMode {
               "Getting Default Admin Cluster Service port failed");
     assertEquals(9002, defaultAdminSecurePort, "Default Admin Cluster port is not set to 9002");
 
-    //expose the admin server external service to access the console in OKD cluster
+    //expose the admin server external service to access the readyapp in OKD cluster
     //set the sslPort as the target port
     adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
                     domainNamespace, "admin-server-sslport-ext");
@@ -250,21 +250,21 @@ class ItProductionSecureMode {
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, defaultAdminPort);
     logger.info("The hostAndPort is {0}", hostAndPort);
 
-    String resourcePath = "/console/login/LoginForm.jsp";
+    String resourcePath = "/weblogic/ready";
     if (!WEBLOGIC_SLIM) {
       if (OKE_CLUSTER) {
         ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName,7002, resourcePath);
         logger.info("result in OKE_CLUSTER is {0}", result.toString());
-        assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
+        assertEquals(0, result.exitValue(), "Failed to access WebLogic readyapp");
       } else {
         String curlCmd = "curl -g -sk --show-error --noproxy '*' "
             + " https://" + hostAndPort
-            + "/console/login/LoginForm.jsp --write-out %{http_code} "
+            + "/weblogic/ready --write-out %{http_code} "
             + " -o /dev/null";
         logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
         assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
       }
-      logger.info("WebLogic console is accessible thru default-admin service");
+      logger.info("WebLogic readyapp is accessible thru default-admin service");
 
       String localhost = "localhost";
       String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 9002);
@@ -272,11 +272,11 @@ class ItProductionSecureMode {
       logger.info("Forwarded admin-port is {0}", forwardPort);
       String curlCmd = "curl -sk --show-error --noproxy '*' "
           + " https://" + localhost + ":" + forwardPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} "
+          + "/weblogic/ready --write-out %{http_code} "
           + " -o /dev/null";
       logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-      logger.info("WebLogic console is accessible thru admin port forwarding");
+      logger.info("WebLogic readyapp is accessible thru admin port forwarding");
 
       // When port-forwarding is happening on admin-port, port-forwarding will
       // not work for SSL port i.e. 7002
@@ -285,14 +285,14 @@ class ItProductionSecureMode {
       logger.info("Forwarded ssl port is {0}", forwardPort);
       curlCmd = "curl -g -sk --show-error --noproxy '*' "
           + " https://" + localhost + ":" + forwardPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} "
+          + "/weblogic/ready --write-out %{http_code} "
           + " -o /dev/null";
       logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
       assertFalse(callWebAppAndWaitTillReady(curlCmd, 10));
-      logger.info("WebLogic console should not be accessible thru ssl port forwarding");
+      logger.info("WebLogic readyapp should not be accessible thru ssl port forwarding");
       stopPortForwardProcess(domainNamespace);
     } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
+      logger.info("Skipping WebLogic reeadyapp check in WebLogic slim image");
     }
 
     int nodePort = getServiceNodePort(
@@ -345,7 +345,7 @@ class ItProductionSecureMode {
     if (OKE_CLUSTER) {
       ExecResult result = exeAppInServerPod(domainNamespace, managedServerPrefix + "1",9002, resourcePath);
       logger.info("result in OKE_CLUSTER is {0}", result.toString());
-      assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
+      assertEquals(0, result.exitValue(), "Failed to access WebLogic rest endpoint");
     } else {
       testUntil(
           () -> checkWeblogicMBean(

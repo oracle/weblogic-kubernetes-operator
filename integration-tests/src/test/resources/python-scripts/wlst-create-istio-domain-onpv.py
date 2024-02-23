@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import sys
@@ -90,6 +90,11 @@ def create_domain():
   cd('/')
   if production_mode_enabled == "true":
     cmo.setProductionModeEnabled(true)
+    cd('/SecurityConfiguration/'+domain_name)
+    secm=create('mySecureMode','SecureMode')
+    cd('SecureMode/mySecureMode')
+    set('SecureModeEnabled','false')
+    #setOption('ServerStartMode', 'prod')
   else: 
     cmo.setProductionModeEnabled(false)
   updateDomain()
