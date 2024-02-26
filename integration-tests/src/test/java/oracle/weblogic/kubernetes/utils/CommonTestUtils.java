@@ -759,18 +759,32 @@ public class CommonTestUtils {
 
   /**
    * verify the system resource configuration using REST API.
-   * @param adminRouteHost only required for OKD env. null otherwise
-   * @param nodePort admin node port
-   * @param resourcesType type of the resource
-   * @param resourcesName name of the resource
+   *
+   * @param adminRouteHost     only required for OKD env. null otherwise
+   * @param nodePort           admin node port
+   * @param resourcesType      type of the resource
+   * @param resourcesName      name of the resource
    * @param expectedStatusCode expected status code
+   * @param hostHeader         ingress host name to pass as header, only for kind cluster
    */
   public static void verifySystemResourceConfiguration(String adminRouteHost, int nodePort, String resourcesType,
-                                                       String resourcesName, String expectedStatusCode) {
+                                      String resourcesName, String expectedStatusCode, String hostHeader) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = getHostAndPort(adminRouteHost, nodePort);
+    
+    // use traefik LB for kind cluster with ingress host header in url
+    String headers = "";
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      headers = " -H 'host: " + hostHeader + "' ";
+    }
     StringBuffer curlString = new StringBuffer("status=$(curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + getHostAndPort(adminRouteHost, nodePort))
+        .append(" ")
+        .append(headers)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesType)
