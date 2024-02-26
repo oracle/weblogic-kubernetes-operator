@@ -116,6 +116,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRe
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -540,9 +541,34 @@ public class MonitoringUtils {
         promAdapterReleaseName, promAdapterNamespace);
 
     // wait for the promethues adapter pod to be ready
-    logger.info("Wait for the promethues adapter pod is ready in namespace {0}", promAdapterNamespace);
-    String podName = assertDoesNotThrow(() -> getPodName(promAdapterNamespace, "prometheus-adapter"),
+    logger.info("Wait for the prometheus adapter pod is ready in namespace {0}", promAdapterNamespace);
+    String command = KUBERNETES_CLI + " get pods  -n " + promAdapterNamespace;
+
+    assertDoesNotThrow(() -> {
+      ExecResult result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("Response : exitValue {0}, stdout {1}, stderr {2}",
+          result.exitValue(), response, result.stderr());
+    });
+    testUntil(
+        searchForKey(command, "prometheus-adapterhpatest"),
+        logger,
+        "Check pod creation {0} ",
+        "prometheus-adapterhpatest");
+
+    logger.info("Get pod name for adapter in namespace {0}", promAdapterNamespace);
+
+    String podName = assertDoesNotThrow(() -> getPodName(promAdapterNamespace, "prometheus-adapterhpatest"),
         "Can't find prometheus-adapter pod");
+    checkPodExists(podName,null, promAdapterNamespace);
+    String command1   = KUBERNETES_CLI + " describe pods " + podName + " -n " + promAdapterNamespace;
+    assertDoesNotThrow(() -> {
+      ExecResult result = ExecCommand.exec(command1, true);
+      String response = result.stdout().trim();
+      logger.info("Response : exitValue {0}, stdout {1}, stderr {2}",
+          result.exitValue(), response, result.stderr());
+    });
+    logger.info("prometheus adapter pod  {0} is ready in namespace {1}", podName, promAdapterNamespace);
     testUntil(
         assertDoesNotThrow(() -> isPrometheusAdapterReady(promAdapterNamespace, podName),
             "prometheusAdapterIsReady failed with ApiException"),

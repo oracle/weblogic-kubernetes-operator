@@ -651,7 +651,7 @@ EOF
                             ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
                         fi
 
-                        if [ "${MAVEN_PROFILE_NAME}" = "oke-gate" ]; then
+                        if [ "${MAVEN_PROFILE_NAME}" = "oke-gate" ] && [ "${BRANCH}" = "main" ]; then
                             compname="wkt"
                             wkt_compartment_ocid=$(oci iam compartment list --compartment-id-in-subtree true --all | jq --arg compname "$compname" '.data[] | select(."name"==$compname)' | jq -r ."id")
                             sec_list_id=$(oci network security-list list --compartment-id="$wkt_compartment_ocid" --display-name=Security-List-wktiso1 | jq -r '.data[] | ."id"')
