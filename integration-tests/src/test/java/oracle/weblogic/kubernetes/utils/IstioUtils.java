@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -36,6 +36,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
@@ -291,11 +292,12 @@ public class IstioUtils {
       String domainNamespace, String domainUid, String prometheusPort) {
     LoggingFacade logger = getLogger();
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNamespace, domainUid);
-    Path fileTemp = Paths.get(RESULTS_ROOT, "createTempValueFile");
+    Path fileTemp = Paths.get(RESULTS_ROOT, "istioPrometheus");
     assertDoesNotThrow(() -> deleteDirectory(fileTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp));
     logger.info("copy the promvalue.yaml to staging location");
-    Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "istioprometheus.yaml");
+    String fileName = OKE_CLUSTER_PRIVATEIP ? "istioprometheusoke.yaml" : "istioprometheus.yaml";
+    Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", fileName);
     Path targetPromFile = Paths.get(fileTemp.toString(), "istioprometheus.yaml");
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING));
     String oldValue = "regex: default;domain1";

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -16,6 +16,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -24,19 +25,27 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -54,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitorin
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -63,7 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test the monitoring WebLogic Domain via istio provided Prometheus")
 @IntegrationTest
-@Tag("oke-parallel")
+@Tag("oke-gate")
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
 class ItIstioMonitoringExporter {
@@ -71,6 +81,7 @@ class ItIstioMonitoringExporter {
   private static String opNamespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
+  private static String nginxNamespace = null;
 
   private String domain1Uid = "istio1-mii";
   private String domain2Uid = "istio2-mii";
@@ -79,14 +90,22 @@ class ItIstioMonitoringExporter {
   private final String workManagerName = "newWM";
   private final int replicaCount = 2;
   private static int prometheusPort;
+  private static final String istioNamespace = "istio-system";
+  private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private boolean isPrometheusDeployed = false;
+  private boolean isPrometheusPortForward = false;
   private static LoggingFacade logger = null;
   private static String oldRegex;
+  private static String miiImageSideCar = null;
+  private static String miiImageWebApp = null;
+  private static String exporterImage = null;
   private static String sessionAppPrometheusSearchKey =
       "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
 
   private static String testWebAppWarLoc = null;
+  private static String ingressIP = null;
+  private static String hostPortPrometheus = null;
 
   /**
    * Install Operator.
@@ -108,6 +127,7 @@ class ItIstioMonitoringExporter {
     logger.info("Assign unique namespace for Domain2");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
+
 
     // Label the domain/operator namespace with istio-injection=enabled
     Map<String, String> labelMap = new HashMap<>();
@@ -141,10 +161,10 @@ class ItIstioMonitoringExporter {
   void testIstioPrometheusViaExporterWebApp() {
     assertDoesNotThrow(() -> downloadMonitoringExporterApp(RESOURCE_DIR
         + "/exporter/exporter-config.yaml", RESULTS_ROOT), "Failed to download monitoring exporter application");
-    String miiImage = createAndVerifyMiiImageWithMonitoringExporter(RESULTS_ROOT + "/wls-exporter.war",
+    miiImageWebApp = createAndVerifyMiiImageWithMonitoringExporter(RESULTS_ROOT + "/wls-exporter.war",
         MODEL_DIR + "/model.monexp.yaml");
     String managedServerPrefix = domain1Uid + "-cluster-1-managed-server";
-    assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImage,
+    assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImageWebApp,
         domain1Namespace,domain1Uid, managedServerPrefix), "setup for istio based domain failed");
     assertDoesNotThrow(() -> deployPrometheusAndVerify(domain1Namespace, domain1Uid, sessionAppPrometheusSearchKey),
         "failed to fetch expected metrics from Prometheus using monitoring exporter webapp");
@@ -172,21 +192,21 @@ class ItIstioMonitoringExporter {
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/model.sessmigr.yaml");
-    String miiImage =
+    miiImageSideCar =
         createMiiImageAndVerify("miimonexp-istio-image", modelList, appList);
 
     // repo login and push image to registry if necessary
-    imageRepoLoginAndPushImageToRegistry(miiImage);
+    imageRepoLoginAndPushImageToRegistry(miiImageSideCar);
 
     String monitoringExporterSrcDir = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir").toString();
     cloneMonitoringExporter(monitoringExporterSrcDir);
-    String exporterImage = assertDoesNotThrow(() ->
+    exporterImage = assertDoesNotThrow(() ->
             buildMonitoringExporterCreateImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
         domain2Namespace, TEST_IMAGES_REPO_SECRET_NAME, getImageBuilderExtraArgs()),
         "Failed to create image for exporter");
     String exporterConfig = RESOURCE_DIR + "/exporter/exporter-config.yaml";
     String managedServerPrefix = domain2Uid + "-managed-server";
-    assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImage, domain2Namespace, domain2Uid, exporterConfig,
+    assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImageSideCar, domain2Namespace, domain2Uid, exporterConfig,
         exporterImage, managedServerPrefix), "setup for istio based domain failed");
     assertDoesNotThrow(() -> deployPrometheusAndVerify(domain2Namespace, domain2Uid, sessionAppPrometheusSearchKey),
         "failed to fetch expected metrics from Prometheus using monitoring exporter sidecar");
@@ -198,18 +218,50 @@ class ItIstioMonitoringExporter {
           String.valueOf(prometheusPort)), "failed to install istio prometheus");
       isPrometheusDeployed = true;
       oldRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
+      //verify metrics via prometheus
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
+
+      // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+      hostPortPrometheus = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+          ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + prometheusPort;
+
+      if (OKE_CLUSTER_PRIVATEIP) {
+        String localhost = "localhost";
+        // Forward the non-ssl port 9090
+        String podName = getPodName(istioNamespace, "prometheus-");
+        String forwardPort = startPortForwardProcess(localhost, istioNamespace, 9090, podName);
+        assertNotNull(forwardPort, "port-forward fails to assign local port");
+        logger.info("Forwarded local port is {0}", forwardPort);
+        hostPortPrometheus = localhost + ":" + forwardPort;
+        isPrometheusPortForward = true;
+
+      }
     } else {
       String newRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
       assertDoesNotThrow(() -> editPrometheusCM(oldRegex, newRegex, "istio-system", "prometheus"),
           "Can't modify Prometheus CM, not possible to monitor " + domainUid);
     }
-    //verify metrics via prometheus
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+
     checkMetricsViaPrometheus(searchKey, "sessmigr",
-        host + ":" + prometheusPort);
+                              hostPortPrometheus);
+  }
+
+  @AfterAll
+  public void tearDownAll() {
+
+    // delete mii domain images created for parameterized test
+    if (miiImageWebApp != null) {
+      deleteImage(miiImageWebApp);
+    }
+    if (miiImageSideCar != null) {
+      deleteImage(miiImageSideCar);
+    }
+    if (exporterImage != null) {
+      deleteImage(exporterImage);
+    }
+    if (OKE_CLUSTER_PRIVATEIP) {
+      stopPortForwardProcess(istioNamespace);
+    }
   }
 
   /**
@@ -338,15 +390,16 @@ class ItIstioMonitoringExporter {
 
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
+
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
       boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
@@ -356,20 +409,21 @@ class ItIstioMonitoringExporter {
     }
 
     Path archivePath = Paths.get(testWebAppWarLoc);
-    ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
+    String target = "{identity: [clusters,'" + clusterName + "']}";
+    ExecResult result = OKE_CLUSTER
+        ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        target, archivePath, domainNamespace + ".org", "testwebapp")
+        : deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         clusterName, archivePath, domainNamespace + ".org", "testwebapp");
+
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
+
+    String url = "http://" + hostAndPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
   }
 
