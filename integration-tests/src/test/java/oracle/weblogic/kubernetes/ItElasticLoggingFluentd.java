@@ -113,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-sequential1")
+@Tag("oke-parallelnew")
 class ItElasticLoggingFluentd {
 
   // constants for creating domain image using model in image

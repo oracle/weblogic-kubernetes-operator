@@ -88,7 +88,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-srg")
-@Tag("oke-sequential1")
+@Tag("oke-parallelnew")
+
 class ItIstioMiiDomain {
 
   private static String opNamespace = null;

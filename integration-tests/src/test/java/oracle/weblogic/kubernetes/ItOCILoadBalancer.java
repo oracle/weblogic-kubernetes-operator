@@ -44,8 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify the sample-app app can be accessed from "
     + "all managed servers in the domain through OCI Load Balancer")
 @IntegrationTest
-@Tag("oke-gate")
 @Tag("oke-arm")
+@Tag("oke-parallelnew")
 class ItOCILoadBalancer {
   // domain constants
   private static final int replicaCount = 2;

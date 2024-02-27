@@ -62,8 +62,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
 @Tag("oke-arm")
+@Tag("oke-parallelnew")
 class ItPodTemplates {
 
   // domain constants
