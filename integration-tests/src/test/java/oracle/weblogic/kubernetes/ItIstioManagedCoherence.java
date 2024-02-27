@@ -75,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to associate a Coherence Cluster with multiple WebLogic server clusters")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-sequential1")
+@Tag("oke-parallelnew")
 class ItIstioManagedCoherence {
 
   // constants for Coherence

@@ -3,7 +3,7 @@
 //
 
 CRON_SETTINGS = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
-                   H 1 * * * % MAVEN_PROFILE_NAME=oke-sequential1;CLUSTER_NAME=seqtwo;PARALLEL_RUN=false'''
+                   H 1 * * * % MAVEN_PROFILE_NAME=oke-parallelnew;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 
 pipeline {
     agent { label 'large' }

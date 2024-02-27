@@ -69,8 +69,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-mrg")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-gate")
 @Tag("oke-arm")
+@Tag("oke-parallelnew")
 class ItMiiCustomSslStore {
 
   private static String opNamespace = null;

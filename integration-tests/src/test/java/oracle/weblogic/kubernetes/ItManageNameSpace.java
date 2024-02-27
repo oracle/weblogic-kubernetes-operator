@@ -85,8 +85,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-sequential1")
 @Tag("oke-arm")
+@Tag("oke-parallelnew")
 class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];

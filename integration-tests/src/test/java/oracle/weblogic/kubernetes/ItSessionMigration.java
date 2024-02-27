@@ -75,8 +75,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
 @Tag("oke-arm")
+@Tag("oke-parallelnew")
 class ItSessionMigration {
 
   // constants for creating domain image using model in image

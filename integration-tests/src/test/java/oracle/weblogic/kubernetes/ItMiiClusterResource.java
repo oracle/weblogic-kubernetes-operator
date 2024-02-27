@@ -103,8 +103,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
-@Tag("oke-gate")
 @Tag("oke-arm")
+@Tag("oke-gate")
 class ItMiiClusterResource {
 
   private static String opNamespace = null;
