@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -239,7 +239,7 @@ class ItWlsMiiLegacySample {
    * Test model in image sample update domain use case 4.
    */
   @Test
-  @Order(7)
+  @Order(8)
   public void testUpate4() {
     execTestScriptAndAssertSuccess("-update4", "Failed to run -update4");
   }

@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 timestamp() {
@@ -37,7 +37,11 @@ get_service_yaml() {
 get_kube_address() {
   # ${KUBERNETES_CLI:-kubectl} cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
   # This is the heuristic used by the integration test framework:
-  echo ${K8S_NODEPORT_HOST:-$(hostname)}
+  if [ "$KIND_CLUSTER" = "true" ]; then
+    echo $(${KUBERNETES_CLI:-kubectl} get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
+  else
+    echo ${K8S_NODEPORT_HOST:-$(hostname)}
+  fi
 }
 
 get_sample_host() {
@@ -60,6 +64,8 @@ get_curl_command() {
   # $1 is service name
   if [ "$OKD" = "true" ]; then
     echo "curl -s -S $(curl_timeout_parms) "
+  elif [ "$KIND_CLUSTER" = "true" ]; then
+    echo "curl --noproxy '*' -s -S $(curl_timeout_parms) -H 'host: $(get_sample_host $1)'"
   else
     echo "curl -s -S $(curl_timeout_parms) -H 'host: $(get_sample_host $1)'"
   fi
@@ -74,11 +80,17 @@ get_curl_command() {
 #               with an URL that has the cluster service name
 #    "traefik"  invokes curl locally using the traefik node port
 # $2 cluster-1 or cluster-2
-# $3 search string expected in curl output
-# $4 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
-# $5 max retries (default 15)
-#
-# For example, 'testapp internal "Hello World!"'.
+# if k8s cluster is KIND cluster:
+#   $3 appversion
+#   $4 search string expected in curl output
+#   $5 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
+#   $6 max retries (default 15)
+#   For example, 'testapp internal cluster-1 v1 "Hello World!"'.
+# else
+#   $3 search string expected in curl output
+#   $4 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
+#   $5 max retries (default 15)
+#   For example, 'testapp internal cluster-1 "Hello World!"'.
 
 testapp() {
 
@@ -87,8 +99,13 @@ testapp() {
 
   local num_tries=0
   local traefik_nodeport=''
-  local max_tries="${4:-15}"
-  local quiet="${5:-false}"
+  if [ "$KIND_CLUSTER" = "true" ]; then
+    local max_tries="${5:-15}"
+    local quiet="${6:-false}"
+  else
+    local max_tries="${4:-15}"
+    local quiet="${5:-false}"
+  fi
   local target_file_prefix="$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0})"
   local target_file=${target_file_prefix}.$(timestamp).testapp.curl.$1.$((num_tries + 1)).out
   local start_secs=$SECONDS
@@ -102,8 +119,11 @@ testapp() {
       local cluster_service_name=$(get_service_name $domain_uid-cluster-$2)
       local admin_service_name=$(get_service_name $domain_uid-admin-server)
       local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
-      local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
-
+      if [ "$KIND_CLUSTER" = "true" ]; then
+        local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp-$3/myapp_war/index.jsp\""
+      else
+        local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
+      fi
     elif [ "$1" = "traefik" ]; then
       if [ -z "$traefik_nodeport" ]; then
         echo "@@ Info: Obtaining traefik nodeport by calling:"
@@ -116,8 +136,11 @@ EOF
           return 1
         fi
       fi
-      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp_war/index.jsp"
-
+      if [ "$KIND_CLUSTER" = "true" ]; then
+        local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp-$3/myapp_war/index.jsp"
+      else
+        local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp_war/index.jsp"
+      fi
     elif [ "$1" = "OKD" ]; then
       echo "In testapp OKD case"
       local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://${ROUTE_HOST}/myapp_war/index.jsp"
@@ -129,8 +152,11 @@ EOF
 
     fi
 
-
-    local outstr="@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command', "
+    if [ "$KIND_CLUSTER" = "true" ]; then
+      local outstr="@@ Info: Searching for '$4' in '$1' mode curl app invoke of cluster '$2' using '$command', "
+    else
+      local outstr="@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command', "
+    fi
     if [ $quiet = 'false' ]; then
       echo -n "${outstr} output file '$target_file'."
     else
@@ -146,14 +172,21 @@ EOF
     # use "cat & sed" instead of "grep" as grep exits with an error when it doesn't find anything
 
     local before=$(cat $target_file)
-    local after=$(cat $target_file | sed "s/$3/ADIFFERENTVALUE/g")
-
+    if [ "$KIND_CLUSTER" = "true" ]; then
+      local after=$(cat $target_file | sed "s/$4/ADIFFERENTVALUE/g")
+    else
+      local after=$(cat $target_file | sed "s/$3/ADIFFERENTVALUE/g")
+    fi
     if [ "$before" = "$after" ]; then
 
       num_tries=$((num_tries + 1))
       if [ $num_tries -gt $max_tries ]; then
         echo
-        echo "@@ Error: '$3' not found in app response for command '$command' after try number '$num_tries'. Total seconds=$((SECONDS-start_secs)). Contents of response file '$target_file':"
+        if [ "$KIND_CLUSTER" = "true" ]; then
+          echo "@@ Error: '$4' not found in app response for command '$command' after try number '$num_tries'. Total seconds=$((SECONDS-start_secs)). Contents of response file '$target_file':"
+        else
+          echo "@@ Error: '$3' not found in app response for command '$command' after try number '$num_tries'. Total seconds=$((SECONDS-start_secs)). Contents of response file '$target_file':"
+        fi
         cat $target_file
         return 1
       fi
