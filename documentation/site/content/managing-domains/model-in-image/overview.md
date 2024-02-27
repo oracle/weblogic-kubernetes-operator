@@ -73,12 +73,12 @@ The certificates are created under the domain home `security` folder.
 -rw-r-----  1 oracle oracle  2948 Feb 15 15:55 DemoIdentity.p12
 ```
 
-For Model in Image domains, whenever you change any security credentials including, but not limited to, the Administration Server credentials, RCU credentials, and such, the domain will
-be recreated and a new set of demo SSL certificates will be generated. The certificates are valid for 180 days, then they expire.
+For Model in Image domains, whenever you change any security credentials including, but not limited to, the Administration Server credentials, RCU credentials, and such, the domain will be recreated and a new set of demo SSL certificates will be generated. The SSL certificates are valid for 6 months, then they expire.
 
+The demo CA certificate expires in 5 years, however, whenever the domain is recreated, the entire set of certificates are regenerated so you _must_ import the demo CA certificate again.  
 
-If you have any external client that needs to communicate with WebLogic Servers using SSL, then you need to import the current self-signing CA cert, `democacert.der`,
-into your local trust store; previously imported certificates will _not_ work.
+If you have any external client that needs to communicate with WebLogic Servers using SSL, then you need to import the current self-signing CA certificate, `democacert.der`,
+into your local trust store.
 
 ```shell
  keytool -importcert -keystore <keystore path> -alias wlscacert  -file $HOME/Downloads/democacer.der
