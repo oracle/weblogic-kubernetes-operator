@@ -398,7 +398,7 @@ def customizeCoherenceMemberConfig(server, listen_address):
 
 def upgradeServerIfNeeded(model):
   # The marker file is created earlier when the introspector checking if
-  # the secure mode is enabled in the config.xml.  This will compare with the incoming model
+  # the secure mode should be false in the config.xml.  This will compare with the incoming model
   # if secure mode is not set (or set to secure in option),  then inject the secure mode
   # to false.  This is done to maintain compatibility from 12.2.1* to 14.1.2 and the file
   # is only created when the deploy version is newer than or equals to 14.1.2
@@ -410,8 +410,27 @@ def upgradeServerIfNeeded(model):
     found = False
     if result == 'False':
         # check if model has anything set
+        # if domainInfo already set to secure or in dev mode then do not set it, prod mode will not be secure
+        # regardless of others
+        # if the model disabled `ProductionModeEnabled`  specifically now, do nothing
+
+        if 'domainInfo' in model and 'ServerStartMode' in model['domainInfo']:
+          return
+
         if 'topology' in model:
+
             topology = model['topology']
+            if 'ProductionModeEnabled' not in topology:
+              return
+
+            if 'ProductionModeEnabled' in topology:
+              value = topology['ProductionModeEnabled']
+              if isinstance(value, str) or isinstance(value, unicode):
+                prod_enabled = Boolean.valueOf(value)
+              else:
+                prod_enabled = value
+              if not prod_enabled:
+                return
 
             if 'SecurityConfiguration' in topology:
                 if 'SecureMode' in topology['SecurityConfiguration']:
@@ -419,15 +438,6 @@ def upgradeServerIfNeeded(model):
                         found = True
 
             if not found:
-                # if domainInfo already set to secure or in dev mode then do not set it.
-                if 'ServerStartMode' in model['domainInfo']:
-                    mode = model['domainInfo']['ServerStartMode']
-                    if mode == 'secure' or mode == 'dev':
-                        return
-                # if the model disabled `ProductionModeEnabled`  specifically now, do nothing
-                if 'ProductionModeEnabled' in topology and topology['ProductionModeEnabled'] == False:
-                  return
-
                 if not 'SecurityConfiguration' in topology:
                     topology['SecurityConfiguration'] = {}
                 if not 'SecureMode' in topology['SecurityConfiguration']:

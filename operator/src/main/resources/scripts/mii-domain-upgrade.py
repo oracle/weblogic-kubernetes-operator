@@ -10,6 +10,7 @@ import os
 import sys
 import traceback
 from xml.dom.minidom import parse
+from java.lang import Boolean
 
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
@@ -21,7 +22,10 @@ from utils import *
 from weblogic.management.configuration import LegalHelper
 
 def checkIfSecureModeEnabledForDomain(domain, domain_version):
-  trace("Checking secure mode")
+
+  # Caller only invoke this if the current pod version is greater than or 14.1.2.0 and existing domain
+
+  trace("Checking secure mode in existing domain")
   secureModeEnabled = False
   cd('/SecurityConfiguration/' + domain.getName())
   childs = ls(returnType='c', returnMap='true')
@@ -36,10 +40,22 @@ def checkIfSecureModeEnabledForDomain(domain, domain_version):
     #
     secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain_version, "14.1.2.0")
 
+  if isinstance(secureModeEnabled, str) or isinstance(secureModeEnabled, unicode):
+    result =  Boolean.valueOf(secureModeEnabled)
+  else:
+    result =  secureModeEnabled
+
   trace("Writing secure mode status as " + str(secureModeEnabled))
   fh = open('/tmp/mii_domain_upgrade.txt', 'w')
-  fh.write(str(secureModeEnabled))
+  if result:
+    fh.write("True")
+  else:
+    fh.write("False")
   fh.close()
+  if LegalHelper.versionEarlierThan(domain_version, "14.1.2.0"):
+    fh = open('/tmp/mii_domain_before14120.txt', 'w')
+    fh.write("True")
+    fh.close()
 
 trace("Checking existing domain at " + str(sys.argv[1]))
 try:
