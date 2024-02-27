@@ -1,6 +1,7 @@
-<%-- Copyright (c) 2019, 2023, Oracle and/or its affiliates. --%>
+<%-- Copyright (c) 2019, 2024, Oracle and/or its affiliates. --%>
 <%-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. --%>
 <%@ page import="java.io.PrintStream" %>
+<%@ page import="java.util.Set" %>
 <%@ page import="javax.management.MBeanServer" %>
 <%@ page import="javax.management.ObjectInstance" %>
 <%@ page import="javax.management.ObjectName" %>
