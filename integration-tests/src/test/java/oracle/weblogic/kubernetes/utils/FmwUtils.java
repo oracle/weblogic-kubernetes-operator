@@ -82,12 +82,17 @@ public class FmwUtils {
    * @param rcuAccessSecretName name of RCU access secret
    * @param opssWalletPasswordSecretName name of opss wallet password secret
    * @param miiImage name of model in image
+   * @param javaOpt optional JAVA_OPT parameter
    * @return Domain WebLogic domain
    */
   public static DomainResource createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
-      String opssWalletPasswordSecretName, String miiImage) {
+      String opssWalletPasswordSecretName, String miiImage, String...javaOpt) {
+
+    if (javaOpt.length == 0) {
+      javaOpt[0] = "-Dweblogic.StdoutDebugEnabled=false";
+    }
 
     // create the domain CR
     DomainResource domain = new DomainResource()
@@ -113,7 +118,7 @@ public class FmwUtils {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value(javaOpt[0]))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -154,11 +159,12 @@ public class FmwUtils {
   public static DomainResource createDomainResourceWithMaxServerPodReadyWaitTime(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
-      String opssWalletPasswordSecretName, int replicaCount, String miiImage, long maxServerPodReadyWaitTime) {
+      String opssWalletPasswordSecretName, int replicaCount, String miiImage, 
+      long maxServerPodReadyWaitTime, String javaOpt) {
     // create the domain CR
     DomainResource domain = createDomainResource(domainUid, domNamespace,
         adminSecretName, repoSecretName, encryptionSecretName,
-        rcuAccessSecretName, opssWalletPasswordSecretName, miiImage);
+        rcuAccessSecretName, opssWalletPasswordSecretName, miiImage, javaOpt);
     domain.getSpec().getServerPod().setMaxReadyWaitTimeSeconds(maxServerPodReadyWaitTime);
 
     return domain;

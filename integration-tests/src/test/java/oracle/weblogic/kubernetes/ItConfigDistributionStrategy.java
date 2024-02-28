@@ -282,9 +282,11 @@ class ItConfigDistributionStrategy {
             headers = new HashMap<>();
             headers.put("host", hostHeader);
           }
+          boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
           String baseUri = "http://" + hostAndPort + "/clusterview/";
           String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT
-              + "&password=" + ADMIN_PASSWORD_DEFAULT;
+              + "&password=" + ADMIN_PASSWORD_DEFAULT + "&ipv6=" + ipv6;
+
           HttpResponse<String> response = OracleHttpClient.get(baseUri + serverListUri, headers, true);
           return response.statusCode() == 200;
         },
