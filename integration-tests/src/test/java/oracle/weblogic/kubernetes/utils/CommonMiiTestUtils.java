@@ -764,7 +764,7 @@ public class CommonMiiTestUtils {
         pvcName,
         configMapName,
         dbSecretName,
-        "-Dweblogic.security.SSL.ignoreHostnameVerification=true",
+        "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.remoteAnonymousRMIT3Enabled=true",
     onlineUpdateEnabled,
     setDataHome);
   }

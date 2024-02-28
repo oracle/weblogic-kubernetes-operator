@@ -116,6 +116,7 @@ class ItDiagnosticsFailedCondition {
   private static String domainNamespace = null;
   int replicaCount = 2;
   private String wlClusterName = "cluster-1";
+  private String adminServerName = "admin-server";
 
 
   private static String adminSecretName;
@@ -775,7 +776,9 @@ class ItDiagnosticsFailedCondition {
           opsswalletpassSecretName,
           replicaCount,
           fmwMiiImage,
-          5L);
+          5L,
+          "-Dcoherence.wka=" + domainName + "-" + adminServerName
+      );
 
       getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
 
