@@ -1624,12 +1624,12 @@ public class CommonTestUtils {
 
     String hostAndPort = getHostAndPort(null, istioIngressPort);
 
-    // verify WebLogic console is accessible before port forwarding using ingress port
-    String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+    // verify ready app is accessible before port forwarding using ingress port
+    String readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
 
-    boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic console");
-    logger.info("WebLogic console is accessible");
+    boolean checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checlReadyApp, "Failed to access ready app");
+    logger.info("ready app is accessible");
 
     // forwarding admin port to a local port
     String localhost = "localhost";
@@ -1637,11 +1637,11 @@ public class CommonTestUtils {
     assertNotNull(forwardedPort, "port-forward command fails to assign local port");
     logger.info("Forwarded local port is {0}", forwardedPort);
 
-    // verify WebLogic console is accessible after port forwarding using the forwarded port
-    consoleUrl = "http://" + localhost + ":" + forwardedPort + "/console/login/LoginForm.jsp";
-    checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
-    logger.info("WebLogic console is accessible thru port forwarding");
+    // verify ready app is accessible after port forwarding using the forwarded port
+    readyAppUrl = "http://" + localhost + ":" + forwardedPort + "/weblogic/ready";
+    checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checlReadyApp, "Failed to access ready app thru port-forwarded port");
+    logger.info("ready app is accessible thru port forwarding");
 
     // test accessing WLS vis WLST using the forwarded port.
     ExecResult result = accesseWLSViaWLSTUsingForwardedPort(domainUid, domainNamespace, forwardedPort);

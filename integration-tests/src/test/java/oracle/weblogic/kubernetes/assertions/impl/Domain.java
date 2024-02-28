@@ -162,15 +162,15 @@ public class Domain {
     LoggingFacade logger = getLogger();
 
     String hostAndPort = getHostAndPort(routeHost, nodePort);
-    String consoleUrl = new StringBuffer()
+    String readyAppUrl = new StringBuffer()
         .append("http://")
         .append(hostAndPort)
-        .append("/console/login/LoginForm.jsp").toString();
+        .append("/weblogic/ready").toString();
 
-    getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
+    getLogger().info("Accessing WebLogic console with url {0}", readyAppUrl);
     final WebClient webClient = new WebClient();
-    //final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
-    final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
+    //final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(readyAppUrl),
+    final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(readyAppUrl),
         "connection to the WebLogic admin console failed");
     HtmlForm form = loginPage.getFormByName("loginData");
     form.getInputByName("j_username").type(userName);

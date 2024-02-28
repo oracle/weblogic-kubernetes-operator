@@ -29,7 +29,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
@@ -396,17 +395,11 @@ class ItIstioMonitoringExporter {
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console");
-      logger.info("WebLogic console is accessible");
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
-    }
+    String readyAppUrl = "http://" + host + ":" + istioIngressPort + "/weblogic/ready";
+    boolean checlReadyApp =
+        checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checlReadyApp, "Failed to access ready app");
+    logger.info("ready app is accessible");
 
     Path archivePath = Paths.get(testWebAppWarLoc);
     String target = "{identity: [clusters,'" + clusterName + "']}";
@@ -421,7 +414,6 @@ class ItIstioMonitoringExporter {
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
-
 
     String url = "http://" + hostAndPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);

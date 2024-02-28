@@ -445,26 +445,27 @@ public class CommonLBTestUtils {
       host = "[" + host + "]";
     }
     curlCmd.append(ADMIN_USERNAME_DEFAULT)
-          .append(":")
-          .append(ADMIN_PASSWORD_DEFAULT)
-          .append(" http://")
-          .append(host)
-          .append(":")
-          .append(nodePort)
-          .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}); ")
-          .append("echo ${status}");
+        .append(":")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" http://")
+        .append(host)
+        .append(":")
+        .append(nodePort)
+        .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}); ")
+        .append("echo ${status}");
     getLogger().info("checkRestConsole : curl command {0}", new String(curlCmd));
     try {
       ExecResult result = ExecCommand.exec(new String(curlCmd), true);
       String response = result.stdout().trim();
       getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
-            result.exitValue(), response, result.stderr());
+          result.exitValue(), response, result.stderr());
       return response.contains("200");
     } catch (IOException | InterruptedException ex) {
       getLogger().info("Exception in checkRestConsole {0}", ex);
       return false;
     }
   }
+
 
   /**
    * Verify REST console is accessible by login to WebLogic Server.
@@ -483,21 +484,21 @@ public class CommonLBTestUtils {
     LoggingFacade logger = getLogger();
     logger.info("Check REST Console for WebLogic Image");
     StringBuffer curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
-          + namespace + " " + adminServerPodName)
-          .append(" -- /bin/bash -c \"")
-          .append("curl -g --user ")
-          .append(userName)
-          .append(":")
-          .append(password)
-          .append(" http://" + adminServerPodName + ":" + adminPort)
-          .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code} && ")
-          .append("echo ${status}\"");
+        + namespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl -g --user ")
+        .append(userName)
+        .append(":")
+        .append(password)
+        .append(" http://" + adminServerPodName + ":" + adminPort)
+        .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code} && ")
+        .append("echo ${status}\"");
     logger.info("checkRestConsole : k8s exec command {0}", new String(curlCmd));
     try {
       ExecResult result = ExecCommand.exec(new String(curlCmd), true);
       String response = result.stdout().trim();
       logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
-            result.exitValue(), response, result.stderr());
+          result.exitValue(), response, result.stderr());
       return response.contains("200");
     } catch (IOException | InterruptedException ex) {
       logger.info("Exception in checkRestConsole {0}", ex);
@@ -826,7 +827,7 @@ public class CommonLBTestUtils {
                                              String ingressHostName,
                                              String pathLocation,
                                              String... hostName) {
-    StringBuffer consoleUrl = new StringBuffer();
+    StringBuffer readyAppUrl = new StringBuffer();
     String hostAndPort;
     if (hostName != null && hostName.length > 0) {
       hostAndPort = OKE_CLUSTER_PRIVATEIP ? hostName[0] : hostName[0] + ":" + lbNodePort;
@@ -839,26 +840,27 @@ public class CommonLBTestUtils {
     }
 
     if (isTLS) {
-      consoleUrl.append("https://");
+      readyAppUrl.append("https://");
     } else {
-      consoleUrl.append("http://");
+      readyAppUrl.append("http://");
     }
-    consoleUrl.append(hostAndPort);
+    readyAppUrl.append(hostAndPort);
     if (!isHostRouting) {
-      consoleUrl.append(pathLocation);
+      readyAppUrl.append(pathLocation);
     }
 
-    consoleUrl.append("/weblogic/ready");
+    readyAppUrl.append("/management/tenant-monitoring/servers/");
     String curlCmd;
     if (isHostRouting) {
-      curlCmd = String.format("curl -g -ks --show-error --noproxy '*' -H 'host: %s' %s",
-          ingressHostName, consoleUrl.toString());
+      curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' -H 'host: %s' %s",
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, ingressHostName, readyAppUrl.toString());
     } else {
       if (isTLS) {
-        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
-            + "-H 'WL-Proxy-SSL: false' %s", consoleUrl.toString());
+        curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
+            + "-H 'WL-Proxy-SSL: false' %s", ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl.toString());
       } else {
-        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' %s", consoleUrl.toString());
+        curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' %s",
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl.toString());
       }
     }
 
@@ -867,12 +869,12 @@ public class CommonLBTestUtils {
       assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
       ExecResult result;
       try {
-        getLogger().info("Accessing console using curl request, iteration {0}: {1}", i, curlCmd);
+        getLogger().info("Accessing app on admin server using curl request, iteration {0}: {1}", i, curlCmd);
         result = ExecCommand.exec(curlCmd, true);
         String response = result.stdout().trim();
         getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
             result.exitValue(), response, result.stderr());
-        if (response.contains("login")) {
+        if (response.contains("RUNNING")) {
           consoleAccessible = true;
           break;
         }
@@ -880,6 +882,6 @@ public class CommonLBTestUtils {
         getLogger().severe(ex.getMessage());
       }
     }
-    assertTrue(consoleAccessible, "Couldn't access admin server console");
+    assertTrue(consoleAccessible, "Couldn't access admin server app");
   }
 }

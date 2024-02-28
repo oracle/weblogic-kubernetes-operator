@@ -38,7 +38,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -128,8 +127,8 @@ class ItIstioDomainInImage {
    * Do not add any AdminService under AdminServer configuration
    * Deploy istio gateways and virtual service
    * Verify server pods are in ready state and services are created.
-   * Verify WebLogic console is accessible thru istio ingress http port
-   * Verify WebLogic console is accessible thru kubectl forwarded port(s)
+   * Verify ready app is accessible thru istio ingress http port
+   * Verify ready app is accessible thru kubectl forwarded port(s)
    * Deploy a web application thru istio http ingress port using REST api
    * Access web application thru istio http ingress port using curl
    * Verify Security Warning Tool does not detect any security warning message
@@ -212,36 +211,31 @@ class ItIstioDomainInImage {
     // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+    
+    String readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
+    boolean checkReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checkReadyApp, "Failed to access ready app");
+    logger.info("ready app is accessible");
+    String localhost = "localhost";
+    // Forward the non-ssl port 7001
+    String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7001);
+    assertNotNull(forwardPort, "port-forward fails to assign local port");
+    logger.info("Forwarded local port is {0}", forwardPort);
+    readyAppUrl = "http://" + localhost + ":" + forwardPort + "/weblogic/ready";
+    checkReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checkReadyApp, "Failed to access ready app thru port-forwarded port");
+    logger.info("ready app is accessible thru non-ssl port forwarding");
+    // Forward the ssl port 7002
+    forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7002);
+    assertNotNull(forwardPort, "(ssl) port-forward fails to assign local port");
+    logger.info("Forwarded local port is {0}", forwardPort);
+    readyAppUrl = "https://" + localhost + ":" + forwardPort + "/weblogic/ready";
+    checkReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checkReadyApp, "Failed to access ready app thru port-forwarded port");
+    logger.info("ready app is accessible thru ssl port forwarding");
 
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console");
-      logger.info("WebLogic console is accessible");
-      String localhost = "localhost";
-      // Forward the non-ssl port 7001
-      String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7001);
-      assertNotNull(forwardPort, "port-forward fails to assign local port");
-      logger.info("Forwarded local port is {0}", forwardPort);
-      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
-      logger.info("WebLogic console is accessible thru non-ssl port forwarding");
-      // Forward the ssl port 7002
-      forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7002);
-      assertNotNull(forwardPort, "(ssl) port-forward fails to assign local port");
-      logger.info("Forwarded local port is {0}", forwardPort);
-      consoleUrl = "https://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
-      logger.info("WebLogic console is accessible thru ssl port forwarding");
-
-      stopPortForwardProcess(domainNamespace);
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
-    }
+    stopPortForwardProcess(domainNamespace);
+ 
 
     Path archivePath = Paths.get(testWebAppWarLoc);
     String target = "{identity: [clusters,'" + clusterName + "']}";

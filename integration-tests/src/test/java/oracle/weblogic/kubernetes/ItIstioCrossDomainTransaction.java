@@ -46,7 +46,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -363,28 +362,23 @@ class ItIstioCrossDomainTransaction {
     istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        // use IPV6
-        host = "[" + host + "]";
-      }
-
-      // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
-      String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-          ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
-
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
-      logger.info("WebLogic console on domain1 is accessible");
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      // use IPV6
+      host = "[" + host + "]";
     }
+
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+
+    String readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
+
+    boolean checkReadyApp =
+        checkAppUsingHostHeader(readyAppUrl, "domain1-" + domain1Namespace + ".org");
+    assertTrue(checkReadyApp, "Failed to access ready app on domain1");
+    logger.info("ready app on domain1 is accessible");
+
   }
 
   /*

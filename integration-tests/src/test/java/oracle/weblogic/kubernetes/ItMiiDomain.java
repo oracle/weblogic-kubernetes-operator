@@ -186,12 +186,12 @@ class ItMiiDomain {
    * Make sure the pre-packaged application in domain image gets deployed to
    * the cluster and accessible from all the managed server pods
    * Make sure two external NodePort services are created in domain namespace.
-   * Make sure WebLogic console is accessible through both
+   * Make sure ready app is accessible through both
    *   `default-secure` service and `default` service.
    *
    * Negative test case for when domain resource attribute domain.spec.adminServer.adminChannelPortForwardingEnabled
    * is set to false, the WLS admin console can not be accessed using the forwarded port, like
-   * http://localhost:localPort/console/login/LoginForm.jsp.
+   * http://localhost:localPort/weblogic/ready.
    */
   @Test
   @Order(1)
@@ -288,25 +288,21 @@ class ItMiiDomain {
     logger.info("Found the administration service nodePort {0}", sslNodePort);
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
 
-    final String resourcePath = "/console/login/LoginForm.jsp";
-    if (!WEBLOGIC_SLIM) {
-      if (OKE_CLUSTER) {
-        testUntil(
-            isAppInServerPodReady(domainNamespace,
-               adminServerPodName, 7001, resourcePath, ""),
-            logger, "verify EM console access {0} in server {1}",
-            resourcePath,
-            adminServerPodName);
-      } else {
-        String curlCmd = "curl -skg --show-error --noproxy '*' "
-            + " https://" + hostAndPort
-            + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-        logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
-        assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-        logger.info("WebLogic console is accessible thru default-secure service");
-      }
+    final String resourcePath = "/weblogic/ready";
+    if (OKE_CLUSTER) {
+      testUntil(
+          isAppInServerPodReady(domainNamespace,
+             adminServerPodName, 7001, resourcePath, ""),
+          logger, "verify EM console access {0} in server {1}",
+          resourcePath,
+          adminServerPodName);
     } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
+      String curlCmd = "curl -skg --show-error --noproxy '*' "
+          + " https://" + hostAndPort
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+      logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+      logger.info("ready app is accessible thru default-secure service");
     }
 
     int nodePort = getServiceNodePort(
@@ -327,11 +323,11 @@ class ItMiiDomain {
       } else {
         String curlCmd2 = "curl -skg --show-error --noproxy '*' "
             + " http://" + hostAndPort
-            + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         logger.info("Executing default nodeport curl command {0}", curlCmd2);
         assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
       }
-      logger.info("WebLogic console is accessible thru default service");
+      logger.info("ready app is accessible thru default service");
     } else {
       logger.info("Checking Rest API management console in WebLogic slim image");
       verifyCredentials(7001, adminServerPodName, domainNamespace,
@@ -340,7 +336,7 @@ class ItMiiDomain {
 
     // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
     // and default secure channel port (7002 in this test)
-    // Verify that the WLS admin console can not be accessed using http://localhost:localPort/console/login/LoginForm.jsp
+    // Verify that the WLS admin console can not be accessed using http://localhost:localPort/weblogic/ready
     String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, adminServerPort);
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, Boolean.FALSE);
 

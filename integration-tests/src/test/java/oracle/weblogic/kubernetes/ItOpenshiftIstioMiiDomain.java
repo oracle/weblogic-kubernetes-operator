@@ -44,7 +44,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
@@ -256,16 +255,11 @@ class ItOpenshiftIstioMiiDomain {
     assertEquals(0, result.exitValue());
     assertNotNull(result.stdout());
     String gatewayUrl = result.stdout();
-    
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = gatewayUrl + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console");
-      logger.info("WebLogic console is accessible");
 
-    } else {
-      logger.info("Skipping WebLogic console test for slim image");
-    }
+    String readyAppUrl = gatewayUrl + "/weblogic/ready";
+    boolean checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checlReadyApp, "Failed to access ready app");
+    logger.info("ready app is accessible");
 
     String url = "http://" + gatewayUrl + "/sample-war/index.jsp";
     logger.info("Application Access URL {0}", url);
