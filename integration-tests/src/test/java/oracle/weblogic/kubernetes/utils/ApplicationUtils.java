@@ -36,7 +36,7 @@ public class ApplicationUtils {
    * @return true if curl command returns HTTP code 200 otherwise false
    */
   public static boolean checkAppUsingHostHeader(String url, String hostHeader, Boolean... args) {
-    boolean checkConsoleAccessible = (args.length == 0) ? true : false;
+    boolean checlReadyAppAccessible = (args.length == 0) ? true : false;
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     StringBuffer headerString = null;
@@ -56,7 +56,7 @@ public class ApplicationUtils {
         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
 
-    if (checkConsoleAccessible) {
+    if (checlReadyAppAccessible) {
       testUntil(
           assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
           logger,
@@ -426,7 +426,7 @@ public class ApplicationUtils {
                                                   String port,
                                                   boolean secureMode,
                                                   Boolean... args) {
-    boolean checkConsoleAccessible = (args.length == 0) ? true : false;
+    boolean checlReadyAppAccessible = (args.length == 0) ? true : false;
     LoggingFacade logger = getLogger();
     String httpKey = "http://";
     if (secureMode) {
@@ -439,15 +439,15 @@ public class ApplicationUtils {
     if (hostName.contains(":")) {
       hostName = "[" + hostName + "]";
     }
-    String consoleUrl = httpKey + hostName + ":" + port + "/console/login/LoginForm.jsp";
+    String readyAppUrl = httpKey + hostName + ":" + port + "/weblogic/ready";
 
-    boolean checkConsole = assertDoesNotThrow(() ->
-        checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org", args));
-    if (checkConsoleAccessible) {
-      assertTrue(checkConsole, "Failed to access WebLogic console");
-      logger.info("WebLogic console is accessible");
+    boolean checlReadyApp = assertDoesNotThrow(() ->
+        checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org", args));
+    if (checlReadyAppAccessible) {
+      assertTrue(checlReadyApp, "Failed to access ready app");
+      logger.info("ready app is accessible");
     } else {
-      assertFalse(checkConsole, "Shouldn't be able to access WebLogic console");
+      assertFalse(checlReadyApp, "Shouldn't be able to access WebLogic console");
       logger.info("WebLogic console is not accessible");
     }
   }

@@ -287,8 +287,8 @@ class ItIstioGatewaySessionMigration {
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
     String restUrl = "http://" + hostAndPort + "/management/tenant-monitoring/servers/";
-    boolean checkConsole = checkAppUsingHostHeader(restUrl, domainNamespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic REST interface");
+    boolean checlReadyApp = checkAppUsingHostHeader(restUrl, domainNamespace + ".org");
+    assertTrue(checlReadyApp, "Failed to access WebLogic REST interface");
 
     Path archivePath = Paths.get(testWebAppWarLoc);
     String target = "{identity: [clusters,'" + clusterName + "']}";

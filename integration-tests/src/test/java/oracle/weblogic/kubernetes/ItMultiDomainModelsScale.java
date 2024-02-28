@@ -53,7 +53,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
@@ -101,7 +100,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * The test class creates WebLogic domains with three models.
@@ -270,7 +268,7 @@ class ItMultiDomainModelsScale {
     } else {
       verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
       // verify admin console login using ingress controller
-      verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
     }
 
     final String hostName = "localhost";
@@ -332,7 +330,7 @@ class ItMultiDomainModelsScale {
     } else {
       verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
       // verify admin console login using ingress controller
-      verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
     }
 
     // shutdown domain and verify the domain is shutdown
@@ -396,7 +394,7 @@ class ItMultiDomainModelsScale {
     } else {
       verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
       // verify admin console login using ingress controller
-      verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
     }
 
     // shutdown domain and verify the domain is shutdown
@@ -819,10 +817,9 @@ class ItMultiDomainModelsScale {
   }
 
   // Verify admin console login using ingress controller
-  private void verifyAdminConsoleLoginUsingIngressController(String domainUid, String domainNamespace) {
+  private void verifyReadyAppUsingIngressController(String domainUid, String domainNamespace) {
 
     if (!OKD) {
-      assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
       String host = K8S_NODEPORT_HOST;
       if (host.contains(":")) {
@@ -831,16 +828,16 @@ class ItMultiDomainModelsScale {
       String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: "
           + domainUid + "." + domainNamespace + ".adminserver.test"
           + "' http://" + host + ":" + nodeportshttp
-          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
       logger.info("Executing curl command {0}", curlCmd);
       testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
           logger,
-          "WebLogic console on domain {0} in namespace {1} is accessible",
+          "Ready app on domain {0} in namespace {1} is accessible",
           domainUid,
           domainNamespace);
 
-      logger.info("WebLogic console on domain1 is accessible");
+      logger.info("Ready app on domain1 is accessible");
     } else {
       logger.info("Skipping the admin console login test using ingress controller in OKD environment");
     }

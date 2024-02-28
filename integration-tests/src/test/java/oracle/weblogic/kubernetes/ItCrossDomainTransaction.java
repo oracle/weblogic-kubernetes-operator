@@ -28,7 +28,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,7 +44,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -549,23 +547,6 @@ class ItCrossDomainTransaction {
     assertDoesNotThrow(
         () -> exec(command, true));
 
-    logger.info("Getting node port");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(domainNamespace,
-        getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
-
-    if (!WEBLOGIC_SLIM) {
-      logger.info("Validating WebLogic admin console");
-      testUntil(
-          assertDoesNotThrow(() -> {
-            return TestAssertions.adminNodePortAccessible(serviceNodePort,
-                 ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminExtSvcRouteHost);
-          }, "Access to admin server node port failed"),
-          logger,
-          "Console login validation");
-    } else {
-      logger.info("Skipping WebLogic Console check for Weblogic slim images");
-    }
   }
 
   private static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,

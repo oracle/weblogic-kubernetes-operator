@@ -38,6 +38,8 @@ spec:
             prefix: /jmsservlet
         - uri:
             prefix: /management
+        - uri:
+            prefix: /weblogic
         - port: 7001
       route:
         - destination:

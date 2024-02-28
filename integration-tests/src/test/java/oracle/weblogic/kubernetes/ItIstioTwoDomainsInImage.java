@@ -36,7 +36,6 @@ import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -280,17 +279,10 @@ class ItIstioTwoDomainsInImage {
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
-
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
-      logger.info("WebLogic console on domain1 is accessible");
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
-    }
+    String readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
+    boolean checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace1 + ".org");
+    assertTrue(checlReadyApp, "Failed to access ready app on domain1");
+    logger.info("WebLogic console on domain1 is accessible");
 
     Path archivePath = Paths.get(testWebAppWarLoc);
     String resourcePath = "/testwebapp/index.jsp";
@@ -326,16 +318,11 @@ class ItIstioTwoDomainsInImage {
     }
     logger.info("Application {0} is accessble to {1}", resourcePath, domainUid1);
 
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
-      assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
-      logger.info("WebLogic console on domain2 is accessible");
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
-    }
+    readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
+    checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace2 + ".org");
+    assertTrue(checlReadyApp, "Failed to access domain2 ready app");
+    logger.info("ready app on domain2 is accessible");
+
 
     // In internal OKE env, deploy App in domain pods using WLST
     createBaseRepoSecret(domainNamespace2);

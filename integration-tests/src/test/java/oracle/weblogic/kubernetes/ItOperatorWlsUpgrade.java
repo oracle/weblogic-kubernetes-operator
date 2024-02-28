@@ -672,7 +672,7 @@ class ItOperatorWlsUpgrade {
     if (successExpected) {
       verifyAdminConsoleAccessible(domainNamespace, "localhost",
            forwardPort, false);
-      logger.info("WebLogic console is accessible thru port forwarding");
+      logger.info("ready app is accessible thru port forwarding");
     } else {
       verifyAdminConsoleAccessible(domainNamespace, "localhost",
            forwardPort, false, false);

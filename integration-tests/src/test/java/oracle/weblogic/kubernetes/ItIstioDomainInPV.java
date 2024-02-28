@@ -52,7 +52,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
@@ -165,8 +164,8 @@ class ItIstioDomainInPV  {
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
    * Check WebLogic Server log for few Japanese characters.
-   * Verify WebLogic console is accessible thru istio ingress http port
-   * Verify WebLogic console is accessible thru kubectl forwarded port
+   * Verify ready app is accessible thru istio ingress http port
+   * Verify ready app is accessible thru kubectl forwarded port
    * Additionally, the test verifies that WebLogic cluster can be scaled down
    * and scaled up in the absence of Administration server.
    */
@@ -329,26 +328,19 @@ class ItIstioDomainInPV  {
     // In internal OKE env, use Istio EXTERNAL-IP;
     // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = hostName.contains(K8S_NODEPORT_HOST) ? host + ":" + istioIngressPort  : hostName;
-
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console");
-      logger.info("WebLogic console is accessible");
-      String localhost = "localhost";
-      String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7001);
-      assertNotNull(forwardPort, "port-forward fails to assign local port");
-      logger.info("Forwarded local port is {0}", forwardPort);
-      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
-      logger.info("WebLogic console is accessible thru port forwarding");
-      stopPortForwardProcess(domainNamespace);
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
-    }
+    String readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
+    boolean checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checlReadyApp, "Failed to access ready app");
+    logger.info("ready app is accessible");
+    String localhost = "localhost";
+    String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7001);
+    assertNotNull(forwardPort, "port-forward fails to assign local port");
+    logger.info("Forwarded local port is {0}", forwardPort);
+    readyAppUrl = "http://" + localhost + ":" + forwardPort + "/weblogic/ready";
+    checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
+    assertTrue(checlReadyApp, "Failed to access ready app thru port-forwarded port");
+    logger.info("ready app is accessible thru port forwarding");
+    stopPortForwardProcess(domainNamespace);
 
     ExecResult result = null;
     if (isWebLogicPsuPatchApplied()) {

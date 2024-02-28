@@ -62,7 +62,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -318,15 +317,13 @@ class ItLargeMiiDomainsClusters {
       String hostAndPort = getHostAndPort(null, nodePort);
 
       // make sure K8S_NODEPORT_HOST is exported to make the below call work
-      if (!WEBLOGIC_SLIM) {
-        // String curlCmd = "curl -s --show-error --noproxy '*' "
-        String curlCmd = "curl -s --show-error "
-            + " http://" + hostAndPort
-            + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-        logger.info("Executing default nodeport curl command {0}", curlCmd);
-        assertTrue(callWebAppAndWaitTillReady(curlCmd, 5));
-        logger.info("WebLogic console is accessible thru default service");
-      }
+      String curlCmd = "curl -s --show-error "
+          + " http://" + hostAndPort
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+      logger.info("Executing default nodeport curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 5));
+      logger.info("ready app is accessible thru default service");
+
     }
   }
 
