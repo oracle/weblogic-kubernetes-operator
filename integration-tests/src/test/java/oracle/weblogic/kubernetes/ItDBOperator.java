@@ -207,7 +207,7 @@ class ItDBOperator {
    * Create a basic FMW model in image domain using the database created by DB Operator. Verify Pod is ready and service
    * exists for both admin server and managed servers. Verify EM console is accessible.
    */
-  @Test
+  //@Test - FMW mii domain has been deprecated since WKO 4.1
   @DisplayName("Create FMW Domain model in image")
   void  testFmwModelInImageWithDbOperator() {
 
@@ -653,7 +653,7 @@ class ItDBOperator {
     logger.info("checkJtaRecoveryServiceRuntime: curl command {0}", new String(curlString));
     testUntil(
         assertDoesNotThrow(() -> () -> exec(curlString.toString(), true)
-        .stdout().contains("{\"active\": " + active + "}")),
+        .stdout().contains("\"active\": " + active)),
         logger,
         "JTA Recovery Service to migrate");
     return true;

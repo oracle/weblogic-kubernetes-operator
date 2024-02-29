@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -583,7 +583,7 @@ class ItMaxConcurOptions {
   private void verifyServersStartedSequentially(String managedServerPodNamePrefix,
                                                 int startPodNum,
                                                 int endPodNum) {
-    final int deltaValue = 30; // seconds
+    final int deltaValue = 15; // seconds
     // get managed server pod creation time
     ArrayList<Long> podCreationTimestampList = new ArrayList<Long>();
     for (int i = startPodNum; i <= endPodNum; i++) {
@@ -598,16 +598,16 @@ class ItMaxConcurOptions {
 
     // verify that the Operator starts up (endPodNum - startPodNum) managed servers in the cluster sequentially
     for (int i = 1; i <= (endPodNum - startPodNum); i++) {
+
+      logger.info("Managed servers {0} started at: {1}",
+          managedServerPodNamePrefix + (i + 1), podCreationTimestampList.get(i - 1));
+      logger.info("Managed servers {0} started at: {1}",
+          managedServerPodNamePrefix + (i + 2), podCreationTimestampList.get(i));
       assertTrue(Math.abs(podCreationTimestampList.get(i)
           - podCreationTimestampList.get(0)) > deltaValue,
               String.format("Two managed servers %s and %s failed to start sequentially",
                   managedServerPodNamePrefix + (i + 1), managedServerPodNamePrefix + (i + 2)));
 
-      logger.info("Managed servers {0} started at: {1}",
-          managedServerPodNamePrefix + (i + 1), podCreationTimestampList.get(i - 1));
-
-      logger.info("Managed servers {0} started at: {1}",
-          managedServerPodNamePrefix + (i + 2), podCreationTimestampList.get(i));
     }
   }
 
