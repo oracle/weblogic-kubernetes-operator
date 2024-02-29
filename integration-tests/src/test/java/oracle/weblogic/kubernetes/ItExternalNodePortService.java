@@ -415,7 +415,8 @@ class ItExternalNodePortService {
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true "
+                                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true"))
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
