@@ -48,6 +48,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
@@ -55,7 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -232,7 +233,7 @@ class ItMiiDomainUpgradeToSecureMode {
 
     // create auxiliary domain creation image
     String auxImage = createAuxImage(auxImageName, auxImageTag, wdtModelFile.toString(), wdtVariableFile.toString());
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + imageTag1411;
+    String baseImage = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1411;
     //name of channel available in domain configuration
     String channelName = "default";
     //create a MII domain resource with the auxiliary image
@@ -315,7 +316,7 @@ class ItMiiDomainUpgradeToSecureMode {
 
     // create auxiliary domain creation image
     String auxImage = createAuxImage(auxImageName, auxImageTag, wdtModelFile.toString(), wdtVariableFile.toString());
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + imageTag1411;
+    String baseImage = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1411;
     //name of channel available in domain configuration
     String channelName = "default";
     // create auxiliary domain creation image
@@ -398,7 +399,7 @@ class ItMiiDomainUpgradeToSecureMode {
 
     // create auxiliary domain creation image
     String auxImage = createAuxImage(auxImageName, auxImageTag, wdtModelFile.toString(), wdtVariableFile.toString());
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + imageTag1411;
+    String baseImage = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1411;
     //name of channel available in domain configuration
     String channelName = "internal-admin";
     //create a MII domain resource with the auxiliary image
@@ -483,7 +484,7 @@ class ItMiiDomainUpgradeToSecureMode {
 
     // create auxiliary domain creation image
     String auxImage = createAuxImage(auxImageName, auxImageTag, wdtModelFile.toString(), wdtVariableFile.toString());
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + imageTag1411;
+    String baseImage = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1411;
     //name of channel available in domain configuration
     String channelName = "internal-admin";
     //create a MII domain resource with the auxiliary image
@@ -566,13 +567,13 @@ class ItMiiDomainUpgradeToSecureMode {
       Files.writeString(wdtVariableFile, "AdministrationPortEnabled=false\n", StandardOpenOption.APPEND);
     });
 
-    String auxImageName = DOMAIN_IMAGES_PREFIX + "dci-prod1411off";
+    String auxImageName = DOMAIN_IMAGES_PREFIX + "dci-prod12214off";
     String auxImageTag = getDateAndTimeStamp();
     Path wdtModelFile = Paths.get(RESOURCE_DIR, "securemodeupgrade", "upgrade-model_1.yaml");
 
     // create auxiliary domain creation image
     String auxImage = createAuxImage(auxImageName, auxImageTag, wdtModelFile.toString(), wdtVariableFile.toString());
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + imageTag12214;
+    String baseImage = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag12214;
     //name of channel available in domain configuration
     String channelName = "default";
     //create a MII domain resource with the auxiliary image
@@ -657,7 +658,7 @@ class ItMiiDomainUpgradeToSecureMode {
 
     // create auxiliary domain creation image
     String auxImage = createAuxImage(auxImageName, auxImageTag, wdtModelFile.toString(), wdtVariableFile.toString());
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + imageTag12214;
+    String baseImage = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag12214;
     //name of channel available in domain configuration
     String channelName = "internal-admin";
     //create a MII domain resource with the auxiliary image
