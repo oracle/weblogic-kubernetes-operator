@@ -4,12 +4,9 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.time.OffsetDateTime;
 
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
@@ -19,7 +16,7 @@ import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -32,7 +29,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Domain {
 
@@ -146,41 +142,27 @@ public class Domain {
   }
 
   /**
-   * Verify admin node port(default/t3channel) is accessible by login to WebLogic console
-   * using the node port and validate its the Home page.
+   * Verify admin node port(default/t3channel) is accessible with readyapp url.
    *
    * @param nodePort the node port that needs to be tested for access
    * @param userName WebLogic administration server user name
    * @param password WebLogic administration server password
    * @param routeHost For OKD - name of the route for external admin service. Can be empty for non OKD env
-   * @return true if login to WebLogic administration console is successful
+   * @return true if /weblogic/ready returns 200 http status
    * @throws IOException when connection to console fails
    */
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String routeHost)
-      throws IOException {
-
-    LoggingFacade logger = getLogger();
-
+      throws Exception {
     String hostAndPort = getHostAndPort(routeHost, nodePort);
     String readyAppUrl = new StringBuffer()
         .append("http://")
         .append(hostAndPort)
         .append("/weblogic/ready").toString();
 
-    getLogger().info("Accessing WebLogic console with url {0}", readyAppUrl);
-    final WebClient webClient = new WebClient();
-    //final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(readyAppUrl),
-    final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(readyAppUrl),
-        "connection to the WebLogic admin console failed");
-    HtmlForm form = loginPage.getFormByName("loginData");
-    form.getInputByName("j_username").type(userName);
-    form.getInputByName("j_password").type(password);
-    HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
-    getLogger().info("Clicking login button");
-    HtmlPage home = submit.click();
-    assertTrue(home.asNormalizedText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
-    getLogger().info("Console login passed");
-    return true;
+    getLogger().info("Accessing WebLogic readyapp with url {0}", readyAppUrl);
+    HttpResponse<String> response;
+    response = OracleHttpClient.get(readyAppUrl, null, true);
+    return response.statusCode() == 200;
   }
 
   /**
