@@ -635,12 +635,13 @@ class ItIstioCrossDomainTransaction {
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.transaction.EnableInstrumentedTM=true -Dweblogic.StdoutDebugEnabled=false "
                         + "-Dweblogic.debug.DebugJTAXA=true "
-                        + "-Dweblogic.debug.DebugJTA2PC=true"
+                        + "-Dweblogic.debug.DebugJTA2PC=true "
                         + "-Dweblogic.debug.DebugConnection=true "
                         + "-Dweblogic.debug.DebugRouting=true -Dweblogic.debug.DebugMessaging=true "
                         + "-Dweblogic.kernel.debug=true -Dweblogic.log.LoggerSeverity=Debug "
                         + "-Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true "
-                        + "-Dweblogic.log.StdoutSeverity=Debug"))
+                        + "-Dweblogic.log.StdoutSeverity=Debug "
+                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))

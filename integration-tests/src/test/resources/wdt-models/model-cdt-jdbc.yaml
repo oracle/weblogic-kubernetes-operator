@@ -9,7 +9,7 @@ resources:
           InitialCapacity: 0
           MinCapacity: 0
           MaxCapacity: 15
-          TestTableName: SQL SELECT 1
+          TestTableName: SQL SELECT 1 FROM DUAL
         JDBCDataSourceParams:
           GlobalTransactionsProtocol: TwoPhaseCommit
           #GlobalTransactionsProtocol: LoggingLastResource

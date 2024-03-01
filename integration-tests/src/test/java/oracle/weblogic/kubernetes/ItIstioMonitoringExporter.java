@@ -395,7 +395,7 @@ class ItIstioMonitoringExporter {
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
-    String readyAppUrl = "http://" + host + ":" + istioIngressPort + "/weblogic/ready";
+    String readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
     boolean checlReadyApp =
         checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
     assertTrue(checlReadyApp, "Failed to access ready app");

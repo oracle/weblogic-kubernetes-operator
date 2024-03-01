@@ -536,7 +536,6 @@ class ItCrossDomainTransaction {
             hostAndPort);
 
     logger.info("curl command {0}", curlString);
-
     testUntil(
         () -> exec(new String(curlString), true).stdout().contains("Messages are distributed"),
         logger,
@@ -653,7 +652,8 @@ class ItCrossDomainTransaction {
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.transaction.EnableInstrumentedTM=true -Dweblogic.StdoutDebugEnabled=false"
                         + "-Dweblogic.debug.DebugJTAXA=true "
-                        + "-Dweblogic.debug.DebugJTA2PC=true"))
+                        + "-Dweblogic.debug.DebugJTA2PC=true "
+                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
