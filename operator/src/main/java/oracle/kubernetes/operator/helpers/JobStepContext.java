@@ -482,7 +482,6 @@ public class JobStepContext extends BasePodStepContext {
     initContainers.add(new V1Container()
         .name(INIT_DOMAIN_ON_PV_CONTAINER)
         .image(getDomain().getSpec().getImage())
-        .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
         .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
             .mountPath(AUXILIARY_IMAGE_TARGET_PATH))

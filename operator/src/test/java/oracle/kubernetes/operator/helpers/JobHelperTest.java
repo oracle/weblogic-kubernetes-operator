@@ -1568,7 +1568,6 @@ class JobHelperTest extends DomainValidationTestBase {
         .withLogHome("/share/logs/domain1")
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withAdditionalVolume("volume1", VOLUME_PATH_1)
-        .withAdditionalVolumeMount("volume1Mount", VOLUME_MOUNT_PATH_1)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
             .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
                 .domainType(JRF)
@@ -1585,7 +1584,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
             .map(V1VolumeMount::getMountPath)
             .collect(Collectors.toList()),
-          hasItems(SCRIPTS_MOUNTS_PATH, "/tmpAuxiliaryImage", VOLUME_MOUNT_PATH_1));
+          hasItems(SCRIPTS_MOUNTS_PATH, "/tmpAuxiliaryImage"));
 
   }
 
