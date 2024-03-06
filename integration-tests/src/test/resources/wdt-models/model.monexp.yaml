@@ -9,7 +9,8 @@ domainInfo:
 topology:
   Name: "wls-monexp-domain-1"
   AdminServerName: "admin-server"
-
+  SecurityConfiguration:
+    RemoteAnonymousRmit3Enabled: true
   Cluster:
     "cluster-1":
       DynamicServers:
