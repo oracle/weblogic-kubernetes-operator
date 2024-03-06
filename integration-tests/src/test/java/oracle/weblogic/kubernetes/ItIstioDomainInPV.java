@@ -265,7 +265,8 @@ class ItIstioDomainInPV  {
                     .value("ja_JP.utf8"))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true "))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
