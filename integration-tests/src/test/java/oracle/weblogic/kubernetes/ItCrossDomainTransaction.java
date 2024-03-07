@@ -536,8 +536,9 @@ class ItCrossDomainTransaction {
             hostAndPort);
 
     logger.info("curl command {0}", curlString);
+
     testUntil(
-        () -> exec(new String(curlString), true).stdout().contains("Messages are distributed"),
+        () -> execCurl(curlString).contains("Messages are distributed"),
         logger,
         "local queue to be updated");
     return true;
@@ -650,10 +651,10 @@ class ItCrossDomainTransaction {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.transaction.EnableInstrumentedTM=true -Dweblogic.StdoutDebugEnabled=false"
+                    .value("-Dweblogic.transaction.EnableInstrumentedTM=true -Dweblogic.StdoutDebugEnabled=false "
                         + "-Dweblogic.debug.DebugJTAXA=true "
                         + "-Dweblogic.debug.DebugJTA2PC=true "
-                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true"))
+                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true "))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -727,5 +728,11 @@ class ItCrossDomainTransaction {
 
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+  }
+
+  String execCurl(String curlString) {
+    ExecResult result = assertDoesNotThrow(() -> exec(new String(curlString), true));
+    logger.info("curl command returned {0}", result.toString());
+    return result.stdout();
   }
 }
