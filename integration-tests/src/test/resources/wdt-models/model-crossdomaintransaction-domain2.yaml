@@ -26,6 +26,8 @@ topology:
       Cluster: "cluster-1"
       ListenPort : 8001
       ExternalDNSName: '@@PROP:DOMAIN_NAME@@-managed-server${id}.@@PROP:NAMESPACE@@'
+      DataSource:
+        RmiJDBCSecurity: Compatibility
 
 appDeployments:
   Application:

@@ -204,13 +204,15 @@ public class CdtTxServlet extends HttpServlet {
       stmt = conn.createStatement();
       stmt.execute(createSQL);
     } catch (SQLException sqle) {
-      System.out.println("Got SQL Exception when creating table ");
-      out.println("Got SQL Exception when creating table ");
+      System.out.println("Got SQL Exception when creating table " + sqle.getMessage());
+      out.println("Got SQL Exception when creating table " + sqle.getMessage());
       sqle.getMessage();
       throw sqle;
     } finally {
       out.println("Created table - closing stmt");
-      stmt.close();
+      if (stmt != null) {
+        stmt.close();
+      }
     }
   }
 
@@ -229,7 +231,9 @@ public class CdtTxServlet extends HttpServlet {
       throw sqle;
     } finally {
       out.println("Created table - closing stmt");
-      stmt.close();
+      if (stmt != null) {
+        stmt.close();
+      }
     }
   }
   private void insertData(Connection conn, String tableName) throws SQLException {

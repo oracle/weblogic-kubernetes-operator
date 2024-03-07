@@ -552,8 +552,7 @@ class ItIstioCrossDomainTransaction {
             + "action=receive&dest=jms.testAccountingQueue\"", host, istioIngressPort);
 
     logger.info("curl command {0}", curlString);
-    testUntil(assertDoesNotThrow(
-        () -> () -> exec(curlString, true).stdout().contains("Messages are distributed")),
+    testUntil(() -> execCurl(curlString).contains("Messages are distributed"),
         logger, "local queue to be updated");
     return true;
   }
@@ -641,7 +640,7 @@ class ItIstioCrossDomainTransaction {
                         + "-Dweblogic.kernel.debug=true -Dweblogic.log.LoggerSeverity=Debug "
                         + "-Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true "
                         + "-Dweblogic.log.StdoutSeverity=Debug "
-                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true"))
+                        + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true "))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -657,5 +656,11 @@ class ItIstioCrossDomainTransaction {
             domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainUid, domNamespace));
+  }
+
+  String execCurl(String curlString) {
+    ExecResult result = assertDoesNotThrow(() -> exec(new String(curlString), true));
+    logger.info("curl command returned {0}", result.toString());
+    return result.stdout();
   }
 }
