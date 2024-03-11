@@ -3339,6 +3339,31 @@ public class Kubernetes {
     }
     return ingressList;
   }
+  
+  /**
+   * Update Ingress in the given namespace.
+   *
+   * @param namespace namespace name
+   * @param ingress V1Ingress body
+   * @throws ApiException when update fails
+   */
+  public static void updateNamespacedIngresses(String namespace, V1Ingress ingress) throws ApiException {
+    try {
+      NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
+      apiInstance.replaceNamespacedIngress(
+          ingress.getMetadata().getName(), // ingress name
+          namespace, //namespace
+          ingress, //ingress body
+          PRETTY, //pretty print output
+          null, // dryRun
+          null, // field manager
+          null // filed validation
+      );
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+  }
 
   /**
    * Delete an ingress in the specified namespace.

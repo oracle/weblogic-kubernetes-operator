@@ -903,7 +903,7 @@ public class DbUtils {
       ExecResult result = ExecCommand.exec(command, true);
       dbUrl = result.stdout().trim();
       logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
-          result.exitValue(), response, result.stderr());
+          result.exitValue(), result.stdout(), result.stderr());
       assertEquals(0, result.exitValue(), "Command didn't succeed");
     } catch (IOException | InterruptedException ex) {
       logger.severe(ex.getMessage());

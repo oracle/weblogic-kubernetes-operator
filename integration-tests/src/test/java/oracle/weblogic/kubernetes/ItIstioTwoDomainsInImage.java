@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -30,6 +32,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
@@ -43,6 +46,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -145,7 +149,7 @@ class ItIstioTwoDomainsInImage {
    */
   @Test
   @DisplayName("Two WebLogic domainhome-in-image with single istio ingress")
-  void testIstioTwoDomainsWithSingleIngress() {
+  void testIstioTwoDomainsWithSingleIngress() throws UnknownHostException {
     final String managedServerPrefix1 = domainUid1 + "-managed-server";
     final String managedServerPrefix2 = domainUid2 + "-managed-server";
     final int replicaCount = 1;
@@ -267,13 +271,16 @@ class ItIstioTwoDomainsInImage {
         () -> deployIstioDestinationRule(targetDrFile2));
     assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-    
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      // use IPV6
-      host = "[" + host + "]";
+    String host;
+    int istioIngressPort;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      istioIngressPort = ISTIO_HTTP_HOSTPORT;
+    } else {
+      istioIngressPort = getIstioHttpIngressPort();
+      logger.info("Istio Ingress Port is {0}", istioIngressPort);
+      host = formatIPv6Host(K8S_NODEPORT_HOST);
     }
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
@@ -282,7 +289,7 @@ class ItIstioTwoDomainsInImage {
     String readyAppUrl = "http://" + hostAndPort + "/weblogic/ready";
     boolean checlReadyApp = checkAppUsingHostHeader(readyAppUrl, domainNamespace1 + ".org");
     assertTrue(checlReadyApp, "Failed to access ready app on domain1");
-    logger.info("WebLogic console on domain1 is accessible");
+    logger.info("WebLogic server on domain1 is accessible");
 
     Path archivePath = Paths.get(testWebAppWarLoc);
     String resourcePath = "/testwebapp/index.jsp";
@@ -294,7 +301,7 @@ class ItIstioTwoDomainsInImage {
     ExecResult result = OKE_CLUSTER
         ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             target, archivePath, domainNamespace1 + ".org", "testwebapp")
-        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+        : deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
 
@@ -323,14 +330,13 @@ class ItIstioTwoDomainsInImage {
     assertTrue(checlReadyApp, "Failed to access domain2 ready app");
     logger.info("ready app on domain2 is accessible");
 
-
     // In internal OKE env, deploy App in domain pods using WLST
     createBaseRepoSecret(domainNamespace2);
 
     result = OKE_CLUSTER
         ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             target, archivePath, domainNamespace2 + ".org", "testwebapp")
-        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+        : deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
 
@@ -347,7 +353,7 @@ class ItIstioTwoDomainsInImage {
           archivePath,
           target);
     } else {
-      String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + resourcePath;
+      String url = "http://" + host + ":" + istioIngressPort + resourcePath;
       logger.info("Application Access URL {0}", url);
       boolean checkApp = checkAppUsingHostHeader(url, domainNamespace2 + ".org");
       assertTrue(checkApp, "Failed to access WebLogic application on domain2");

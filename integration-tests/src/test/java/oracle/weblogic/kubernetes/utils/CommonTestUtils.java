@@ -149,7 +149,13 @@ public class CommonTestUtils {
         .atMost(seconds, SECONDS).await();
   }
 
-  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+  /**
+   * Create retry policy with parameters.
+   *
+   * @param minutes max wait in minutes
+   * @return conditionFactory object of retry policy
+   */
+  public static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
     return with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(minutes, MINUTES).await();
@@ -2270,18 +2276,7 @@ public class CommonTestUtils {
                                              String serverPodName,
                                              int serverPort,
                                              String resourcePath) {
-    LoggingFacade logger = getLogger();;
-
-    String command = KUBERNETES_CLI + " get all --all-namespaces";
-    logger.info("curl command to get all --all-namespaces is: {0}", command);
-
-    try {
-      ExecResult result0 = ExecCommand.exec(command, true);
-      logger.info("result is: {0}", result0.toString());
-    } catch (IOException | InterruptedException ex) {
-      ex.printStackTrace();
-    }
-
+    LoggingFacade logger = getLogger();
     String commandToRun = KUBERNETES_CLI + " exec -n "
         + domainNamespace + "  " + serverPodName + " -- curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
@@ -2295,7 +2290,6 @@ public class CommonTestUtils {
     } catch (IOException | InterruptedException ex) {
       logger.severe(ex.getMessage());
     }
-
     return result;
   }
 

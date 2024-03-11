@@ -16,7 +16,7 @@ resources:
           RowPrefetchSize: 200
           JNDIName: jdbc/TestCdtDataSource
         JDBCDriverParams:
-          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          URL: 'jdbc:oracle:thin:@//@@PROP:PDBCONNECTSTRING@@'
           PasswordEncrypted: 'Oradoc_db1'
           DriverName: oracle.jdbc.xa.client.OracleXADataSource
           Properties:

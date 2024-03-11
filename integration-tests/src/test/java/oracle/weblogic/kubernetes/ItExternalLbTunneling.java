@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -45,6 +47,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
@@ -57,11 +63,11 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -130,6 +136,7 @@ class ItExternalLbTunneling {
   private static Path jksTrustFile;
   private static String tlsSecretName = domainUid + "-test-tls-secret";
   private String clusterSvcRouteHost = null;
+  private static String hostAddress = K8S_NODEPORT_HOST;
 
   /**
    * Install Operator.
@@ -138,9 +145,13 @@ class ItExternalLbTunneling {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
     logger = getLogger();
     logger.info("K8S_NODEPORT_HOSTNAME {0} K8S_NODEPORT_HOST {1}", K8S_NODEPORT_HOSTNAME, K8S_NODEPORT_HOST);
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAddress = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+    }
 
     // get a new unique opNamespace
     logger.info("Assigning unique namespace for Operator");
@@ -177,7 +188,7 @@ class ItExternalLbTunneling {
     // Prepare the config map sparse model file from the template by replacing
     // Public Address of the custom channel with K8S_NODEPORT_HOST
     Map<String, String> configTemplateMap  = new HashMap<>();
-    configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+    configTemplateMap.put("INGRESS_HOST", hostAddress);
 
     Path srcFile = Paths.get(RESOURCE_DIR,
         "wdt-models", "tunneling.model.template.yaml");
@@ -207,11 +218,12 @@ class ItExternalLbTunneling {
 
     if (!OKD) {
       logger.info("Installing Traefik controller using helm");
-      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 
+          IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT, IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT).getHelmParams();
     }
 
     // Create SSL certificate and key using openSSL with SAN extension
-    createCertKeyFiles(K8S_NODEPORT_HOST);
+    createCertKeyFiles(hostAddress);
     // Create kubernates secret using genereated certificate and key
     createSecretWithTLSCertKey(tlsSecretName);
     // Import the tls certificate into a JKS truststote to be used while
@@ -262,7 +274,7 @@ class ItExternalLbTunneling {
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
-    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+    templateMap.put("INGRESS_HOST", hostAddress);
 
     Path srcTraefikHttpFile = Paths.get(RESOURCE_DIR,
         "tunneling", "traefik.tunneling.template.yaml");
@@ -281,11 +293,14 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to non-tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service =
-         TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
+    String service
+        = TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
-    int httpTunnelingPort =
-        getServiceNodePort(traefikNamespace, service, "web");
+    int httpTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      httpTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTP_HOSTPORT;
+    }
     assertNotEquals(-1, httpTunnelingPort,
         "Could not get the Traefik HttpTunnelingPort service node port");
     logger.info("HttpTunnelingPort for Traefik {0}", httpTunnelingPort);
@@ -320,7 +335,7 @@ class ItExternalLbTunneling {
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
     templateMap.put("TLS_CERT", tlsSecretName);
-    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+    templateMap.put("INGRESS_HOST", hostAddress);
 
     Path srcTraefikHttpsFile  = Paths.get(RESOURCE_DIR,
         "tunneling", "traefik.tls.tunneling.template.yaml");
@@ -339,11 +354,14 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service =
-         TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
+    String service
+        = TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
-    int httpsTunnelingPort =
-        getServiceNodePort(traefikNamespace, service, "websecure");
+    int httpsTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      httpsTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTPS_HOSTPORT;
+    }
     assertNotEquals(-1, httpsTunnelingPort,
         "Could not get the Traefik HttpsTunnelingPort service node port");
     logger.info("HttpsTunnelingPort for Traefik {0}", httpsTunnelingPort);
@@ -441,8 +459,7 @@ class ItExternalLbTunneling {
     logger.info("java command to be run {0}", javasCmd.toString());
 
     // Note it takes a couples of iterations before the client success
-    testUntil(
-        runJmsClient(new String(javasCmd)),
+    testUntil(runJmsClient(new String(javasCmd)),
         logger,
         "Wait for Https JMS Client to access WLS");
   }
@@ -503,7 +520,7 @@ class ItExternalLbTunneling {
     javaCmd.append(String.valueOf(checkConnection));
     logger.info("java command to be run {0}", javaCmd.toString());
 
-    // Note it takes a couples of iterations before the client success
+    // Note it takes a couples of iterations before the client success    
     testUntil(runJmsClient(new String(javaCmd)), logger, "Wait for Http JMS Client to access WLS");
   }
 
@@ -604,7 +621,7 @@ class ItExternalLbTunneling {
   private static void createCertKeyFiles(String cn) {
 
     Map<String, String> sanConfigTemplateMap  = new HashMap<>();
-    sanConfigTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+    sanConfigTemplateMap.put("INGRESS_HOST", hostAddress);
 
     Path srcFile = Paths.get(RESOURCE_DIR,
         "tunneling", "san.config.template.txt");
