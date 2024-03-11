@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
@@ -229,6 +230,34 @@ public class Ingress {
 
     return ingressNames;
   }
+  
+  /**
+   * Get ingress object in the specified namespace.
+   *
+   * @param namespace the namespace in which the ingress exists
+   * @param ingressName name of the ingress object
+   * @return an Optional ingress name in the namespace
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static Optional<V1Ingress> getIngress(String namespace, String ingressName) throws ApiException {
+
+    V1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
+    List<V1Ingress> listOfIngress = ingressList.getItems();
+
+    return listOfIngress.stream().filter(
+        ingress -> ingress.getMetadata().getName().equals(ingressName)).findAny();
+  }
+  
+  /**
+   * Update Ingress in the given namespace.
+   *
+   * @param namespace namespace name
+   * @param ingress V1Ingress body
+   * @throws ApiException when update fails
+   */
+  public static void updateIngress(String namespace, V1Ingress ingress) throws ApiException {
+    Kubernetes.updateNamespacedIngresses(namespace, ingress);
+  } 
 
   /**
    * Delete an ingress in the specified namespace.

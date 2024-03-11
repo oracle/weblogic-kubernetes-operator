@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,12 +21,15 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -39,6 +43,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
+import oracle.weblogic.kubernetes.actions.impl.Ingress;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -96,6 +101,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.Ingress.updateIngress;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -106,6 +112,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -153,6 +160,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests related to introspectVersion attribute.
@@ -402,7 +410,7 @@ class ItIntrospectVersion {
    */
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
-  void testDomainIntrospectVersionRolling() {
+  void testDomainIntrospectVersionRolling() throws ApiException {
 
     final int newAdminPort = 7005;
 
@@ -494,6 +502,11 @@ class ItIntrospectVersion {
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
+    }
+    
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      updateIngressBackendServicePort(newAdminPort);
     }
 
     //verify admin server accessibility and the health of cluster members
@@ -1262,7 +1275,7 @@ class ItIntrospectVersion {
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRouting(introDomainNamespace, domainUid, adminServerName, adminPort);
-      assertDoesNotThrow(() -> verifyAdminServerRESTAccess("localhost", 
+      assertDoesNotThrow(() -> verifyAdminServerRESTAccess(formatIPv6Host(InetAddress.getLocalHost().getHostAddress()), 
           TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
     }    
 
@@ -1370,7 +1383,8 @@ class ItIntrospectVersion {
         Map<String, String> headers = null;
         if (TestConstants.KIND_CLUSTER
             && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-          hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+          hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) 
+              + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
           headers = new HashMap<>();
           headers.put("host", hostHeader);
         }
@@ -1552,6 +1566,20 @@ class ItIntrospectVersion {
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     
     return domain;
+  }
+  
+  private void updateIngressBackendServicePort(int newAdminPort) throws ApiException {
+    String ingressName = introDomainNamespace + "-" + domainUid + "-" + adminServerName;
+    V1Ingress ingress = Ingress.getIngress(introDomainNamespace, ingressName).orElse(null);
+    if (ingress != null) {
+      logger.info("Updating ingress {0} with new admin port {1}", ingressName, newAdminPort);
+      ingress.getSpec().getRules().getFirst().getHttp()
+          .getPaths().getFirst().getBackend().getService()
+          .setPort(new V1ServiceBackendPort().number(newAdminPort));
+      updateIngress(introDomainNamespace, ingress);
+    } else {
+      fail("Failed to update ingress");
+    }
   }
   
 }

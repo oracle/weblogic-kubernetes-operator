@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPDEMO;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -59,6 +62,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.setupWebLogicPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
@@ -118,7 +123,7 @@ class ItLiftAndShiftFromOnPremDomain {
   private static final String BUILD_SCRIPT = "discover_domain.sh";
   private static final Path BUILD_SCRIPT_SOURCE_PATH = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
   private static final String domainUid = "onprem-domain";
-  private static final String adminServerPort = "7001";
+  private static final String adminServerName = "admin-server";
   private static final String appPath = "opdemo/index.jsp";
   private static String imageName = null;
   private static LoggingFacade logger = null;
@@ -154,7 +159,8 @@ class ItLiftAndShiftFromOnPremDomain {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    if (!OKD) {
+    if (!OKD && !(TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
       // install and verify Traefik
       logger.info("Installing Traefik controller using helm");
       traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
@@ -170,9 +176,9 @@ class ItLiftAndShiftFromOnPremDomain {
    */
   @Test
   @DisplayName("Create model in image domain and verify external admin services")
-  void testCreateMiiDomainWithClusterFromOnPremDomain() {
+  void testCreateMiiDomainWithClusterFromOnPremDomain() throws UnknownHostException {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerPrefix = domainUid + "-managed-server";
     final String clusterService = domainUid + "-cluster-cluster-1";
     final int replicaCount = 5;
@@ -326,31 +332,42 @@ class ItLiftAndShiftFromOnPremDomain {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    if (!OKD) {
-      // create ingress rules with path routing for Traefik
-      createTraefikIngressRoutingRules(domainNamespace);
-    
-      traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
-      assertNotEquals(-1, traefikNodePort,
-          "Could not get the default external service node port");
-      logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
-      logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    } else {
+    String hostHeader = "";
+    if (OKD) {
       hostName = createRouteForOKD(clusterService, domainNamespace);
+    } else {
+      // create ingress rules with path routing for Traefik
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostHeader = createIngressHostRouting(domainNamespace, domainUid, "cluster-cluster-1", 8001);
+        hostHeader = " --header 'Host: " + hostHeader + "'";
+      } else {
+        createTraefikIngressRoutingRules(domainNamespace);
+        traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
+        assertNotEquals(-1, traefikNodePort,
+            "Could not get the default external service node port");
+        logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
+        logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+      }
     }
 
     String hostAndPort = null;
-    if (!OKD) {
-      final String ingressServiceName = traefikHelmParams.getReleaseName();
-      hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, traefikNodePort);
-    } else {
+    if (OKD) {
       hostAndPort = getHostAndPort(hostName, traefikNodePort);
+    } else {
+      if (TestConstants.KIND_CLUSTER
+          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      } else {
+        final String ingressServiceName = traefikHelmParams.getReleaseName();
+        hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+            ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, traefikNodePort);
+      }
     }
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    String curlString = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s/opdemo/?dsName=testDatasource", hostAndPort);
+    String curlString = String.format("curl -v --show-error --noproxy '*' %s "
+            + "http://%s/opdemo/?dsName=testDatasource", hostHeader, hostAndPort);
 
     // check and wait for the application to be accessible in admin pod
     checkAppIsRunning(
@@ -457,6 +474,7 @@ class ItLiftAndShiftFromOnPremDomain {
     logger.info("Creating ingress rules for domain traffic routing");
     Path srcFile = Paths.get(RESOURCE_DIR, "traefik/traefik-ingress-rules-onprem.yaml");
     Path dstFile = Paths.get(RESULTS_ROOT, "traefik/traefik-ingress-rules-onprem.yaml");
+    
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);
       Files.createDirectories(dstFile.getParent());

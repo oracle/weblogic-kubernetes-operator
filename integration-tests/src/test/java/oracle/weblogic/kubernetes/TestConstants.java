@@ -472,6 +472,10 @@ public interface TestConstants {
   public static final int ITEXTERNALNODEPORTSERVICE_HOSTPORT = 2156;
   public static final int IT_DEDICATED_MODE_CONAINERPORT = 32159;
   public static final int IT_DEDICATED_MODE_HOSTPORT = 2160;
+  public static final int IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT = 32169;
+  public static final int IT_EXTERNALLB_TUNNELING_HTTP_HOSTPORT = 2172;
+  public static final int IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT = 32170;
+  public static final int IT_EXTERNALLB_TUNNELING_HTTPS_HOSTPORT = 2173;   
   
 
 }

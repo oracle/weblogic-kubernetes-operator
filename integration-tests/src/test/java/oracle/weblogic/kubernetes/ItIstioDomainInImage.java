@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
@@ -45,6 +48,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
@@ -136,7 +140,7 @@ class ItIstioDomainInImage {
    */
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
-  void testIstioDomainHomeInImage() {
+  void testIstioDomainHomeInImage() throws UnknownHostException {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 1;
 
@@ -198,13 +202,16 @@ class ItIstioDomainInImage {
         () -> deployIstioDestinationRule(targetDrFile));
     assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      // use IPV6
-      host = "[" + host + "]";
+    String host;
+    int istioIngressPort;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      istioIngressPort = ISTIO_HTTP_HOSTPORT;
+    } else {
+      istioIngressPort = getIstioHttpIngressPort();
+      logger.info("Istio Ingress Port is {0}", istioIngressPort);
+      host = formatIPv6Host(K8S_NODEPORT_HOST);
     }
 
     // In internal OKE env, use Istio EXTERNAL-IP;
@@ -235,14 +242,13 @@ class ItIstioDomainInImage {
     logger.info("ready app is accessible thru ssl port forwarding");
 
     stopPortForwardProcess(domainNamespace);
- 
 
     Path archivePath = Paths.get(testWebAppWarLoc);
     String target = "{identity: [clusters,'" + clusterName + "']}";
     ExecResult result = OKE_CLUSTER
         ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             target, archivePath, domainNamespace + ".org", "testwebapp")
-        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+        : deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace + ".org", "testwebapp");
 

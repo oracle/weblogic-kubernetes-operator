@@ -2,7 +2,6 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import java.util.Hashtable;
-import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSConsumer;
@@ -70,10 +69,13 @@ public class JmsTestClient {
      ConnectionFactory qcf= null;
      ctx = getInitialContext(clusterurl);
      qcf = (ConnectionFactory) ctx.lookup(testcf);
+     System.out.println("Looked up Queue connection factory");
      for ( int i=0; i<10; i++ ) {
        javax.jms.Connection con = qcf.createConnection();
+       System.out.println("Got connection to the Queue");
        String server = ((WLConnectionImpl) con).getWLSServerName();
-       servers[i]=server; 
+       System.out.println("Looked up server " + server);
+       servers[i]=server;
        // con.close();
      }
      ctx.close();
@@ -169,7 +171,7 @@ public class JmsTestClient {
      // env.put(Context.SECURITY_CREDENTIALS, password);
       try {
         jndiContext = new InitialContext(env);
-        // System.out.println("GOT INITIALCONTEXT(): " + jndiContext);
+        System.out.println("GOT INITIALCONTEXT(): " + jndiContext);
       } catch (Exception e) {
        System.out.println("Unable to getInitialContext "+e);
        System.exit(-1);
