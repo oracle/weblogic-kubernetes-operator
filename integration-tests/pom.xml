@@ -55,6 +55,7 @@
         <wko.it.fss.dir>${env.FSS_DIR}</wko.it.fss.dir>
         <wko.it.okd.cluster>${env.OKD}</wko.it.okd.cluster>
         <wko.it.ocne.cluster>${env.OCNE}</wko.it.ocne.cluster>
+        <wko.it.crio.pipeline>${env.CRIO_PIPELINE}</wko.it.crio.pipeline>
         <wko.it.oracle.db.operator.release>${env.ORACLE_DB_OPERATOR_RELEASE}</wko.it.oracle.db.operator.release>
         <wko.it.oraclelinux.test.version>${env.ORACLELINUX_TEST_VERSION}</wko.it.oraclelinux.test.version>
         <wko.it.wdt.download.url>${wdt.download.url}</wko.it.wdt.download.url>
@@ -254,12 +255,13 @@
                                 <wko.it.grafana.chart.version>${wko.it.grafana.chart.version}</wko.it.grafana.chart.version>
                                 <wko.it.istio.version>${wko.it.istio.version}</wko.it.istio.version>
                                 <wko.it.oke.cluster>${wko.it.oke.cluster}</wko.it.oke.cluster>
-        			<wko.it.oke.cluster.privateip>${env.OKE_CLUSTER_PRIVATEIP}</wko.it.oke.cluster.privateip>
+        			            <wko.it.oke.cluster.privateip>${env.OKE_CLUSTER_PRIVATEIP}</wko.it.oke.cluster.privateip>
                                 <wko.it.nfs.server>${wko.it.nfs.server}</wko.it.nfs.server>
                                 <wko.it.fss.dir>${wko.it.fss.dir}</wko.it.fss.dir>
                                 <wko.it.okd.cluster>${wko.it.okd.cluster}</wko.it.okd.cluster>
                                 <wko.it.arm.cluster>${wko.it.arm.cluster}</wko.it.arm.cluster>
                                 <wko.it.ocne.cluster>${wko.it.ocne.cluster}</wko.it.ocne.cluster>
+                                <wko.it.crio.pipeline>${wko.it.crio.pipeline}</wko.it.crio.pipeline>
                                 <wko.it.oracle.db.operator.release>${wko.it.oracle.db.operator.release}</wko.it.oracle.db.operator.release>
                                 <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
                                 <wko.it.wdt.download.url>${wko.it.wdt.download.url}</wko.it.wdt.download.url>

@@ -380,6 +380,9 @@ public interface TestConstants {
   // OCNE constants
   public static final boolean OCNE =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.ocne.cluster", "false"));
+  // CRIO_PIPELINE constants
+  public static final boolean CRIO =
+      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.crio.pipeline", "false"));
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
