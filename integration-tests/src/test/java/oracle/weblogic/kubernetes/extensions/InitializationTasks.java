@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_TENANCY;
 import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
+import static oracle.weblogic.kubernetes.TestConstants.CRIO;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -316,7 +317,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
-        if ((!OKD && !OCNE) || (OCNE && !assertDoesNotThrow(() -> Namespace.exists("istio-system")))) {
+        if ((!OKD && !OCNE && !CRIO)
+            || (OCNE && !CRIO && !assertDoesNotThrow(() -> Namespace.exists("istio-system")))) {
           logger.info("Installing istio before any test suites are run");
           installIstio();
         }
@@ -360,11 +362,11 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     if (SKIP_CLEANUP) {
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
-      if (!OKD && !OCNE) {
+      if (!OKD && !OCNE && !CRIO) {
         logger.info("Uninstall istio after all test suites are run");
         uninstallIstio();
       }
-      if (!OKD && !OKE_CLUSTER && !OCNE) {
+      if (!OKD && !OKE_CLUSTER && !OCNE && !CRIO) {
         logger.info("Delete istio-system namespace after all test suites are run");
         deleteNamespace("istio-system");
       }

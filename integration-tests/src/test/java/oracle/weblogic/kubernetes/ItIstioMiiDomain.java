@@ -89,7 +89,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("olcne-srg")
 @Tag("oke-parallelnew")
-
 class ItIstioMiiDomain {
 
   private static String opNamespace = null;
@@ -155,7 +154,6 @@ class ItIstioMiiDomain {
   @Test
   @DisplayName("Create WebLogic Domain with mii model with istio")
   @Tag("gate")
-  @Tag("crio")
   void testIstioModelInImageDomain() throws UnknownHostException, IOException, InterruptedException {
 
     // Create the repo secret to pull the image
