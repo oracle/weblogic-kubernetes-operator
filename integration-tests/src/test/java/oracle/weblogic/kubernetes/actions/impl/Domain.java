@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -766,15 +766,6 @@ public class Domain {
       return false;
     }
 
-    // create $DOMAIN_HOME/bin/scripts directory on admin server pod
-    logger.info("Creating directory {0}/bin/scripts on admin server pod", domainHomeLocation);
-    testUntil(
-        () -> executeCommandOnPod(adminPod, null, true,
-          "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts"),
-        logger,
-        "Creating directory {0}/bin/scripts on admin server pod",
-        domainHomeLocation);
-
     logger.info("Copying scalingAction.sh to admin server pod");
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
@@ -782,7 +773,6 @@ public class Domain {
           Paths.get("/u01/scalingAction.sh")),
         logger,
         "Copying scalingAction.sh to admin server pod");
-    //      Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
 
     logger.info("Adding execute mode for scalingAction.sh");
     testUntil(
@@ -790,7 +780,6 @@ public class Domain {
           "/bin/sh", "-c", "chmod +x /u01/scalingAction.sh"),
         logger,
         "Adding execute mode for scalingAction.sh");
-    //      "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh"),
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");

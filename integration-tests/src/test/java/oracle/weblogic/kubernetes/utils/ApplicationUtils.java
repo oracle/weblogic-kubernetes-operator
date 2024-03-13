@@ -520,8 +520,7 @@ public class ApplicationUtils {
         .append(":")
         .append(password)
         .append(" http://" + adminServerPodName + ":" + adminPort)
-        .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code} && ")
-        .append("echo ${status}");
+        .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}\"");
     logger.info("checkRestConsole : curl command {0}", new String(curlCmd));
     try {
       ExecResult result = ExecCommand.exec(new String(curlCmd), true);
