@@ -194,6 +194,7 @@ public class ItFmwDomainInPvUserCreateRcu {
   @Test
   @Order(1)
   @DisplayName("Create a FMW domain on PV when user per-creates RCU")
+  @Tag("gate")
   void testFmwDomainOnPvUserCreatesRCU() {
 
     final String pvName = getUniqueName(domainUid1 + "-pv-");
