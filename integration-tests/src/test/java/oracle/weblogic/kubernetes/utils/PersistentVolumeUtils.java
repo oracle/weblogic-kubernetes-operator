@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
@@ -253,6 +254,17 @@ public class PersistentVolumeUtils {
       logger.info("Creating PV directory host path {0}", pvHostPath);
       deleteDirectory(pvHostPath.toFile());
       createDirectories(pvHostPath);
+      Path p = pvHostPath;
+      while (true) {
+        Files.setPosixFilePermissions(p,PosixFilePermissions.fromString("rwxrwxrwx"));
+        p = p.getParent();
+        if (p == null) {
+          break;
+        }
+        if (p.toAbsolutePath().toString().equals(PV_ROOT)) {
+          break;
+        }
+      }
     } catch (IOException ioex) {
       logger.severe(ioex.getMessage());
       fail("Create persistent volume host path failed");
