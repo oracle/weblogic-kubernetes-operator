@@ -681,7 +681,7 @@
     <jersey-version>3.1.5</jersey-version>
     <jackson-version>2.16.1</jackson-version>
     <parsson-version>1.1.5</parsson-version>
-    <jose4j-version>0.9.4</jose4j-version>
+    <jose4j-version>0.9.6</jose4j-version>
     <snakeyaml-version>1.33</snakeyaml-version>
     <jackson-databind-version>2.16.1</jackson-databind-version>
     <dependency-check-version>9.0.9</dependency-check-version>
