@@ -47,7 +47,7 @@ jobs:
           gh release create ${{ github.ref_name }} \
             --draft \
             --generate-notes \
-            --target release/4.1 \
+            --target release/4.2 \
             --title 'Operator ${{ env.VERSION }}' \
             --repo https://github.com/oracle/weblogic-kubernetes-operator \
             domain-upgrader/target/domain-upgrader.jar
