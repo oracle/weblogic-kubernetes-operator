@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
@@ -54,7 +54,7 @@ domainNamespaceSelectionStrategy: LabelSelector
 enableClusterRoleBinding: true
 
 # image specifies the container image containing the operator.
-image: "4.2.0-RELEASE-MARKER"
+image: "4.3.0-RELEASE-MARKER"
 
 # imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent

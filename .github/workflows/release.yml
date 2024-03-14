@@ -88,7 +88,7 @@ jobs:
           curl -fL -o helm.tar.gz "https://get.helm.sh/helm-v3.12.1-linux-amd64.tar.gz"
           tar -xf helm.tar.gz
           export PATH="$PWD/linux-amd64:$PATH"
-          sed -i 's#4.2.0-RELEASE-MARKER#${{ env.BASE_IMAGE_NAME }}:${{ env.VERSION }}#g' $GITHUB_WORKSPACE/kubernetes/charts/weblogic-operator/values.yaml
+          sed -i 's#4.3.0-RELEASE-MARKER#${{ env.BASE_IMAGE_NAME }}:${{ env.VERSION }}#g' $GITHUB_WORKSPACE/kubernetes/charts/weblogic-operator/values.yaml
           mkdir $GITHUB_WORKSPACE/WORK
           helm package --app-version $VERSION --version $VERSION $GITHUB_WORKSPACE/kubernetes/charts/weblogic-operator -d $GITHUB_WORKSPACE/WORK
           cp $GITHUB_WORKSPACE/WORK/*.tgz $GITHUB_WORKSPACE/gh-pages/charts/
