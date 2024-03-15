@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.108.0">
-    <meta name="description" content="Upgrade managed domains to a higher, major version.">
+    <meta name="description" content="Upgrade managed domains, general and specific guidelines.">
 
 
     <link rel="icon" href="https://oracle.github.io/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,20 +12,20 @@
     <title>Upgrade managed domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1710505142" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1710505142" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1710514949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1710514949" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1710505142"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1710514949"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1710505142"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1710505142"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1710514949"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1710514949"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1710505142"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1710514949"></script>
 
     
   </div>
@@ -823,6 +823,58 @@
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/upgrade-major/" title="Upgrade managed domains" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/">
+        <b> </b>Upgrade managed domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/upgrade-14210/" title="Upgrade managed domains to v14.1.2.0" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/">
+        <b> </b>Upgrade managed domains to v14.1.2.0
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
       
     </li>
   
@@ -3875,49 +3927,72 @@
 
 
 
-	<p>This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to a higher, major version.</p>
-<p>In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the <a href="https://docs.oracle.com/en/middleware/fusion-middleware/12.2.1.4/asmas/planning-upgrade-oracle-fusion-middleware-12c.html#GUID-D9CEE7E2-5062-4086-81C7-79A33A200080">Fusion Middleware Upgrade Guide</a>.</p>
-<p><strong>Before the upgrade</strong>, you must do the following:</p>
-<ul>
-<li>
-<p>If your <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a> is Domain on Persistent Volume (DoPV), then back up the domain home.</p>
-</li>
-<li>
-<p>If your domain type is <code>JRF</code>:</p>
-<ul>
-<li>
-<p>Back up the JRF database.</p>
-</li>
-<li>
-<p>Back up the OPSS wallet file, this allows you to reuse the same JRF database schemas if you need to recreate the domain.</p>
-<p>The operator provides a helper script, the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh">OPSS wallet utility</a>, for extracting the wallet file and storing it in a Kubernetes <code>walletFileSecret</code>. In addition, you should save the wallet file in a safely backed-up location, outside of Kubernetes. For example, the following command saves the OPSS wallet for the <code>sample-domain1</code> domain in the <code>sample-ns</code> namespace to a file named <code>ewallet.p12</code> in the <code>/tmp</code> directory and also stores it in the wallet secret named <code>sample-domain1-opss-walletfile-secret</code>.</p>
-<pre tabindex="0"><code>$ opss-wallet.sh -n sample-ns -d sample-domain1 -s -r -wf /tmp/ewallet.p12 -ws sample-domain1-opss-walletfile-secret
-</code></pre></li>
-</ul>
-</li>
-<li>
-<p>Make sure nothing else is accessing the database.</p>
-</li>
-<li>
-<p><strong>Do not delete</strong> the domain resource.</p>
-</li>
+	
+
+
+
+
+
+
+<ul class="children children-h4">
+	
+
+	
+		
+	
+
+	
+
+	
+		
+	
+		
+			
+				
+					
+					
+
+<h4>
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/" >Upgrade managed domains</a>
+</h4>
+
+				
+
+				
+					
+<p>Upgrade managed domains to a higher, major version.</p>
+					
+				
+			
+			
+		
+	
+		
+			
+				
+					
+					
+
+<h4>
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/" >Upgrade managed domains to v14.1.2.0</a>
+</h4>
+
+				
+
+				
+					
+<p>Upgrade managed domains to v14.1.2.0.</p>
+					
+				
+			
+			
+		
+	
+
+	
 </ul>
 
-<div class="notices note" ><p>According to My Oracle Support <a href="https://support.oracle.com/epmos/faces/DocumentDisplay?id=2752458.1">Doc ID 2752458.1</a>, if you are using an FMW/JRF domain and upgrading from 12.2.1.3 to 12.2.1.4, then before upgrading, you do <em>not</em> need to run the Upgrade Assistant or Reconfiguration Wizard, but we recommend moving the domain to a persistent volume.  See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/move-to-pv/">Move MII/JRF domains to PV</a>.</p>
-</div>
 
-<p>To upgrade WLS and FMW/JRF infrastructure domains, use the following procedure.</p>
-<ol>
-<li>
-<p>Shut down the domain by patching the domain and/or cluster spec <code>serverStartPolicy</code> to <code>Never</code>. For example:</p>
-<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p=&#39;[ {&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/serverStartPolicy&#34;, &#34;value&#34;: &#34;Never&#34;}]&#39;
-</code></pre></li>
-<li>
-<p>After the shutdown completes, upgrade the base image in the domain resource YAML file and redeploy the domain.</p>
-<p>You can patch the domain resource YAML file, update the base image and change <code>serverStartPolicy</code> to <code>IfNeeded</code> again, as follows:</p>
-<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p=&#39;[ {&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/serverStartPolicy&#34;, &#34;value&#34;: &#34;IfNeeded&#34;}, {&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;:&#34;/spec/image&#34;, &#34;value&#34;:&#34;&lt;New WebLogic or Fusion Middleware base image&gt;&#34;]&#39;
-</code></pre></li>
-</ol>
 
 
 
@@ -4485,6 +4560,22 @@
                     
 
                     
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
             
         
                     
@@ -4493,8 +4584,24 @@
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
                         
-                        
+            
+            
+                
                     
                 
                 
@@ -6500,7 +6607,7 @@
 			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/" title="Prepare to run a domain"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/" title="Domain on Persistent Volume (PV)" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/" title="Upgrade managed domains" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -6510,19 +6617,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1710505142"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1710505142"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1710505142"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1710505142"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1710505142"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1710505142"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1710514950"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1710514950"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1710514950"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1710514950"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1710514950"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1710514950"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1710505142"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1710505142"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1710505142"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1710514950"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1710514950"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1710514950"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1710505142"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1710514950"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

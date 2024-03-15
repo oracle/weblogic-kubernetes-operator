@@ -13,7 +13,7 @@
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/overview/</guid>
-      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
+      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Using demo SSL certificates in v14.1.2.0.0 or later Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
     </item>
     
     <item>

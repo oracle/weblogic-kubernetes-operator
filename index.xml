@@ -110,7 +110,7 @@ $ cd /tmp $ git clone --branch v4.</description>
       <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
 Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
 For example:
-$ cd /tmp $ git clone --branch v4.1.8 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
+$ cd /tmp $ git clone --branch v4.2.0 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
 For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
     </item>
     
@@ -779,7 +779,7 @@ Create a Kubernetes Secret containing the Administration Server boot credentials
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release 4.1.8 :
+      <description>For the current production release 4.2.0 :
 Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, and 1.28.2+ (check with kubectl version).
 Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.
 Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).
@@ -796,6 +796,18 @@ For domain home source type Model in Image, WebLogic Deploy Tooling 1.</descript
       <description>Here&amp;rsquo;s some insight into what&amp;rsquo;s happening under the covers during the Quick Start tutorial.
 The Quick Start guide first installs the WebLogic Kubernetes Operator, then creates a domain using the Model in Image domain home source type.
 For a comparison of Model in Image to other domain home source types, see Choose a domain home source type. To learn more about Model in Image domains, see the detailed Model in Image user guide.</description>
+    </item>
+    
+    <item>
+      <title>Upgrade managed domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/</link>
+      <pubDate>Thu, 05 Oct 2023 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/</guid>
+      <description>This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to a higher, major version.
+In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the Fusion Middleware Upgrade Guide.
+Before the upgrade, you must do the following:
+If your domain home source type is Domain on Persistent Volume (DoPV), then back up the domain home.</description>
     </item>
     
     <item>
@@ -882,6 +894,15 @@ documentation/latest: This documentation documentation/&amp;lt;numbered director
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/platforms/environments/</guid>
       <description>Contents Overview Important notes about specific environments Oracle Cloud Infrastructure Oracle Cloud Native Environment Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure Microsoft Azure Kubernetes Service (AKS) Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace) VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions Pricing and licensing WebLogic Kubernetes Operator WebLogic Server Oracle Linux Oracle Java WebLogic Server or Fusion Middleware Infrastructure images Additional references Overview The operator supports running on production-quality Kubernetes environments, including on-premises, cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.</description>
+    </item>
+    
+    <item>
+      <title>Upgrade managed domains to v14.1.2.0</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/</link>
+      <pubDate>Thu, 05 Oct 2023 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/</guid>
+      <description>Contents Important considerations General upgrade procedures Back up the OPSS wallet and save it in a secret Deploy a WebLogic Server pod to access the domain home on a persistent volume Upgrade the JRF database Reconfigure the domain Upgrade use cases WLS Domain on Persistent Volume FMW/JRF Domain on Persistent Volume WLS domain using Model in Image FMW/JRF domain using Model in Image Sample WDT model for secured production mode and SSL This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to v14.</description>
     </item>
     
     <item>
@@ -1030,7 +1051,7 @@ $ git checkout -b your-branch Make your documentation updates by editing the sou
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/overview/</guid>
-      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
+      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Using demo SSL certificates in v14.1.2.0.0 or later Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
     </item>
     
     <item>
@@ -1112,16 +1133,6 @@ WebLogic Server has a new, important feature to ensure and help you secure your 
     </item>
     
     <item>
-      <title>Domain debugging</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</link>
-      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</guid>
-      <description>Here are some suggestions for debugging problems with a domain after your Domain or Cluster YAML files are deployed.
-Contents Understand failure types, severities, and tuning Check the Domain status Check the Cluster status Check the Domain events Check the introspector job Check the WebLogic Server pods Check the docs Check the operator Understand failure types, severities, and tuning When debugging, it helps to understand failure types, failure severities, retry behavior, and retry tuning, see Domain failure retry processing.</description>
-    </item>
-    
-    <item>
       <title>Scheduling pods to particular nodes</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/</link>
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
@@ -1132,6 +1143,16 @@ To do this:
 First, set a label on the nodes on which the WebLogic Server pods will run. For example:
 $ kubectl label nodes name=weblogic-pods In the Domain CR, set a nodeSelector: a selector which must match a node&amp;rsquo;s labels for the pod to be scheduled on that node. See kubectl explain pods.spec.nodeSelector.
 You can set nodeSelector labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain.</description>
+    </item>
+    
+    <item>
+      <title>Domain debugging</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</guid>
+      <description>Here are some suggestions for debugging problems with a domain after your Domain or Cluster YAML files are deployed.
+Contents Understand failure types, severities, and tuning Check the Domain status Check the Cluster status Check the Domain events Check the introspector job Check the WebLogic Server pods Check the docs Check the operator Understand failure types, severities, and tuning When debugging, it helps to understand failure types, failure severities, retry behavior, and retry tuning, see Domain failure retry processing.</description>
     </item>
     
     <item>

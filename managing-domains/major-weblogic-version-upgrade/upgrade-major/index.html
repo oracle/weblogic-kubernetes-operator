@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.108.0">
-    <meta name="description" content="Consult these preparation steps, strategy choices, and prequisites prior to installing an operator.">
+    <meta name="description" content="Upgrade managed domains to a higher, major version.">
 
 
     <link rel="icon" href="https://oracle.github.io/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Prepare for installation :: WebLogic Kubernetes Operator</title>
+    <title>Upgrade managed domains :: WebLogic Kubernetes Operator</title>
 
     
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1710514949" rel="stylesheet">
@@ -39,7 +39,7 @@
     </style>
     
   </head>
-  <body class="" data-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/preparation/">
+  <body class="" data-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/">
     <nav id="sidebar" class="">
 
 
@@ -384,7 +384,7 @@
   
     
     <li data-nav-id="/managing-operators/" title="Manage operators" class="dd-item
-        parent
+        
         
         
         ">
@@ -431,7 +431,7 @@
  
   
     
-      <li data-nav-id="/managing-operators/preparation/" title="Prepare for installation" class="dd-item active">
+      <li data-nav-id="/managing-operators/preparation/" title="Prepare for installation" class="dd-item ">
         <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/preparation/">
         Prepare for installation
         
@@ -670,7 +670,7 @@
   
     
     <li data-nav-id="/managing-domains/" title="Manage domains" class="dd-item
-        
+        parent
         
         
         ">
@@ -814,7 +814,7 @@
   
     
     <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/" title="Upgrade managed domains" class="dd-item
-        
+        parent
         
         
         ">
@@ -840,7 +840,7 @@
  
   
     
-      <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/upgrade-major/" title="Upgrade managed domains" class="dd-item ">
+      <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/upgrade-major/" title="Upgrade managed domains" class="dd-item active">
         <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/">
         <b> </b>Upgrade managed domains
         
@@ -3890,7 +3890,13 @@
             
           
           
-            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/'>Manage operators</a> > Prepare for installation
+            
+            
+          
+          
+            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/'>Manage domains</a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/'>Upgrade managed domains</a> > Upgrade managed domains
+          
+        
           
         
           
@@ -3903,44 +3909,7 @@
                 
                     <div class="progress">
     <div class="wrapper">
-<nav id="TableOfContents">
-  <ul>
-    <li>
-      <ul>
-        <li><a href="#introduction">Introduction</a></li>
-        <li><a href="#check-environment">Check environment</a></li>
-        <li><a href="#set-up-the-operator-helm-chart-access">Set up the operator Helm chart access</a></li>
-        <li><a href="#inspect-the-operator-helm-chart">Inspect the operator Helm chart</a></li>
-        <li><a href="#prepare-an-operator-namespace-and-service-account">Prepare an operator namespace and service account</a></li>
-        <li><a href="#prepare-operator-image">Prepare operator image</a>
-          <ul>
-            <li><a href="#locating-an-operator-image">Locating an operator image</a></li>
-            <li><a href="#default-operator-image">Default operator image</a></li>
-            <li><a href="#pulling-operator-image">Pulling operator image</a></li>
-            <li><a href="#customizing-operator-image-name-pull-secret-and-private-registry">Customizing operator image name, pull secret, and private registry</a></li>
-          </ul>
-        </li>
-        <li><a href="#determine-the-platform-setting">Determine the platform setting</a></li>
-        <li><a href="#choose-a-security-strategy">Choose a security strategy</a>
-          <ul>
-            <li><a href="#any-namespace-with-cluster-role-binding-enabled">Any namespace with cluster role binding enabled</a></li>
-            <li><a href="#any-namespace-with-cluster-role-binding-disabled">Any namespace with cluster role binding disabled</a></li>
-            <li><a href="#local-namespace-only-with-cluster-role-binding-disabled">Local namespace only with cluster role binding disabled</a></li>
-          </ul>
-        </li>
-        <li><a href="#choose-a-domain-namespace-selection-strategy">Choose a domain namespace selection strategy</a></li>
-        <li><a href="#choose-a-helm-release-name">Choose a Helm release name</a></li>
-        <li><a href="#be-aware-of-advanced-operator-configuration-options">Be aware of advanced operator configuration options</a></li>
-      </ul>
-    </li>
-    <li><a href="#special-use-cases">Special use cases</a>
-      <ul>
-        <li><a href="#how-to-download-the-helm-chart-if-internet-access-is-not-available">How to download the Helm chart if Internet access is not available</a></li>
-        <li><a href="#how-to-manually-install-the-domain-resource-custom-resource-definition-crd">How to manually install the Domain resource custom resource definition (CRD)</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
+<nav id="TableOfContents"></nav>
     </div>
 </div>
 
@@ -3956,371 +3925,56 @@
           
             <h1>
               
-              Prepare for installation
+              Upgrade managed domains
             </h1>
           
 
         
 
 
-<h4 id="introduction">Introduction</h4>
-<p>A single operator instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured.
-A Kubernetes cluster can host multiple operators, but no more than one per namespace.</p>
-<p>Before installing an operator, ensure that each of these prerequisite requirements is met:</p>
-<ol>
-<li><a href="#check-environment">Check environment</a></li>
-<li><a href="#set-up-the-operator-helm-chart-access">Set up the operator Helm chart access</a></li>
-<li><a href="#inspect-the-operator-helm-chart">Inspect the operator Helm chart</a></li>
-<li><a href="#prepare-an-operator-namespace-and-service-account">Prepare an operator namespace and service account</a></li>
-<li><a href="#prepare-operator-image">Prepare operator image</a>
-<ul>
-<li><a href="#locating-an-operator-image">Locating an operator image</a></li>
-<li><a href="#default-operator-image">Default operator image</a></li>
-<li><a href="#pulling-operator-image">Pulling operator image</a></li>
-<li><a href="#customizing-operator-image-name-pull-secret-and-private-registry">Customizing operator image name, pull secret, and private registry</a></li>
-</ul>
-</li>
-<li><a href="#determine-the-platform-setting">Determine the platform setting</a></li>
-<li><a href="#choose-a-security-strategy">Choose a security strategy</a>
-<ul>
-<li><a href="#any-namespace-with-cluster-role-binding-enabled">Any namespace with cluster role binding enabled</a></li>
-<li><a href="#any-namespace-with-cluster-role-binding-disabled">Any namespace with cluster role binding disabled</a></li>
-<li><a href="#local-namespace-only-with-cluster-role-binding-disabled">Local namespace only with cluster role binding disabled</a></li>
-</ul>
-</li>
-<li><a href="#choose-a-domain-namespace-selection-strategy">Choose a domain namespace selection strategy</a></li>
-<li><a href="#choose-a-helm-release-name">Choose a Helm release name</a></li>
-<li><a href="#be-aware-of-advanced-operator-configuration-options">Be aware of advanced operator configuration options</a></li>
-<li>Special use cases:
-<ul>
-<li><a href="#how-to-download-the-helm-chart-if-internet-access-is-not-available">How to download the Helm chart if Internet access is not available</a></li>
-<li><a href="#how-to-manually-install-the-domain-resource-custom-resource-definition-crd">How to manually install the Domain resource custom resource definition (CRD)</a></li>
-</ul>
-</li>
-</ol>
-<h4 id="check-environment">Check environment</h4>
-<ol>
-<li>
-<p>Review the <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/">Operator prerequisites</a> to ensure that your Kubernetes cluster supports the operator.</p>
-</li>
-<li>
-<p>It is important to keep in mind that some supported environments
-have additional help or samples that are specific to the operator,
-or are subject to limitations, special tuning requirements,
-special licensing requirements, or restrictions.
-See <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/platforms/environments/">Supported environments</a> for details.</p>
-</li>
-<li>
-<p>If your environment doesn&rsquo;t already have a Kubernetes setup, then see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/k8s-setup/">set up Kubernetes</a>.</p>
-</li>
-<li>
-<p>If it is not already installed, then install Helm.
-To install an operator, it is required to install Helm in your Kubernetes cluster.
-The operator uses Helm to create the necessary resources and then deploy the operator in a Kubernetes cluster.</p>
-<p>To check if you already have Helm available, try the <code>helm version</code> command.</p>
-<p>For detailed instructions on installing Helm, see the <a href="https://github.com/helm/helm">GitHub Helm Repository</a>.</p>
-</li>
-<li>
-<p>Optionally, enable <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/istio/istio/">Istio</a>.</p>
-</li>
-</ol>
-<h4 id="set-up-the-operator-helm-chart-access">Set up the operator Helm chart access</h4>
-<p>Before installing an operator, the operator Helm chart must be made available.
-The operator Helm chart includes:</p>
-<ul>
-<li>Pre-configured default values for the configuration of the operator.</li>
-<li>Helm configuration value settings for fine tuning operator behavior.</li>
-<li>Commands for deploying (installing) or undeploying the operator.</li>
-</ul>
-<p>You can set up access to the operator Helm chart using the chart repository.</p>
+<p>This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to a higher, major version.</p>
+<p>In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the <a href="https://docs.oracle.com/en/middleware/fusion-middleware/12.2.1.4/asmas/planning-upgrade-oracle-fusion-middleware-12c.html#GUID-D9CEE7E2-5062-4086-81C7-79A33A200080">Fusion Middleware Upgrade Guide</a>.</p>
+<p><strong>Before the upgrade</strong>, you must do the following:</p>
 <ul>
 <li>
-<p>Use the operator Helm chart repository
-that is located at <code>https://oracle.github.io/weblogic-kubernetes-operator/charts</code>
-or in a custom repository that you control.</p>
+<p>If your <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a> is Domain on Persistent Volume (DoPV), then back up the domain home.</p>
 </li>
 <li>
-<p>To set up your Helm installation so that it can access the
-<code>https://oracle.github.io/weblogic-kubernetes-operator/charts</code>
-repository and name the repository reference <code>weblogic-operator</code>, use
-the following command, <code>helm repo add &lt;helm-chart-repo-name&gt; &lt;helm-chart-repo-url&gt;</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
-</span></span></code></pre></div></li>
-<li>
-<p>To verify that a Helm chart repository was added correctly, or to list existing repositories:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo list
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>NAME                 URL
-</span></span><span style="display:flex;"><span>weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
-</span></span></code></pre></div></li>
-<li>
-<p>For example, assuming you have named
-your repository <code>weblogic-operator</code>, simply
-use <code>weblogic-operator/weblogic-operator</code> in your Helm
-commands when specifying the chart location.</p>
+<p>If your domain type is <code>JRF</code>:</p>
 <ul>
 <li>
-<p>To list the versions of the operator that you can install from the Helm chart repository:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm search repo weblogic-operator/weblogic-operator --versions
-</span></span></code></pre></div></li>
-<li>
-<p>For a specified version of the Helm chart and operator, with the <code>helm pull</code> and <code>helm install</code> commands, use the <code>--version &lt;value&gt;</code> option
-to choose the version that you want, with the <code>latest</code> value being the default.</p>
-</li>
-</ul>
-</li>
-</ul>
-<h4 id="inspect-the-operator-helm-chart">Inspect the operator Helm chart</h4>
-<p>You can find out the configuration values that the operator Helm chart supports,
-as well as the default values, using the <code>helm show</code> command.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm show values weblogic-operator/weblogic-operator
-</span></span></code></pre></div><ul>
-<li>
-<p>Alternatively, you can view most of the configuration values
-and their defaults in the operator source in the
-<code>./kubernetes/charts/weblogic-operator/values.yaml</code> file.</p>
+<p>Back up the JRF database.</p>
 </li>
 <li>
-<p>The available configuration values are explained by category in the
-<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>
-section of the operator Configuration Reference.</p>
+<p>Back up the OPSS wallet file, this allows you to reuse the same JRF database schemas if you need to recreate the domain.</p>
+<p>The operator provides a helper script, the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh">OPSS wallet utility</a>, for extracting the wallet file and storing it in a Kubernetes <code>walletFileSecret</code>. In addition, you should save the wallet file in a safely backed-up location, outside of Kubernetes. For example, the following command saves the OPSS wallet for the <code>sample-domain1</code> domain in the <code>sample-ns</code> namespace to a file named <code>ewallet.p12</code> in the <code>/tmp</code> directory and also stores it in the wallet secret named <code>sample-domain1-opss-walletfile-secret</code>.</p>
+<pre tabindex="0"><code>$ opss-wallet.sh -n sample-ns -d sample-domain1 -s -r -wf /tmp/ewallet.p12 -ws sample-domain1-opss-walletfile-secret
+</code></pre></li>
+</ul>
 </li>
 <li>
-<p>Helm commands are explained in more detail here, see
-<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/using-helm/#useful-helm-operations">Useful Helm operations</a>.</p>
+<p>Make sure nothing else is accessing the database.</p>
+</li>
+<li>
+<p><strong>Do not delete</strong> the domain resource.</p>
 </li>
 </ul>
-<h4 id="prepare-an-operator-namespace-and-service-account">Prepare an operator namespace and service account</h4>
-<p>Each operator requires a namespace to run in and a Kubernetes service account
-within the namespace. The service account will be used
-to host the operator&rsquo;s security permissions. Only one operator can run
-in a given namespace.</p>
-<p>To simplifies management and monitoring of an operator, Oracle recommends:</p>
-<ul>
-<li>When possible, create an isolated namespace
-for each operator which hosts only the operator, does not host
-domains, and does not host Kubernetes resources that are
-unrelated to the operator. Sometimes this is not possible,
-in which case the operator can be configured to
-manage domains in its own namespace. For more information, see
-<a href="#choose-a-security-strategy">Choose a security strategy</a> and
-<a href="#choose-a-domain-namespace-selection-strategy">Choose a domain namespace selection strategy</a>.</li>
-<li>Creating a dedicated service account for each operator
-instead of relying on the <code>default</code> service account that
-Kubernetes creates when a new namespace is created.</li>
-<li>Directly creating a namespace
-and service account instead of relying
-on the operator Helm chart installation to create
-these resources for you.</li>
-</ul>
-<p>Here&rsquo;s an example of each:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl create namespace sample-weblogic-operator-ns
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
-</span></span></code></pre></div><p>In operator installation steps,
-you will specify the namespace using the <code>--namespace MY-NAMESPACE</code>
-operator Helm chart configuration setting on the Helm install command line.
-If not specified, then it defaults to <code>default</code>.
-If the namespace does not already exist, then Helm will automatically create it
-(and Kubernetes will create a <code>default</code> service account in the new namespace).
-If you later uninstall the operator, then Helm will not remove the specified namespace.
-These are standard Helm behaviors.</p>
-<p>Similarly, you will specify the <code>serviceAccount=MY-SERVICE-ACCOUNT</code>
-operator Helm chart configuration setting on the Helm install command
-line to specify the service account in the operator&rsquo;s namespace
-that the operator will use. If not specified, then it defaults to <code>default</code>. This
-service account will not be automatically removed when you uninstall an operator.</p>
-<h4 id="prepare-operator-image">Prepare operator image</h4>
-<p>The operator image must be available to all nodes of your Kubernetes cluster.</p>
-<h5 id="locating-an-operator-image">Locating an operator image</h5>
-<p>Production-ready operator images for various supported versions of the operator are
-publicly located in the operator
-<a href="https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator">GitHub Container Registry</a>.
-Operator GitHub container registry images can be directly referenced using an image name similar to
-<code>ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N</code> where <code>N.N.N</code> refers to the operator version
-and <code>ghcr.io</code> is the DNS name of the GitHub container registry.
-You can also optionally build your own operator image,
-see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/">Developer Guide</a>.</p>
-<h5 id="default-operator-image">Default operator image</h5>
-<p>Each Helm chart version defaults to using an operator image from the matching version.
-To find the default image name that will be used when installing the operator,
-see <a href="#inspect-the-operator-helm-chart">Inspect the operator Helm chart</a> and look for the <code>image</code> value.
-The value will look something like this, <code>ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N</code>.</p>
-<h5 id="pulling-operator-image">Pulling operator image</h5>
-<p>In most use cases, Kubernetes will automatically download (pull) the operator image, as needed,
-to the machines on its cluster nodes.</p>
-<p>If you want to manually place an operator image
-in a particular machine&rsquo;s container image pool, or test access to an image,
-then call <code>docker pull</code>. For example:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:4.2.0
 
-</span></span></code></pre></div><p>Note that if the image registry you are using is a private registry that
-requires an image pull credential,
-then you will need to call <code>docker login my-registry-dns-name.com</code>
-before calling <code>docker pull</code>.</p>
-<h5 id="customizing-operator-image-name-pull-secret-and-private-registry">Customizing operator image name, pull secret, and private registry</h5>
-<p>Sometimes, you may want to specify a custom operator image name
-or an image pull secret. For example, you may want to deploy a different
-version than the <a href="#default-operator-image">default operator image name</a>
-or you may want to place an operator image in your own private image registry.</p>
-<p>A private image registry requires using a custom image name for the operator
-where the first part of the name up to the first slash (<code>/</code>) character
-is the DNS location of the registry and the remaining part refers
-to the image location within the registry. A private image registry
-may also require an image pull registry secret to
-provide security credentials.</p>
-<ul>
-<li>To reference a custom image name, specify the <code>image=</code> operator Helm chart configuration setting
-when installing the operator,
-for example <code>--set &quot;image=my-image-registry.io/my-operator-image:1.0&quot;</code>.</li>
-<li>To create an image pull registry secret, create a Kubernetes Secret of type <code>docker-registry</code>
-in the namespace where the operator is to be deployed, as described
-in <a href="https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod">Specifying <code>imagePullSecrets</code> on a Pod</a>.</li>
-<li>To reference an image pull registry secret from an operator installation, there are two options:
-<ul>
-<li>Use the <code>imagePullSecrets</code> operator Helm chart
-configuration setting when installing the operator.
-For examples, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/using-helm/#imagepullsecrets">imagePullSecrets</a>.</li>
-<li>Or, add the pull secret name to the service account you will
-use for the operator. See <a href="#prepare-an-operator-namespace-and-service-account">Prepare an operator namespace and service account</a>
-and <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-image-pull-secret-to-service-account">Add image pull secret to service account</a>.</li>
-</ul>
-</li>
-</ul>
-<h4 id="determine-the-platform-setting">Determine the platform setting</h4>
-<p>It is important to set the correct value
-for the <code>kubernetesPlatform</code> Helm chart configuration setting when installing the operator.</p>
-<p>In particular, beginning with operator version 3.3.2,
-specify the operator <code>kubernetesPlatform</code> Helm chart setting
-with the value <code>OpenShift</code> when using the <code>OpenShift</code> Kubernetes platform,
-for example <code>--set &quot;kubernetesPlatform=OpenShift&quot;</code>.
-This accommodates OpenShift security requirements.</p>
-<p>For more information,
-see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/using-helm/#kubernetesplatform">kubernetesPlatform</a>.</p>
-<h4 id="choose-a-security-strategy">Choose a security strategy</h4>
-<p>There are three commonly used security strategies for deploying an operator:</p>
-<ol>
-<li><a href="#any-namespace-with-cluster-role-binding-enabled">Any namespace with cluster role binding enabled</a></li>
-<li><a href="#any-namespace-with-cluster-role-binding-disabled">Any namespace with cluster role binding disabled</a></li>
-<li><a href="#local-namespace-only-with-cluster-role-binding-disabled">Local namespace only with cluster role binding disabled</a></li>
-</ol>
-<p>For a detailed description of the operator&rsquo;s security-related resources,
-see the operator&rsquo;s role-based access control (RBAC) requirements,
-which are documented <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/rbac/">here</a>.</p>
-<h5 id="any-namespace-with-cluster-role-binding-enabled">Any namespace with cluster role binding enabled</h5>
-<p>If you want to give the operator permission to access any namespace,
-then, for most use cases, set the <code>enableClusterRoleBinding</code> operator Helm chart
-configuration setting to <code>true</code> when installing the operator.</p>
-<p>For example <code>--set &quot;enableClusterRoleBinding=true&quot;</code>.
-The default for this setting is <code>true</code>.</p>
-<p>This is the most popular security strategy.</p>
-<h5 id="any-namespace-with-cluster-role-binding-disabled">Any namespace with cluster role binding disabled</h5>
-<p>If your operator Helm <code>enableClusterRoleBinding</code> configuration value is <code>false</code>,
-then an operator is still capable of managing multiple namespaces
-but a running operator will <em>not</em> have privilege to manage a newly added namespace
-that matches its namespace selection criteria until you upgrade
-the operator&rsquo;s Helm release.
-See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/namespace-management/#ensuring-the-operator-has-permission-to-manage-a-namespace">Ensuring the operator has permission to manage a namespace</a>.</p>
-<p><strong>NOTE</strong>: You will need to manually install the operator CRD
-because <code>enableClusterRoleBinding</code> is not set to <code>true</code>
-and installation of the CRD requires cluster role binding privileges.
-See <a href="#how-to-manually-install-the-domain-resource-custom-resource-definition-crd">How to manually install the Domain resource custom resource definition (CRD)</a>.</p>
-<h5 id="local-namespace-only-with-cluster-role-binding-disabled">Local namespace only with cluster role binding disabled</h5>
-<p>If you want to limit the operator so that it can access only resources in its local namespace, then:</p>
-<ul>
-<li>Choose a <code>Dedicated</code> namespace selection strategy.
-See <a href="#choose-a-domain-namespace-selection-strategy">Choose a domain namespace selection strategy</a>.</li>
-<li>You will need to manually install the operator CRD
-because <code>enableClusterRoleBinding</code> is not set to <code>true</code>
-and installing the CRD requires cluster role binding privileges.
-See <a href="#how-to-manually-install-the-domain-resource-custom-resource-definition-crd">How to manually install the Domain resource custom resource definition (CRD)</a>.</li>
-</ul>
-<p>This may be necessary in environments where the operator cannot have cluster-scoped privileges,
-such as may happen on OpenShift platforms when running the operator with a <code>Dedicated</code> namespace strategy.</p>
-<h4 id="choose-a-domain-namespace-selection-strategy">Choose a domain namespace selection strategy</h4>
-<p>Before installing your operator,
-choose the value for its <code>domainNamespaceSelectionStrategy</code> Helm chart configuration setting and its related setting (if any).
-See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/namespace-management/#choose-a-domain-namespace-selection-strategy">Choose a domain namespace section strategy</a>.</p>
-<p>See <a href="#choose-a-security-strategy">Choose a security strategy</a>.</p>
-<p>For a description of common namespace management issues,
-see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/common-mistakes/">Common mistakes and solutions</a>.
-For reference, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/using-helm/#weblogic-domain-management">WebLogic domain management</a>.</p>
-<h4 id="choose-a-helm-release-name">Choose a Helm release name</h4>
-<p>The operator requires Helm for installation,
-and Helm requires that each installed operator
-be assigned a release name. Helm release names
-can be the same if they are deployed to
-different namespaces, but must
-be unique within a particular namespace.</p>
-<p>A typical Helm release name is simply <code>weblogic-operator</code>.
-The operator samples and documentation
-often use <code>sample-weblogic-operator</code>.</p>
-<h4 id="be-aware-of-advanced-operator-configuration-options">Be aware of advanced operator configuration options</h4>
-<p>Review the settings in the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/using-helm/">Configuration Reference</a> for
-less commonly used advanced or fine tuning Helm chart configuration options
-that might apply to your particular use case.
-These include node selectors,
-node affinity,
-Elastic Stack integration,
-the operator REST API,
-setting operator pod labels,
-setting operator pod annotations,
-and Istio.</p>
-<h3 id="special-use-cases">Special use cases</h3>
-<p>If applicable, please review the following special use cases.</p>
-<h4 id="how-to-download-the-helm-chart-if-internet-access-is-not-available">How to download the Helm chart if Internet access is not available</h4>
-<p>At a high level, you use <code>helm pull</code> to download a released version of the Helm chart and move it to the machine with no Internet access,
-so that then you can run <code>helm install</code> to install the operator.</p>
-<p>The steps are:</p>
-<ol>
-<li>On a machine with Internet access, to download the chart to the current directory, run:</li>
-</ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm pull weblogic-operator --repo https://oracle.github.io/weblogic-kubernetes-operator/charts --destination .
-</span></span></code></pre></div><p>For a specified version of the Helm chart, with <code>helm pull</code> and <code>helm install</code>, use the <code>--version &lt;value&gt;</code> option
-to choose the version that you want, with the <code>latest</code> value being the default. To list the versions of the
-operator that you can install from the Helm chart repository, run:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
-</span></span><span style="display:flex;"><span>$ helm search repo weblogic-operator/weblogic-operator --versions
-</span></span></code></pre></div><ol start="2">
-<li>Move the resulting <code>weblogic-operator-&lt;version&gt;.tgz</code> file to the machine without Internet access on which you want to install the WebLogic Kubernetes Operator.</li>
-<li>Run <code>$ tar zxf weblogic-operator-&lt;version&gt;.tgz</code>. This puts the Helm chart files in a local directory <code>./weblogic-operator</code>.</li>
-<li>To create the namespace where the operator will be installed, run <code>$ kubectl create namespace weblogic-operator</code>.
-
-<div class="notices note" ><p>Creating a dedicated namespace for the operator is the most common approach, but is not always correct or sufficient. For details,
-see the prerequisite steps starting with Step 3. <a href="#inspect-the-operator-helm-chart">Inspect the operator Helm chart</a>.
-Be sure to follow all the previously detailed prerequisite steps, ending at Step 10. <a href="#be-aware-of-advanced-operator-configuration-options">Be aware of advanced operator configuration options</a>.</p>
+<div class="notices note" ><p>According to My Oracle Support <a href="https://support.oracle.com/epmos/faces/DocumentDisplay?id=2752458.1">Doc ID 2752458.1</a>, if you are using an FMW/JRF domain and upgrading from 12.2.1.3 to 12.2.1.4, then before upgrading, you do <em>not</em> need to run the Upgrade Assistant or Reconfiguration Wizard, but we recommend moving the domain to a persistent volume.  See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/move-to-pv/">Move MII/JRF domains to PV</a>.</p>
 </div>
-</li>
-<li>To install the operator, run <code>$ helm install weblogic-operator ./weblogic-operator --namespace weblogic-operator</code>.</li>
+
+<p>To upgrade WLS and FMW/JRF infrastructure domains, use the following procedure.</p>
+<ol>
+<li>
+<p>Shut down the domain by patching the domain and/or cluster spec <code>serverStartPolicy</code> to <code>Never</code>. For example:</p>
+<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p=&#39;[ {&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/serverStartPolicy&#34;, &#34;value&#34;: &#34;Never&#34;}]&#39;
+</code></pre></li>
+<li>
+<p>After the shutdown completes, upgrade the base image in the domain resource YAML file and redeploy the domain.</p>
+<p>You can patch the domain resource YAML file, update the base image and change <code>serverStartPolicy</code> to <code>IfNeeded</code> again, as follows:</p>
+<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p=&#39;[ {&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/serverStartPolicy&#34;, &#34;value&#34;: &#34;IfNeeded&#34;}, {&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;:&#34;/spec/image&#34;, &#34;value&#34;:&#34;&lt;New WebLogic or Fusion Middleware base image&gt;&#34;]&#39;
+</code></pre></li>
 </ol>
-<h4 id="how-to-manually-install-the-domain-resource-custom-resource-definition-crd">How to manually install the Domain resource custom resource definition (CRD)</h4>
-<p>The Domain resource type is defined by a Kubernetes CustomResourceDefinition (CRD) resource.
-The domain CRD provides Kubernetes with the schema for operator domain resources
-and there must be one domain CRD installed in each Kubernetes cluster that hosts the operator.
-If you install multiple operators in the same Kubernetes cluster, then they all
-share the same domain CRD.</p>
-<p><strong>When does a Domain CRD need to be manually installed?</strong></p>
-<p>Typically, the operator automatically installs the CRD for the Domain type when the operator first starts.
-However, if the operator lacks sufficient permission to install it,
-then you may choose to manually install the CRD in advance by using one of the provided YAML files.
-Manually installing the CRD in advance allows you to run the operator without giving it privilege
-(through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources.
-This may be necessary in environments where the operator cannot have cluster-scoped security privileges,
-such as on OpenShift when running the operator with a <code>Dedicated</code> namespace strategy.
-See <a href="#choose-a-security-strategy">Choose a security strategy</a>.</p>
-<p><strong>How to manually install a Domain CRD.</strong></p>
-<p>To manually install the CRD, first <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/#obtaining-the-operator-source-code">download the operator source</a>.</p>
-<p>Assuming you have installed the operator source into the <code>/tmp</code> directory:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ cd /tmp/weblogic-kubernetes-operator
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl create -f kubernetes/crd/domain-crd.yaml
-</span></span></code></pre></div><p><strong>How to check if a Domain CRD has been installed.</strong></p>
-<p>After the CustomResourceDefinition is installed,
-either by the operator or using the previous <code>create</code> command,
-you can verify that the CRD is installed correctly using:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl get crd domains.weblogic.oracle
-</span></span></code></pre></div><p>Or, by calling:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl explain domain.spec
-</span></span></code></pre></div><p>The <code>kubectl explain</code> call should succeed
-and list the domain resource&rsquo;s <code>domain.spec</code> attributes
-that are defined in the CRD.</p>
 
 
 <footer class="footline">
@@ -4569,7 +4223,6 @@ that are defined in the CRD.</p>
             
                 
                     
-                    
                 
                 
 
@@ -4582,26 +4235,6 @@ that are defined in the CRD.</p>
             
             
                 
-                    
-                        
-                        
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
                     
                 
                 
@@ -4619,8 +4252,21 @@ that are defined in the CRD.</p>
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
                         
-                        
+            
+            
+                
                     
                 
                 
@@ -4785,6 +4431,7 @@ that are defined in the CRD.</p>
             
                 
                     
+                    
                 
                 
 
@@ -4799,6 +4446,9 @@ that are defined in the CRD.</p>
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -4880,6 +4530,7 @@ that are defined in the CRD.</p>
             
                 
                     
+                    
                 
                 
 
@@ -4892,6 +4543,7 @@ that are defined in the CRD.</p>
             
             
                 
+                    
                     
                 
                 
@@ -4908,6 +4560,9 @@ that are defined in the CRD.</p>
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -6929,10 +6584,10 @@ that are defined in the CRD.</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/overview/" title="Overview"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/" title="Upgrade managed domains"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/installation/" title="Installation and upgrade" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/" title="Upgrade managed domains to v14.1.2.0" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

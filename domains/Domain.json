@@ -415,6 +415,10 @@
             "FromModel"
           ]
         },
+        "fluentbitSpecification": {
+          "description": "Automatic fluent-bit sidecar injection. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the fluent-bit, Optionally, the introspector job pod can be enabled to deploy with the fluent-bit sidecar container. WebLogic Server instances that are already running when the `fluentbitSpecification` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod  will have the fluent-bit sidecar or not, as appropriate",
+          "$ref": "#/definitions/FluentbitSpecification"
+        },
         "httpAccessLogInLogHome": {
           "default": true,
           "description": "Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.",
@@ -591,6 +595,68 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/ClusterStatus"
+          }
+        }
+      }
+    },
+    "FluentbitSpecification": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "description": "The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the Fluentbit sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string"
+        },
+        "elasticSearchCredentials": {
+          "description": "Fluentbit elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password",
+          "type": "string"
+        },
+        "parserConfiguration": {
+          "description": "The Fluentbit parser configuration text, specify your own custom fluentbit configuration.",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the fluentbit container. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "containerArgs": {
+          "description": "(Optional) The Fluentbit sidecar container spec\u0027s args. Default is: [ -c, /etc/fluent-bit.conf ] if not specified",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fluentbitConfiguration": {
+          "description": "The Fluentbit configuration text, specify your own custom fluentbit configuration.",
+          "type": "string"
+        },
+        "watchIntrospectorLogs": {
+          "description": "Fluentbit will watch introspector logs",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "A list of environment variables to set in the fluentbit container. See `kubectl explain pods.spec.containers.env`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "containerCommand": {
+          "description": "(Optional) The Fluentbit sidecar container spec\u0027s command. Default is not set if not specified",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "volumeMounts": {
+          "description": "Volume mounts for fluentbit container",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
         }
       }
