@@ -669,9 +669,9 @@
     <commons.io.version>2.15.1</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>16.0.3</client-java-version>
-    <kotlin-stdlib-version>1.9.22</kotlin-stdlib-version>
+    <kotlin-stdlib-version>1.9.23</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
-    <okio-version>3.7.0</okio-version>
+    <okio-version>3.9.0</okio-version>
     <bc-jdk18on-version>1.77</bc-jdk18on-version>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
@@ -681,9 +681,9 @@
     <jersey-version>3.1.5</jersey-version>
     <jackson-version>2.16.1</jackson-version>
     <parsson-version>1.1.5</parsson-version>
-    <jose4j-version>0.9.4</jose4j-version>
+    <jose4j-version>0.9.6</jose4j-version>
     <snakeyaml-version>1.33</snakeyaml-version>
-    <jackson-databind-version>2.16.1</jackson-databind-version>
+    <jackson-databind-version>2.17.0</jackson-databind-version>
     <dependency-check-version>9.0.9</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
