@@ -672,7 +672,7 @@
     <maven-failsafe-plugin-version>3.2.5</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.6.1</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.5.2</maven-shade-plugin-version>
-    <exec-maven-plugin-version>3.1.1</exec-maven-plugin-version>
+    <exec-maven-plugin-version>3.2.0</exec-maven-plugin-version>
     <checkstyle-version>10.14.1</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.2</maven-jxr-plugin-version>
@@ -714,7 +714,7 @@
     <jackson-databind-version>2.17.0</jackson-databind-version>
     <snakeyaml-version>2.2</snakeyaml-version>
     <gson-version>2.10.1</gson-version>
-    <dependency-check-version>9.0.9</dependency-check-version>
+    <dependency-check-version>9.0.10</dependency-check-version>
     <slf4j-version>2.0.12</slf4j-version>
     <logback-classic-version>1.4.14</logback-classic-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
