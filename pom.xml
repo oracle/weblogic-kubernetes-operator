@@ -710,13 +710,13 @@
     <grizzly-version>4.0.2</grizzly-version>
     <jakarta-version>6.0.0</jakarta-version>
     <prometheus-version>0.16.0</prometheus-version>
-    <jackson-version>2.16.1</jackson-version>
-    <jackson-databind-version>2.16.1</jackson-databind-version>
+    <jackson-version>2.17.0</jackson-version>
+    <jackson-databind-version>2.17.0</jackson-databind-version>
     <snakeyaml-version>2.2</snakeyaml-version>
     <gson-version>2.10.1</gson-version>
-    <dependency-check-version>9.0.9</dependency-check-version>
+    <dependency-check-version>9.0.10</dependency-check-version>
     <slf4j-version>2.0.12</slf4j-version>
-    <logback-classic-version>1.4.14</logback-classic-version>
+    <logback-classic-version>1.5.3</logback-classic-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
