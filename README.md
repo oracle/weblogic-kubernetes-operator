@@ -31,7 +31,7 @@ Documentation for the operator is [available here](https://oracle.github.io/webl
 This documentation includes information for users and for developers.  It provides samples, reference material, security
 information and a [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide if you just want to get up and running quickly.
 
-Documentation for prior releases of the operator: [3.4](https://oracle.github.io/weblogic-kubernetes-operator/3.4/) and [4.0](https://oracle.github.io/weblogic-kubernetes-operator/4.0/).
+Documentation for prior releases of the operator: [3.4](https://oracle.github.io/weblogic-kubernetes-operator/3.4/), [4.0](https://oracle.github.io/weblogic-kubernetes-operator/4.0/), and [4.1](https://oracle.github.io/weblogic-kubernetes-operator/4.1/).
 
 ## Backward compatibility guidelines
 
@@ -60,7 +60,7 @@ Please consult the [security guide](./SECURITY.md) for our responsible security 
 
 ## License
 
-Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 
 Released under the Universal Permissive License v1.0 as shown at
 <https://oss.oracle.com/licenses/upl/>.
