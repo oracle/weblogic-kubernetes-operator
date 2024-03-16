@@ -1,0 +1,7104 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.108.0">
+    <meta name="description" content="An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values.">
+
+
+    <link rel="icon" href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/images/favicon.png" type="image/png">
+
+    <title>Configuration reference :: WebLogic Kubernetes Operator</title>
+
+    
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/nucleus.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/fontawesome-all.min.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/hybrid.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/featherlight.min.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/perfect-scrollbar.min.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/auto-complete.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/atom-one-dark-reasonable.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/theme.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/tabs.css?1710559287" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/css/hugo-theme.css?1710559287" rel="stylesheet">
+    
+    
+
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/jquery-3.6.0.min.js?1710559287"></script>
+
+    <style>
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+        :not(pre) > code + span.copy-to-clipboard {
+            display: none;
+        }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/using-helm/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="https://oracle.github.io/weblogic-kubernetes-operator/4.1">
+  <img src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/images/logo.png" height="90"><br/>
+  WebLogic Kubernetes Operator
+</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="search" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-times"></i></span>
+</div>
+
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/lunr.min.js?1710559287"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/auto-complete.js?1710559287"></script>
+<script type="text/javascript">
+    
+        var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/4.1";
+    
+</script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/search.js?1710559287"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+      <li><a  class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/4.1">Home</a></li>
+        
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/quickstart/" title="Quick Start" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/">
+          <b> </b>Quick Start
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/install/">
+        Install the operator and ingress controller
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/quickstart/prepare/" title="Prepare for a domain" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/prepare/">
+        Prepare for a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/quickstart/create-domain/" title="Create a domain" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/create-domain/">
+        Create a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/quickstart/cleanup/" title="Clean up" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/cleanup/">
+        Clean up
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/quickstart/summary/" title="Under the covers" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/summary/">
+        Under the covers
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/introduction/" title="Introduction" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/">
+          <b> </b>Introduction
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/introduction/terms/" title="Important terms" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/terms/">
+        Important terms
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/introduction/design/" title="Design philosophy" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/design/">
+        Design philosophy
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/introduction/architecture/" title="Architecture" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/architecture/">
+        Architecture
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/introduction/get-help/" title="Get help" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/get-help/">
+        Get help
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/introduction/prerequisites/introduction/" title="Operator prerequisites" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/prerequisites/introduction/">
+        Operator prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/introduction/platforms/environments/" title="Supported environments" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/platforms/environments/">
+        Supported environments
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-operators/" title="Manage operators" class="dd-item
+        parent
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/">
+          <b> </b>Manage operators
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/overview/" title="Overview" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/overview/">
+        Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/preparation/" title="Prepare for installation" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/preparation/">
+        Prepare for installation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/installation/" title="Installation and upgrade" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/installation/">
+        Installation and upgrade
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/conversion-webhook/" title="Upgrade operator from version 3.x to 4.x" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/">
+        Upgrade operator from version 3.x to 4.x
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/using-helm/" title="Configuration reference" class="dd-item active">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/using-helm/">
+        Configuration reference
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/namespace-management/" title="Namespace management" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/">
+        Namespace management
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/rbac/" title="RBAC" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/the-rest-api/" title="REST services" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/the-rest-api/">
+        REST services
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/k8s-setup/">
+        Set up Kubernetes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/common-mistakes/" title="Common mistakes and solutions" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/common-mistakes/">
+        Common mistakes and solutions
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-operators/troubleshooting/" title="Troubleshooting" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/troubleshooting/">
+        Troubleshooting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/" title="Manage domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/">
+          Manage domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/manage-domains/" title="About WebLogic domains" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/manage-domains/">
+        About WebLogic domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/choosing-a-model/" title="Choose a domain home source type" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/choosing-a-model/">
+          Choose a domain home source type
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-resource/" title="Domain and Cluster resources" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-resource/">
+        <b> </b>Domain and Cluster resources
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/upgrade-domain-resource/" title="Upgrade Domain resource" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/upgrade-domain-resource/">
+          <b> </b>Upgrade Domain resource
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/prepare/">
+        Prepare to run a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/" title="Upgrade managed domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/major-weblogic-version-upgrade/">
+          <b> </b>Upgrade managed domains
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/domain-on-pv/" title="Domain on Persistent Volume (PV)" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/">
+          <b> </b>Domain on Persistent Volume (PV)
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/overview/" title="Overview" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/overview/">
+        <b> </b>Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/usage/" title="Usage" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/usage/">
+        <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/domain-creation-images/" title="Domain creation images" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/domain-creation-images/">
+        <b> </b>Domain creation images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/model-files/" title="Working with WDT model files" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/model-files/">
+        <b> </b>Working with WDT model files
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/jrf-domain/" title="JRF domains" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/jrf-domain/">
+        <b> </b>JRF domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/model-in-image/" title="Model in Image" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/">
+          <b> </b>Model in Image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/model-in-image/overview/" title="Overview" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/overview/">
+        <b> </b>Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/usage/">
+        <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/auxiliary-images/">
+        <b> </b>Auxiliary images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/model-in-image/model-files/" title="Model files" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/model-files/">
+        <b> </b>Model files
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/model-in-image/runtime-updates/" title="Runtime updates" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/runtime-updates/">
+        <b> </b>Runtime updates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/model-in-image/move-to-pv/" title="Move MII/JRF domains to PV" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/move-to-pv/">
+        <b> </b>Move MII/JRF domains to PV
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/configoverrides/">
+          <b> </b>Configuration overrides
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/">
+          <b> </b>Persistent storage
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/persistent-storage/pv-pvc/" title="PersistentVolumes and PersistentVolumeClaims" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/pv-pvc/">
+        PersistentVolumes and PersistentVolumeClaims
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/persistent-storage/oci-fss-pv/" title="Use OCI File Storage (FSS) for persistent volumes" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/oci-fss-pv/">
+        Use OCI File Storage (FSS) for persistent volumes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/persistent-storage/volumes/" title="Provide access to a PersistentVolumeClaim" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/volumes/">
+        Provide access to a PersistentVolumeClaim
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/persistent-storage/configmaps/" title="Provide access to a ConfigMap" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/configmaps/">
+        Provide access to a ConfigMap
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/accessing-the-domain/" title="Access and monitor domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/">
+          <b> </b>Access and monitor domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/weblogic-admin-console/" title="Use the Administration Console" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/weblogic-admin-console/">
+        Use the Administration Console
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/remote-admin-console/" title="Use the Remote Console" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/remote-admin-console/">
+        Use the Remote Console
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/wlst/">
+        Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/accessing-the-domain/ingress/" title="Ingress" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/ingress/">
+          Ingress
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/oci-lb/" title="Use an OCI load balancer" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/oci-lb/">
+        Use an OCI load balancer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/istio/istio/" title="Istio support" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/istio/istio/">
+        Istio support
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/external-clients/" title="External WebLogic clients" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/external-clients/">
+        External WebLogic clients
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/domain-events/" title="Domain events" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/domain-events/">
+        Domain events
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/status-conditions/" title="Status conditions" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/status-conditions/">
+        Status conditions
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/logs/" title="Log files" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/logs/">
+        Log files
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/accessing-the-domain/monitoring-exporter/" title="Monitoring exporter" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/monitoring-exporter/">
+        Monitoring exporter
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/domain-lifecycle/" title="Domain life cycle" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/">
+          <b> </b>Domain life cycle
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-lifecycle/startup/" title="Startup and shutdown" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/startup/">
+        Startup and shutdown
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-lifecycle/restarting/" title="Restarting" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/restarting/">
+        Restarting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-lifecycle/scaling/" title="Scaling" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scaling/">
+        Scaling
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-lifecycle/introspection/" title="Domain introspection" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/introspection/">
+        Domain introspection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/" title="Liveness and readiness probes customization" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/">
+        Liveness and readiness probes customization
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-lifecycle/retry/" title="Domain failure retry processing" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/retry/">
+        Domain failure retry processing
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-lifecycle/scripts/" title="Lifecycle scripts" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scripts/">
+        Lifecycle scripts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/cicd/" title="CI/CD considerations" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/">
+          CI/CD considerations
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/cicd/layering/" title="Container image layering" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/layering/">
+        Container image layering
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/cicd/why-layering-matters/" title="Why layering matters" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/why-layering-matters/">
+        Why layering matters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/cicd/choose-an-approach/" title="Choose an approach" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/choose-an-approach/">
+        Choose an approach
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/cicd/mutate-the-domain-layer/" title="Mutate the domain layer" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/mutate-the-domain-layer/">
+        Mutate the domain layer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/cicd/how-to-copy-domains/" title="Copy domains" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/how-to-copy-domains/">
+        Copy domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/cicd/tools/" title="Tools" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/tools/">
+        Tools
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/managing-fmw-domains/" title="Manage FMW Infrastructure domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/managing-fmw-domains/">
+          Manage FMW Infrastructure domains
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/managing-domains/aks/" title="Azure Kubernetes Service (AKS)" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/aks/">
+          Azure Kubernetes Service (AKS)
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/debugging/" title="Domain debugging" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/debugging/">
+        <b> </b>Domain debugging
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/base-images/" title="WebLogic images" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/">
+          <b> </b>WebLogic images
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/base-images/ocr-images/" title="OCR images" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/ocr-images/">
+        OCR images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/base-images/custom-images/" title="Create custom images" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/custom-images/">
+        Create custom images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/base-images/patch-images/" title="Patch running domains" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/patch-images/">
+        Patch running domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/base-images/access-images/" title="Access domain images" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/access-images/">
+        Access domain images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/" title="Samples" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/">
+          <b> </b>Samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/credentials/" title="Credentials" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/credentials/">
+          Credentials
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/storage/" title="Storage" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/storage/">
+          Storage
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/database/" title="Run a database" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/database/">
+          Run a database
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/domains/" title="Domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/">
+          Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/domains/domain-home-on-pv/" title="Domain on PV" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/">
+          Domain on PV
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/domain-home-on-pv/prerequisites/" title="Prerequisites" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/prerequisites/">
+        Prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/domain-home-on-pv/build-domain-creation-image/" title="Build domain creation image" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/build-domain-creation-image/">
+        Build domain creation image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/domain-home-on-pv/sample/" title="Sample" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/sample/">
+        Sample
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/domain-home-on-pv/cleanup/" title="Cleanup" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/cleanup/">
+        Cleanup
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/domains/model-in-image/" title="Model in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/">
+          Model in image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/prerequisites/" title="Prerequisites" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/prerequisites/">
+        Prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/auxiliary-image-creation/" title="Auxiliary image creation" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/auxiliary-image-creation/">
+        Auxiliary image creation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/initial/" title="Initial use case" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/initial/">
+        Initial use case
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/update1/" title="Update 1" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update1/">
+        Update 1
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/update2/" title="Update 2" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update2/">
+        Update 2
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/update3/" title="Update 3" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update3/">
+        Update 3
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/update4/" title="Update 4" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update4/">
+        Update 4
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/cleanup/" title="Cleanup" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/cleanup/">
+        Cleanup
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/domains/delete-domain/" title="Delete resources associated with the domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/delete-domain/">
+          Delete resources associated with the domain
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/rest/" title="REST APIs" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/rest/">
+          REST APIs
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/ingress/" title="Ingress" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/ingress/">
+          Ingress
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/elastic-stack/" title="Elastic Stack" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/elastic-stack/">
+          Elastic Stack
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/elastic-stack/operator/" title="Operator" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/elastic-stack/operator/">
+          Operator
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/elastic-stack/weblogic-domain/" title="WebLogic domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/elastic-stack/weblogic-domain/">
+          WebLogic domain
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/azure-kubernetes-service/" title="Azure Kubernetes Service" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/">
+          Azure Kubernetes Service
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/azure-kubernetes-service/domain-on-pv/" title="Domain home on a PV" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/domain-on-pv/">
+        Domain home on a PV
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/azure-kubernetes-service/model-in-image/" title="Model in Image" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/model-in-image/">
+        Model in Image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/azure-kubernetes-service/troubleshooting/" title="Troubleshooting" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/troubleshooting/">
+        Troubleshooting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/tanzu-kubernetes-service/" title="Tanzu Kubernetes Service" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/tanzu-kubernetes-service/">
+          Tanzu Kubernetes Service
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/developerguide/" title="Developer Guide" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/">
+          <b> </b>Developer Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/contributing/" title="Contribute to the operator" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/contributing/">
+        Contribute to the operator
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/requirements/" title="Requirements" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/requirements/">
+        Requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/building/" title="Building" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/building/">
+        Building
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/integration-tests/" title="Integration tests" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/integration-tests/">
+        Integration tests
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/branching/" title="Branching" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/branching/">
+        Branching
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/coding-standards/" title="Coding standards" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/coding-standards/">
+        Coding standards
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/code-structure/" title="Code structure" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/code-structure/">
+        Code structure
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/asynchronous-call-model/" title="Asynchronous call model" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/asynchronous-call-model/">
+        Asynchronous call model
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/domain-processing/" title="Domain processing" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/domain-processing/">
+        Domain processing
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/documentation/" title="Documentation" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/documentation/">
+        Documentation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/developerguide/backwards-compatibility/" title="Backward compatibility" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/backwards-compatibility/">
+        Backward compatibility
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/reference/" title="Reference" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/reference/">
+          <b> </b>Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/reference/domain-resource/">
+        Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/security/" title="Security" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/">
+          <b> </b>Security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/certificates/" title="Certificates" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/certificates/">
+        Certificates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/security/domain-security/" title="Domain security" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/">
+          Domain security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/domain-security/pod-and-container/" title="Pod and container security" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/pod-and-container/">
+        Pod and container security
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/domain-security/image-protection/" title="Container image protection" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/image-protection/">
+        Container image protection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/weblogic-channels/">
+        External network access security
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/encryption/" title="Encryption" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/encryption/">
+        Encryption
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/rbac/" title="RBAC" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/secrets/" title="Secrets" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/secrets/">
+        Secrets
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/security/openshift/" title="OpenShift" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/openshift/">
+        OpenShift
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/faq/" title="Frequently asked questions" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/">
+          Frequently asked questions
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/newbie/" title="Answers for newcomers" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/newbie/">
+        Answers for newcomers
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/cannot-pull-image/" title="Cannot pull image" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/cannot-pull-image/">
+        Cannot pull image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/boot-identity-not-valid/" title="Boot identity not valid" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/boot-identity-not-valid/">
+        Boot identity not valid
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/domain-secret-mismatch/" title="Domain secret mismatch" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/domain-secret-mismatch/">
+        Domain secret mismatch
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/node-heating/" title="Node heating problem" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-heating/">
+        Node heating problem
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/fan/" title="Disabling Fast Application Notifications" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/fan/">
+        Disabling Fast Application Notifications
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/coherence-requirements/" title="Coherence requirements" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/coherence-requirements/">
+        Coherence requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/resource-settings/" title="Pod memory and CPU resources" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/resource-settings/">
+        Pod memory and CPU resources
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/security-validation/" title="Handling security validations" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/security-validation/">
+        Handling security validations
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/faq/node-selector/" title="Scheduling pods to particular nodes" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-selector/">
+        Scheduling pods to particular nodes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/deprecated-functionality/" title="Deprecated functionality" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/deprecated-functionality/">
+          Deprecated functionality
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/known-limitations/" title="Known limitations" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/known-limitations/">
+          Known limitations
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+          
+        
+      <li><a  class="padding" href="https://github.com/oracle/weblogic-kubernetes-operator/releases">Release Notes</a></li>
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://join.slack.com/t/oracle-weblogic/shared_invite/zt-1ni1gtjv6-PGC6CQ4uIte3KBdm_67~aQ"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
+
+    </section>
+  </div>
+</nav>
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='https://oracle.github.io/weblogic-kubernetes-operator/4.1/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/'>Manage operators</a> > Configuration reference
+          
+        
+          
+        
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#useful-helm-operations">Useful Helm operations</a></li>
+    <li><a href="#operator-helm-configuration-values">Operator Helm configuration values</a>
+      <ul>
+        <li><a href="#overall-operator-information">Overall operator information</a>
+          <ul>
+            <li><a href="#serviceaccount"><code>serviceAccount</code></a></li>
+            <li><a href="#kubernetesplatform"><code>kubernetesPlatform</code></a></li>
+            <li><a href="#enableclusterrolebinding"><code>enableClusterRoleBinding</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#creating-the-operator-pod">Creating the operator pod</a>
+          <ul>
+            <li><a href="#image"><code>image</code></a></li>
+            <li><a href="#imagepullpolicy"><code>imagePullPolicy</code></a></li>
+            <li><a href="#imagepullsecrets"><code>imagePullSecrets</code></a></li>
+            <li><a href="#annotations"><code>annotations</code></a></li>
+            <li><a href="#labels"><code>labels</code></a></li>
+            <li><a href="#nodeselector"><code>nodeSelector</code></a></li>
+            <li><a href="#affinity"><code>affinity</code></a></li>
+            <li><a href="#runasuser"><code>runAsUser</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#weblogic-domain-conversion-webhook">WebLogic domain conversion webhook</a>
+          <ul>
+            <li><a href="#webhookonly"><code>webhookOnly</code></a></li>
+            <li><a href="#operatoronly"><code>operatorOnly</code></a></li>
+            <li><a href="#preservewebhook"><code>preserveWebhook</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#weblogic-domain-management">WebLogic domain management</a>
+          <ul>
+            <li><a href="#domainnamespaceselectionstrategy"><code>domainNamespaceSelectionStrategy</code></a></li>
+            <li><a href="#domainnamespaces"><code>domainNamespaces</code></a></li>
+            <li><a href="#domainnamespacelabelselector"><code>domainNamespaceLabelSelector</code></a></li>
+            <li><a href="#domainnamespaceregexp"><code>domainNamespaceRegExp</code></a></li>
+            <li><a href="#introspectorjobnamesuffix-and-externalservicenamesuffix"><code>introspectorJobNameSuffix</code> and <code>externalServiceNameSuffix</code></a></li>
+            <li><a href="#clustersizepaddingvalidationenabled"><code>clusterSizePaddingValidationEnabled</code></a></li>
+            <li><a href="#istiolocalhostbindingsenabled"><code>istioLocalhostBindingsEnabled</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#elastic-stack-integration">Elastic Stack integration</a>
+          <ul>
+            <li><a href="#elkintegrationenabled"><code>elkIntegrationEnabled</code></a></li>
+            <li><a href="#logstashimage"><code>logStashImage</code></a></li>
+            <li><a href="#elasticsearchhost"><code>elasticSearchHost</code></a></li>
+            <li><a href="#elasticsearchport"><code>elasticSearchPort</code></a></li>
+            <li><a href="#elasticsearchprotocol"><code>elasticSearchProtocol</code></a></li>
+            <li><a href="#createlogstashconfigmap"><code>createLogStashConfigMap</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#rest-interface-configuration">REST interface configuration</a>
+          <ul>
+            <li><a href="#enablerest"><code>enableRest</code></a></li>
+            <li><a href="#externalrestenabled"><code>externalRestEnabled</code></a></li>
+            <li><a href="#externalresthttpsport"><code>externalRestHttpsPort</code></a></li>
+            <li><a href="#externalrestidentitysecret"><code>externalRestIdentitySecret</code></a></li>
+            <li><a href="#externaloperatorcert-deprecated"><code>externalOperatorCert</code> <em><strong>(Deprecated)</strong></em></a></li>
+            <li><a href="#externaloperatorkey-deprecated"><code>externalOperatorKey</code> <em><strong>(Deprecated)</strong></em></a></li>
+            <li><a href="#tokenreviewauthentication"><code>tokenReviewAuthentication</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#debugging-options">Debugging options</a>
+          <ul>
+            <li><a href="#javalogginglevel"><code>javaLoggingLevel</code></a></li>
+            <li><a href="#remotedebugnodeportenabled"><code>remoteDebugNodePortEnabled</code></a></li>
+            <li><a href="#internaldebughttpport"><code>internalDebugHttpPort</code></a></li>
+            <li><a href="#externaldebughttpport"><code>externalDebugHttpPort</code></a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+        <div id="head-tags">
+        
+        </div>
+        
+        <div id="body-inner">
+          
+            <h1>
+              
+              Configuration reference
+            </h1>
+          
+
+        
+
+
+<h3 id="contents">Contents</h3>
+<div class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#useful-helm-operations">Useful Helm operations</a></li>
+    <li><a href="#operator-helm-configuration-values">Operator Helm configuration values</a>
+      <ul>
+        <li><a href="#overall-operator-information">Overall operator information</a>
+          <ul>
+            <li><a href="#serviceaccount"><code>serviceAccount</code></a></li>
+            <li><a href="#kubernetesplatform"><code>kubernetesPlatform</code></a></li>
+            <li><a href="#enableclusterrolebinding"><code>enableClusterRoleBinding</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#creating-the-operator-pod">Creating the operator pod</a>
+          <ul>
+            <li><a href="#image"><code>image</code></a></li>
+            <li><a href="#imagepullpolicy"><code>imagePullPolicy</code></a></li>
+            <li><a href="#imagepullsecrets"><code>imagePullSecrets</code></a></li>
+            <li><a href="#annotations"><code>annotations</code></a></li>
+            <li><a href="#labels"><code>labels</code></a></li>
+            <li><a href="#nodeselector"><code>nodeSelector</code></a></li>
+            <li><a href="#affinity"><code>affinity</code></a></li>
+            <li><a href="#runasuser"><code>runAsUser</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#weblogic-domain-conversion-webhook">WebLogic domain conversion webhook</a>
+          <ul>
+            <li><a href="#webhookonly"><code>webhookOnly</code></a></li>
+            <li><a href="#operatoronly"><code>operatorOnly</code></a></li>
+            <li><a href="#preservewebhook"><code>preserveWebhook</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#weblogic-domain-management">WebLogic domain management</a>
+          <ul>
+            <li><a href="#domainnamespaceselectionstrategy"><code>domainNamespaceSelectionStrategy</code></a></li>
+            <li><a href="#domainnamespaces"><code>domainNamespaces</code></a></li>
+            <li><a href="#domainnamespacelabelselector"><code>domainNamespaceLabelSelector</code></a></li>
+            <li><a href="#domainnamespaceregexp"><code>domainNamespaceRegExp</code></a></li>
+            <li><a href="#introspectorjobnamesuffix-and-externalservicenamesuffix"><code>introspectorJobNameSuffix</code> and <code>externalServiceNameSuffix</code></a></li>
+            <li><a href="#clustersizepaddingvalidationenabled"><code>clusterSizePaddingValidationEnabled</code></a></li>
+            <li><a href="#istiolocalhostbindingsenabled"><code>istioLocalhostBindingsEnabled</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#elastic-stack-integration">Elastic Stack integration</a>
+          <ul>
+            <li><a href="#elkintegrationenabled"><code>elkIntegrationEnabled</code></a></li>
+            <li><a href="#logstashimage"><code>logStashImage</code></a></li>
+            <li><a href="#elasticsearchhost"><code>elasticSearchHost</code></a></li>
+            <li><a href="#elasticsearchport"><code>elasticSearchPort</code></a></li>
+            <li><a href="#elasticsearchprotocol"><code>elasticSearchProtocol</code></a></li>
+            <li><a href="#createlogstashconfigmap"><code>createLogStashConfigMap</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#rest-interface-configuration">REST interface configuration</a>
+          <ul>
+            <li><a href="#enablerest"><code>enableRest</code></a></li>
+            <li><a href="#externalrestenabled"><code>externalRestEnabled</code></a></li>
+            <li><a href="#externalresthttpsport"><code>externalRestHttpsPort</code></a></li>
+            <li><a href="#externalrestidentitysecret"><code>externalRestIdentitySecret</code></a></li>
+            <li><a href="#externaloperatorcert-deprecated"><code>externalOperatorCert</code> <em><strong>(Deprecated)</strong></em></a></li>
+            <li><a href="#externaloperatorkey-deprecated"><code>externalOperatorKey</code> <em><strong>(Deprecated)</strong></em></a></li>
+            <li><a href="#tokenreviewauthentication"><code>tokenReviewAuthentication</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#debugging-options">Debugging options</a>
+          <ul>
+            <li><a href="#javalogginglevel"><code>javaLoggingLevel</code></a></li>
+            <li><a href="#remotedebugnodeportenabled"><code>remoteDebugNodePortEnabled</code></a></li>
+            <li><a href="#internaldebughttpport"><code>internalDebugHttpPort</code></a></li>
+            <li><a href="#externaldebughttpport"><code>externalDebugHttpPort</code></a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+<h3 id="introduction">Introduction</h3>
+<p>The operator requires Helm for its installation and tuning,
+and this document is a reference guide for useful Helm commands and operator configuration values.</p>
+<p>This document assumes that the operator has been installed using an operator Helm chart.
+An operator Helm chart can be obtained from the chart repository or can be found in the operator source.
+For information about operator Helm chart access, installation, and upgrade,
+see <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/preparation/">Prepare for installation</a>
+and <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/installation/">Installation and upgrade</a>.</p>
+<h3 id="useful-helm-operations">Useful Helm operations</h3>
+<ul>
+<li>
+<p>You can find out the configuration values that the operator Helm chart supports,
+as well as the default values, using the <code>helm show</code> command.</p>
+<ul>
+<li>First, access the operator Helm chart repository using
+this format, <code>helm repo add &lt;helm-chart-repo-name&gt; &lt;helm-chart-repo-url&gt;</code>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+</span></span></code></pre></div></li>
+<li>Then, use the <code>helm show</code> command with this format: <code>helm show &lt;helm-chart-repo-name&gt;/weblogic-operator</code>. For example,
+with an operator Helm chart where the repository is named <code>weblogic-operator</code>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm show chart weblogic-operator/weblogic-operator
+</span></span></code></pre></div></li>
+</ul>
+</li>
+<li>
+<p>An installed operator is maintained by a Helm release. List the Helm releases for a specified namespace or all namespaces:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm list --namespace &lt;namespace&gt;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm list --all-namespaces
+</span></span></code></pre></div></li>
+<li>
+<p>Get the status of the operator Helm release named <code>sample-weblogic-operator</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm status sample-weblogic-operator --namespace &lt;namespace&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Show the history of the operator Helm release named <code>sample-weblogic-operator</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm history sample-weblogic-operator --namespace &lt;namespace&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Roll back to a previous version of the operator Helm release named <code>sample-weblogic-operator</code>, in this case, the first version:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm rollback sample-weblogic-operator <span style="color:#ae81ff">1</span> --namespace &lt;namespace&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Show the custom values you configured for a operator Helm release named <code>sample-weblogic-operator</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm get values sample-weblogic-operator
+</span></span></code></pre></div></li>
+<li>
+<p>Show all of the values your operator Helm release named <code>sample-weblogic-operator</code> is using:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm get values --all sample-weblogic-operator
+</span></span></code></pre></div></li>
+<li>
+<p>Change one or more values using <code>helm upgrade</code>, for example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+</span></span><span style="display:flex;"><span>$ helm upgrade <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  weblogic-operator/weblogic-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --reuse-values <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaces={sample-domains-ns1}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;javaLoggingLevel=FINE&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wait
+</span></span></code></pre></div><p><strong>NOTES</strong>:</p>
+<ul>
+<li>In this example, the <code>--reuse-values</code> flag indicates that previous overrides of other values should be retained.</li>
+<li>Before changing the <code>javaLoggingLevel</code> setting,
+consult the <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/troubleshooting/#operator-and-conversion-webhook-logging-level">Operator logging level</a> advice.</li>
+</ul>
+</li>
+</ul>
+<h3 id="operator-helm-configuration-values">Operator Helm configuration values</h3>
+<p>This section describes the details of the operator Helm chart&rsquo;s available configuration values.</p>
+<h4 id="overall-operator-information">Overall operator information</h4>
+<h5 id="serviceaccount"><code>serviceAccount</code></h5>
+<p>Specifies the name of the service account in the operator&rsquo;s namespace that the operator will use to make requests to the Kubernetes API server. You are responsible for creating the service account.</p>
+<p>The <code>helm install</code> or <code>helm upgrade</code> command with a non-existing service account results in a Helm chart validation error.</p>
+<p>Defaults to <code>default</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">serviceAccount</span>: <span style="color:#e6db74">&#34;weblogic-operator&#34;</span>
+</span></span></code></pre></div><h5 id="kubernetesplatform"><code>kubernetesPlatform</code></h5>
+<p>Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift; the setting should be left unset for other platforms.</p>
+<p>When set to <code>OpenShift</code>, the operator:</p>
+<ul>
+<li>Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/">Model in Image</a>, and <a href="">Domain home in Image</a> domains. Specifically, it sets file group permissions so that they match file user permissions.</li>
+<li>Sets the <code>weblogic.SecureMode.WarnOnInsecureFileSystem</code> Java system property to <code>false</code> on the command line of each WebLogic Server. This flag suppresses insecure file system warnings reported in the WebLogic Server console when the WebLogic Server is in production mode. These warnings result from setting the file permissions necessary to work with restricted security context constraints on OpenShift.</li>
+</ul>
+<p>For more information about the security requirements for running WebLogic in OpenShift, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/openshift/">OpenShift</a> documentation.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">kubernetesPlatform</span>: <span style="color:#ae81ff">OpenShift</span>
+</span></span></code></pre></div><h5 id="enableclusterrolebinding"><code>enableClusterRoleBinding</code></h5>
+<p>Specifies whether the roles necessary for the operator to manage domains
+will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.</p>
+<p>Defaults to <code>true</code>.</p>
+<p>This option greatly simplifies managing namespaces when the selection is done using label selectors or
+regular expressions as the operator will already have privilege in any namespace.</p>
+<p>Customers who deploy the operator in Kubernetes clusters that run unrelated workloads will likely
+<em>not</em> want to use this option. With the <code>enableClusterRoleBinding</code> option, the operator will have
+privilege in <em>all</em> Kubernetes namespaces. If you want to limit the operator&rsquo;s privilege to just the set of namespaces that it will manage,
+then remove this option; this will mean that the operator has privilege only in the set of namespaces that match the selection strategy
+at the time the Helm release was installed or upgraded.</p>
+<p><strong>NOTE</strong>: If your operator Helm <code>enableClusterRoleBinding</code> configuration value is <code>false</code>,
+then a running operator will <em>not</em> have privilege to manage a newly added namespace
+that matches its namespace selection criteria until you upgrade
+the operator&rsquo;s Helm release.
+See <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/#ensuring-the-operator-has-permission-to-manage-a-namespace">Ensuring the operator has permission to manage a namespace</a>.</p>
+<h4 id="creating-the-operator-pod">Creating the operator pod</h4>
+<h5 id="image"><code>image</code></h5>
+<p>Specifies the container image containing the operator code.</p>
+<p>Defaults to <code>ghcr.io/oracle/weblogic-kubernetes-operator:4.1.8
+</code>
+or similar (based on the default in your Helm chart, see <code>helm show</code>
+in <a href="#useful-helm-operations">Useful Helm operations</a>).</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">image</span>:  <span style="color:#e6db74">&#34;ghcr.io/oracle/weblogic-kubernetes-operator:some-tag&#34;</span>
+</span></span></code></pre></div><h5 id="imagepullpolicy"><code>imagePullPolicy</code></h5>
+<p>Specifies the image pull policy for the operator container image.</p>
+<p>Defaults to <code>IfNotPresent</code>.</p>
+<p>When using the default images, <code>IfNotPresent</code> is sufficient because the
+operator will never update an existing image. However, if you have created your own operator image and are
+updating the image without changing the tag, you might want to use <code>Always</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">image</span>:  <span style="color:#e6db74">&#34;Always&#34;</span>
+</span></span></code></pre></div><h5 id="imagepullsecrets"><code>imagePullSecrets</code></h5>
+<p>Contains an optional list of Kubernetes Secrets, in the operator&rsquo;s namespace, that are needed to access the registry containing the operator image.
+For example, you might need an operator <code>imagePullSecret</code> if you are using an operator image from a private registry that requires authentication to pull.
+You are responsible for creating the secret. If no secrets are required, then omit this property. For more information on specifying the registry
+credentials when the operator image is stored in a private registry, see
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/preparation/#customizing-operator-image-name-pull-secret-and-private-registry">Customizing operator image name, pull secret, and private registry</a>.</p>
+<p>Examples:</p>
+<ul>
+<li>Using YAML:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">imagePullSecrets</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;my-image-pull-secret&#34;</span>
+</span></span></code></pre></div></li>
+<li>Using the Helm command line:
+<pre tabindex="0"><code>--set &#34;imagePullSecrets[0].name=my-image-pull-secret&#34;
+</code></pre></li>
+</ul>
+<h5 id="annotations"><code>annotations</code></h5>
+<p>Specifies a set of key-value annotations that will be added to each pod running the operator. If no customer defined annotations are required, then omit this property.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">stage</span>: <span style="color:#ae81ff">production</span>
+</span></span></code></pre></div><p>You may also specify annotations <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
+<pre tabindex="0"><code>--set annotations.stage=production
+</code></pre><h5 id="labels"><code>labels</code></h5>
+<p>Specifies a set of key-value labels that will be added to each pod running the operator. The Helm chart will automatically add any required labels, so the customer is not required to define those here. If no customer defined labels are required, then omit this property.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">sidecar.istio.io/inject</span>: <span style="color:#e6db74">&#34;false&#34;</span>
+</span></span></code></pre></div><p>You may also specify labels <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
+<pre tabindex="0"><code>--set labels.&#34;sidecar\.istio\.io/inject&#34;=false
+</code></pre><h5 id="nodeselector"><code>nodeSelector</code></h5>
+<p>Allows you to run the operator Pod on a Node whose labels match the specified <code>nodeSelector</code> labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. For more details, see <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector">Assign Pods to Nodes</a> in the Kubernetes documentation. This is not required if the operator Pod can run on any Node.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">nodeSelector</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">disktype</span>: <span style="color:#ae81ff">ssd</span>
+</span></span></code></pre></div><h5 id="affinity"><code>affinity</code></h5>
+<p>Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to <code>nodeSelector</code>. <code>affinity</code> provides advanced capabilities to limit Pod placement on specific Nodes. For more details, see  <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity">Assign Pods to Nodes</a> in the Kubernetes documentation. This is optional and not required if the operator Pod can run on any Node or when using <code>nodeSelector</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">affinity</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">nodeAffinity</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requiredDuringSchedulingIgnoredDuringExecution</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">nodeSelectorTerms</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">matchExpressions</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">key</span>: <span style="color:#ae81ff">nodeType</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">values</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">dev</span>
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">preferredDuringSchedulingIgnoredDuringExecution</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">weight</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">preference</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">matchExpressions</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">key</span>: <span style="color:#ae81ff">another-node-label-key</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">values</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">another-node-label-value</span>
+</span></span></code></pre></div><h5 id="runasuser"><code>runAsUser</code></h5>
+<p>Specifies the UID to run the operator and conversion webhook container processes. If not specified, it defaults to the user specified in the operator&rsquo;s container image.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">runAsUser</span>: <span style="color:#ae81ff">1000</span>
+</span></span></code></pre></div><h4 id="weblogic-domain-conversion-webhook">WebLogic domain conversion webhook</h4>
+<p>The WebLogic domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator&rsquo;s Helm chart. For details, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/#install-the-conversion-webhook">Install the conversion webhook</a> and <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/#uninstall-the-conversion-webhook">Uninstall the conversion webhook</a>.</p>
+<p><strong>NOTE</strong>: By default, the conversion webhook installation uses the same <a href="#serviceaccount"><code>serviceAccount</code></a>, <a href="#elastic-stack-integration">Elastic Stack integration</a>, and <a href="#debugging-options">Debugging options</a> configuration values that are used by the operator installation. If you want to use different <code>serviceAccount</code> or <code>Elastic Stack integration</code> or <code>Debugging options</code> for the conversion webhook, then install the conversion webhook independently by using the following <code>webhookOnly</code> configuration value and provide the new value during webhook installation.</p>
+<h5 id="webhookonly"><code>webhookOnly</code></h5>
+<p>Specifies whether only the conversion webhook should be installed during the <code>helm install</code> and that the operator installation should be skipped. By default, the <code>helm install</code> command installs both the operator and the conversion webhook.
+If set to <code>true</code>, the <code>helm install</code> will install <em>only</em> the conversion webhook (and not the operator).</p>
+<p>Defaults to <code>false</code>.</p>
+<h5 id="operatoronly"><code>operatorOnly</code></h5>
+<p><strong>NOTE</strong>: This is an advanced setting and should be used only in environments where a conversion webhook is already installed. The operator version 4.x requires a conversion webhook to be installed.</p>
+<p>Specifies whether only the operator should be installed during the <code>helm install</code> and that the conversion webhook installation should be skipped. By default, the <code>helm install</code> command installs both the operator and the conversion webhook.
+If set to <code>true</code>, the <code>helm install</code> will install <em>only</em> the operator (and not the conversion webhook).</p>
+<p>Defaults to <code>false</code>.</p>
+<h5 id="preservewebhook"><code>preserveWebhook</code></h5>
+<p>Specifies whether the existing conversion webhook deployment should be preserved (not removed) when the release is uninstalled using <code>helm uninstall</code>. By default, the <code>helm uninstall</code> removes both the webhook and the operator installation.
+If set to <code>true</code> in the <code>helm install</code> command, then the <code>helm uninstall</code> command will not remove the webhook installation. Ignored when <code>webhookOnly</code> is set to <code>true</code> in the <code>helm install</code> command.</p>
+<p>Defaults to <code>false</code>.</p>
+<h4 id="weblogic-domain-management">WebLogic domain management</h4>
+<p>The settings in this section determine the namespaces that an operator
+monitors for domain resources. For usage,
+also see <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/">Namespace management</a>.</p>
+<h5 id="domainnamespaceselectionstrategy"><code>domainNamespaceSelectionStrategy</code></h5>
+<p>Specifies how the operator will select the set of namespaces that it will manage.
+Legal values are: <code>List</code>, <code>LabelSelector</code>, <code>RegExp</code>, and <code>Dedicated</code>:</p>
+<ul>
+<li>If set to <code>List</code>, then the operator will manage the set of namespaces listed by the <code>domainNamespaces</code> value.</li>
+<li>If set to <code>LabelSelector</code>, then the operator will manage the set of namespaces discovered by a list
+of namespaces using the value specified by <code>domainNamespaceLabelSelector</code> as a label selector.</li>
+<li>If set to <code>RegExp</code>, then the operator will manage the set of namespaces discovered by a list
+of namespaces using the value specified by <code>domainNamespaceRegExp</code> as a regular expression matched
+against the namespace names.</li>
+<li>Finally, if set to <code>Dedicated</code>, then operator will manage WebLogic domains only in the same namespace
+which the operator itself is deployed, which is the namespace of the Helm release.</li>
+</ul>
+<p><strong>NOTES</strong>:</p>
+<ul>
+<li>Defaults to <code>List</code>.</li>
+<li>For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/#choose-a-domain-namespace-selection-strategy">Choose a domain namespace section strategy</a>.</li>
+</ul>
+
+<div class="notices note" ><p>If your operator Helm <code>enableClusterRoleBinding</code> configuration value is <code>false</code>, note that any domain namespaces created after operator installation,
+requires running <code>helm upgrade</code> on the operator to have the operator rescan for domains to manage, even if,
+for example, using a <code>LabelSelector</code> where the namespace has a matching label. See
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/#ensuring-the-operator-has-permission-to-manage-a-namespace">Ensuring the operator has permission to manage a namespace</a>.</p>
+</div>
+
+<h5 id="domainnamespaces"><code>domainNamespaces</code></h5>
+<p>Specifies a list of namespaces that the operator manages. The names must be lowercase. You are responsible for creating these namespaces.
+The operator will only manage domains found in these namespaces.
+This value is required if <code>domainNamespaceSelectionStrategy</code> is <code>List</code> and ignored otherwise.</p>
+<p>Examples:</p>
+<ul>
+<li>Example 1: In the following configuration, the operator will manage the <code>default</code> and <code>ns1</code> Kubernetes Namespaces:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaces</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#e6db74">&#34;default&#34;</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#e6db74">&#34;ns1&#34;</span>
+</span></span></code></pre></div></li>
+<li>Example 2: In the following configuration, the operator will manage <code>namespace1</code> and <code>namespace2</code>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaces</span>: [ <span style="color:#e6db74">&#34;namespace1&#34;</span>, <span style="color:#e6db74">&#34;namespace2&#34;</span> ]
+</span></span></code></pre></div>Note that this is a valid but different YAML syntax for specifying arrays
+in comparison to the previous example.</li>
+<li>Example 3: To specify on the Helm command line:
+<pre tabindex="0"><code>--set &#34;domainNamespaces={namespace1,namespace2}&#34;
+</code></pre></li>
+</ul>
+<p><strong>NOTES</strong>:</p>
+<ul>
+<li>Defaults to the <code>default</code> namespace.</li>
+<li>You must include the <code>default</code> namespace in the list if you want the operator to monitor both the <code>default</code> namespace and some other namespaces.</li>
+<li>If you change <code>domainNamespaces</code> using a <code>helm upgrade</code> command,
+then the new list completely replaces the original list
+(they are not merged).</li>
+<li>For more information,
+see <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/">Namespace Management</a>.</li>
+</ul>
+<h5 id="domainnamespacelabelselector"><code>domainNamespaceLabelSelector</code></h5>
+<p>Specifies a <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors">label selector</a> that will be used when searching for namespaces that the operator will manage.
+The operator will only manage domains found in namespaces matching this selector.
+This value is required if <code>domainNamespaceSelectionStrategy</code> is <code>LabelSelector</code> and ignored otherwise.</p>
+<p>Examples:</p>
+<ul>
+<li>Example 1: In the following configuration, the operator will manage namespaces that have the label <code>weblogic-operator</code>
+regardless of the value of that label:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaceLabelSelector</span>: <span style="color:#ae81ff">weblogic-operator</span>
+</span></span></code></pre></div></li>
+<li>Example 2: In the following configuration, the operator will manage all namespaces that have the label <code>environment</code>,
+but where the value of that label is not <code>production</code> or <code>systemtest</code>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaceLabelSelector</span>: <span style="color:#ae81ff">environment notin (production,systemtest)</span>
+</span></span></code></pre></div></li>
+</ul>
+<p><strong>NOTES</strong>:</p>
+<ul>
+<li>To specify the previous sample on the Helm command line, escape the equal sign, spaces, and commas as follows:
+<pre tabindex="0"><code>--set &#34;domainNamespaceLabelSelector\=environment\\ notin\\ (production\\,systemtest)&#34;
+</code></pre></li>
+<li>If your operator Helm <code>enableClusterRoleBinding</code> configuration value is <code>false</code>, then
+a running operator will <em>not</em> have privilege to manage a newly added namespace
+that matches its label selector until you upgrade
+the operator&rsquo;s Helm release.
+See <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/#ensuring-the-operator-has-permission-to-manage-a-namespace">Ensuring the operator has permission to manage a namespace</a>.</li>
+</ul>
+<h5 id="domainnamespaceregexp"><code>domainNamespaceRegExp</code></h5>
+<p>Specifies a regular expression that will be used when searching for namespaces that the operator will manage.
+The operator will only manage domains found in namespaces matching this regular expression.
+This value is required if <code>domainNamespaceSelectionStrategy</code> is <code>RegExp</code> and ignored otherwise.</p>
+<p><strong>NOTES</strong>:</p>
+<ul>
+<li>The regular expression functionality included with Helm is restricted to linear time constructs and,
+in particular, does not support lookarounds. The operator, written in Java, supports these
+complicated expressions. If you need to use a complex regular expression, then either:
+<ul>
+<li>Set <code>enableClusterRoleBinding</code> to <code>true</code>.
+<ul>
+<li>When <code>enableClusterRoleBinding</code> is <code>false</code>  and namespaces are determined by list or regular expression,
+then the Helm chart has to iterate all of the namespaces and determine which ones match.</li>
+<li>If you set <code>enableClusterRoleBinding</code> to <code>true</code> when selecting namespaces by list or regular expression,
+then the Helm chart doesn&rsquo;t need to do anything special per namespace.</li>
+</ul>
+</li>
+<li>Or, create the necessary RoleBindings outside of Helm.</li>
+</ul>
+</li>
+<li>If your operator Helm <code>enableClusterRoleBinding</code> configuration value is <code>false</code>,
+then a running operator will <em>not</em> have privilege to manage a newly added namespace
+that matches its regular expression until you upgrade
+the operator&rsquo;s Helm release.
+See <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/#ensuring-the-operator-has-permission-to-manage-a-namespace">Ensuring the operator has permission to manage a namespace</a>.</li>
+</ul>
+<h5 id="introspectorjobnamesuffix-and-externalservicenamesuffix"><code>introspectorJobNameSuffix</code> and <code>externalServiceNameSuffix</code></h5>
+<p>Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.</p>
+<p>Defaults to <code>-introspector</code> and <code>-ext</code>, respectively. The values cannot be more than 25 and 10 characters, respectively.</p>
+
+<div class="notices note" ><p>Prior to the operator 3.1.0 release, the suffixes are hard-coded to <code>-introspect-domain-job</code> and <code>-external</code>. The defaults are shortened in newer releases to support longer names in the domain resource and WebLogic domain configurations, such as the <code>domainUID</code>, and WebLogic cluster and server names.</p>
+</div>
+
+
+<div class="notices note" ><p>To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/manage-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+</div>
+
+<h5 id="clustersizepaddingvalidationenabled"><code>clusterSizePaddingValidationEnabled</code></h5>
+<p>Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer Managed Server names as a result of expanding a cluster&rsquo;s size in WebLogic domain configurations.</p>
+<p>Defaults to <code>true</code>.</p>
+<p>If <code>clusterSizePaddingValidationEnabed</code> is set to <code>true</code>, two additional characters will be reserved if the configured cluster&rsquo;s size is between one and nine, and one additional character will be reserved if the configured cluster&rsquo;s size is between 10 and 99. No additional character is reserved if the configured cluster&rsquo;s size is greater than 99.</p>
+<h5 id="istiolocalhostbindingsenabled"><code>istioLocalhostBindingsEnabled</code></h5>
+<p>Default for the domain resource <code>domain.spec.configuration.istio.localhostBindingsEnabled</code> setting.</p>
+<p>For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/istio/istio/#configuring-the-domain-resource">Configuring the domain resource</a> in Istio Support.</p>
+<h4 id="elastic-stack-integration">Elastic Stack integration</h4>
+<p>The following settings are related to integrating the Elastic Stack with the operator pod.</p>
+<p>For example usage, see the operator <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/elastic-stack/operator/#elastic-stack-per-operator-configuration">Elastic Stack (Elasticsearch, Logstash, and Kibana)</a> integration sample.</p>
+<h5 id="elkintegrationenabled"><code>elkIntegrationEnabled</code></h5>
+<p>Specifies whether or not Elastic Stack integration is enabled.</p>
+<p>Defaults to <code>false</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">elkIntegrationEnabled</span>:  <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><h5 id="logstashimage"><code>logStashImage</code></h5>
+<p>Specifies the container image containing Logstash.  This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
+<p>Defaults to <code>logstash:6.8.23</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">logStashImage</span>:  <span style="color:#e6db74">&#34;docker.elastic.co/logstash/logstash:6.8.23&#34;</span>
+</span></span></code></pre></div><h5 id="elasticsearchhost"><code>elasticSearchHost</code></h5>
+<p>Specifies the hostname where Elasticsearch is running. This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
+<p>Defaults to <code>elasticsearch.default.svc.cluster.local</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">elasticSearchHost</span>: <span style="color:#e6db74">&#34;elasticsearch2.default.svc.cluster.local&#34;</span>
+</span></span></code></pre></div><h5 id="elasticsearchport"><code>elasticSearchPort</code></h5>
+<p>Specifies the port number where Elasticsearch is running. This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
+<p>Defaults to <code>9200</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">elasticSearchPort</span>: <span style="color:#ae81ff">9201</span>
+</span></span></code></pre></div><h5 id="elasticsearchprotocol"><code>elasticSearchProtocol</code></h5>
+<p>Specifies the protocol to use for communication with Elasticsearch. This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
+<p>Defaults to <code>http</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">elasticSearchProtocol</span>: <span style="color:#ae81ff">https</span>
+</span></span></code></pre></div><h5 id="createlogstashconfigmap"><code>createLogStashConfigMap</code></h5>
+<p>Specifies whether a ConfigMap named <code>weblogic-operator-logstash-cm</code> should be created during <code>helm install</code>.
+The ConfigMap contains the Logstash pipeline configuration file <code>logstash.conf</code> and the Logstash settings file <code>logstash.yml</code> for the Logstash container running in the operator pod.
+If set to <code>true</code>, then a ConfigMap will be created during <code>helm install</code> using the <code>logstash.conf</code> and <code>logstash.yml</code> files in the <code>kubernetes/samples/charts/weblogic-operator</code> directory.
+Set <code>createLogStashConfigMap</code> to <code>false</code> if the ConfigMap already exists in the operator&rsquo;s namespace with the Logstash configuration files.
+This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
+<p>Defaults to <code>true</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">createLogStashConfigMap</span>:  <span style="color:#66d9ef">false</span>
+</span></span></code></pre></div><h4 id="rest-interface-configuration">REST interface configuration</h4>
+<p>The REST interface configuration options are advanced settings for configuring the operator&rsquo;s external REST interface.</p>
+<p>For usage information, see the operator <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/the-rest-api/">REST Services</a>.</p>
+<h5 id="enablerest"><code>enableRest</code></h5>
+<p>Determines whether the operator&rsquo;s REST endpoint is enabled.</p>
+<p>Beginning with operator version 4.0.5, the operator&rsquo;s REST endpoint is disabled by default.</p>
+<p>Defaults to <code>false</code>.</p>
+<h5 id="externalrestenabled"><code>externalRestEnabled</code></h5>
+<p>Determines whether the operator&rsquo;s REST interface will be exposed outside the Kubernetes cluster using a node port. This
+value is ignored if <code>enableRest</code> is not <code>true</code>.</p>
+<p>See also <code>externalRestHttpsPort</code> for customizing the port number.</p>
+<p>Defaults to <code>false</code>.</p>
+<p>If set to <code>true</code>, you must provide the <code>externalRestIdentitySecret</code> property that contains the name of the Kubernetes Secret which contains the SSL certificate and private key for the operator&rsquo;s external REST interface.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalRestEnabled</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><p><strong>NOTE</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.</p>
+<h5 id="externalresthttpsport"><code>externalRestHttpsPort</code></h5>
+<p>Specifies the node port that should be allocated for the external operator REST HTTPS interface.</p>
+<p>Only used when <code>externalRestEnabled</code> is <code>true</code>, otherwise ignored.</p>
+<p>Defaults to <code>31001</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalRestHttpsPort</span>: <span style="color:#ae81ff">32009</span>
+</span></span></code></pre></div><p><strong>NOTE</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.</p>
+<h5 id="externalrestidentitysecret"><code>externalRestIdentitySecret</code></h5>
+<p>Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes <code>tls</code> secret previously created in the namespace where the operator is deployed. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored. To create the Kubernetes <code>tls</code> secret, you can use the following command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create secret tls &lt;secret-name&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n &lt;operator-namespace&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --cert<span style="color:#f92672">=</span>&lt;path-to-certificate&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --key<span style="color:#f92672">=</span>&lt;path-to-private-key&gt;
+</span></span></code></pre></div><p>There is no default value.</p>
+<p>The Helm installation will produce an error, similar to the following, if <code>externalRestIdentitySecret</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:9:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+    at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:42:14: executing &#34;operator.validateInputs&#34;
+    at &lt;include &#34;utils.endVa...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing &#34;utils.endValidation&#34;
+    at &lt;fail $scope.validati...&gt;: error calling fail:
+ string externalRestIdentitySecret must be specified
+</code></pre><p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalRestIdentitySecret</span>: <span style="color:#ae81ff">weblogic-operator-external-rest-identity</span>
+</span></span></code></pre></div><h5 id="externaloperatorcert-deprecated"><code>externalOperatorCert</code> <em><strong>(Deprecated)</strong></em></h5>
+
+<div class="notices info" ><p>Use <strong><code>externalRestIdentitySecret</code></strong> instead</p>
+</div>
+
+<p>Specifies the user supplied certificate to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored.</p>
+<p>There is no default value.</p>
+<p>The Helm installation will produce an error, similar to the following, if <code>externalOperatorCert</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:4:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+  at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &#34;operator.validateInputs&#34;
+  at &lt;include &#34;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &#34;operator.reportValidationErrors&#34;
+  at &lt;fail .validationErro...&gt;: error calling fail: The string property externalOperatorCert must be specified.
+</code></pre><p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalOperatorCert</span>: <span style="color:#ae81ff">LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...</span>
+</span></span></code></pre></div><h5 id="externaloperatorkey-deprecated"><code>externalOperatorKey</code> <em><strong>(Deprecated)</strong></em></h5>
+
+<div class="notices info" ><p>Use <strong><code>externalRestIdentitySecret</code></strong> instead</p>
+</div>
+
+<p>Specifies user supplied private key to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored.</p>
+<p>There is no default value.</p>
+<p>The Helm installation will produce an error, similar to the following, if <code>externalOperatorKey</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:4:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+  at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &#34;operator.validateInputs&#34;
+  at &lt;include &#34;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &#34;operator.reportValidationErrors&#34;
+  at &lt;fail .validationErro...&gt;: error calling fail: The string property externalOperatorKey must be specified.
+</code></pre><p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalOperatorKey</span>: <span style="color:#ae81ff">QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...</span>
+</span></span></code></pre></div><h5 id="tokenreviewauthentication"><code>tokenReviewAuthentication</code></h5>
+<p>If set to <code>true</code>, <code>tokenReviewAuthentication</code> specifies whether the the operator&rsquo;s REST API should:</p>
+<ul>
+<li>Use Kubernetes token review API for authenticating users.</li>
+<li>Use Kubernetes subject access review API for authorizing a user&rsquo;s operation (<code>get</code>, <code>list</code>,
+<code>patch</code>, and such) on a resource.</li>
+<li>Update the domain resource using the operator&rsquo;s privileges.</li>
+</ul>
+<p>If set to <code>false</code>, the operator&rsquo;s REST API will use the caller&rsquo;s bearer token for any update
+to the domain resource so that it is done using the caller&rsquo;s privileges.</p>
+<p>Defaults to <code>false</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">tokenReviewAuthentication</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><h4 id="debugging-options">Debugging options</h4>
+<h5 id="javalogginglevel"><code>javaLoggingLevel</code></h5>
+<p>Specifies the level of Java logging that should be enabled in the operator. Valid values are:  <code>SEVERE</code>, <code>WARNING</code>, <code>INFO</code>, <code>CONFIG</code>, <code>FINE</code>, <code>FINER</code>, and <code>FINEST</code>.</p>
+<p>Defaults to <code>INFO</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">javaLoggingLevel</span>:  <span style="color:#e6db74">&#34;FINE&#34;</span>
+</span></span></code></pre></div><p><strong>NOTE</strong>: Please consult <a href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/troubleshooting/#operator-and-conversion-webhook-logging-level">Operator logging level</a> before changing this setting.</p>
+<h5 id="remotedebugnodeportenabled"><code>remoteDebugNodePortEnabled</code></h5>
+<p>Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.</p>
+<p>Defaults to <code>false</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">remoteDebugNodePortEnabled</span>:  <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><h5 id="internaldebughttpport"><code>internalDebugHttpPort</code></h5>
+<p>Specifies the port number inside the Kubernetes cluster for the operator&rsquo;s Java remote debug server.</p>
+<p>This parameter is required if <code>remoteDebugNodePortEnabled</code> is <code>true</code> (default <code>false</code>). Otherwise, it is ignored.</p>
+<p>Defaults to <code>30999</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">internalDebugHttpPort</span>:  <span style="color:#ae81ff">30888</span>
+</span></span></code></pre></div><h5 id="externaldebughttpport"><code>externalDebugHttpPort</code></h5>
+<p>Specifies the node port that should be allocated for the Kubernetes cluster for the operator&rsquo;s Java remote debug server.</p>
+<p>This parameter is required if <code>remoteDebugNodePortEnabled</code> is <code>true</code>. Otherwise, it is ignored.</p>
+<p>Defaults to <code>30999</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalDebugHttpPort</span>:  <span style="color:#ae81ff">30777</span>
+</span></span></code></pre></div><p><strong>NOTE</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.</p>
+
+
+<footer class="footline">
+	
+</footer>
+
+        
+        </div>
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/" title="Upgrade operator from version 3.x to 4.x"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/" title="Namespace management" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/clipboard.min.js?1710559287"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/perfect-scrollbar.min.js?1710559287"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/perfect-scrollbar.jquery.min.js?1710559287"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/jquery.sticky.js?1710559287"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/featherlight.min.js?1710559287"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/highlight.pack.js?1710559287"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/modernizr.custom-3.6.0.js?1710559287"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/learn.js?1710559287"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/js/hugo-learn.js?1710559287"></script>
+    
+        
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/4.1/mermaid/mermaid.js?1710559287"></script>
+        
+        <script>
+            mermaid.initialize({ startOnLoad: true });
+        </script>
+    
+    
+
+  </body>
+</html>
+

@@ -1,0 +1,1187 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/</link>
+    <description>Recent content on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 05 Oct 2023 16:43:45 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Overview</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/overview/</link>
+      <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/overview/</guid>
+      <description>Contents Overview High-level use case WebLogic Deploy Tooling models Runtime behavior Runtime updates Overview Domain on persistent volume (Domain on PV) is an operator domain home source type, which requires that the domain home exists on a persistent volume. The domain home can be created either manually or automatically by specifying the section, domain.spec.configuration.initializeDomainOnPV, in the domain resource YAML file. The initial domain topology and resources are described using WebLogic Deploy Tooling (WDT) models.</description>
+    </item>
+    
+    <item>
+      <title>Overview</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/overview/</link>
+      <pubDate>Sun, 05 Dec 2021 16:47:21 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/overview/</guid>
+      <description>An operator runtime is a process that runs in a container deployed into a Kubernetes Pod and that automatically manages domain resources. A domain resource references WebLogic domain configuration, a WebLogic installation image, Kubernetes secrets, and anything else necessary to run a particular WebLogic domain. The operator requires Helm for its installation and tuning.
+A single operator instance is capable of managing multiple domains in multiple namespaces depending on how it is configured.</description>
+    </item>
+    
+    <item>
+      <title>Answers for newcomers</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/newbie/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/newbie/</guid>
+      <description>What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation? It&amp;rsquo;s all here.
+How much does it cost? The WebLogic Kubernetes Operator (the “operator”) is open source and free, licensed under the Universal Permissive license (UPL), Version 1.0.
+WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.</description>
+    </item>
+    
+    <item>
+      <title>Container image layering</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/layering/</link>
+      <pubDate>Thu, 11 Apr 2019 13:15:32 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/layering/</guid>
+      <description>Container images are composed of layers, as shown in the following diagram. If you download the standard weblogic:12.2.1.4 image from the Oracle Container Registry, then you can see these layers using the command docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.4 (the domain layer will not be there). You are not required to use layers, but efficient use of layers is considered a best practice.
+Why is it important to maintain the layering of images? Layering is an important technique in container images.</description>
+    </item>
+    
+    <item>
+      <title>Pod and container security</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/pod-and-container/</link>
+      <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/pod-and-container/</guid>
+      <description>The WebLogic Kubernetes Operator enforces pod and container security best practices for the pods and containers that the operator creates for WebLogic Server instances, the init container for auxiliary images, sidecar containers for Fluentd or the WebLogic Monitoring Exporter, and the introspection job.
+Beginning with operator version 4.0.5, the operator adds the following pod-level securityContext content:
+securityContext: seccompProfile: type: RuntimeDefault The operator also adds the following container-level securityContext content to each container:</description>
+    </item>
+    
+    <item>
+      <title>Certificates</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/certificates/</link>
+      <pubDate>Wed, 06 Mar 2019 21:14:18 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/certificates/</guid>
+      <description>This document is now located in the operator user guide, see REST Services.</description>
+    </item>
+    
+    <item>
+      <title>Use the Administration Console</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/weblogic-admin-console/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/weblogic-admin-console/</guid>
+      <description>Contents Introduction Use a load balancer Configure ingress path routing rules for a non-SSL port Configure ingress path routing rules for an SSL port and enable WebLogic Plugin Enabled Use an Administration Server NodePort Use a kubectl port-forward connection Test Introduction You can access the WebLogic Server Administration Console external to the Kubernetes cluster using the following approaches:
+Use a load balancer
+Use an Administration Server NodePort
+Use a kubectl port-forward connection</description>
+    </item>
+    
+    <item>
+      <title>Use the Remote Console</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/remote-admin-console/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/remote-admin-console/</guid>
+      <description>Contents Introduction Setup Use an Administration Server NodePort Configure ingress path routing rules Use a kubectl port-forward connection Test Introduction The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. It is an alternative to the WebLogic Server Administration Console. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Remote Console&amp;rdquo;.</description>
+    </item>
+    
+    <item>
+      <title>Prerequisites</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/prerequisites/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/prerequisites/</guid>
+      <description>Contents Prerequisites for WLS and JRF domain types Additional prerequisites for JRF domains Prerequisites for WLS and JRF domain types Choose the type of domain you’re going to use throughout the sample, WLS or JRF.
+The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
+Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
+For example:
+$ cd /tmp $ git clone --branch v4.</description>
+    </item>
+    
+    <item>
+      <title>Prerequisites</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/prerequisites/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/prerequisites/</guid>
+      <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
+Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
+For example:
+$ cd /tmp $ git clone --branch v4.1.8 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
+For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
+    </item>
+    
+    <item>
+      <title>Contribute to the operator</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/contributing/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:19 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/contributing/</guid>
+      <description>Oracle welcomes contributions to this project from anyone. Contributions may be reporting an issue with the operator or submitting a pull request. Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.
+If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.</description>
+    </item>
+    
+    <item>
+      <title>Requirements</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/requirements/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:19 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/requirements/</guid>
+      <description>In addition to the requirements listed here, the following software is also required to obtain and build the operator:
+Git (1.8 or later recommended) Java Developer Kit (11 required, 11.0.2 recommended) Apache Maven (3.5.3 min, 3.6 recommended) The operator is written primarily in Java, BASH shell scripts, and WLST scripts.
+Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.</description>
+    </item>
+    
+    <item>
+      <title>Startup and shutdown</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/startup/</link>
+      <pubDate>Sat, 23 Feb 2019 17:04:41 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/startup/</guid>
+      <description>This document describes approaches for stopping, starting, rolling, and restarting WebLogic Server instances in a Kubernetes environment.
+Contents Introduction Starting and stopping servers serverStartPolicy rules Available serverStartPolicy values Administration Server start and stop rules Standalone Managed Server start and stop rules Clustered Managed Server start and stop rules Common starting and stopping scenarios Normal running state Shut down all the servers Only start the Administration Server Shut down a cluster Shut down a specific standalone server Force a specific clustered Managed Server to start Shutdown options Shutdown environment variables shutdown rules Restarting servers Fields that cause servers to be restarted Rolling restarts Draining a node and PodDisruptionBudget Common restarting scenarios Using restartVersion to force the operator to restart servers Restart all the servers in the domain Restart all the servers in the cluster Restart the Administration Server Restart a standalone or clustered Managed Server Full domain restarts Domain lifecycle sample scripts Introduction There are fields on the Domain and the Cluster that specify which servers should be running, which servers should be restarted, and the desired initial state.</description>
+    </item>
+    
+    <item>
+      <title>OCR images</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/ocr-images/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/ocr-images/</guid>
+      <description>Contents Overview Understand Oracle Container Registry images Compare General Availability to Critical Patch Updates images WebLogic distribution installer type Compare &amp;ldquo;dated&amp;rdquo; and &amp;ldquo;undated&amp;rdquo; images Example OCR image names Obtain images from the Oracle Container Registry Inspect images Ensure you are using recently patched images Use or create WebLogic images depending on the domain home source type Overview A container image with WebLogic Server or Fusion Middleware Infrastructure is required to run WebLogic domains in Kubernetes.</description>
+    </item>
+    
+    <item>
+      <title>PersistentVolumes and PersistentVolumeClaims</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/pv-pvc/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:09 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/pv-pvc/</guid>
+      <description>This document show you how to set up a Kubernetes PersistentVolume and PersistentVolumeClaim, which can be used as storage for WebLogic domain homes and log files. A PersistentVolume can be shared by multiple WebLogic domains or dedicated to a particular domain.
+Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the volume:
+Create a Kubernetes Namespace for the PersistentVolumeClaim unless the intention is to use the default namespace.</description>
+    </item>
+    
+    <item>
+      <title>About WebLogic domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/manage-domains/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/manage-domains/</guid>
+      <description>This document is an overview of managing WebLogic domains and clusters in Kubernetes.
+Contents Creating and managing WebLogic domains Modifying domain configurations Managing lifecycle operations Scaling clusters About domain events Accessing and monitoring domains Logging Meet Kubernetes resource name restrictions Important considerations for WebLogic domains in Kubernetes Creating and managing WebLogic domains Domain resources reference WebLogic domain configuration, a WebLogic install, images, and anything else necessary to run the domain. Beginning with operator 4.</description>
+    </item>
+    
+    <item>
+      <title>Important terms</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/terms/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/terms/</guid>
+      <description>This documentation uses several important terms which are intended to have a specific meaning.
+Term Definition Cluster A WebLogic cluster is a group of WebLogic Managed Servers that together host some application or component and which are able to share load and state between them; a single WebLogic domain can define multiple WebLogic clusters. The 4.0 release adds a cluster resource which is a Kubernetes resource that is of custom resource type Cluster.</description>
+    </item>
+    
+    <item>
+      <title>Install the operator and ingress controller</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/install/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/install/</guid>
+      <description>Use Helm to install the operator and Traefik ingress controller. First, install the operator.
+Create a namespace for the operator.
+$ kubectl create namespace sample-weblogic-operator-ns Create a service account for the operator in the operator&amp;rsquo;s namespace.
+$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa Set up Helm with the location of the operator Helm chart using this format: helm repo add &amp;lt;helm-chart-repo-name&amp;gt; &amp;lt;helm-chart-repo-url&amp;gt;
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update Install the operator using this format: helm install &amp;lt;helm-release-name&amp;gt; &amp;lt;helm-chart-repo-name&amp;gt;/weblogic-operator .</description>
+    </item>
+    
+    <item>
+      <title>Domain home on a PV</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/domain-on-pv/</link>
+      <pubDate>Thu, 14 Sep 2023 18:22:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/domain-on-pv/</guid>
+      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
+Contents Prerequisites Prepare Parameters Clone WKO repository Create Resource Group Create an AKS cluster Create and Configure Storage Create an Azure Storage account and NFS share Create SC and PVC Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Deploy sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
+    </item>
+    
+    <item>
+      <title>Usage</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/usage/</link>
+      <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/usage/</guid>
+      <description>This document describes how to create and deploy a typical Domain home on persistent volume (Domain on PV).
+Contents WebLogic Kubernetes Operator Configuration WebLogic base image Domain creation WDT models Optional WDT models ConfigMap Volumes and VolumeMounts information Persistent Volume and Persistent Volume Claim PV and PVC requirements References Domain information Best practices Back up the JRF domain home directory and database Store the OPSS wallet in a Kubernetes Secret and update opss.</description>
+    </item>
+    
+    <item>
+      <title>Prepare for installation</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/preparation/</link>
+      <pubDate>Sun, 05 Dec 2021 16:47:21 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/preparation/</guid>
+      <description>Introduction A single operator instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured. A Kubernetes cluster can host multiple operators, but no more than one per namespace.
+Before installing an operator, ensure that each of these prerequisite requirements is met:
+Check environment Set up the operator Helm chart access Inspect the operator Helm chart Prepare an operator namespace and service account Prepare operator image Locating an operator image Default operator image Pulling operator image Customizing operator image name, pull secret, and private registry Determine the platform setting Choose a security strategy Any namespace with cluster role binding enabled Any namespace with cluster role binding disabled Local namespace only with cluster role binding disabled Choose a domain namespace selection strategy Choose a Helm release name Be aware of advanced operator configuration options Special use cases: How to download the Helm chart if Internet access is not available How to manually install the Domain resource custom resource definition (CRD) Check environment Review the Operator prerequisites to ensure that your Kubernetes cluster supports the operator.</description>
+    </item>
+    
+    <item>
+      <title>Use OCI File Storage (FSS) for persistent volumes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/oci-fss-pv/</link>
+      <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/oci-fss-pv/</guid>
+      <description>Oracle recommends using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store the WebLogic domain home or log files when running the Kubernetes cluster on Oracle Container Engine for Kubernetes (OKE). When using the FSS with OKE for domain home or log files, the file system handling will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
+File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux-based systems.</description>
+    </item>
+    
+    <item>
+      <title>Why layering matters</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/why-layering-matters/</link>
+      <pubDate>Thu, 11 Apr 2019 13:27:58 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/why-layering-matters/</guid>
+      <description>How does layering affect our CI/CD process? Now that we know more about layering, let’s talk about why it is important to our CI/CD process. Let&amp;rsquo;s consider the kinds of updates we might want to make to our domain:
+You might want to update the domain by:
+Installing a patch on the operating system or a library. Updating the version of the JDK you are using. Picking up a new version of WebLogic Server.</description>
+    </item>
+    
+    <item>
+      <title>Cannot pull image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/cannot-pull-image/</link>
+      <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/cannot-pull-image/</guid>
+      <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
+When you see these kinds of errors, it means that Kubernetes cannot find your container image. The most common causes are:
+The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
+    </item>
+    
+    <item>
+      <title>Container image protection</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/image-protection/</link>
+      <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/image-protection/</guid>
+      <description>Oracle strongly recommends storing the container images that contain a WebLogic domain home as private in the container registry. In addition to any local registry, public container registries include GitHub Container Registry and the Oracle Cloud Infrastructure Registry (OCIR).
+The WebLogic domain home that is part of a Domain in Image image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
+    </item>
+    
+    <item>
+      <title>Restarting</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/restarting/</link>
+      <pubDate>Sat, 23 Feb 2019 20:58:51 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/restarting/</guid>
+      <description>This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.
+Contents Overview Common restart scenarios Use cases Modifying the WebLogic domain configuration Domain in Image Model in Image Domain on PV Changing the domain configuration overrides Changing the WebLogic Server credentials Changing fields on the Domain that affect WebLogic Server instance Pods Applying WebLogic Server patches Updating deployed applications Rolling out an updated domain home in image or model in image Avoiding a rolling restart when changing the image field on a Domain Other considerations for restarting a domain Overview There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</description>
+    </item>
+    
+    <item>
+      <title>Design philosophy</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/design/</link>
+      <pubDate>Sat, 23 Feb 2019 20:51:51 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/design/</guid>
+      <description>The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various lifecycle operations on a domain correctly.
+Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.</description>
+    </item>
+    
+    <item>
+      <title>Use WLST</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/wlst/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/wlst/</guid>
+      <description>Contents Introduction Use kubectl exec Use a NodePort Use port forwarding Introduction You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.
+To give WLST access to a domain running in Kubernetes, you can:
+Use kubectl exec Use a NodePort Use port forwarding NOTE: If your domain home type is either Domain in Image or Model in Image, then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart.</description>
+    </item>
+    
+    <item>
+      <title>Auxiliary image creation</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/auxiliary-image-creation/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/auxiliary-image-creation/</guid>
+      <description>Contents Overview Auxiliary image creation Understand your first archive Stage a ZIP file of the archive Stage model files Create the image with WIT Before you begin: Complete the steps in Prerequisites.
+Overview Auxiliary image creation step uses the WebLogic Image Tool to create a Model in Image auxiliary image. This image contains:
+The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image&amp;rsquo;s /auxiliary/weblogic-deploy directory, by default.</description>
+    </item>
+    
+    <item>
+      <title>Build domain creation image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/build-domain-creation-image/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/build-domain-creation-image/</guid>
+      <description>Contents Overview Build the domain creation image Understand your first archive Stage the archive ZIP file Stage the model files Create the image with WIT Before you begin: Complete the steps in Prerequisites.
+Overview The image build process uses the WebLogic Image Tool to create a Domain on PV domain creation image. This image contains:
+The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image&amp;rsquo;s /auxiliary/weblogic-deploy directory, by default.</description>
+    </item>
+    
+    <item>
+      <title>Initial use case</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/initial/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/initial/</guid>
+      <description>Contents Overview Auxiliary image Deploy resources - Introduction Secrets Domain resource Verify the domain Verify the pods Invoke the web application Before you begin: Perform the steps in Prerequisites and then create a Model in Image auxiliary image by completing the steps in Auxiliary image creation.
+Overview In this use case, you set up an initial WebLogic domain. This involves:
+Using the auxiliary image that you previously created. Creating secrets for the domain.</description>
+    </item>
+    
+    <item>
+      <title>Create custom images</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/custom-images/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/custom-images/</guid>
+      <description>Contents Use the WebLogic Image Tool to create custom images Create a custom image with patches applied Create a custom base image Create a custom image with your domain inside the image Create a custom image with your model inside the image Use the WebLogic Image Tool to create custom images You can use the WebLogic Image Tool (WIT) to build your own WebLogic Server or Fusion Middleware Infrastructure images (with the latest Oracle Linux images, Java updates, and WebLogic Server patches), apply one-off patches to existing OCR images, or overlay your own files and applications on top of an OCR image.</description>
+    </item>
+    
+    <item>
+      <title>Prepare for a domain</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/prepare/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/prepare/</guid>
+      <description>Create and label a namespace that can host one or more domains.
+$ kubectl create namespace sample-domain1-ns $ kubectl label ns sample-domain1-ns weblogic-operator=enabled Configure Traefik to manage ingresses created in this namespace.
+$ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-values \ --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34; If you have reached this point while following the prerequisites in the domain samples, stop here and return to the Model in Image sample instructions or Domain on PV sample instructions.</description>
+    </item>
+    
+    <item>
+      <title>Model in Image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/model-in-image/</link>
+      <pubDate>Tue, 24 Nov 2020 18:22:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/model-in-image/</guid>
+      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image domain home source type. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
+Contents Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operator Create Docker image Create WebLogic domain Invoke the web application Rolling updates Clean up resource Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
+    </item>
+    
+    <item>
+      <title>Troubleshooting</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/troubleshooting/</link>
+      <pubDate>Tue, 24 Nov 2020 18:22:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/troubleshooting/</guid>
+      <description>Access Administration Console: Possible causes for Administration Console inaccessibility Domain debugging Pod Error: How to get details of the pod error WebLogic Image Tool failure WebLogic Kubernetes Operator installation failure System pods are pending WebLogic Kubernetes Operator ErrImagePull WSL2 bad timestamp Cannot attach ACR due to not being Owner of subscription Virtual Machine size is not supported Get pod error details You may get the following message while creating the WebLogic domain: &amp;quot;the job status is not Completed!</description>
+    </item>
+    
+    <item>
+      <title>Boot identity not valid</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/boot-identity-not-valid/</link>
+      <pubDate>Mon, 02 Mar 2020 08:08:19 -0401</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/boot-identity-not-valid/</guid>
+      <description>One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:
+***&amp;lt;Feb 6, 2020 12:05:35,550 AM GMT&amp;gt; &amp;lt;Critical&amp;gt; &amp;lt;Security&amp;gt; &amp;lt;BEA-090402&amp;gt; &amp;lt;Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password.</description>
+    </item>
+    
+    <item>
+      <title>Provide access to a PersistentVolumeClaim</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/volumes/</link>
+      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/volumes/</guid>
+      <description>Some applications need access to a file, either to read data or to provide additional logging beyond what is built into the operator. One common way of doing that within Kubernetes is to create a PersistentVolumeClaim (PVC) and map it to a file. The domain configuration can then be used to provide access to the claim across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the configuration of the desired scope.</description>
+    </item>
+    
+    <item>
+      <title>Choose an approach</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/choose-an-approach/</link>
+      <pubDate>Thu, 11 Apr 2019 13:36:57 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/choose-an-approach/</guid>
+      <description>Let&amp;rsquo;s review what we have discussed and talk about when we might want to use various approaches. We can start by asking ourselves questions like these:
+Can you make the desired change with a configuration override or Model in Image ConfigMap?
+When your domain home source type is Domain on PV or Domain in Image, the operator allows you to inject a number of configuration overrides into your pods before starting any servers in the domain.</description>
+    </item>
+    
+    <item>
+      <title>External network access security</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/weblogic-channels/</link>
+      <pubDate>Fri, 08 Mar 2019 19:07:36 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/domain-security/weblogic-channels/</guid>
+      <description>WebLogic T3 and administrative channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary.
+If exposing an administrative, RMI, EJB, JMS, or T3 capable channel using a load balancer, port forwarding, NodePorts, or similar, then limit access by using a custom dedicated WebLogic Server port that you have configured with the T3 or administration protocol (a network access point) instead of relaying the traffic to a default port, leverage two-way SSL, use controls like security lists, and/or set up a Bastion to provide access.</description>
+    </item>
+    
+    <item>
+      <title>Architecture</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/architecture/</link>
+      <pubDate>Sat, 23 Feb 2019 20:51:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/architecture/</guid>
+      <description>Contents Overall architecture Domain UID Domain architecture Network name predictability Domain state stored outside container images Overall architecture The operator consists of the following parts:
+The operator runtime, which is a process that: Runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. Performs the actual management tasks for domain and cluster resources deployed to these namespaces. A Helm chart for installing the operator runtime and its related resources.</description>
+    </item>
+    
+    <item>
+      <title>Use port forwarding</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/port-forward/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/port-forward/</guid>
+      <description>Contents Overview Set up Administration Server network channels for port forward access Port forward to an Administration Server Pod Port forward example Port forward notes and warnings Enabling WLST access when local and remote ports do not match Terminating port forwarding Overview Beginning with WebLogic Kubernetes Operator version 3.3.2, or earlier if you are using an Istio-enabled domain, you can use the kubectl port-forward command to set up external access for the WebLogic Server Administration Console, the Remote Console, and WLST.</description>
+    </item>
+    
+    <item>
+      <title>Encryption</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/encryption/</link>
+      <pubDate>Sat, 23 Feb 2019 17:36:29 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/encryption/</guid>
+      <description>Contents Introspector encryption Encryption of Kubernetes Secrets Additional reading Introspector encryption The operator has an introspection job that handles WebLogic domain encryption. The introspection job also addresses the use of Kubernetes Secrets with configuration overrides. For additional information on the configuration handling, see Configuration overrides.
+The introspection job also creates a boot.properties file that is made available to the pods in the WebLogic domain. The credential used for the WebLogic domain is kept in a Kubernetes Secret which follows the naming pattern &amp;lt;domainUID&amp;gt;-weblogic-credentials, where &amp;lt;domainUID&amp;gt; is the unique identifier of the domain, for example, mydomain-weblogic-credentials.</description>
+    </item>
+    
+    <item>
+      <title>Sample</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/sample/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/sample/</guid>
+      <description>Contents Overview Domain creation image Deploy resources - Introduction Secrets Domain resource Verify the PV, PVC, and domain Verify the persistent volume Verify the persistent volume claim Verify the domain Verify the pods Verify the services Invoke the web application Clean up resources and remove the generated domain home Remove the PVC and PV Delete the domain namespace. Before you begin: Perform the steps in Prerequisites and then build a Domain on PV domain creation image by completing the steps in Build the domain creation image.</description>
+    </item>
+    
+    <item>
+      <title>Update 1</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update1/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update1/</guid>
+      <description>This use case demonstrates dynamically adding a data source to your running domain by updating your model and rolling your domain. It demonstrates several features of WDT and Model in Image:
+The syntax used for updating a model is the same syntax you use for creating the original model. A domain&amp;rsquo;s model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap. Model updates can be as simple as changing the value of a single attribute, or more complex, such as adding a JMS Server.</description>
+    </item>
+    
+    <item>
+      <title>Building</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/building/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:24 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/building/</guid>
+      <description>The operator is built using Apache Maven. The build machine will also need to have Docker installed.
+To build the operator, issue the following command in the project directory:
+$ mvn clean install This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
+Contributions must conform to coding and formatting standards.</description>
+    </item>
+    
+    <item>
+      <title>Scaling</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scaling/</link>
+      <pubDate>Sat, 23 Feb 2019 17:04:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scaling/</guid>
+      <description>This document describes approaches for scaling WebLogic clusters in a Kubernetes environment.
+Contents Overview kubectl CLI commands kubectl scale command kubectl patch command On-demand, updating the Cluster or Domain directly Updating the Cluster directly Updating the Domain directly Using Domain lifecycle sample scripts Calling the operator&amp;rsquo;s REST scale API Operator REST endpoints What does the operator do in response to a scaling request? Supported autoscaling controllers Kubernetes Horizontal Pod Autoscaler (HPA) Using a WLDF policy rule and script action to call the operator&amp;rsquo;s REST scale API Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics Using a Prometheus alert action to call the operator&amp;rsquo;s REST scale API Helpful tips Debugging scalingAction.</description>
+    </item>
+    
+    <item>
+      <title>Installation and upgrade</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/installation/</link>
+      <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/installation/</guid>
+      <description>Contents Introduction Install the operator Install the WebLogic domain resource conversion webhook Set up domain namespaces Update a running operator Upgrade the operator Uninstall the operator Installation sample Introduction This installation guide describes how to configure, install (deploy), update, upgrade, and uninstall an instance of the WebLogic Kubernetes Operator. A single instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured. A Kubernetes cluster can host multiple operators, but no more than one per namespace.</description>
+    </item>
+    
+    <item>
+      <title>Patch running domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/patch-images/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/patch-images/</guid>
+      <description>Apply patched images to a running domain When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image, the operator applies the update in a zero downtime fashion. The procedure for the operator to update the running domain differs depending on the domain home source type. See the following corresponding sections:
+Domain on PV Model in Image with auxiliary images Model in Image without auxiliary images Domain in Image For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see CI/CD.</description>
+    </item>
+    
+    <item>
+      <title>Domain creation images</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/domain-creation-images/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/domain-creation-images/</guid>
+      <description>Contents Introduction Configuration References Source locations Multiple images Configuration examples Example 1: Basic configuration Example 2: Source locations Example 3: Multiple images Introduction Domain creation images are used for supplying WebLogic Deploy Tooling (WDT) model files, WDT variables files, WDT application archive files (collectively known as WDT model files), and the directory where the WebLogic Deploy Tooling software is installed (known as the WDT Home) when deploying a domain using a Domain on PV model.</description>
+    </item>
+    
+    <item>
+      <title>Domain and Cluster resources</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-resource/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-resource/</guid>
+      <description>This document describes how to create your own Domain and Cluster resources.
+Contents Overview Prerequisites Deploying domain and cluster resource YAML files Domain and cluster resource attribute references Using kubectl explain Domain and cluster spec elements Domain spec elements Cluster spec elements JVM memory and Java option environment variables Pod generation Overview Domain resources reference WebLogic domain configuration, a WebLogic install, images, and anything else necessary to run the domain. Beginning with operator 4.</description>
+    </item>
+    
+    <item>
+      <title>Domain resource</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/reference/domain-resource/</link>
+      <pubDate>Fri, 22 Feb 2019 16:17:07 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/reference/domain-resource/</guid>
+      <description>View the Domain reference document here.
+View the Cluster reference document here.</description>
+    </item>
+    
+    <item>
+      <title>Create a domain</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/create-domain/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/create-domain/</guid>
+      <description>Create the domain using a domain resource. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain.
+$ kubectl create secret generic sample-domain1-weblogic-credentials \ --from-literal=username=ADMIN_USERNAME --from-literal=password=ADMIN_PASSWORD \ -n sample-domain1-ns Replace ADMIN_USERNAME and ADMIN_PASSWORD with your choice of user name and password. Note that the password must be at least 8 characters long and must contain at least one non-alphabetical character.</description>
+    </item>
+    
+    <item>
+      <title>Working with WDT model files</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/model-files/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/model-files/</guid>
+      <description>Contents Sample WDT model file with macros Important notes about WDT model files WDT models source location and loading order Model file macros Using secrets in model files Using environment variables in model files Combining secrets and environment variables in model files This document describes working with WebLogic Deploy Tooling (WDT) model files in the operator. For additional information, see the WebLogic Deploy Tooling documentation.
+The WDT Discover Domain Tool is particularly useful for generating WDT model files from an existing domain home.</description>
+    </item>
+    
+    <item>
+      <title>Domain secret mismatch</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/domain-secret-mismatch/</link>
+      <pubDate>Mon, 02 Mar 2020 08:08:19 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/domain-secret-mismatch/</guid>
+      <description>One or more WebLogic Server instances in my domain will not start and the Domain status or the pod log reports errors like this:
+Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSystemIni.dat where DOMAIN_HOME=$DOMAIN_HOME does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.
+When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
+    </item>
+    
+    <item>
+      <title>Provide access to a ConfigMap</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/configmaps/</link>
+      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/persistent-storage/configmaps/</guid>
+      <description>Configuration files can be supplied to Kubernetes Pods and Jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.
+For example, given a ConfigMap named my-map with entries key-1 and key-2, you can provide access to both values as separate files in the same directory within the cluster-1 cluster with the following in your Domain:</description>
+    </item>
+    
+    <item>
+      <title>Mutate the domain layer</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/mutate-the-domain-layer/</link>
+      <pubDate>Thu, 11 Apr 2019 13:43:41 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/mutate-the-domain-layer/</guid>
+      <description>If you need to mutate the domain layer, and keep the same domain encryption keys, then there are some choices about how to implement that, as alluded to previously. Let&amp;rsquo;s explore those in some more detail now.
+The first option is to implement each mutation as a delta to the previous state. This is conceptually similar to how immutable objects (like Java Strings) are implemented, a &amp;ldquo;copy on write&amp;rdquo; approach applied to the domain configuration as a unit.</description>
+    </item>
+    
+    <item>
+      <title>Service accounts</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/service-accounts/</link>
+      <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/service-accounts/</guid>
+      <description>This document is now located in the operator user guide, see Service Accounts.</description>
+    </item>
+    
+    <item>
+      <title>Update 2</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update2/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update2/</guid>
+      <description>This use case demonstrates concurrently deploying a domain that is similar to the Update 1 use case domain to the same sample-domain1-ns namespace, but with a different domain UID, a different WebLogic domain name, and a different WebLogic domain encryption key. It does this by:
+Using the same image, image model YAML file, and application archive as the Initial and Update 1 use cases. Using the same model update ConfigMap source file as the Update 1 use case (a data source).</description>
+    </item>
+    
+    <item>
+      <title>Integration tests</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/integration-tests/</link>
+      <pubDate>Sat, 23 Feb 2019 17:23:22 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/integration-tests/</guid>
+      <description>The project includes integration tests that can be run against a Kubernetes cluster. If you want to use these tests, you will need to provide your own Kubernetes cluster. The Kubernetes cluster must meet the version number requirements and have Helm installed. Ensure that the operator image is in a container registry visible to the Kubernetes cluster.
+You will need to obtain the kube.config file for an administrative user and make it available on the machine running the build.</description>
+    </item>
+    
+    <item>
+      <title>Branching</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/branching/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:29 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/branching/</guid>
+      <description>The main branch is protected and contains source for the latest completed features and bug fixes. While this branch contains active work, we expect to keep it always &amp;ldquo;ready to release.&amp;rdquo; Therefore, longer running feature work will be performed on specific branches, such as feature/dynamic-clusters.
+Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to main when these smaller work items are completed.</description>
+    </item>
+    
+    <item>
+      <title>Upgrade operator from version 3.x to 4.x</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/</link>
+      <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/</guid>
+      <description>Contents Introduction Conversion webhook components Install the conversion webhook Uninstall the conversion webhook Troubleshooting the conversion webhook Introduction The conversion webhook that is described in this document transparently handles a weblogic.oracle/v8 schema domain resource at runtime, but if you want to use the new fields introduced in the latest weblogic.oracle/v9 schema with a Domain that is currently weblogic.oracle/v8, then you will need to update its Domain resource file and potentially create new Cluster resource files.</description>
+    </item>
+    
+    <item>
+      <title>Access domain images</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/access-images/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/base-images/access-images/</guid>
+      <description>In most operator samples, it is assumed that the Kubernetes cluster has a single worker node and any images that are needed by that node have either been created on that node or externally pulled to the node from a registry (using docker pull). This is fine for most demonstration purposes, and if this assumption is correct, then no additional steps are needed to ensure that Kubernetes has access to the image.</description>
+    </item>
+    
+    <item>
+      <title>Get help</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/get-help/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/get-help/</guid>
+      <description>Oracle Slack We have a closely monitored public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. We can also create dedicated private channels upon request. We would love to hear from you.
+To join our public channel, please visit this site to get an invitation. The invitation email will include details of how to access our Slack workspace.</description>
+    </item>
+    
+    <item>
+      <title>Clean up</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/cleanup/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/cleanup/</guid>
+      <description>Remove the domain and cluster. Remove the domain&amp;rsquo;s ingress routes by using kubectl.
+$ kubectl delete ingressroute quickstart -n sample-domain1-ns $ kubectl delete ingressroute console -n sample-domain1-ns Use kubectl to delete the domain resource.
+$ kubectl delete domain sample-domain1 -n sample-domain1-ns Use kubectl to confirm that the WebLogic Server instance Pods and Domain are gone.
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns Use kubectl to delete the cluster resource.</description>
+    </item>
+    
+    <item>
+      <title>Cleanup</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/cleanup/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/domain-home-on-pv/cleanup/</guid>
+      <description>Remove the domain and cluster Remove the domain&amp;rsquo;s ingress routes by using kubectl.
+$ kubectl delete ingressroute traefik-ingress-sample-domain1-admin-server -n sample-domain1-ns $ kubectl delete ingressroute traefik-ingress-sample-domain1-cluster-cluster-1 -n sample-domain1-ns $ kubectl delete ingressroute traefik-ingress-sample-domain2-cluster-cluster-1 -n sample-domain1-ns Use kubectl to delete the domain resource.
+$ kubectl delete domain sample-domain1 -n sample-domain1-ns Use kubectl to confirm that the WebLogic Server instance Pods and Domain are gone.
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns Use kubectl to delete the cluster resource.</description>
+    </item>
+    
+    <item>
+      <title>JRF domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/jrf-domain/</link>
+      <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-on-pv/jrf-domain/</guid>
+      <description>Contents Overview Sample WDT model for JRF domain Importance of domain home directory backup Download OPSS wallet and store in a Kubernetes Secret Disaster recovery for Domain on PV deployment Disaster recovery for Model in Image domains Overview A Java Required Files (JRF) domain consists of those components not included in a WebLogic Server installation that provide common functionality for Oracle business applications and application frameworks. They consist of a number of independently developed libraries and applications that are deployed in a common location.</description>
+    </item>
+    
+    <item>
+      <title>Domain introspection</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/introspection/</link>
+      <pubDate>Tue, 07 Jul 2020 08:14:51 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/introspection/</guid>
+      <description>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in a Kubernetes environment.
+Contents Overview When introspection occurs automatically Initiating introspection Failed introspection Introspection use cases Adding clusters or Managed Servers to a Domain on PV configuration Distributing changes to configuration overrides Distributing changes to running Model in Image domains Overview To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job.</description>
+    </item>
+    
+    <item>
+      <title>Node heating problem</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-heating/</link>
+      <pubDate>Wed, 03 Jun 2020 08:08:19 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-heating/</guid>
+      <description>The WebLogic Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary container images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
+    </item>
+    
+    <item>
+      <title>Use an OCI load balancer</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/oci-lb/</link>
+      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/oci-lb/</guid>
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), then you can have Oracle Cloud Infrastructure automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik.
+OKE Kubernetes worker nodes typically do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
+    </item>
+    
+    <item>
+      <title>Copy domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/how-to-copy-domains/</link>
+      <pubDate>Thu, 11 Apr 2019 13:48:15 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/how-to-copy-domains/</guid>
+      <description>The recommended approach to save a copy of a Domain in Image or Domain on PV domain is to simply ZIP (or tar) the domain directory. However, there is a very important caveat with this recommendation - when you unzip the domain, it must go back into exactly the same location (Domain Home) in the (new) file system. Using this approach will maintain the same domain encryption key.
+The best practice/recommended approach is to create a &amp;ldquo;primordial domain&amp;rdquo; which does not contain any applications or resources, and to create a ZIP file of this domain before starting any servers.</description>
+    </item>
+    
+    <item>
+      <title>Update 3</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update3/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update3/</guid>
+      <description>The Update 3 use case demonstrates deploying an updated WebLogic application to the running Update 1 use case domain using an updated image.
+In the use case, you will:
+Create an image model-in-image:WLS-v2 that is similar to the currently active model-in-image:WLS-v1 image, but with the following updates: An updated web application v2 at the myapp-v2 directory path within the WDT application archive instead of myapp-v1. An updated model YAML file within the image that points to the new web application path.</description>
+    </item>
+    
+    <item>
+      <title>Coding standards</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/coding-standards/</link>
+      <pubDate>Sat, 23 Feb 2019 17:24:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/coding-standards/</guid>
+      <description>This project has adopted the following coding standards:
+Code should be formatted using Oracle / WebLogic standards, which are identical to the Google Java Style. Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns. Javadoc is not required for methods that override or implement methods that are already documented. All non-trivial methods should include LOGGER.entering() and LOGGER.exiting() calls. The LOGGER.exiting() call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.</description>
+    </item>
+    
+    <item>
+      <title>RBAC</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/rbac/</link>
+      <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/rbac/</guid>
+      <description>This document is now located in the operator user guide, see RBAC.</description>
+    </item>
+    
+    <item>
+      <title>Configuration reference</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/using-helm/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/using-helm/</guid>
+      <description>Contents Introduction Useful Helm operations Operator Helm configuration values Overall operator information serviceAccount kubernetesPlatform enableClusterRoleBinding Creating the operator pod image imagePullPolicy imagePullSecrets annotations labels nodeSelector affinity runAsUser WebLogic domain conversion webhook webhookOnly operatorOnly preserveWebhook WebLogic domain management domainNamespaceSelectionStrategy domainNamespaces domainNamespaceLabelSelector domainNamespaceRegExp introspectorJobNameSuffix and externalServiceNameSuffix clusterSizePaddingValidationEnabled istioLocalhostBindingsEnabled Elastic Stack integration elkIntegrationEnabled logStashImage elasticSearchHost elasticSearchPort elasticSearchProtocol createLogStashConfigMap REST interface configuration enableRest externalRestEnabled externalRestHttpsPort externalRestIdentitySecret externalOperatorCert (Deprecated) externalOperatorKey (Deprecated) tokenReviewAuthentication Debugging options javaLoggingLevel remoteDebugNodePortEnabled internalDebugHttpPort externalDebugHttpPort Introduction The operator requires Helm for its installation and tuning, and this document is a reference guide for useful Helm commands and operator configuration values.</description>
+    </item>
+    
+    <item>
+      <title>Prepare to run a domain</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/prepare/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/prepare/</guid>
+      <description>Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
+Create the domain namespace or namespaces. One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
+$ kubectl create namespace domain-namespace-1 Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lowercase, numbers, and hyphens.
+Create a Kubernetes Secret containing the Administration Server boot credentials.</description>
+    </item>
+    
+    <item>
+      <title>Operator prerequisites</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/prerequisites/introduction/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/prerequisites/introduction/</guid>
+      <description>For the current production release 4.1.8 :
+Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, and 1.28.2+ (check with kubectl version).
+Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.
+Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).
+Helm 3.3.4+ (check with helm version --client --short).
+For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
+    </item>
+    
+    <item>
+      <title>Under the covers</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/summary/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/quickstart/summary/</guid>
+      <description>Here&amp;rsquo;s some insight into what&amp;rsquo;s happening under the covers during the Quick Start tutorial.
+The Quick Start guide first installs the WebLogic Kubernetes Operator, then creates a domain using the Model in Image domain home source type.
+For a comparison of Model in Image to other domain home source types, see Choose a domain home source type. To learn more about Model in Image domains, see the detailed Model in Image user guide.</description>
+    </item>
+    
+    <item>
+      <title>Disabling Fast Application Notifications</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/fan/</link>
+      <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/fan/</guid>
+      <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
+When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
+    </item>
+    
+    <item>
+      <title>Namespace management</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/</guid>
+      <description>Contents Overview Choose a domain namespace selection strategy Ensuring the operator has permission to manage a namespace Check the namespaces that a running operator manages Altering namespaces for a running operator Add a Kubernetes namespace to a running operator Delete a Kubernetes namespace from a running operator Recreate a previously deleted Kubernetes namespace with a running operator Overview An operator deployment must be configured to manage Kubernetes namespaces, and a number of Kubernetes resources must be present in a namespace before any WebLogic Server instances can be successfully started by operator.</description>
+    </item>
+    
+    <item>
+      <title>Istio support</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/istio/istio/</link>
+      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/istio/istio/</guid>
+      <description>Contents Overview Limitations Determining the Istio version Setting up an operator with Istio support Creating a domain with Istio support Configuring the domain resource Applying a Domain YAML file Exposing applications in Istio-enabled domains Traffic management Distributed tracing Automatically added network channels Network channel for Istio versions v1.10 and later Network channel for WebLogic EJB and servlet session state replication traffic Security Mutual TLS Authorization policy Destination rule Ingress gateway Overview These instructions assume that you are using a Kubernetes cluster with Istio installed and configured already.</description>
+    </item>
+    
+    <item>
+      <title>Tools</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/tools/</link>
+      <pubDate>Thu, 11 Apr 2019 13:50:15 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/cicd/tools/</guid>
+      <description>WebLogic Deploy Tooling (WDT) You can use several of the WDT tools in a CI/CD pipeline. For example, the createDomain tool creates a new domain based on a simple model, and updateDomain (and deployApps) uses the same model concept to update an existing domain (preserving the same domain encryption key). The deployApps tool is very similar to the updateDomain tool, but limits what can be updated to application-related configuration attributes such as data sources and application archives.</description>
+    </item>
+    
+    <item>
+      <title>Liveness and readiness probes customization</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/</link>
+      <pubDate>Sat, 23 Feb 2019 20:58:51 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/</guid>
+      <description>This document describes how to customize the liveness and readiness probes for WebLogic Server instance Pods.
+Contents Liveness probe customization Automatic restart of failed server instances by Node Manager Readiness probe customization Liveness probe customization The liveness probe is configured to check that a server is alive by querying the Node Manager process. By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.</description>
+    </item>
+    
+    <item>
+      <title>Secrets</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/secrets/</link>
+      <pubDate>Sat, 23 Feb 2019 17:36:33 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/secrets/</guid>
+      <description>Contents Domain credentials secret Domain image pull secret Domain configuration override or runtime update secrets Operator image pull secret Operator external REST interface secret Operator internal REST interface secret Domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
+    </item>
+    
+    <item>
+      <title>Update 4</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update4/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/update4/</guid>
+      <description>This use case demonstrates dynamically changing the Work Manager threads constraint and data source configuration in your running domain without restarting (rolling) running WebLogic Servers. This use case requires that the Update 1 use case has been run and expects that its sample-domain1 domain is deployed and running.
+In the use case, you will:
+Update the ConfigMap containing the WDT model created in the Update 1 use case with changes to the Work Manager threads constraint configuration.</description>
+    </item>
+    
+    <item>
+      <title>Code structure</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/code-structure/</link>
+      <pubDate>Sat, 23 Feb 2019 17:25:04 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/code-structure/</guid>
+      <description>This project has the following directory structure:
+documentation/latest: This documentation documentation/&amp;lt;numbered directory&amp;gt;: The archived documentation for a previous release documentation/swagger: The operator REST API swagger documentation/domains: Reference for Domain and Cluster resource schemas json-schema-generator: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation integration-tests: JUnit 5 integration test suite operator: Operator runtime swagger-generator: Swagger file generator for the Kubernetes API server and Domain type Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
+    </item>
+    
+    <item>
+      <title>Supported environments</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/platforms/environments/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/platforms/environments/</guid>
+      <description>Contents Overview Important notes about specific environments Oracle Cloud Infrastructure Oracle Cloud Native Environment Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure Microsoft Azure Kubernetes Service (AKS) Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace) VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions Pricing and licensing WebLogic Kubernetes Operator WebLogic Server Oracle Linux Oracle Java WebLogic Server or Fusion Middleware Infrastructure images Additional references Overview The operator supports running on production-quality Kubernetes environments, including on-premises, cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.</description>
+    </item>
+    
+    <item>
+      <title>Domain failure retry processing</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/retry/</link>
+      <pubDate>Mon, 10 Oct 2022 08:14:51 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/retry/</guid>
+      <description>This document describes domain failure retry processing in the Oracle WebLogic Server in Kubernetes environment.
+Contents Overview Domain failure severities Retry behavior Domain failure reasons Overview The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource. Failures are reported using Kubernetes events and conditions in the status.conditions field in the Domain resource. See Domain debugging. Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries.</description>
+    </item>
+    
+    <item>
+      <title>External WebLogic clients</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/external-clients/</link>
+      <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/external-clients/</guid>
+      <description>Contents Overview Load balancer tunneling Adding a WebLogic custom channel When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes Kubernetes NodePorts NodePort overview NodePort warnings NodePort steps Setting up a NodePort Sample NodePort resource Table of NodePort attributes Enabling unknown host access When is it necessary to enable unknown host access? How to enable unknown host access Cross-domain transactions RMI forwarding When is it necessary to configure RMI forwarding?</description>
+    </item>
+    
+    <item>
+      <title>OpenShift</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/openshift/</link>
+      <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/security/openshift/</guid>
+      <description>Set the Helm chart property kubernetesPlatform to OpenShift Beginning with operator version 3.3.2, set the operator kubernetesPlatform Helm chart property to OpenShift. This property accommodates OpenShift security requirements. Specifically, the operator&amp;rsquo;s deployment and any pods created by the operator for WebLogic Server instances will not contain runAsUser: 1000 in the configuration of the securityContext. This is to accommodate OpenShift&amp;rsquo;s default restricted security context constraint. For more information, see Operator Helm configuration values.</description>
+    </item>
+    
+    <item>
+      <title>Service accounts</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/service-accounts/</link>
+      <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/service-accounts/</guid>
+      <description>WebLogic Kubernetes Operator ServiceAccounts When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed.
+The operator will use this service account when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.
+To display the service account used by the operator, where the operator was installed using the Helm release name weblogic-operator, look for the serviceAccount value using the Helm command:</description>
+    </item>
+    
+    <item>
+      <title>Cleanup</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/cleanup/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/domains/model-in-image/cleanup/</guid>
+      <description>To remove the resources you have created in these samples:
+Delete the resources associated with the domain.
+$ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1 $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2 This deletes the domain and any related resources that are labeled with the domain UID sample-domain1 and sample-domain2.
+It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
+NOTE: When you delete a domain, the operator will detect your domain deletion and shut down its pods.</description>
+    </item>
+    
+    <item>
+      <title>Asynchronous call model</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/asynchronous-call-model/</link>
+      <pubDate>Sat, 23 Feb 2019 17:20:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/asynchronous-call-model/</guid>
+      <description>Our expectation is that customers will task the operator with managing hundreds of WebLogic domains across dozens of Kubernetes Namespaces. Therefore, we have designed the operator with an efficient user-level threads pattern. We&amp;rsquo;ve used that pattern to implement an asynchronous call model for Kubernetes API requests. This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.</description>
+    </item>
+    
+    <item>
+      <title>Lifecycle scripts</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scripts/</link>
+      <pubDate>Sun, 05 Dec 2021 17:04:41 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scripts/</guid>
+      <description>Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
+Versions 3.2 and 3.3 have subsequently added sample scripts for restarting a server, scaling a cluster, rolling a domain or a cluster, monitoring a cluster, and reinitiating introspection.
+The scripts are located in the kubernetes/samples/scripts/domain-lifecycle directory. They are helpful when scripting the life cycle of a WebLogic Server domain.</description>
+    </item>
+    
+    <item>
+      <title>Domain events</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/domain-events/</link>
+      <pubDate>Mon, 30 Nov 2020 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/domain-events/</guid>
+      <description>Contents Overview What&amp;rsquo;s new Operator-generated event types Operator-generated event details How to access the events Examples of generated events Overview This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Most of the operator-generated events are associated with a domain resource, and those events are included in the Domain resource object as well.</description>
+    </item>
+    
+    <item>
+      <title>Domain processing</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/domain-processing/</link>
+      <pubDate>Sat, 23 Feb 2019 17:20:20 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/domain-processing/</guid>
+      <description>When the operator starts, it lists all the existing Domains and then processes these Domains to create the necessary Kubernetes resources, such as Pods and Services, if they don&amp;rsquo;t already exist. This initialization also includes looking for any stranded resources that, while created by the operator, no longer correlate with a Domain.
+After this, the operator starts watches for changes to Domains and any changes to other resources created by the operator.</description>
+    </item>
+    
+    <item>
+      <title>RBAC</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/rbac/</link>
+      <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/rbac/</guid>
+      <description>Contents Overview Operator RBAC definitions Kubernetes Role and RoleBinding naming conventions Kubernetes ClusterRole and ClusterRoleBinding naming conventions RoleBindings ClusterRoleBindings Overview This document describes the Kubernetes Role-Based Access Control (RBAC) roles that an operator installation Helm chart automatically creates for you.
+The general design goal of the operator installation is to automatically provide the operator with the minimum amount of permissions that the operator requires and to favor built-in roles over custom roles where it makes sense to use the Kubernetes built-in roles.</description>
+    </item>
+    
+    <item>
+      <title>Status conditions</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/status-conditions/</link>
+      <pubDate>Mon, 24 Oct 2022 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/status-conditions/</guid>
+      <description>Contents Overview Checking domain or cluster conditions Attributes in a condition Types of domain conditions Failed Completed Available ConfigChangesPendingRestart Rolling Types of cluster conditions Completed Available Conditions life cycle Conditions and generations Conditions and events Overview The WebLogic Kubernetes Operator populates status conditions on Domain and Cluster resources to provide high-level status reporting. Status conditions are a Kubernetes standard mechanism and the conditions generated by the operator are similar to those that Kubernetes provides for Pod and Deployment resources.</description>
+    </item>
+    
+    <item>
+      <title>Documentation</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/documentation/</link>
+      <pubDate>Tue, 19 Mar 2019 07:13:22 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/documentation/</guid>
+      <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
+If you have not already done so, clone the repository.
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator Create a new branch.
+$ git checkout -b your-branch Make your documentation updates by editing the source files in documentation/site/content. Make sure you check in the changes from the documentation/site/content area only; do not build the site and check in the static files.</description>
+    </item>
+    
+    <item>
+      <title>Backward compatibility</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/backwards-compatibility/</link>
+      <pubDate>Sat, 23 Feb 2019 17:26:09 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/developerguide/backwards-compatibility/</guid>
+      <description>Starting with the 2.0.1 release, operator releases must be backward compatible with respect to the Domain schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.</description>
+    </item>
+    
+    <item>
+      <title>REST services</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/the-rest-api/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:32 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/the-rest-api/</guid>
+      <description>Contents Introduction Configure the operator&amp;rsquo;s external REST HTTPS interface Updating operator external certificates Use the operator&amp;rsquo;s REST services How to add your certificate to your operating system trust store Sample SSL certificate and private key for the REST interface Sample operator REST client script Introduction The operator provides an optional REST API for advanced users. You can use the API as an alternative method for getting a list of WebLogic domains and clusters (for example, instead of calling kubectl get domains), or for getting certain aspects of a domain&amp;rsquo;s status (for example, instead of calling kubectl get domain MYDOMAIN -o yaml).</description>
+    </item>
+    
+    <item>
+      <title>Overview</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/overview/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/overview/</guid>
+      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
+    </item>
+    
+    <item>
+      <title>Log files</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/logs/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/logs/</guid>
+      <description>Contents Overview WebLogic Server log file location WebLogic Server log file rotation and size Overview The operator can automatically override WebLogic Server, domain, and introspector .log and .out locations. This occurs if the Domain logHomeEnabled field is explicitly set to true, or if logHomeEnabled isn&amp;rsquo;t set and domainHomeSourceType is set to PersistentVolume. When overriding, the log location will be the location specified by the logHome setting.
+WebLogic Server .out files contain a subset of WebLogic Server .</description>
+    </item>
+    
+    <item>
+      <title>Set up Kubernetes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/k8s-setup/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/k8s-setup/</guid>
+      <description>Contents Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud Prerequisites Quick start Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes Important note about persistent volumes Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
+    </item>
+    
+    <item>
+      <title>Monitoring exporter</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/monitoring-exporter/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/accessing-the-domain/monitoring-exporter/</guid>
+      <description>The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in its domain specification. For more details, see the WebLogic Monitoring Exporter document, Use the Monitoring Exporter with WebLogic Kubernetes Operator.</description>
+    </item>
+    
+    <item>
+      <title>Common mistakes and solutions</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/common-mistakes/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/common-mistakes/</guid>
+      <description>Contents Namespace related Changes in default Helm chart values from WebLogic Kubernetes Operator version 3.4 to 4.0 Deleting and recreating a namespace that an operator manages without informing the operator Forgetting to configure the operator to monitor a namespace Installing the operator a second time into the same namespace Installing an operator and having it manage a domain namespace that another operator is already managing Upgrading an operator and having it manage a domain namespace that another operator is already managing Installing an operator and having it manage a domain namespace that doesn&amp;rsquo;t exist Upgrading an operator and having it manage a domain namespace that doesn&amp;rsquo;t exist REST port conflict Installing an operator and assigning it the same external REST port number as another operator Upgrading an operator and assigning it the same external REST port number as another operator Missing service account Installing an operator and assigning it a service account that doesn&amp;rsquo;t exist Upgrading an operator and assigning it a service account that doesn&amp;rsquo;t exist Namespace related Common namespace-related mistakes.</description>
+    </item>
+    
+    <item>
+      <title>Coherence requirements</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/coherence-requirements/</link>
+      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/coherence-requirements/</guid>
+      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
+Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
+Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (for example, in a different pod), will use UDP to try to contact the senior member.</description>
+    </item>
+    
+    <item>
+      <title>Troubleshooting</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/troubleshooting/</link>
+      <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/troubleshooting/</guid>
+      <description>Contents Troubleshooting a particular domain resource Check Helm status Ensure the operator CRDs are installed Check the operator deployment Check the conversion webhook deployment Check common operator issues Check for operator events Check for conversion webhook events Check the operator log Check the conversion webhook log Operator ConfigMap Force the operator to restart Operator and conversion webhook logging level Troubleshooting the conversion webhook Ensure the conversion webhook is deployed and running X509: Certificate signed by unknown authority error from the webhook Webhook errors in older operator versions Webhook errors in operator dedicated Mode Check for runtime errors during conversion See also Troubleshooting a particular domain resource After you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.</description>
+    </item>
+    
+    <item>
+      <title>Pod memory and CPU resources</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/resource-settings/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/resource-settings/</guid>
+      <description>Contents Introduction Setting resource requests and limits in a Domain or Cluster resource Determining Pod Quality Of Service Java heap size and memory resource considerations Importance of setting heap size and memory resources Default heap sizes Configuring heap size CPU resource considerations Operator sample heap and resource configuration Burstable pods and JDK active processor count calculation Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References Introduction The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned where the optimal values depend on your workload, applications, and the Kubernetes environment.</description>
+    </item>
+    
+    <item>
+      <title>Handling security validations</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/security-validation/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/security-validation/</guid>
+      <description>After applying the July2021 PSU, I&amp;rsquo;m now seeing security warnings, such as:
+Description: Production Mode is enabled but user lockout settings are not secure in realm: myrealm, i.e. LockoutThreshold should not be greater than 5, LockoutDuration should not be less than 30.
+SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.
+WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production.</description>
+    </item>
+    
+    <item>
+      <title>Domain debugging</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/debugging/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/debugging/</guid>
+      <description>Here are some suggestions for debugging problems with a domain after your Domain or Cluster YAML files are deployed.
+Contents Understand failure types, severities, and tuning Check the Domain status Check the Cluster status Check the Domain events Check the introspector job Check the WebLogic Server pods Check the docs Check the operator Understand failure types, severities, and tuning When debugging, it helps to understand failure types, failure severities, retry behavior, and retry tuning, see Domain failure retry processing.</description>
+    </item>
+    
+    <item>
+      <title>Scheduling pods to particular nodes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-selector/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-selector/</guid>
+      <description>How do I constrain scheduling WebLogic Server pods to a particular set of nodes?
+To do this:
+First, set a label on the nodes on which the WebLogic Server pods will run. For example:
+$ kubectl label nodes name=weblogic-pods In the Domain CR, set a nodeSelector: a selector which must match a node&amp;rsquo;s labels for the pod to be scheduled on that node. See kubectl explain pods.spec.nodeSelector.
+You can set nodeSelector labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain.</description>
+    </item>
+    
+    <item>
+      <title>Usage</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/usage/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/usage/</guid>
+      <description>This document describes what&amp;rsquo;s needed to create and deploy a typical Model in Image domain.
+Contents WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial WDT model files and WDT Home Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain.</description>
+    </item>
+    
+    <item>
+      <title>Auxiliary images</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/auxiliary-images/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/auxiliary-images/</guid>
+      <description>Contents Introduction References Configuration Source locations Multiple auxiliary images Model and WDT installation homes Configuration examples Example 1: Basic configuration Example 2: Source locations Example 3: Multiple images Sample Using Docker to create an auxiliary image Automated upgrade of the weblogic.oracle/v8 schema auxiliary images configuration Sample weblogic.oracle/v8 schema auxiliary image configuration Compatibility weblogic.oracle/v9 schema auxiliary image configuration generated by conversion webhook in operator 4.0 Domain upgrade tool to manually upgrade the weblogic.</description>
+    </item>
+    
+    <item>
+      <title>Model files</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/model-files/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/model-files/</guid>
+      <description>Contents Introduction Sample model file Important notes about Model in Image model files Model file naming and loading order Model file macros Using secrets in model files Using environment variables in model files Combining secrets and environment variables in model files Introduction This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the WebLogic Deploy Tooling documentation.
+The WDT Discover Domain Tool is particularly useful for generating model files from an existing domain home.</description>
+    </item>
+    
+    <item>
+      <title>Runtime updates</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/runtime-updates/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/runtime-updates/</guid>
+      <description>Contents Overview Updating an existing model Offline updates Offline update sample Online updates Online update scenarios Online update status and labels Online update handling of non-dynamic WebLogic configuration changes Online update handling of deletes MBean type section deletion Deleting cross-referenced MBeans Online update sample Appendices Supported updates Unsupported updates Using the WDT Discover Domain and Compare Model Tools Changing a Domain restartVersion or introspectVersion Overview If you want to make a WebLogic domain home configuration update to a running Model in Image domain, and you want the update to survive WebLogic Server pod restarts, then you must modify your existing model and instruct the WebLogic Kubernetes Operator to propagate the change.</description>
+    </item>
+    
+    <item>
+      <title>Move MII/JRF domains to PV</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/move-to-pv/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/model-in-image/move-to-pv/</guid>
+      <description>FMW/JRF domains using the Model in Image domain home source type has been deprecated since WebLogic Kubernetes Operator 4.1. We recommend moving your domain home to Domain on Persistent Volume (Domain on PV). For more information, see Domain On Persistent Volume.
+If you cannot move the domain to a persistent volume right now, you can use the following procedure.
+Back up the OPSS wallet and save it in a secret if you have not already done it.</description>
+    </item>
+    
+  </channel>
+</rss>

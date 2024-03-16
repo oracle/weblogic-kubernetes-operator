@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Frequently asked questions on WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/</link>
+    <description>Recent content in Frequently asked questions on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 08:14:59 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Answers for newcomers</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/newbie/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/newbie/</guid>
+      <description>What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation? It&amp;rsquo;s all here.
+How much does it cost? The WebLogic Kubernetes Operator (the “operator”) is open source and free, licensed under the Universal Permissive license (UPL), Version 1.0.
+WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.</description>
+    </item>
+    
+    <item>
+      <title>Cannot pull image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/cannot-pull-image/</link>
+      <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/cannot-pull-image/</guid>
+      <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
+When you see these kinds of errors, it means that Kubernetes cannot find your container image. The most common causes are:
+The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
+    </item>
+    
+    <item>
+      <title>Boot identity not valid</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/boot-identity-not-valid/</link>
+      <pubDate>Mon, 02 Mar 2020 08:08:19 -0401</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/boot-identity-not-valid/</guid>
+      <description>One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:
+***&amp;lt;Feb 6, 2020 12:05:35,550 AM GMT&amp;gt; &amp;lt;Critical&amp;gt; &amp;lt;Security&amp;gt; &amp;lt;BEA-090402&amp;gt; &amp;lt;Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password.</description>
+    </item>
+    
+    <item>
+      <title>Domain secret mismatch</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/domain-secret-mismatch/</link>
+      <pubDate>Mon, 02 Mar 2020 08:08:19 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/domain-secret-mismatch/</guid>
+      <description>One or more WebLogic Server instances in my domain will not start and the Domain status or the pod log reports errors like this:
+Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSystemIni.dat where DOMAIN_HOME=$DOMAIN_HOME does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.
+When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
+    </item>
+    
+    <item>
+      <title>Node heating problem</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-heating/</link>
+      <pubDate>Wed, 03 Jun 2020 08:08:19 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-heating/</guid>
+      <description>The WebLogic Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary container images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
+    </item>
+    
+    <item>
+      <title>Disabling Fast Application Notifications</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/fan/</link>
+      <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/fan/</guid>
+      <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
+When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
+    </item>
+    
+    <item>
+      <title>Coherence requirements</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/coherence-requirements/</link>
+      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/coherence-requirements/</guid>
+      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
+Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
+Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (for example, in a different pod), will use UDP to try to contact the senior member.</description>
+    </item>
+    
+    <item>
+      <title>Pod memory and CPU resources</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/resource-settings/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/resource-settings/</guid>
+      <description>Contents Introduction Setting resource requests and limits in a Domain or Cluster resource Determining Pod Quality Of Service Java heap size and memory resource considerations Importance of setting heap size and memory resources Default heap sizes Configuring heap size CPU resource considerations Operator sample heap and resource configuration Burstable pods and JDK active processor count calculation Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References Introduction The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned where the optimal values depend on your workload, applications, and the Kubernetes environment.</description>
+    </item>
+    
+    <item>
+      <title>Handling security validations</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/security-validation/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/security-validation/</guid>
+      <description>After applying the July2021 PSU, I&amp;rsquo;m now seeing security warnings, such as:
+Description: Production Mode is enabled but user lockout settings are not secure in realm: myrealm, i.e. LockoutThreshold should not be greater than 5, LockoutDuration should not be less than 30.
+SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.
+WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production.</description>
+    </item>
+    
+    <item>
+      <title>Scheduling pods to particular nodes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-selector/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/faq/node-selector/</guid>
+      <description>How do I constrain scheduling WebLogic Server pods to a particular set of nodes?
+To do this:
+First, set a label on the nodes on which the WebLogic Server pods will run. For example:
+$ kubectl label nodes name=weblogic-pods In the Domain CR, set a nodeSelector: a selector which must match a node&amp;rsquo;s labels for the pod to be scheduled on that node. See kubectl explain pods.spec.nodeSelector.
+You can set nodeSelector labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain.</description>
+    </item>
+    
+  </channel>
+</rss>
