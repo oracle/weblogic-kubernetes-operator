@@ -168,7 +168,6 @@ class ItFmwDomainOnPV {
    * Create a basic FMW domain on PV.
    * Operator will create PV/PVC/RCU/Domain.
    * Verify Pod is ready and service exists for both admin server and managed servers.
-   * Update the base image in the domain spec, verify the domain is rolling-restarted.
    */
   @Test
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -254,42 +253,6 @@ class ItFmwDomainOnPV {
       // verify that all servers are ready
       verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
 
-      // get the map with server pods and their original creation timestamps
-      String adminServerPodName = domainUid + "-admin-server";
-      String managedServerPodNamePrefix = domainUid + "-managed-server";
-      Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace,
-          adminServerPodName, managedServerPodNamePrefix, replicaCount);
-
-      // update the domain with new base image
-      int index = FMWINFRA_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":");
-      String newImage;
-      if (OCNE) {
-        newImage = BASE_IMAGES_PREFIX + "fmw-infrastructure1:newtag";
-      } else {
-        newImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.substring(0, index) + ":newtag";
-      }
-      testUntil(
-          tagImageAndPushIfNeeded(FMWINFRA_IMAGE_TO_USE_IN_SPEC, newImage),
-          logger,
-          "tagImageAndPushIfNeeded for image {0} to be successful",
-          newImage);
-
-      logger.info("patch the domain resource with new image {0}", newImage);
-      String patchStr
-          = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/image\", "
-          + "\"value\": \"" + newImage + "\"}"
-          + "]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-
-      // verify the server pods are rolling restarted and back to ready state
-      logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-          domainUid, domainNamespace);
-      assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-          String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
     } finally {
       // delete the domain
       deleteDomainResource(domainNamespace, domainUid);
@@ -304,6 +267,7 @@ class ItFmwDomainOnPV {
    * Create a basic FMW domain on PV.
    * User creates PV/PVC, operator creates RCU and domain.
    * Verify Pod is ready and service exists for both admin server and managed servers.
+   * Update the base image in the domain spec, verify the domain is rolling-restarted.
    */
   @Test
   @DisplayName("Create a FMW domain on PV. User creates PV/PVC and operator creates RCU and domain")
@@ -384,6 +348,8 @@ class ItFmwDomainOnPV {
 
       // verify that all servers are ready
       verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+
+      verifyRollingRestartWithImageChg(domainUid, domainNamespace);
     } finally {
       // delete the domain
       deleteDomainResource(domainNamespace, domainUid);
@@ -819,5 +785,44 @@ class ItFmwDomainOnPV {
       imageRepoLoginAndPushImageToRegistry(taggedImage);
       return result;
     });
+  }
+
+  private void verifyRollingRestartWithImageChg(String domainUid, String domainNamespace) {
+    // get the map with server pods and their original creation timestamps
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPodNamePrefix = domainUid + "-managed-server";
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace,
+        adminServerPodName, managedServerPodNamePrefix, replicaCount);
+
+    // update the domain with new base image
+    int index = FMWINFRA_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":");
+    String newImage;
+    if (OCNE) {
+      newImage = BASE_IMAGES_PREFIX + "fmw-infrastructure1:newtag";
+    } else {
+      newImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.substring(0, index) + ":newtag";
+    }
+    testUntil(
+        tagImageAndPushIfNeeded(FMWINFRA_IMAGE_TO_USE_IN_SPEC, newImage),
+          logger,
+          "tagImageAndPushIfNeeded for image {0} to be successful",
+          newImage);
+
+    logger.info("patch the domain resource with new image {0}", newImage);
+    String patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/image\", "
+          + "\"value\": \"" + newImage + "\"}"
+          + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
   }
 }
