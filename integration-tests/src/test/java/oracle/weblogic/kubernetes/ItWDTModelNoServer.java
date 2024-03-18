@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -16,9 +18,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -69,6 +77,7 @@ class ItWDTModelNoServer {
   private static final String MII_IMAGE_NAME = "wdtmodelnoserver-mii";
   private static final int replicaCount = 2;
   private static final String internalPort = "8001";
+  private static final int ADMIN_SERVER_PORT = 7001;
   private static final String appPath = "sample-war/index.jsp";
   private static final String clusterName = "cluster-1";
 
@@ -532,9 +541,37 @@ class ItWDTModelNoServer {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceDomainConfig(adminSvcExtHost, adminServiceNodePort,
-        "\"adminServerName\": \"" + expectedAdminServerName + "\""),
-        "Admin server name is not '" + expectedAdminServerName + "'");
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      assertTrue(checkSystemResourceConfigViaAdminPod(adminServerPodName,
+          "\"adminServerName\": \"" + expectedAdminServerName + "\""),
+          "Admin server name is not '" + expectedAdminServerName + "'");
+    } else {
+      assertTrue(checkSystemResourceDomainConfig(adminSvcExtHost, adminServiceNodePort,
+          "\"adminServerName\": \"" + expectedAdminServerName + "\""),
+          "Admin server name is not '" + expectedAdminServerName + "'");
+    }
     logger.info("AdminServerName is {0}", expectedAdminServerName);
   }
+
+  private boolean checkSystemResourceConfigViaAdminPod(String adminServerPodName,
+                                                       String expectedValue) {
+    final LoggingFacade logger = getLogger();
+
+    StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n "
+        + domainNamespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl -g --user ")
+        .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + adminServerPodName + ":" + ADMIN_SERVER_PORT)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(" \"");
+
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return Command
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
+
 }
