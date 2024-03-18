@@ -47,6 +47,7 @@ public interface TestConstants {
   public static final String WEBLOGIC_IMAGE_TAGS =
       getNonEmptySystemProperty("wko.it.weblogic.image.tags", DEFAULT_WEBLOGIC_IMAGE_TAGS);
   public static final int DEFAULT_MAX_CLUSTER_SIZE = 5;
+  public static final int ADMIN_SERVER_PORT_DEFAULT = 7001;
 
   // cluster constants
   public static final String CLUSTER_VERSION =
@@ -205,11 +206,7 @@ public interface TestConstants {
   public static final String TEST_NGINX_IMAGE_NAME = TEST_IMAGES_TENANCY + "/test-images/ingress-nginx/controller";
   public static final String NGINX_INGRESS_IMAGE_TAG = "v1.2.0";
   public static final String NGINX_NAMESPACE = "ns-nginx";
-  public static final int NGINX_INGRESS_HTTP_NODEPORT = 30880;
-  public static final int NGINX_INGRESS_HTTPS_NODEPORT = 30443;
-  public static final int NGINX_INGRESS_HTTP_HOSTPORT = 2080;
-  public static final int NGINX_INGRESS_HTTPS_HOSTPORT = 2443;
-  
+
   public static final Path INGRESS_CLASS_FILE_NAME = assertDoesNotThrow(()
       -> Files.createTempFile("ingressclass", ".name"));  
 
@@ -478,7 +475,11 @@ public interface TestConstants {
   public static final int IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT = 32169;
   public static final int IT_EXTERNALLB_TUNNELING_HTTP_HOSTPORT = 2172;
   public static final int IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT = 32170;
-  public static final int IT_EXTERNALLB_TUNNELING_HTTPS_HOSTPORT = 2173;   
-  
+  public static final int IT_EXTERNALLB_TUNNELING_HTTPS_HOSTPORT = 2173;
+
+  public static final int ITLBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT = 30881;
+  public static final int ITLBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT = 30444;
+  public static final int ITLBTWODOMAINSNGINX_INGRESS_HTTP_HOSTPORT = 2081;
+  public static final int ITLBTWODOMAINSNGINX_INGRESS_HTTPS_HOSTPORT = 2444;
 
 }

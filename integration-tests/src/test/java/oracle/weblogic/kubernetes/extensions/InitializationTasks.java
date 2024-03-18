@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
@@ -64,10 +63,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYP
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -116,7 +111,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -648,25 +642,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         true, // webhookOnly
         "null" // domainNamespace
     );
-  }
-  
-  private void installNginxLB() {
-    deleteNamespace(NGINX_NAMESPACE);
-    assertDoesNotThrow(() -> new Namespace().name(NGINX_NAMESPACE).create());
-    getLogger().info("Installing NGINX in namespace {0}", NGINX_NAMESPACE);
-    NginxParams params = installAndVerifyNginx(NGINX_NAMESPACE, NGINX_INGRESS_HTTP_NODEPORT,
-        NGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, "NodePort");
-    assertDoesNotThrow(() -> Files.writeString(INGRESS_CLASS_FILE_NAME, params.getIngressClassName()));
-    String cmd = KUBERNETES_CLI + " get all -A";
-    try {
-      ExecCommand.exec(cmd, true);
-    } catch (IOException | InterruptedException ex) {
-      getLogger().info("Exception in get all {0}", ex);
-    }
-    //TO-DO for OKD to use NGINX for all service access
-    //expose NGINX node port service and get route host
-    //oc -n ns-abcdef expose service nginx-release-nginx-ingress-nginx-controller
-    //oc -n ns-abcdef get routes nginx-release-nginx-ingress-nginx-controller '-o=jsonpath={.spec.host}'
   }
   
   private void installTraefikLB() {

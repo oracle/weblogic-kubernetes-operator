@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -75,7 +75,6 @@ public class DeployUtil {
 
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(namespace);
-
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("domain", "properties"),

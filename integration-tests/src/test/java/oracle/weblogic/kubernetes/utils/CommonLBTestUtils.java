@@ -53,6 +53,7 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_PORT_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -60,6 +61,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SE
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
@@ -67,6 +69,8 @@ import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
@@ -79,6 +83,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.END_PORT;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.START_PORT;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -595,6 +600,12 @@ public class CommonLBTestUtils {
           clusterViewAppPath,
           namespace),"Deploying the application");
       return true;
+    } else if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      getLogger().info("Deploying webapp {0} to domain {1}", clusterViewAppPath, domainUid);
+      deployUsingWlst(adminServerPodName, Integer.toString(ADMIN_SERVER_PORT_DEFAULT),
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, "cluster-1",
+          clusterViewAppPath, namespace);
+      return true;
     } else {
       int serviceNodePort = assertDoesNotThrow(() ->
           getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
@@ -672,15 +683,12 @@ public class CommonLBTestUtils {
   public static void checkIngressReady(boolean isHostRouting, String ingressHost, boolean isTLS,
                                         int httpNodeport, int httpsNodeport, String pathString,
                                        String... ingressExtIP) {
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    String host = ingressExtIP.length != 0 ? ingressExtIP[0] : K8S_NODEPORT_HOST;
     String hostAndPort;
     if (isTLS) {
-      hostAndPort = ingressExtIP.length != 0 ? ingressExtIP[0] : host + ":" + httpsNodeport;
+      hostAndPort = getHostAndPort(host, httpsNodeport);
     } else {
-      hostAndPort = ingressExtIP.length != 0 ? ingressExtIP[0] : host + ":" + httpNodeport;
+      hostAndPort = getHostAndPort(host, httpNodeport);
     }
     getLogger().info("hostAndPort to check ingress ready is: {0}", hostAndPort);
 
@@ -769,17 +777,18 @@ public class CommonLBTestUtils {
     getLogger().info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
     String uri = "clusterview/ClusterViewServlet" + "\"?user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT + (host.contains(":") ? "&ipv6=true" : "&ipv6=false") + "\"";
+        + "&password=" + ADMIN_PASSWORD_DEFAULT
+        + ((host != null) && host.contains(":") ? "&ipv6=true" : "&ipv6=false") + "\"";
     if (hostRouting) {
       curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
           + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, host)
         : String.format("curl -g --show-error -ks --noproxy '*' "
-          + "-H 'host: %s' %s://%s:%s/" + uri, ingressHostName, protocol, host, lbPort);
+          + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, getHostAndPort(host, lbPort));
     } else {
       curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
           + "%s://%s" + locationString + "/" + uri, protocol, host)
         : String.format("curl -g --show-error -ks --noproxy '*' "
-          + "%s://%s:%s" + locationString + "/" + uri, protocol, host, lbPort);
+          + "%s://%s" + locationString + "/" + uri, protocol, getHostAndPort(host, lbPort));
     }
 
     List<String> managedServers = new ArrayList<>();
@@ -826,18 +835,9 @@ public class CommonLBTestUtils {
                                              boolean isHostRouting,
                                              String ingressHostName,
                                              String pathLocation,
-                                             String... hostName) {
+                                             String hostName) {
     StringBuffer readyAppUrl = new StringBuffer();
-    String hostAndPort;
-    if (hostName != null && hostName.length > 0) {
-      hostAndPort = OKE_CLUSTER_PRIVATEIP ? hostName[0] : hostName[0] + ":" + lbNodePort;
-    } else {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      hostAndPort = host + ":" + lbNodePort;
-    }
+    String hostAndPort = getHostAndPort(hostName, lbNodePort);
 
     if (isTLS) {
       readyAppUrl.append("https://");
