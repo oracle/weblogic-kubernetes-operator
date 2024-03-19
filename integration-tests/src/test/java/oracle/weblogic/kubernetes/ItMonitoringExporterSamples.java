@@ -1,11 +1,15 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +42,8 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -62,9 +68,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogForKey;
@@ -76,6 +82,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createSqlFileInPod;
+import static oracle.weblogic.kubernetes.utils.DbUtils.runMysqlInsidePod;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -93,11 +104,11 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoring
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
+import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -120,14 +131,15 @@ class ItMonitoringExporterSamples {
   private static int managedServersCount = 2;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
-  private static String domain1Uid = "monexp-domain-1";
-  private static String domain2Uid = "monexp-domain-2";
+  private static String domain1Uid = "monexpdomain1";
+  private static String domain2Uid = "monexpdomain2";
 
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
   private static List<String> ingressHost1List = null;
   private static List<String> ingressHost2List = null;
+  private static String dbService = null;
 
   private static String monitoringNS = null;
   private static String webhookNS = null;
@@ -252,6 +264,15 @@ class ItMonitoringExporterSamples {
       assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
     }
+    //start  MySQL database instance
+    assertDoesNotThrow(() -> {
+      dbService = createMySQLDB("mysql", "root", "root123", domain2Namespace, null);
+      assertNotNull(dbService, "Failed to create database");
+      V1Pod pod = getPod(domain2Namespace, null, "mysql");
+      createFileInPod(pod.getMetadata().getName(), domain2Namespace, "root123");
+      runMysqlInsidePod(pod.getMetadata().getName(), domain2Namespace, "root123", "/tmp/grant.sql");
+      runMysqlInsidePod(pod.getMetadata().getName(), domain2Namespace, "root123", "/tmp/create.sql");
+    });
   }
 
   /**
@@ -349,7 +370,7 @@ class ItMonitoringExporterSamples {
     assertNotNull(pod, "Can't find running webhook pod");
     logger.info("Wait for the webhook to fire alert and check webhook log file in {0} namespace ", webhookNS);
 
-    testUntil(
+    testUntil(withLongRetryPolicy,
         assertDoesNotThrow(() -> searchPodLogForKey(pod,
             "Some WLS cluster has only one running server for more than 1 minutes"),
             "webhook failed to fire alert"),
@@ -449,17 +470,29 @@ class ItMonitoringExporterSamples {
         labelMap, "coordsecret"), "Failed to start coordinator");
   }
 
+  private static void createFileInPod(String podName, String namespace, String password) throws IOException {
+
+    ExecResult result = assertDoesNotThrow(() -> exec(new String("hostname -i"), true));
+    String ip = result.stdout();
+    String sqlCommand = "select user();\n"
+        + "SELECT host, user FROM mysql.user;\n"
+        + "CREATE USER 'root'@'%' IDENTIFIED BY '" + password + "';\n"
+        + "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;\n"
+        + "CREATE USER 'root'@'" + ip + "' IDENTIFIED BY '" + password + "';\n"
+        + "GRANT ALL PRIVILEGES ON *.* TO 'root'@'" + ip + "' WITH GRANT OPTION;\n"
+        + "SELECT host, user FROM mysql.user;";
+    String fileName = "grant.sql";
+    createSqlFileInPod(podName, namespace, sqlCommand, fileName);
+    fileName = "create.sql";
+    sqlCommand =
+        "CREATE DATABASE " + domain2Uid + ";\n"
+            + "CREATE USER 'wluser1' IDENTIFIED BY 'wlpwd123';\n"
+            + "GRANT ALL ON " + domain2Uid + ".* TO 'wluser1';";
+    createSqlFileInPod(podName, namespace, sqlCommand, fileName);
+  }
+
   @AfterAll
   public void tearDownAll() {
-
-    // uninstall NGINX release
-    logger.info("Uninstalling NGINX");
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
-          .as("Test uninstallNginx1 returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
 
     // delete mii domain images created for parameterized test
     if (miiImage != null) {
@@ -780,8 +813,24 @@ class ItMonitoringExporterSamples {
     final List<String> propertyList = Collections.singletonList(domainPropertiesFile.getPath());
 
     // build the model file list
-    final List<String> modelList = Collections.singletonList(monitoringExporterEndToEndDir
-        + MONEXP_WDT_FILE);
+    logger.info("create a staging location for the scripts");
+    Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "temp","sampleTopologyTemp");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for topology");
+
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for topology");
+    logger.info("copy the " + MONEXP_WDT_FILE + "  to staging location");
+    Path srcPromFile = Paths.get(monitoringExporterEndToEndDir, MONEXP_WDT_FILE);
+    Path targetPromFile = Paths.get(fileTemp.toString(), "simple-topology.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
+        StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
+    String dbURL = dbService + "." + domain2Namespace + ".svc";
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(targetPromFile.toString(),
+          "mysql.default.svc.cluster.local",
+          dbURL);
+    });
+
+    final List<String> modelList = Collections.singletonList(targetPromFile.toString());
 
     wdtImage =
         createImageAndVerify(MONEXP_IMAGE_NAME,
