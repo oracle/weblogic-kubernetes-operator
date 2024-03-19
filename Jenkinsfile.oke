@@ -3,15 +3,18 @@
 //
 
 CRON_SETTINGS = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
-                   H 1 * * * % MAVEN_PROFILE_NAME=oke-parallelnew;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
-
+                   H 2 * * * % MAVEN_PROFILE_NAME=oke-parallelnew;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 pipeline {
     agent { label 'large' }
     options {
         timeout(time: 1800, unit: 'MINUTES')
         //disableConcurrentBuilds()
     }
-
+    triggers {
+        // timer trigger for "nightly build"
+        parameterizedCron(env.JOB_NAME == 'wko-oke-nightly' ?
+        CRON_SETTINGS : '')
+    }
     tools {
         maven 'maven-3.8.7'
         jdk 'jdk21'
