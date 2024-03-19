@@ -591,6 +591,17 @@ public class FmwUtils {
     return initializeDomainOnPV;
   }
 
+  private static InitializeDomainOnPV getInitializeDomainOnPV(Configuration config) {
+
+    InitializeDomainOnPV initializeDomainOnPV = config.getInitializeDomainOnPV();
+    if (!OKE_CLUSTER) {
+      initializeDomainOnPV.runInitContainerAsRoot(true);
+    }
+
+    return initializeDomainOnPV;
+
+  }
+
   /**
    * Save and restore the OPSS key wallet from a running JRF domain's introspector configmap to a file.
    * @param namespace namespace where JRF domain exists
@@ -702,7 +713,8 @@ public class FmwUtils {
                     .storageClassName(storageClassName)
                     .resources(new V1ResourceRequirements()
                         .requests(pvcRequest)))));
-
+    InitializeDomainOnPV initializeDomainOnPV = getInitializeDomainOnPV(configuration);
+    configuration.initializeDomainOnPV(initializeDomainOnPV);
     return configuration;
   }
 
@@ -727,6 +739,9 @@ public class FmwUtils {
                     .storageClassName(storageClassName)
                     .resources(new V1ResourceRequirements()
                         .requests(pvcRequest)))));
+
+    InitializeDomainOnPV initializeDomainOnPV = getInitializeDomainOnPV(configuration);
+    configuration.initializeDomainOnPV(initializeDomainOnPV);
 
     return configuration;
   }
