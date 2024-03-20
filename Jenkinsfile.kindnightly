@@ -20,11 +20,7 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel
-                   H 2 * * * % MAVEN_PROFILE_NAME=kind-sequential
-                   H 3 * * * % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.24.0;KIND_VERSION=0.19.0
-		   H 4 * * * % MAVEN_PROFILE_NAME=ipv6;IP_FAMILY=ipv6'''
-
+CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=wls-srg'''
 
 pipeline {
     agent { label 'large' }
@@ -33,7 +29,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-kind-main-nightly' ?
+        parameterizedCron(env.JOB_NAME == 'wko-kind-release42-nightly' ?
         CRON_SETTINGS : '')
     }
 
@@ -67,7 +63,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH',
                description: 'The branch to run the tests on',
-               defaultValue: 'main'
+               defaultValue: 'release/4.2'
         )
 	choice(name: 'IP_FAMILY',
                description: 'Ip Family.',
@@ -80,12 +76,12 @@ pipeline {
         choice(name: 'MAVEN_PROFILE_NAME',
                 description: 'Profile to use in mvn command to run the tests.  Possible values are kind-parallel (the default), kind-sequential, kind-upgrade,toolkits-srg, wls-srg and integration-tests. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
+                        'wls-srg',
                         'kind-parallel',
                         'kind-sequential',
                         'kind-upgrade',
                         'integration-tests',
                         'toolkits-srg',
-                        'wls-srg',
 			'ipv6'
                 ]
         )
