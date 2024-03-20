@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -90,11 +92,13 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVeri
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
@@ -244,7 +248,8 @@ class ItConfigDistributionStrategy {
    * Verify the default config before starting any test.
    */
   @BeforeEach
-  public void beforeEach() {
+  public void beforeEach() throws UnknownHostException, IOException, InterruptedException {
+    getDomainHealth();
     //check configuration values before override
     verifyConfigXMLOverride(false);
     verifyResourceJDBC0Override(false);
@@ -254,7 +259,8 @@ class ItConfigDistributionStrategy {
    * Delete the overrides and restart domain to get clean state.
    */
   @AfterEach
-  public void afterEach() {
+  public void afterEach() throws IOException, InterruptedException {
+    getDomainHealth();
     deleteConfigMap(overridecm, domainNamespace);
     String patchStr
         = "["
@@ -1279,6 +1285,45 @@ class ItConfigDistributionStrategy {
     //logger.info("mysql returned {0}", result.toString());
     logger.info("mysql returned EXIT value {0}", result.exitValue());
     assertEquals(0, result.exitValue(), "mysql execution fails");
+  }
+  
+  private void getDomainHealth() throws IOException, InterruptedException {
+    testUntil(
+        withStandardRetryPolicy,
+        () -> {
+          String extSvcPodName = getExternalServicePodName(adminServerPodName);
+          logger.info("**** adminServerPodName={0}", adminServerPodName);
+          logger.info("**** extSvcPodName={0}", extSvcPodName);
+
+          adminSvcExtHost = createRouteForOKD(extSvcPodName, domainNamespace);
+          logger.info("**** adminSvcExtHost={0}", adminSvcExtHost);
+          logger.info("admin svc host = {0}", adminSvcExtHost);
+
+          logger.info("Getting node port for default channel");
+          int serviceNodePort = assertDoesNotThrow(()
+              -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+              "Getting admin server node port failed");
+          String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+          boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
+          Map<String, String> headers = null;
+          if (TestConstants.KIND_CLUSTER
+              && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+            hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress())
+                + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+            headers = new HashMap<>();
+            headers.put("host", hostHeader);
+          }
+
+          String url = "http://" + hostAndPort
+              + "/clusterview/ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT
+              + "&password=" + ADMIN_PASSWORD_DEFAULT + "&ipv6=" + ipv6;
+
+          HttpResponse<String> response;
+          response = OracleHttpClient.get(url, headers, true);
+          return response.statusCode() == 200;
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
   }
 
 }

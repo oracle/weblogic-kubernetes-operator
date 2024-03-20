@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,6 +68,8 @@ import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_ALERT_HTTP_CONAINERPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_PROM_HTTP_CONAINERPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -436,6 +440,11 @@ public class MonitoringUtils {
     }
     int promServerNodePort = getNextFreePort();
     int alertManagerNodePort = getNextFreePort();
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      promServerNodePort = IT_MONITORINGEXPORTER_PROM_HTTP_CONAINERPORT;
+      alertManagerNodePort = IT_MONITORINGEXPORTER_ALERT_HTTP_CONAINERPORT;
+    }
 
     assertTrue(imageRepoLogin(TestConstants.BASE_IMAGES_REPO,
         BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), WLSIMG_BUILDER + " login failed");
@@ -1153,7 +1162,8 @@ public class MonitoringUtils {
    * @param replicaCount number of managed servers
    * @param nodeport  nginx nodeport
    */
-  public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount, int nodeport) {
+  public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount, 
+      int nodeport) throws UnknownHostException {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -1162,6 +1172,10 @@ public class MonitoringUtils {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      host = InetAddress.getLocalHost().getHostAddress();
+    }
     String curlCmd =
         String.format("curl -g --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
             nginxHost,

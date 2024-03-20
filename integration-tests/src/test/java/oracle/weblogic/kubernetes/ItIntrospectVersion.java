@@ -1329,6 +1329,7 @@ class ItIntrospectVersion {
       String user, String code) {
 
     logger.info("Checking the health of servers in cluster");
+    boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
 
     testUntil(() -> {
       if (OKE_CLUSTER) {
@@ -1340,7 +1341,7 @@ class ItIntrospectVersion {
             + adminServerPodName + ":"
             + servicePort + "/clusterview/ClusterViewServlet"
             + "\"?user=" + user
-            + "&password=" + code + "\"";
+            + "&password=" + code + "&ipv6=" + ipv6 + "\"";
 
         ExecResult result = null;
         try {
@@ -1388,9 +1389,9 @@ class ItIntrospectVersion {
           headers = new HashMap<>();
           headers.put("host", hostHeader);
         }
-
+        
         String url = "http://" + hostAndPort
-            + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code;
+            + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code + "&ipv6=" + ipv6;
         HttpResponse<String> response;
         response = OracleHttpClient.get(url, headers, true);
 
