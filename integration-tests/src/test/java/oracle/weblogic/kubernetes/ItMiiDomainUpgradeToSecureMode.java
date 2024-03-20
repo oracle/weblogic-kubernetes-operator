@@ -1,9 +1,11 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,6 +54,10 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_CONAINERPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_CONAINERPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
@@ -75,6 +81,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -211,7 +218,7 @@ class ItMiiDomainUpgradeToSecureMode {
   @Test
   @DisplayName("Test upgrade from 1411 container image to "
       + "1412 container image  with production off and secure mode off")
-  void testUpgrade1411to1412ProdOff() {
+  void testUpgrade1411to1412ProdOff() throws UnknownHostException {
     domainNamespace = namespaces.get(2);
     domainUid = "testdomain1";
     adminServerPodName = domainUid + "-" + adminServerName;
@@ -294,7 +301,7 @@ class ItMiiDomainUpgradeToSecureMode {
    */
   @Test
   @DisplayName("Test upgrade from 1411 to 1412 with production on and secure mode off")
-  void testUpgrade1411to1412ProdOnSecOff() {
+  void testUpgrade1411to1412ProdOnSecOff() throws UnknownHostException {
     domainNamespace = namespaces.get(3);
     domainUid = "testdomain2";
     adminServerPodName = domainUid + "-" + adminServerName;
@@ -377,7 +384,7 @@ class ItMiiDomainUpgradeToSecureMode {
    */
   @Test
   @DisplayName("Test upgrade from 1411 to 1412 with production on and secure mode on")
-  void testUpgrade1411to1412ProdOnSecOn() {
+  void testUpgrade1411to1412ProdOnSecOn() throws UnknownHostException {
     domainNamespace = namespaces.get(4);
     domainUid = "testdomain3";
     adminServerPodName = domainUid + "-" + adminServerName;
@@ -463,7 +470,7 @@ class ItMiiDomainUpgradeToSecureMode {
    */
   @Test
   @DisplayName("Test upgrade from 1411 to 1412 with production on and secure mode not configured")
-  void testUpgrade1411to1412ProdOnSecNotConfigured() {
+  void testUpgrade1411to1412ProdOnSecNotConfigured() throws UnknownHostException {
     domainNamespace = namespaces.get(5);
     domainUid = "testdomain4";
     adminServerPodName = domainUid + "-" + adminServerName;
@@ -552,7 +559,7 @@ class ItMiiDomainUpgradeToSecureMode {
   @Test
   @DisplayName("Test upgrade from 12214 container image  to "
       + "1412 container image  with production off and secure mode off")
-  void testUpgrade12214to1412ProdOff() {
+  void testUpgrade12214to1412ProdOff() throws UnknownHostException {
     domainNamespace = namespaces.get(6);
     domainUid = "testdomain5";
     adminServerPodName = domainUid + "-" + adminServerName;
@@ -637,7 +644,7 @@ class ItMiiDomainUpgradeToSecureMode {
    */
   @Test
   @DisplayName("Test upgrade from 12214 to 1412 with production on and administration port enabled")
-  void testUpgrade12214to1412ProdOn() {
+  void testUpgrade12214to1412ProdOn() throws UnknownHostException {
     domainNamespace = namespaces.get(7);
     domainUid = "testdomain6";
     adminServerPodName = domainUid + "-" + adminServerName;
@@ -864,7 +871,9 @@ class ItMiiDomainUpgradeToSecureMode {
   private static void installNginx() {
     // install and verify Nginx ingress controller
     logger.info("Installing Nginx controller using helm");
-    nginxParams = installAndVerifyNginx(ingressNamespace, 0, 0);
+    nginxParams = installAndVerifyNginx(ingressNamespace, 
+        IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_CONAINERPORT, 
+        IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_CONAINERPORT);
   }
 
   /**
@@ -1095,6 +1104,14 @@ class ItMiiDomainUpgradeToSecureMode {
 
   private static int getNginxLbNodePort(String channelName) {
     String nginxServiceName = nginxParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      if (channelName.equals("https")) {
+        return IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_HOSTPORT;
+      } else {
+        return IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_HOSTPORT;
+      }
+    }
     return getServiceNodePort(ingressNamespace, nginxServiceName, channelName);
   }
 
@@ -1105,18 +1122,19 @@ class ItMiiDomainUpgradeToSecureMode {
       String pathLocation,
       String content,
       boolean useCredentials,
-      String... hostName) {
+      String... hostName) throws UnknownHostException {
 
     StringBuffer url = new StringBuffer();
     String hostAndPort;
     if (hostName != null && hostName.length > 0) {
       hostAndPort = OKE_CLUSTER_PRIVATEIP ? hostName[0] : hostName[0] + ":" + lbNodePort;
     } else {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
       hostAndPort = host + ":" + lbNodePort;
+    }
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + lbNodePort;
     }
 
     if (isTLS) {

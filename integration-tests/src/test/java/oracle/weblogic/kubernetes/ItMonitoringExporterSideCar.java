@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_PROM_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -481,8 +483,14 @@ class ItMonitoringExporterSideCar {
       if (!OKE_CLUSTER_PRIVATEIP) {
         nodeportPrometheus = promHelmParams.getNodePortServer();
         String host = formatIPv6Host(K8S_NODEPORT_HOST);
+        if (TestConstants.KIND_CLUSTER
+            && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+          host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+          nodeportPrometheus = IT_MONITORINGEXPORTER_PROM_HTTP_HOSTPORT;
+          logger.info("Running in podman Debug 1 : {0}", hostPortPrometheus);
+        }
         hostPortPrometheus = host + ":" + nodeportPrometheus;
-
+        logger.info("Running in podman Debug 2 : {0}", hostPortPrometheus);
       }
       prometheusDomainRegexValue = prometheusRegexValue;
     }
@@ -498,6 +506,7 @@ class ItMonitoringExporterSideCar {
     assertDoesNotThrow(() -> ExecCommand.exec(command1,true));
     String command2 = KUBERNETES_CLI + " describe svc -n " + monitoringNS;
     assertDoesNotThrow(() -> ExecCommand.exec(command2,true));
+    logger.info("Running in podman Debug 3 : {0}", hostPortPrometheus);
 
     if (OKD) {
       hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
@@ -510,8 +519,10 @@ class ItMonitoringExporterSideCar {
               monitoringNS,
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
+      logger.info("Running in podman Debug 4 : {0}", hostPortPrometheus);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       String host = formatIPv6Host(K8S_NODEPORT_HOST);
+      logger.info("Running in podman Debug 5 : {0}", hostPortPrometheus);
 
       String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
       if (OKE_CLUSTER_PRIVATEIP) {
@@ -521,6 +532,7 @@ class ItMonitoringExporterSideCar {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }
     }
+    logger.info("Running in podman Debug 6 : {0}", hostPortPrometheus);
     logger.info("Grafana is running");
   }
 
