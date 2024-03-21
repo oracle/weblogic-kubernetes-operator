@@ -479,9 +479,10 @@ Now that you have WLS running in AKS, you can test the cluster by deploying the 
 First, package the application with the following command:
 
 ```shell
-$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.8.zip -o ${BASE_DIR}/v4.1.8.zip
+$ cd ${BASE_DIR}
+$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.8.zip -o v4.1.8.zip
 $ unzip v4.1.8.zip "weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/bash-scripts/build-war-app.sh" "weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/apps/testwebapp/*"
-$ cd $BASE_DIR/weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/bash-scripts
+$ cd weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/bash-scripts
 $ bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
 ```
 
