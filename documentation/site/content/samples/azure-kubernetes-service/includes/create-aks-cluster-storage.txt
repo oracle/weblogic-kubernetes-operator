@@ -34,6 +34,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     Successful output will be a JSON object with the entry `"type": "Microsoft.Storage/storageAccounts"`.
 
 2. Create an NFS share.
+
     {{% notice note %}} We strongly recommend NFS instead of SMB. NFS evolved from the UNIX operating system, and other variants such as GNU/Linux. For this reason, when using NFS with container technologies such as Docker, it is less likely to have problems for concurrent reads and file locking.
 
     Please be sure to enable NFS v4.1. Versions lower than v4.1 will have problems.

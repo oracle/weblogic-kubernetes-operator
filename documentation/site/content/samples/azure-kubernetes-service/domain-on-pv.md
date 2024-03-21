@@ -17,6 +17,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
  - [Create and Configure Storage](#create-storage)
    - [Create an Azure Storage account and NFS share](#create-an-azure-storage-account-and-nfs-share)
    - [Create SC and PVC](#create-sc-and-pvc)
+ - [Create a domain creation image](#create-a-domain-creation-image)
  - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator-into-the-aks-cluster)
  - [Create WebLogic domain](#create-weblogic-domain)
    - [Create secrets](#create-secrets)
@@ -84,7 +85,7 @@ export AKS_PERS_LOCATION=eastus
 export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
 export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
 export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
-export ACR_ACCOUNT_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
+export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 ```
 
@@ -98,59 +99,138 @@ export ACR_ACCOUNT_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
 
-#### Create the Azure Container Registry and connect it to the AKS cluster
+#### Create a domain creation image
 
-Your AKS cluster must be connected to a container registry so it can pull and interact with container images. The WebLogic Kubernetes Operator assumes that the docker images in the container registry have the correct structure so they are ready to run as WebLogic Docker images. The WebLogic Image Toolkit you used when satisfying the preconditions produces images that meet this requirement. In particular the image `wdt-domain-image:WLS-v1`. The steps in this section show you how to create an Azure Container Registry, connect it to your existing AKS cluster, and push the `wdt-domain-image:WLS-v1` to this registry.
+This sample requires [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images" >}}). For more information, see [Domain on Persistent Volume]({{< relref "/managing-domains/domain-on-pv/overview" >}}).
 
-Create the Azure Container Registry in your existing resource group.
+  - [Image creation prerequisites](#image-creation-prerequisites)
+  - [Image creation - Introduction](#image-creation---introduction)
+  - [Understanding your first archive](#understanding-your-first-archive)
+  - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
+  - [Staging model files](#staging-model-files)
+  - [Creating the image with WIT](#creating-the-image-with-wit)
+  - [Pushing the image to Azure Container Registry](#pushing-the-image-to-azure-container-registry)
+
+##### Image creation prerequisites
+
+- The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
+- Copy the sample to a new directory; for example, use the directory `/tmp/dpv-sample`. In the directory name, `dpv` is short for "domain on pv". Domain on PV is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+
+   ```shell
+   $ rm /tmp/dpv-sample -f -r
+   $ mkdir /tmp/dpv-sample
+   ```
+
+   ```shell
+   $ cp -r $BASE_DIR/sample-scripts/create-weblogic-domain/domain-on-pv/* /tmp/dpv-sample
+   ```
+
+   **NOTE**: We will refer to this working copy of the sample as `/tmp/dpv-sample`; however, you can use a different location.
+- Copy the `wdt-artifacts` directory of the sample to a new directory; for example, use directory `/tmp/dpv-sample/wdt-artifacts`
+
+   ```shell
+   $ cp -r $BASE_DIR/sample-scripts/create-weblogic-domain/wdt-artifacts/* /tmp/dpv-sample
+   ```
+
+   ```shell
+   $ export WDT_MODEL_FILES_PATH=/tmp/dpv-sample/wdt-model-files
+   ```
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" >}}
+
+##### Image creation - Introduction
+
+The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image tagged as `wdt-domain-image:WLS-v1` from files that you will stage to `${WDT_MODEL_FILES_PATH}/WLS-v1`.
+
+  - The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image’s `/auxiliary/weblogic-deploy` directory, by default.
+  - WDT model YAML (model), WDT variable (property), and WDT archive ZIP (archive) files, expected in directory `/auxiliary/models`, by default.
+
+##### Understanding your first archive
+
+See [Understanding your first archive]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#understand-your-first-archive" >}}).
+
+##### Staging a ZIP file of the archive
+
+Delete existing archive.zip in case we have an old leftover version.
 
 ```shell
-az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name ${ACR_ACCOUNT_NAME} --sku Basic --admin-enabled
+$ rm -f ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
 ```
 
-Successful output will be a JSON object that includes the property.
-
-```json
-"id": "/subscriptions/<your subscription id>/resourceGroups/<your resource group>/providers/Microsoft.ContainerRegistry/registries/<your aks cluster name>"
-```
-
-Obtain the credentials to the Azure Container Registry and perform the `docker login`.
+Create a ZIP file of the archive in the location that we will use when we run the WebLogic Image Tool.
 
 ```shell
-export LOGIN_SERVER=$(az acr show \
-    --name ${ACR_ACCOUNT_NAME} \
-    --query 'loginServer' \
-    --output tsv)
-export USER_NAME=$(az acr credential show \
-    --name ${ACR_ACCOUNT_NAME} \
-    --query 'username' \
-    --output tsv)
-export PASSWORD=$(az acr credential show \
-    --name ${ACR_ACCOUNT_NAME} \
-    --query 'passwords[0].value' \
-    --output tsv)
-
-docker login $LOGIN_SERVER -u $USER_NAME -p $PASSWORD
+$ cd /tmp/dpv-sample/archives/archive-v1
+$ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
+
+##### Staging model files
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
+
+An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/domain-on-pv/model-files" >}}) in the user documentation.
+
+##### Creating the image with WIT
+
+At this point, you have all of the files needed for `image wdt-domain-image:WLS-v1` staged; they include:
+
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.yaml`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.properties`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip`
+
+Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You’ve already set up this tool during the prerequisite steps.
+
+Run the following commands to create the image and verify that it worked:
+
+```shell
+$ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh createAuxImage \
+  --tag wdt-domain-image:WLS-v1 \
+  --wdtModel ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.yaml \
+  --wdtVariables ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.properties \
+  --wdtArchive ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
+```
+
+This command runs the WebLogic Image Tool to create the domain creation image and does the following:
+
+  - Builds the final container image as a layer on a small `busybox` base image.
+  - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
+    - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
+    - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+  - Copies the specified WDT model, properties, and application archives to image location `/auxiliary/models`.
+
+When the command succeeds, it should end with output like the following:
+
+```
+[INFO   ] Build successful. Build time=70s. Image tag=wdt-domain-image:WLS-v1
+```
+
+Verify the image is available in the local Docker server with the following command.
+
+```shell
+$ docker images | grep WLS-v1
+```
+```
+wdt-domain-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
+```
+
+{{% notice note %}}
+You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
+{{% /notice %}}
+
+##### Pushing the image to Azure Container Registry
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" >}}
 
 Push the `wdt-domain-image:WLS-v1` image created while satisfying the preconditions to this registry.
 
 ```shell
-docker push ${LOGIN_SERVER}/wdt-domain-image:WLS-v1
+$ docker tag wdt-domain-image:WLS-v1 $LOGIN_SERVER/wdt-domain-image:WLS-v1
+$ docker push ${LOGIN_SERVER}/wdt-domain-image:WLS-v1
 ```
 
-Set an environment variable for use in a later script.
+{{< readfile file="/samples/azure-kubernetes-service/includes/aks-connect-acr.txt" >}}
 
-```shell
-# An example of Domain_Creation_Image_tag: xxx.azurecr.io/wdt-domain-image:WLS-v1
-export Domain_Creation_Image_tag=${LOGIN_SERVER}/wdt-domain-image:WLS-v1
-```
-
-Connect the Azure Container Registry to your existing AKS cluster.
-
-```shell
-az aks update --name ${AKS_CLUSTER_NAME} --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr ${ACR_ACCOUNT_NAME}
-```
+If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
 
 #### Install WebLogic Kubernetes Operator into the AKS cluster
 
@@ -254,6 +334,12 @@ kubectl label namespace default weblogic-operator=enabled
 Now, you deploy a `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.
 
 - Run the following command to generate resource files.
+
+    Export `Domain_Creation_Image_tag`, which will be referred in `create-domain-on-aks-generate-yaml.sh`.
+
+    ```shell
+    export Domain_Creation_Image_tag=${LOGIN_SERVER}/wdt-domain-image:WLS-v1
+    ```
 
     ```shell
     cd $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service  
@@ -393,9 +479,9 @@ Now that you have WLS running in AKS, you can test the cluster by deploying the 
 First, package the application with the following command:
 
 ```shell
-$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.7.zip -o ${BASE_DIR}/v4.1.7.zip
-$ unzip v4.1.7.zip "weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts/build-war-app.sh" "weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/apps/testwebapp/*"
-$ cd $BASE_DIR/weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts
+$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.8.zip -o ${BASE_DIR}/v4.1.8.zip
+$ unzip v4.1.8.zip "weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/bash-scripts/build-war-app.sh" "weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/apps/testwebapp/*"
+$ cd $BASE_DIR/weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/bash-scripts
 $ bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
 ```
 

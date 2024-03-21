@@ -1,0 +1,28 @@
+- Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/wdt-model-files` directory. Both WDT and WIT are required to create your Model in Image images.
+
+    ```shell
+    $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
+     -o ${WDT_MODEL_FILES_PATH}/weblogic-deploy.zip
+    ```
+    ```shell
+    $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
+      -o ${WDT_MODEL_FILES_PATH}/imagetool.zip
+    ```
+
+- Set up the WebLogic Image Tool, run the following commands:
+    ```shell
+    $ unzip ${WDT_MODEL_FILES_PATH}/imagetool.zip -d ${WDT_MODEL_FILES_PATH}
+    ```
+
+   ```
+   $ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
+   ```
+
+   ```shell
+   $ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh cache addInstaller \
+     --type wdt \
+     --version latest \
+     --path ${WDT_MODEL_FILES_PATH}/weblogic-deploy.zip
+   ```
+
+   These steps will install WIT to the `${WDT_MODEL_FILES_PATH}/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
