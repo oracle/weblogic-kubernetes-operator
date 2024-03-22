@@ -938,7 +938,7 @@ public class CommonTestUtils {
   /**
    * Compile java class inside the pod.
    * @param podName name of the pod
-   * @param namespace name of namespace
+   * @param namespace name of  namespace
    * @param destLocation location of java class
    */
   public static void runJavacInsidePod(String podName, String namespace, String destLocation) {
@@ -1334,7 +1334,7 @@ public class CommonTestUtils {
    * @return formatted for ipv6
    */
   public static String formatIPv6Host(String hostname) {
-    return hostname.contains(":") ? "[" + hostname + "]" : hostname;
+    return hostname.contains(":") ? hostname.contains("[") ? hostname : "[" + hostname + "]" : hostname;
   }
 
   /**
