@@ -42,6 +42,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -275,9 +276,7 @@ public class DeployUtil {
             String userName, String password, String targets, 
             Path archivePath, String hostHeader, String appName) {
     ExecResult result = null;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    host = formatIPv6Host(host);
     result = deployUsingRest(host + ":" + port, userName, password, targets, archivePath,
            hostHeader, appName);
     return result;
