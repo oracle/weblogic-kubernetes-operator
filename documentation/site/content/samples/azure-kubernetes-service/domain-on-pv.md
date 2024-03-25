@@ -23,7 +23,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
    - [Create WebLogic Domain](#create-weblogic-domain-1)
    - [Create LoadBalancer](#create-loadbalancer)
  - [Automation](#automation)
- - [Deploy sample application](#deploy-sample-application)
+ - [Access sample application](#access-sample-application)
  - [Validate NFS volume](#validate-nfs-volume)
  - [Clean up resources](#clean-up-resources)
  - [Troubleshooting](#troubleshooting)
@@ -436,7 +436,7 @@ The domain resource references the cluster resource, a WebLogic Server installat
   $ kubectl get events --sort-by='.metadata.creationTimestamp'
   ```
 
-To deploy a sample application on WLS, you may skip to the section [Deploy sample application](#deploy-sample-application).  The next section includes a script that automates all of the preceding steps.
+To access the sample application on WLS, you may skip to the section [Access sample application](#access-sample-application).  The next section includes a script that automates all of the preceding steps.
 
 #### Automation
 
@@ -456,8 +456,8 @@ For input values, you can edit `${BASE_DIR}/sample-scripts/create-weblogic-domai
 | `weblogicUserName` | `weblogic`          | Uername for WebLogic user account.                                                             |
 | `weblogicAccountPassword` | `Secret123456` | Password for WebLogic user account.                                                            |
 
-```
-cd ${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service
+```shell
+$ cd ${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service
 ```
 
 ```shell
@@ -470,119 +470,16 @@ To interact with the cluster using `kubectl`, use `az aks get-credentials` as sh
 {{% notice info %}} You now have created an AKS cluster with Azure Files NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
 {{% /notice %}}
 
-#### Deploy sample application
+#### Access sample application
 
-Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository.
-
-First, package the application with the following command:
+Access the Administration Console using the admin load balancer IP address.
 
 ```shell
-$ cd ${BASE_DIR}
-$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.8.zip -o v4.1.8.zip
-$ unzip v4.1.8.zip "weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/bash-scripts/build-war-app.sh" "weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/apps/testwebapp/*"
-$ cd weblogic-kubernetes-operator-4.1.8/integration-tests/src/test/resources/bash-scripts
-$ bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
-```
-
-Successful output will look similar to the following:
-
-```text
-Found source at ../apps/testwebapp/
-build /tmp/testwebapp/testwebapp.war with command jar -cvf /tmp/testwebapp/testwebapp.war *
-added manifest
-ignoring entry META-INF/
-ignoring entry META-INF/MANIFEST.MF
-adding: META-INF/maven/(in = 0) (out= 0)(stored 0%)
-adding: META-INF/maven/com.oracle.weblogic/(in = 0) (out= 0)(stored 0%)
-adding: META-INF/maven/com.oracle.weblogic/testwebapp/(in = 0) (out= 0)(stored 0%)
-adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.properties(in = 117) (out= 113)(deflated 3%)
-adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.xml(in = 1210) (out= 443)(deflated 63%)
-adding: WEB-INF/(in = 0) (out= 0)(stored 0%)
-adding: WEB-INF/web.xml(in = 951) (out= 428)(deflated 54%)
-adding: WEB-INF/weblogic.xml(in = 1140) (out= 468)(deflated 58%)
-adding: index.jsp(in = 1001) (out= 459)(deflated 54%)
--rw-r--r-- 1 user user 3528 Jul  5 14:25 /tmp/testwebapp/testwebapp.war
-```
-
-Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster. This sample uses WLS RESTful API [/management/weblogic/latest/edit/appDeployments](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlrer/op-management-weblogic-version-edit-appdeployments-x-operations-1.html) to deploy the sample application.
-Replace `${WEBLOGIC_USERNAME}` and `${WEBLOGIC_PASSWORD}` with the values you specified in [Create secrets](#create-secrets) or [Automation](#automation):
-
-```bash
 $ ADMIN_SERVER_IP=$(kubectl get svc domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
-$ curl --user ${WEBLOGIC_USERNAME}:${WEBLOGIC_PASSWORD} -H X-Requested-By:MyClient  -H Accept:application/json -s -v \
-  -H Content-Type:multipart/form-data  \
-  -F "model={
-        name:    'testwebapp',
-        targets: [ { identity: [ 'clusters', 'cluster-1' ] } ]
-      }" \
-  -F "sourcePath=@/tmp/testwebapp/testwebapp.war" \
-  -H "Prefer:respond-async" \
-  -X POST http://${ADMIN_SERVER_IP}:7001/management/weblogic/latest/edit/appDeployments
+$ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
-After the successful deployment, you will find output similar to the following:
-
-{{%expand "Click here to view the output." %}}
-```text
-*   Trying 52.226.101.43:7001...
-* TCP_NODELAY set
-* Connected to 52.226.101.43 (52.226.101.43) port 7001 (#0)
-* Server auth using Basic with user 'weblogic'
-> POST /management/weblogic/latest/edit/appDeployments HTTP/1.1
-> Host: 52.226.101.43:7001
-> Authorization: Basic ...=
-> User-Agent: curl/7.68.0
-> X-Requested-By:MyClient
-> Accept:application/json
-> Prefer:respond-async
-> Content-Length: 3925
-> Content-Type: multipart/form-data; boundary=------------------------cc76a2c2d819911f
-> Expect: 100-continue
->
-* Mark bundle as not supporting multiuse
-< HTTP/1.1 100 Continue
-* We are completely uploaded and fine
-* Mark bundle as not supporting multiuse
-< HTTP/1.1 202 Accepted
-< Date: Thu, 11 Aug 2022 08:32:56 GMT
-< Location: http://domain1-admin-server:7001/management/weblogic/latest/domainRuntime/deploymentManager/deploymentProgressObjects/testwebapp
-< Content-Length: 764
-< Content-Type: application/json
-< X-ORACLE-DMS-ECID: 6f205c83-e172-4c34-a638-7f0c6345ce45-00000055
-< X-ORACLE-DMS-RID: 0
-< Set-Cookie: JSESSIONID=NOCMCQBO7dxyA2lUfCYp4zSYIeFB0S3V1KRRzigmmoOUfmQmlLOh!-546081476; path=/; HttpOnly
-< Vary: Accept-Encoding
-<
-{
-    "links": [{
-        "rel": "job",
-        "href": "http:\/\/domain1-admin-server:7001\/management\/weblogic\/latest\/domainRuntime\/deploymentManager\/deploymentProgressObjects\/testwebapp"
-    }],
-    "identity": [
-        "deploymentManager",
-        "deploymentProgressObjects",
-        "testwebapp"
-    ],
-    "rootExceptions": [],
-    "deploymentMessages": [],
-    "name": "testwebapp",
-    "operationType": 3,
-    "startTimeAsLong": 1660206785965,
-    "state": "STATE_RUNNING",
-    "id": "0",
-    "type": "DeploymentProgressObject",
-    "targets": ["cluster-1"],
-    "applicationName": "testwebapp",
-    "failedTargets": [],
-    "progress": "processing",
-    "completed": false,
-    "intervalToPoll": 1000,
-    "startTime": "2022-08-11T08:33:05.965Z"
-* Connection #0 to host 52.226.101.43 left intact
-```
-{{% /expand %}}
-
-Now, you can go to the application through the `domain1-cluster-1-lb` external IP.
+Access the sample application using the cluster load balancer IP address.
 
 ```shell
 $ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -590,28 +487,29 @@ $ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-lb -o=jsonpath='{.status.loadBa
 
 
 ```shell
-$ curl http://${CLUSTER_IP}:8001/testwebapp/
+$ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
 
 The test application will list the server host and server IP on the output, like the following:
 
 ```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html><body><pre>
+*****************************************************************
 
-    <link rel="stylesheet" href="/testwebapp/res/styles.css;jsessionid=9uiMDakndtPlZTyDB9A-OKZEFBBAPyIs_9bG3qC4uA3PYaI8DsH1!-1450005246" type="text/css">
-    <title>Test WebApp</title>
-  </head>
-  <body>
+Hello World! This is version 'v1' of the sample JSP web-app.
 
+Welcome to WebLogic Server 'managed-server1'!
 
-    <li>InetAddress: domain1-managed-server1/10.244.1.8
-    <li>InetAddress.hostname: domain1-managed-server1
+ domain UID  = 'domain1'
+ domain name = 'domain1'
 
-  </body>
-</html>
+Found 1 local cluster runtime:
+  Cluster 'cluster-1'
+
+Found 0 local data sources:
+
+*****************************************************************
+</pre></body></html>
 ```
 
 #### Validate NFS volume

@@ -88,14 +88,14 @@ sample-weblogic-operator-sa   1         9m5s
 
 Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from Github. It may take you several minutes to install the operator.
 
-```
-helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+```shell
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 
 Update the repo to get the latest Helm charts. It is a best practice to do this every time before installing a new operator version. In this example, we are using a pinned version, but you may also find success if you use the latest version. In this case, you can omit the `--version` argument. Be warned that these instructions have only been tested with the exact version shown.
 
 
-```
+```shell
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
@@ -395,10 +395,16 @@ $ kubectl -n sample-domain1-ns label  secret \
 
 Now, you create a domain YAML file. Think of the domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
-We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
+We provide a sample file at `$BASE_DIR/sample-scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
 
 ```shell
-$ cp $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml /tmp/mii-sample/mii-initial.yaml
+$ cp $BASE_DIR/sample-scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml /tmp/mii-sample/mii-initial.yaml
+```
+
+Print the image path. Copy the output to your clipboard and paste it to value of `spec.image` in `/tmp/mii-sample/mii-initial.yaml`.
+
+```shell
+echo $LOGIN_SERVER/model-in-image-aks:1.0
 ```
 
 Modify the Domain YAML with your values.
@@ -471,7 +477,7 @@ If the system does not reach this state, troubleshoot and resolve the problem be
 
 Create the Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed in the cluster.
 
-Use the configuration file in `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with you domain values.
+Use the configuration file in `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with you domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -494,7 +500,7 @@ spec:
 ```
 {{% /expand %}}
 
-Use the configuration file in `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
+Use the configuration file in `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -521,13 +527,13 @@ spec:
 Create the load balancer services using the following command:
 
 ```shell
-$ kubectl apply -f $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml
+$ kubectl apply -f $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml
 ```
 ```
 service/sample-domain1-admin-server-external-lb created
 ```
 ```shell
-$ kubectl  apply -f $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml
+$ kubectl  apply -f $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml
 ```
 ```
 service/sample-domain1-cluster-1-external-lb created
@@ -687,22 +693,28 @@ Events:             <none>
 
 ##### Access the application
 
-Access the Administration Console using the admin load balancer IP address, `http://52.191.234.149:7001/console`
+Access the Administration Console using the admin load balancer IP address.
+
+```shell
+$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+$ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
+```
 
 Access the sample application using the cluster load balancer IP address.
 
-```
-## Access the sample application using the cluster load balancer IP (52.191.235.71)
-```
-```
+```shell
+## Access the sample application using the cluster load balancer IP.
 $ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+```
+
+```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
 ```
 <html><body><pre>
 *****************************************************************
 
-Hello World! This is version 'v1' of the mii-sample JSP web-app.
+Hello World! This is version 'v1' of the sample JSP web-app.
 
 Welcome to WebLogic Server 'managed-server1'!
 
@@ -717,28 +729,6 @@ Found 0 local data sources:
 *****************************************************************
 </pre></body></html>
 
-```
-```shell
-$ curl http://52.191.235.71:8001/myapp_war/index.jsp
-```
-```
-<html><body><pre>
-*****************************************************************
-
-Hello World! This is version 'v1' of the mii-sample JSP web-app.
-
-Welcome to WebLogic Server 'managed-server2'!
-
- domain UID  = 'sample-domain1'
- domain name = 'domain1'
-
-Found 1 local cluster runtime:
-  Cluster 'cluster-1'
-
-Found 0 local data sources:
-
-*****************************************************************
-</pre></body></html>
 ```
 
 #### Rolling updates
