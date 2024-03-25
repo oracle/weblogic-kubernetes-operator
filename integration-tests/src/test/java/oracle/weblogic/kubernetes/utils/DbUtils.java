@@ -8,9 +8,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLProtocolException;
@@ -78,6 +80,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_PREBUILT_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.DB_PREBUILT_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
@@ -1058,6 +1061,17 @@ public class DbUtils {
               .path(PV_ROOT)
               .server(NFS_SERVER)
               .readOnly(false));
+    } else if (OKE_CLUSTER) {
+      String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
+      logger.info("Using FSS PV directory {0}", fssDir);
+      List<String> mountOptions = Collections.singletonList("vers=3");
+      v1pv.getSpec()
+          .storageClassName("oci-fss")
+          .nfs(new V1NFSVolumeSource()
+              .path(fssDir)
+              .server(NFS_SERVER)
+              .readOnly(false))
+          .mountOptions(mountOptions);
     } else {
       v1pv.getSpec()
           .storageClassName("weblogic-domain-storage-class")
