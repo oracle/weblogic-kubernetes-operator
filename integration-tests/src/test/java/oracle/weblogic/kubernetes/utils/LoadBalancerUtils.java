@@ -15,10 +15,15 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.V1IngressBackend;
 import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.TestConstants;
@@ -458,6 +463,63 @@ public class LoadBalancerUtils {
     }
 
     return ingressHostList;
+  }
+
+  /**
+   * Creates Nginx Ingress Path Routing for service.
+   * @param domainNamespace - domain namespace
+   * @param ingressClassName - class name
+   * @param serviceName - service name
+   * @param servicePort -service port
+   * @param hostAndPort - host and port  for url
+   */
+  public  static void createNginxIngressPathRoutingRules(String domainNamespace,
+                                                         String ingressClassName,
+                                                         String serviceName,
+                                                         int servicePort,
+                                                         String hostAndPort) {
+    // create an ingress in domain namespace
+    String ingressName = domainNamespace + "-nginx-path-routing";
+
+    // create ingress rules for two domains
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+
+    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
+        .path("/")
+        .pathType("Prefix")
+        .backend(new V1IngressBackend()
+            .service(new V1IngressServiceBackend()
+                .name(serviceName)
+                .port(new V1ServiceBackendPort()
+                    .number(servicePort)))
+        );
+    httpIngressPaths.add(httpIngressPath);
+
+    V1IngressRule ingressRule = new V1IngressRule()
+        .host("")
+        .http(new V1HTTPIngressRuleValue()
+            .paths(httpIngressPaths));
+
+    ingressRules.add(ingressRule);
+
+    createIngressAndRetryIfFail(60, false, ingressName, domainNamespace, null, ingressClassName, ingressRules, null);
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
+        .contains(ingressName);
+    LoggingFacade logger = getLogger();
+    logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
+
+    // check the ingress is ready to route the app to the server pod
+
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
+        + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+    logger.info("Executing curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
   }
 
   /**
