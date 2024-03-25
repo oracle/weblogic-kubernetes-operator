@@ -710,6 +710,7 @@ $ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb 
 ```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
+
 ```
 <html><body><pre>
 *****************************************************************
@@ -718,17 +719,20 @@ Hello World! This is version 'v1' of the sample JSP web-app.
 
 Welcome to WebLogic Server 'managed-server1'!
 
- domain UID  = 'sample-domain1'
- domain name = 'domain1'
+  domain UID  = 'sample-domain1'
+  domain name = 'domain1'
 
 Found 1 local cluster runtime:
   Cluster 'cluster-1'
+
+Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
 
 Found 0 local data sources:
 
 *****************************************************************
 </pre></body></html>
-
 ```
 
 #### Rolling updates

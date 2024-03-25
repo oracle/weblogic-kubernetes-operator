@@ -500,11 +500,15 @@ Hello World! This is version 'v1' of the sample JSP web-app.
 
 Welcome to WebLogic Server 'managed-server1'!
 
- domain UID  = 'domain1'
- domain name = 'domain1'
+  domain UID  = 'domain1'
+  domain name = 'domain1'
 
 Found 1 local cluster runtime:
   Cluster 'cluster-1'
+
+Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
 
 Found 0 local data sources:
 
