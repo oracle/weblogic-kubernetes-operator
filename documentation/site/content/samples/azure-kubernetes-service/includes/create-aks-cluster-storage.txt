@@ -35,11 +35,9 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 
 2. Create an NFS share.
 
-    {{% notice note %}} We strongly recommend NFS instead of SMB. NFS evolved from the UNIX operating system, and other variants such as GNU/Linux. For this reason, when using NFS with container technologies such as Docker, it is less likely to have problems for concurrent reads and file locking.
+    We strongly recommend NFS instead of SMB. NFS evolved from the UNIX operating system, and other variants such as GNU/Linux. For this reason, when using NFS with container technologies such as Docker, it is less likely to have problems for concurrent reads and file locking.
 
     Please be sure to enable NFS v4.1. Versions lower than v4.1 will have problems.
-
-    {{% /notice %}}
 
     To create the file share, you must use `NoRootSquash` to allow the operator to change the ownership of the directory in the NFS share.
 
