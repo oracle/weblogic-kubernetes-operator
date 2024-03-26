@@ -751,8 +751,7 @@ class ItMonitoringExporterMetricsFiltering {
   private static void installTraefikIngressController() throws IOException {
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
-    if (TestConstants.KIND_CLUSTER
-        && TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
       traefikHelmParams = traefikParams.getHelmParams();
       ingressClassName = traefikParams.getIngressClassName();
