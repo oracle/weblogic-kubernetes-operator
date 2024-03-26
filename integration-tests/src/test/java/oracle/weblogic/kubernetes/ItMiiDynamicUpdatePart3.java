@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
@@ -45,6 +46,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfigViaAdminPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -69,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test dynamic updates to a model in image domain, part3")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-sequential")
+@Tag("oke-gate")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
@@ -292,8 +294,7 @@ class ItMiiDynamicUpdatePart3 {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, OffsetDateTime> pods =
-        helper.addDataSourceAndVerify(false);
+    LinkedHashMap<String, OffsetDateTime> pods = helper.addDataSourceAndVerify(false);
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
@@ -319,12 +320,18 @@ class ItMiiDynamicUpdatePart3 {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration using REST api
-    int adminServiceNodePort
-        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
-        "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
+    if (OKE_CLUSTER) {
+      assertTrue(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
+          "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
+          "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
+    } else {
+      int adminServiceNodePort
+          = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
+      assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+      assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
+          "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
+          "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
+    }
     logger.info("JDBCSystemResource configuration found");
 
     // check that the domain status condition contains the correct type and expected reason
@@ -333,8 +340,7 @@ class ItMiiDynamicUpdatePart3 {
 
     // write sparse yaml to delete datasource to file, delete ds to keep the config clean
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
-    String yamlToDeleteDS = "resources:\n"
-        + "  JDBCSystemResource:\n";
+    String yamlToDeleteDS = "resources:\n" + "  JDBCSystemResource:\n";
 
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
@@ -363,17 +369,22 @@ class ItMiiDynamicUpdatePart3 {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration is deleted using REST api
-    adminServiceNodePort
-        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertFalse(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
-        "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
+    if (OKE_CLUSTER) {
+      assertFalse(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
+          "JDBCSystemResources",
+          "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
+    } else {
+      int adminServiceNodePort
+          = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
+      assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+      assertFalse(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
+          "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
+    }
     logger.info("JDBCSystemResource Datasource is deleted");
 
     // check that the domain status condition contains the correct type and expected status
     logger.info("verifying the domain status condition contains the correct type and expected status");
     helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
-
   }
 
   private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {
