@@ -223,22 +223,19 @@ class ItWseeSSO {
         "/samlSenderVouches/EchoService");
     senderURI = checkWSDLAccess(domain1Namespace, domain1Uid, adminSvcExtHost1,
         "/EchoServiceRef/Echo");
-    assertDoesNotThrow(() -> {
-      assertTrue(callPythonScript(domain1Uid, domain1Namespace,
-                  "addSAMLRelyingPartySenderConfig.py", receiverURI),
-              "Failed to run python script addSAMLRelyingPartySenderConfig.py");
-    },
+    testUntil(() -> callPythonScript(domain1Uid, domain1Namespace,
+            "addSAMLRelyingPartySenderConfig.py", receiverURI),
+        logger,
         "Failed to run python script addSAMLRelyingPartySenderConfig.py");
+
     int serviceNodePort = assertDoesNotThrow(()
             -> getServiceNodePort(domain2Namespace, getExternalServicePodName(adminServerPodName2),
             "default"),
         "Getting admin server node port failed");
     String hostPort = OKE_CLUSTER_PRIVATEIP ? ingressIP + " 80" : K8S_NODEPORT_HOST + " " + serviceNodePort;
-
-    assertDoesNotThrow(() -> {
-      assertTrue(callPythonScript(domain1Uid, domain1Namespace,
-              "setupPKI.py", hostPort), "Failed to run python script setupPKI.py");
-    },
+    testUntil(() -> callPythonScript(domain1Uid, domain1Namespace,
+            "setupPKI.py", hostPort),
+        logger,
         "Failed to run python script setupPKI.py");
 
     buildRunClientOnPod();
@@ -456,27 +453,21 @@ class ItWseeSSO {
     if (adminSvcExtHost2 == null) {
       adminSvcExtHost2 = createRouteForOKD(getExternalServicePodName(adminServerPodName2), domain2Namespace);
     }
-
-    assertDoesNotThrow(() -> {
-      assertTrue(callPythonScript(domain1Uid, domain1Namespace,
-                  "setupAdminSSL.py", "mykeysen changeit 7002 /shared/" + domain1Namespace + "/"
-                      + domain1Uid + "/keystores Identity1KeyStore.jks"),
-              "Failed to run python script setupAdminSSL.py");
-    },
-        "Failed to run python script setupAdminSSL.py");
-    assertDoesNotThrow(() -> {
-      assertTrue(callPythonScript(domain2Uid, domain2Namespace,
-                  "setupAdminSSL.py", "mykeyrec changeit 7002 /shared/" + domain2Namespace + "/"
-                      + domain2Uid + "/keystores Identity2KeyStore.jks"),
-              "Failed to run python script setupAdminSSL.py");
-    },
+    testUntil(() -> callPythonScript(domain1Uid, domain1Namespace,
+            "setupAdminSSL.py", "mykeysen changeit 7002 /shared/" + domain1Namespace + "/"
+                + domain1Uid + "/keystores Identity1KeyStore.jks"),
+        logger,
         "Failed to run python script setupAdminSSL.py");
 
-    assertDoesNotThrow(() -> {
-      assertTrue(callPythonScript(domain2Uid, domain2Namespace,
-                  "addSAMLAssertingPartyReceiverConfig.py", "/samlSenderVouches/EchoService"),
-              "Failed to run python script addSAMLAssertingPartyReceiverConfig.py");
-    },
+    testUntil(() -> callPythonScript(domain2Uid, domain2Namespace,
+            "setupAdminSSL.py", "mykeyrec changeit 7002 /shared/" + domain2Namespace + "/"
+                + domain2Uid + "/keystores Identity2KeyStore.jks"),
+        logger,
+        "Failed to run python script setupAdminSSL.py");
+
+    testUntil(() -> callPythonScript(domain2Uid, domain2Namespace,
+            "addSAMLAssertingPartyReceiverConfig.py", "/samlSenderVouches/EchoService"),
+        logger,
         "Failed to run python script addSAMLAssertingPartyReceiverConfig.py");
   }
 
