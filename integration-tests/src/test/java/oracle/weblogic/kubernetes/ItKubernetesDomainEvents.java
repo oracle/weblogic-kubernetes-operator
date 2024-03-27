@@ -27,12 +27,10 @@ import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
-import oracle.weblogic.kubernetes.utils.K8sEvents;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -55,7 +53,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
@@ -101,7 +98,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEventCount;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEventCountForResource;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -146,8 +143,6 @@ class ItKubernetesDomainEvents {
   private static String domainNamespace4 = null;
   private static String domainNamespace5 = null;
   private static String opServiceAccount = null;
-  private static int externalRestHttpsPort = 0;
-  private static OperatorParams opParams = null;
 
   static final String cluster1Name = "mycluster";
   static final String cluster2Name = "cl2";
@@ -211,10 +206,9 @@ class ItKubernetesDomainEvents {
     opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
-    opParams = installAndVerifyOperator(opNamespace, opServiceAccount,
+    installAndVerifyOperator(opNamespace, opServiceAccount,
             true, 0, domainNamespace1, domainNamespace2, domainNamespace3,
             domainNamespace4, domainNamespace5);
-    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     createDomain(domainNamespace3, domainUid, pvName3, pvcName3);
   }
@@ -387,9 +381,7 @@ class ItKubernetesDomainEvents {
     logger.info("verify the Cluster_Available event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid,
         CLUSTER_CHANGED, "Normal", timestamp);
-    assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
-        CLUSTER_CHANGED, timestamp2));
-    assertEquals(1, K8sEvents.getOpGeneratedEventCountForResource(domainNamespace3, domainUid, cluster2Name,
+    assertEquals(1, getOpGeneratedEventCountForResource(domainNamespace3, domainUid, cluster2Name,
         CLUSTER_CHANGED, timestamp));
     checkEvent(opNamespace, domainNamespace3, domainUid,
         CLUSTER_AVAILABLE, "Normal", timestamp);
@@ -400,10 +392,10 @@ class ItKubernetesDomainEvents {
     checkEvent(opNamespace, domainNamespace3,
         domainUid, CLUSTER_COMPLETED, "Normal", timestamp2);
     logger.info("verify the only 1 Completed event for domain is generated");
-    assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
+    assertEquals(1, getOpGeneratedEventCountForResource(domainNamespace3, domainUid, domainUid,
             DOMAIN_COMPLETED, timestamp));
     logger.info("verify the only 1 ClusterCompleted event for domain is generated");
-    assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
+    assertEquals(1, getOpGeneratedEventCountForResource(domainNamespace3, domainUid, cluster2Name,
         CLUSTER_COMPLETED, timestamp2));
   }
 

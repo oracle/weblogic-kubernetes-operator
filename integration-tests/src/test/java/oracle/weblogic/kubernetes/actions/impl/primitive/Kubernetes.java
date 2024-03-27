@@ -2801,9 +2801,10 @@ public class Kubernetes {
    */
   public static V1Job getJob(String jobName, String namespace) throws ApiException {
     V1JobList listJobs = listJobs(namespace);
-    for (V1Job job : listJobs.getItems()) {
-      if (job != null && job.getMetadata() != null) {
-        if (job.getMetadata().getName().equals(jobName)) {
+    if (listJobs != null) {
+      for (V1Job job : listJobs.getItems()) {
+        if (job.getMetadata() != null && job.getMetadata().getName() != null
+            && job.getMetadata().getName().equals(jobName)) {
           return job;
         }
       }
