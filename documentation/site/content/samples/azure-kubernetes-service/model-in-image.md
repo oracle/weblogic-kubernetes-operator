@@ -696,7 +696,7 @@ Events:             <none>
 Access the Administration Console using the admin load balancer IP address.
 
 ```shell
-$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
 $ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
@@ -704,7 +704,7 @@ Access the sample application using the cluster load balancer IP address.
 
 ```shell
 ## Access the sample application using the cluster load balancer IP.
-$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
 ```
 
 ```shell

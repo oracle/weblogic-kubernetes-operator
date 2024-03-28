@@ -179,7 +179,7 @@ At this point, you have all of the files needed for `image wdt-domain-image:WLS-
 
 Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You’ve already set up this tool during the prerequisite steps.
 
-Run the following commands to create the image and verify that it worked:
+Run the following commands to create the image and verify that it worked. Note that `amagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).
 
 ```shell
 $ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh createAuxImage \
