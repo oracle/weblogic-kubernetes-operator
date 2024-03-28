@@ -10,9 +10,9 @@
 #  artifacts of the corresponding domain.
 #
 #  The Azure resource deployment is customized by editing
-#  create-domain-on-aks-inputs.yaml. If you also want to customize
+#  create-domain-on-aks-inputs.sh. If you also want to customize
 #  WebLogic Server domain configuration, please edit
-#  kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml.  Or you can create a copy of this file and edit it and refer to the copy using "-d <your-domain-inputs.yaml>".
+#  kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-on-aks-inputs.sh.  Or you can create a copy of this file and edit it and refer to the copy using "-d <your-create-domain-on-aks-inputs.sh>".
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * Environment has set up, with git, azure cli, kubectl and helm installed.
@@ -714,11 +714,9 @@ unzip imagetool.zip
   --version latest \
   --path ${image_build_base_dir}/sample/wdt-artifacts/weblogic-deploy.zip
 
-unzip ${image_build_base_dir}/sample/wdt-artifacts/weblogic-deploy.zip
 rm -f ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip
 cd ${image_build_base_dir}/sample/wdt-artifacts/archives/archive-v1
-
-${image_build_base_dir}/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip -source=wlsdeploy/applications/myapp-v1
+zip -r ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip wlsdeploy
 
 cd ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1
 ${image_build_base_dir}/sample/wdt-artifacts/imagetool/bin/imagetool.sh createAuxImage \
@@ -743,7 +741,8 @@ docker push ${acr_account_name}.azurecr.io/wdt-domain-image:WLS-v1
 
 # allow aks to access acr
 echo allow aks to access acr
-az aks update --name $aksClusterName --resource-group $azureResourceGroupName --attach-acr $acr_account_name
+acr_id=$(az acr show -n $acr_account_name --resource-group $azureResourceGroupName --query "id" -o tsv)
+az aks update --name $aksClusterName --resource-group $azureResourceGroupName --attach-acr $acr_id
 
 ## build image success
 echo "build image end----------"
