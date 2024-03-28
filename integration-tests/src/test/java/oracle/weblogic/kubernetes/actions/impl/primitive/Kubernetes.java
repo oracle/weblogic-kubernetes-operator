@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -2801,10 +2801,12 @@ public class Kubernetes {
    */
   public static V1Job getJob(String jobName, String namespace) throws ApiException {
     V1JobList listJobs = listJobs(namespace);
-    for (V1Job job : listJobs.getItems()) {
-      if (job != null && job.getMetadata() != null) {
-        if (job.getMetadata().getName().equals(jobName)) {
-          return job;
+    if (listJobs != null) {
+      for (V1Job job : listJobs.getItems()) {
+        if (job != null && job.getMetadata() != null) {
+          if (job.getMetadata().getName().equals(jobName)) {
+            return job;
+          }
         }
       }
     }

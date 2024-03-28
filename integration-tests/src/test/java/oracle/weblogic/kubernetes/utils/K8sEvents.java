@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -15,20 +15,18 @@ import java.util.stream.Collectors;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.util.Yaml;
-import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Helper class for Kubernetes Events checking.
@@ -95,9 +93,7 @@ public class K8sEvents {
   public static Callable<Boolean> checkDomainFailedEventWithReason(
       String opNamespace, String domainNamespace, String domainUid, String failureReason,
       String type, OffsetDateTime timestamp) {
-    return () -> {
-      return domainFailedEventExists(opNamespace, domainNamespace, domainUid, failureReason, type, timestamp);
-    };
+    return () -> domainFailedEventExists(opNamespace, domainNamespace, domainUid, failureReason, type, timestamp);
   }
 
   /**
@@ -113,9 +109,7 @@ public class K8sEvents {
   public static Callable<Boolean> checkDomainEvent(
       String opNamespace, String domainNamespace, String domainUid, String reason,
       String type, OffsetDateTime timestamp) {
-    return () -> {
-      return domainEventExists(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    };
+    return () -> domainEventExists(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
   }
 
   /**
@@ -190,14 +184,18 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (DOMAIN_FAILED.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))
-            && event.getMessage().contains(failureReason)) {
+        if (DOMAIN_FAILED.equals(event.getReason()) && isEqualOrAfter(timestamp, event)
+            && event.getMessage() != null && event.getMessage().contains(failureReason)) {
           logger.info(Yaml.dump(event));
-          verifyOperatorDetails(event, opNamespace, domainUid);
+          if (!verifyOperatorDetails(event, opNamespace, domainUid)) {
+            logger.info("verifyOperatorDetails failed");
+            return false;
+          }
           //verify type
           logger.info("Verifying domain event type {0}", type);
-          assertEquals(event.getType(), type);
-          return true;
+          if (event.getType() != null && event.getType().equals(type)) {
+            return true;
+          }
         }
       }
     } catch (ApiException ex) {
@@ -225,12 +223,16 @@ public class K8sEvents {
       for (CoreV1Event event : events) {
         if (isDomainEvent(domainUid, event) && reason.equals(event.getReason()) && isEqualOrAfter(timestamp, event)) {
           logger.info(Yaml.dump(event));
-          verifyOperatorDetails(event, opNamespace, domainUid);
+          if (!verifyOperatorDetails(event, opNamespace, domainUid)) {
+            logger.info("verifyOperatorDetails failed");
+            return false;
+          }
           //verify type
           logger.info("Verifying domain event type {0} with reason {1} for domain {2} in namespace {3}",
                   type, reason, domainUid, domainNamespace);
-          assertEquals(event.getType(), type);
-          return true;
+          if (event.getType() != null && event.getType().equals(type)) {
+            return true;
+          }
         }
       }
     } catch (ApiException ex) {
@@ -263,9 +265,9 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+        if (event.getReason() != null && event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
-          if (event.getType().equals(type)) {
+          if (event.getType() != null && event.getType().equals(type)) {
             return event;
           }
         }
@@ -295,14 +297,23 @@ public class K8sEvents {
       try {
         List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
-          if (((domainUid != null && event.getMetadata().getLabels().containsValue(domainUid))
-                  || domainUid == null)
-                  && event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          if ((domainUid == null
+              || (event.getMetadata() != null && event.getMetadata().getLabels() != null
+              && event.getMetadata().getLabels().containsValue(domainUid)))
+              && event.getReason() != null && event.getReason().equals(reason)
+              && (isEqualOrAfter(timestamp, event))) {
+
             logger.info(Yaml.dump(event));
-            verifyOperatorDetails(event, opNamespace, domainUid);
+            if (!verifyOperatorDetails(event, opNamespace, domainUid)) {
+              logger.info("verifyOperatorDetails failed");
+              return false;
+            }
+
             //verify type
             logger.info("Verifying domain event type {0}", type);
-            assertEquals(type, event.getType());
+            if (event.getType() != null && !event.getType().equals(type)) {
+              return false;
+            }
             int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
             return (countAfter >= countBefore + 1);
           }
@@ -328,47 +339,20 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        Map<String, String> labels = event.getMetadata().getLabels();
-        if (event.getReason().equals(reason)
-                && event.getType().equals(type)
-                && labels.get("weblogic.domainUID").equals(domainUid)) {
-          return event.getCount();
+        if (event.getMetadata() != null) {
+          Map<String, String> labels = event.getMetadata().getLabels();
+          if (event.getReason() != null && event.getReason().equals(reason)
+              && event.getType() != null && event.getType().equals(type)
+              && labels != null && labels.get("weblogic.domainUID") != null
+              && labels.get("weblogic.domainUID").equals(domainUid)) {
+            return event.getCount();
+          }
         }
       }
     } catch (ApiException ex) {
       Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
     return 0;
-  }
-
-  /**
-   * Get the event count between a specific timestamp.
-   *
-   * @param domainNamespace namespace in which the domain exists
-   * @param domainUid UID of the domain
-   * @param reason event to check for Created, Changed, deleted, processing etc
-   * @param timestamp the timestamp after which to see events
-   * @return count number of events count
-   */
-  public static int getOpGeneratedEventCount(
-      String domainNamespace, String domainUid, String reason, OffsetDateTime timestamp) {
-    int count = 0;
-    try {
-      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
-      for (CoreV1Event event : events) {
-        Map<String, String> labels = event.getMetadata().getLabels();
-        if (event.getReason().equals(reason)
-            && labels.get("weblogic.domainUID").equals(domainUid)
-            && (isEqualOrAfter(timestamp, event))) {
-          logger.info(Yaml.dump(event));
-          count++;
-        }
-      }
-    } catch (ApiException ex) {
-      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
-      return -1;
-    }
-    return count;
   }
 
   /**
@@ -387,13 +371,17 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        Map<String, String> labels = event.getMetadata().getLabels();
-        if (event.getReason().equals(reason)
-            && labels.get("weblogic.domainUID").equals(domainUid)
-            && event.getInvolvedObject().getName().equals(resourceName)
-            && (isEqualOrAfter(timestamp, event))) {
-          logger.info(Yaml.dump(event));
-          count++;
+        if (event.getMetadata() != null) {
+          Map<String, String> labels = event.getMetadata().getLabels();
+          if (event.getReason() != null && event.getReason().equals(reason)
+              && labels != null && labels.get("weblogic.domainUID") != null
+              && labels.get("weblogic.domainUID").equals(domainUid)
+              && event.getInvolvedObject() != null && event.getInvolvedObject().getName() != null
+              && event.getInvolvedObject().getName().equals(resourceName)
+              && (isEqualOrAfter(timestamp, event))) {
+            logger.info(Yaml.dump(event));
+            count++;
+          }
         }
       }
     } catch (ApiException ex) {
@@ -418,8 +406,9 @@ public class K8sEvents {
               reason, serverName, domainNamespace);
       try {
         return isEventLoggedOnce(serverName, Kubernetes.listNamespacedEvents(domainNamespace).stream()
-                .filter(e -> e.getInvolvedObject().getName().equals(serverName))
-                .filter(e -> e.getReason().contains(reason))
+                .filter(e -> e.getInvolvedObject() != null && e.getInvolvedObject().getName() != null
+                    && e.getInvolvedObject().getName().equals(serverName))
+                .filter(e -> e.getReason() != null && e.getReason().contains(reason))
                 .filter(e -> isEqualOrAfter(timestamp, e)).collect(Collectors.toList()).size());
       } catch (ApiException ex) {
         Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
@@ -492,15 +481,17 @@ public class K8sEvents {
     try {
       List<CoreV1Event> allEvents = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : allEvents) {
-        Map<String, String> labels = event.getMetadata().getLabels();
-        if (event.getReason().equals(reason)
-            && (isEqualOrAfter(timestamp, event))
-            && event.getType().equals(type)
-            && (labels != null)
-            && (labels.get("weblogic.domainUID") != null)
-            && labels.get("weblogic.domainUID").equals(domainUid)) {
+        if (event.getMetadata() != null) {
+          Map<String, String> labels = event.getMetadata().getLabels();
+          if (event.getReason() != null && event.getReason().equals(reason)
+              && (isEqualOrAfter(timestamp, event))
+              && event.getType() != null && event.getType().equals(type)
+              && labels != null
+              && labels.get("weblogic.domainUID") != null
+              && labels.get("weblogic.domainUID").equals(domainUid)) {
 
-          events.add(event);
+            events.add(event);
+          }
         }
       }
     } catch (ApiException ex) {
@@ -534,8 +525,8 @@ public class K8sEvents {
   }
 
   private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
-    return event.getLastTimestamp().isEqual(timestamp)
-            || event.getLastTimestamp().isAfter(timestamp);
+    return event.getLastTimestamp() != null
+           && (event.getLastTimestamp().isEqual(timestamp) || event.getLastTimestamp().isAfter(timestamp));
   }
 
   private static Boolean isEventLoggedOnce(String serverName, int count) {
@@ -549,30 +540,57 @@ public class K8sEvents {
   }
 
   // Verify the operator instance details are correct
-  private static void verifyOperatorDetails(
+  private static boolean verifyOperatorDetails(
       CoreV1Event event, String opNamespace, String domainUid) throws ApiException {
     logger.info("Verifying operator details");
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
-    //verify DOMAIN_API_VERSION
-    if (domainUid != null && event.getInvolvedObject().getKind().equals("Domain")) {
-      assertEquals(TestConstants.DOMAIN_API_VERSION, event.getInvolvedObject().getApiVersion(),
-          "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
+
+    if (event != null) {
+      //verify DOMAIN_API_VERSION
+      if (domainUid != null
+          && event.getInvolvedObject() != null
+          && event.getInvolvedObject().getKind() != null
+          && event.getInvolvedObject().getKind().equals("Domain")) {
+        if (event.getInvolvedObject().getApiVersion() != null
+            && !event.getInvolvedObject().getApiVersion().equals(DOMAIN_API_VERSION)) {
+          logger.info("Expected " + DOMAIN_API_VERSION + " , Got " + event.getInvolvedObject().getApiVersion());
+          return false;
+        }
+      }
+
+      //verify reporting component to be operator release
+      if (event.getReportingComponent() != null
+          && !event.getReportingComponent().equals("weblogic.operator")) {
+        logger.info("Expected reporting component as weblogic.operator, Got: " + event.getReportingComponent());
+        return false;
+      }
+
+      //verify reporting instance to be operator instance
+      if (event.getReportingInstance() != null
+          && !event.getReportingInstance().equals(operatorPodName)) {
+        logger.info("Expect reporting instance as " + operatorPodName + ", Got" + event.getReportingInstance());
+        return false;
+      }
+
+      //verify the event was created by operator
+      if (event.getMetadata() != null) {
+        Map<String, String> labels = event.getMetadata().getLabels();
+        if (labels != null
+            && (!labels.containsKey("weblogic.createdByOperator")
+            || !labels.get("weblogic.createdByOperator").equals("true"))) {
+          logger.info("labels do not contain key weblogic.createdByOperator or weblogic.createdByOperator is not true");
+          return false;
+        }
+
+        //verify the domainUID matches
+        if (domainUid != null && labels != null
+            && (!labels.containsKey("weblogic.domainUID") || !labels.get("weblogic.domainUID").equals(domainUid))) {
+          logger.info("labels do not contain key weblogic.domainUID or weblogic.domainUID is not " + domainUid);
+          return false;
+        }
+      }
     }
-    //verify reporting component to be operator release
-    assertEquals("weblogic.operator", event.getReportingComponent(),
-        "Didn't get reporting component as " + "weblogic.operator");
-    //verify reporting instance to be operator instance
-    assertEquals(operatorPodName, event.getReportingInstance(),
-        "Didn't get reporting instance as " + operatorPodName);
-    //verify the event was created by operator
-    Map<String, String> labels = event.getMetadata().getLabels();
-    assertTrue(labels.containsKey("weblogic.createdByOperator")
-        && labels.get("weblogic.createdByOperator").equals("true"));
-    //verify the domainUID matches
-    if (domainUid != null) {
-      assertTrue(labels.containsKey("weblogic.domainUID")
-          && labels.get("weblogic.domainUID").equals(domainUid));
-    }
+    return true;
   }
 
   public static final String DOMAIN_AVAILABLE = "Available";

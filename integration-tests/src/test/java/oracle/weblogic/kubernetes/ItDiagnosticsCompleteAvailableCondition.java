@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -66,8 +66,6 @@ class ItDiagnosticsCompleteAvailableCondition {
 
   private static final String cluster1Name = "cluster-1";
 
-  private static final String clusterResName = cluster1Name;
-
   private static LoggingFacade logger = null;
   private static String domainNamespace1 = null;
   private static int replicaCount = 2;
@@ -115,6 +113,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithIfNeeded() {
     String domainUid = "diagnosticsdomain1";
     createDomainAndVerify(domainUid);
+    String clusterResName = domainUid + "-" + cluster1Name;
 
     try {
       // verify the condition type Completed exists
@@ -147,6 +146,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithAdminOnly() {
     String domainUid = "diagnosticsdomain2";
     createDomainAndVerify(domainUid);
+    String clusterResName = domainUid + "-" + cluster1Name;
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
@@ -199,10 +199,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithNever() {
     String domainUid = "diagnosticsdomain3";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
+
     try {
       logger.info("patch the domain resource with serverStartPolicy set to Never");
       patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"Never\"}]";
@@ -251,10 +252,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithReplicaZero() {
     String domainUid = "diagnosticsdomain4";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
+
     try {
       logger.info("patch the cluster resource with new cluster replica 0");      
       patchStr
@@ -306,10 +308,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithClusterNever() {
     String domainUid = "diagnosticsdomain5";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
+
     try {
       logger.info("patch the cluster resource with cluster serverStartPolicy to Never");
       patchStr
@@ -355,6 +358,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeWithoutChangingIntrospectVersion() {
     String domainUid = "diagnosticsdomain6";
     createDomainAndVerify(domainUid);
+    String clusterResName = domainUid + "-" + cluster1Name;
 
     try {
       int newReplicaCount = maxClusterSize + 1;
@@ -387,10 +391,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String domainUid = "diagnosticsdomain7";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
+
     try {
       int newReplicaCount = maxClusterSize + 1;
       logger.info("patch the domain resource with new introspectVersion and replicas higher than max cluster size");
@@ -445,10 +450,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithReplicaLessThanMaxSize() {
     String domainUid = "diagnosticsdomain8";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
+
     try {
       logger.info("patch the domain resource with replica less than max size of cluster");
       int newReplicaCount = replicaCount - 1;
@@ -506,7 +512,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithScaleUpDownCluster() {
     String domainUid = "diagnosticsdomain9";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
@@ -588,7 +594,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithNewRestartVersion() {
     String domainUid = "diagnosticsdomain10";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
@@ -654,7 +660,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithNewImage() {
     String domainUid = "diagnosticsdomain11";
     createDomainAndVerify(domainUid);
-
+    String clusterResName = domainUid + "-" + cluster1Name;
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
@@ -732,6 +738,9 @@ class ItDiagnosticsCompleteAvailableCondition {
         adminServerPodName,
         managedServerPodNamePrefix,
         replicaCount,
-        List.of(cluster1Name));
+        List.of(cluster1Name),
+        false,
+        null,
+        true);
   }
 }
