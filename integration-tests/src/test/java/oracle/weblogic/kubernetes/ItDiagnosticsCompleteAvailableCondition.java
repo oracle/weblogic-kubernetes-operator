@@ -67,8 +67,6 @@ class ItDiagnosticsCompleteAvailableCondition {
 
   private static final String cluster1Name = "cluster-1";
 
-  private static final String clusterResName = cluster1Name;
-
   private static LoggingFacade logger = null;
   private static String domainNamespace1 = null;
   private static int replicaCount = 2;
@@ -132,7 +130,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
       deleteDomainResource(domainNamespace1, domainUid);
-      deleteClusterCustomResource(clusterResName, domainNamespace1);
+      deleteClusterCustomResource(domainUid + "-" + cluster1Name, domainNamespace1);
     }
   }
 
@@ -183,7 +181,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
       deleteDomainResource(domainNamespace1, domainUid);
-      deleteClusterCustomResource(clusterResName, domainNamespace1);
+      deleteClusterCustomResource(domainUid + "-" + cluster1Name, domainNamespace1);
     }
   }
 
@@ -235,7 +233,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     } finally {
       deleteDomainResource(domainNamespace1, domainUid);
-      deleteClusterCustomResource(clusterResName, domainNamespace1);
+      deleteClusterCustomResource(domainUid + "-" + cluster1Name, domainNamespace1);
     }
   }
 
@@ -255,7 +253,9 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + cluster1Name;
     String patchStr;
+
     try {
       logger.info("patch the cluster resource with new cluster replica 0");      
       patchStr
@@ -310,6 +310,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + cluster1Name;
     String patchStr;
     try {
       logger.info("patch the cluster resource with cluster serverStartPolicy to Never");
@@ -355,6 +356,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeWithoutChangingIntrospectVersion() {
     String domainUid = "diagnosticsdomain6";
+    String clusterResName = domainUid + "-" + cluster1Name;
     createDomainAndVerify(domainUid);
 
     try {
@@ -391,6 +393,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + cluster1Name;
     String patchStr;
     try {
       int newReplicaCount = maxClusterSize + 1;
@@ -449,6 +452,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + cluster1Name;
     String patchStr;
     try {
       logger.info("patch the domain resource with replica less than max size of cluster");
@@ -510,6 +514,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + cluster1Name;
 
     try {
       // scale down the cluster
@@ -592,6 +597,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + cluster1Name;
 
     try {
       // get the pod creation time stamps
@@ -658,6 +664,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + cluster1Name;
 
     try {
       // get the pod creation time stamps
@@ -733,6 +740,9 @@ class ItDiagnosticsCompleteAvailableCondition {
         adminServerPodName,
         managedServerPodNamePrefix,
         replicaCount,
-        List.of(cluster1Name));
+        List.of(cluster1Name),
+        false,
+        null,
+        true);
   }
 }
