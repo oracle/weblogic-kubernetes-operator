@@ -11,19 +11,19 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 
  - [Prerequisites](#prerequisites)
  - [Prepare Parameters](#prepare-parameters)
- - [Clone WKO repository](#clone-wko-repository)
  - [Create Resource Group](#create-resource-group)
  - [Create an AKS cluster](#create-the-aks-cluster)
- - [Create and Configure Storage](#create-storage)
+ - [Create and configure storage](#create-storage)
    - [Create an Azure Storage account and NFS share](#create-an-azure-storage-account-and-nfs-share)
    - [Create SC and PVC](#create-sc-and-pvc)
+ - [Create a domain creation image](#create-a-domain-creation-image)
  - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator-into-the-aks-cluster)
  - [Create WebLogic domain](#create-weblogic-domain)
    - [Create secrets](#create-secrets)
    - [Create WebLogic Domain](#create-weblogic-domain-1)
    - [Create LoadBalancer](#create-loadbalancer)
  - [Automation](#automation)
- - [Deploy sample application](#deploy-sample-application)
+ - [Access sample application](#access-sample-application)
  - [Validate NFS volume](#validate-nfs-volume)
  - [Clean up resources](#clean-up-resources)
  - [Troubleshooting](#troubleshooting)
@@ -84,7 +84,7 @@ export AKS_PERS_LOCATION=eastus
 export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
 export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
 export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
-export ACR_ACCOUNT_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
+export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 ```
 
@@ -98,59 +98,138 @@ export ACR_ACCOUNT_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
 
-#### Create the Azure Container Registry and connect it to the AKS cluster
+#### Create a domain creation image
 
-Your AKS cluster must be connected to a container registry so it can pull and interact with container images. The WebLogic Kubernetes Operator assumes that the docker images in the container registry have the correct structure so they are ready to run as WebLogic Docker images. The WebLogic Image Toolkit you used when satisfying the preconditions produces images that meet this requirement. In particular the image `wdt-domain-image:WLS-v1`. The steps in this section show you how to create an Azure Container Registry, connect it to your existing AKS cluster, and push the `wdt-domain-image:WLS-v1` to this registry.
+This sample requires [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images" >}}). For more information, see [Domain on Persistent Volume]({{< relref "/managing-domains/domain-on-pv/overview" >}}).
 
-Create the Azure Container Registry in your existing resource group.
+  - [Image creation prerequisites](#image-creation-prerequisites)
+  - [Image creation - Introduction](#image-creation---introduction)
+  - [Understanding your first archive](#understanding-your-first-archive)
+  - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
+  - [Staging model files](#staging-model-files)
+  - [Creating the image with WIT](#creating-the-image-with-wit)
+  - [Pushing the image to Azure Container Registry](#pushing-the-image-to-azure-container-registry)
+
+##### Image creation prerequisites
+
+- The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
+- Copy the sample to a new directory; for example, use the directory `/tmp/dpv-sample`. In the directory name, `dpv` is short for "domain on pv". Domain on PV is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+
+   ```shell
+   $ rm /tmp/dpv-sample -f -r
+   $ mkdir /tmp/dpv-sample
+   ```
+
+   ```shell
+   $ cp -r $BASE_DIR/sample-scripts/create-weblogic-domain/domain-on-pv/* /tmp/dpv-sample
+   ```
+
+   **NOTE**: We will refer to this working copy of the sample as `/tmp/dpv-sample`; however, you can use a different location.
+- Copy the `wdt-artifacts` directory of the sample to a new directory; for example, use directory `/tmp/dpv-sample/wdt-artifacts`
+
+   ```shell
+   $ cp -r $BASE_DIR/sample-scripts/create-weblogic-domain/wdt-artifacts/* /tmp/dpv-sample
+   ```
+
+   ```shell
+   $ export WDT_MODEL_FILES_PATH=/tmp/dpv-sample/wdt-model-files
+   ```
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" >}}
+
+##### Image creation - Introduction
+
+The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image tagged as `wdt-domain-image:WLS-v1` from files that you will stage to `${WDT_MODEL_FILES_PATH}/WLS-v1`.
+
+  - The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image’s `/auxiliary/weblogic-deploy` directory, by default.
+  - WDT model YAML (model), WDT variable (property), and WDT archive ZIP (archive) files, expected in directory `/auxiliary/models`, by default.
+
+##### Understanding your first archive
+
+See [Understanding your first archive]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#understand-your-first-archive" >}}).
+
+##### Staging a ZIP file of the archive
+
+Delete existing archive.zip in case we have an old leftover version.
 
 ```shell
-az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name ${ACR_ACCOUNT_NAME} --sku Basic --admin-enabled
+$ rm -f ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
 ```
 
-Successful output will be a JSON object that includes the property.
-
-```json
-"id": "/subscriptions/<your subscription id>/resourceGroups/<your resource group>/providers/Microsoft.ContainerRegistry/registries/<your aks cluster name>"
-```
-
-Obtain the credentials to the Azure Container Registry and perform the `docker login`.
+Create a ZIP file of the archive in the location that we will use when we run the WebLogic Image Tool.
 
 ```shell
-export LOGIN_SERVER=$(az acr show \
-    --name ${ACR_ACCOUNT_NAME} \
-    --query 'loginServer' \
-    --output tsv)
-export USER_NAME=$(az acr credential show \
-    --name ${ACR_ACCOUNT_NAME} \
-    --query 'username' \
-    --output tsv)
-export PASSWORD=$(az acr credential show \
-    --name ${ACR_ACCOUNT_NAME} \
-    --query 'passwords[0].value' \
-    --output tsv)
-
-docker login $LOGIN_SERVER -u $USER_NAME -p $PASSWORD
+$ cd /tmp/dpv-sample/archives/archive-v1
+$ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
+
+##### Staging model files
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
+
+An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/domain-on-pv/model-files" >}}) in the user documentation.
+
+##### Creating the image with WIT
+
+At this point, you have all of the files needed for `image wdt-domain-image:WLS-v1` staged; they include:
+
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.yaml`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.properties`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip`
+
+Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You’ve already set up this tool during the prerequisite steps.
+
+Run the following commands to create the image and verify that it worked. Note that `amagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).
+
+```shell
+$ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh createAuxImage \
+  --tag wdt-domain-image:WLS-v1 \
+  --wdtModel ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.yaml \
+  --wdtVariables ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.properties \
+  --wdtArchive ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
+```
+
+This command runs the WebLogic Image Tool to create the domain creation image and does the following:
+
+  - Builds the final container image as a layer on a small `busybox` base image.
+  - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
+    - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
+    - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+  - Copies the specified WDT model, properties, and application archives to image location `/auxiliary/models`.
+
+When the command succeeds, it should end with output like the following:
+
+```
+[INFO   ] Build successful. Build time=70s. Image tag=wdt-domain-image:WLS-v1
+```
+
+Verify the image is available in the local Docker server with the following command.
+
+```shell
+$ docker images | grep WLS-v1
+```
+```
+wdt-domain-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
+```
+
+{{% notice note %}}
+You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
+{{% /notice %}}
+
+##### Pushing the image to Azure Container Registry
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" >}}
 
 Push the `wdt-domain-image:WLS-v1` image created while satisfying the preconditions to this registry.
 
 ```shell
-docker push ${LOGIN_SERVER}/wdt-domain-image:WLS-v1
+$ docker tag wdt-domain-image:WLS-v1 $LOGIN_SERVER/wdt-domain-image:WLS-v1
+$ docker push ${LOGIN_SERVER}/wdt-domain-image:WLS-v1
 ```
 
-Set an environment variable for use in a later script.
+{{< readfile file="/samples/azure-kubernetes-service/includes/aks-connect-acr.txt" >}}
 
-```shell
-# An example of Domain_Creation_Image_tag: xxx.azurecr.io/wdt-domain-image:WLS-v1
-export Domain_Creation_Image_tag=${LOGIN_SERVER}/wdt-domain-image:WLS-v1
-```
-
-Connect the Azure Container Registry to your existing AKS cluster.
-
-```shell
-az aks update --name ${AKS_CLUSTER_NAME} --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr ${ACR_ACCOUNT_NAME}
-```
+If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
 
 #### Install WebLogic Kubernetes Operator into the AKS cluster
 
@@ -255,6 +334,12 @@ Now, you deploy a `sample-domain1` domain resource and an associated `sample-dom
 
 - Run the following command to generate resource files.
 
+    Export `Domain_Creation_Image_tag`, which will be referred in `create-domain-on-aks-generate-yaml.sh`.
+
+    ```shell
+    export Domain_Creation_Image_tag=${LOGIN_SERVER}/wdt-domain-image:WLS-v1
+    ```
+
     ```shell
     cd $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service  
 
@@ -313,7 +398,6 @@ The domain resource references the cluster resource, a WebLogic Server installat
   domain1-managed-server2                     1/1     Running   0          10m
   weblogic-operator-7796bc7b8-qmhzw           1/1     Running   0          48m
   weblogic-operator-webhook-b5b586bc5-ksfg9   1/1     Running   0          48m
-
   ```
 
   {{% notice tip %}} If Kubernetes advertises the WebLogic pod as `Running` you can be assured the WebLogic Server actually is running because the operator ensures that the Kubernetes health checks are actually polling the WebLogic health check mechanism.
@@ -352,18 +436,18 @@ The domain resource references the cluster resource, a WebLogic Server installat
   $ kubectl get events --sort-by='.metadata.creationTimestamp'
   ```
 
-To deploy a sample application on WLS, you may skip to the section [Deploy sample application](#deploy-sample-application).  The next section includes a script that automates all of the preceding steps.
+To access the sample application on WLS, you may skip to the section [Access sample application](#access-sample-application).  The next section includes a script that automates all of the preceding steps.
 
 #### Automation
 
-If you want to automate the above steps of creating AKS cluster and WLS domain, you can use the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
+If you want to automate the above steps of creating AKS cluster and WLS domain, you can use the script `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
 
 The sample script will create a WLS domain home on the AKS cluster, including:
   - Creating a new Azure resource group, with a new Azure Storage Account and Azure File Share to allow WebLogic to persist its configuration and data separately from the Kubernetes pods that run WLS workloads.
   - Creating WLS domain home.
   - Generating the domain resource YAML files, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 
-For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh` directly. The following values must be specified:
+For input values, you can edit `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh` directly. The following values must be specified:
 
 | Name in YAML file | Example value       | Notes                                                                                          |
 |-------------------|---------------------|------------------------------------------------------------------------------------------------|
@@ -372,8 +456,8 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `weblogicUserName` | `weblogic`          | Uername for WebLogic user account.                                                             |
 | `weblogicAccountPassword` | `Secret123456` | Password for WebLogic user account.                                                            |
 
-```
-cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
+```shell
+$ cd ${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service
 ```
 
 ```shell
@@ -386,144 +470,50 @@ To interact with the cluster using `kubectl`, use `az aks get-credentials` as sh
 {{% notice info %}} You now have created an AKS cluster with Azure Files NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
 {{% /notice %}}
 
-#### Deploy sample application
+#### Access sample application
 
-Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository.
-
-First, package the application with the following command:
+Access the Administration Console using the admin load balancer IP address.
 
 ```shell
-$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/archive/refs/tags/v4.1.7.zip -o ${BASE_DIR}/v4.1.7.zip
-$ unzip v4.1.7.zip "weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts/build-war-app.sh" "weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/apps/testwebapp/*"
-$ cd $BASE_DIR/weblogic-kubernetes-operator-4.1.7/integration-tests/src/test/resources/bash-scripts
-$ bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
-```
-
-Successful output will look similar to the following:
-
-```text
-Found source at ../apps/testwebapp/
-build /tmp/testwebapp/testwebapp.war with command jar -cvf /tmp/testwebapp/testwebapp.war *
-added manifest
-ignoring entry META-INF/
-ignoring entry META-INF/MANIFEST.MF
-adding: META-INF/maven/(in = 0) (out= 0)(stored 0%)
-adding: META-INF/maven/com.oracle.weblogic/(in = 0) (out= 0)(stored 0%)
-adding: META-INF/maven/com.oracle.weblogic/testwebapp/(in = 0) (out= 0)(stored 0%)
-adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.properties(in = 117) (out= 113)(deflated 3%)
-adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.xml(in = 1210) (out= 443)(deflated 63%)
-adding: WEB-INF/(in = 0) (out= 0)(stored 0%)
-adding: WEB-INF/web.xml(in = 951) (out= 428)(deflated 54%)
-adding: WEB-INF/weblogic.xml(in = 1140) (out= 468)(deflated 58%)
-adding: index.jsp(in = 1001) (out= 459)(deflated 54%)
--rw-r--r-- 1 user user 3528 Jul  5 14:25 /tmp/testwebapp/testwebapp.war
-```
-
-Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster. This sample uses WLS RESTful API [/management/weblogic/latest/edit/appDeployments](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlrer/op-management-weblogic-version-edit-appdeployments-x-operations-1.html) to deploy the sample application.
-Replace `${WEBLOGIC_USERNAME}` and `${WEBLOGIC_PASSWORD}` with the values you specified in [Create secrets](#create-secrets) or [Automation](#automation):
-
-```bash
 $ ADMIN_SERVER_IP=$(kubectl get svc domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
-$ curl --user ${WEBLOGIC_USERNAME}:${WEBLOGIC_PASSWORD} -H X-Requested-By:MyClient  -H Accept:application/json -s -v \
-  -H Content-Type:multipart/form-data  \
-  -F "model={
-        name:    'testwebapp',
-        targets: [ { identity: [ 'clusters', 'cluster-1' ] } ]
-      }" \
-  -F "sourcePath=@/tmp/testwebapp/testwebapp.war" \
-  -H "Prefer:respond-async" \
-  -X POST http://${ADMIN_SERVER_IP}:7001/management/weblogic/latest/edit/appDeployments
+$ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
-After the successful deployment, you will find output similar to the following:
-
-{{%expand "Click here to view the output." %}}
-```text
-*   Trying 52.226.101.43:7001...
-* TCP_NODELAY set
-* Connected to 52.226.101.43 (52.226.101.43) port 7001 (#0)
-* Server auth using Basic with user 'weblogic'
-> POST /management/weblogic/latest/edit/appDeployments HTTP/1.1
-> Host: 52.226.101.43:7001
-> Authorization: Basic ...=
-> User-Agent: curl/7.68.0
-> X-Requested-By:MyClient
-> Accept:application/json
-> Prefer:respond-async
-> Content-Length: 3925
-> Content-Type: multipart/form-data; boundary=------------------------cc76a2c2d819911f
-> Expect: 100-continue
->
-* Mark bundle as not supporting multiuse
-< HTTP/1.1 100 Continue
-* We are completely uploaded and fine
-* Mark bundle as not supporting multiuse
-< HTTP/1.1 202 Accepted
-< Date: Thu, 11 Aug 2022 08:32:56 GMT
-< Location: http://domain1-admin-server:7001/management/weblogic/latest/domainRuntime/deploymentManager/deploymentProgressObjects/testwebapp
-< Content-Length: 764
-< Content-Type: application/json
-< X-ORACLE-DMS-ECID: 6f205c83-e172-4c34-a638-7f0c6345ce45-00000055
-< X-ORACLE-DMS-RID: 0
-< Set-Cookie: JSESSIONID=NOCMCQBO7dxyA2lUfCYp4zSYIeFB0S3V1KRRzigmmoOUfmQmlLOh!-546081476; path=/; HttpOnly
-< Vary: Accept-Encoding
-<
-{
-    "links": [{
-        "rel": "job",
-        "href": "http:\/\/domain1-admin-server:7001\/management\/weblogic\/latest\/domainRuntime\/deploymentManager\/deploymentProgressObjects\/testwebapp"
-    }],
-    "identity": [
-        "deploymentManager",
-        "deploymentProgressObjects",
-        "testwebapp"
-    ],
-    "rootExceptions": [],
-    "deploymentMessages": [],
-    "name": "testwebapp",
-    "operationType": 3,
-    "startTimeAsLong": 1660206785965,
-    "state": "STATE_RUNNING",
-    "id": "0",
-    "type": "DeploymentProgressObject",
-    "targets": ["cluster-1"],
-    "applicationName": "testwebapp",
-    "failedTargets": [],
-    "progress": "processing",
-    "completed": false,
-    "intervalToPoll": 1000,
-    "startTime": "2022-08-11T08:33:05.965Z"
-* Connection #0 to host 52.226.101.43 left intact
-```
-{{% /expand %}}
-
-Now, you can go to the application through the `domain1-cluster-1-lb` external IP.
+Access the sample application using the cluster load balancer IP address.
 
 ```shell
 $ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+```
 
-$ curl http://${CLUSTER_IP}:8001/testwebapp/
+
+```shell
+$ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
 
 The test application will list the server host and server IP on the output, like the following:
 
 ```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html><body><pre>
+*****************************************************************
 
-    <link rel="stylesheet" href="/testwebapp/res/styles.css;jsessionid=9uiMDakndtPlZTyDB9A-OKZEFBBAPyIs_9bG3qC4uA3PYaI8DsH1!-1450005246" type="text/css">
-    <title>Test WebApp</title>
-  </head>
-  <body>
+Hello World! This is version 'v1' of the sample JSP web-app.
 
+Welcome to WebLogic Server 'managed-server1'!
 
-    <li>InetAddress: domain1-managed-server1/10.244.1.8
-    <li>InetAddress.hostname: domain1-managed-server1
+  domain UID  = 'domain1'
+  domain name = 'domain1'
 
-  </body>
-</html>
+Found 1 local cluster runtime:
+  Cluster 'cluster-1'
+
+Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+
+Found 0 local data sources:
+
+*****************************************************************
+</pre></body></html>
 ```
 
 #### Validate NFS volume
