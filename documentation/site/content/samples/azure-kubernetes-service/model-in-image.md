@@ -88,18 +88,18 @@ sample-weblogic-operator-sa   1         9m5s
 
 Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from Github. It may take you several minutes to install the operator.
 
-```
-helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+```shell
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 
 Update the repo to get the latest Helm charts. It is a best practice to do this every time before installing a new operator version. In this example, we are using a pinned version, but you may also find success if you use the latest version. In this case, you can omit the `--version` argument. Be warned that these instructions have only been tested with the exact version shown.
 
 
-```
+```shell
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --version 4.1.7 \
+  --version 4.1.8 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --wait
 ```
@@ -115,7 +115,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.1.7` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.1.8` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -126,7 +126,7 @@ $ helm list -A
 ```
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
-weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.1.7  4.1.7
+weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.1.8  4.1.8
 ```
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
@@ -156,8 +156,9 @@ If you have an image built with domain models following [Model in Image]({{< rel
   - [Pushing the image to Azure Container Registry](#pushing-the-image-to-azure-container-registry)
 
 ##### Image creation prerequisites
-1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
-1. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`. In the directory name, `mii` is short for "model in image". Model in image is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+
+- The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
+- Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`. In the directory name, `mii` is short for "model in image". Model in image is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
    ```shell
    $ mkdir /tmp/mii-sample
@@ -167,35 +168,16 @@ If you have an image built with domain models following [Model in Image]({{< rel
    $ cp -r $BASE_DIR/sample-scripts/create-weblogic-domain/wdt-artifacts/* /tmp/mii-sample
    ```
 
-   **NOTE**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
-
-1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/wdt-model-files` directory. Both WDT and WIT are required to create your Model in Image images.
+   Save the model file directory.
 
    ```shell
-   export WDT_MODEL_FILES_PATH=/tmp/mii-sample/wdt-model-files
+   $ export WDT_MODEL_FILES_PATH=/tmp/mii-sample/wdt-model-files
    ```
 
-    ```shell
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
-     -o ${WDT_MODEL_FILES_PATH}/weblogic-deploy.zip
-    ```
-    ```shell
-    $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
-      -o ${WDT_MODEL_FILES_PATH}/imagetool.zip
-    ```
+   **NOTE**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
-   To set up the WebLogic Image Tool, run the following commands:
-    ```shell
-   $ unzip ${WDT_MODEL_FILES_PATH}/imagetool.zip -d ${WDT_MODEL_FILES_PATH}
-    ```
-    ```shell
-   $ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh cache addInstaller \
-     --type wdt \
-     --version latest \
-     --path ${WDT_MODEL_FILES_PATH}/weblogic-deploy.zip
-   ```
+{{< readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" >}}
 
-   These steps will install WIT to the `${WDT_MODEL_FILES_PATH}/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
 
 ##### Image creation - Introduction
 
@@ -243,65 +225,7 @@ $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 
 ##### Staging model files
 
-In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration.
-
-Here is the WLS `model.10.properties`:
-
-```
-CLUSTER_SIZE=5
-```
-
-Here is the WLS `model.10.yaml`:
-
-```yaml
-domainInfo:
-    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
-    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-    ServerStartMode: 'prod'
-
-topology:
-    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
-    AdminServerName: 'admin-server'
-    Cluster:
-        'cluster-1':
-            DynamicServers:
-                ServerTemplate:  'cluster-1-template'
-                ServerNamePrefix: 'managed-server'
-                DynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
-                MaxDynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
-                MinDynamicClusterSize: '0'
-                CalculatedListenPorts: false
-    Server:
-        'admin-server':
-            ListenPort: 7001
-    ServerTemplate:
-        'cluster-1-template':
-            Cluster: 'cluster-1'
-            ListenPort: 8001
-
-appDeployments:
-    Application:
-        myapp:
-            SourcePath: 'wlsdeploy/applications/myapp-v1'
-            ModuleType: ear
-            Target: 'cluster-1'
-```
-
-The model file:
-
-- Defines a WebLogic domain with:
-    - Cluster `cluster-1`
-    - Administration Server `admin-server`
-    - An EAR application, targeted to `cluster-1`, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
-
-- Leverages macros to inject external values:
-    - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
-    - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
-        - You set this environment variable later in this sample using an `env` field in its Domain.
-        - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image_.
-    - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
-        - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
-        - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
+{{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 
@@ -363,54 +287,24 @@ You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled
 
 ##### Pushing the image to Azure Container Registry
 
-AKS can pull images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the image built in the preceding section to it.  For complete details, see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
-
-Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.
-
-```shell
-$ az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name $ACR_NAME --sku Basic --admin-enabled true
-```
-
-Closely examine the JSON output from this command. Save the value of the `loginServer` property aside. It will look something like the following.
-
-```json
-"loginServer": "contosoresourcegroup1610068510.azurecr.io",
-```
-
-Use this value to sign in to the ACR instance. Note that because you are signing in with the `az` cli, you do not need a password because your identity is already conveyed by having done `az login` previously.
-
-```shell
-$ export AKS_PERS_ACR=$(az acr show -n $ACR_NAME --query "loginServer" -o tsv)
-```
-```shell
-$ az acr login --name $AKS_PERS_ACR
-```
-
-Successful output will include `Login Succeeded`.
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" >}}
 
 Ensure Docker is running on your local machine.  Run the following commands to tag and push the image to your ACR.
 
 ```shell
-$ docker tag model-in-image:WLS-v1 $AKS_PERS_ACR/model-in-image-aks:1.0
+$ docker tag model-in-image:WLS-v1 $LOGIN_SERVER/model-in-image-aks:1.0
 ```
 ```shell
-$ docker push $AKS_PERS_ACR/model-in-image-aks:1.0
+$ docker push $LOGIN_SERVER/model-in-image-aks:1.0
 ```
 ```
 The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/model-in-image-aks]
 1.0: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
 ```
 
-Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS, see [Configure ACR integration for existing AKS clusters](https://docs.microsoft.com/en-us/azure/aks/cluster-container-registry-integration#configure-acr-integration-for-existing-aks-clusters).
-
-```shell
-$ az aks update --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr $ACR_NAME
-```
+{{< readfile file="/samples/azure-kubernetes-service/includes/aks-connect-acr.txt" >}}
 
 If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
-
-Successful output will be a JSON object with the entry `"type": "Microsoft.ContainerService/ManagedClusters"`.
-
 
 #### Create WebLogic domain
 
@@ -501,17 +395,23 @@ $ kubectl -n sample-domain1-ns label  secret \
 
 Now, you create a domain YAML file. Think of the domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
-We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
+We provide a sample file at `$BASE_DIR/sample-scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
 
 ```shell
-$ cp $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml /tmp/mii-sample/mii-initial.yaml
+$ cp $BASE_DIR/sample-scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml /tmp/mii-sample/mii-initial.yaml
+```
+
+Print the image path. Copy the output to your clipboard and paste it to value of `spec.image` in `/tmp/mii-sample/mii-initial.yaml`.
+
+```shell
+echo $LOGIN_SERVER/model-in-image-aks:1.0
 ```
 
 Modify the Domain YAML with your values.
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
-|`spec.image`|`$AKS_PERS_ACR/model-in-image-aks:1.0`|Must be the same as the value to which you pushed the image to by running the command `docker push $AKS_PERS_ACR/model-in-image-aks:1.0`.|
+|`spec.image`|`$LOGIN_SERVER/model-in-image-aks:1.0`|Must be the same as the value to which you pushed the image to by running the command `docker push $LOGIN_SERVER/model-in-image-aks:1.0`.|
 
 Run the following command to create the domain custom resource:
 
@@ -577,7 +477,7 @@ If the system does not reach this state, troubleshoot and resolve the problem be
 
 Create the Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed in the cluster.
 
-Use the configuration file in `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with you domain values.
+Use the configuration file in `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with you domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -600,7 +500,7 @@ spec:
 ```
 {{% /expand %}}
 
-Use the configuration file in `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
+Use the configuration file in `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -627,13 +527,13 @@ spec:
 Create the load balancer services using the following command:
 
 ```shell
-$ kubectl apply -f $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml
+$ kubectl apply -f $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml
 ```
 ```
 service/sample-domain1-admin-server-external-lb created
 ```
 ```shell
-$ kubectl  apply -f $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml
+$ kubectl  apply -f $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml
 ```
 ```
 service/sample-domain1-cluster-1-external-lb created
@@ -793,53 +693,41 @@ Events:             <none>
 
 ##### Access the application
 
-Access the Administration Console using the admin load balancer IP address, `http://52.191.234.149:7001/console`
+Access the Administration Console using the admin load balancer IP address.
+
+```shell
+$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
+$ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
+```
 
 Access the sample application using the cluster load balancer IP address.
 
+```shell
+## Access the sample application using the cluster load balancer IP.
+$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
 ```
-## Access the sample application using the cluster load balancer IP (52.191.235.71)
-```
-```
-$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
+
 ```
 <html><body><pre>
 *****************************************************************
 
-Hello World! This is version 'v1' of the mii-sample JSP web-app.
+Hello World! This is version 'v1' of the sample JSP web-app.
 
 Welcome to WebLogic Server 'managed-server1'!
 
- domain UID  = 'sample-domain1'
- domain name = 'domain1'
+  domain UID  = 'sample-domain1'
+  domain name = 'domain1'
 
 Found 1 local cluster runtime:
   Cluster 'cluster-1'
 
-Found 0 local data sources:
+Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
 
-*****************************************************************
-</pre></body></html>
-
-```
-```shell
-$ curl http://52.191.235.71:8001/myapp_war/index.jsp
-```
-```
-<html><body><pre>
-*****************************************************************
-
-Hello World! This is version 'v1' of the mii-sample JSP web-app.
-
-Welcome to WebLogic Server 'managed-server2'!
-
- domain UID  = 'sample-domain1'
- domain name = 'domain1'
-
-Found 1 local cluster runtime:
-  Cluster 'cluster-1'
+Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
 
 Found 0 local data sources:
 
