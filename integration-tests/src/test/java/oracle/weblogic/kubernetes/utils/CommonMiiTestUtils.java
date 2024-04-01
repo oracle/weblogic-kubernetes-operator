@@ -1082,7 +1082,7 @@ public class CommonMiiTestUtils {
       int port = getServicePort(domainNamespace, adminServerPodName, "internal-t3");
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;
-      String ingressName = domainNamespace + "-" + domainName + "-" + serviceName;
+      String ingressName = domainNamespace + "-" + domainName + "-" + serviceName + "-" + port;
       String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
       Optional<String> ingressFound;
       try {
@@ -1256,7 +1256,7 @@ public class CommonMiiTestUtils {
       int port = getServicePort(domainNamespace, adminServerPodName, "internal-t3");
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;
-      String ingressName = domainNamespace + "-" + domainName + "-" + serviceName;      
+      String ingressName = domainNamespace + "-" + domainName + "-" + serviceName + "-" + port;
       String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
       Optional<String> ingressFound;
       try {
