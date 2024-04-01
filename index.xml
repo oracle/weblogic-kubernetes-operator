@@ -98,7 +98,7 @@ Use a kubectl port-forward connection</description>
 The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
 Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
 For example:
-$ cd /tmp $ git clone --branch v https://github.</description>
+$ cd /tmp $ git clone --branch v4.</description>
     </item>
     
     <item>
@@ -110,7 +110,7 @@ $ cd /tmp $ git clone --branch v https://github.</description>
       <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
 Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
 For example:
-$ cd /tmp $ git clone --branch v https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
+$ cd /tmp $ git clone --branch v4.2.0 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
 For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
     </item>
     
@@ -205,7 +205,7 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</guid>
       <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
-Contents Prerequisites Prepare Parameters Clone WKO repository Create Resource Group Create an AKS cluster Create and Configure Storage Create an Azure Storage account and NFS share Create SC and PVC Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Deploy sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
+Contents Prerequisites Prepare Parameters Create Resource Group Create an AKS cluster Create and configure storage Create an Azure Storage account and NFS share Create SC and PVC Create a domain creation image Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Access sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
     </item>
     
     <item>
@@ -779,7 +779,7 @@ Create a Kubernetes Secret containing the Administration Server boot credentials
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release :
+      <description>For the current production release 4.2.0 :
 Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, and 1.28.2+ (check with kubectl version).
 Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.
 Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).
