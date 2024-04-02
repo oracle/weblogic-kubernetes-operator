@@ -60,3 +60,7 @@ export OKE_CLUSTER=${OKE_CLUSTER:-false}
 
 # default Kubernetes CLI
 export KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+
+# default WLSIMG_BUILDER
+export WLSIMG_BUILDER=${WLSIMG_BUILDER:-docker}
+export WLSIMG_BUILDER_DEFAULT=${WLSIMG_BUILDER_DEFAULT:-docker}

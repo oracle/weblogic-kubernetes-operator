@@ -37,8 +37,8 @@ get_service_yaml() {
 get_kube_address() {
   # ${KUBERNETES_CLI:-kubectl} cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
   # This is the heuristic used by the integration test framework:
-  if [ "$KIND_CLUSTER" = "true" ]; then
-    echo $(${KUBERNETES_CLI:-kubectl} get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
+  if [ "$KIND_CLUSTER" = "true" ] && [ "$WLSIMG_BUILDER" = "$WLSIMG_BUILDER_DEFAULT" ]; then
+      echo $(${KUBERNETES_CLI:-kubectl} get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
   else
     echo ${K8S_NODEPORT_HOST:-$(hostname)}
   fi
@@ -125,7 +125,9 @@ testapp() {
         local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
       fi
     elif [ "$1" = "traefik" ]; then
-      if [ -z "$traefik_nodeport" ]; then
+      if [ "$KIND_CLUSTER" = "true" ] && [ "$WLSIMG_BUILDER" != "$WLSIMG_BUILDER_DEFAULT" ]; then
+        traefik_nodeport=${TRAEFIK_INGRESS_HTTP_HOSTPORT:-2080}
+      elif [ -z "$traefik_nodeport" ]; then
         echo "@@ Info: Obtaining traefik nodeport by calling:"
         cat<<EOF
           ${KUBERNETES_CLI:-kubectl} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
