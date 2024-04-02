@@ -39,7 +39,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
-import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -57,7 +56,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -395,9 +393,9 @@ class ItCrossDomainTransaction {
     assertNotEquals(-1, admin2ServiceNodePort, "admin server default node port is not valid");
 
     if (OKE_CLUSTER) {
-      createNginxIngressPathRoutingRules();
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       hostAndPort = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace);
+      createNginxIngressPathRoutingRules();
     } else {
       hostAndPort = getHostAndPort(domain1AdminExtSvcRouteHost, domain1AdminServiceNodePort);
       if (TestConstants.KIND_CLUSTER
@@ -683,13 +681,6 @@ class ItCrossDomainTransaction {
     logger.info("ingress {0} was created in namespace {1}", ingressName, domain1Namespace);
 
     // check the ingress is ready to route the app to the server pod
-    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-    nginxNodePort = assertDoesNotThrow(() -> Service.getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
-        "Getting Nginx loadbalancer service node port failed");
-
-    String hostAndPort = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
-        ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST + ":" + nginxNodePort;
-
     String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 

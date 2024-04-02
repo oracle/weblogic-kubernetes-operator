@@ -485,7 +485,7 @@ EOF
                     steps {
                          script {
                              def res = 0
-                             currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME}"
+                             currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME} ${CLUSTER_NAME}"
                              res = sh(script: '''
                                      if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                         echo 'ERROR: All tests cannot be run with integration-tests profile'
