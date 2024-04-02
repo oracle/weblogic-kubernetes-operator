@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ITLBTWODOMAINSNGINX_INGRE
 import static oracle.weblogic.kubernetes.TestConstants.ITLBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -144,6 +146,16 @@ class ItLBTwoDomainsNginx {
 
     // install Nginx ingress controller for all test cases using Nginx
     installNginxIngressController();
+
+    String command = KUBERNETES_CLI + " get all --all-namespaces";
+    logger.info("curl command to get all --all-namespaces is: {0}", command);
+
+    try {
+      ExecResult result = ExecCommand.exec(command, true);
+      logger.info("result is: {0}", result.toString());
+    } catch (java.io.IOException | InterruptedException ex) {
+      ex.printStackTrace();
+    }
 
     String ingressServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     ingressIP = getServiceExtIPAddrtOke(ingressServiceName, nginxNamespace) != null
@@ -510,10 +522,15 @@ class ItLBTwoDomainsNginx {
   }
 
   private static NginxParams installNginxLB() {
-
     getLogger().info("Installing NGINX in namespace {0}", nginxNamespace);
+
+    String nodePortValue = null;
+    if (!OKE_CLUSTER) {
+      nodePortValue = "NodePort";
+    }
+
     NginxParams params = installAndVerifyNginx(nginxNamespace, ITLBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT,
-        ITLBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, "NodePort");
+        ITLBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, nodePortValue);
 
     return params;
   }
