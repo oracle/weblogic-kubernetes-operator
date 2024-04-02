@@ -1,4 +1,4 @@
-# Copyright (c) 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 timestamp() {
@@ -105,7 +105,9 @@ testapp() {
       local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
 
     elif [ "$1" = "traefik" ]; then
-      if [ -z "$traefik_nodeport" ]; then
+      if [ "$KIND_CLUSTER" = "true" ] && [ "$WLSIMG_BUILDER" != "$WLSIMG_BUILDER_DEFAULT" ]; then
+        traefik_nodeport=${TRAEFIK_INGRESS_HTTP_HOSTPORT:-2080}
+      elif [ -z "$traefik_nodeport" ]; then
         echo "@@ Info: Obtaining traefik nodeport by calling:"
         cat<<EOF
           ${KUBERNETES_CLI:-kubectl} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
