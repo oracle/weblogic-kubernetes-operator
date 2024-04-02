@@ -14,7 +14,7 @@
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/samples/azure-kubernetes-service/domain-on-pv/</guid>
       <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
-Contents Prerequisites Prepare Parameters Clone WKO repository Create Resource Group Create an AKS cluster Create and Configure Storage Create an Azure Storage account and NFS share Create SC and PVC Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Deploy sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
+Contents Prerequisites Prepare Parameters Create Resource Group Create an AKS cluster Create and configure storage Create an Azure Storage account and NFS share Create SC and PVC Create a domain creation image Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Access sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
     </item>
     
     <item>

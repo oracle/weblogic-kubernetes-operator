@@ -10,9 +10,9 @@ This sample assumes the following prerequisite environment.
 * Operating System: GNU/Linux, macOS or [WSL2 for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
    * Note: the Docker image creation steps will not work on a Mac with Apple Silicon.
 * [Git](https://git-scm.com/downloads); use `git --version` to test if `git` works.  This document was tested with version 2.25.1.
-* [Azure CLI](https://docs.microsoft.com/cli/azure); use `az --version` to test if `az` works.  This document was tested with version 2.48.1.
+* [Azure CLI](https://docs.microsoft.com/cli/azure); use `az --version` to test if `az` works.  This document was tested with version 2.58.0.
 * [Docker for Desktop](https://www.docker.com/products/docker-desktop).  This document was tested with `Docker version 20.10.7`
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.21.2.
 * [Helm](https://helm.sh/docs/intro/install/), version 3.1 and later; use `helm version` to check the `helm` version.  This document was tested with version v3.6.2.
 * A Java JDK, Version 8 or 11. Azure recommends [Microsoft Build of OpenJDK](https://docs.microsoft.com/java/openjdk/download). Ensure that your `JAVA_HOME` environment variable is set correctly in the shells in which you run the commands.
-* A `domain creation image` tagged as `wdt-domain-image:WLS-v1` in your local Docker server's image cache. You can create it by following the [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" >}}) step.
+* Ensure that you have the zip/unzip utility installed; use `zip/unzip -v` to test if `zip/unzip` works.
