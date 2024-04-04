@@ -671,7 +671,7 @@
     <maven-dependency-plugin-version>3.6.1</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.5.2</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.2.0</exec-maven-plugin-version>
-    <checkstyle-version>10.14.2</checkstyle-version>
+    <checkstyle-version>10.15.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.2</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.2.2</maven-gpg-plugin-version>
@@ -720,7 +720,7 @@
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
     <skip.dependency-check>false</skip.dependency-check>
-    <jacoco.version>0.8.11</jacoco.version>
+    <jacoco.version>0.8.12</jacoco.version>
     <git-commit-id-plugin-version>4.9.10</git-commit-id-plugin-version>
     <htmlunit-version>2.70.0</htmlunit-version>
     <jython-standalone-version>2.7.3</jython-standalone-version>
