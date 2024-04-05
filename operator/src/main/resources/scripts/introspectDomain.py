@@ -1131,7 +1131,7 @@ class MII_DomainConfigGenerator(Generator):
               "--exclude=$DOMAIN_HOME/config/wlsdeploy/custom " \
               "--exclude=$DOMAIN_HOME/config/deployments " \
               "--exclude=$DOMAIN_HOME/config/fmwconfig " \
-              "$DOMAIN_HOME/wlsdeploy/applications/*.xml " \
+              "$DOMAIN_HOME/wlsdeploy/applications/./*.xml " \
               "$DOMAIN_HOME/config " \
               "$DOMAIN_HOME/security/saml*.properties " \
               "$DOMAIN_HOME/security/*.xml " % tar_name
