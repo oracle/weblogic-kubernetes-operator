@@ -1,9 +1,11 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,13 +39,21 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_FILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -54,6 +64,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
@@ -92,6 +103,7 @@ class ItRemoteConsole {
   private static HelmParams traefikHelmParams = null;
   private static NginxParams nginxHelmParams = null;
   private static int nginxNodePort;
+  private static String nginxHostAndPort;
 
   // domain constants
   private static final String domainUid = "domain1";
@@ -100,6 +112,7 @@ class ItRemoteConsole {
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static LoggingFacade logger = null;
   private static final int ADMIN_SERVER_PORT = 7001;
+  private static final int adminServerSecurePort = 7008;
   private static String adminSvcExtHost = null;
 
   /**
@@ -109,7 +122,7 @@ class ItRemoteConsole {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) throws Exception {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -137,15 +150,6 @@ class ItRemoteConsole {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    if (!OKD) {
-      logger.info("Installing Traefik controller using helm");
-      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
-
-
-      // install and verify Nginx
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    }
-
     createSSLenabledMiiDomainAndVerify(
         domainNamespace,
         domainUid,
@@ -154,18 +158,20 @@ class ItRemoteConsole {
         managedServerPrefix,
         replicaCount);
 
-    // create ingress rules with path routing for Traefik and NGINX
     if (!OKD) {
-      createTraefikIngressRoutingRules(domainNamespace);
-      createNginxIngressPathRoutingRules();
+
+      logger.info("Installing Traefik controller using helm");
+      installTraefikIngressController();
+
+      // install and verify Nginx
+      logger.info("Installing Ngnix controller using helm");
+      installNgnixIngressController();
+
     }
 
     // install WebLogic remote console
     assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
         "Remote Console installation failed");
-
-    // Verify k8s WebLogic domain is accessible through remote console using admin server nodeport
-    verifyWlsRemoteConsoleConnection();
   }
 
   /**
@@ -176,12 +182,21 @@ class ItRemoteConsole {
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsRemoteConsoleConnectionThroughTraefik() {
 
-    int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
+    int traefikNodePort = -1;
+    if (traefikHelmParams != null) {
+      logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
+      traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
+    } else if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      logger.info("Getting node port for Traefik loadbalancer from init installation");
+      traefikNodePort = TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      logger.info("Got node port {0} for Traefik loadbalancer", TRAEFIK_INGRESS_HTTP_HOSTPORT);
+    }
+
     assertNotEquals(-1, traefikNodePort,
         "Could not get the default external service node port");
     logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    verifyRemoteConsoleConnectionThroughLB(traefikNodePort);
+    verifyRemoteConsoleConnectionThroughLB(traefikNodePort, "traefik");
     logger.info("WebLogic domain is accessible through remote console using Traefik");
   }
 
@@ -197,7 +212,7 @@ class ItRemoteConsole {
     logger.info("Found the NGINX service nodePort {0}", nginxNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
-    verifyRemoteConsoleConnectionThroughLB(nginxNodePort);
+    verifyRemoteConsoleConnectionThroughLB(nginxNodePort, "nginx");
     logger.info("WebLogic domain is accessible through remote console using NGINX");
   }
 
@@ -222,11 +237,21 @@ class ItRemoteConsole {
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
     setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
     String hostAndPort = null;
+    String httpsHostHeader = "";
+    String header = "";
     if (!OKD) {
-      String ingressServiceName = traefikHelmParams.getReleaseName();
-      hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
-          : getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+      if (KIND_CLUSTER
+          && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        httpsHostHeader = createIngressHostRouting(domainNamespace, domainUid,
+          "admin-server", adminServerSecurePort);
+        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTPS_HOSTPORT;
+        header = " -H 'host: " + httpsHostHeader + "' ";
+      } else {
+        String ingressServiceName = traefikHelmParams.getReleaseName();
+        hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+            ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
+            : getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+      }
     } else {
       hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
     }
@@ -234,27 +259,43 @@ class ItRemoteConsole {
     logger.info("The hostAndPort is {0}", hostAndPort);
 
     //verify ready app is accessible through default-secure nodeport
-    String curlCmd = "curl -g -sk --show-error --noproxy '*' "
+    String curlCmd = "";
+    if (KIND_CLUSTER
+          && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      curlCmd = "curl -g -sk --show-error --noproxy '*' "
+          + header + " https://" + hostAndPort
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+    } else {
+      curlCmd = "curl -g -sk --show-error --noproxy '*' "
           + " https://" + hostAndPort
           + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+    }
     logger.info("Executing WebLogic console default-secure nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
     logger.info("ready app is accessible thru default-secure service");
 
-    //verify remote console is accessible through default-secure nodeport
-    //The final complete curl command to run is like:
-    //curl -sk -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
-    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"https://myhost://nodeport\"}"
-    //--write-out %{http_code} -o /dev/null
-    curlCmd = "curl -g -sk -v --show-error --noproxy '*' --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-        + " http://localhost:8012/api/providers/AdminServerConnection -H  "
-        + "\"" + "Content-Type:application/json" + "\""
-        + " --data "
-        + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
-        + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
-        + hostAndPort + "\\" + "\"}" + "\""
-        + " --write-out %{http_code} -o /dev/null";
+    if (KIND_CLUSTER
+          && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      curlCmd = "curl -g -sk -v --show-error --noproxy '*' --user "
+          + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+          + " http://localhost:8012/api/providers/AdminServerConnection -H  "
+          + "\"" + "Content-Type:application/json" + "\""
+          + " --data "
+          + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+          + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + header
+          + "https://" + hostAndPort + "\\" + "\"}" + "\""
+          + " --write-out %{http_code} -o /dev/null";
+    } else {
+      curlCmd = "curl -g -sk -v --show-error --noproxy '*' --user "
+          + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+          + " http://localhost:8012/api/providers/AdminServerConnection -H  "
+          + "\"" + "Content-Type:application/json" + "\""
+          + " --data "
+          + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+          + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
+          + hostAndPort + "\\" + "\"}" + "\""
+          + " --write-out %{http_code} -o /dev/null";
+    }
     logger.info("Executing remote console default-secure nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("Remote console is accessible through default-secure service");
@@ -295,7 +336,7 @@ class ItRemoteConsole {
     }
   }
 
-  private static void createNginxIngressPathRoutingRules() {
+  private static void createNginxIngressPathRoutingRules() throws UnknownHostException {
 
     // create an ingress in domain namespace
     String ingressName = domainNamespace + "-nginx-path-routing";
@@ -335,63 +376,72 @@ class ItRemoteConsole {
     logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
+
     String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-    nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
+    logger.info("nginxServiceName is {0}", nginxServiceName);
+
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      nginxNodePort = NGINX_INGRESS_HTTP_HOSTPORT;
+    } else if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
         "Getting Nginx loadbalancer service node port failed");
+    }
+    logger.info("nginxNodePort is {0}", nginxNodePort);
+
     String host = K8S_NODEPORT_HOST;
     if (host.contains(":")) {
       host = "[" + host + "]";
     }
-    String hostAndPort = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
-        ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : host + ":" + nginxNodePort;
+    if (KIND_CLUSTER
+        && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      host = InetAddress.getLocalHost().getHostAddress();
+    }
 
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
+    nginxHostAndPort = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
+        ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : host + ":" + nginxNodePort;
+    logger.info("nginxHostAndPort is {0}", nginxHostAndPort);
+
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + nginxHostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
   }
 
-  private static void verifyWlsRemoteConsoleConnection() {
-    int nodePort = getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, nodePort,
-        "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+  private static void installTraefikIngressController() {
 
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      logger.info("Installing Traefik controller using helm");
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
     }
-    logger.info("admin svc host = {0}", adminSvcExtHost);
-    String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
-    String curlCmd = "curl -g -v --show-error --noproxy '*' --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-        + " http://localhost:8012/api/providers/AdminServerConnection -H "
-        + "\"" + "Content-Type:application/json" + "\""
-        + " --data "
-        + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
-        + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + hostAndPort + "\\" + "\"}" + "\""
-        + " --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
-    logger.info("WebLogic domain is accessible through remote console");
+    createTraefikIngressRoutingRules(domainNamespace);
+
   }
 
-  private static void verifyRemoteConsoleConnectionThroughLB(int nodePortOfLB) {
+  private static void installNgnixIngressController() throws UnknownHostException {
+
+    if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      logger.info("Installing Ngnix controller using 0 as nodeport");
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    } else if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      logger.info("Installing Ngnix controller using http_nodeport {0}, https_nodeport {1}",
+          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+    }
+
+    createNginxIngressPathRoutingRules();
+
+  }
+
+  private static void verifyRemoteConsoleConnectionThroughLB(int nodePortOfLB, String type) {
     logger.info("LB nodePort is {0}", nodePortOfLB);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
-    String ingressServiceName = traefikHelmParams.getReleaseName();
-    String traefikNamespace = traefikHelmParams.getNamespace();
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : host + ":" + nodePortOfLB;
+    String hostAndPort = getLBhostAndPort(nodePortOfLB, type);
+
+    logger.info("For loadbalancer {0} hostAndPort is {0}", type, hostAndPort);
 
     String curlCmd = "curl -g -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H "
@@ -404,6 +454,31 @@ class ItRemoteConsole {
     logger.info("Executing LB nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10),
         "Calling web app failed");
+  }
+
+  private static String getLBhostAndPort(int nodePortOfLB, String type) {
+    String host = K8S_NODEPORT_HOST;
+    String hostAndPort = null;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String ingressServiceName = null;
+    String traefikNamespace = null;
+    if (type.equalsIgnoreCase("traefik")) {
+      if (traefikHelmParams != null) {
+        ingressServiceName = traefikHelmParams.getReleaseName();
+        traefikNamespace = traefikHelmParams.getNamespace();
+        hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+            ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : host + ":" + nodePortOfLB;
+      } else {
+        logger.info("traefikHelmParams is null");
+        hostAndPort = host + ":" + nodePortOfLB;
+      }
+    } else if (type.equalsIgnoreCase("nginx")) {
+      hostAndPort = nginxHostAndPort;
+    }
+
+    return hostAndPort;
   }
 
   /**

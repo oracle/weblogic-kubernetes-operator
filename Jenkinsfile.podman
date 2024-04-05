@@ -182,11 +182,11 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.7'
+               defaultValue: '2.1.2'
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
-               defaultValue: '15.2.0'
+               defaultValue: '17.0.0'
         )
         string(name: 'GRAFANA_CHART_VERSION',
                description: '',
@@ -349,7 +349,7 @@ pipeline {
                               podman stop "${registry_name}"
                               podman rm --force "${registry_name}"
                             fi
-        
+
                             podman run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
                                 ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2.8.2
                             echo "Registry Host: ${registry_host}"
@@ -394,6 +394,17 @@ nodes:
       - containerPort: 30443
         hostPort: 2443
         protocol: TCP
+      - containerPort: 31880
+        hostPort: 2180
+        protocol: TCP
+      - containerPort: 31443
+        hostPort: 2543
+      - containerPort: 30881
+        hostPort: 2081
+        protocol: TCP
+      - containerPort: 30444
+        hostPort: 2444
+        protocol: TCP
       - containerPort: 32480
         hostPort: 2480
       - containerPort: 32490
@@ -409,7 +420,19 @@ nodes:
         protocol: TCP
       - containerPort: 32170
         hostPort: 2173
-        protocol: TCP	
+        protocol: TCP
+      - containerPort: 32189
+        hostPort: 2182
+        protocol: TCP
+      - containerPort: 32185
+        hostPort: 2175
+        protocol: TCP
+      - containerPort: 32143
+        hostPort: 2143
+        protocol: TCP
+      - containerPort: 32343
+        hostPort: 2343
+        protocol: TCP
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
