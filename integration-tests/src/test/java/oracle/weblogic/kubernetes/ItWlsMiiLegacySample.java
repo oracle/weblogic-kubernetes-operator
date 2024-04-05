@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +34,16 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
@@ -49,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,7 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItWlsMiiLegacySample {
 
   private static final String miiSampleScript = "../operator/integration-tests/model-in-image/run-test.sh";
-  private static final String DOMAIN_CREATION_IMAGE_NAME = "wdt-domain-image";
   private static final String DOMAIN_CREATION_IMAGE_WLS_TAG = "WLS-LEGACY-v1";
   private static final String MODEL_IMAGE_WLS_TAG = "WLS-LEGACY-v2";
   private static String traefikNamespace = null;
@@ -72,6 +77,7 @@ class ItWlsMiiLegacySample {
   private static LoggingFacade logger = null;
 
   private boolean previousTestSuccessful = true;
+  private static String DOMAIN_CREATION_IMAGE_NAME = "wdt-domain-image";
 
   /**
    * Create namespaces and set environment variables for the test.
@@ -117,7 +123,8 @@ class ItWlsMiiLegacySample {
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
     envMap.put("IMAGE_PULL_SECRET_NAME", BASE_IMAGES_REPO_SECRET_NAME);
     envMap.put("DOMAIN_IMAGE_PULL_SECRET_NAME", TEST_IMAGES_REPO_SECRET_NAME);
-    envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    envMap.put("WLSIMG_BUILDER_DEFAULT", WLSIMG_BUILDER_DEFAULT);
+    envMap.put("WLSIMG_BUILDER", WLSIMG_BUILDER);
     envMap.put("OKD", "" +  OKD);
     envMap.put("KIND_CLUSTER", "" + KIND_CLUSTER);
 
@@ -133,6 +140,19 @@ class ItWlsMiiLegacySample {
     if (WDT_DOWNLOAD_URL != null) {
       envMap.put("WDT_INSTALLER_URL", WDT_DOWNLOAD_URL);
     }
+
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      DOMAIN_CREATION_IMAGE_NAME = "localhost/wdt-domain-image";
+      envMap.put("OPER_IMAGE_NAME", "localhost/weblogic-kubernetes-operator");
+      envMap.put("MODEL_IMAGE_NAME", DOMAIN_CREATION_IMAGE_NAME);
+      envMap.put("K8S_NODEPORT_HOST", assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
+      envMap.put("TRAEFIK_INGRESS_HTTP_HOSTPORT", "" + TRAEFIK_INGRESS_HTTP_HOSTPORT);
+      envMap.put("TRAEFIK_NAMESPACE", TRAEFIK_NAMESPACE);
+    } else {
+      envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
+      envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    }
+
     logger.info("Environment variables to the script {0}", envMap);
 
     logger.info("Setting up image registry secrets");
@@ -163,7 +183,13 @@ class ItWlsMiiLegacySample {
   @Test
   @Order(2)
   public void testInstallTraefik() {
-    execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik");
+    
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      logger.info("skip installing  Traefik in KIND and podman environment");
+      logger.info("Traefik is already installed in InitialTask in namespace %s", TRAEFIK_NAMESPACE);
+    } else {
+      execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik");
+    }
   }
 
   /**
