@@ -28,6 +28,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.SemanticVersion.Compatibility;
 
 import static oracle.weblogic.kubernetes.TestConstants.ARM;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_TENANCY;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
@@ -89,11 +91,12 @@ public class IstioUtils {
     Path istioInstallPath =
         Paths.get(RESULTS_ROOT, "install-istio.sh");
     String installScript = istioInstallPath.toString();
-
-    // When install istio in OCNE environment, use phx.ocir.io/devweblogic/istio-release instead of gcr.io/istio-release
+    String ocneIstioRepo = BASE_IMAGES_REPO + "/" +  BASE_IMAGES_TENANCY; 
+    // When install istio in OCNE environment, 
+    // use BASE_IMAGES_REPO/devweblogic/istio-release instead of gcr.io/istio-release
     if (OCNE) {
-      logger.info("replace istio installation hub in File {0}", installScript);
-      assertDoesNotThrow(() -> replaceStringInFile(installScript, "gcr.io", "phx.ocir.io/devweblogic"),
+      logger.info("replace istio installation hub in File {0}", ocneIstioRepo);
+      assertDoesNotThrow(() -> replaceStringInFile(installScript, "gcr.io", ocneIstioRepo),
           String.format("Failed to replace string in File %s", installScript));
     }
     String arch = "linux-amd64";
