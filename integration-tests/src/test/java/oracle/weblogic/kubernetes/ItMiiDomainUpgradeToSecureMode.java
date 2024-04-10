@@ -130,7 +130,8 @@ class ItMiiDomainUpgradeToSecureMode {
   String clusterIngressHost;
   private final String imageTag1411 = "14.1.1.0-11";
   private final String imageTag12214 = "12.2.1.4";
-  private final String image1412 = "wls-docker-dev-local.dockerhub-phx.oci.oraclecorp.com/weblogic:14.1.2.0.0";
+  private final String imageTag1412 = "14.1.2.0.0-jdk17";
+  private final String image1412 = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1412;
   private final String sampleAppUri = "/sample-war/index.jsp";
   private final String adminAppUri = "/management/tenant-monitoring/servers";
   private final String adminAppText = "RUNNING";
