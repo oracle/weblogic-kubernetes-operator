@@ -2047,7 +2047,7 @@ public class CommonTestUtils {
 
   /**
    * Given a repo and tenancy name, determine the prefix length.  For example,
-   * phx.ocir.io/foobar/test-images/myimage will treat phx.ocir.io/foobar/ as
+   * cloud.io/foobar/test-images/myimage will treat cloud.io/foobar/ as
    * the prefix so the length is 19.
    *
    * @param baseRepo    base repo name
