@@ -6,9 +6,14 @@ package oracle.weblogic.kubernetes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -25,8 +30,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodEvictedStatus;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -38,11 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Use Operator log to test WLS server pods were evicted due to Pod ephemeral local
- * storage usage exceeds the total limit of containers 50M and replaced.
+ * storage usage exceeds the total limit of containers 25M and replaced.
  * 1. Install and start Operators
- * 2. Create and start the WebLogic domain with configuration of resource limit "ephemeral-storage=50M"
+ * 2. Create and start the WebLogic domain with configuration of resource limit "ephemeral-storage=25M"
  * 3. Verify that WLS server pods were evicted due to Pod ephemeral local
- *    storage usage exceeds the total limit of containers 50M and replaced.
+ *    storage usage exceeds the total limit of containers 25M and replaced.
  */
 @DisplayName("Test WLS server pods were evicted due to Pod ephemeral storage usage exceeds the total limit")
 @IntegrationTest
@@ -63,13 +69,13 @@ class ItEvictedPodsCycling {
 
   private static Map<String, String> resourceRequest = new HashMap<>();
   private static Map<String, String> resourceLimit = new HashMap<>();
-  private static final String ephemeralStorage = "50M";
+  private static final String ephemeralStorage = "25M";
 
   private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
-   * Config resource limit and set ephemeral-storage=50M
+   * Config resource limit and set ephemeral-storage=25M
    * Create domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -97,25 +103,33 @@ class ItEvictedPodsCycling {
   }
 
   /**
-   * Set domain resources limits tp 50M and then use Operator log to verify
+   * Set domain resources limits to 25M and then use Operator log to verify
    * that WLS server pods were evicted due to Pod ephemeral local
-   * storage usage exceeds the total limit of containers 50M and replaced. 
+   * storage usage exceeds the total limit of containers 25M and replaced.
    */
   @Test
   @DisplayName("Use Operator log to verify that WLS server pods were evicted and replaced")
-  void testEvictedPodReplaced() {
+  void testEvictedPodReplaced() throws ApiException {
     resourceLimit.put("ephemeral-storage", ephemeralStorage);
     resourceRequest.put("cpu", "250m");
     resourceRequest.put("memory", "768Mi");
 
-    // patch domain with ephemeral-storage = 50M
+    // patch domain with ephemeral-storage = 25M
+    String reason = "Pod ephemeral local storage usage exceeds the total limit of containers";
     addServerPodResources(domainUid, domainNamespace, resourceLimit, resourceRequest);
-
-    // verify that admin server pod evicted status exists in Operator log
-    checkPodEvictedStatus(opNamespace, adminServerPodName, ephemeralStorage);
+    // verify that admin server pod evicted event is logged
+    testUntil(withLongRetryPolicy,
+        checkEvictionEvent(adminServerPodName, "Evicted", reason, "Warning"),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        reason,
+        domainNamespace);
+    resourceLimit.replace("ephemeral-storage", "250M");
+    addServerPodResources(domainUid, domainNamespace, resourceLimit, resourceRequest);
 
     // verify that evicted pods are replaced and started
     checkServerPodsAndServiceReady();
+
   }
 
   private static DomainResource createAndVerifyDomain() {
@@ -184,4 +198,23 @@ class ItEvictedPodsCycling {
       checkPodReadyAndServiceExists(managedServerPodPrefix + i, domainUid, domainNamespace);
     }
   }
+
+  private Callable<Boolean> checkEvictionEvent(String adminServerpodName,
+                                               String reason, String message, String type) throws ApiException {
+    return (() -> {
+      boolean gotEvent = false;
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (event.getType().equals(type)
+            && event.getInvolvedObject().getName().equals(adminServerpodName)
+            && event.getReason().equals(reason)
+            && event.getMessage().contains(message)) {
+          logger.info(Yaml.dump(event));
+          gotEvent = true;
+        }
+      }
+      return gotEvent;
+    });
+  }
+
 }
