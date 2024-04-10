@@ -67,7 +67,8 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -100,13 +101,13 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConso
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
@@ -204,6 +205,8 @@ class ItMiiDomain {
     final String hostName = "localhost";
     final int adminServerPort = 7001;
     final int adminServerSecurePort = 7008;
+    String httpHostHeader = "";
+    String httpsHostHeader = "";
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -287,6 +290,18 @@ class ItMiiDomain {
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+    // create ingress for admin service
+    // use traefik LB for kind cluster with ingress host header in url
+    String headers = "";
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      httpHostHeader = createIngressHostRouting(domainNamespace, domainUid,
+          "admin-server", adminServerPort);
+      httpsHostHeader = createIngressHostRouting(domainNamespace, domainUid,
+          "admin-server", adminServerSecurePort);
+      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTPS_HOSTPORT;
+      headers = " -H 'host: " + httpsHostHeader + "' ";
+    }
 
     final String resourcePath = "/weblogic/ready";
     if (OKE_CLUSTER) {
@@ -298,7 +313,7 @@ class ItMiiDomain {
           adminServerPodName);
     } else {
       String curlCmd = "curl -skg --show-error --noproxy '*' "
-          + " https://" + hostAndPort
+          + headers + " https://" + hostAndPort
           + "/weblogic/ready --write-out %{http_code} -o /dev/null";
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -311,28 +326,27 @@ class ItMiiDomain {
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
-
-    if (!WEBLOGIC_SLIM) {
-      if (OKE_CLUSTER) {
-        testUntil(
-            isAppInServerPodReady(domainNamespace,
-                adminServerPodName, 7001, resourcePath, ""),
-            logger, "verify EM console access {0} in server {1}",
-            resourcePath,
-            adminServerPodName);
-      } else {
-        String curlCmd2 = "curl -skg --show-error --noproxy '*' "
-            + " http://" + hostAndPort
-            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
-        logger.info("Executing default nodeport curl command {0}", curlCmd2);
-        assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
-      }
-      logger.info("ready app is accessible thru default service");
-    } else {
-      logger.info("Checking Rest API management console in WebLogic slim image");
-      verifyCredentials(7001, adminServerPodName, domainNamespace,
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      headers = " -H 'host: " + httpHostHeader + "' ";
     }
+    if (OKE_CLUSTER) {
+      testUntil(
+          isAppInServerPodReady(domainNamespace,
+              adminServerPodName, 7001, resourcePath, ""),
+          logger, "verify EM console access {0} in server {1}",
+          resourcePath,
+          adminServerPodName);
+    } else {
+      String curlCmd2 = "curl -skg --show-error --noproxy '*' "
+          + headers + " http://" + hostAndPort
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+      logger.info("Executing default nodeport curl command {0}", curlCmd2);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
+    }
+    logger.info("ready app is accessible thru default service");
+
 
     // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
     // and default secure channel port (7002 in this test)
