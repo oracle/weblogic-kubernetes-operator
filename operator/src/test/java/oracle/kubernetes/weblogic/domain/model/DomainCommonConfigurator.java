@@ -699,6 +699,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withReadinessProbeHttpGetActionPath(String httpGetActionPath) {
+      server.setReadinessProbeHttpGetActionPath(httpGetActionPath);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withRequestRequirement(String resource, String quantity) {
       server.addRequestRequirement(resource, quantity);
       return this;

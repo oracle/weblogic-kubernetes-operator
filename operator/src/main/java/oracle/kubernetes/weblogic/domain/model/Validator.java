@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -18,6 +18,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.helpers.LegalNames;
 
@@ -136,7 +137,7 @@ public abstract class Validator {
         .ifPresent(containers -> containers.forEach(container -> isContainerNameReserved(container, prefix)));
   }
 
-  void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {
+  void verifySuccessThresholdValue(V1Probe probe, String prefix) {
     if (probe.getSuccessThreshold() != null && probe.getSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
       failures.add(DomainValidationMessages.invalidLivenessProbeSuccessThresholdValue(
           probe.getSuccessThreshold(), prefix));

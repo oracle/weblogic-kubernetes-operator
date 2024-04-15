@@ -6,7 +6,7 @@ A Domain resource describes the configuration, logging, images, and lifecycle of
 | --- | --- | --- |
 | `apiVersion` | string | The API version defines the versioned schema of this Domain. Required. |
 | `kind` | string | The type of the REST resource. Must be "Domain". Required. |
-| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | The resource metadata. Must include the `name` and `namespace`. Required. |
+| `metadata` | [Object Meta](k8s1.28.2.md#object-meta) | The resource metadata. Must include the `name` and `namespace`. Required. |
 | `spec` | [Domain Spec](#domain-spec) | The specification of the operation of the WebLogic domain. Required. |
 | `status` | [Domain Status](#domain-status) | The current status of the operation of the WebLogic domain. Updated automatically by the operator. |
 
@@ -17,7 +17,7 @@ The specification of the operation of the WebLogic domain. Required.
 | Name | Type | Description |
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service. |
-| `clusters` | Array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | References to Cluster resources that describe the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a cluster that already exists in the WebLogic domain configuration. |
+| `clusters` | Array of [Local Object Reference](k8s1.28.2.md#local-object-reference) | References to Cluster resources that describe the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a cluster that already exists in the WebLogic domain configuration. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
 | `dataHome` | string | An optional directory in a server's container for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty, then the data storage directories are determined from the WebLogic domain configuration. |
 | `domainHome` | string | The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel. |
@@ -30,7 +30,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `httpAccessLogInLogHome` | Boolean | Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true. |
 | `image` | string | The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
-| `imagePullSecrets` | Array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull Secrets for the WebLogic Server image. |
+| `imagePullSecrets` | Array of [Local Object Reference](k8s1.28.2.md#local-object-reference) | A list of image pull Secrets for the WebLogic Server image. |
 | `includeServerOutInPodLog` | Boolean | Specifies whether the server .out file will be included in the Pod's log. Defaults to true. |
 | `introspector` | [Introspector](#introspector) | Lifecycle options for the Introspector Job Pod, including Java options, environment variables, and resources. |
 | `introspectVersion` | string | Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`. |
@@ -49,7 +49,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of ClusterIP Services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
-| `webLogicCredentialsSecret` | [Local Object Reference](k8s1.13.5.md#local-object-reference) | Reference to a Kubernetes Secret that contains the user name and password needed to boot a WebLogic Server under the `username` and `password` fields. |
+| `webLogicCredentialsSecret` | [Local Object Reference](k8s1.28.2.md#local-object-reference) | Reference to a Kubernetes Secret that contains the user name and password needed to boot a WebLogic Server under the `username` and `password` fields. |
 
 ### Domain Status
 
@@ -100,13 +100,13 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `containerArgs` | Array of string | (Optional) The Fluentbit sidecar container spec's args. Default is: [ -c, /etc/fluent-bit.conf ] if not specified |
 | `containerCommand` | Array of string | (Optional) The Fluentbit sidecar container spec's command. Default is not set if not specified |
 | `elasticSearchCredentials` | string | Fluentbit elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password |
-| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the fluentbit container. See `kubectl explain pods.spec.containers.env`. |
+| `env` | Array of [Env Var](k8s1.28.2.md#env-var) | A list of environment variables to set in the fluentbit container. See `kubectl explain pods.spec.containers.env`. |
 | `fluentbitConfiguration` | string | The Fluentbit configuration text, specify your own custom fluentbit configuration. |
 | `image` | string | The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2 |
 | `imagePullPolicy` | string | The image pull policy for the Fluentbit sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `parserConfiguration` | string | The Fluentbit parser configuration text, specify your own custom fluentbit configuration. |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentbit container. See `kubectl explain pods.spec.containers.resources`. |
-| `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Volume mounts for fluentbit container |
+| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentbit container. See `kubectl explain pods.spec.containers.resources`. |
+| `volumeMounts` | Array of [Volume Mount](k8s1.28.2.md#volume-mount) | Volume mounts for fluentbit container |
 | `watchIntrospectorLogs` | Boolean | Fluentbit will watch introspector logs |
 
 ### Fluentd Specification
@@ -116,12 +116,12 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `containerArgs` | Array of string | (Optional) The Fluentd sidecar container spec's args. Default is: [ -c, /etc/fluentd.conf ] if not specified |
 | `containerCommand` | Array of string | (Optional) The Fluentd sidecar container spec's command. Default is not set if not specified |
 | `elasticSearchCredentials` | string | Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password |
-| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`. |
+| `env` | Array of [Env Var](k8s1.28.2.md#env-var) | A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`. |
 | `fluentdConfiguration` | string | The fluentd configuration text, specify your own custom fluentd configuration. |
 | `image` | string | The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2 |
 | `imagePullPolicy` | string | The image pull policy for the Fluentd sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`. |
-| `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Volume mounts for fluentd container |
+| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`. |
+| `volumeMounts` | Array of [Volume Mount](k8s1.28.2.md#volume-mount) | Volume mounts for fluentd container |
 | `watchIntrospectorLogs` | Boolean | Fluentd will watch introspector logs |
 
 ### Introspector
@@ -148,40 +148,40 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.2.0 |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `port` | integer | The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs). |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`. |
+| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`. |
 
 ### Server Pod
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `affinity` | [Affinity](k8s1.13.5.md#affinity) | The Pod's scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`. |
+| `affinity` | [Affinity](k8s1.28.2.md#affinity) | The Pod's scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`. |
 | `annotations` | Map | The annotations to be added to generated resources. |
-| `containers` | Array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
-| `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
-| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
-| `envFrom` | Array of [Env From Source](k8s1.13.5.md#env-from-source) | List of sources to populate environment variables in the container running a WebLogic Server instance. The sources include either a config map or a secret. The operator will not expand the dependent variables in the 'envFrom' source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. |
-| `hostAliases` | Array of [Host Alias](k8s1.13.5.md#host-alias) | HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. This is only valid for non-hostNetwork pods. |
-| `initContainers` | Array of [Container](k8s1.13.5.md#container) | Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`. |
+| `containers` | Array of [Container](k8s1.28.2.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
+| `containerSecurityContext` | [Security Context](k8s1.28.2.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
+| `env` | Array of [Env Var](k8s1.28.2.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
+| `envFrom` | Array of [Env From Source](k8s1.28.2.md#env-from-source) | List of sources to populate environment variables in the container running a WebLogic Server instance. The sources include either a config map or a secret. The operator will not expand the dependent variables in the 'envFrom' source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. |
+| `hostAliases` | Array of [Host Alias](k8s1.28.2.md#host-alias) | HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. This is only valid for non-hostNetwork pods. |
+| `initContainers` | Array of [Container](k8s1.28.2.md#container) | Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
-| `livenessProbe` | [Probe Tuning](#probe-tuning) | Settings for the liveness probe associated with a WebLogic Server instance. |
+| `livenessProbe` | [Probe](k8s1.28.2.md#probe) | Settings for the liveness probe associated with a WebLogic Server instance. If not specified, the operator will create a probe that executes a script provided by the operator. The operator will also fill in any missing tuning-related fields, if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different script to execute. |
 | `maxPendingWaitTimeSeconds` | integer | The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running state before it considers the pod failed. Defaults to 5 minutes. |
 | `maxReadyWaitTimeSeconds` | integer | The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state before it considers the pod failed. Defaults to 1800 seconds. |
 | `nodeName` | string | NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`. |
 | `nodeSelector` | Map | Selector which must match a Node's labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`. |
-| `podSecurityContext` | [Pod Security Context](k8s1.13.5.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
+| `podSecurityContext` | [Pod Security Context](k8s1.28.2.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
 | `priorityClassName` | string | If specified, indicates the Pod's priority. "system-node-critical" and "system-cluster-critical" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default. See `kubectl explain pods.spec.priorityClassName`. |
-| `readinessGates` | Array of [Pod Readiness Gate](k8s1.13.5.md#pod-readiness-gate) | If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its containers are ready AND all conditions specified in the readiness gates have a status equal to "True". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md. |
-| `readinessProbe` | [Probe Tuning](#probe-tuning) | Settings for the readiness probe associated with a WebLogic Server instance. |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`. |
+| `readinessGates` | Array of [Pod Readiness Gate](k8s1.28.2.md#pod-readiness-gate) | If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its containers are ready AND all conditions specified in the readiness gates have a status equal to "True". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md. |
+| `readinessProbe` | [Probe](k8s1.28.2.md#probe) | Settings for the readiness probe associated with a WebLogic Server instance. If not specified, the operator will create an HTTP probe accessing the /weblogic/ready path. If an HTTP probe is specified then the operator will fill in `path`, `port`, and `scheme`, if they are missing. The operator will also fill in any missing tuning-related fields if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different HTTP path to access. |
+| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`. |
 | `restartPolicy` | string | Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`. |
 | `runtimeClassName` | string | RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future. See `kubectl explain pods.spec.runtimeClassName`. |
 | `schedulerName` | string | If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler. See `kubectl explain pods.spec.schedulerName`. |
 | `serviceAccountName` | string | Name of the ServiceAccount to be used to run this Pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created. See `kubectl explain pods.spec.serviceAccountName`. |
 | `shutdown` | [Shutdown](#shutdown) | Configures how the operator should shut down the server instance. |
-| `tolerations` | Array of [Toleration](k8s1.13.5.md#toleration) | If specified, the Pod's tolerations. See `kubectl explain pods.spec.tolerations`. |
-| `topologySpreadConstraints` | Array of [V 1 Topology Spread Constraint](#v-1-topology-spread-constraint) | TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed. |
-| `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Additional volume mounts for the container running a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`. |
-| `volumes` | Array of [Volume](k8s1.13.5.md#volume) | Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`. |
+| `tolerations` | Array of [Toleration](k8s1.28.2.md#toleration) | If specified, the Pod's tolerations. See `kubectl explain pods.spec.tolerations`. |
+| `topologySpreadConstraints` | Array of [Topology Spread Constraint](k8s1.28.2.md#topology-spread-constraint) | TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed. |
+| `volumeMounts` | Array of [Volume Mount](k8s1.28.2.md#volume-mount) | Additional volume mounts for the container running a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`. |
+| `volumes` | Array of [Volume](k8s1.28.2.md#volume) | Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`. |
 
 ### Server Service
 
@@ -275,20 +275,10 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
-| `envFrom` | Array of [Env From Source](k8s1.13.5.md#env-from-source) | List of sources to populate environment variables in the Introspector Job Pod container. The sources include either a config map or a secret. The operator will not expand the dependent variables in the 'envFrom' source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. |
-| `podSecurityContext` | [Pod Security Context](k8s1.13.5.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`. |
-
-### Probe Tuning
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `failureThreshold` | integer | Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1. |
-| `initialDelaySeconds` | integer | The number of seconds before the first check is performed. |
-| `periodSeconds` | integer | The number of seconds between checks. |
-| `successThreshold` | integer | Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe. |
-| `timeoutSeconds` | integer | The number of seconds with no response that indicates a failure. |
+| `env` | Array of [Env Var](k8s1.28.2.md#env-var) | A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
+| `envFrom` | Array of [Env From Source](k8s1.28.2.md#env-from-source) | List of sources to populate environment variables in the Introspector Job Pod container. The sources include either a config map or a secret. The operator will not expand the dependent variables in the 'envFrom' source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. |
+| `podSecurityContext` | [Pod Security Context](k8s1.28.2.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
+| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`. |
 
 ### Shutdown
 
@@ -299,21 +289,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `skipWaitingCohEndangeredState` | Boolean | For graceful shutdown only, set to true to skip waiting for Coherence Cache Cluster service MBean HAStatus in safe state before shutdown. By default, the operator will wait until it is safe to shutdown the Coherence Cache Cluster. Defaults to false. |
 | `timeoutSeconds` | integer | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Defaults to 30 seconds. |
 | `waitForAllSessions` | Boolean | For graceful shutdown only, set to true to wait for all HTTP sessions during in-flight work handling; false to wait for non-persisted HTTP sessions only. Defaults to false. |
-
-### V 1 Topology Spread Constraint
-
-TopologySpreadConstraint specifies how to spread matching pods among the given topology.
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `labelSelector` | [Label Selector](k8s1.13.5.md#label-selector) | A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects. |
-| `matchLabelKeys` | Array of string | MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated. The keys are used to lookup values from the incoming pod labels, those key-value labels are ANDed with labelSelector to select the group of existing pods over which spreading will be calculated for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. MatchLabelKeys cannot be set when LabelSelector isn't set. Keys that don't exist in the incoming pod labels will be ignored. A null or empty list means only match against labelSelector.  This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default). |
-| `maxSkew` | integer | MaxSkew describes the degree to which pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference between the number of matching pods in the target topology and the global minimum. The global minimum is the minimum number of matching pods in an eligible domain or zero if the number of eligible domains is less than MinDomains. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 2/2/1: In this case, the global minimum is 1. | zone1 | zone2 | zone3 | |  P P  |  P P  |   P   | - if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2; scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2) violate MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled onto any zone. When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence to topologies that satisfy it. It's a required field. Default value is 1 and 0 is not allowed. |
-| `minDomains` | integer | MinDomains indicates a minimum number of eligible domains. When the number of eligible domains with matching topology keys is less than minDomains, Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed. And when the number of eligible domains with matching topology keys equals or greater than minDomains, this value has no effect on scheduling. As a result, when the number of eligible domains is less than minDomains, scheduler won't schedule more than maxSkew Pods to those domains. If value is nil, the constraint behaves as if MinDomains is equal to 1. Valid values are integers greater than 0. When value is not nil, WhenUnsatisfiable must be DoNotSchedule.  For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same labelSelector spread as 2/2/2: | zone1 | zone2 | zone3 | |  P P  |  P P  |  P P  | The number of domains is less than 5(MinDomains), so "global minimum" is treated as 0. In this situation, new pod with the same labelSelector cannot be scheduled, because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones, it will violate MaxSkew.  This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default). |
-| `nodeAffinityPolicy` | string | NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations. - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.  If this value is nil, the behavior is equivalent to the Honor policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag. |
-| `nodeTaintsPolicy` | string | NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew. Options are: - Honor: nodes without taints, along with tainted nodes for which the incoming pod has a toleration, are included. - Ignore: node taints are ignored. All nodes are included.  If this value is nil, the behavior is equivalent to the Ignore policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag. |
-| `topologyKey` | string | TopologyKey is the key of node labels. Nodes that have a label with this key and identical values are considered to be in the same topology. We consider each <key, value> as a "bucket", and try to put balanced number of pods into each bucket. We define a domain as a particular instance of a topology. Also, we define an eligible domain as a domain whose nodes meet the requirements of nodeAffinityPolicy and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology. It's a required field. |
-| `whenUnsatisfiable` | string | WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy the spread constraint. - DoNotSchedule (default) tells the scheduler not to schedule it. - ScheduleAnyway tells the scheduler to schedule the pod in any location,   but giving higher precedence to topologies that would help reduce the   skew. A constraint is considered "Unsatisfiable" for an incoming pod if and only if every possible node assignment for that pod would violate "MaxSkew" on some topology. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 3/1/1: | zone1 | zone2 | zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler won't make it *more* imbalanced. It's a required field. |
 
 ### Cluster Condition
 
@@ -361,14 +336,14 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | The PersistentVolume metadata. Must include the `name` field. Required. |
+| `metadata` | [Object Meta](k8s1.28.2.md#object-meta) | The PersistentVolume metadata. Must include the `name` field. Required. |
 | `spec` | [Persistent Volume Spec](#persistent-volume-spec) | The specification of a persistent volume for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolume specifications. |
 
 ### Persistent Volume Claim
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | The PersistentVolumeClaim metadata. Must include the `name` field. Required. |
+| `metadata` | [Object Meta](k8s1.28.2.md#object-meta) | The PersistentVolumeClaim metadata. Must include the `name` field. Required. |
 | `spec` | [Persistent Volume Claim Spec](#persistent-volume-claim-spec) | The specifications of a persistent volume claim for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolumeClaim specifications. |
 
 ### Auxiliary Image
@@ -410,8 +385,8 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
 | Name | Type | Description |
 | --- | --- | --- |
 | `capacity` | Map | Capacity is the description of the persistent volume's resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity |
-| `hostPath` | [Host Path Volume Source](k8s1.13.5.md#host-path-volume-source) | HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath. Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling. |
-| `nfs` | [NFS Volume Source](k8s1.13.5.md#nfs-volume-source) | nfs represents an NFS mount on the host. Provisioned by an admin. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs. Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling. |
+| `hostPath` | [Host Path Volume Source](k8s1.28.2.md#host-path-volume-source) | HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath. Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling. |
+| `nfs` | [NFS Volume Source](k8s1.28.2.md#nfs-volume-source) | nfs represents an NFS mount on the host. Provisioned by an admin. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs. Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling. |
 | `persistentVolumeReclaimPolicy` | string | PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming |
 | `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
 
@@ -419,7 +394,7 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
+| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
 | `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
 | `volumeName` | string | VolumeName is the binding reference to the PersistentVolume backing this claim. |
 

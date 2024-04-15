@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class SchemaGeneratorTest {
 
   private static final String K8S_SCHEMA_URL =
-      "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json";
+      "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.9.0/_definitions.json";
   private static final String K8S_CACHE_FILE = "caches/kubernetes-1.9.0.json";
   private final SchemaGenerator generator = new SchemaGenerator();
 

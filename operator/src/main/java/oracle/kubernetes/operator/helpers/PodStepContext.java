@@ -41,6 +41,7 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ProbeBuilder;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -907,25 +908,44 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private V1Probe createReadinessProbe(PodTuning tuning) {
-    V1Probe readinessProbe = new V1Probe();
-    readinessProbe
-        .initialDelaySeconds(getReadinessProbeInitialDelaySeconds(tuning))
-        .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
-        .periodSeconds(getReadinessProbePeriodSeconds(tuning))
-        .failureThreshold(getReadinessProbeFailureThreshold(tuning));
+    V1Probe readinessProbe = getReadinessProbe();
 
-    // Add the success threshold only if the value is non-default to avoid pod roll.
-    if (getReadinessProbeSuccessThreshold(tuning) != DEFAULT_SUCCESS_THRESHOLD) {
-      readinessProbe.successThreshold(getReadinessProbeSuccessThreshold(tuning));
+    if (readinessProbe.getInitialDelaySeconds() == null) {
+      readinessProbe.setInitialDelaySeconds(tuning.getReadinessProbeInitialDelaySeconds());
+    }
+    if (readinessProbe.getTimeoutSeconds() == null) {
+      readinessProbe.setTimeoutSeconds(tuning.getReadinessProbeTimeoutSeconds());
+    }
+    if (readinessProbe.getPeriodSeconds() == null) {
+      readinessProbe.setPeriodSeconds(tuning.getReadinessProbePeriodSeconds());
+    }
+    if (readinessProbe.getFailureThreshold() == null) {
+      readinessProbe.setFailureThreshold(tuning.getReadinessProbeFailureThreshold());
+    }
+    if (readinessProbe.getSuccessThreshold() == null
+        && tuning.getReadinessProbeSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+      readinessProbe.setSuccessThreshold(tuning.getReadinessProbeSuccessThreshold());
     }
 
     try {
-      readinessProbe =
-          readinessProbe.httpGet(
-              httpGetAction(
-                  READINESS_PATH,
-                  getLocalAdminProtocolChannelPort(),
-                  isLocalAdminProtocolChannelSecure()));
+      V1HTTPGetAction httpGetAction = readinessProbe.getHttpGet();
+      if (httpGetAction != null) {
+        if (httpGetAction.getPath() == null) {
+          httpGetAction.setPath(READINESS_PATH);
+        }
+        if (httpGetAction.getPort() == null) {
+          httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
+        }
+        if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
+          httpGetAction.setScheme("HTTPS");
+        }
+      } else if (readinessProbe.getExec() == null
+          && readinessProbe.getTcpSocket() == null && readinessProbe.getGrpc() == null) {
+        readinessProbe.setHttpGet(new V1HTTPGetAction()
+                .path(READINESS_PATH)
+                .port(new IntOrString(getLocalAdminProtocolChannelPort()))
+                .scheme(isLocalAdminProtocolChannelSecure() ? "HTTPS" : null));
+      }
     } catch (Exception e) {
       // do nothing
     }
@@ -933,77 +953,54 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1HTTPGetAction httpGetAction(String path, int port, boolean useHttps) {
-    V1HTTPGetAction getAction = new V1HTTPGetAction();
-    getAction.path(path).port(new IntOrString(port));
-    if (useHttps) {
-      getAction.scheme("HTTPS");
-    }
-    return getAction;
-  }
-
-  private int getReadinessProbePeriodSeconds(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getReadinessProbe().getPeriodSeconds())
-        .orElse(tuning.getReadinessProbePeriodSeconds());
-  }
-
-  private int getReadinessProbeTimeoutSeconds(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getReadinessProbe().getTimeoutSeconds())
-        .orElse(tuning.getReadinessProbeTimeoutSeconds());
-  }
-
-  private int getReadinessProbeInitialDelaySeconds(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getReadinessProbe().getInitialDelaySeconds())
-        .orElse(tuning.getReadinessProbeInitialDelaySeconds());
-  }
-
-  private int getReadinessProbeSuccessThreshold(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getReadinessProbe().getSuccessThreshold())
-            .orElse(tuning.getReadinessProbeSuccessThreshold());
-  }
-
-  private int getReadinessProbeFailureThreshold(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getReadinessProbe().getFailureThreshold())
-            .orElse(tuning.getReadinessProbeFailureThreshold());
+  private V1Probe getReadinessProbe() {
+    return Optional.ofNullable(getServerSpec().getReadinessProbe())
+        .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
   private V1Probe createLivenessProbe(PodTuning tuning) {
-    V1Probe livenessProbe = new V1Probe()
-        .initialDelaySeconds(getLivenessProbeInitialDelaySeconds(tuning))
-        .timeoutSeconds(getLivenessProbeTimeoutSeconds(tuning))
-        .periodSeconds(getLivenessProbePeriodSeconds(tuning))
-        .failureThreshold(getLivenessProbeFailureThreshold(tuning));
+    V1Probe livenessProbe = getLivenessProbe();
 
-    // Add the success threshold only if the value is non-default to avoid pod roll.
-    if (getLivenessProbeSuccessThreshold(tuning) != DEFAULT_SUCCESS_THRESHOLD) {
-      livenessProbe.successThreshold(getLivenessProbeSuccessThreshold(tuning));
+    if (livenessProbe.getInitialDelaySeconds() == null) {
+      livenessProbe.setInitialDelaySeconds(tuning.getLivenessProbeInitialDelaySeconds());
     }
-    return livenessProbe.exec(execAction(LIVENESS_PROBE));
+    if (livenessProbe.getTimeoutSeconds() == null) {
+      livenessProbe.setTimeoutSeconds(tuning.getLivenessProbeTimeoutSeconds());
+    }
+    if (livenessProbe.getPeriodSeconds() == null) {
+      livenessProbe.setPeriodSeconds(tuning.getLivenessProbePeriodSeconds());
+    }
+    if (livenessProbe.getFailureThreshold() == null) {
+      livenessProbe.setFailureThreshold(tuning.getLivenessProbeFailureThreshold());
+    }
+    if (livenessProbe.getSuccessThreshold() == null
+            && tuning.getLivenessProbeSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+      livenessProbe.setSuccessThreshold(tuning.getLivenessProbeSuccessThreshold());
+    }
+
+    try {
+      V1HTTPGetAction httpGetAction = livenessProbe.getHttpGet();
+      if (httpGetAction != null) {
+        if (httpGetAction.getPort() == null) {
+          httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
+        }
+        if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
+          httpGetAction.setScheme("HTTPS");
+        }
+      } else if (livenessProbe.getExec() == null
+              && livenessProbe.getTcpSocket() == null && livenessProbe.getGrpc() == null) {
+        livenessProbe.setExec(execAction(LIVENESS_PROBE));
+      }
+    } catch (Exception e) {
+      // do nothing
+    }
+
+    return livenessProbe;
   }
 
-  private int getLivenessProbeInitialDelaySeconds(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getLivenessProbe().getInitialDelaySeconds())
-        .orElse(tuning.getLivenessProbeInitialDelaySeconds());
-  }
-
-  private int getLivenessProbeTimeoutSeconds(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getLivenessProbe().getTimeoutSeconds())
-        .orElse(tuning.getLivenessProbeTimeoutSeconds());
-  }
-
-  private int getLivenessProbePeriodSeconds(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getLivenessProbe().getPeriodSeconds())
-        .orElse(tuning.getLivenessProbePeriodSeconds());
-  }
-
-  private int getLivenessProbeSuccessThreshold(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getLivenessProbe().getSuccessThreshold())
-            .orElse(tuning.getLivenessProbeSuccessThreshold());
-  }
-
-  private int getLivenessProbeFailureThreshold(PodTuning tuning) {
-    return Optional.ofNullable(getServerSpec().getLivenessProbe().getFailureThreshold())
-            .orElse(tuning.getLivenessProbeFailureThreshold());
+  private V1Probe getLivenessProbe() {
+    return Optional.ofNullable(getServerSpec().getLivenessProbe())
+        .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
   private boolean mockWls() {

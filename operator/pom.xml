@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2024, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -170,7 +170,7 @@
             <configuration>
               <rootClass>oracle.kubernetes.weblogic.domain.model.DomainResource</rootClass>
               <outputFile>oracle/kubernetes/weblogic/domain/model/Domain.json</outputFile>
-              <kubernetesVersion>1.13.5</kubernetesVersion>
+              <kubernetesVersion>1.28.2</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
             </configuration>
           </execution>
@@ -183,7 +183,7 @@
             <configuration>
               <rootClass>oracle.kubernetes.weblogic.domain.model.ClusterResource</rootClass>
               <outputFile>oracle/kubernetes/weblogic/domain/model/Cluster.json</outputFile>
-              <kubernetesVersion>1.13.5</kubernetesVersion>
+              <kubernetesVersion>1.28.2</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
             </configuration>
           </execution>

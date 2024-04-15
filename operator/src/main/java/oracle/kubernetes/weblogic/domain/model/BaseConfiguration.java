@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -146,7 +147,7 @@ public abstract class BaseConfiguration {
     serverPod.setLivenessProbeThresholds(successThreshold, failureThreshold);
   }
 
-  ProbeTuning getLivenessProbe() {
+  V1Probe getLivenessProbe() {
     return serverPod.getLivenessProbeTuning();
   }
 
@@ -158,7 +159,11 @@ public abstract class BaseConfiguration {
     serverPod.setReadinessProbeThresholds(successThreshold, failureThreshold);
   }
 
-  ProbeTuning getReadinessProbe() {
+  void setReadinessProbeHttpGetActionPath(String httpGetActionPath) {
+    serverPod.setReadinessProbeHttpGetActionPath(httpGetActionPath);
+  }
+
+  V1Probe getReadinessProbe() {
     return serverPod.getReadinessProbeTuning();
   }
 
