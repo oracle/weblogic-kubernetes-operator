@@ -27,12 +27,14 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -478,7 +480,89 @@ public class Domain {
         "Calling curl command");
     return true;
   }
-  
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param opPodName operator pod name
+   * @param opPort operator port
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @return true if REST call succeeds, false otherwise
+   */
+  public static boolean scaleClusterWithRestApiInOpPod(String domainUid,
+                                                       String clusterName,
+                                                       int numOfServers,
+                                                       String opPodName,
+                                                       int opPort,
+                                                       String opNamespace,
+                                                       String opServiceAccount) {
+    LoggingFacade logger = getLogger();
+
+    logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+    String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
+    if (secretName.isEmpty()) {
+      logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+      return false;
+    }
+    logger.info("Got secret {0} of service account {1} in namespace {2}", secretName, opServiceAccount, opNamespace);
+
+    logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
+        + " in namespace {2}", secretName, opServiceAccount, opNamespace);
+    String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
+    if (secretToken.isEmpty()) {
+      logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
+          secretName, opServiceAccount, opNamespace);
+      return false;
+    }
+    logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, secretToken);
+
+    // decode the secret encoded token
+    String decodedToken = OKD ? secretToken : new String(Base64.getDecoder().decode(secretToken));
+    logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, decodedToken);
+    assertNotNull(decodedToken, "Couldn't get secret, token is null");
+
+    // build the curl command to scale the cluster
+    String command = new StringBuffer()
+        .append("curl -g --noproxy '*' -v -k ")
+        .append("-H \"Authorization:Bearer ")
+        .append(decodedToken)
+        .append("\" ")
+        .append("-H Accept:application/json ")
+        .append("-H Content-Type:application/json ")
+        .append("-H X-Requested-By:MyClient ")
+        .append("-d '{\"spec\": {\"replicas\": ")
+        .append(numOfServers)
+        .append("} }' ")
+        .append("-X POST https://")
+        .append(opPodName)
+        .append(":")
+        .append(opPort)
+        .append("/operator/latest/domains/")
+        .append(domainUid)
+        .append("/clusters/")
+        .append(clusterName)
+        .append("/scale").toString();
+
+    String commandToRun = KUBERNETES_CLI + " exec -n " + opNamespace + "  " + opPodName + " -- " + command;
+    logger.info("curl command to run in pod {0} is: {1}", opPodName, commandToRun);
+
+    ExecResult result = null;
+    try {
+      result = ExecCommand.exec(commandToRun, true);
+      logger.info("result is: {0}", result.toString());
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+
+    return true;
+  }
+
   /**
    * Scale the cluster of the domain in the specified namespace with REST API.
    *
