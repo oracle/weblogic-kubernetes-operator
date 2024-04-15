@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -10,7 +10,7 @@ import java.net.URL;
 
 public class KubernetesSchemaReference {
   private static final String K8S_SCHEMA_URL =
-      "https://github.com/garethr/kubernetes-json-schema/blob/master/v%s/_definitions.json";
+      "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v%s/_definitions.json";
   private static final String K8S_SCHEMA_CACHE = "caches/kubernetes-%s.json";
   private static final String K8S_MARKDOWN_LINK = "k8s%s.md";
 

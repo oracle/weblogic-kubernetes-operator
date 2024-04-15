@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -32,6 +32,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
 
   ServerConfigurator withReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold);
+
+  ServerConfigurator withReadinessProbeHttpGetActionPath(String httpGetActionPath);
 
   /**
    * Add a node label to the Servers' node selector.

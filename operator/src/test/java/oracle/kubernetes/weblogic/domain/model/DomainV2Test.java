@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -42,6 +42,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.WebLogicConstants.JRF;
 import static oracle.kubernetes.operator.WebLogicConstants.WLS;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_PATH;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
 import static oracle.kubernetes.weblogic.domain.model.CreateIfNotExists.DOMAIN;
@@ -379,7 +380,8 @@ class DomainV2Test extends DomainTestBase {
   void readinessProbeSettings_returnsConfiguredValues() {
     configureServer(SERVER1)
             .withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD)
-            .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
+            .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD)
+            .withReadinessProbeHttpGetActionPath(CONFIGURED_PATH);
     EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
@@ -387,6 +389,7 @@ class DomainV2Test extends DomainTestBase {
     assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
     assertThat(spec.getReadinessProbe().getSuccessThreshold(), equalTo(CONFIGURED_SUCCESS_THRESHOLD));
     assertThat(spec.getReadinessProbe().getFailureThreshold(), equalTo(CONFIGURED_FAILURE_THRESHOLD));
+    assertThat(spec.getReadinessProbe().getHttpGet().getPath(), equalTo(CONFIGURED_PATH));
   }
 
   @Test
