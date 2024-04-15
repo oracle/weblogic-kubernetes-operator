@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -452,6 +452,29 @@ public class TestActions {
                                                 String opServiceAccount) {
     return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
         externalRestHttpsPort, opNamespace, opServiceAccount);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace using REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param opPodName operator pod name
+   * @param opPort operator port
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @return true if REST call succeeds, false otherwise
+   */
+  public static boolean scaleClusterWithRestApiInOpPod(String domainUid,
+                                                       String clusterName,
+                                                       int numOfServers,
+                                                       String opPodName,
+                                                       int opPort,
+                                                       String opNamespace,
+                                                       String opServiceAccount) {
+    return Domain.scaleClusterWithRestApiInOpPod(domainUid, clusterName, numOfServers,
+        opPodName, opPort, opNamespace, opServiceAccount);
   }
 
   /**

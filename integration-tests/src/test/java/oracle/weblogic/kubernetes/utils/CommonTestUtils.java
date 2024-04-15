@@ -97,6 +97,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiInOpPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
@@ -462,8 +463,10 @@ public class CommonTestUtils {
                                            String myWebAppName,
                                            String curlCmdForWLDFApp,
                                            String curlCmd,
-                                           List<String> expectedServerNames) {
+                                           List<String> expectedServerNames,
+                                           String... args) {
     LoggingFacade logger = getLogger();
+
     // get the original managed server pod creation timestamp before scale
     List<OffsetDateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
@@ -479,13 +482,25 @@ public class CommonTestUtils {
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
         clusterName, domainUid, domainNamespace, replicasAfterScale);
     if (withRestApi) {
-      assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
-          replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
-          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
-              clusterName, domainUid, domainNamespace))
-          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
-              clusterName, domainUid, domainNamespace))
-          .isTrue();
+      if (OKE_CLUSTER && args != null && args.length > 0) {
+        String operatorPodName = (args == null || args.length == 0) ? null : args[0];
+        int opExtPort = 8081;
+        assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApiInOpPod(domainUid, clusterName,
+            replicasAfterScale, operatorPodName, opExtPort, opNamespace, opServiceAccount)))
+            .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
+                clusterName, domainUid, domainNamespace))
+            .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
+                clusterName, domainUid, domainNamespace))
+            .isTrue();
+      } else {
+        assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
+            replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
+            .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
+                clusterName, domainUid, domainNamespace))
+            .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
+                clusterName, domainUid, domainNamespace))
+            .isTrue();
+      }
     } else if (withWLDF) {
       // scale the cluster using WLDF policy
       assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
