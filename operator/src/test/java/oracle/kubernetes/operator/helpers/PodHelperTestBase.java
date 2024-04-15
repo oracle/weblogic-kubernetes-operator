@@ -230,6 +230,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private static final int CONFIGURED_PERIOD = 35;
   public static final int CONFIGURED_FAILURE_THRESHOLD = 1;
   public static final int CONFIGURED_SUCCESS_THRESHOLD = 2;
+  public static final String CONFIGURED_PATH = "/path";
   private static final Integer DEFAULT_SUCCESS_THRESHOLD = null;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";

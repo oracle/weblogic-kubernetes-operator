@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -19,11 +19,13 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -84,8 +86,12 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Settings for the liveness probe associated with a WebLogic Server instance.")
-  private final ProbeTuning livenessProbe = new ProbeTuning();
+  @Description("Settings for the liveness probe associated with a WebLogic Server instance."
+      + " If not specified, the operator will create a probe that executes a script provided by the operator."
+      + " The operator will also fill in any missing tuning-related fields, if they are unspecified."
+      + " Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope"
+      + " defines a different action, such as a different script to execute.")
+  private V1Probe livenessProbe = null;
 
   /**
    * Defines the settings for the readiness probe. Any that are not specified will default to the
@@ -93,8 +99,14 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Settings for the readiness probe associated with a WebLogic Server instance.")
-  private final ProbeTuning readinessProbe = new ProbeTuning();
+  @Description("Settings for the readiness probe associated with a WebLogic Server instance."
+      + " If not specified, the operator will create an HTTP probe accessing the /weblogic/ready path."
+      + " If an HTTP probe is specified then the operator will fill in `path`, `port`, and `scheme`,"
+      + " if they are missing. The operator will also fill in any missing tuning-related fields"
+      + " if they are unspecified."
+      + " Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope"
+      + " defines a different action, such as a different HTTP path to access.")
+  private V1Probe readinessProbe = null;
 
   /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
@@ -277,6 +289,34 @@ class ServerPod extends KubernetesResource {
       + "state before it considers the pod failed. Defaults to 5 minutes.")
   private Long maxPendingWaitTimeSeconds = null;
 
+  private static boolean hasAnAction(V1Probe probe) {
+    return probe.getExec() != null || probe.getHttpGet() != null
+        || probe.getGrpc() != null || probe.getTcpSocket() != null;
+  }
+
+  private static void copyValues(V1Probe to, V1Probe from) {
+    if (from != null && !(hasAnAction(to) && hasAnAction(from))) {
+      if (to.getInitialDelaySeconds() == null) {
+        to.setInitialDelaySeconds(from.getInitialDelaySeconds());
+      }
+      if (to.getTimeoutSeconds() == null) {
+        to.setTimeoutSeconds(from.getTimeoutSeconds());
+      }
+      if (to.getPeriodSeconds() == null) {
+        to.setPeriodSeconds(from.getPeriodSeconds());
+      }
+      if (to.getSuccessThreshold() == null) {
+        to.setSuccessThreshold(from.getSuccessThreshold());
+      }
+      if (to.getFailureThreshold() == null) {
+        to.setFailureThreshold(from.getFailureThreshold());
+      }
+      if (to.getTerminationGracePeriodSeconds() == null) {
+        to.setTerminationGracePeriodSeconds(from.getTerminationGracePeriodSeconds());
+      }
+    }
+  }
+
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
       if (from.getRequests() != null) {
@@ -371,36 +411,41 @@ class ServerPod extends KubernetesResource {
         .skipWaitingCohEndangeredState(skipWaitingCohEndangeredState);
   }
 
-  ProbeTuning getReadinessProbeTuning() {
+  V1Probe getReadinessProbeTuning() {
     return this.readinessProbe;
   }
 
   void setReadinessProbeTuning(Integer initialDelay, Integer timeout, Integer period) {
-    this.readinessProbe
+    readinessProbe = Optional.ofNullable(readinessProbe).orElse(new V1Probe())
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
         .periodSeconds(period);
   }
 
   void setReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
-    this.readinessProbe
+    readinessProbe = Optional.ofNullable(readinessProbe).orElse(new V1Probe())
         .successThreshold(successThreshold)
         .failureThreshold(failureThreshold);
   }
 
-  ProbeTuning getLivenessProbeTuning() {
+  void setReadinessProbeHttpGetActionPath(String httpGetActionPath) {
+    readinessProbe = Optional.ofNullable(readinessProbe).orElse(new V1Probe())
+        .httpGet(new V1HTTPGetAction().path(httpGetActionPath));
+  }
+
+  V1Probe getLivenessProbeTuning() {
     return this.livenessProbe;
   }
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    this.livenessProbe
+    livenessProbe = Optional.ofNullable(livenessProbe).orElse(new V1Probe())
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
         .periodSeconds(period);
   }
 
   void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
-    this.livenessProbe
+    livenessProbe = Optional.ofNullable(livenessProbe).orElse(new V1Probe())
         .successThreshold(successThreshold)
         .failureThreshold(failureThreshold);
   }
@@ -431,8 +476,16 @@ class ServerPod extends KubernetesResource {
       }
       envFrom.addAll(serverPod1.envFrom);
     }
-    livenessProbe.copyValues(serverPod1.livenessProbe);
-    readinessProbe.copyValues(serverPod1.readinessProbe);
+    if (livenessProbe == null) {
+      livenessProbe = serverPod1.livenessProbe;
+    } else {
+      copyValues(livenessProbe, serverPod1.livenessProbe);
+    }
+    if (readinessProbe == null) {
+      readinessProbe = serverPod1.readinessProbe;
+    } else {
+      copyValues(readinessProbe, serverPod1.readinessProbe);
+    }
     shutdown.copyValues(serverPod1.shutdown);
     for (V1Volume volume : serverPod1.getAdditionalVolumes()) {
       addIfMissing(new V1VolumeBuilder(volume).build());

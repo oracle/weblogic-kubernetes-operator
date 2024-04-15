@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class YamlDocGeneratorTest {
-  private static final String K8S_VERSION = "1.13.5";
+  private static final String K8S_VERSION = "1.28.2";
   private final SchemaGenerator schemaGenerator = new SchemaGenerator();
   @SuppressWarnings("unused")
   @Description("An annotated field")

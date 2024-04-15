@@ -1340,7 +1340,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private void verifyLivenessProbeSuccessThresholdManagedServers() {
-      Optional.of(getAdminServerSpec().getLivenessProbe())
+      Optional.ofNullable(getAdminServerSpec().getLivenessProbe())
           .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
               + ".livenessProbe.successThreshold"));
       getSpec().getManagedServers().forEach(managedServer ->

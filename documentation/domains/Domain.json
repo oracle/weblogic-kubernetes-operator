@@ -367,7 +367,7 @@
           "description": "A list of image pull Secrets for the WebLogic Server image.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
         },
         "fluentdSpecification": {
@@ -426,7 +426,7 @@
         },
         "webLogicCredentialsSecret": {
           "description": "Reference to a Kubernetes Secret that contains the user name and password needed to boot a WebLogic Server under the `username` and `password` fields.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         },
         "adminServer": {
           "description": "Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service.",
@@ -461,7 +461,7 @@
           "description": "References to Cluster resources that describe the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
         },
         "image": {
@@ -621,7 +621,7 @@
         },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the fluentbit container. See `kubectl explain pods.spec.containers.resources`.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "containerArgs": {
           "description": "(Optional) The Fluentbit sidecar container spec\u0027s args. Default is: [ -c, /etc/fluent-bit.conf ] if not specified",
@@ -642,7 +642,7 @@
           "description": "A list of environment variables to set in the fluentbit container. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
         "containerCommand": {
@@ -656,7 +656,7 @@
           "description": "Volume mounts for fluentbit container",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
         }
       }
@@ -683,7 +683,7 @@
         },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "containerArgs": {
           "description": "(Optional) The Fluentd sidecar container spec\u0027s args. Default is: [ -c, /etc/fluentd.conf ] if not specified",
@@ -700,7 +700,7 @@
           "description": "A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
         "containerCommand": {
@@ -714,7 +714,7 @@
           "description": "Volume mounts for fluentd container",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
         }
       }
@@ -762,24 +762,24 @@
       "properties": {
         "podSecurityContext": {
           "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "env": {
           "description": "A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
         "envFrom": {
           "description": "List of sources to populate environment variables in the Introspector Job Pod container. The sources include either a config map or a secret. The operator will not expand the dependent variables in the \u0027envFrom\u0027 source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
           }
         }
       }
@@ -899,7 +899,7 @@
         },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         }
       }
     },
@@ -943,7 +943,7 @@
       "properties": {
         "metadata": {
           "description": "The PersistentVolume metadata. Must include the `name` field. Required.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
         },
         "spec": {
           "description": "The specification of a persistent volume for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolume specifications.",
@@ -956,7 +956,7 @@
       "properties": {
         "metadata": {
           "description": "The PersistentVolumeClaim metadata. Must include the `name` field. Required.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
         },
         "spec": {
           "description": "The specifications of a persistent volume claim for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolumeClaim specifications.",
@@ -977,7 +977,7 @@
         },
         "resources": {
           "description": "Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         }
       }
     },
@@ -990,7 +990,7 @@
         },
         "nfs": {
           "description": "nfs represents an NFS mount on the host. Provisioned by an admin. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs. Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.NFSVolumeSource"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.NFSVolumeSource"
         },
         "persistentVolumeReclaimPolicy": {
           "description": "PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming",
@@ -998,40 +998,11 @@
         },
         "hostPath": {
           "description": "HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath. Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.HostPathVolumeSource"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.HostPathVolumeSource"
         },
         "capacity": {
           "description": "Capacity is the description of the persistent volume\u0027s resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity",
           "$ref": "#/definitions/Map"
-        }
-      }
-    },
-    "ProbeTuning": {
-      "type": "object",
-      "properties": {
-        "failureThreshold": {
-          "default": 1,
-          "description": "Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1.",
-          "type": "integer",
-          "minimum": 1
-        },
-        "periodSeconds": {
-          "description": "The number of seconds between checks.",
-          "type": "integer"
-        },
-        "timeoutSeconds": {
-          "description": "The number of seconds with no response that indicates a failure.",
-          "type": "integer"
-        },
-        "successThreshold": {
-          "default": 1,
-          "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe.",
-          "type": "integer",
-          "minimum": 1
-        },
-        "initialDelaySeconds": {
-          "description": "The number of seconds before the first check is performed.",
-          "type": "integer"
         }
       }
     },
@@ -1066,7 +1037,7 @@
           "description": "If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodReadinessGate"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodReadinessGate"
           }
         },
         "serviceAccountName": {
@@ -1075,7 +1046,7 @@
         },
         "podSecurityContext": {
           "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "priorityClassName": {
           "description": "If specified, indicates the Pod\u0027s priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default. See `kubectl explain pods.spec.priorityClassName`.",
@@ -1092,7 +1063,7 @@
           "description": "HostAliases is an optional list of hosts and IPs that will be injected into the pod\u0027s hosts file if specified. This is only valid for non-hostNetwork pods.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.HostAlias"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.HostAlias"
           }
         },
         "nodeSelector": {
@@ -1106,7 +1077,7 @@
           "description": "Additional volume mounts for the container running a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
         },
         "runtimeClassName": {
@@ -1117,22 +1088,22 @@
           "description": "If specified, the Pod\u0027s tolerations. See `kubectl explain pods.spec.tolerations`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
           }
         },
         "readinessProbe": {
-          "description": "Settings for the readiness probe associated with a WebLogic Server instance.",
-          "$ref": "#/definitions/ProbeTuning"
+          "description": "Settings for the readiness probe associated with a WebLogic Server instance. If not specified, the operator will create an HTTP probe accessing the /weblogic/ready path. If an HTTP probe is specified then the operator will fill in `path`, `port`, and `scheme`, if they are missing. The operator will also fill in any missing tuning-related fields if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different HTTP path to access.",
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "envFrom": {
           "description": "List of sources to populate environment variables in the container running a WebLogic Server instance. The sources include either a config map or a secret. The operator will not expand the dependent variables in the \u0027envFrom\u0027 source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
           }
         },
         "schedulerName": {
@@ -1144,32 +1115,32 @@
           "type": "integer"
         },
         "livenessProbe": {
-          "description": "Settings for the liveness probe associated with a WebLogic Server instance.",
-          "$ref": "#/definitions/ProbeTuning"
+          "description": "Settings for the liveness probe associated with a WebLogic Server instance. If not specified, the operator will create a probe that executes a script provided by the operator. The operator will also fill in any missing tuning-related fields, if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different script to execute.",
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "topologySpreadConstraints": {
           "description": "TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/V1TopologySpreadConstraint"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.TopologySpreadConstraint"
           }
         },
         "volumes": {
           "description": "Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
         },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "env": {
           "description": "A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
         "restartPolicy": {
@@ -1191,14 +1162,14 @@
           "description": "Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         },
         "initContainers": {
           "description": "Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         },
         "shutdown": {
@@ -1207,7 +1178,7 @@
         },
         "affinity": {
           "description": "The Pod\u0027s scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
         }
       }
     },
@@ -1325,52 +1296,6 @@
         }
       }
     },
-    "V1TopologySpreadConstraint": {
-      "description": "TopologySpreadConstraint specifies how to spread matching pods among the given topology.",
-      "type": "object",
-      "properties": {
-        "nodeTaintsPolicy": {
-          "description": "NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew. Options are: - Honor: nodes without taints, along with tainted nodes for which the incoming pod has a toleration, are included. - Ignore: node taints are ignored. All nodes are included.  If this value is nil, the behavior is equivalent to the Ignore policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.",
-          "type": "string"
-        },
-        "whenUnsatisfiable": {
-          "description": "WhenUnsatisfiable indicates how to deal with a pod if it doesn\u0027t satisfy the spread constraint. - DoNotSchedule (default) tells the scheduler not to schedule it. - ScheduleAnyway tells the scheduler to schedule the pod in any location,   but giving higher precedence to topologies that would help reduce the   skew. A constraint is considered \"Unsatisfiable\" for an incoming pod if and only if every possible node assignment for that pod would violate \"MaxSkew\" on some topology. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 3/1/1: | zone1 | zone2 | zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler won\u0027t make it *more* imbalanced. It\u0027s a required field.",
-          "type": "string"
-        },
-        "maxSkew": {
-          "description": "MaxSkew describes the degree to which pods may be unevenly distributed. When `whenUnsatisfiable\u003dDoNotSchedule`, it is the maximum permitted difference between the number of matching pods in the target topology and the global minimum. The global minimum is the minimum number of matching pods in an eligible domain or zero if the number of eligible domains is less than MinDomains. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 2/2/1: In this case, the global minimum is 1. | zone1 | zone2 | zone3 | |  P P  |  P P  |   P   | - if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2; scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2) violate MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled onto any zone. When `whenUnsatisfiable\u003dScheduleAnyway`, it is used to give higher precedence to topologies that satisfy it. It\u0027s a required field. Default value is 1 and 0 is not allowed.",
-          "type": "integer"
-        },
-        "nodeAffinityPolicy": {
-          "description": "NodeAffinityPolicy indicates how we will treat Pod\u0027s nodeAffinity/nodeSelector when calculating pod topology spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations. - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.  If this value is nil, the behavior is equivalent to the Honor policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.",
-          "type": "string"
-        },
-        "labelSelector": {
-          "description": "A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
-        },
-        "minDomains": {
-          "description": "MinDomains indicates a minimum number of eligible domains. When the number of eligible domains with matching topology keys is less than minDomains, Pod Topology Spread treats \"global minimum\" as 0, and then the calculation of Skew is performed. And when the number of eligible domains with matching topology keys equals or greater than minDomains, this value has no effect on scheduling. As a result, when the number of eligible domains is less than minDomains, scheduler won\u0027t schedule more than maxSkew Pods to those domains. If value is nil, the constraint behaves as if MinDomains is equal to 1. Valid values are integers greater than 0. When value is not nil, WhenUnsatisfiable must be DoNotSchedule.  For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same labelSelector spread as 2/2/2: | zone1 | zone2 | zone3 | |  P P  |  P P  |  P P  | The number of domains is less than 5(MinDomains), so \"global minimum\" is treated as 0. In this situation, new pod with the same labelSelector cannot be scheduled, because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones, it will violate MaxSkew.  This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).",
-          "type": "integer"
-        },
-        "topologyKey": {
-          "description": "TopologyKey is the key of node labels. Nodes that have a label with this key and identical values are considered to be in the same topology. We consider each \u003ckey, value\u003e as a \"bucket\", and try to put balanced number of pods into each bucket. We define a domain as a particular instance of a topology. Also, we define an eligible domain as a domain whose nodes meet the requirements of nodeAffinityPolicy and nodeTaintsPolicy. e.g. If TopologyKey is \"kubernetes.io/hostname\", each Node is a domain of that topology. And, if TopologyKey is \"topology.kubernetes.io/zone\", each zone is a domain of that topology. It\u0027s a required field.",
-          "type": "string"
-        },
-        "matchLabelKeys": {
-          "description": "MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated. The keys are used to lookup values from the incoming pod labels, those key-value labels are ANDed with labelSelector to select the group of existing pods over which spreading will be calculated for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. MatchLabelKeys cannot be set when LabelSelector isn\u0027t set. Keys that don\u0027t exist in the incoming pod labels will be ignored. A null or empty list means only match against labelSelector.  This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "maxSkew",
-        "topologyKey",
-        "whenUnsatisfiable"
-      ]
-    },
     "WDTTimeouts": {
       "type": "object",
       "properties": {
@@ -1420,7 +1345,7 @@
   "properties": {
     "metadata": {
       "description": "The resource metadata. Must include the `name` and `namespace`. Required.",
-      "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+      "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
     },
     "apiVersion": {
       "description": "The API version defines the versioned schema of this Domain. Required.",
