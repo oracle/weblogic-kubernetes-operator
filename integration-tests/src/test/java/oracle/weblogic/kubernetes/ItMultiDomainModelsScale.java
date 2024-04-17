@@ -935,7 +935,7 @@ class ItMultiDomainModelsScale {
 
   private String  createIngressHostRoutingIfNotExists(String domainNamespace,
                                                       String domainUid) {
-    String ingressName = domainNamespace + "-" + domainUid + "-" + adminServerName;
+    String ingressName = domainNamespace + "-" + domainUid + "-" + adminServerName + "-" + 7001;
     String hostHeader = "";
     try {
       List<String> ingresses = listIngresses(domainNamespace);
