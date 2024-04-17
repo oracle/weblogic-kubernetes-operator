@@ -25,6 +25,8 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -34,6 +36,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -50,6 +53,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -61,10 +65,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.adminLoginPageAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
@@ -85,9 +93,11 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -129,6 +139,7 @@ class ItSystemResOverrides {
 
   static Path sitconfigAppPath;
   String overridecm = "configoverride-cm";
+  String uniquePath;
   LinkedHashMap<String, OffsetDateTime> podTimestamps;
 
   private static LoggingFacade logger = null;
@@ -153,7 +164,7 @@ class ItSystemResOverrides {
     logger.info("Assign a unique namespace for domain namspace");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
-
+    uniquePath = "/shared/" + domainNamespace + "/domains";
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
@@ -163,7 +174,7 @@ class ItSystemResOverrides {
 
     //create and start WebLogic domain
     createDomain();
-    restartDomain();
+    //restartDomain();
 
     // build the sitconfig application
     Path distDir = buildApplication(Paths.get(APP_DIR, "sitconfig"),
@@ -370,7 +381,6 @@ class ItSystemResOverrides {
 
   //create a standard WebLogic domain.
   private void createDomain() {
-    String uniquePath = "/shared/" + domainNamespace + "/domains";
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -378,7 +388,39 @@ class ItSystemResOverrides {
 
     createPV(pvName, domainUid, this.getClass().getSimpleName());
     createPVC(pvName, pvcName, domainUid, domainNamespace);
+    LoggingFacade logger = getLogger();
+    String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
+    // check the persistent volume and persistent volume claim exist
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+            String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+        logger,
+        "persistent volume {0} exists",
+        pvName);
 
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+                pvcName, domainNamespace)),
+        logger,
+        "persistent volume claim {0} exists in namespace {1}",
+        pvcName,
+        domainNamespace);
+    logger.info("Setting up WebLogic pod to access PV");
+    String mountPath = "/shared";
+    V1Pod pvPod = setupWebLogicPod(domainNamespace, pvName, pvcName, mountPath);
+    logger.info("Changing file ownership {0} to oracle:root in PV", mountPath);
+    String argCommand = "chown -R 1000:0 " + mountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:0 " + mountPath
+          + "/. && find "
+          + mountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+    }
+    //Calls execInPod to change the ownership of files in PV - not valid in OKD
+    if (!OKD) {
+      execInPod(pvPod, null, true, argCommand);
+    }
     t3ChannelPort = getNextFreePort();
 
     // create a temporary WebLogic domain property file
@@ -505,7 +547,13 @@ class ItSystemResOverrides {
       hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, adminPort);
       assertDoesNotThrow(() -> verifyAdminServerRESTAccess("localhost", 
           TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
-    }     
+    }
+    logger.info("Validating WebLogic admin server access by login to console");
+    assertTrue(assertDoesNotThrow(
+        () -> adminLoginPageAccessible(adminServerPodName, "7001",
+            domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        "Access to admin console page failed"), "Console login validation failed");
+
   }
 
   //deploy application sitconfig.war to domain
@@ -558,6 +606,9 @@ class ItSystemResOverrides {
         // script
         .addArgsItem("-skipWLSModuleScanning")
         .addArgsItem("-loadProperties")
+        .addEnvItem(new V1EnvVar()
+        .name("DOMAIN_HOME_DIR")
+        .value(uniquePath + "/" + domainUid))
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName());
     //domain property file
 
@@ -586,5 +637,53 @@ class ItSystemResOverrides {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
+  }
+
+  private static V1Pod setupWebLogicPod(String namespace, String pvName, String pvcName, String mountPath) {
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(namespace);
+
+    final String podName = "weblogic-pv-pod-" + namespace;
+    V1PodSpec podSpec = new V1PodSpec()
+        .containers(Arrays.asList(
+            new V1Container()
+                .name("weblogic-container")
+                .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                .imagePullPolicy(IMAGE_PULL_POLICY)
+                .addCommandItem("sleep")
+                .addArgsItem("600")
+                .volumeMounts(Arrays.asList(
+                    new V1VolumeMount()
+                        .name(pvName) // mount the persistent volume to /shared inside the pod
+                        .mountPath(mountPath)))))
+        .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
+            .name(BASE_IMAGES_REPO_SECRET_NAME)))
+        // the persistent volume claim used by the test
+        .volumes(Arrays.asList(
+            new V1Volume()
+                .name(pvName) // the persistent volume that needs to be archived
+                .persistentVolumeClaim(
+                    new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName))));
+    if (!OKD) {
+      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, mountPath)));
+    }
+
+    V1Pod podBody = new V1Pod()
+        .spec(podSpec)
+        .metadata(new V1ObjectMeta().name(podName))
+        .apiVersion("v1")
+        .kind("Pod");
+
+    V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
+
+    testUntil(
+        podReady(podName, null, namespace),
+        logger,
+        "{0} to be ready in namespace {1}",
+        podName,
+        namespace);
+
+    return wlsPod;
   }
 }
