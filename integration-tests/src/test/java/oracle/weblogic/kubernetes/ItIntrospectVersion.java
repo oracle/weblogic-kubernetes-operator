@@ -171,7 +171,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-sequential1")
+@Tag("oke-gate")
 @Tag("oke-arm")
 class ItIntrospectVersion {
 
