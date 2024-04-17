@@ -203,8 +203,13 @@ class ItMonitoringExporterWebApp {
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
     if (!OKD) {
       // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 
-          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+      if (!OKE_CLUSTER_PRIVATEIP) {
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+            NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+      } else {
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+            0,0);
+      }
 
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
@@ -463,7 +468,9 @@ class ItMonitoringExporterWebApp {
       }
       String ingressClassName = nginxHelmParams.getIngressClassName();
       createIngressPathRouting(monitoringNS, "/api",
-          prometheusReleaseName + "-server", 80, ingressClassName);
+          prometheusReleaseName + "-server", 80, ingressClassName,
+          prometheusReleaseName
+              + "." + monitoringNS);
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -646,7 +653,8 @@ class ItMonitoringExporterWebApp {
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
       checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22"
               + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-          cluster1Name + "-managed-server1", hostPortPrometheus);
+          cluster1Name + "-managed-server1", hostPortPrometheus, prometheusReleaseName
+              + "." + monitoringNS);
     }
 
   }
@@ -668,7 +676,9 @@ class ItMonitoringExporterWebApp {
     if (!OKD) {
       String sessionAppPrometheusSearchKey =
           "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus,
+          prometheusReleaseName
+              + "." + monitoringNS);
     }
   }
 
@@ -809,7 +819,8 @@ class ItMonitoringExporterWebApp {
     assertFalse(page.asNormalizedText().contains("metricsNameSnakeCase"));
     if (!OKD) {
       String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
+      checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus, prometheusReleaseName
+          + "." + monitoringNS);
     }
   }
 
@@ -831,7 +842,8 @@ class ItMonitoringExporterWebApp {
 
       String prometheusSearchKey1 =
           "heap_free_current";
-      checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1", hostPortPrometheus);
+      checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1", hostPortPrometheus, prometheusReleaseName
+          + "." + monitoringNS);
     }
   }
 
@@ -849,7 +861,9 @@ class ItMonitoringExporterWebApp {
     assertTrue(page.asNormalizedText().contains("domainQualifier"));
     if (!OKD) {
       String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"", hostPortPrometheus);
+      checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"", hostPortPrometheus,
+          prometheusReleaseName
+              + "." + monitoringNS);
     }
   }
 

@@ -253,7 +253,8 @@ class ItMonitoringExporterSideCar {
 
         String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus,
+            prometheusReleaseName + "." + monitoringNS);
       }
       DomainResource domain = getDomainCustomResource(domain3Uid, domain3Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
@@ -376,7 +377,8 @@ class ItMonitoringExporterSideCar {
     checkPodReadyAndServiceExists(managedServerPodName + "1", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPodName + "2", domainUid, domainNamespace);
     if (!OKD) {
-      checkMetricsViaPrometheus(promSearchString, expectedVal, hostPortPrometheus);
+      checkMetricsViaPrometheus(promSearchString, expectedVal, hostPortPrometheus,
+          prometheusReleaseName + "." + monitoringNS);
     }
   }
 
@@ -403,9 +405,11 @@ class ItMonitoringExporterSideCar {
 
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
       checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-          cluster1Name + "-managed-server1",hostPortPrometheus);
+          cluster1Name + "-managed-server1",hostPortPrometheus,
+          prometheusReleaseName + "." + monitoringNS);
       checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server2%22%7D%5B15s%5D",
-          cluster2Name + "-managed-server2",hostPortPrometheus);
+          cluster2Name + "-managed-server2",hostPortPrometheus,
+          prometheusReleaseName + "." + monitoringNS);
     } finally {
       shutdownDomain(domain1Uid, domain1Namespace);
     }
@@ -436,7 +440,8 @@ class ItMonitoringExporterSideCar {
 
         String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus,
+            prometheusReleaseName + "." + monitoringNS);
       }
 
       DomainResource domain = getDomainCustomResource(domain2Uid,domain2Namespace);
@@ -478,7 +483,8 @@ class ItMonitoringExporterSideCar {
       assertDoesNotThrow(() -> ExecCommand.exec(command2, true));
 
       createIngressPathRouting(monitoringNS, "/api",
-            prometheusReleaseName + "-server", 80, ingressClassName);
+            prometheusReleaseName + "-server", 80, ingressClassName, prometheusReleaseName
+              + "." + monitoringNS);
 
       if (!OKE_CLUSTER_PRIVATEIP) {
         nodeportPrometheus = promHelmParams.getNodePortServer();

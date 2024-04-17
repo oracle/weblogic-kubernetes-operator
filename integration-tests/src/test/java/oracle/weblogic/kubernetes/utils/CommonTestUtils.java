@@ -2448,9 +2448,52 @@ public class CommonTestUtils {
    * @param serviceName name of the service for which to create ingress routing
    * @param port container port of the service
    * @param ingressClassName ingress class name
+   * @param host ingress host name
    */
   public static void createIngressPathRouting(String namespace, String path,
-                                              String serviceName, int port, String ingressClassName) {
+                                              String serviceName, int port, String ingressClassName,
+                                              String host) {
+    // create an ingress in domain namespace
+    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
+        .path(path)
+        .pathType("Prefix")
+        .backend(new V1IngressBackend()
+            .service(new V1IngressServiceBackend()
+                .name(serviceName)
+                .port(new V1ServiceBackendPort().number(port)))
+        );
+
+    // create ingress rule
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    V1IngressRule ingressRule = new V1IngressRule()
+        .host(host)
+        .http(new V1HTTPIngressRuleValue()
+            .paths(Collections.singletonList(httpIngressPath)));
+    ingressRules.add(ingressRule);
+
+    String ingressName = namespace + "-" + serviceName;
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null,
+        ingressClassName, ingressRules, null));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
+        .contains(ingressName);
+    getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
+  }
+
+  /**
+   * Create ingress resource for a single service.
+   *
+   * @param namespace namespace in which the service exists
+   * @param path path prefix
+   * @param serviceName name of the service for which to create ingress routing
+   * @param port container port of the service
+   * @param ingressClassName ingress class name
+   */
+  public static void createIngressPathRouting(String namespace, String path,
+                                                     String serviceName, int port, String ingressClassName) {
     // create an ingress in domain namespace
     V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
         .path(path)

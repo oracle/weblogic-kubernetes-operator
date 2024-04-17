@@ -517,12 +517,12 @@ public class PersistentVolumeUtils {
    * @param mountPath -mountPath
    */
   public static void changePermissionOnPv(String namespace, String pvName, String pvcName, String mountPath) {
-    String argCommand = "chown -R 1000:1000 " + mountPath;
+    String argCommand = "chown -R 1000:0 " + mountPath;
     if (OKE_CLUSTER) {
-      argCommand = "chown 1000:1000 " + mountPath
+      argCommand = "chown 1000:0 " + mountPath
           + "/. && find "
           + mountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
     }
 
     createTestRepoSecret(namespace);

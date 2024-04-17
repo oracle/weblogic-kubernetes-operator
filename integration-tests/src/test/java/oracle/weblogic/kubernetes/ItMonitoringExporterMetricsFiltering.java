@@ -557,7 +557,8 @@ class ItMonitoringExporterMetricsFiltering {
     // create ingress rules with non-tls host routing, tls host routing and path routing for Traefik
 
     createIngressPathRouting(monitoringNS, "/api",
-        prometheusReleaseName + "-server", 80, ingressClassName);
+        prometheusReleaseName + "-server", 80, ingressClassName,prometheusReleaseName
+            + "." + monitoringNS);
 
   }
 
@@ -698,7 +699,8 @@ class ItMonitoringExporterMetricsFiltering {
       Thread.sleep(20 * 1000);
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
       checkMetricsViaPrometheus(checkMetricsPrometheusString,
-          expectedValue, hostPortPrometheus);
+          expectedValue, hostPortPrometheus, prometheusReleaseName
+              + "." + monitoringNS);
     }
   }
 

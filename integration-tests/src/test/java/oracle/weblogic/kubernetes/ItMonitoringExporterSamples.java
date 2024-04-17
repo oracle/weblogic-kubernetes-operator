@@ -78,6 +78,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogForKey;
@@ -116,6 +117,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -244,8 +246,13 @@ class ItMonitoringExporterSamples {
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     if (!OKD) {
       // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 
-          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+      if (!OKE_CLUSTER_PRIVATEIP) {
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+            NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+      } else {
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+            0,0);
+      }
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
           ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST;
@@ -336,7 +343,9 @@ class ItMonitoringExporterSamples {
         logger.info("verify metrics via prometheus");
         String testappPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-        checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", hostPortPrometheus);
+        checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", hostPortPrometheus,
+            prometheusReleaseName
+                + "." + monitoringNS);
         logger.info("fire alert by scaling down");
         fireAlert();
 
@@ -353,7 +362,9 @@ class ItMonitoringExporterSamples {
         editPrometheusCM(oldRegex, newRegex, monitoringNS, prometheusReleaseName + "-server");
         String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus,
+            prometheusReleaseName
+                + "." + monitoringNS);
       }
     } finally {
       shutdownDomain(domain1Uid, domain1Namespace);
@@ -432,7 +443,8 @@ class ItMonitoringExporterSamples {
       }
       String ingressClassName = nginxHelmParams.getIngressClassName();
       createIngressPathRouting(monitoringNS, "/api",
-          prometheusReleaseName + "-server", 80, ingressClassName);
+          prometheusReleaseName + "-server", 80, ingressClassName, prometheusReleaseName
+              + "." + monitoringNS);
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -534,6 +546,12 @@ class ItMonitoringExporterSamples {
     deleteNamespace(monitoringNS);
     uninstallDeploymentService(webhookDepl, webhookService);
     uninstallDeploymentService(coordinatorDepl, coordinatorService);
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
+          .as("Test uninstallNginx1 returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
     // delete coordinator and webhook images
     if (webhookImage != null) {
       deleteImage(webhookImage);
