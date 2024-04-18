@@ -1570,7 +1570,7 @@ class ItIntrospectVersion {
   }
   
   private void updateIngressBackendServicePort(int newAdminPort) throws ApiException {
-    String ingressName = introDomainNamespace + "-" + domainUid + "-" + adminServerName;
+    String ingressName = introDomainNamespace + "-" + domainUid + "-" + adminServerName + "-7001";
     V1Ingress ingress = Ingress.getIngress(introDomainNamespace, ingressName).orElse(null);
     if (ingress != null) {
       logger.info("Updating ingress {0} with new admin port {1}", ingressName, newAdminPort);
@@ -1579,7 +1579,7 @@ class ItIntrospectVersion {
           .setPort(new V1ServiceBackendPort().number(newAdminPort));
       updateIngress(introDomainNamespace, ingress);
     } else {
-      fail("Failed to update ingress");
+      fail("Ingress is null, failed to update ingress");
     }
   }
   
