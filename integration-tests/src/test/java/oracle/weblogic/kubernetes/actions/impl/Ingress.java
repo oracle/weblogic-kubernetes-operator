@@ -25,6 +25,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.INGRESS_API_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.INGRESS_KIND;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listNamespacedIngresses;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
@@ -240,11 +241,7 @@ public class Ingress {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static Optional<V1Ingress> getIngress(String namespace, String ingressName) throws ApiException {
-
-    V1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
-    List<V1Ingress> listOfIngress = ingressList.getItems();
-
-    return listOfIngress.stream().filter(
+    return listNamespacedIngresses(namespace).getItems().stream().filter(
         ingress -> ingress.getMetadata().getName().equals(ingressName)).findAny();
   }
   
