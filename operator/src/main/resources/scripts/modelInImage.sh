@@ -18,7 +18,7 @@ INTROSPECTCM_JDK_PATH="/weblogic-operator/introspectormii/jdk.path"
 INTROSPECTCM_SECRETS_AND_ENV_MD5="/weblogic-operator/introspectormii/secrets_and_env.md5"
 INTROSPECTCM_DOMAIN_WDT_VERSION="/weblogic-operator/introspectormii/domain_wdt_version"
 PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormii/primordial_domainzip.secure"
-WLSDOMAIN_CONFIG_ZIPPED="/weblogic-operator/introspectormii//domainzip.secure"
+WLSDOMAIN_CONFIG_ZIPPED="/weblogic-operator/introspectormii/domainzip.secure"
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
 INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
@@ -505,19 +505,20 @@ createModelDomain() {
     # if the primordial domain already in the configmap, restore it
     #
 
-    if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
-      trace "Using newly created domain"
-    elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-      trace "Using existing primordial domain"
-      restoreIntrospectorPrimordialDomain || return 1
-      # create empty lib since we don't archive it in primordial zip and WDT will fail without it
-      createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
-      # Since the SerializedSystem ini is encrypted, restore it first
-      local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-      encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
-    fi
-
-    wdtUpdateModelDomain
+#    if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
+#      trace "Using newly created domain"
+#    elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+#      trace "Using existing primordial domain"
+#      restoreIntrospectorPrimordialDomain || return 1
+#      # create empty lib since we don't archive it in primordial zip and WDT will fail without it
+#      createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
+#      # Since the SerializedSystem ini is encrypted, restore it first
+#      local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+#      encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+#    fi
+#
+#    # remove   use oracle.imported.salt.file
+#    wdtUpdateModelDomain
 
     # This will be a no op if MII_USE_ONLINE_UPDATE is not defined or false
     wdtHandleOnlineUpdate
@@ -540,6 +541,12 @@ restorePrimordialDomain() {
   restoreEncodedTar "primordial_domainzip.secure" || return 1
 }
 
+restoreDomainSalt() {
+  trace "Restoring Salt file"
+  restoreSaltIni "primordial_domainzip.secure" || return 1
+  encrypt_decrypt_domain_secret "decrypt" /tmp$DOMAIN_HOME ${MII_PASSPHRASE}
+}
+
 restoreIntrospectorPrimordialDomain() {
   cd / || return 1
   cat $(ls /weblogic-operator/introspectormii*/primordial_domainzip.secure | sort -t- -k3) > /tmp/domain.secure || return 1
@@ -556,6 +563,13 @@ restoreEncodedTar() {
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
 
   tar -pxzf /tmp/domain.tar.gz || return 1
+}
+
+restoreSaltIni() {
+  cd / || return 1
+  cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
+  base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
+  tar -pzxvf /tmp/domain.tar.gz -C /tmp  '*/security/SerializedSystemIni.dat' || return 1
 }
 
 # This is before WDT compareModel implementation
@@ -658,14 +672,16 @@ createPrimordialDomain() {
 
   if [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
     # If there is an existing domain in the cm - this is update in the lifecycle
-    # Call WDT validateModel.sh to generate the new merged mdoel
-    trace "Checking if security info has been changed"
-
-    generateMergedModel
-
+    # Call WDT validateModel.sh to generate the new merged model
     # decrypt the merged model from introspect cm
     local DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+
+    restoreDomainSalt
+
+    trace "Checking if security info has been changed"
+    generateMergedModel
+
 
     # Maintain backward compatibility - check first byte to see if it is a json file
     # if yes then it is the not a gzipped and encrypted model, just use it
@@ -713,6 +729,10 @@ createPrimordialDomain() {
         exitOrLoop
       fi
 
+      # always recreate the domain
+
+      recreate_domain=1
+
       # recreate the domain if there is an unsafe security update such as admin password update or security roles
 
       # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
@@ -721,80 +741,78 @@ createPrimordialDomain() {
       # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
       # getDatabaseDefaults).
       #
-      if [ ${security_info_updated} == "true" ] ; then
-        recreate_domain=1
-        if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
-          UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
-        fi
-      fi
+#      if [ ${security_info_updated} == "true" ] ; then
+#        recreate_domain=1
+##        if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
+##          UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+##        fi
+#      fi
 
       # if the domain is JRF and the schema password has been changed. Set this so that the changes are persisted
       # in the primordial domain.
 
-      local rcu_password_updated="false"
-      rcu_password_updated=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
-      if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
-          recreate_domain=1
-          UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
-      fi
+#      local rcu_password_updated="false"
+#      rcu_password_updated=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
+#      if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
+#          recreate_domain=1
+#          UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+#      fi
     fi
-
+  else
+      MII_USE_ONLINE_UPDATE=false
   fi
 
   # If there is no primordial domain or needs to recreate one due to security changes
   trace "recreate domain "${recreate_domain}
-  if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
+#  if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [ "true" == "$MII_USE_ONLINE_UPDATE" ] \
-       && [ "true" == "${security_info_updated}" ] \
-       && [  ${recreate_domain} -eq 1 ] ; then
-      trace SEVERE "There are unsupported security realm related changes to a Model In Image model and" \
-        "'spec.configuration.model.onlineUpdate.enabled=true'; WDT currently does not" \
-        "support online changes for most security realm related mbeans. Use offline update" \
-        "to update the domain by setting 'domain.spec.configuration.model.onlineUpdate.enabled'" \
-        "to 'false' and trying again."
-      exitOrLoop
-    fi
-
-    trace "No primordial domain or need to create again because of changes require domain recreation"
-
-    #if } -eq 1 ] && [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ]; then
-
-
-    wdtCreatePrimordialDomain
-    create_primordial_tgz=1
-    MII_USE_ONLINE_UPDATE=false
+  if [ "true" == "$MII_USE_ONLINE_UPDATE" ] \
+     && [ "true" == "${security_info_updated}" ] \
+     && [  ${recreate_domain} -eq 1 ] ; then
+    trace SEVERE "There are unsupported security realm related changes to a Model In Image model and" \
+      "'spec.configuration.model.onlineUpdate.enabled=true'; WDT currently does not" \
+      "support online changes for most security realm related mbeans. Use offline update" \
+      "to update the domain by setting 'domain.spec.configuration.model.onlineUpdate.enabled'" \
+      "to 'false' and trying again."
+    exitOrLoop
   fi
+
+  trace "No primordial domain or need to create again because of changes require domain recreation"
+
+  wdtCreatePrimordialDomain
+  create_primordial_tgz=1
+    #MII_USE_ONLINE_UPDATE=false
+#  fi
 
   # tar up primordial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
   # introspectDomain.py
 
-  if [ ${create_primordial_tgz} -eq 1 ]; then
-    empath=""
-    if [ "${WDT_DOMAIN_TYPE}" != "WLS" ] ; then
-      empath=$(grep "/em.ear" ${DOMAIN_HOME}/config/config.xml | grep -oPm1 "(?<=<source-path>)[^<]+")
-    fi
-
-    # Before targz it, we encrypt the SerializedSystemIni.dat, first save the original
-
-    cp ${DOMAIN_HOME}/security/SerializedSystemIni.dat /tmp/sii.dat.saved
-
-    local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-    encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
-
-    if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
-      # Operator running on Openshift platform - change file permissions in the DOMAIN_HOME dir to give
-      # group same permissions as user .
-      chmod -R g=u ${DOMAIN_HOME} || return 1
-    fi
-
-    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \
-    --exclude ${DOMAIN_HOME}/lib --exclude ${DOMAIN_HOME}/backup_config ${empath} ${DOMAIN_HOME}/*
-
-    # Put back the original one so that update can continue
-    mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
-
+#  if [ ${create_primordial_tgz} -eq 1 ]; then
+  empath=""
+  if [ "${WDT_DOMAIN_TYPE}" != "WLS" ] ; then
+    empath=$(grep "/em.ear" ${DOMAIN_HOME}/config/config.xml | grep -oPm1 "(?<=<source-path>)[^<]+")
   fi
+
+  # Before targz it, we encrypt the SerializedSystemIni.dat, first save the original
+
+  cp ${DOMAIN_HOME}/security/SerializedSystemIni.dat /tmp/sii.dat.saved
+
+  local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+  encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+
+  if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
+    # Operator running on Openshift platform - change file permissions in the DOMAIN_HOME dir to give
+    # group same permissions as user .
+    chmod -R g=u ${DOMAIN_HOME} || return 1
+  fi
+
+  tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \
+  --exclude ${DOMAIN_HOME}/lib --exclude ${DOMAIN_HOME}/backup_config ${empath} ${DOMAIN_HOME}/*
+
+  # Put back the original one so that the process node manager and introspector works later
+  mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
+
+#  fi
 
   trace "Exiting createPrimordialDomain"
 
@@ -896,6 +914,11 @@ wdtCreatePrimordialDomain() {
   wdtArgs+=" ${OPSS_FLAGS}"
   wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
 
+  if [ -f /tmp$DOMAIN_HOME/security/SerializedSystemIni.dat ] ; then
+    export WLSDEPLOY_PROPERTIES="$WLSDEPLOY_PROPERTIES -Doracle.imported.salt.file=/tmp$DOMAIN_HOME/security/SerializedSystemIni.dat"
+    trace "Found previous salt file, setting system properties to create the domain"
+  fi
+
   trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
 
   expandWdtArchiveCustomDir
@@ -952,11 +975,20 @@ wdtCreatePrimordialDomain() {
     exitOrLoop
   else
     trace "WDT Create Domain Succeeded, ret=${ret}:"
+    trace "Domain Created Salt key md5"
+    md5sum $DOMAIN_HOME/security/SerializedSystemIni.dat
     cat ${WDT_OUTPUT}
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ]; then
       CREATED_JRF_PRIMODIAL="true"
     fi
   fi
+
+  local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+
+  gzip ${DOMAIN_HOME}/wlsdeploy/domain_model.json || exitOrLoop
+  base64 ${DOMAIN_HOME}/wlsdeploy/domain_model.json.gz > ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 || exitOrLoop
+  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
+    ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
   wdtRotateAndCopyLogFile "${WDT_CREATE_DOMAIN_LOG}"
   wdtRotateAndCopyOutFile
@@ -1092,6 +1124,7 @@ wdtHandleOnlineUpdate() {
   fi
   local ret=0
 
+  # TODO  Check --- MAY NOT NEED THIS since we always create domain and the DOMAIN_HOME should hava everything in it.
   # We need to extract all the archives, WDT online checks for file existence
   # even for delete
   #
@@ -1362,10 +1395,10 @@ prepareMIIServer() {
     return 1
   fi
 
-  if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
-    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
-    return 1
-  fi
+#  if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
+#    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
+#    return 1
+#  fi
 
   trace "Model-in-Image: Restoring primordial domain"
   restorePrimordialDomain || return 1
@@ -1388,8 +1421,10 @@ prepareMIIServer() {
   trace "Model-in-Image: Restoring apps and libraries"
   restoreAppAndLibs || return 1
 
-  trace "Model-in-Image: Restore domain config"
-  restoreDomainConfig || return 1
+  if [  -f /weblogic-operator/introspector/domainzip.secure ] ; then
+    trace "Model-in-Image: Restore domain config"
+    restoreDomainConfig || return 1
+  fi
 
   trace "Model-in-image: Restore dbWallets zip"
 

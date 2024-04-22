@@ -1,13 +1,12 @@
 {
     "create": [
-      { "name": "primordial_filter", "path": "/weblogic-operator/scripts/model-wdt-create-filter.py" }
+       { "name": "create_mii_filter", "path": "/weblogic-operator/scripts/model_wdt_mii_filter.py" }
     ],
     "deploy": [
     ],
     "discover": [
     ],
     "update": [
-      { "name": "update_mii_filter", "path": "/weblogic-operator/scripts/model_wdt_mii_filter.py" }
     ],
     "validate": [
       { "name": "validate_mii_filter", "path": "/weblogic-operator/scripts/model_wdt_mii_filter.py" }

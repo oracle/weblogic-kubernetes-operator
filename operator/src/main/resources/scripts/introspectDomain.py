@@ -1126,26 +1126,27 @@ class MII_DomainConfigGenerator(Generator):
     # Note: only certain config type is needed fmwconfig, security (except saml files) is excluded because it's in the primordial and contain
     # all the many policies files
 
-    tar_name = "/tmp/domain.tar"
-    packcmd = "tar -pcf %s " \
-              "--exclude=$DOMAIN_HOME/config/wlsdeploy/custom " \
-              "--exclude=$DOMAIN_HOME/config/deployments " \
-              "--exclude=$DOMAIN_HOME/config/fmwconfig " \
-              "$DOMAIN_HOME/wlsdeploy/applications/./*.xml " \
-              "$DOMAIN_HOME/config " \
-              "$DOMAIN_HOME/security/saml*.properties " \
-              "$DOMAIN_HOME/security/*.xml " % tar_name
+    # tar_name = "/tmp/domain.tar"
+    # packcmd = "tar -pcf %s " \
+    #           "--exclude=$DOMAIN_HOME/config/wlsdeploy/custom " \
+    #           "--exclude=$DOMAIN_HOME/config/deployments " \
+    #           "--exclude=$DOMAIN_HOME/config/fmwconfig " \
+    #           "$DOMAIN_HOME/wlsdeploy/applications/./*.xml " \
+    #           "$DOMAIN_HOME/config " \
+    #           "$DOMAIN_HOME/security/saml*.properties " \
+    #           "$DOMAIN_HOME/security/*.xml " % tar_name
+    #
+    # os.system(packcmd)
+    # packcmd = "tar -prf %s $DOMAIN_HOME/config/fmwconfig/servers/*/logging.xml" % tar_name
+    # os.system(packcmd)
+    # os.system("gzip %s" % tar_name)
 
-    os.system(packcmd)
-    packcmd = "tar -prf %s $DOMAIN_HOME/config/fmwconfig/servers/*/logging.xml" % tar_name
-    os.system(packcmd)
-    os.system("gzip %s" % tar_name)
+    #domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
 
-    domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
+    domain_data = self.env.readBinaryFile("/tmp/prim_domain.tar.gz")
     b64 = ""
     for s in base64.encodestring(domain_data).splitlines():
       b64 = b64 + s
-    self.writeln(b64)
 
     domainzip_hash = md5.new(domain_data).hexdigest()
     fh = open("/tmp/domainzip_hash", "w")
