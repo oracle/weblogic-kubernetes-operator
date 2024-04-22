@@ -117,7 +117,6 @@ class ItMiiDynamicUpdatePart2 {
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
   @Tag("gate")
-  @Tag("crio")
   void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
 
     // This test uses the WebLogic domain created in BeforeAll method

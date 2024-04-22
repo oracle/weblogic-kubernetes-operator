@@ -29,8 +29,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -57,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("oke-gate")
-
 class ItLBTwoDomainsTraefik {
 
   private static final int numberOfDomains = 2;
@@ -128,9 +132,14 @@ class ItLBTwoDomainsTraefik {
     // install Traefik ingress controller for all test cases using Traefik
     installTraefikIngressController();
 
-    String ingressServiceName = traefikHelmParams.getReleaseName();
-    ingressIP = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : K8S_NODEPORT_HOST;
+    if (traefikHelmParams != null) {
+      String ingressServiceName = traefikHelmParams.getReleaseName();
+      ingressIP = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : K8S_NODEPORT_HOST;
+    } else {
+      logger.info("traefikHelmParams is null");
+      ingressIP = K8S_NODEPORT_HOST;
+    }
   }
 
   /**
@@ -222,7 +231,9 @@ class ItLBTwoDomainsTraefik {
   private static void installTraefikIngressController() {
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
-    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
+    if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
+    }
 
     // create TLS secret for Traefik HTTPS traffic
     for (String domainUid : domainUids) {
@@ -262,9 +273,16 @@ class ItLBTwoDomainsTraefik {
   }
 
   private int getTraefikLbNodePort(boolean isHttps) {
-    logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
-    return assertDoesNotThrow(() ->
-            getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
-        "Getting web node port for Traefik loadbalancer failed");
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      return isHttps ? TRAEFIK_INGRESS_HTTPS_HOSTPORT : TRAEFIK_INGRESS_HTTP_HOSTPORT;
+    } else if (traefikHelmParams != null) {
+      logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
+      return assertDoesNotThrow(() ->
+              getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
+          "Getting web node port for Traefik loadbalancer failed");
+    } else {
+      logger.info("failed to get Traefik Nodeport");
+      return -1;
+    }
   }
 }

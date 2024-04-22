@@ -32,9 +32,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ITLBTWODOMAINSNGINX_INGRESS_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.ITLBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.ITLBTWODOMAINSNGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.ITLBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
@@ -474,15 +482,19 @@ class ItLBTwoDomainsNginx {
    * @return NGINX load balancer node port
    */
   private static int getNginxLbNodePort(String channelName) {
-    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-
-    return getServiceNodePort(nginxNamespace, nginxServiceName, channelName);
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      return channelName.equals("https")
+          ? ITLBTWODOMAINSNGINX_INGRESS_HTTPS_HOSTPORT : ITLBTWODOMAINSNGINX_INGRESS_HTTP_HOSTPORT;
+    } else {
+      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+      return getServiceNodePort(nginxNamespace, nginxServiceName, channelName);
+    }
   }
 
   private static void installNginxIngressController() {
     // install and verify Nginx
     logger.info("Installing Nginx controller using helm");
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    nginxHelmParams = installNginxLB();
 
     // create ingress rules with non-tls host routing for NGINX
     createNginxIngressHostRoutingForTwoDomains(nginxHelmParams.getIngressClassName(), false);
@@ -495,5 +507,20 @@ class ItLBTwoDomainsNginx {
 
     // create ingress rules with TLS path routing for NGINX
     createNginxTLSPathRoutingForTwoDomains();
+  }
+
+  private static NginxParams installNginxLB() {
+
+    getLogger().info("Installing NGINX in namespace {0}", nginxNamespace);
+
+    String nodePortValue = null;
+    if (!OKE_CLUSTER) {
+      nodePortValue = "NodePort";
+    }
+
+    NginxParams params = installAndVerifyNginx(nginxNamespace, ITLBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT,
+        ITLBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, nodePortValue);
+
+    return params;
   }
 }
