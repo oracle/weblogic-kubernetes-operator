@@ -40,6 +40,9 @@ def filter_model(model):
       if 'Security' in topology:
         model['topology']['Security'] = topology['Security']
 
+      if 'SecurityConfiguration' in topology:
+        model['topology']['SecurityConfiguration'] = topology['SecurityConfiguration']
+
     if model and 'appDeployments' in model:
       model['appDeployments'] = {}
 
