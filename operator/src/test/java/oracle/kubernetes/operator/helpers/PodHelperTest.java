@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,13 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
-import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -22,13 +21,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.meterware.simplestub.Stub.createStub;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class PodHelperTest {
@@ -54,6 +51,7 @@ class PodHelperTest {
   @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
@@ -65,50 +63,30 @@ class PodHelperTest {
     testSupport.throwOnCompletionFailure();
   }
 
-  @Test
-  void afterAddingFactoryToPacket_canRetrieveIt() {
-    Packet packet = new Packet();
-    PodAwaiterStepFactory factory = createStub(PodAwaiterStepFactory.class);
-    PodHelper.addToPacket(packet, factory);
-
-    assertThat(PodHelper.getPodAwaiterStepFactory(packet), sameInstance(factory));
-  }
-
   // --- delete pod ---
   // REG: very curious. Deletion uses the namespace from the domain presence info, but the name
   // from the pod (if any) in the SKO.
-
-  @Test
-  void afterDeletePodStepRun_markedForDeleteInSko() {
-    testSupport.defineResources(pod);
-    domainPresenceInfo.setServerPod(SERVER_NAME, pod);
-
-    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
-
-    MatcherAssert.assertThat(
-        domainPresenceInfo.isServerPodBeingDeleted(SERVER_NAME), is(Boolean.TRUE));
-  }
 
   @Test
   void whenDeleteFails_reportCompletionFailure() {
     testSupport.failOnResource(POD, POD_NAME, NS, HTTP_BAD_REQUEST);
     domainPresenceInfo.setServerPod(SERVER_NAME, pod);
 
-    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
+    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep));
 
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+    testSupport.verifyCompletionThrowable(ApiException.class);
   }
 
   @Test
   void whenDeletePodStepRunWithNoPod_doNotSendDeleteCall() {
-    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
+    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep));
 
     MatcherAssert.assertThat(domainPresenceInfo.getServerPod(SERVER_NAME), nullValue());
   }
 
   @Test
   void afterDeletePodStepRun_runSpecifiedNextStep() {
-    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
+    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep));
 
     MatcherAssert.assertThat(terminalStep.wasRun(), is(true));
   }
@@ -120,7 +98,7 @@ class PodHelperTest {
     testSupport.addDomainPresenceInfo(info);
 
     assertDoesNotThrow(
-        () -> testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep)));
+        () -> testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep)));
 
   }
 

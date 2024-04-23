@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -16,12 +16,12 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
@@ -30,14 +30,15 @@ import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.http.rest.OperatorRestServer;
 import oracle.kubernetes.operator.http.rest.RestConfigImpl;
@@ -46,10 +47,9 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.watcher.NamespaceWatcher;
+import oracle.kubernetes.operator.watcher.OperatorEventWatcher;
 import oracle.kubernetes.operator.work.FiberGate;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
@@ -73,19 +73,6 @@ public class OperatorMain extends BaseMain {
    */
   private static final long CRD_DETECTION_DELAY = 10;
 
-  static {
-    container
-        .getComponents()
-        .put(
-            ProcessingConstants.MAIN_COMPONENT_NAME,
-            Component.createFor(
-                ScheduledExecutorService.class,
-                wrappedExecutorService,
-                ThreadFactory.class,
-                threadFactory));
-  }
-
-
   Object getOperatorNamespaceEventWatcher() {
     return operatorNamespaceEventWatcher;
   }
@@ -103,8 +90,8 @@ public class OperatorMain extends BaseMain {
     private final DomainNamespaces domainNamespaces;
     private final AtomicReference<V1CustomResourceDefinition> crdReference;
 
-    public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
-      super(buildProps, scheduledExecutorService);
+    public MainDelegateImpl(Properties buildProps, ScheduledExecutorService executor) {
+      super(buildProps, executor);
 
       domainProcessor = new DomainProcessorImpl(this, productVersion);
 
@@ -152,28 +139,13 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
-      return domainNamespaces.getPodWatcher(namespace);
-    }
-
-    @Override
-    public JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace) {
-      return domainNamespaces.getJobWatcher(namespace);
-    }
-
-    @Override
-    public PvcAwaiterStepFactory getPvcAwaiterStepFactory() {
-      return new PvcWatcher(domainProcessor);
-    }
-
-    @Override
     public boolean isNamespaceRunning(String namespace) {
       return !domainNamespaces.isStopping(namespace).get();
     }
 
     @Override
     public FiberGate createFiberGate() {
-      return new FiberGate(engine);
+      return new FiberGate(scheduledExecutorService);
     }
 
     @Override
@@ -205,7 +177,7 @@ public class OperatorMain extends BaseMain {
   }
 
   static @Nonnull OperatorMain createMain(Properties buildProps) {
-    final MainDelegateImpl delegate = new MainDelegateImpl(buildProps, wrappedExecutorService);
+    final MainDelegateImpl delegate = new MainDelegateImpl(buildProps, executor);
 
     delegate.logStartup(LOGGER);
     return new OperatorMain(delegate);
@@ -240,8 +212,8 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<CoreV1EventList> callResponse) {
-      CoreV1EventList list = callResponse.getResult();
+    public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1EventList> callResponse) {
+      CoreV1EventList list = callResponse.getObject();
       operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
       list.getItems().forEach(DomainProcessorImpl::updateEventK8SObjects);
       return doContinueListOrNext(callResponse, packet);
@@ -261,15 +233,15 @@ public class OperatorMain extends BaseMain {
     }
 
     private Step createOperatorNamespaceEventListStep() {
-      return new CallBuilder()
-          .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
-          .listEventAsync(getOperatorNamespace(), new EventListResponseStep(mainDelegate.getDomainProcessor()));
+      return RequestBuilder.EVENT.list(getOperatorNamespace(),
+          new ListOptions().labelSelector(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER),
+          new EventListResponseStep(mainDelegate.getDomainProcessor()));
     }
 
     @Override
     public Step getDefaultSelection() {
       return Step.chain(
-          new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
+          RequestBuilder.NAMESPACE.list(new StartNamespaceWatcherStep()),
           createOperatorNamespaceEventListStep(),
           createDomainRecheckSteps());
     }
@@ -287,16 +259,16 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      namespaceWatcher = createNamespaceWatcher(KubernetesUtils.getResourceVersion(callResponse.getResult()));
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1NamespaceList> callResponse) {
+      namespaceWatcher = createNamespaceWatcher(KubernetesUtils.getResourceVersion(callResponse.getObject()));
       return doNext(packet);
     }
   }
 
   void completeBegin() {
     try {
-      startMetricsServer(container);
-      startRestServer(container);
+      startMetricsServer();
+      startRestServer();
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
@@ -312,12 +284,12 @@ public class OperatorMain extends BaseMain {
   }
 
   @Override
-  void startRestServer(Container container)
+  void startRestServer()
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
     if (Optional.ofNullable(HelmAccess.getHelmVariable(OPERATOR_ENABLE_REST_ENDPOINT_ENV))
         .map(Boolean::valueOf).orElse(Boolean.FALSE)) {
-      super.startRestServer(container);
+      super.startRestServer();
     }
   }
 
@@ -368,9 +340,9 @@ public class OperatorMain extends BaseMain {
   class CrdPresenceStep extends Step {
 
     @Override
-    public NextAction apply(Packet packet) {
-      return doNext(new CallBuilder().readCustomResourceDefinitionAsync(
-              KubernetesConstants.DOMAIN_CRD_NAME, createReadResponseStep(getNext())), packet);
+    public @Nonnull Result apply(Packet packet) {
+      return doNext(
+          RequestBuilder.CRD.get(KubernetesConstants.DOMAIN_CRD_NAME, createReadResponseStep(getNext())), packet);
     }
   }
 
@@ -387,9 +359,9 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public NextAction onSuccess(
-            Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-      V1CustomResourceDefinition existingCrd = callResponse.getResult();
+    public Result onSuccess(
+            Packet packet, KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
+      V1CustomResourceDefinition existingCrd = callResponse.getObject();
 
       if (!existingCrdContainsConversionWebhook(existingCrd)) {
         LOGGER.info(MessageKeys.WAIT_FOR_CRD_INSTALLATION, CRD_DETECTION_DELAY);
@@ -408,10 +380,11 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+    protected Result onFailureNoRetry(Packet packet,
+                                          KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
       return isNotAuthorizedOrForbidden(callResponse)
-              ? doNext(new CallBuilder().listDomainAsync(getOperatorNamespace(),
-                new CrdPresenceResponseStep(getNext())), packet) : super.onFailureNoRetry(packet, callResponse);
+          ? doNext(RequestBuilder.DOMAIN.list(getOperatorNamespace(), new CrdPresenceResponseStep(getNext())), packet)
+          : super.onFailureNoRetry(packet, callResponse);
     }
   }
 
@@ -423,7 +396,7 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
+    public Result onFailure(Packet packet, KubernetesApiResponse<DomainList> callResponse) {
       LOGGER.info(MessageKeys.WAIT_FOR_CRD_INSTALLATION, CRD_DETECTION_DELAY);
       return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.SECONDS);
     }

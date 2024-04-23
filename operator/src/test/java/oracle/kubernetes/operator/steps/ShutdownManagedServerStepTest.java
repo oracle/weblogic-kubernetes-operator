@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.steps;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -31,29 +30,21 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
-import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.client.HttpResponseStub;
 import oracle.kubernetes.operator.steps.ShutdownManagedServerStep.ShutdownManagedServerProcessing;
-import oracle.kubernetes.operator.steps.ShutdownManagedServerStep.ShutdownManagedServerResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -67,16 +58,12 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 class ShutdownManagedServerStepTest {
   // The log messages to be checked during this test
@@ -97,7 +84,6 @@ class ShutdownManagedServerStepTest {
   private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
   private static final String DYNAMIC_MANAGED_SERVER1 = "dyn-managed-server1";
   private static final String DYNAMIC_MANAGED_SERVER2 = "dyn-managed-server2";
-  private static final String RESPONSE = "httpResponse";
   private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
 
   private final V1Pod configuredManagedServer1 = defineManagedPod(CONFIGURED_MANAGED_SERVER1);
@@ -142,7 +128,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
-    testSupport.defineResources(domain);
+    testSupport.defineResources(domain, configuredManagedServer1, standaloneManagedServer1, dynamicManagedServer1);
 
     configuredServerService = createServerService(CONFIGURED_MANAGED_SERVER1, CONFIGURED_CLUSTER_NAME);
     standaloneServerService = createServerService(MANAGED_SERVER1, null);
@@ -338,56 +324,6 @@ class ShutdownManagedServerStepTest {
     assertThat(
         processing.getRequestTimeoutSeconds(),
         equalTo(Shutdown.DEFAULT_TIMEOUT + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {RUNNING_STATE, ADMIN_STATE, SHUTDOWN_STATE})
-  void whenShutdownResponseThrowsExceptionAndServerIsRunning_logRetry(String state) {
-    ShutdownManagedServerResponseStep responseStep =
-        new ShutdownManagedServerResponseStep(MANAGED_SERVER1, terminalStep);
-    Packet p = testSupport.getPacket();
-
-    // Setup Throwable exception
-    p.getComponents().put(RESPONSE, Component
-        .createFor(Throwable.class, new Throwable()));
-    ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(p,
-        standaloneServerService, standaloneManagedServer1);
-    HttpAsyncRequestStep httpAsyncRequestStep = processing.createRequestStep(responseStep);
-    responseStep.setHttpAsyncRequestStep(httpAsyncRequestStep);
-    setServerState(state);
-
-    responseStep.onFailure(p, null);
-    if (!SHUTDOWN_STATE.equals(state)) {
-      // Assert that we will retry due to exception and server not shutdown
-      assertRetry(p);
-    } else {
-      // Assert that we will not retry as server is shutdown
-      assertNoRetry(p);
-    }
-
-    // Assert we only retry once
-    responseStep.onFailure(p, null);
-    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), is(nullValue()));
-    if (!SHUTDOWN_STATE.equals(state)) {
-      // Log throwable message only if the server is not shutdown.
-      assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_THROWABLE));
-    }
-  }
-
-  private void assertRetry(Packet p) {
-    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(1));
-    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_RETRY));
-  }
-
-  private void assertNoRetry(Packet p) {
-    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(null));
-    assertThat(logRecords, not(containsInfo(SERVER_SHUTDOWN_REST_RETRY)));
-  }
-
-  private void setServerState(String state) {
-    DomainStatus domainStatus = info.getDomain().getStatus();
-    domainStatus.withServers(Collections.singletonList(new ServerStatus()
-        .withServerName(MANAGED_SERVER1).withState(state)));
   }
 
   private void setForcedShutdownType(String serverName) {

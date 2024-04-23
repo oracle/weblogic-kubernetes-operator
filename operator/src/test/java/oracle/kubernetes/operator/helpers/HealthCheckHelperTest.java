@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -13,7 +13,6 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
-import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
@@ -97,15 +96,14 @@ class HealthCheckHelperTest {
 
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
-  private final CallTestSupport testSupport = new CallTestSupport();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final AccessChecks accessChecks = new AccessChecks();
 
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TuningParametersStub.install());
+    mementos.add(testSupport.install());
     mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
-    mementos.add(ClientFactoryStub.install());
-    mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
   @AfterEach
@@ -148,10 +146,7 @@ class HealthCheckHelperTest {
   }
 
   private void expectSelfSubjectRulesReview() {
-    testSupport
-        .createCannedResponse("createSelfSubjectRulesReview")
-        .ignoringBody()
-        .returning(new V1SelfSubjectRulesReview().status(accessChecks.createRulesStatus()));
+    testSupport.defineResources(new V1SelfSubjectRulesReview().status(accessChecks.createRulesStatus()));
   }
 
   @SuppressWarnings("SameParameterValue")

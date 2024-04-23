@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks;
@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1Scale;
+import io.kubernetes.client.openapi.models.V1ScaleSpec;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
@@ -703,9 +705,15 @@ class WebhookRestTest extends RestTestBase {
     assertThat(isAllowed(responseReview), equalTo(true));
   }
 
+  private V1Scale convert(Scale scale) {
+    return new V1Scale().metadata(scale.getMetadata())
+            .spec(new V1ScaleSpec()
+                    .replicas(Optional.ofNullable(scale.getSpec().get("replicas")).map(Integer::valueOf).orElse(1)));
+  }
+
   @Test
   void whenScaleClusterReplicasInvalid_rejectIt() {
-    testSupport.defineResources(invalidScale, proposedCluster);
+    testSupport.defineResources(convert(invalidScale), proposedCluster);
     setProposedScale(invalidScale);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
@@ -715,7 +723,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenScaleClusterReplicasInvalid_rejectItWithExpectedMessage() {
-    testSupport.defineResources(invalidScale, proposedCluster);
+    testSupport.defineResources(convert(invalidScale), proposedCluster);
     setProposedScale(invalidScale);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
@@ -726,7 +734,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenScaleClusterReplicasValid_acceptIt() {
-    testSupport.defineResources(validScale, proposedCluster);
+    testSupport.defineResources(convert(validScale), proposedCluster);
     setProposedScale(validScale);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
@@ -736,7 +744,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenScaleClusterWhenClusterNotFound_rejectItWithException() {
-    testSupport.defineResources(validScale);
+    testSupport.defineResources(convert(validScale));
     setProposedScale(validScale);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
@@ -753,7 +761,7 @@ class WebhookRestTest extends RestTestBase {
     Map<String, String> kind = new HashMap<>();
     kind.put("kind", "blabla");
     request.setKind(kind);
-    testSupport.defineResources(validScale);
+    testSupport.defineResources(convert(validScale));
     setProposedScale(validScale);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(review);
@@ -847,7 +855,7 @@ class WebhookRestTest extends RestTestBase {
     }
 
     public List<Map<String, Object>> listClusters(String namespace) {
-      return null; // TODO
+      return null;
     }
   }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Kubernetes periodically calls this liveness probe script to determine whether
@@ -73,9 +73,17 @@ if [ "${MOCK_WLS}" != 'true' ]; then
   # Adjust PATH if necessary before calling jps
   adjustPath
 
-  if [ `jps -v | grep -c " -Dweblogic.Name=${SERVER_NAME} "` -eq 0 ]; then
-    trace SEVERE "WebLogic Server instance process not found."
+  if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
+    trace SEVERE "WebLogic NodeManager process not found."
     exit $RETVAL
+  fi
+
+  if [ ! -f ${STATEFILE} ] || [ `grep -c "SHUT" ${STATEFILE}` -eq 0 ]; then
+    # Only check for running server instance if the state is not SHUTDOWN or SHUTTING_DOWN
+    if [ `jps -v | grep -c " -Dweblogic.Name=${SERVER_NAME} "` -eq 0 ]; then
+      trace SEVERE "WebLogic Server instance process not found."
+      exit $RETVAL
+    fi
   fi
 fi
 

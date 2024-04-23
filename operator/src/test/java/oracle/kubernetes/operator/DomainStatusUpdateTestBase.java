@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -41,6 +41,7 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -98,7 +99,6 @@ import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN_STATUS;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.FALSE;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
@@ -137,7 +137,6 @@ abstract class DomainStatusUpdateTestBase {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
-    mementos.add(ClientFactoryStub.install());
     mementos.add(SystemClockTestSupport.installClock());
 
     domain.getSpec().setImage(IMAGE);
@@ -633,7 +632,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAllDesiredServersRunningButSomeMarkedToBeRolled_establishCompletedConditionFalse() {  
-    info.setServersToRoll(Map.of("server1", new Step.StepAndPacket(null, null)));
+    info.setServersToRoll(Map.of("server1", new Fiber.StepAndPacket(null, null)));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -1251,7 +1250,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAllDesiredServersRunningButSomeMarkedToBeRolled_establishClusterCompletedConditionFalse() {
-    info.setServersToRoll(Map.of("server1", new Step.StepAndPacket(null, null)));
+    info.setServersToRoll(Map.of("server1", new Fiber.StepAndPacket(null, null)));
     configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
     defineScenario()
         .withCluster("cluster1", "server1", "server2", "server3", "server4")
@@ -1854,7 +1853,7 @@ abstract class DomainStatusUpdateTestBase {
     testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
 
     info.getDomain().getMetadata().setGeneration(2L);
-    testSupport.failOnReplaceStatus(DOMAIN_STATUS, info.getDomainUid(), info.getNamespace(), HTTP_UNAVAILABLE);
+    testSupport.failOnReplaceStatus(DOMAIN, info.getDomainUid(), info.getNamespace(), HTTP_UNAVAILABLE);
     testSupport.returnEmptyResultOnRead(DOMAIN, info.getDomainUid(), info.getNamespace());
     retryStrategy.setNumRetriesLeft(1);
     testSupport.addRetryStrategy(retryStrategy);
@@ -1868,7 +1867,7 @@ abstract class DomainStatusUpdateTestBase {
     testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
 
     info.getDomain().getMetadata().setGeneration(2L);
-    testSupport.failOnReplaceStatus(DOMAIN_STATUS, info.getDomainUid(), info.getNamespace(), HTTP_UNAVAILABLE);
+    testSupport.failOnReplaceStatus(DOMAIN, info.getDomainUid(), info.getNamespace(), HTTP_UNAVAILABLE);
     retryStrategy.setNumRetriesLeft(1);
     testSupport.addRetryStrategy(retryStrategy);
     updateDomainStatusInEndOfProcessing();
@@ -1881,7 +1880,7 @@ abstract class DomainStatusUpdateTestBase {
     testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
 
     info.getDomain().getMetadata().setGeneration(2L);
-    testSupport.failOnReplaceStatus(DOMAIN_STATUS, info.getDomainUid(), info.getNamespace(), HTTP_NOT_FOUND);
+    testSupport.failOnReplaceStatus(DOMAIN, info.getDomainUid(), info.getNamespace(), HTTP_NOT_FOUND);
     retryStrategy.setNumRetriesLeft(1);
     testSupport.addRetryStrategy(retryStrategy);
     updateDomainStatusInEndOfProcessing();

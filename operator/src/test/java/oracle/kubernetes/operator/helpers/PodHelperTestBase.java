@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -51,12 +51,15 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinity;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -72,9 +75,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -82,7 +83,6 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -117,6 +117,7 @@ import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_I
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
@@ -131,6 +132,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.POD;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
@@ -375,12 +378,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
         .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology)
         .addToPacket(SERVER_SCAN, domainTopology.getServerConfig(serverName))
         .addDomainPresenceInfo(domainPresenceInfo);
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new PassthroughPodAwaiterStepFactory());
 
     definePodTuning();
+    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> setPodReady((V1Pod) p));
+    testSupport.doOnDelete(KubernetesTestSupport.POD, this::preDelete);
+  }
+
+  private void setPodReady(V1Pod pod) {
+    pod.status(createPodReadyStatus());
+  }
+
+  private V1PodStatus createPodReadyStatus() {
+    return new V1PodStatus()
+            .phase("Running")
+            .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
+  }
+
+  private void preDelete(KubernetesTestSupport.DeletionContext context) {
+    testSupport.deleteResources(
+            new V1Pod().metadata(new V1ObjectMeta().name(context.name()).namespace(context.namespace())));
   }
 
   private Memento setProductVersion(String productVersion) throws NoSuchFieldException {
@@ -1700,10 +1716,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
-    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
-        .build());
+    testSupport.failOnCreate(POD, NS, new V1Status()
+        .reason("FieldValueNotFound")
+        .message("Test this failure"), HTTP_BAD_REQUEST);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1713,10 +1728,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_createFailedKubernetesEvent() {
-    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
-        .build());
+    testSupport.failOnCreate(POD, NS, new V1Status()
+        .reason("FieldValueNotFound")
+        .message("Test this failure"), HTTP_BAD_REQUEST);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1729,10 +1743,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
-    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
-        .build());
+    testSupport.failOnCreate(POD, NS, new V1Status()
+        .reason("FieldValueNotFound")
+        .message("Test this failure"), HTTP_BAD_REQUEST);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1741,7 +1754,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenPodCreationFailsDueToQuotaExceeded_reportInDomainStatus() {
-    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
+    testSupport.failOnCreate(POD, NS, createQuotaExceededStatus(), HTTP_FORBIDDEN);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1751,7 +1764,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenPodCreationFailsDueToQuotaExceeded_generateFailedEvent() {
-    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
+    testSupport.failOnCreate(POD, NS, createQuotaExceededStatus(), HTTP_FORBIDDEN);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1762,8 +1775,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
             getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
-  private ApiException createQuotaExceededException() {
-    return new ApiException(HttpURLConnection.HTTP_FORBIDDEN, getQuotaExceededMessage());
+  private V1Status createQuotaExceededStatus() {
+    return new V1Status().message(getQuotaExceededMessage());
   }
 
   private String getQuotaExceededMessage() {
@@ -1772,7 +1785,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenPodCreationFailsDueToQuotaExceeded_abortFiber() {
-    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
+    testSupport.failOnCreate(POD, NS, createQuotaExceededStatus(), HTTP_FORBIDDEN);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -2441,7 +2454,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
-    assertThat(domainPresenceInfo.getServerPod(serverName), equalTo(createPodModel()));
+    assertThat(domainPresenceInfo.getServerPod(serverName).getSpec(), equalTo(createPodModel().getSpec()));
   }
 
   abstract String getExistsMessageKey();
@@ -2917,56 +2930,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     void mutate(V1Pod pod);
   }
 
-  public static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
-    @Override
-    public Step waitForReady(V1Pod pod, Step next) {
-      return next;
-    }
-
-    @Override
-    public Step waitForReady(String podName, Step next) {
-      return next;
-    }
-
-    @Override
-    public Step waitForDelete(V1Pod pod, Step next) {
-      return next;
-    }
-
-    @Override
-    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
-      return next;
-    }
-  }
-
-  public static class DelayedPodAwaiterStepFactory implements PodAwaiterStepFactory {
-    private final int delaySeconds;
-
-    public DelayedPodAwaiterStepFactory(int delaySeconds) {
-      this.delaySeconds = delaySeconds;
-    }
-
-    @Override
-    public Step waitForReady(V1Pod pod, Step next) {
-      return new DelayStep(next, delaySeconds);
-    }
-
-    @Override
-    public Step waitForReady(String podName, Step next) {
-      return new DelayStep(next, delaySeconds);
-    }
-
-    @Override
-    public Step waitForDelete(V1Pod pod, Step next) {
-      return new DelayStep(next, delaySeconds);
-    }
-
-    @Override
-    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
-      return next;
-    }
-  }
-
   private static class DelayStep extends Step {
     private final int delay;
     private final Step next;
@@ -2977,7 +2940,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doDelay(next, packet, delay, TimeUnit.SECONDS);
     }
   }

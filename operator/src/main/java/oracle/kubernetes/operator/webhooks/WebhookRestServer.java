@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks;
@@ -22,7 +22,6 @@ import oracle.kubernetes.operator.http.rest.ResponseDebugLoggingFilter;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.webhooks.resource.AdmissionWebhookResource;
 import oracle.kubernetes.operator.webhooks.resource.ConversionWebhookResource;
-import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -101,7 +100,6 @@ public class WebhookRestServer extends BaseRestServer {
   /**
    * Starts conversion webhook's REST api.
    *
-   * @param container Container
    * @throws IOException if the REST api could not be started.
    *     When an exception is thrown, then none of the ports will be left running,
    *     however it is still OK to call stop (which will be a no-op).
@@ -113,13 +111,13 @@ public class WebhookRestServer extends BaseRestServer {
    * @throws KeyManagementException Key management failed
    */
   @Override
-  public void start(Container container)
+  public void start()
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     boolean fullyStarted = false;
     try {
-      webhookHttpsServer.set(createWebhookHttpsServer(container));
+      webhookHttpsServer.set(createWebhookHttpsServer());
       LOGGER.info(
               "Started the webhook ssl REST server on "
                       + getWebhookHttpsUri());
@@ -146,13 +144,12 @@ public class WebhookRestServer extends BaseRestServer {
     LOGGER.exiting();
   }
 
-  private HttpServer createWebhookHttpsServer(Container container)
+  private HttpServer createWebhookHttpsServer()
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     HttpServer result =
             createHttpsServer(
-                    container,
                     createSslContext(
                             createKeyManagers(
                                     config.getWebhookCertificateData(),

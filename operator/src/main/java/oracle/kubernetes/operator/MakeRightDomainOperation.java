@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -61,11 +61,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
 
   void clear();
 
-  @Override
-  default void addToPacket(Packet packet) {
-    packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
-  }
-
   boolean wasInspectionRun();
 
   private static boolean wasInspectionRun(Packet packet) {
@@ -90,7 +85,7 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
    * @return true, if the domain requires introspection
    */
   private static boolean domainRequiresIntrospectionInCurrentMakeRight(Packet packet) {
-    return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+    return Optional.ofNullable((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO))
         .map(DomainPresenceInfo::getDomain)
         .map(DomainResource::isNewIntrospectionRequiredForNewServers)
         .orElse(false);

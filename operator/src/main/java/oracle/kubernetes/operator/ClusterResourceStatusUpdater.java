@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,19 +12,19 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
@@ -74,7 +74,7 @@ public class ClusterResourceStatusUpdater {
      * @return Next action
      */
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       Step step = Optional.ofNullable(info.getDomain())
           .map(domain -> createUpdateClusterResourceStatusSteps(packet, info.getClusterResources()))
@@ -84,9 +84,10 @@ public class ClusterResourceStatusUpdater {
 
     private static Step createUpdateClusterResourceStatusSteps(Packet packet,
                                                                Collection<ClusterResource> clusterResources) {
-      List<StepAndPacket> result = clusterResources.stream()
+      List<Fiber.StepAndPacket> result = clusterResources.stream()
           .filter(res -> createContext(packet, res).isClusterResourceStatusChanged())
-          .map(res -> new StepAndPacket(createContext(packet, res).createReplaceClusterResourceStatusStep(), packet))
+          .map(res -> new Fiber.StepAndPacket(
+                  createContext(packet, res).createReplaceClusterResourceStatusStep(), packet))
           .toList();
       return result.isEmpty() ? null : new RunInParallelStep(result);
     }
@@ -110,16 +111,17 @@ public class ClusterResourceStatusUpdater {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<ClusterResource> callResponse) {
-      if (callResponse.getResult() != null) {
-        packet.getSpi(DomainPresenceInfo.class).addClusterResource(callResponse.getResult());
+    public Result onSuccess(Packet packet, KubernetesApiResponse<ClusterResource> callResponse) {
+      if (callResponse.getObject() != null) {
+        DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+        info.addClusterResource(callResponse.getObject());
       }
       return doNext(packet);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<ClusterResource> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+    public Result onFailure(Packet packet, KubernetesApiResponse<ClusterResource> callResponse) {
+      if (isUnrecoverable(callResponse)) {
         return super.onFailure(packet, callResponse);
       } else {
         return onFailure(createRetry(), packet, callResponse);
@@ -133,20 +135,20 @@ public class ClusterResourceStatusUpdater {
     }
 
     private Step createClusterResourceRefreshStep() {
-      return new CallBuilder().readClusterAsync(context.getClusterResourceName(),
-          context.getNamespace(), new ReadClusterResponseStep());
+      return RequestBuilder.CLUSTER.get(
+          context.getNamespace(), context.getClusterResourceName(), new ReadClusterResponseStep());
     }
   }
 
   private static class RunInParallelStep extends Step {
-    final Collection<StepAndPacket> statusUpdateSteps;
+    final Collection<Fiber.StepAndPacket> statusUpdateSteps;
 
-    RunInParallelStep(Collection<StepAndPacket> statusUpdateSteps) {
+    RunInParallelStep(Collection<Fiber.StepAndPacket> statusUpdateSteps) {
       this.statusUpdateSteps = statusUpdateSteps;
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       if (statusUpdateSteps.isEmpty()) {
         return doNext(getNext(), packet);
       } else {
@@ -277,27 +279,25 @@ public class ClusterResourceStatusUpdater {
     }
 
     private Step createReplaceClusterStatusAsyncStep() {
-      return new CallBuilder()
-          .replaceClusterStatusAsync(
-              getClusterResourceName(),
-              getNamespace(),
-              createReplacementClusterResource(),
-              new ClusterResourceStatusReplaceResponseStep(this));
+      return RequestBuilder.CLUSTER.updateStatus(
+          createReplacementClusterResource(), ClusterResource::getStatus,
+          new ClusterResourceStatusReplaceResponseStep(this));
     }
   }
 
   private static class ReadClusterResponseStep extends ResponseStep<ClusterResource> {
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<ClusterResource> callResponse) {
-      if (callResponse.getResult() != null) {
-        packet.getSpi(DomainPresenceInfo.class).addClusterResource(callResponse.getResult());
+    public Result onSuccess(Packet packet, KubernetesApiResponse<ClusterResource> callResponse) {
+      if (callResponse.getObject() != null) {
+        DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+        info.addClusterResource(callResponse.getObject());
       }
       return doNext(packet);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<ClusterResource> callResponse) {
-      return callResponse.getStatusCode() == HTTP_NOT_FOUND
+    public Result onFailure(Packet packet, KubernetesApiResponse<ClusterResource> callResponse) {
+      return callResponse.getHttpStatusCode() == HTTP_NOT_FOUND
           ? doNext(null, packet)
           : super.onFailure(packet, callResponse);
     }
@@ -311,7 +311,7 @@ public class ClusterResourceStatusUpdater {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       // Get the ClusterResource, that was refreshed, from DomainPresenceInfo.
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       ClusterResource res = info.getClusterResource(clusterName);

@@ -1,11 +1,11 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   }
 
   @BeforeEach
-  public void setUpDeletionTest() {
+  public void setUpDeletionTest() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
 
@@ -70,7 +70,7 @@ class ServiceHelperDeletionTest extends ServiceHelperTestBase {
 
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, null));
 
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+    testSupport.verifyCompletionThrowable(ApiException.class);
   }
 
   @Test

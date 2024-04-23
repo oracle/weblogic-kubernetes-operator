@@ -1,11 +1,10 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serial;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -20,20 +19,18 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.WebhookMainDelegate;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.PathSupport;
 import oracle.kubernetes.operator.utils.SelfSignedCertUtils;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.io.FileUtils;
@@ -78,7 +75,7 @@ public class InitializeWebhookIdentityStep extends Step {
   }
 
   @Override
-  public NextAction apply(Packet packet) {
+  public @Nonnull Result apply(Packet packet) {
     try {
       if (isWebHoodSslIdentityAlreadyCreated()) {
         reuseIdentity();
@@ -88,7 +85,7 @@ public class InitializeWebhookIdentityStep extends Step {
       }
     } catch (IdentityInitializationException | IOException e) {
       LOGGER.warning(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
-      packet.getComponents().put(EXCEPTION, Component.createFor(Exception.class, e));
+      packet.put(EXCEPTION, e);
       return doNext(getNext(), packet);
     }
   }
@@ -108,7 +105,7 @@ public class InitializeWebhookIdentityStep extends Step {
     FileUtils.copyFile(keyFile, webhookKeyFile);
   }
 
-  private NextAction createIdentity(Packet packet) throws IdentityInitializationException {
+  private Result createIdentity(Packet packet) throws IdentityInitializationException {
     try {
       final KeyPair keyPair = identityFactory.createKeyPair();
       final String key = identityFactory.convertToPEM(keyPair.getPrivate());
@@ -138,8 +135,8 @@ public class InitializeWebhookIdentityStep extends Step {
   }
 
   private Step recordWebhookIdentity(WebhookIdentity webhookIdentity, Step next) {
-    return new CallBuilder().readSecretAsync(WEBHOOK_SECRETS,
-            getWebhookNamespace(), readSecretResponseStep(next, webhookIdentity));
+    return RequestBuilder.SECRET.get(
+        getWebhookNamespace(), WEBHOOK_SECRETS, readSecretResponseStep(next, webhookIdentity));
   }
 
   private ResponseStep<V1Secret> readSecretResponseStep(Step next, WebhookIdentity webhookIdentity) {
@@ -155,21 +152,17 @@ public class InitializeWebhookIdentityStep extends Step {
     }
 
     private Step createSecret(Step next, WebhookIdentity webhookIdentity) {
-      return new CallBuilder()
-          .createSecretAsync(getWebhookNamespace(),
-              createModel(null, webhookIdentity),
-              new DefaultResponseStep<>(next));
+      return RequestBuilder.SECRET.create(createModel(null, webhookIdentity), new DefaultResponseStep<>(next));
     }
 
     private Step replaceSecret(Step next, V1Secret secret, WebhookIdentity webhookIdentity) {
-      return new CallBuilder()
-          .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, webhookIdentity),
-              new ReplaceSecretResponseStep(webhookIdentity, next));
+      return RequestBuilder.SECRET.update(createModel(secret, webhookIdentity),
+          new ReplaceSecretResponseStep(webhookIdentity, next));
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
-      V1Secret existingSecret = callResponse.getResult();
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Secret> callResponse) {
+      V1Secret existingSecret = callResponse.getObject();
       Map<String, byte[]> data = Optional.ofNullable(existingSecret).map(V1Secret::getData).orElse(new HashMap<>());
       if (existingSecret == null) {
         return doNext(createSecret(getNext(), webhookIdentity), packet);
@@ -178,7 +171,7 @@ public class InitializeWebhookIdentityStep extends Step {
           reuseExistingIdentity(data);
         } catch (Exception e) {
           LOGGER.severe(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
-          packet.getComponents().put(EXCEPTION, Component.createFor(Exception.class, e));
+          packet.put(EXCEPTION, e);
         }
         return doNext(getNext(), packet);
       }
@@ -229,8 +222,8 @@ public class InitializeWebhookIdentityStep extends Step {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
+    public Result onFailure(Packet packet, KubernetesApiResponse<V1Secret> callResponse) {
+      if (isUnrecoverable(callResponse)) {
         return doNext(Step.chain(readSecretResponseStep(getNext(), webhookIdentity), getNext()), packet);
       } else {
         return super.onFailure(packet, callResponse);
@@ -241,13 +234,13 @@ public class InitializeWebhookIdentityStep extends Step {
   protected static V1Secret createModel(V1Secret secret, WebhookIdentity webhookIdentity) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
-      data.put(WEBHOOK_KEY, webhookIdentity.webhookKey().getBytes());
-      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.webhookCert());
+      data.put(WEBHOOK_KEY, webhookIdentity.getWebhookKey().getBytes());
+      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.getWebhookCert());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
     } else {
       Map<String, byte[]> data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put(WEBHOOK_KEY, webhookIdentity.webhookKey().getBytes());
-      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.webhookCert());
+      data.put(WEBHOOK_KEY, webhookIdentity.getWebhookKey().getBytes());
+      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.getWebhookCert());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
     }
   }
@@ -259,13 +252,26 @@ public class InitializeWebhookIdentityStep extends Step {
             .labels(labels);
   }
 
-  record WebhookIdentity(String webhookKey, byte[] webhookCert) {
+  static final class WebhookIdentity {
+
+    private final String webhookKey;
+    private final byte[] webhookCert;
+
+    public WebhookIdentity(String webhookKey, byte[] webhookCert) {
+      this.webhookKey = webhookKey;
+      this.webhookCert = webhookCert;
+    }
+
+    public String getWebhookKey() {
+      return webhookKey;
+    }
+
+    public byte[] getWebhookCert() {
+      return webhookCert;
+    }
   }
 
   public static class IdentityInitializationException extends Exception {
-    @Serial
-    private static final long serialVersionUID  = 1L;
-
     public IdentityInitializationException(Exception e) {
       super(e);
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -17,13 +18,14 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
@@ -71,15 +73,15 @@ public class DomainValidationSteps {
   }
 
   private static Step createListSecretsStep(String domainNamespace) {
-    return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
+    return RequestBuilder.SECRET.list(domainNamespace, new ListSecretsResponseStep());
   }
 
   static class ListSecretsResponseStep extends DefaultResponseStep<V1SecretList> {
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1SecretList> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1SecretList> callResponse) {
       List<V1Secret> list = getSecrets(packet);
-      list.addAll(callResponse.getResult().getItems());
+      list.addAll(callResponse.getObject().getItems());
       packet.put(SECRETS, list);
 
       return doContinueListOrNext(callResponse, packet);
@@ -91,15 +93,15 @@ public class DomainValidationSteps {
   }
 
   private static Step createListConfigMapsStep(String domainNamespace) {
-    return new CallBuilder().listConfigMapsAsync(domainNamespace, new ListConfigMapsResponseStep());
+    return RequestBuilder.CM.list(domainNamespace, new ListConfigMapsResponseStep());
   }
 
   static class ListConfigMapsResponseStep extends DefaultResponseStep<V1ConfigMapList> {
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1ConfigMapList> callResponse) {
       List<V1ConfigMap> list = getConfigMaps(packet);
-      list.addAll(callResponse.getResult().getItems());
+      list.addAll(callResponse.getObject().getItems());
       packet.put(CONFIGMAPS, list);
 
       return doContinueListOrNext(callResponse, packet);
@@ -111,15 +113,15 @@ public class DomainValidationSteps {
   }
 
   private static Step createListClustersStep(String domainNamespace) {
-    return new CallBuilder().listClusterAsync(domainNamespace, new ListClustersResponseStep());
+    return RequestBuilder.CLUSTER.list(domainNamespace, new ListClustersResponseStep());
   }
 
   static class ListClustersResponseStep extends DefaultResponseStep<ClusterList> {
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<ClusterList> callResponse) {
       List<ClusterResource> list = getClusters(packet);
-      list.addAll(callResponse.getResult().getItems());
+      list.addAll(callResponse.getObject().getItems());
       packet.put(CLUSTERS, list);
 
       return doContinueListOrNext(callResponse, packet);
@@ -133,15 +135,14 @@ public class DomainValidationSteps {
   static class DomainValidationStep extends Step {
 
     @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    public @Nonnull Result apply(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       DomainResource domain = info.getDomain();
       List<String> fatalValidationFailures = domain.getFatalValidationFailures();
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
       String errorMsg = getErrorMessage(fatalValidationFailures, validationFailures);
       if (validationFailures.isEmpty()) {
-        return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet)
-              .withDebugComment(packet, this::domainValidated);
+        return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet);
       } else {
         LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), errorMsg);
         return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(errorMsg), packet);
@@ -162,11 +163,6 @@ public class DomainValidationSteps {
     private String perLine(List<String> validationFailures) {
       return String.join(lineSeparator(), validationFailures);
     }
-
-    private String domainValidated(Packet packet) {
-      return "Validated " + DomainPresenceInfo.fromPacket(packet).orElse(null);
-    }
-    
   }
 
   static class DomainAdditionalValidationStep extends Step {
@@ -177,8 +173,8 @@ public class DomainValidationSteps {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    public @Nonnull Result apply(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       DomainResource domain = info.getDomain();
       List<String> validationFailures = domain.getAdditionalValidationFailures(podSpec);
 
@@ -204,7 +200,7 @@ public class DomainValidationSteps {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       final WlsConfigValidator validator = new WlsConfigValidator(packet).loggingTo(LOGGER);
       final List<String> failures = validator.getTopologyFailures();
       final List<String> replicasTooHigh = validator.getReplicaTooHighFailures();
@@ -256,7 +252,7 @@ public class DomainValidationSteps {
 
     @SuppressWarnings("unchecked")
     private List<ClusterResource> getClusters(Packet packet) {
-      return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+      return Optional.ofNullable((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO))
           .map(DomainPresenceInfo::getReferencedClusters)
           .or(() -> Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS))).orElse(Collections.emptyList());
     }

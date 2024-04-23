@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -14,20 +14,21 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.MainDelegate;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.Certificates;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.io.FileUtils;
@@ -67,7 +68,7 @@ public class InitializeInternalIdentityStep extends Step {
   }
 
   @Override
-  public NextAction apply(Packet packet) {
+  public @Nonnull Result apply(Packet packet) {
     try {
       if (configInternalCertFile.exists() && secretsInternalKeyFile.exists()) {
         // The operator's internal ssl identity has already been created.
@@ -90,7 +91,7 @@ public class InitializeInternalIdentityStep extends Step {
     FileUtils.copyFile(secretsInternalKeyFile, internalKeyFile);
   }
 
-  private NextAction createInternalIdentity(Packet packet) throws Exception {
+  private Result createInternalIdentity(Packet packet) throws Exception {
     KeyPair keyPair = createKeyPair();
     String key = convertToPEM(keyPair.getPrivate());
     writeToFile(key, internalKeyFile);
@@ -128,15 +129,14 @@ public class InitializeInternalIdentityStep extends Step {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
 
-    return new CallBuilder()
-            .patchConfigMapAsync(OPERATOR_CM, getOperatorNamespace(),
-                    null,
-                    new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
+    return RequestBuilder.CM.patch(
+        getOperatorNamespace(), OPERATOR_CM,
+        V1Patch.PATCH_FORMAT_JSON_PATCH,
+        new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
   }
 
   private static Step recordInternalOperatorKey(String key, Step next) {
-    return new CallBuilder().readSecretAsync(OPERATOR_SECRETS,
-            getOperatorNamespace(), readSecretResponseStep(next, key));
+    return RequestBuilder.SECRET.get(getOperatorNamespace(), OPERATOR_SECRETS, readSecretResponseStep(next, key));
   }
 
   private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String internalOperatorKey) {
@@ -152,20 +152,16 @@ public class InitializeInternalIdentityStep extends Step {
     }
 
     private static Step createSecret(Step next, String internalOperatorKey) {
-      return new CallBuilder()
-          .createSecretAsync(getOperatorNamespace(),
-              createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
+      return RequestBuilder.SECRET.create(createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
     }
 
     private static Step replaceSecret(Step next, V1Secret secret, String internalOperatorKey) {
-      return new CallBuilder()
-          .replaceSecretAsync(OPERATOR_SECRETS, getOperatorNamespace(), createModel(secret, internalOperatorKey),
-              new DefaultResponseStep<>(next));
+      return RequestBuilder.SECRET.update(createModel(secret, internalOperatorKey), new DefaultResponseStep<>(next));
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
-      V1Secret existingSecret = callResponse.getResult();
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Secret> callResponse) {
+      V1Secret existingSecret = callResponse.getObject();
       if (existingSecret == null) {
         return doNext(createSecret(getNext(), internalOperatorKey), packet);
       } else {

@@ -1,23 +1,41 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
-import java.io.Serial;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import io.kubernetes.client.extended.controller.reconciler.Result;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 /** Individual step in a processing flow. */
 public abstract class Step {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  public interface StepAdapter {
+    Step adapt(Fiber fiber, Step step, Packet packet);
+  }
+
+  private static final StepAdapter DEFAULT_ADAPTER = (fiber, step, packet) -> {
+    if (fiber != null) {
+      fiber.addBreadcrumb(step);
+    }
+    return step;
+  };
+
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static StepAdapter adapter = DEFAULT_ADAPTER;
+
+  public static final String THROWABLE = "throwable";
+
   private Step next;
 
   /** Create a step with no next step. */
@@ -60,29 +78,6 @@ public abstract class Step {
    */
   public static Step chain(List<Step> stepGroups) {
     return chain(stepGroups.toArray(new Step[0]));
-  }
-
-  /**
-   * Inserts a step into a chain of steps before the first step whose name is specified. The name is given without
-   * its package and/or outer class. If no step with the specified class is found, the step will be inserted at the end.
-   * @param stepToInsert the step to insert
-   * @param stepClassName the name of the class before which to insert the new step
-   */
-  public void insertBefore(Step stepToInsert, @Nullable String stepClassName) {
-    Step step = this;
-    while (step.getNext() != null && !isSpecifiedStep(step.getNext(), stepClassName)) {
-      step = step.getNext();
-    }
-    stepToInsert.next = step.getNext();
-    step.next = stepToInsert;
-  }
-
-  private boolean isSpecifiedStep(Step step, String stepClassName) {
-    return stepClassName != null && hasSpecifiedClassName(step.getClass().getName(), stepClassName);
-  }
-
-  private boolean hasSpecifiedClassName(String name, String stepClassName) {
-    return name.endsWith("." + stepClassName) || name.endsWith("$" + stepClassName);
   }
 
   private static int getFirstNonNullIndex(Step[] stepGroups) {
@@ -163,10 +158,6 @@ public abstract class Step {
   }
 
   // creates a unique ID that allows matching requests to responses
-  public String identityHash() {
-    return Integer.toHexString(System.identityHashCode(this));
-  }
-
   @Override
   public String toString() {
     if (next == null) {
@@ -176,216 +167,187 @@ public abstract class Step {
   }
 
   /**
-   * Invokes step using the packet as input/output context. The next action directs further
-   * processing of the {@link Fiber}.
+   * Invokes step using the packet as input/output context.
    *
    * @param packet Packet
-   * @return Next action
    */
-  public abstract NextAction apply(Packet packet);
+  public abstract @Nonnull Result apply(Packet packet);
 
-  /**
-   * Create {@link NextAction} that indicates that the next step be invoked with the given {@link
-   * Packet}.
-   *
-   * @param packet Packet to provide when invoking the next step
-   * @return The next action
-   */
-  protected NextAction doNext(Packet packet) {
-    NextAction na = new NextAction();
-    na.invoke(next, packet);
-    return na;
+  static final Step adapt(Step step, Packet packet) {
+    return adapt(Fiber.getCurrentIfSet(), step, packet);
+  }
+
+  static final Step adapt(Fiber fiber, Step step, Packet packet) {
+    if (fiber != null && fiber.isCancelled()) {
+      return null;
+    }
+    return adapter.adapt(fiber, step, packet);
   }
 
   /**
-   * Create {@link NextAction} that indicates that the indicated step be invoked with the given
-   * {@link Packet}.
+   * Invokes this step.
+   *
+   * @param packet Packet to provide when invoking the step
+   */
+  public final Result doStepNext(Packet packet) {
+    return doNext(this, packet);
+  }
+
+  /**
+   * Invokes the next step, if set.
+   *
+   * @param packet Packet to provide when invoking the next step
+   */
+  protected final Result doNext(Packet packet) {
+    return doNext(next, packet);
+  }
+
+  /**
+   * Invokes the indicated next step.
    *
    * @param step The step
    * @param packet Packet to provide when invoking the next step
-   * @return The next action
    */
-  protected NextAction doNext(Step step, Packet packet) {
-    NextAction na = new NextAction();
-    na.invoke(step, packet);
-    return na;
+  protected static final Result doNext(Step step, Packet packet) {
+    if (step != null) {
+      Step s = adapt(step, packet);
+      if (s != null) {
+        return s.apply(packet);
+      }
+    }
+    return doEnd(packet);
   }
 
   /**
-   * Returns next action that will end the fiber processing.
+   * End the fiber processing.
    *
    * @param packet Packet
-   * @return Next action that will end processing
    */
-  protected final NextAction doEnd(Packet packet) {
-    return doNext(null, packet);
+  protected static final Result doEnd(Packet packet) {
+    return new Result(false);
   }
 
   /**
-   * Returns next action that will terminate fiber processing with a throwable.
+   * End the fiber processing and requeue after the standard delay.
+   *
+   * @param packet Packet
+   */
+  protected static final Result doRequeue(Packet packet) {
+    return new Result(true,
+            Duration.ofSeconds(TuningParameters.getInstance().getWatchTuning().getWatchBackstopRecheckDelay()));
+  }
+
+  /**
+   * Terminate fiber processing with a throwable.
    *
    * @param throwable Throwable
    * @param packet Packet
    * @return Next action that will end processing with a throwable
    */
-  protected final NextAction doTerminate(Throwable throwable, Packet packet) {
-    NextAction na = new NextAction();
-    na.terminate(throwable, packet);
-    return na;
+  protected static final Result doTerminate(Throwable throwable, Packet packet) {
+    Fiber fiber = Fiber.getCurrentIfSet();
+    if (fiber != null) {
+      fiber.addBreadcrumb("[throw= " + throwable.getMessage() + "]");
+    }
+    packet.put(THROWABLE, throwable);
+    return doEnd(packet);
   }
 
   /**
-   * Create {@link NextAction} that indicates that the current step be retried after a delay.
+   * Retries this step after a delay.
    *
    * @param packet Packet to provide when retrying this step
    * @param delay Delay time
    * @param unit Delay time unit
-   * @return The next action
    */
   @SuppressWarnings("SameParameterValue")
-  protected NextAction doRetry(Packet packet, long delay, TimeUnit unit) {
-    NextAction na = new NextAction();
-    na.delay(this, packet, delay, unit);
-    return na;
+  protected final Result doRetry(Packet packet, long delay, TimeUnit unit) {
+    return doDelay(this, packet, delay, unit);
   }
 
   /**
-   * Create {@link NextAction} that indicates that the current fiber resume with the indicated step
-   * after a delay.
+   * Invoke the indicated step after a delay.
    *
    * @param step Step from which to resume
    * @param packet Packet to provide when retrying this step
    * @param delay Delay time
    * @param unit Delay time unit
-   * @return The next action
    */
-  protected NextAction doDelay(Step step, Packet packet, long delay, TimeUnit unit) {
-    NextAction na = new NextAction();
-    na.delay(step, packet, delay, unit);
-    return na;
+  protected static final Result doDelay(Step step, Packet packet, long delay, TimeUnit unit) {
+    try {
+      Fiber fiber = Fiber.getCurrentIfSet();
+      if (fiber != null) {
+        fiber.addBreadcrumb(("[delay: " + unit.toMillis(delay) + "ms]"));
+      }
+      unit.sleep(delay);
+    } catch (InterruptedException e) {
+      return doTerminate(e, packet);
+    }
+    return step.doStepNext(packet);
   }
 
-  /**
-   * Create {@link NextAction} that suspends the current {@link Fiber}. While suspended the Fiber
-   * does not consume a thread. Resume the Fiber using {@link Fiber#resume(Packet)}
-   *
-   * @param onExit Called after fiber is suspended
-   * @return Next action
-   */
-  protected NextAction doSuspend(Consumer<AsyncFiber> onExit) {
-    NextAction na = new NextAction();
-    na.suspend(next, onExit);
-    return na;
-  }
-
-  /**
-   * Create {@link NextAction} that suspends the current {@link Fiber}. While suspended the Fiber
-   * does not consume a thread. When the Fiber resumes it will start with the indicated step. Resume
-   * the Fiber using {@link Fiber#resume(Packet)}
-   *
-   * @param step Step to invoke next when resumed
-   * @param onExit Called after fiber is suspended
-   * @return Next action
-   */
-  protected NextAction doSuspend(Step step, Consumer<AsyncFiber> onExit) {
-    NextAction na = new NextAction();
-    na.suspend(step, onExit);
-    return na;
-  }
-
-  public Step getNext() {
+  public final Step getNext() {
     return next;
   }
 
   /**
-   * Create a {@link NextAction} that suspends the current {@link Fiber} and that starts child
-   * fibers for each step and packet pair. When all the created child fibers complete, then this
-   * fiber is resumed with the indicated step and packet.
+   * Invokes a set of steps and then conditionally continues to invoke a given step. If any of the steps
+   * return requesting a requeue then the conditional step is not invoked and a requeue result with the
+   * shortest duration. Otherwise, if none of the steps request a requeue then the result of invoking the
+   * conditional step is returned.
    *
-   * @param step Step to invoke next when resumed after child fibers complete
+   * @param step Step to invoke conditionally after the set of steps are invoked
    * @param packet Resume packet
-   * @param startDetails Pairs of step and packet to use when starting child fibers
-   * @return Next action
+   * @param startDetails Pairs of step and packet to use when starting
    */
-  protected NextAction doForkJoin(
-      Step step, Packet packet, Collection<StepAndPacket> startDetails) {
-    return doSuspend(
-        step,
-        fiber -> {
-          CompletionCallback callback =
-              new JoinCompletionCallback(fiber, packet, startDetails.size()) {
-                @Override
-                public void onCompletion(Packet p) {
-                  int current = count.decrementAndGet();
-                  if (current == 0) {
-                    // no need to synchronize throwables as all fibers are done
-                    if (throwables.isEmpty()) {
-                      fiber.resume(packet);
-                    } else if (throwables.size() == 1) {
-                      fiber.terminate(throwables.get(0), packet);
-                    } else {
-                      fiber.terminate(new MultiThrowable(throwables), packet);
-                    }
-                  }
-                }
-              };
-          // start forked fibers
-          for (StepAndPacket sp : startDetails) {
-            fiber.createChildFiber().start(sp.step, sp.packet, callback);
-          }
-        });
-  }
+  protected final Result doForkJoin(
+      Step step, Packet packet, Collection<Fiber.StepAndPacket> startDetails) {
+    boolean requeue = false;
+    Duration duration = null;
 
-  /** Multi-exception. */
-  public static class MultiThrowable extends RuntimeException {
-    @Serial
-    private static final long serialVersionUID  = 1L;
-    private final transient List<Throwable> throwables;
-
-    private MultiThrowable(List<Throwable> throwables) {
-      super(throwables.get(0));
-      this.throwables = throwables;
+    Fiber fiber = Fiber.getCurrentIfSet();
+    int count = 0;
+    if (LOGGER.isFinerEnabled() && fiber != null) {
+      fiber.addBreadcrumb("[forkJoin]");
     }
-
-    /**
-     * The multiple exceptions wrapped by this exception.
-     *
-     * @return Multiple exceptions
-     */
-    public List<Throwable> getThrowables() {
-      return throwables;
-    }
-  }
-
-  private abstract static class JoinCompletionCallback implements CompletionCallback {
-    protected final AsyncFiber fiber;
-    protected final Packet packet;
-    protected final AtomicInteger count;
-    protected final List<Throwable> throwables = new ArrayList<>();
-
-    JoinCompletionCallback(AsyncFiber fiber, Packet packet, int initialCount) {
-      this.fiber = fiber;
-      this.packet = packet;
-      this.count = new AtomicInteger(initialCount);
-    }
-
-    @Override
-    public void onThrowable(Packet p, Throwable throwable) {
-      synchronized (throwables) {
-        throwables.add(throwable);
+    for (Fiber.StepAndPacket sap : startDetails) {
+      if (LOGGER.isFinerEnabled() && fiber != null) {
+        fiber.addBreadcrumb("[" + ++count + "of" + startDetails.size() + "]");
       }
-      int current = count.decrementAndGet();
-      if (current == 0) {
-        // no need to synchronize throwables as all fibers are done
-        if (throwables.size() == 1) {
-          fiber.terminate(throwable, packet);
-        } else {
-          fiber.terminate(new MultiThrowable(throwables), packet);
-        }
+
+      Result r = sap.step().doStepNext(sap.packet());
+      if (r != null && r.isRequeue()) {
+        requeue = true;
+        duration = minDuration(duration, r.getRequeueAfter());
       }
     }
+
+    if (requeue) {
+      if (LOGGER.isFinerEnabled() && fiber != null) {
+        fiber.addBreadcrumb("[forkJoin-requeue: " + duration + "]");
+      }
+      return new Result(true, duration);
+    }
+
+    if (step == null) {
+      if (LOGGER.isFinerEnabled() && fiber != null) {
+        fiber.addBreadcrumb("[forkJoin-end]");
+      }
+      return doEnd(packet);
+    }
+    if (LOGGER.isFinerEnabled() && fiber != null) {
+      fiber.addBreadcrumb("[forkJoin-cont]");
+    }
+    return step.doStepNext(packet);
   }
 
-  public record StepAndPacket(Step step, Packet packet) {
+  private Duration minDuration(Duration one, Duration two) {
+    if (one == null) {
+      return two;
+    }
+    if (two == null) {
+      return one;
+    }
+    return one.compareTo(two) <= 0 ? one : two;
   }
 }

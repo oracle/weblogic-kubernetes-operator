@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,6 +8,7 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewSpec;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
@@ -41,7 +42,7 @@ public class AuthenticationProxy {
               namespace == null ? AuthorizationProxy.Scope.CLUSTER : AuthorizationProxy.Scope.NAMESPACE,
               namespace);
       if (allowed) {
-        result = new CallBuilder().createTokenReview(prepareTokenReview(token));
+        result = RequestBuilder.TR.create(prepareTokenReview(token));
       } else {
         LOGGER.warning(MessageKeys.CANNOT_CREATE_TOKEN_REVIEW);
       }

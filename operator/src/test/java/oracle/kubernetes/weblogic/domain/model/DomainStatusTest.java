@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -49,10 +49,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-// todo if fatal error, append 'no retry' comment to message (will already be set to fatal)
-// if severe error, append 'retry until XXX' message
-// message is now always taken from first sorted condition(?)
-
 
 class DomainStatusTest {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

@@ -259,8 +259,6 @@ public class ItMiiDomainModelInPV {
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
         domainUid, image);
 
-    // HERE -- looking for where nodePort value is set
-
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, createSecretsForImageRepos(domainNamespace), encryptionSecretName,
         2, List.of(clusterName), true, params.nodePort);
@@ -361,7 +359,6 @@ public class ItMiiDomainModelInPV {
       } else {
         // In non-internal OKE env, verifyMemberHealth using adminSvcExtHost by sending HTTP request from local VM
 
-        // TEST, HERE
         String extSvcPodName = getExternalServicePodName(adminServerPodName);
         logger.info("**** adminServerPodName={0}", adminServerPodName);
         logger.info("**** extSvcPodName={0}", extSvcPodName);

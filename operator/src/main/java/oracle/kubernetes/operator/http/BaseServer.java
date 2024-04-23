@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -15,16 +15,12 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Collection;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 
 import io.kubernetes.client.util.SSLUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.work.Container;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import org.apache.commons.codec.binary.Base64;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
@@ -53,7 +49,6 @@ public abstract class BaseServer {
   /**
    * Starts WebLogic operator's or conversion webhook's REST api.
    *
-   * @param container Container
    * @throws IOException if the REST api could not be started for reasons other than a port was not
    *                   configured. When an exception is thrown, then none of the ports will be left running,
    *                   however it is still OK to call stop (which will be a no-op).
@@ -64,7 +59,7 @@ public abstract class BaseServer {
    * @throws InvalidKeySpecException Invalid key
    * @throws KeyManagementException Key management failed
    */
-  public abstract void start(Container container) throws UnrecoverableKeyException, CertificateException,
+  public abstract void start() throws UnrecoverableKeyException, CertificateException,
       IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException;
 
   /**
@@ -81,13 +76,13 @@ public abstract class BaseServer {
     // no-op
   }
 
-  protected HttpServer createHttpServer(Container container, String uri) throws IOException {
+  protected HttpServer createHttpServer(String uri) throws IOException {
     HttpServer h =
         GrizzlyHttpServerFactory.createHttpServer(
             URI.create(uri),
             createResourceConfig(),
             false);
-    updateHttpServer(h, container);
+    updateHttpServer(h);
 
     configureServer(h);
 
@@ -95,7 +90,7 @@ public abstract class BaseServer {
     return h;
   }
 
-  protected HttpServer createHttpsServer(Container container, SSLContext ssl, String uri) throws IOException {
+  protected HttpServer createHttpsServer(SSLContext ssl, String uri) throws IOException {
     HttpServer h =
         GrizzlyHttpServerFactory.createHttpServer(
             URI.create(uri),
@@ -106,7 +101,7 @@ public abstract class BaseServer {
                 .setNeedClientAuth(false)
                 .setEnabledProtocols(SSL_PROTOCOLS),
             false);
-    updateHttpServer(h, container);
+    updateHttpServer(h);
 
     configureServer(h);
 
@@ -114,7 +109,7 @@ public abstract class BaseServer {
     return h;
   }
 
-  private void updateHttpServer(HttpServer h, Container container) {
+  private void updateHttpServer(HttpServer h) {
     // We discovered the default thread pool configuration was generating hundreds of
     // threads.  Tune it down to something more modest.  Note: these are core
     // pool sizes, so they can still grow if there is sufficient load.
@@ -127,36 +122,15 @@ public abstract class BaseServer {
           t = ThreadPoolConfig.defaultConfig();
           transport.setWorkerThreadPoolConfig(t);
         }
-        updateThreadPoolConfig(t, container);
 
         t = transport.getKernelThreadPoolConfig();
         if (t == null) {
           t = ThreadPoolConfig.defaultConfig();
           transport.setKernelThreadPoolConfig(t);
         }
-        updateThreadPoolConfig(t, container);
         transport.setSelectorRunnersCount(CORE_POOL_SIZE);
       }
     }
-  }
-
-  private void updateThreadPoolConfig(ThreadPoolConfig threadPoolConfig, Container container) {
-    threadPoolConfig.setCorePoolSize(CORE_POOL_SIZE);
-    ThreadFactory x = threadPoolConfig.getThreadFactory();
-    ThreadFactory tf = x != null ? x : Executors.defaultThreadFactory();
-    threadPoolConfig.setThreadFactory(
-        r -> {
-          Thread n =
-              tf.newThread(
-                  () -> {
-                    ContainerResolver.getDefault().enterContainer(container);
-                    r.run();
-                  });
-          if (!n.isDaemon()) {
-            n.setDaemon(true);
-          }
-          return n;
-        });
   }
 
   protected boolean isSslConfigured(

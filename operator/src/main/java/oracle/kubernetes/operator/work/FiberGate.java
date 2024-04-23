@@ -1,40 +1,37 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
-import java.time.format.DateTimeFormatter;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.operator.work.Fiber.FiberExecutor;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Allows at most one running Fiber per key value. However, rather than queue later arriving Fibers
- * this class cancels the earlier arriving Fibers. For the operator, this makes sense as domain
- * presence Fibers that come later will always complete or correct work that may have been
- * in-flight.
+ * Allows at most one running Fiber per key value.
  */
 public class FiberGate {
-  private final Engine engine;
+  private final ScheduledExecutorService scheduledExecutorService;
 
   /** A map of domain UIDs to the fiber charged with running processing on that domain. **/
   private final Map<String, Fiber> gateMap = new ConcurrentHashMap<>();
 
-  private final Fiber placeholder;
-
   /**
    * Constructor taking Engine for running Fibers.
    *
-   * @param engine Engine
+   * @param scheduledExecutorService Executor
    */
-  public FiberGate(Engine engine) {
-    this.engine = engine;
-    this.placeholder = engine.createFiber();
+  public FiberGate(ScheduledExecutorService scheduledExecutorService) {
+    this.scheduledExecutorService = scheduledExecutorService;
   }
 
   /**
@@ -45,138 +42,77 @@ public class FiberGate {
     return new HashMap<>(gateMap);
   }
 
-  public ScheduledExecutorService getExecutor() {
-    return engine.getExecutor();
-  }
-
   /**
    * Starts Fiber that cancels any earlier running Fibers with the same domain UID. Fiber map is not
    * updated if no Fiber is started.
    *
    * @param domainUid the UID for which a fiber should be started
-   * @param strategy Step for Fiber to begin with
-   * @param packet Packet
+   * @param stepSupplier Supplier for Step for Fiber to begin with
+   * @param packetSupplier Supplier for Packet
    * @param callback Completion callback
    */
-  public void startFiber(String domainUid, Step strategy, Packet packet, CompletionCallback callback) {
-    requestNewFiberStart(domainUid, null, strategy, packet, callback);
-  }
-
-  /**
-   * Starts Fiber only if there is no running Fiber with the same key. Fiber map is not updated if
-   * no Fiber is started.
-   *
-   * @param domainUid the UID for which a fiber should be started
-   * @param strategy Step for Fiber to begin with
-   * @param packet Packet
-   * @param callback Completion callback
-   */
-  public void startFiberIfNoCurrentFiber(
-      String domainUid, Step strategy, Packet packet, CompletionCallback callback) {
-    requestNewFiberStart(domainUid, placeholder, strategy, packet, callback);
-  }
-
-  /**
-   * Starts a new fiber only if the current running fiber is associated with the specified domain UID.
-   * @param domainUid  the UID for which a fiber should be started
-   * @param strategy Step for Fiber to begin with
-   * @param packet Packet
-   * @param callback Completion callback
-   */
-  public void startNewFiberIfCurrentFiberMatches(
-      String domainUid, Step strategy, Packet packet, CompletionCallback callback) {
-    requestNewFiberStart(domainUid, Fiber.getCurrentIfSet(), strategy, packet, callback);
+  public void startFiber(String domainUid, Supplier<Step> stepSupplier, Supplier<Packet> packetSupplier,
+                     CompletionCallback callback) {
+    requestNewFiberStart(domainUid, stepSupplier, packetSupplier, callback);
   }
 
   /**
    * Starts Fiber only if the last started Fiber matches the given old Fiber.
    *
    * @param domainUid the UID for which a fiber should be started
-   * @param old Expected last Fiber
-   * @param strategy Step for Fiber to begin with
-   * @param packet Packet
+   * @param stepSupplier Supplier for step for Fiber to begin with
+   * @param packetSupplier Supplier for Packet
    * @param callback Completion callback
    */
   private synchronized void requestNewFiberStart(
-      String domainUid, Fiber old, Step strategy, Packet packet, CompletionCallback callback) {
-    new FiberRequest(domainUid, old, strategy, packet, callback).invoke();
+      String domainUid, Supplier<Step> stepSupplier, Supplier<Packet> packetSupplier, CompletionCallback callback) {
+    new FiberRequest(domainUid, stepSupplier, packetSupplier, callback).invoke();
   }
 
   private class FiberRequest {
 
     private final String domainUid;
     private final Fiber fiber;
-    private final CompletionCallback gateCallback;
-    private Fiber old;
-    private final Step steps;
-    private final Packet packet;
+    private final Supplier<Step> stepSupplier;
+    private final Supplier<Packet> packetSupplier;
 
-    FiberRequest(String domainUid, Fiber old, Step steps, Packet packet, CompletionCallback callback) {
+    FiberRequest(String domainUid, Supplier<Step> stepSupplier,
+             Supplier<Packet> packetSupplier, CompletionCallback callback) {
       this.domainUid = domainUid;
-      this.old = old;
-      this.steps = steps;
-      this.packet = packet;
+      this.stepSupplier = stepSupplier;
+      this.packetSupplier = packetSupplier;
 
-      fiber = engine.createFiber();
-      gateCallback = new FiberGateCompletionCallback(callback, domainUid, fiber);
+      fiber = new Fiber(new FiberExecutorImpl(), stepSupplier.get(), packetSupplier.get(),
+          new FiberGateCompletionCallback(callback, domainUid));
     }
 
     void invoke() {
-      if (isAllowed()) {
-        fiber.start(new WaitForOldFiberStep(old, steps), packet, gateCallback);
-      }
+      fiber.start();
     }
 
-    private boolean isAllowed() {
-      if (old == null) {
-        old = gateMap.put(domainUid, fiber);
-        return true;
-      } else if (old == placeholder) {
-        return gateMap.putIfAbsent(domainUid, fiber) == null;
-      } else {
-        return gateMap.replace(domainUid, old, fiber);
-      }
-    }
-  }
-
-  private static class WaitForOldFiberStep extends Step {
-    private final AtomicReference<Fiber> old;
-    private final AtomicReference<WaitForOldFiberStep> current;
-
-    public WaitForOldFiberStep(Fiber old, Step next) {
-      super(next);
-      this.old = new AtomicReference<>(old);
-      current = new AtomicReference<>(this);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      WaitForOldFiberStep c = current.get();
-      Fiber o = c != null ? c.old.getAndSet(null) : null;
-      if (o == null) {
-        return doNext(packet).withDebugComment(this::getProceedTime);
+    private class FiberExecutorImpl implements FiberExecutor {
+      @Override
+      public Cancellable schedule(Fiber fiber, Duration duration) {
+        ScheduledFuture<?> future = scheduledExecutorService.schedule(
+                () -> scheduledExecution(fiber), TimeUnit.MILLISECONDS.convert(duration), TimeUnit.MILLISECONDS);
+        return () -> future.cancel(true);
       }
 
-      return doSuspend(
-          this,
-          fiber -> {
-            boolean isWillCall =
-                o.cancelAndExitCallback(
-                    true,
-                    () -> {
-                      current.set(o.getSpi(WaitForOldFiberStep.class));
-                      fiber.resume(packet);
-                    });
+      private void scheduledExecution(Fiber fiber) {
+        Fiber scheduledReplacement = Fiber.copyWithNewStepsAndPacket(fiber, stepSupplier.get(), packetSupplier.get());
+        if (gateMap.replace(domainUid, fiber, scheduledReplacement)) {
+          scheduledExecutorService.execute(scheduledReplacement);
+        }
+      }
 
-            if (!isWillCall) {
-              current.set(o.getSpi(WaitForOldFiberStep.class));
-              fiber.resume(packet);
-            }
-          });
-    }
-
-    private String getProceedTime() {
-      return "starting fiber at " + SystemClock.now().format(DateTimeFormatter.ISO_LOCAL_TIME);
+      @Override
+      public void execute(@NotNull Fiber fiber) {
+        Fiber existing = gateMap.put(domainUid, fiber);
+        if (existing != null) {
+          existing.cancel();
+        }
+        scheduledExecutorService.execute(fiber);
+      }
     }
   }
 
@@ -184,16 +120,15 @@ public class FiberGate {
 
     private final CompletionCallback callback;
     private final String domainUid;
-    private final Fiber fiber;
 
-    public FiberGateCompletionCallback(CompletionCallback callback, String domainUid, Fiber fiber) {
+    public FiberGateCompletionCallback(CompletionCallback callback, String domainUid) {
       this.callback = callback;
       this.domainUid = domainUid;
-      this.fiber = fiber;
     }
 
     @Override
     public void onCompletion(Packet packet) {
+      Fiber fiber = packet.getFiber();
       try {
         callback.onCompletion(packet);
       } finally {
@@ -203,6 +138,7 @@ public class FiberGate {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
+      Fiber fiber = packet.getFiber();
       try {
         callback.onThrowable(packet, throwable);
       } finally {

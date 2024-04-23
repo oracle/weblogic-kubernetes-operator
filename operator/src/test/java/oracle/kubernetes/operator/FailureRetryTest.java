@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
@@ -25,8 +26,8 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
+import oracle.kubernetes.operator.watcher.JobWatcher;
 import oracle.kubernetes.operator.work.FiberTestSupport;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
@@ -266,7 +267,7 @@ class FailureRetryTest {
     private int numTimesRun = 0;
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       numTimesRun++;
       return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps("in unit test"), packet);
     }
@@ -275,7 +276,7 @@ class FailureRetryTest {
   static class AddFatalIntrospectionFailureStep extends Step {
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doNext(DomainStatusUpdater.createIntrospectionFailureSteps(FATAL_INTROSPECTOR_ERROR), packet);
     }
   }
@@ -300,7 +301,7 @@ class FailureRetryTest {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       if (exception instanceof RuntimeException) {
         throw (RuntimeException) exception;
       } else {
@@ -397,7 +398,10 @@ class FailureRetryTest {
     @Nonnull
     @Override
     public Packet createPacket() {
-      return new Packet().with(info).with(this);
+      Packet packet = new Packet();
+      packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, info);
+      packet.put(ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION, this);
+      return packet;
     }
 
     @Override

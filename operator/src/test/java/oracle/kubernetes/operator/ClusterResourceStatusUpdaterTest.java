@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -9,7 +9,6 @@ import java.util.List;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.RetryStrategyStub;
@@ -35,9 +34,7 @@ import static oracle.kubernetes.operator.EventConstants.CLUSTER_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_INCOMPLETE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_UNAVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER_STATUS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -60,7 +57,6 @@ class ClusterResourceStatusUpdaterTest {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
-    mementos.add(ClientFactoryStub.install());
 
     domain.setStatus(new DomainStatus());
     testSupport.addDomainPresenceInfo(info);
@@ -161,19 +157,6 @@ class ClusterResourceStatusUpdaterTest {
   }
 
   @Test
-  void onFailedReplaceStatus_reportUnrecoverableFailure() {
-    cluster.withStatus(new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
-        .withClusterName(CLUSTER).withReplicas(2).withReadyReplicas(1).withReplicasGoal(2));
-    info.addClusterResource(cluster);
-    domain.getStatus().addCluster(new ClusterStatus());
-    testSupport.failOnReplaceStatus(CLUSTER_STATUS, NAME + '-' + CLUSTER, NS, HTTP_INTERNAL_ERROR);
-
-    updateClusterResourceStatus();
-
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
-  }
-
-  @Test
   void onFailedReplaceStatus_retryRequest() {
     ClusterStatus newStatus = new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
         .withClusterName(CLUSTER).withReplicas(2).withReadyReplicas(1).withReplicasGoal(2);
@@ -182,7 +165,7 @@ class ClusterResourceStatusUpdaterTest {
     info.addClusterResource(cluster);
     retryStrategy.setNumRetriesLeft(1);
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnReplaceStatus(CLUSTER_STATUS, NAME + '-' + CLUSTER, NS, HTTP_UNAVAILABLE);
+    testSupport.failOnReplaceStatus(CLUSTER, NAME + '-' + CLUSTER, NS, HTTP_UNAVAILABLE);
 
     updateClusterResourceStatus();
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.client;
@@ -7,7 +7,6 @@ import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.http.HttpResponse;
 
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -76,15 +75,4 @@ class HttpResponseStepTest {
     assertThat(responseStep.getSuccessResponse(), nullValue());
     assertThat(responseStep.getFailureResponse(), notNullValue());
   }
-
-  @Test
-  void whenNoResponseProvided_skipProcessing() {
-    NextAction nextAction = responseStep.apply(new Packet());
-
-    assertThat(responseStep.getSuccessResponse(), nullValue());
-    assertThat(responseStep.getFailureResponse(), nullValue());
-    assertThat(nextAction.getNext(), sameInstance(terminalStep));
-  }
-
-  // todo when response is failure, invoke onFailure
 }

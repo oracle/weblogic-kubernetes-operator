@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -12,9 +12,6 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.auth.ApiKeyAuth;
-import io.kubernetes.client.openapi.auth.Authentication;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
@@ -487,28 +484,6 @@ class RestBackendImplTest {
     restBackend.getClusters(DOMAIN1);
     assertThat(authorizationProxyStub.atzCheck, is(true));
   }
-
-  @Test
-  void whenUsingAccessToken_configureApiClient() {
-    RestBackendImpl restBackend = new RestBackendImpl("", "1234", this::getDomainNamespaces);
-    ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
-    Authentication authentication = apiClient.getAuthentication("BearerToken");
-    assertThat(authentication instanceof ApiKeyAuth, is(true));
-    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
-    assertThat(apiKey, is("1234"));
-  }
-
-  @Test
-  void whenUsingTokenReview_configureApiClient() {
-    TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
-    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
-    ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
-    Authentication authentication = apiClient.getAuthentication("BearerToken");
-    assertThat(authentication instanceof ApiKeyAuth, is(true));
-    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
-    assertThat(apiKey, nullValue());
-  }
-
 
   private DomainConfigurator configureDomain() {
     return configurator;

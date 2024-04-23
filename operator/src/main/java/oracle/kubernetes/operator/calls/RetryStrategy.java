@@ -1,10 +1,10 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
-import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.work.NextAction;
+import io.kubernetes.client.extended.controller.reconciler.Result;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -12,19 +12,15 @@ import oracle.kubernetes.operator.work.Step;
 public interface RetryStrategy {
 
   /**
-   * Called during {@link ResponseStep#onFailure(Packet, CallResponse)} to decide if
+   * Called during {@link ResponseStep#onFailure} to decide if
    * another retry attempt will occur.
    *
    * @param conflictStep Conflict step, or null
-   * @param packet Packet
-   * @param statusCode HTTP response status code; will be 0 for simple timeout
-   * @return Desired next action which should specify retryStep. Return null when call will not be
-   *     retried.
+   * @param packet       Packet
+   * @param callResponse Call response
+   * @return Desired next action which should specify retryStep. Return null when call will not be retried.
    */
-  NextAction doPotentialRetry(
-      Step conflictStep,
-      Packet packet,
-      int statusCode);
+  Result doPotentialRetry(Step conflictStep, Packet packet, KubernetesApiResponse<?> callResponse);
 
   /**
    * Called when retry count, or other statistics, should be reset, such as when partial list was

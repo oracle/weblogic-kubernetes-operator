@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -16,10 +16,10 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
-import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Packet;
@@ -45,8 +45,8 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
@@ -94,6 +94,7 @@ class PodDisruptionBudgetHelperTest {
                 .collectLogMessages(logRecords, MESSAGE_KEYS)
                 .withLogLevel(Level.FINE)
                 .ignoringLoggedExceptions(ApiException.class));
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
@@ -201,16 +202,6 @@ class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  void onFailedRun_reportFailure() {
-    testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, HTTP_INTERNAL_ERROR);
-
-    runPodDisruptionBudgetHelper();
-
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
-  }
-
-  @Test
   void onFailedRunWithConflictAndNoExistingPDB_createItOnRetry() {
     consoleHandlerMemento.ignoreMessage(getPdbCreateLogMessage());
     retryStrategy.setNumRetriesLeft(1);
@@ -244,10 +235,9 @@ class PodDisruptionBudgetHelperTest {
   @Test
   void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new UnrecoverableErrorBuilderImpl()
-            .withReason("FieldValueNotFound")
-            .withMessage("Test this failure")
-            .build());
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new V1Status()
+            .reason("FieldValueNotFound")
+            .message("Test this failure"), HTTP_BAD_REQUEST);
 
     runPodDisruptionBudgetHelper();
 
@@ -258,10 +248,9 @@ class PodDisruptionBudgetHelperTest {
   @Test
   void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_generateFailedEvent() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
-        .build());
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new V1Status()
+        .reason("FieldValueNotFound")
+        .message("Test this failure"), HTTP_BAD_REQUEST);
 
     runPodDisruptionBudgetHelper();
 
@@ -275,10 +264,9 @@ class PodDisruptionBudgetHelperTest {
   @Test
   void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new UnrecoverableErrorBuilderImpl()
-            .withReason("FieldValueNotFound")
-            .withMessage("Test this failure")
-            .build());
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new V1Status()
+            .reason("FieldValueNotFound")
+            .message("Test this failure"), HTTP_BAD_REQUEST);
 
     runPodDisruptionBudgetHelper();
 
