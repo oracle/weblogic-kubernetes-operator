@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -45,17 +45,21 @@ import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_MAX_CLUSTER_SIZE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -146,9 +150,15 @@ class ItValidateWebhookReplicas {
     // install and verify operator with REST API
     logger.info("Install an operator in namespace {0}, managing namespace {1} and {2}",
         opNamespace, domainNamespace, domainNamespace2);
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
-        domainNamespace, domainNamespace2);
-    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      installAndVerifyOperator(opNamespace, opServiceAccount, true, OPERATOR_EXTERNAL_REST_HTTPSPORT,
+          domainNamespace, domainNamespace2);
+      externalRestHttpsPort = OPERATOR_EXTERNAL_REST_HTTPSPORT;
+    } else {
+      installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
+          domainNamespace, domainNamespace2);
+      externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    }
 
     // create a mii domain resource with one cluster
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
