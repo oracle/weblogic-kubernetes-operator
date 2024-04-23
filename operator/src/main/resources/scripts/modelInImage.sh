@@ -547,6 +547,11 @@ restoreDomainSalt() {
   encrypt_decrypt_domain_secret "decrypt" /tmp$DOMAIN_HOME ${MII_PASSPHRASE}
 }
 
+restoreDomainDemoCerts() {
+  trace "Restoring Domain Demo Certs"
+  restoreDomainDemoPKIs "primordial_domainzip.secure" || return 1
+}
+
 restoreIntrospectorPrimordialDomain() {
   cd / || return 1
   cat $(ls /weblogic-operator/introspectormii*/primordial_domainzip.secure | sort -t- -k3) > /tmp/domain.secure || return 1
@@ -565,11 +570,18 @@ restoreEncodedTar() {
   tar -pxzf /tmp/domain.tar.gz || return 1
 }
 
+restoreDomainDemoPKIs() {
+  cd / || return 1
+  cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
+  base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
+  tar -pzxvf /tmp/domain.tar.gz -C /tmp  '*/security/Demo*' '*/security/demo*' || return 1
+}
+
 restoreSaltIni() {
   cd / || return 1
   cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
-  tar -pzxvf /tmp/domain.tar.gz -C /tmp  '*/security/SerializedSystemIni.dat' || return 1
+  tar -pzxvf /tmp/domain.tar.gz -C /tmp  '*/security/SerializedSystemIni.dat'  || return 1
 }
 
 # This is before WDT compareModel implementation
@@ -678,6 +690,7 @@ createPrimordialDomain() {
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
     restoreDomainSalt
+    restoreDomainDemoCerts
 
     trace "Checking if security info has been changed"
     generateMergedModel
@@ -833,7 +846,9 @@ checkSecureModeForUpgrade() {
       createFolder "/tmp/miiupgdomain${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
       local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
       encrypt_decrypt_domain_secret "decrypt" /tmp/miiupgdomain${DOMAIN_HOME} ${MII_PASSPHRASE}
-      cd /tmp/miiupgdomain && base64 -d ${WLSDOMAIN_CONFIG_ZIPPED} > ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp && tar -pxzf ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp
+      if [ -f ${WLSDOMAIN_CONFIG_ZIPPED} ] ; then
+        cd /tmp/miiupgdomain && base64 -d ${WLSDOMAIN_CONFIG_ZIPPED} > ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp && tar -pxzf ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp
+      fi
       # reading existing domain to determine what the secure mode should be whether it is set or by default.
       # a file is written to a /tmp/mii_domain_upgrade.txt containing the status of SecureModeEnabled.
       ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/mii-domain-upgrade.py /tmp/miiupgdomain$DOMAIN_HOME || exitOrLoop
@@ -975,8 +990,13 @@ wdtCreatePrimordialDomain() {
     exitOrLoop
   else
     trace "WDT Create Domain Succeeded, ret=${ret}:"
-    trace "Domain Created Salt key md5"
-    md5sum $DOMAIN_HOME/security/SerializedSystemIni.dat
+
+    trace "Copying demo certs from original domain"
+    if [ -f /tmp$DOMAIN_HOME/security/democacert.der ] ; then
+      cp /tmp$DOMAIN_HOME/security/demo* $DOMAIN_HOME/security
+      cp /tmp$DOMAIN_HOME/security/Demo* $DOMAIN_HOME/security
+    fi
+
     cat ${WDT_OUTPUT}
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ]; then
       CREATED_JRF_PRIMODIAL="true"
