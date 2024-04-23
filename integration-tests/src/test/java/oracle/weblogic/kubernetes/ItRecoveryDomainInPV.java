@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("oke-arm")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItRecoveryDomainInPV  {
 
   private static String opNamespace = null;

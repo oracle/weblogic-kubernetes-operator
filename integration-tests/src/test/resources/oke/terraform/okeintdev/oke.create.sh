@@ -1,10 +1,11 @@
 #!/bin/bash
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 prop() {
     grep "${1}" ${propsFile}| grep -v "#" | cut -d'=' -f2
 }
+
 
 generateTFVarFile() {
     tfVarsFiletfVarsFile=${terraformVarDir}/${clusterTFVarsFile}.tfvars
@@ -13,18 +14,23 @@ generateTFVarFile() {
     chmod 777 ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
     sed -i -e "s:@TENANCYOCID@:${tenancy_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@USEROCID@:${user_ocid}:g" ${tfVarsFiletfVarsFile}
-    sed -i -e "s:@COMPARTMENTOCID@:${compartment_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@COMPOCID@:${compartment_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@SUBCOMPARTMENTOCID@:${sub_compartment_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@COMPARTMENTNAME@:${compartment_name}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@OKECLUSTERNAME@:${okeclustername}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s/@OCIAPIPUBKEYFINGERPRINT@/"${ociapi_pubkey_fingerprint}"/g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@OCIPRIVATEKEYPATH@:${ocipk_path}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@VCNCIDRPREFIX@:${vcn_cidr_prefix}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@VCNOCID@:${vcn_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@PUBSUBNETOCID@:${pub_subnet_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@PRIVATESUBNETOCID@:${private_subnet_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@VCNCIDR@:${vcn_cidr_prefix}.0.0/16:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@OKEK8SVERSION@:${k8s_version}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@NODEPOOLSHAPE@:${nodepool_shape}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@NODEPOOLIMAGENAME@:${nodepool_imagename}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@NODEPOOLSSHPUBKEY@:${nodepool_ssh_pubkey}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@MOUNTTARGETOCID@:${mount_target_ocid}:g" ${tfVarsFiletfVarsFile}
     echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
 }
 
@@ -41,7 +47,6 @@ setupTerraform() {
     curl -O https://releases.hashicorp.com/terraform/1.8.1/terraform_1.8.1_${os_type}_${platform}64.zip
     unzip terraform_1.8.1_${os_type}_${platform}64.zip
     chmod +x ${terraformDir}/terraform
-
     export PATH=${terraformDir}:${PATH}
 }
 
@@ -77,34 +82,40 @@ createRoleBindings () {
 
 checkClusterRunning () {
 
-    echo "Confirm access to cluster..."
+    echo "Confirm we have ${KUBERNETES_CLI:-kubectl} working..."
     myline=`${KUBERNETES_CLI:-kubectl} get nodes | awk '{print $2}'| tail -n+2`
     status="NotReady"
     max=50
     count=1
 
     privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
-    myline=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
+    privateIP=${vcn_cidr_prefix}
+    declare -a myline
+    myline=(`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`)
     NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-    echo $myline
-    status=$myline
+    status=$myline[0]
     max=100
     count=1
-    while [ "$myline" != "Ready" -a $count -le $max ] ; do
-      echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
-      sleep 10
-      myline=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
-      NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-      [[ ${myline} -eq "Ready"  ]]
-      echo "Status is ${myline} Iter [$count/$max]"
-      count=`expr $count + 1`
+
+    for i in {0..1}
+    do
+    while [ "${myline[i]}" != "Ready" -a $count -le $max ] ; do
+        echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
+        sleep 10
+        myline=(`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`)
+        NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
+        echo "myline[i] ${myline[i]}"
+        [[ ${myline[i]} -eq "Ready"  ]]
+        echo "Status is ${myline[i]} Iter [$count/$max]"
+        count=`expr $count + 1`
+      done
     done
 
     NODES=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | wc -l`
-    if [ "$NODES" == "1" ]; then
-      echo '- able to access cluster'
+    if [ "$NODES" == "2" ]; then
+      echo '- looks good'
     else
-      echo '- could not access cluster, aborting'
+      echo '- could not talk to cluster, aborting'
       cd ${terraformVarDir}
       terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
       exit 1
@@ -128,12 +139,17 @@ platform=${3:-amd}
 clusterTFVarsFile=$(prop 'tfvars.filename')
 tenancy_ocid=$(prop 'tenancy.ocid')
 user_ocid=$(prop 'user.ocid')
+mount_target_ocid=$(prop 'mounttarget.ocid')
 compartment_ocid=$(prop 'compartment.ocid')
+sub_compartment_ocid=$(prop 'sub.comp.ocid')
 compartment_name=$(prop 'compartment.name')
 okeclustername=$(prop 'okeclustername')
 ociapi_pubkey_fingerprint=$(prop 'ociapi.pubkey.fingerprint')
 ocipk_path=$(prop 'ocipk.path')
 vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
+vcn_ocid=$(prop 'vcn.ocid')
+pub_subnet_ocid=$(prop 'pub.subnet.ocid')
+private_subnet_ocid=$(prop 'private.subnet.ocid')
 k8s_version=$(prop 'k8s.version')
 nodepool_shape=$(prop 'nodepool.shape')
 nodepool_imagename=$(prop 'nodepool.imagename')
@@ -142,6 +158,7 @@ region=$(prop 'region')
 terraformDir=$(prop 'terraform.installdir')
 
 # generate terraform configuration file with name $(clusterTFVarsFile).tfvar
+#generateTFVarFile
 generateTFVarFile
 
 # cleanup previously installed terraform binaries
@@ -159,5 +176,20 @@ chmod 600 ${ocipk_path}
 createCluster
 #check status of OKE cluster nodes, destroy if can not access them
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
+
+
+export okeclustername=\"${okeclustername}\"
+
+
+ echo " oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"'"
+
+clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
+echo "clusterIp : $clusterIP"
+clusterPublicIP=${clusterIP:1:-6}
+echo " clusterPublicIP : ${clusterPublicIP}"
+export NO_PROXY=$NO_PROXY,${clusterPublicIP}
+echo "NO_PROXY:" $NO_PROXY
+
+
 checkClusterRunning
-echo "$okeclustername cluster is up and running"
+echo "$okeclustername is up and running}"

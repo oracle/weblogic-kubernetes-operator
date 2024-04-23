@@ -116,7 +116,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItSystemResOverrides {
 
   private static String opNamespace = null;

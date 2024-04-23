@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItRetryImprovements {
 
   // domain constants

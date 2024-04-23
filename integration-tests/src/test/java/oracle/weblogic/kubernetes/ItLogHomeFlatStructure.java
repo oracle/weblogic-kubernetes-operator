@@ -85,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItLogHomeFlatStructure {
 
   private static String opNamespace = null;
