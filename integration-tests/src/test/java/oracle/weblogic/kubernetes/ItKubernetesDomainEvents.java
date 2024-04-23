@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -761,7 +762,7 @@ class ItKubernetesDomainEvents {
     int t3ChannelPort = getNextFreePort();
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
-                    -> File.createTempFile("domain", "properties"),
+                    -> File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
             "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", uniquePath);
@@ -881,7 +882,8 @@ class ItKubernetesDomainEvents {
         = getServicePort(domainNamespace3, adminServerPodName, "default");
 
     // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+    File wlstPropertiesFile =
+        assertDoesNotThrow(() -> File.createTempFile("wlst", ".properties", new File(RESULTS_TEMPFILE)),
         "Creating WLST properties file failed");
     Properties p = new Properties();
     p.setProperty("admin_host", adminServerPodName);
