@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-srg")
 @Tag("olcne-mrg")
 @Tag("oke-arm")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;
