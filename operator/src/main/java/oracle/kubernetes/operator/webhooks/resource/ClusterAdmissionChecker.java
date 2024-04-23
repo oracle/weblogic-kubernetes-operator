@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.resource;
@@ -11,7 +11,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -87,7 +87,7 @@ public abstract class ClusterAdmissionChecker extends AdmissionChecker {
   }
 
   List<DomainResource> getDomainResources(ClusterResource clusterResource) throws ApiException {
-    return referencingDomains(clusterResource, new CallBuilder().listDomain(getNamespace(clusterResource)));
+    return referencingDomains(clusterResource, RequestBuilder.DOMAIN.list(getNamespace(clusterResource)));
   }
 
   private List<DomainResource> referencingDomains(ClusterResource clusterResource, DomainList domains) {

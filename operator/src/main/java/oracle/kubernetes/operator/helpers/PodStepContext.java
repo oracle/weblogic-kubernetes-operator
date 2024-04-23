@@ -23,12 +23,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
-import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -47,6 +47,7 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -57,11 +58,10 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -71,7 +71,6 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
@@ -141,7 +140,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private String sha256Hash;
 
   PodStepContext(Step conflictStep, Packet packet) {
-    super(packet.getSpi(DomainPresenceInfo.class));
+    super((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
     this.conflictStep = conflictStep;
     this.packet = packet;
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
@@ -396,10 +395,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   // ----------------------- step methods ------------------------------
 
-  private void clearBeingDeleted() {
-    info.setServerPodBeingDeleted(getServerName(), Boolean.FALSE);
-  }
-
   private void setRecordedPod(V1Pod pod) {
     info.setServerPod(getServerName(), pod);
   }
@@ -431,12 +426,11 @@ public abstract class PodStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step createPod(Step next) {
-    clearBeingDeleted();
     return createPodAsync(createResponse(next));
   }
 
   private Step createPodAsync(ResponseStep<V1Pod> response) {
-    return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), response);
+    return RequestBuilder.POD.create(getPodModel(), response);
   }
 
   /**
@@ -518,7 +512,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected boolean canUseNewDomainZip(V1Pod currentPod) {
     String dynamicUpdateResult = packet.getValue(MII_DYNAMIC_UPDATE);
-
     if (miiDomainZipHash == null || isDomainZipUnchanged(currentPod)) {
       return true;
     } else if (dynamicUpdateResult == null || !getDomain().isUseOnlineUpdate()) {
@@ -1025,7 +1018,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private class ConflictStep extends BaseStep {
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doNext(getConflictStep(), packet);
     }
 
@@ -1065,7 +1058,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       this.message = message;
     }
 
-    private ResponseStep<Object> deleteResponse(V1Pod pod, Step next) {
+    private ResponseStep<V1Pod> deleteResponse(V1Pod pod, Step next) {
       return new DeleteResponseStep(pod, next);
     }
 
@@ -1077,20 +1070,11 @@ public abstract class PodStepContext extends BasePodStepContext {
      * @return a step to be scheduled.
      */
     private Step deletePod(V1Pod pod, Step next) {
-      return new CallBuilder()
-          .deletePodAsync(getPodName(), getNamespace(), getDomainUid(),
-              new V1DeleteOptions(), deleteResponse(pod, next));
-    }
-
-    // Prevent the watcher from recreating pod with old spec
-    private void markBeingDeleted() {
-      info.setServerPodBeingDeleted(getServerName(), Boolean.TRUE);
+      return RequestBuilder.POD.delete(getNamespace(), getPodName(), deleteResponse(pod, next));
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-
-      markBeingDeleted();
+    public @Nonnull Result apply(Packet packet) {
       return doNext(createCyclePodEventStep(deletePod(pod, getNext())), packet);
     }
 
@@ -1125,9 +1109,9 @@ public abstract class PodStepContext extends BasePodStepContext {
           patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
       KubernetesUtils.addPatches(
           patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getNonHashedPodAnnotations());
-      return new CallBuilder()
-          .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-              new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+      return RequestBuilder.POD.patch(getNamespace(), getPodName(),
+          V1Patch.PATCH_FORMAT_JSON_PATCH,
+          new V1Patch(patchBuilder.build().toString()), patchResponse(next));
     }
 
     private Step patchCurrentPod(V1Pod currentPod, Step next) {
@@ -1418,7 +1402,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
 
       if (currentPod == null) {
@@ -1453,16 +1437,16 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+    public Result onFailure(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
+      if (isUnrecoverable(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
         return onFailure(getConflictStep(), packet, callResponse);
       }
     }
 
-    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
-      return doNext(createKubernetesFailureSteps(callResponse), packet);
+    private Result updateDomainStatus(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
+      return doNext(createKubernetesFailureSteps(callResponse, createFailureMessage(callResponse)), packet);
     }
   }
 
@@ -1477,25 +1461,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
       logPodCreated();
-      if (callResponse.getResult() != null) {
+      V1Pod pod = callResponse.getObject();
+      if (pod != null) {
         info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
-        setRecordedPod(callResponse.getResult());
+        setRecordedPod(pod);
       }
 
-      boolean waitForPodReady =
-          (boolean) Optional.ofNullable(packet.get(ProcessingConstants.WAIT_FOR_POD_READY)).orElse(false);
-
-      if (waitForPodReady) {
-        PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-        return doNext(pw.waitForReady(callResponse.getResult(), getNext()), packet);
-      }
       return doNext(packet);
+    }
+
+    protected boolean isPodReady(V1Pod result) {
+      return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
     }
   }
 
-  private class DeleteResponseStep extends ResponseStep<Object> {
+  private class DeleteResponseStep extends ResponseStep<V1Pod> {
     private final V1Pod pod;
 
     DeleteResponseStep(V1Pod pod, Step next) {
@@ -1509,8 +1491,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<Object> callResponses) {
-      if (callResponses.getStatusCode() == HTTP_NOT_FOUND) {
+    public Result onFailure(Packet packet, KubernetesApiResponse<V1Pod> callResponses) {
+      if (callResponses.getHttpStatusCode() == HTTP_NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
       return super.onFailure(getConflictStep(), packet, callResponses);
@@ -1531,9 +1513,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<Object> callResponses) {
-      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-      return doNext(pw.waitForDelete(pod, replacePod(getNext())), packet);
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponses) {
+      if (callResponses.getHttpStatusCode() == HTTP_NOT_FOUND) {
+        setRecordedPod(null);
+        return doNext(replacePod(getNext()), packet);
+      }
+
+      // requeue to wait for the pod to be deleted
+      return doRequeue(packet);
     }
   }
 
@@ -1553,10 +1540,18 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-      return doNext(
-          packet.getSpi(PodAwaiterStepFactory.class).waitForReady(processResponse(callResponse), getNext()),
-          packet);
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
+      V1Pod pod = callResponse.getObject();
+      if (pod == null || !isPodReady(pod)) {
+        // requeue to wait for the pod to be ready
+        return doRequeue(packet);
+      }
+      processResponse(callResponse);
+      return doNext(packet);
+    }
+
+    protected boolean isPodReady(V1Pod result) {
+      return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
     }
   }
 
@@ -1575,13 +1570,13 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
       processResponse(callResponse);
-      return doNext(getNext(), packet);
+      return doNext(packet);
     }
 
-    protected V1Pod processResponse(CallResponse<V1Pod> callResponse) {
-      V1Pod newPod = callResponse.getResult();
+    protected V1Pod processResponse(KubernetesApiResponse<V1Pod> callResponse) {
+      V1Pod newPod = callResponse.getObject();
       logPodChanged();
       if (newPod != null) {
         setRecordedPod(newPod);

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,17 +7,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -59,8 +62,8 @@ public class PersistentVolumeHelper {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    public @Nonnull Result apply(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       if (info.getDomain().getInitPvDomainPersistentVolume() != null) {
         return doNext(createContext(packet).readAndCreatePersistentVolumeStep(getNext()), packet);
       }
@@ -76,7 +79,7 @@ public class PersistentVolumeHelper {
     private final Step conflictStep;
 
     PersistentVolumeContext(Step conflictStep, Packet packet) {
-      super(packet.getSpi(DomainPresenceInfo.class));
+      super((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
       this.conflictStep = conflictStep;
     }
 
@@ -85,8 +88,7 @@ public class PersistentVolumeHelper {
     }
 
     Step readAndCreatePersistentVolumeStep(Step next) {
-      return new CallBuilder().readPersistentVolumeAsync(getPersistentVolumeName(),
-              new ReadResponseStep(next));
+      return RequestBuilder.PV.get(getPersistentVolumeName(), new ReadResponseStep(next));
     }
 
     private String getPersistentVolumeName() {
@@ -119,20 +121,20 @@ public class PersistentVolumeHelper {
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1PersistentVolume> callResponse) {
-        if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<V1PersistentVolume> callResponse) {
+        if (isUnrecoverable(callResponse)) {
           return updateDomainStatus(packet, callResponse);
         } else {
           return onFailure(getConflictStep(), packet, callResponse);
         }
       }
 
-      private NextAction updateDomainStatus(Packet packet, CallResponse<V1PersistentVolume> callResponse) {
-        return doNext(createKubernetesFailureSteps(callResponse), packet);
+      private Result updateDomainStatus(Packet packet, KubernetesApiResponse<V1PersistentVolume> callResponse) {
+        return doNext(createKubernetesFailureSteps(callResponse, createFailureMessage(callResponse)), packet);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolume> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<V1PersistentVolume> callResponse) {
         logPersistentVolumeCreated(messageKey);
         return doNext(packet);
       }
@@ -144,16 +146,16 @@ public class PersistentVolumeHelper {
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1PersistentVolume> callResponse) {
-        return callResponse.getStatusCode() == HTTP_NOT_FOUND
+      public Result onFailure(Packet packet, KubernetesApiResponse<V1PersistentVolume> callResponse) {
+        return callResponse.getHttpStatusCode() == HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : super.onFailure(packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolume> callResponse) {
-        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        V1PersistentVolume persistentVolume = callResponse.getResult();
+      public Result onSuccess(Packet packet, KubernetesApiResponse<V1PersistentVolume> callResponse) {
+        DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+        V1PersistentVolume persistentVolume = callResponse.getObject();
         if (persistentVolume == null) {
           return doNext(createNewPersistentVolume(getNext()), packet);
         } else {
@@ -172,20 +174,16 @@ public class PersistentVolumeHelper {
       }
 
       private Step createPersistentVolume(String messageKey, Step next) {
-        return new CallBuilder()
-            .createPersistentVolumeAsync(
-                createModel(),
-                new PersistentVolumeHelper.PersistentVolumeContext
-                    .CreateResponseStep(messageKey, next));
+        return RequestBuilder.PV.create(createModel(), new PersistentVolumeHelper.PersistentVolumeContext
+            .CreateResponseStep(messageKey, next));
       }
     }
 
     private class ConflictStep extends Step {
       @Override
-      public NextAction apply(Packet packet) {
-        return doNext(
-                new CallBuilder().readPersistentVolumeAsync(getPersistentVolumeName(info),
-                        new ReadResponseStep(conflictStep)), packet);
+      public @Nonnull Result apply(Packet packet) {
+        return doNext(RequestBuilder.PV.get(getPersistentVolumeName(info),
+            new ReadResponseStep(conflictStep)), packet);
       }
 
       private String getPersistentVolumeName(DomainPresenceInfo info) {

@@ -1,29 +1,21 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Queue;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
-import oracle.kubernetes.operator.ClientFactoryStub;
+import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.NoopWatcherStarter;
-import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.watcher.NoopWatcherStarter;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -42,11 +34,8 @@ import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests watches created by the WatchBuilder, verifying that they are created with the correct query
@@ -64,8 +53,6 @@ class WatchBuilderTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(ClientPoolStub.install());
-    mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(NoopWatcherStarter.install());
   }
@@ -84,7 +71,7 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("cluster1", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(cluster));
 
-    Watchable<ClusterResource> clusterWatch = new WatchBuilder().createClusterWatch(NAMESPACE);
+    Watchable<ClusterResource> clusterWatch = RequestBuilder.CLUSTER.watch(NAMESPACE, new ListOptions());
 
     assertThat(clusterWatch, contains(addEvent(cluster)));
   }
@@ -98,7 +85,7 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("cluster1", NAMESPACE, BOOKMARK_RESOURCE_VERSION));
     StubWatchFactory.addCallResponses(createBookmarkResponse(cluster));
 
-    Watchable<ClusterResource> clusterWatch = new WatchBuilder().createClusterWatch(NAMESPACE);
+    Watchable<ClusterResource> clusterWatch = RequestBuilder.CLUSTER.watch(NAMESPACE, new ListOptions());
 
     assertThat(clusterWatch, contains(bookmarkEvent(cluster)));
   }
@@ -112,7 +99,7 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("domain1", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(domain));
 
-    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(addEvent(domain)));
   }
@@ -126,7 +113,7 @@ class WatchBuilderTest {
                     .withMetadata(createMetaData("domain1", NAMESPACE, BOOKMARK_RESOURCE_VERSION));
     StubWatchFactory.addCallResponses(createBookmarkResponse(domain));
 
-    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(bookmarkEvent(domain)));
   }
@@ -153,30 +140,6 @@ class WatchBuilderTest {
   }
 
   @Test
-  void afterWatchClosed_returnClientToPool() throws Exception {
-    DomainResource domain =
-        new DomainResource()
-            .withApiVersion(API_VERSION)
-            .withKind("Domain")
-            .withMetadata(createMetaData("domain1", NAMESPACE));
-    StubWatchFactory.addCallResponses(createAddResponse(domain));
-
-    try (Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE)) {
-      domainWatch.next();
-    }
-
-    assertThat(ClientPoolStub.getPooledClients(), not(empty()));
-  }
-
-  @Test
-  void afterWatchError_closeDoesNotReturnClientToPool() throws ApiException {
-    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
-    assertThrows(NoSuchElementException.class, domainWatch::next);
-
-    assertThat(ClientPoolStub.getPooledClients(), is(empty()));
-  }
-
-  @Test
   void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator()
       throws Exception {
     DomainResource domain1 =
@@ -191,7 +154,7 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("domain2", NAMESPACE));
     StubWatchFactory.addCallResponses(createModifyResponse(domain1), createDeleteResponse(domain2));
 
-    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(List.of(modifyEvent(domain1), deleteEvent(domain2))));
   }
@@ -200,7 +163,7 @@ class WatchBuilderTest {
   void whenDomainWatchReceivesErrorResponse_returnItFromIterator() throws Exception {
     StubWatchFactory.addCallResponses(createErrorResponse(HTTP_ENTITY_TOO_LARGE));
 
-    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(errorEvent(HTTP_ENTITY_TOO_LARGE)));
   }
@@ -216,17 +179,15 @@ class WatchBuilderTest {
 
     StubWatchFactory.addCallResponses(createModifyResponse(service));
 
-    Watchable<V1Service> serviceWatch =
-        new WatchBuilder()
-            .withResourceVersion(startResourceVersion)
-            .withLabelSelector(DOMAINUID_LABEL + "," + CREATEDBYOPERATOR_LABEL)
-            .createServiceWatch(NAMESPACE);
+    Watchable<V1Service> serviceWatch = RequestBuilder.SERVICE.watch(NAMESPACE,
+            new ListOptions()
+                    .resourceVersion(startResourceVersion)
+                    .labelSelector(DOMAINUID_LABEL + "," + CREATEDBYOPERATOR_LABEL));
 
     assertThat(serviceWatch, contains(modifyEvent(service)));
     assertThat(StubWatchFactory.getRequestParameters().get(0),
           allOf(hasEntry("resourceVersion", startResourceVersion),
-                hasEntry("labelSelector", DOMAINUID_LABEL + "," + CREATEDBYOPERATOR_LABEL),
-                hasEntry("watch", "true")));
+                hasEntry("labelSelector", DOMAINUID_LABEL + "," + CREATEDBYOPERATOR_LABEL)));
   }
 
   @Test
@@ -235,11 +196,8 @@ class WatchBuilderTest {
         new V1Pod().apiVersion(API_VERSION).kind("Pod").metadata(createMetaData("pod4", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(pod));
 
-    Watchable<V1Pod> podWatch =
-        new WatchBuilder()
-            .withFieldSelector("thisValue")
-            .withLimit(25)
-            .createPodWatch(NAMESPACE);
+    Watchable<V1Pod> podWatch = RequestBuilder.POD.watch(NAMESPACE,
+            new ListOptions().fieldSelector("thisValue").limit(25));
 
     assertThat(podWatch, contains(addEvent(pod)));
     assertThat(StubWatchFactory.getRequestParameters().get(0),
@@ -249,7 +207,7 @@ class WatchBuilderTest {
   @Test
   void whenPodWatchFindsNoData_hasNextReturnsFalse() throws Exception {
 
-    Watchable<V1Pod> podWatch = new WatchBuilder().createPodWatch(NAMESPACE);
+    Watchable<V1Pod> podWatch = RequestBuilder.POD.watch(NAMESPACE, new ListOptions());
 
     assertThat(podWatch.hasNext(), is(false));
   }
@@ -268,23 +226,5 @@ class WatchBuilderTest {
 
   private String getNextResourceVersion() {
     return Integer.toString(resourceVersion++);
-  }
-
-  static class ClientPoolStub extends ClientPool {
-    private static Queue<ApiClient> queue;
-
-    static Memento install() throws NoSuchFieldException {
-      queue = new ArrayDeque<>();
-      return StaticStubSupport.install(ClientPool.class, "singleton", new ClientPoolStub());
-    }
-
-    static Collection<ApiClient> getPooledClients() {
-      return Collections.unmodifiableCollection(queue);
-    }
-
-    @Override
-    protected Queue<ApiClient> getQueue() {
-      return queue;
-    }
   }
 }

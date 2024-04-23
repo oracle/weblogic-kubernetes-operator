@@ -52,6 +52,8 @@
             <compilerArgs>
               <arg>-Xpkginfo:always</arg>
               <arg>-Xlint:all</arg>
+              <arg>-Xmaxerrs</arg>
+              <arg>200</arg>
             </compilerArgs>
           </configuration>
         </plugin>

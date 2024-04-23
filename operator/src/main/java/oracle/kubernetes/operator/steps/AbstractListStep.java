@@ -1,12 +1,13 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.util.Collection;
 import java.util.Iterator;
+import javax.annotation.Nonnull;
 
-import oracle.kubernetes.operator.work.NextAction;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -23,7 +24,7 @@ public abstract class AbstractListStep<T> extends Step {
   }
 
   @Override
-  public NextAction apply(Packet packet) {
+  public @Nonnull Result apply(Packet packet) {
     if (it.hasNext()) {
       return doNext(createActionStep(it.next()), packet);
     } else {

@@ -1,8 +1,11 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
+import javax.annotation.Nonnull;
+
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,7 +18,7 @@ class FiberGateTest {
   private static final String UID2 = "uid2";
 
   private final FiberTestSupport testSupport = new FiberTestSupport();
-  private final FiberGate fiberGate = new FiberGate(testSupport.getEngine());
+  private final FiberGate fiberGate = new FiberGate(testSupport.getScheduledExecutorService());
   private final TerminalStep terminalStep = new TerminalStep();
   private final Step noopStep = new NoopStep();
   private final Packet packet = new Packet();
@@ -23,7 +26,7 @@ class FiberGateTest {
 
   @Test
   void whenFiberStarted_stepsAreRun() {
-    fiberGate.startFiber(UID1, terminalStep, packet, completionCallback);
+    fiberGate.startFiber(UID1, () -> terminalStep, () -> packet, completionCallback);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -32,43 +35,29 @@ class FiberGateTest {
   void afterFiberStarted_callbackIsInvokedWithPacket() {
     packet.put("name", "value");
 
-    fiberGate.startFiber(UID1, terminalStep, packet, completionCallback);
+    fiberGate.startFiber(UID1, () -> terminalStep, () -> packet, completionCallback);
 
     assertThat(completionCallback.foundValue, equalTo("value"));
   }
 
   @Test
-  void ifFiberAlreadyRunningWithUID_doNotStartAnother() {
-    fiberGate.startFiber(UID1, new RunFiberStep(UID1), packet, completionCallback);
-
-    assertThat(terminalStep.wasRun(), is(false));
-  }
-
-  @Test
   void ifNoFiberAlreadyRunningWithUID_startAnother() {
-    fiberGate.startFiber(UID1, new RunFiberStep(UID2), packet, completionCallback);
+    fiberGate.startFiber(UID1, () -> new RunFiberStep(UID2), () -> packet, completionCallback);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
   void ifCallbackSettingMatchesCurrentUID_startAnother() {
-    fiberGate.startFiber(UID1, noopStep, packet, new DelegatingCompletionCallback(UID1));
+    fiberGate.startFiber(UID1, () -> noopStep, () -> packet, new DelegatingCompletionCallback(UID1));
 
     assertThat(terminalStep.wasRun(), is(true));
-  }
-
-  @Test
-  void ifCallbackSettingDoesNotMatchCurrentUID_dontStartAnother() {
-    fiberGate.startFiber(UID1, noopStep, packet, new DelegatingCompletionCallback(UID2));
-
-    assertThat(terminalStep.wasRun(), is(false));
   }
 
   private static class NoopStep extends Step {
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doNext(packet);
     }
   }
@@ -81,8 +70,8 @@ class FiberGateTest {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      fiberGate.startFiberIfNoCurrentFiber(subStepUid, terminalStep, packet, completionCallback);
+    public @Nonnull Result apply(Packet packet) {
+      fiberGate.startFiber(subStepUid, () -> terminalStep, () -> packet, completionCallback);
       return doNext(packet);
     }
   }
@@ -112,7 +101,7 @@ class FiberGateTest {
 
     @Override
     public void onCompletion(Packet packet) {
-      fiberGate.startNewFiberIfCurrentFiberMatches(uid, terminalStep, packet, completionCallback);
+      fiberGate.startFiber(uid, () -> terminalStep, () -> packet, completionCallback);
     }
 
     @Override

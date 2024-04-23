@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.http.rest.resource.VersionsResource;
-import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -117,7 +116,6 @@ public class OperatorRestServer extends BaseRestServer {
    * <p>If a port has not been configured, then it logs that fact, does not start that port, and
    * continues (v.s. throwing an exception and not starting any ports).
    *
-   * @param container Container
    * @throws IOException if the REST api could not be started for reasons other than a port was not
    *     configured. When an exception is thrown, then none of the ports will be left running,
    *     however it is still OK to call stop (which will be a no-op).
@@ -129,7 +127,7 @@ public class OperatorRestServer extends BaseRestServer {
    * @throws KeyManagementException Key management failed
    */
   @Override
-  public void start(Container container) throws UnrecoverableKeyException, CertificateException,
+  public void start() throws UnrecoverableKeyException, CertificateException,
       IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     if (externalHttpsServer.get() != null || internalHttpsServer.get() != null) {
@@ -138,7 +136,7 @@ public class OperatorRestServer extends BaseRestServer {
     boolean fullyStarted = false;
     try {
       if (isExternalSslConfigured()) {
-        externalHttpsServer.set(createExternalHttpsServer(container));
+        externalHttpsServer.set(createExternalHttpsServer());
         LOGGER.info(
             "Started the external ssl REST server on "
                 + getExternalHttpsUri()
@@ -146,7 +144,7 @@ public class OperatorRestServer extends BaseRestServer {
       }
 
       if (isInternalSslConfigured()) {
-        internalHttpsServer.set(createInternalHttpsServer(container));
+        internalHttpsServer.set(createInternalHttpsServer());
         LOGGER.info(
             "Started the internal ssl REST server on "
                 + getInternalHttpsUri()
@@ -177,13 +175,12 @@ public class OperatorRestServer extends BaseRestServer {
     LOGGER.exiting();
   }
 
-  private HttpServer createExternalHttpsServer(Container container)
+  private HttpServer createExternalHttpsServer()
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     HttpServer result =
         createHttpsServer(
-            container,
             createSslContext(
                 createKeyManagers(
                     config.getOperatorExternalCertificateData(),
@@ -195,13 +192,12 @@ public class OperatorRestServer extends BaseRestServer {
     return result;
   }
 
-  private HttpServer createInternalHttpsServer(Container container)
+  private HttpServer createInternalHttpsServer()
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     HttpServer result =
         createHttpsServer(
-            container,
             createSslContext(
                 createKeyManagers(
                     config.getOperatorInternalCertificateData(),

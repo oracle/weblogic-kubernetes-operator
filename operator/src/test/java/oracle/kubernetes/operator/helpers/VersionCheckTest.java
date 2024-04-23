@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.VersionInfo;
-import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
@@ -37,10 +36,11 @@ class VersionCheckTest {
   private static final String[] LOG_KEYS = {
     K8S_VERSION_TOO_LOW, K8S_VERSION_CHECK, K8S_VERSION_CHECK_FAILURE,
   };
+
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
-  private final CallTestSupport testSupport = new CallTestSupport();
 
 
   private static Stream<Arguments> getTestParams() {
@@ -88,9 +88,8 @@ class VersionCheckTest {
   public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
     mementos.add(consoleControl);
-    mementos.add(ClientFactoryStub.install());
+    mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
-    mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
   @AfterEach
@@ -115,9 +114,7 @@ class VersionCheckTest {
   }
 
   private void specifyK8sVersion(String majorVersion, String minorVersion, String revision) {
-    testSupport
-        .createCannedResponse("getVersion")
-        .returning(createVersionInfo(majorVersion, minorVersion, revision));
+    testSupport.setVersionInfo(createVersionInfo(majorVersion, minorVersion, revision));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

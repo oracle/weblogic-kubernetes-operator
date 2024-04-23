@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -29,7 +29,16 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.watcher.ClusterWatcher;
+import oracle.kubernetes.operator.watcher.ConfigMapWatcher;
+import oracle.kubernetes.operator.watcher.DomainWatcher;
+import oracle.kubernetes.operator.watcher.EventWatcher;
+import oracle.kubernetes.operator.watcher.JobWatcher;
+import oracle.kubernetes.operator.watcher.OperatorEventWatcher;
+import oracle.kubernetes.operator.watcher.PodWatcher;
+import oracle.kubernetes.operator.watcher.ServiceWatcher;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;

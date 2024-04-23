@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,7 +15,7 @@ import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.work.Engine;
+import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -32,7 +32,7 @@ public class CoreDelegateImpl implements CoreDelegate {
   protected final String buildVersion;
   protected final SemanticVersion productVersion;
   protected final KubernetesVersion kubernetesVersion;
-  protected final Engine engine;
+  protected final ScheduledExecutorService scheduledExecutorService;
   protected final String deploymentImpl;
   protected final String deploymentBuildTime;
   protected String domainCrdResourceVersion;
@@ -46,7 +46,7 @@ public class CoreDelegateImpl implements CoreDelegate {
     productVersion = new SemanticVersion(buildVersion);
     kubernetesVersion = HealthCheckHelper.performK8sVersionCheck();
 
-    engine = new Engine(scheduledExecutorService);
+    this.scheduledExecutorService = scheduledExecutorService;
 
     PodHelper.setProductVersion(productVersion.toString());
   }
@@ -114,8 +114,8 @@ public class CoreDelegateImpl implements CoreDelegate {
 
   @Override
   public void runStepsInternal(Packet packet, Step firstStep, Runnable completionAction) {
-    Fiber f = engine.createFiber();
-    f.start(firstStep, packet, andThenDo(completionAction));
+    Fiber f = new Fiber(scheduledExecutorService, firstStep, packet, andThenDo(completionAction));
+    f.start();
   }
 
   private static BaseMain.NullCompletionCallback andThenDo(Runnable completionAction) {
@@ -123,7 +123,14 @@ public class CoreDelegateImpl implements CoreDelegate {
   }
 
   @Override
-  public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-    return engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+  public Cancellable schedule(Runnable command, long delay, TimeUnit unit) {
+    ScheduledFuture<?> future = scheduledExecutorService.schedule(command, delay, unit);
+    return () -> future.cancel(true);
+  }
+
+  @Override
+  public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    ScheduledFuture<?> future = scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    return () -> future.cancel(true);
   }
 }

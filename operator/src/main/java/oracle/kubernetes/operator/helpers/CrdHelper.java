@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -29,6 +29,7 @@ import com.google.gson.ToNumberPolicy;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.ApiextensionsV1ServiceReference;
 import io.kubernetes.client.openapi.models.ApiextensionsV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
@@ -43,18 +44,18 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1WebhookConversion;
 import io.kubernetes.client.util.Yaml;
-import okhttp3.internal.http2.StreamResetException;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.PathSupport;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -78,7 +79,6 @@ import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createC
 public class CrdHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SCHEMA_LOCATION = "/schema";
-  private static final String NO_ERROR = "NO_ERROR";
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private static final FileGroupReader schemaReader = new FileGroupReader(SCHEMA_LOCATION);
@@ -200,7 +200,7 @@ public class CrdHelper {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doNext(context.verifyCrd(getNext()), packet);
     }
   }
@@ -217,7 +217,7 @@ public class CrdHelper {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doNext(context.verifyCrd(getNext()), packet);
     }
   }
@@ -444,8 +444,7 @@ public class CrdHelper {
     }
 
     Step verifyCrd(Step next) {
-      return new CallBuilder().readCustomResourceDefinitionAsync(
-          model.getMetadata().getName(), createReadResponseStep(next));
+      return RequestBuilder.CRD.get(model.getMetadata().getName(), createReadResponseStep(next));
     }
 
     ResponseStep<V1CustomResourceDefinition> createReadResponseStep(Step next) {
@@ -453,8 +452,7 @@ public class CrdHelper {
     }
 
     Step createCrd(Step next) {
-      return new CallBuilder().createCustomResourceDefinitionAsync(
-          model, createCreateResponseStep(next));
+      return RequestBuilder.CRD.create(model, createCreateResponseStep(next));
     }
 
     ResponseStep<V1CustomResourceDefinition> createCreateResponseStep(Step next) {
@@ -474,21 +472,18 @@ public class CrdHelper {
               .served(true)
               .storage(true));
 
-      return new CallBuilder().replaceCustomResourceDefinitionAsync(
-          existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
+      return RequestBuilder.CRD.update(existingCrd, createReplaceResponseStep(next));
     }
 
     Step updateExistingCrdWithConversion(Step next, V1CustomResourceDefinition existingCrd) {
       existingCrd.getSpec().conversion(createConversionWebhook(certificates));
-      return new CallBuilder().replaceCustomResourceDefinitionAsync(
-              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
+      return RequestBuilder.CRD.update(existingCrd, createReplaceResponseStep(next));
     }
 
     Step updateCrd(Step next, V1CustomResourceDefinition existingCrd) {
       model.getMetadata().setResourceVersion(existingCrd.getMetadata().getResourceVersion());
 
-      return new CallBuilder().replaceCustomResourceDefinitionAsync(
-          model.getMetadata().getName(), model, createReplaceResponseStep(next));
+      return RequestBuilder.CRD.update(model, createReplaceResponseStep(next));
     }
 
     ResponseStep<V1CustomResourceDefinition> createReplaceResponseStep(Step next) {
@@ -557,9 +552,9 @@ public class CrdHelper {
       }
 
       @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        V1CustomResourceDefinition existingCrd = callResponse.getResult();
+      public Result onSuccess(
+          Packet packet, KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
+        V1CustomResourceDefinition existingCrd = callResponse.getObject();
         if (existingCrd == null) {
           return doNext(createCrd(getNext()), packet);
         } else if (isOutdatedCrd(existingCrd)) {
@@ -574,7 +569,8 @@ public class CrdHelper {
       }
 
       @Override
-      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+      protected Result onFailureNoRetry(Packet packet,
+                                            KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -586,21 +582,22 @@ public class CrdHelper {
       }
 
       @Override
-      public NextAction onFailure(
-          Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+      public Result onFailure(
+          Packet packet, KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
         return super.onFailure(conflictStep, packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
+      public Result onSuccess(
+          Packet packet, KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getObject().getMetadata().getName());
         return doNext(packet);
       }
 
       @Override
-      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse.getE().getResponseBody());
+      protected Result onFailureNoRetry(Packet packet,
+                                            KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse.getStatus());
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -612,24 +609,23 @@ public class CrdHelper {
       }
 
       @Override
-      public NextAction onFailure(
-          Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+      public Result onFailure(
+          Packet packet, KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
         return super.onFailure(conflictStep, packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
+      public Result onSuccess(
+          Packet packet, KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getObject().getMetadata().getName());
         return doNext(packet);
       }
 
       @Override
-      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse.getE().getResponseBody());
+      protected Result onFailureNoRetry(Packet packet,
+                                            KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse.getStatus());
         return isNotAuthorizedOrForbidden(callResponse)
-            || ((callResponse.getE().getCause() instanceof StreamResetException)
-            && (callResponse.getExceptionString().contains(NO_ERROR)))
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }

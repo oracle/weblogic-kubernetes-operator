@@ -42,9 +42,8 @@ import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
@@ -67,8 +66,6 @@ import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
  * including the scan and the Pods and Services for servers.
  */
 public class DomainPresenceInfo extends ResourcePresenceInfo {
-
-  private static final String COMPONENT_KEY = "dpi";
   private final String domainUid;
   private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
@@ -88,7 +85,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private final List<String> serverNamesFromPodList = Collections.synchronizedList(new ArrayList<>());
-  private Map<String, Step.StepAndPacket> serversToRoll = Collections.emptyMap();
+  private Map<String, Fiber.StepAndPacket> serversToRoll = Collections.emptyMap();
 
   /**
    * Create presence for a domain.
@@ -329,11 +326,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   }
 
   public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
-    return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
-  }
-
-  public void addToPacket(Packet packet) {
-    packet.getComponents().put(COMPONENT_KEY, Component.createFor(this));
+    return Optional.ofNullable((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
   }
 
   public String getAdminServerName() {
@@ -373,20 +366,29 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return getActiveServers().values().stream().map(this::getPod).filter(Objects::nonNull);
   }
 
+  /**
+   * Returns a stream of all server pods present, if the server is not marked for deletion.
+   *
+   * @return a pod stream
+   */
+  public Stream<V1Pod> getServerPodsNotBeingDeleted() {
+    return getActiveServers().values().stream().filter(
+        sko -> !PodHelper.isPodAlreadyLabeledForShutdown(sko.getPod().get())).map(this::getPod)
+        .filter(Objects::nonNull);
+  }
+
   private V1Pod getPod(ServerKubernetesObjects sko) {
     return sko.getPod().get();
   }
 
-  private Boolean getPodIsBeingDeleted(ServerKubernetesObjects sko) {
-    return sko.isPodBeingDeleted().get();
+  public boolean isServerPodBeingDeleted(String serverName) {
+    return Optional.ofNullable(getSko(serverName)).map(ServerKubernetesObjects::getPod).map(AtomicReference::get)
+        .map(PodHelper::isPodAlreadyLabeledForShutdown).orElse(false);
   }
 
-  public Boolean isServerPodBeingDeleted(String serverName) {
-    return getPodIsBeingDeleted(getSko(serverName));
-  }
-
-  public void setServerPodBeingDeleted(String serverName, Boolean isBeingDeleted) {
-    getSko(serverName).isPodBeingDeleted().set(isBeingDeleted);
+  public boolean isServerPodDeleted(String serverName) {
+    return Optional.ofNullable(getSko(serverName)).map(ServerKubernetesObjects::getPod).map(AtomicReference::get)
+        .map(PodHelper::isDeleting).orElse(false);
   }
 
   /**
@@ -838,6 +840,13 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     this.serverShutdownInfo.set(serverShutdownInfo);
   }
 
+  /**
+   * Gets server shutdown info.
+   * @return Shutdown info, or null if not set
+   */
+  public Collection<ServerShutdownInfo> getServerShutdownInfo() {
+    return serverShutdownInfo.get();
+  }
 
   /**
    * Check if all cluster status have been initially populated.
@@ -933,11 +942,11 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
             .collect(Collectors.toSet());
   }
 
-  public Map<String, Step.StepAndPacket> getServersToRoll() {
+  public Map<String, Fiber.StepAndPacket> getServersToRoll() {
     return serversToRoll;
   }
 
-  public void setServersToRoll(Map<String, Step.StepAndPacket> serversToRoll) {
+  public void setServersToRoll(Map<String, Fiber.StepAndPacket> serversToRoll) {
     this.serversToRoll = serversToRoll;
   }
 

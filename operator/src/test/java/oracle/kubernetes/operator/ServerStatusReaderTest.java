@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,10 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import com.meterware.pseudoserver.HttpUserAgentTest;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -24,7 +26,6 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.FiberTestSupport;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -64,7 +65,6 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
     mementos.add(execFactory.install());
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "stepFactory", stepFactory));
     mementos.add(TuningParametersStub.install());
-    mementos.add(ClientFactoryStub.install());
 
     testSupport.addDomainPresenceInfo(info);
   }
@@ -157,21 +157,6 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @Test
-  void whenWebLogicServerProcessExitedAndPodBeingDeleted_recordInStateMap() {
-    info.setServerPod("server1", createPod("server1"));
-    info.updateLastKnownServerStatus("server1", "not ready yet");
-    info.setServerPodBeingDeleted("server1", true);
-
-    execFactory.defineResponse("server1", "Shutdown", 1);
-
-    Packet packet =
-        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
-
-    Map<String, String> serverStates = getServerStates(packet);
-    assertThat(serverStates, hasEntry("server1", SHUTDOWN_STATE));
-  }
-
-  @Test
   void whenWebLogicServerProcessExitedAndPodHasDeletionTimestamp_recordInStateMap() {
     info.setServerPod("server1", createPodWithDeletionTimestamp("server1"));
     info.updateLastKnownServerStatus("server1", "not ready yet");
@@ -239,7 +224,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
     public Step apply(Step next) {
       return new Step() {
         @Override
-        public NextAction apply(Packet packet) {
+        public @Nonnull Result apply(Packet packet) {
           serverNames.add((String) packet.get(ProcessingConstants.SERVER_NAME));
           return doNext(packet);
         }

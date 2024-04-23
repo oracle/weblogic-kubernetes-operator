@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -15,13 +15,11 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import oracle.kubernetes.operator.DomainProcessorDelegateStub;
+import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PvcAwaiterStepFactory;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
-import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Packet;
@@ -49,10 +47,9 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.PVCWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PODDISRUPTIONBUDGET;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PVC;
@@ -94,6 +91,7 @@ class PersistentVolumeClaimHelperTest {
                 .collectLogMessages(logRecords, MESSAGE_KEYS)
                 .withLogLevel(Level.FINE)
                 .ignoringLoggedExceptions(ApiException.class));
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
@@ -101,8 +99,6 @@ class PersistentVolumeClaimHelperTest {
     WlsDomainConfig domainConfig = configSupport.createDomainConfig();
     testSupport
         .addToPacket(DOMAIN_TOPOLOGY, domainConfig)
-        .addComponent(PVCWATCHER_COMPONENT_NAME, PvcAwaiterStepFactory.class,
-            new DomainProcessorDelegateStub.TestPvcAwaiterStepFactory())
         .addDomainPresenceInfo(domainPresenceInfo);
     configureDomain();
   }
@@ -119,7 +115,7 @@ class PersistentVolumeClaimHelperTest {
 
   private PersistentVolumeClaim createPvc() {
     return new PersistentVolumeClaim().spec(new PersistentVolumeClaimSpec().storageClassName("SC")
-        .resources(createResources())).metadata(new V1ObjectMeta().name("Test"));
+        .resources(createResources())).metadata(new V1ObjectMeta().name("Test").namespace(NS));
   }
 
   @AfterEach
@@ -188,22 +184,12 @@ class PersistentVolumeClaimHelperTest {
   }
 
   @Test
-  void onFailedRun_reportFailure() {
-    testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(PVC, NS, HTTP_INTERNAL_ERROR);
-
-    runPersistentVolumeClaimHelper();
-
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
-  }
-
-  @Test
   void onFailedRunWithConflictAndNoExistingPVC_createItOnRetry() {
     consoleHandlerMemento.ignoreMessage(getPvcCreateLogMessage());
     consoleHandlerMemento.ignoreMessage(getPvcExistsLogMessage());
     retryStrategy.setNumRetriesLeft(1);
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(PVC, NS, HTTP_CONFLICT);
+    testSupport.failOnCreate(PVC, null, HTTP_CONFLICT);
 
     runPersistentVolumeClaimHelper();
 
@@ -236,7 +222,7 @@ class PersistentVolumeClaimHelperTest {
     existingPvc.getMetadata().setNamespace(NS);
     retryStrategy.setNumRetriesLeft(1);
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(PVC, NS, HTTP_CONFLICT);
+    testSupport.failOnCreate(PVC, null, HTTP_CONFLICT);
     testSupport.defineResources(existingPvc);
 
     runPersistentVolumeClaimHelper();
@@ -249,10 +235,9 @@ class PersistentVolumeClaimHelperTest {
   @Test
   void whenPersistentVolumeClaimCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(PVC, NS, new UnrecoverableErrorBuilderImpl()
-            .withReason("FieldValueNotFound")
-            .withMessage("Test this failure")
-            .build());
+    testSupport.failOnCreate(PVC, null, new V1Status()
+            .reason("FieldValueNotFound")
+            .message("Test this failure"), HTTP_BAD_REQUEST);
 
     runPersistentVolumeClaimHelper();
 
@@ -263,10 +248,9 @@ class PersistentVolumeClaimHelperTest {
   @Test
   void whenPersistentVolumeClaimCreationFailsDueToUnprocessableEntityFailure_generateFailedEvent() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(PVC, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
-        .build());
+    testSupport.failOnCreate(PVC, null, new V1Status()
+        .reason("FieldValueNotFound")
+        .message("Test this failure"), HTTP_BAD_REQUEST);
 
     runPersistentVolumeClaimHelper();
 
@@ -280,10 +264,9 @@ class PersistentVolumeClaimHelperTest {
   @Test
   void whenPersistentVolumeClaimCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(PVC, NS, new UnrecoverableErrorBuilderImpl()
-            .withReason("FieldValueNotFound")
-            .withMessage("Test this failure")
-            .build());
+    testSupport.failOnCreate(PVC, null, new V1Status()
+            .reason("FieldValueNotFound")
+            .message("Test this failure"), HTTP_BAD_REQUEST);
 
     runPersistentVolumeClaimHelper();
 

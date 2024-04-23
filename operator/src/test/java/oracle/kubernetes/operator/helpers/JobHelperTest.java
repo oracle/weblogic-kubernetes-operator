@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -48,7 +48,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -80,7 +79,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
@@ -95,7 +93,6 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPE
 import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_OR_RESTRICTED_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.WebLogicConstants.JRF;
 import static oracle.kubernetes.operator.WebLogicConstants.WLS;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
@@ -223,9 +220,6 @@ class JobHelperTest extends DomainValidationTestBase {
     domain.getSpec().setNodeName(null);
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
-    testSupport.addComponent(JOBWATCHER_COMPONENT_NAME,
-          JobAwaiterStepFactory.class,
-          createNiceStub(JobAwaiterStepFactory.class));
   }
 
   @AfterEach
@@ -441,11 +435,15 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   private V1JobSpec createJobSpec() {
-    return JobHelper.createJobSpec(new Packet().with(domainPresenceInfo));
+    Packet packet = new Packet();
+    packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, domainPresenceInfo);
+    return JobHelper.createJobSpec(packet);
   }
 
   private V1Job createJob() {
-    return new JobStepContext(new Packet().with(domainPresenceInfo)).getJobModel();
+    Packet packet = new Packet();
+    packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, domainPresenceInfo);
+    return new JobStepContext(packet).getJobModel();
   }
 
   @Test

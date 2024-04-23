@@ -1,11 +1,11 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.client;
 
 import java.net.http.HttpResponse;
 
-import oracle.kubernetes.operator.work.NextAction;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -26,13 +26,13 @@ public class HttpResponseStepImpl extends HttpResponseStep {
   }
 
   @Override
-  public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
+  public Result onSuccess(Packet packet, HttpResponse<String> response) {
     successResponse = response;
     return doNext(packet);
   }
 
   @Override
-  public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+  public Result onFailure(Packet packet, HttpResponse<String> response) {
     failureResponse = response;
     return doNext(packet);
   }

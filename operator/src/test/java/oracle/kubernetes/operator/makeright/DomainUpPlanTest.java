@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
@@ -17,18 +17,16 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import oracle.kubernetes.operator.helpers.PodHelperTestBase;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -92,18 +90,29 @@ class DomainUpPlanTest {
   @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
-    mementos.add(ClientFactoryStub.install());
     mementos.add(testSupport.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(TuningParametersStub.install());
 
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> setPodReady((V1Pod) p));
+    testSupport.doOnDelete(KubernetesTestSupport.POD, this::preDelete);
+  }
 
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new PodHelperTestBase.PassthroughPodAwaiterStepFactory());
+  private void setPodReady(V1Pod pod) {
+    pod.status(createPodReadyStatus());
+  }
+
+  private V1PodStatus createPodReadyStatus() {
+    return new V1PodStatus()
+            .phase("Running")
+            .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
+  }
+
+  private void preDelete(KubernetesTestSupport.DeletionContext context) {
+    testSupport.deleteResources(
+            new V1Pod().metadata(new V1ObjectMeta().name(context.name()).namespace(context.namespace())));
   }
 
   @AfterEach
@@ -149,7 +158,7 @@ class DomainUpPlanTest {
     configSupport.addWlsServer(WEBLOGIC_SERVER_NAME, NAP_PORT_1);
     configSupport.setAdminServerName(WEBLOGIC_SERVER_NAME);
     Step plan =
-        DomainProcessorImpl.bringAdminServerUp(new NullPodWaiter());
+        DomainProcessorImpl.bringAdminServerUp(domainPresenceInfo);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.runSteps(plan);
 
@@ -168,7 +177,7 @@ class DomainUpPlanTest {
         .addNetworkAccessPoint(new NetworkAccessPoint(NAP_NAME_1, "t3", NAP_PORT_1, 8085));
     domain.getSpec().getOrCreateAdminServer().withChannel(NAP_NAME_1, NAP_PORT_1);
     Step plan =
-        DomainProcessorImpl.bringAdminServerUp(new NullPodWaiter());
+        DomainProcessorImpl.bringAdminServerUp(domainPresenceInfo);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.runSteps(plan);
 
@@ -187,7 +196,7 @@ class DomainUpPlanTest {
     domain.getSpec().getOrCreateAdminServer();
 
     Step plan =
-        DomainProcessorImpl.bringAdminServerUp(new NullPodWaiter());
+        DomainProcessorImpl.bringAdminServerUp(domainPresenceInfo);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.runSteps(plan);
 
@@ -208,7 +217,7 @@ class DomainUpPlanTest {
     domain.getSpec().getOrCreateAdminServer().withChannel(NAP_NAME_1, NAP_PORT_1);
 
     Step plan =
-        DomainProcessorImpl.bringAdminServerUp(new NullPodWaiter());
+        DomainProcessorImpl.bringAdminServerUp(domainPresenceInfo);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.runSteps(plan);
 
@@ -250,28 +259,6 @@ class DomainUpPlanTest {
     labels.put(CREATEDBYOPERATOR_LABEL, "true");
     labels.put(SERVERNAME_LABEL, WEBLOGIC_SERVER_NAME);
     return labels;
-  }
-
-  static class NullPodWaiter implements PodAwaiterStepFactory {
-    @Override
-    public Step waitForReady(V1Pod pod, Step next) {
-      return null;
-    }
-
-    @Override
-    public Step waitForReady(String podName, Step next) {
-      return null;
-    }
-
-    @Override
-    public Step waitForDelete(V1Pod pod, Step next) {
-      return null;
-    }
-
-    @Override
-    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
-      return null;
-    }
   }
 
   @SuppressWarnings("unused")

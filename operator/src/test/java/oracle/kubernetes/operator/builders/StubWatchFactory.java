@@ -1,9 +1,8 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,30 +10,34 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
-import okhttp3.Call;
+import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.WatchApi;
+import oracle.kubernetes.operator.calls.WatchApiFactory;
 
 /**
  * A test-time replacement for the factory that creates Watch objects, allowing tests to specify
  * directly the events they want returned from the Watch.
  */
-public class StubWatchFactory<T> implements WatchFactory<T> {
+public class StubWatchFactory implements WatchApiFactory {
 
   private static final int MAX_TEST_REQUESTS = 100;
   private static final String SYMBOL = "[A-Z_a-z0-9.]+";
   private static final String ENCODED_COMMA = "%2C";
   private static final String PARAMETERS_PATTERN = "(" + SYMBOL + ")=(" + SYMBOL + "(" + ENCODED_COMMA + SYMBOL + ")*)";
   private static final Pattern URL_PARAMETERS = Pattern.compile(PARAMETERS_PATTERN);
-  private static StubWatchFactory<?> factory;
+  private static StubWatchFactory factory;
   private static List<Map<String, String>> requestParameters;
   private static RuntimeException exceptionOnNext;
   private static AllWatchesClosedListener listener;
@@ -51,11 +54,11 @@ public class StubWatchFactory<T> implements WatchFactory<T> {
    * @throws NoSuchFieldException if StaticStubSupport fails to install.
    */
   public static Memento install() throws NoSuchFieldException {
-    factory = new StubWatchFactory<>();
+    factory = new StubWatchFactory();
     requestParameters = new ArrayList<>();
     exceptionOnNext = null;
 
-    return StaticStubSupport.install(WatchImpl.class, "factory", factory);
+    return StaticStubSupport.install(RequestBuilder.class, "watchApiFactory", factory);
   }
 
   /**
@@ -88,42 +91,80 @@ public class StubWatchFactory<T> implements WatchFactory<T> {
   }
 
   /**
-   * The factory method called when a watch is created. This method returns a stub for the Kubernetes watch
-   * that allows tests to simulate responses and check specified parameters.
-   * @param client the underlying Kubernetes http client
-   * @param call a definition of the http class to be made to Kubernetes to create the watch
-   * @param type the type of the object that the watch will describe
-   * @return a test double for the requested watch
+   * Create watch api.
+   * @param <A> Kubernetes object type
+   * @param <L> Kubernetes list object type
+   * @param apiTypeClass api type
+   * @param apiListTypeClass api list type
+   * @param apiGroup group
+   * @param apiVersion version
+   * @param resourcePlural plural
+   * @return the watch api
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  @Nonnull
-  public Watchable<T> createWatch(ApiClient client, Call call, Type type) {
-    try {
-      addRecordedParameters(getParameters(call));
+  public <A extends KubernetesObject, L extends KubernetesListObject>
+      WatchApi<A> create(Class<A> apiTypeClass, Class<L> apiListTypeClass,
+                     String apiGroup, String apiVersion, String resourcePlural) {
+    return new WatchApi<A>() {
+      @Override
+      public Watchable<A> watch(ListOptions listOptions) throws ApiException {
+        return watch(null, listOptions);
+      }
 
-      if (nothingToDo()) {
-        return new WatchStub<>(Collections.emptyList());
-      } else if (exceptionOnNext == null) {
-        return new WatchStub<T>((List) calls.remove(0));
-      } else {
+      @Override
+      public Watchable<A> watch(String namespace, ListOptions listOptions) throws ApiException {
         try {
-          return new ExceptionThrowingWatchStub<>(exceptionOnNext);
-        } finally {
-          exceptionOnNext = null;
+          addRecordedParameters(getParameters(namespace, listOptions));
+
+          if (nothingToDo()) {
+            return new WatchStub<>(Collections.emptyList());
+          } else if (exceptionOnNext == null) {
+            return new WatchStub<A>((List) calls.remove(0));
+          } else {
+            try {
+              return new ExceptionThrowingWatchStub<>(exceptionOnNext);
+            } finally {
+              exceptionOnNext = null;
+            }
+          }
+        } catch (IndexOutOfBoundsException e) {
+          System.out.println("Failed in thread " + Thread.currentThread());
+          throw e;
         }
       }
-    } catch (IndexOutOfBoundsException e) {
-      System.out.println("Failed in thread " + Thread.currentThread());
-      throw e;
-    }
+    };
   }
 
   @Nonnull
-  private Map<String, String> getParameters(Call call) {
-    final Matcher matcher = URL_PARAMETERS.matcher(call.request().url().toString());
+  private Map<String, String> getParameters(String namespace, ListOptions listOptions) {
     final Map<String, String> recordedParams = new HashMap<>();
-    while (matcher.find()) {
-      recordedParams.put(matcher.group(1), matcher.group(2).replace(ENCODED_COMMA, ","));
+    if (namespace != null) {
+      recordedParams.put("namespace", namespace);
+    }
+    if (listOptions != null) {
+      String resourceVersion = listOptions.getResourceVersion();
+      if (resourceVersion != null) {
+        recordedParams.put("resourceVersion", resourceVersion);
+      }
+      String fieldSelector = listOptions.getFieldSelector();
+      if (fieldSelector != null) {
+        recordedParams.put("fieldSelector", fieldSelector);
+      }
+      String labelSelector = listOptions.getLabelSelector();
+      if (labelSelector != null) {
+        recordedParams.put("labelSelector", labelSelector);
+      }
+      Integer limit = listOptions.getLimit();
+      if (limit != null) {
+        recordedParams.put("limit", limit.toString());
+      }
+      Integer timeoutSeconds = listOptions.getTimeoutSeconds();
+      if (timeoutSeconds != null) {
+        recordedParams.put("timeoutSeconds", timeoutSeconds.toString());
+      }
+      String cont = listOptions.getContinue();
+      if (cont != null) {
+        recordedParams.put("cont", cont);
+      }
     }
     return recordedParams;
   }

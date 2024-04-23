@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -86,7 +86,6 @@ class DomainStatusUpdaterTest {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords).ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
-    mementos.add(ClientFactoryStub.install());
     mementos.add(SystemClockTestSupport.installClock());
     mementos.add(TuningParametersStub.install());
 

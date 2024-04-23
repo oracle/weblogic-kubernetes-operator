@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.metrics;
@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.prometheus.client.hotspot.DefaultExports;
 import io.prometheus.client.servlet.jakarta.exporter.MetricsServlet;
 import oracle.kubernetes.operator.http.BaseServer;
-import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -32,9 +31,9 @@ public class MetricsServer extends BaseServer {
   }
 
   @Override
-  public void start(Container container) throws IOException {
+  public void start() throws IOException {
     DefaultExports.initialize();
-    metricsHttpServer.set(createHttpServer(container, "http://0.0.0.0:" + port));
+    metricsHttpServer.set(createHttpServer("http://0.0.0.0:" + port));
   }
 
   @Override

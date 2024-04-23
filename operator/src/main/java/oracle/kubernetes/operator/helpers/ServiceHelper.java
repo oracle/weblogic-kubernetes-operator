@@ -1,11 +1,10 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -13,16 +12,18 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
@@ -35,7 +36,6 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
@@ -61,7 +61,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSelector;
 import static oracle.kubernetes.operator.LabelConstants.getServiceTypeSelector;
-import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
@@ -219,11 +218,11 @@ public class ServiceHelper {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doVerifyService(getNext(), packet);
     }
 
-    private NextAction doVerifyService(Step next, Packet packet) {
+    private Result doVerifyService(Step next, Packet packet) {
       return doNext(createContext(packet).verifyService(next), packet);
     }
 
@@ -243,7 +242,7 @@ public class ServiceHelper {
       serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
-      version = packet.getSpi(KubernetesVersion.class);
+      version = (KubernetesVersion) packet.get(ProcessingConstants.DOMAIN_COMPONENT_NAME);
     }
 
     @Override
@@ -389,7 +388,7 @@ public class ServiceHelper {
     private final OperatorServiceType serviceType;
 
     ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
-      super(packet.getSpi(DomainPresenceInfo.class));
+      super((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
       this.conflictStep = conflictStep;
       domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       this.serviceType = serviceType;
@@ -580,26 +579,23 @@ public class ServiceHelper {
       if (serviceType == EXTERNAL) {
         return deleteAndReplaceNodePortService();
       } else {
-        V1DeleteOptions deleteOptions = new V1DeleteOptions();
-        return new CallBuilder()
-            .deleteServiceAsync(
-                createServiceName(), getNamespace(), getDomainUid(), deleteOptions, new DeleteServiceResponse(next));
+        return RequestBuilder.SERVICE.delete(getNamespace(), createServiceName(), new DeleteServiceResponse(next));
       }
     }
 
     private Step deleteAndReplaceNodePortService() {
-      return new CallBuilder()
-              .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedByOperatorSelector())
-              .listServiceAsync(
-                      getNamespace(),
-                      new ActionResponseStep<>() {
-                      public Step createSuccessStep(V1ServiceList result, Step next) {
-                        Collection<V1Service> c = Optional.ofNullable(result).map(list -> list.getItems().stream()
-                                  .filter(ServiceHelper::isNodePortType)
-                                  .toList()).orElse(new ArrayList<>());
-                        return new DeleteServiceListStep(c, createReplacementService(next));
-                      }
-                    });
+      return RequestBuilder.SERVICE.list(getNamespace(),
+          new ListOptions().labelSelector(
+              forDomainUidSelector(info.getDomainUid()) + "," + getCreatedByOperatorSelector()),
+          new ActionResponseStep<>() {
+            @Override
+            public Step createSuccessStep(V1ServiceList result, Step next) {
+              return new DeleteServiceListStep(Optional.ofNullable(result).map(list -> list.getItems().stream()
+                  .filter(ServiceHelper::isNodePortType)
+                  .toList()).orElse(new ArrayList<>()),
+                  createReplacementService(next));
+            }
+          });
     }
 
     private Step createReplacementService(Step next) {
@@ -609,17 +605,14 @@ public class ServiceHelper {
     protected abstract String getServiceReplaceMessageKey();
 
     private Step createService(String messageKey, Step next) {
-      return new CallBuilder()
-          .createServiceAsync(getNamespace(), createModel(), new CreateResponse(messageKey, next));
+      return RequestBuilder.SERVICE.create(createModel(), new CreateResponse(messageKey, next));
     }
 
     private class ConflictStep extends Step {
       @Override
-      public NextAction apply(Packet packet) {
+      public @Nonnull Result apply(Packet packet) {
         return doNext(
-            new CallBuilder()
-                .readServiceAsync(
-                    createServiceName(), getNamespace(), getDomainUid(), new ReadServiceResponse(conflictStep)),
+            RequestBuilder.SERVICE.get(getNamespace(), createServiceName(), new ReadServiceResponse(conflictStep)),
             packet);
       }
 
@@ -655,15 +648,15 @@ public class ServiceHelper {
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        return callResponse.getStatusCode() == HTTP_NOT_FOUND
+      public Result onFailure(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
+        return callResponse.getHttpStatusCode() == HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
-        V1Service service = callResponse.getResult();
+      public Result onSuccess(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
+        V1Service service = callResponse.getObject();
         if (service == null) {
           removeServiceFromRecord();
         } else {
@@ -679,14 +672,14 @@ public class ServiceHelper {
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        return callResponse.getStatusCode() == HTTP_NOT_FOUND
+      public Result onFailure(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
+        return callResponse.getHttpStatusCode() == HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
         return doNext(createReplacementService(getNext()), packet);
       }
     }
@@ -700,22 +693,22 @@ public class ServiceHelper {
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
+        if (isUnrecoverable(callResponse)) {
           return updateDomainStatus(packet, callResponse);
         } else {
           return onFailure(getConflictStep(), packet, callResponse);
         }
       }
 
-      private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
-        return doNext(createKubernetesFailureSteps(callResponse), packet);
+      private Result updateDomainStatus(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
+        return doNext(createKubernetesFailureSteps(callResponse, createFailureMessage(callResponse)), packet);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
         logServiceCreated(messageKey);
-        addServiceToRecord(callResponse.getResult());
+        addServiceToRecord(callResponse.getObject());
         return doNext(packet);
       }
     }
@@ -730,8 +723,8 @@ public class ServiceHelper {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    public @Nonnull Result apply(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       return doNext(createActionStep(info), packet);
     }
 
@@ -743,11 +736,8 @@ public class ServiceHelper {
     }
 
     Step deleteService(V1ObjectMeta metadata) {
-      V1DeleteOptions deleteOptions = new V1DeleteOptions();
-      return new CallBuilder()
-          .deleteServiceAsync(metadata.getName(),
-              metadata.getNamespace(), getDomainUidLabel(metadata), deleteOptions,
-              new DefaultResponseStep<>(getNext()));
+      return RequestBuilder.SERVICE.delete(
+          metadata.getNamespace(), metadata.getName(), new DefaultResponseStep<>(getNext()));
     }
   }
 
@@ -964,16 +954,14 @@ public class ServiceHelper {
     }
 
     private Step getStep() {
-      return new CallBuilder()
-          .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedByOperatorSelector(),
-              getServiceTypeSelector("EXTERNAL"))
-          .listServiceAsync(
-              info.getNamespace(),
-              new ActionResponseStep<>() {
-                public Step createSuccessStep(V1ServiceList result, Step next) {
-                  return new DeleteServiceListStep(result.getItems(), next);
-                }
-              });
+      return RequestBuilder.SERVICE.list(info.getNamespace(),
+          new ListOptions().labelSelector(forDomainUidSelector(info.getDomainUid()) + ","
+              + getCreatedByOperatorSelector() + "," + getServiceTypeSelector("EXTERNAL")),
+          new ActionResponseStep<>() {
+            public Step createSuccessStep(V1ServiceList result, Step next) {
+              return new DeleteServiceListStep(result.getItems(), next);
+            }
+          });
     }
 
 

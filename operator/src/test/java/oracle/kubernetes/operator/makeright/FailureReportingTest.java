@@ -7,8 +7,8 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -17,6 +17,9 @@ import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -36,7 +39,6 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Fiber;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -116,6 +118,15 @@ class FailureReportingTest {
 
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     steps = makeRight.createSteps();
+    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> setPodReady((V1Pod) p));
+  }
+
+  private void setPodReady(V1Pod pod) {
+    pod.status(updatePodReadyStatus(Optional.of(pod).map(V1Pod::getStatus).orElse(new V1PodStatus())));
+  }
+
+  private V1PodStatus updatePodReadyStatus(V1PodStatus status) {
+    return status.phase("Running").addConditionsItem(new V1PodCondition().status("True").type("Ready"));
   }
 
   private void defineDomainTopology() {
@@ -186,7 +197,6 @@ class FailureReportingTest {
   }
 
   private void copyFrom(Packet target, Packet source) {
-    target.getComponents().putAll(source.getComponents());
     target.putAll(source);
   }
 
@@ -437,25 +447,22 @@ class FailureReportingTest {
     }
 
     Memento install() throws NoSuchFieldException {
-      final BiConsumer<NextAction, String> detector = this::detectFlicker;
-      return StaticStubSupport.install(Fiber.class, "preApplyReport", detector);
+      final Step.StepAdapter detector = this::detectFlicker;
+      return StaticStubSupport.install(Step.class, "adapter", detector);
     }
 
-    void detectFlicker(NextAction nextAction, String fiberName) {
-      final Set<DomainCondition> conditions = getMatchingConditions(nextAction);
+    Step detectFlicker(Fiber fiber, Step step, Packet packet) {
+      final Set<DomainCondition> conditions = getMatchingConditions(packet);
       if (flickeredStep != null) { // already found a problem; no need to keep looking
-        return;
+        throw new IllegalStateException();
       }
 
       if (!expectedConditions.equals(conditions)) {
         flickeredStep = currentStep;
-      } else if (!(nextAction.getNext() instanceof SimulatedStep)) {
-        currentStep = nextAction.getNext();
+      } else if (!(step instanceof SimulatedStep)) {
+        currentStep = step;
       }
-    }
-
-    private Set<DomainCondition> getMatchingConditions(NextAction nextAction) {
-      return getMatchingConditions(nextAction.getPacket());
+      return step;
     }
 
     @Nonnull
@@ -488,14 +495,15 @@ class FailureReportingTest {
     }
 
     Memento install() throws NoSuchFieldException {
-      final BiConsumer<NextAction, String> detector = this::detectBannedStep;
-      return StaticStubSupport.install(Fiber.class, "preApplyReport", detector);
+      final Step.StepAdapter detector = this::detectBannedStep;
+      return StaticStubSupport.install(Step.class, "adapter", detector);
     }
 
-    void detectBannedStep(NextAction nextAction, String fiberName) {
-      if (reachedBannedStep == null && isSpecifiedStep(nextAction.getNext())) {
-        reachedBannedStep = nextAction.getNext();
+    Step detectBannedStep(Fiber fiber, Step step, Packet packet) {
+      if (reachedBannedStep == null && isSpecifiedStep(step)) {
+        reachedBannedStep = step;
       }
+      return step;
     }
 
     private boolean isSpecifiedStep(Step step) {

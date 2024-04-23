@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -8,13 +8,18 @@ import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.GetOptions;
+import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
@@ -25,10 +30,8 @@ import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.webhooks.WebhookRestServer;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadata;
 
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
@@ -41,6 +44,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.WEBHOOK_S
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
+import static oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep.EXCEPTION;
 
 /** A Domain Custom Resource Conversion Webhook for WebLogic Kubernetes Operator. */
 public class WebhookMain extends BaseMain {
@@ -53,8 +57,8 @@ public class WebhookMain extends BaseMain {
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
 
   static class WebhookMainDelegateImpl extends CoreDelegateImpl implements WebhookMainDelegate {
-    public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
-      super(buildProps, scheduledExecutorService);
+    public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService executor) {
+      super(buildProps, executor);
     }
 
     private void logStartup() {
@@ -96,7 +100,7 @@ public class WebhookMain extends BaseMain {
 
   static WebhookMain createMain(Properties buildProps) {
     final WebhookMainDelegateImpl delegate =
-            new WebhookMainDelegateImpl(buildProps, wrappedExecutorService);
+            new WebhookMainDelegateImpl(buildProps, executor);
 
     delegate.logStartup();
     return new WebhookMain(delegate);
@@ -129,8 +133,8 @@ public class WebhookMain extends BaseMain {
 
   void completeBegin() {
     try {
-      startMetricsServer(container);
-      startRestServer(container);
+      startMetricsServer();
+      startRestServer();
 
       // start periodic recheck of CRD
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
@@ -177,8 +181,8 @@ public class WebhookMain extends BaseMain {
   }
 
   private String getCrdResourceVersion(String crdName) throws ApiException {
-    return Optional.of(new CallBuilder().readCRDMetadata(crdName))
-        .map(PartialObjectMetadata::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse(null);
+    return Optional.ofNullable(RequestBuilder.CRD.get(crdName, new GetOptions().isPartialObjectMetadataRequest(true)))
+        .map(V1CustomResourceDefinition::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse(null);
   }
 
   private Step createFullCRDRecheckSteps() {
@@ -197,28 +201,32 @@ public class WebhookMain extends BaseMain {
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
   private Step createDomainCRDPresenceCheck() {
-    return new CallBuilder().listDomainAsync(getWebhookNamespace(), new CrdPresenceResponseStep<>());
+    return RequestBuilder.DOMAIN.list(getWebhookNamespace(),
+        new ListOptions().isPartialObjectMetadataListRequest(true),
+        new CrdPresenceResponseStep<>());
   }
 
   // Returns a step that verifies the presence of an installed cluster CRD. It does this by attempting to list the
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
   private Step createClusterCRDPresenceCheck() {
-    return new CallBuilder().listClusterAsync(getWebhookNamespace(), new CrdPresenceResponseStep<>());
+    return RequestBuilder.CLUSTER.list(getWebhookNamespace(),
+        new ListOptions().isPartialObjectMetadataListRequest(true),
+        new CrdPresenceResponseStep<>());
   }
 
   // on failure, aborts the processing.
-  private class  CrdPresenceResponseStep<L extends KubernetesListObject> extends DefaultResponseStep<L> {
+  private class CrdPresenceResponseStep<L extends KubernetesListObject> extends DefaultResponseStep<L> {
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<L> callResponse) {
       warnedOfCrdAbsence = false;
       crdPresenceCheckCount.set(0);
       return super.onSuccess(packet, callResponse);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<L> callResponse) {
+    public Result onFailure(Packet packet, KubernetesApiResponse<L> callResponse) {
       if (crdPresenceCheckCount.getAndIncrement() < getCrdPresenceFailureRetryMaxCount()) {
         return doNext(this, packet);
       }
@@ -251,8 +259,8 @@ public class WebhookMain extends BaseMain {
 
   public static class CheckFailureAndCreateEventStep extends Step {
     @Override
-    public NextAction apply(Packet packet) {
-      Exception failure = packet.getSpi(Exception.class);
+    public @Nonnull Result apply(Packet packet) {
+      Throwable failure = (Throwable) packet.get(EXCEPTION);
       if (failure != null) {
         return doNext(createEventStep(new EventHelper.EventData(WEBHOOK_STARTUP_FAILED, failure.getMessage())
             .resourceName(OPERATOR_WEBHOOK_COMPONENT)

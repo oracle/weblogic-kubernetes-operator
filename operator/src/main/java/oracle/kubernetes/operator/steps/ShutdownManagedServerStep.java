@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -18,17 +19,16 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ShutdownType;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
+import oracle.kubernetes.operator.http.client.HttpRequestStep;
 import oracle.kubernetes.operator.http.client.HttpResponseStep;
 import oracle.kubernetes.operator.http.rest.Scan;
 import oracle.kubernetes.operator.http.rest.ScanCache;
@@ -39,7 +39,6 @@ import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -76,17 +75,18 @@ public class ShutdownManagedServerStep extends Step {
   }
 
   @Override
-  public NextAction apply(Packet packet) {
+  public @Nonnull Result apply(Packet packet) {
     LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
     V1Service service = getDomainPresenceInfo(packet).getServerService(serverName);
 
     if (service == null) {
-      return doNext(packet);
+      return doNext(PodHelper.labelPodAsNeedingToShutdown(pod, getNext()), packet);
     } else {
       return doNext(
             Step.chain(
                 SecretHelper.createAuthorizationSourceStep(),
-                new ShutdownManagedServerWithHttpStep(service, pod, getNext())),
+                PodHelper.labelPodAsNeedingToShutdown(pod,
+                    new ShutdownManagedServerWithHttpStep(service, pod, getNext()))),
             packet);
     }
   }
@@ -294,9 +294,9 @@ public class ShutdownManagedServerStep extends Step {
       return domainConfig;
     }
 
-    HttpAsyncRequestStep createRequestStep(
+    HttpRequestStep createRequestStep(
         ShutdownManagedServerResponseStep shutdownManagedServerResponseStep) {
-      HttpAsyncRequestStep requestStep = HttpAsyncRequestStep.create(createRequest(),
+      HttpRequestStep requestStep = HttpRequestStep.create(createRequest(),
           shutdownManagedServerResponseStep).withTimeoutSeconds(getRequestTimeoutSeconds());
       shutdownManagedServerResponseStep.requestStep = requestStep;
       return requestStep;
@@ -315,25 +315,24 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
+    public @Nonnull Result apply(Packet packet) {
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
-          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext());
-      HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
+              new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext());
+      HttpRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
       return doNext(requestStep, packet);
     }
 
   }
 
   private static DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
-    return packet.getSpi(DomainPresenceInfo.class);
+    return (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
   }
 
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
     private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
     private final String serverName;
-    private HttpAsyncRequestStep requestStep;
+    private HttpRequestStep requestStep;
 
     ShutdownManagedServerResponseStep(String serverName, Step next) {
       super(next);
@@ -341,15 +340,14 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
+    public Result onSuccess(Packet packet, HttpResponse<String> response) {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
-      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-      return doNext(pw.waitForServerShutdown(serverName, getDomainPresenceInfo(packet).getDomain(), getNext()), packet);
+      return doNext(packet);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+    public Result onFailure(Packet packet, HttpResponse<String> response) {
       if (getThrowableResponse(packet) != null) {
         Throwable throwable = getThrowableResponse(packet);
         if (shouldRetry(packet)) {
@@ -364,14 +362,13 @@ public class ShutdownManagedServerStep extends Step {
       } else {
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
-
       removeShutdownRequestRetryCount(packet);
       return doNext(Step.chain(createDomainRefreshStep(getDomainPresenceInfo(packet).getDomainName(),
           getDomainPresenceInfo(packet).getNamespace()), getNext()), packet);
     }
 
     private Step createDomainRefreshStep(String domainName, String namespace) {
-      return new CallBuilder().readDomainAsync(domainName, namespace, new DomainUpdateStep());
+      return RequestBuilder.DOMAIN.get(namespace, domainName, new DomainUpdateStep());
     }
 
     private boolean shouldRetry(Packet packet) {
@@ -400,16 +397,17 @@ public class ShutdownManagedServerStep extends Step {
       packet.remove(SHUTDOWN_REQUEST_RETRY_COUNT);
     }
 
-    void setHttpAsyncRequestStep(HttpAsyncRequestStep requestStep) {
+    void setHttpAsyncRequestStep(HttpRequestStep requestStep) {
       this.requestStep = requestStep;
     }
   }
 
   static class DomainUpdateStep extends DefaultResponseStep<DomainResource> {
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
-      if (callResponse.getResult() != null) {
-        packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+    public Result onSuccess(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
+      if (callResponse.getObject() != null) {
+        DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+        info.setDomain(callResponse.getObject());
       }
       return doNext(packet);
     }

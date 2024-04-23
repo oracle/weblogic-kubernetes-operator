@@ -64,12 +64,6 @@ public class MessageKeys {
   public static final String WAITING_FOR_POD_READY = "WLSKO-0087";
   public static final String POD_IS_READY = "WLSKO-0088";
   public static final String POD_IS_FAILED = "WLSKO-0089";
-  public static final String ASYNC_REQUEST = "WLSKO-0094";
-  public static final String ASYNC_FAILURE = "WLSKO-0095";
-  public static final String ASYNC_SUCCESS = "WLSKO-0096";
-  public static final String ASYNC_NO_RETRY = "WLSKO-0097";
-  public static final String ASYNC_RETRY = "WLSKO-0098";
-  public static final String ASYNC_TIMEOUT = "WLSKO-0099";
   public static final String WATCH_EVENT = "WLSKO-0101";
   public static final String DOMAIN_STATUS = "WLSKO-0102";
   public static final String INVALID_MANAGE_SERVER_COUNT = "WLSKO-0103";
@@ -80,7 +74,6 @@ public class MessageKeys {
   public static final String NULL_TOKEN_REVIEW_STATUS = "WLSKO-0109";
   public static final String NULL_USER_INFO = "WLSKO-0110";
   public static final String RESOURCE_BUNDLE_NOT_FOUND = "WLSKO-0111";
-  public static final String CURRENT_STEPS = "WLSKO-0112";
   public static final String CYCLING_SERVERS = "WLSKO-0118";
   public static final String ROLLING_SERVERS = "WLSKO-0119";
   public static final String ADMIN_POD_PATCHED = "WLSKO-0120";
@@ -109,12 +102,8 @@ public class MessageKeys {
   public static final String DOMAIN_VALIDATION_FAILED = "WLSKO-0157";
   public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
   public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
-  public static final String REQUEST_PARAMS_IN_NS = "WLSKO-0165";
-  public static final String REQUEST_PARAMS_FOR_NAME = "WLSKO-0166";
-  public static final String REQUEST_PARAMS_WITH = "WLSKO-0167";
   public static final String CALL_FAILED = "WLSKO-0168";
   public static final String JOB_CREATION_TIMESTAMP_MESSAGE = "WLSKO-0169";
-  public static final String HTTP_REQUEST_TIMED_OUT = "WLSKO-0170";
   public static final String NAMESPACE_IS_MISSING = "WLSKO-0171";
   public static final String CM_PATCHED = "WLSKO-0172";
   public static final String REPLACE_CRD_FAILED = "WLSKO-0173";

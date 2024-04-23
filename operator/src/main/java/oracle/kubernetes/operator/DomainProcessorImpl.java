@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,12 +12,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -31,7 +30,6 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.logging.LoggingFilter;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.common.logging.OncePerMessageLoggingFilter;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -50,18 +48,17 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
-import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
-import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.FiberGate;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -94,9 +91,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static final String DELETED = "DELETED";
   private static final String ERROR = "ERROR";
 
-  @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
-  private static String debugPrefix = null;  // Debugging: set this to a non-null value to dump the make-right steps
-
   /** A map that holds at most one FiberGate per namespace to run make-right steps. */
   @SuppressWarnings("FieldMayBeFinal")
   private static Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
@@ -111,7 +105,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   // map namespace to map of uid to processing.
   @SuppressWarnings("FieldMayBeFinal")
-  private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
+  private static Map<String, Map<String, Cancellable>> statusUpdaters = new ConcurrentHashMap<>();
 
   // List of clusters in a namespace.
   private static final Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
@@ -194,11 +188,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void registerStatusUpdater(
-        String ns, String domainUid, ScheduledFuture<?> future) {
-    ScheduledFuture<?> existing =
+        String ns, String domainUid, Cancellable future) {
+    Cancellable existing =
           statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUid, future);
     if (existing != null) {
-      existing.cancel(false);
+      existing.cancel();
     }
   }
 
@@ -348,8 +342,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
-  public static Step bringAdminServerUp(PodAwaiterStepFactory podAwaiterStepFactory) {
-    return bringAdminServerUpSteps(podAwaiterStepFactory);
+  public static Step bringAdminServerUp(DomainPresenceInfo info) {
+    return bringAdminServerUpSteps(info);
   }
 
   @Override
@@ -415,7 +409,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return false;
     }
   }
-  
+
   private boolean isExplicitRecheckWithoutRetriableFailure(
       MakeRightDomainOperation operation, DomainPresenceInfo info) {
     return operation.isExplicitRecheck() && !hasRetriableFailureNonRetryingOperation(operation, info);
@@ -518,50 +512,29 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void endScheduledDomainStatusUpdates(DomainPresenceInfo info) {
-    Map<String, ScheduledFuture<?>> map = statusUpdaters.get(info.getNamespace());
+    Map<String, Cancellable> map = statusUpdaters.get(info.getNamespace());
     if (map != null) {
-      ScheduledFuture<?> existing = map.remove(info.getDomainUid());
+      Cancellable existing = map.remove(info.getDomainUid());
       if (existing != null) {
-        existing.cancel(true);
+        existing.cancel();
       }
     }
   }
 
-  private static Step bringAdminServerUpSteps(PodAwaiterStepFactory podAwaiterStepFactory) {
+  private static Step bringAdminServerUpSteps(DomainPresenceInfo info) {
     List<Step> steps = new ArrayList<>();
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
     steps.add(ServiceHelper.createForExternalServiceStep(null));
     steps.add(ServiceHelper.createForServerStep(null));
-    steps.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, null));
+    steps.add(PodHelper.createAdminReadyStep(null));
     return Step.chain(steps.toArray(new Step[0]));
-  }
-
-  /**
-   * Report on currently suspended fibers. This is the first step toward diagnosing if we need special handling
-   * to kill or kick these fibers.
-   */
-  @Override
-  @SuppressWarnings("try")
-  public void reportSuspendedFibers() {
-    if (LOGGER.isFineEnabled()) {
-      BiConsumer<String, FiberGate> consumer =
-          (namespace, gate) -> gate.getCurrentFibers().forEach(
-            (key, fiber) -> Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-              try (ThreadLoggingContext ignored
-                  = setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
-                LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getResourceName());
-              }
-            }));
-      makeRightFiberGates.forEach(consumer);
-      statusFiberGates.forEach(consumer);
-    }
   }
 
   private String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
           .map(Fiber::getPacket)
-          .map(p -> p.getSpi(DomainPresenceInfo.class))
+          .map(p -> (DomainPresenceInfo) p.get(ProcessingConstants.DOMAIN_PRESENCE_INFO))
           .map(DomainPresenceInfo::getDomainUid).orElse("");
   }
 
@@ -592,25 +565,23 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     String serverName = getPodLabel(pod, LabelConstants.SERVERNAME_LABEL);
     switch (watchType) {
       case ADDED:
-        info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
-        // fall through
       case MODIFIED:
         boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
         if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
             LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
-            createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
           } else {
             LOGGER.info(MessageKeys.POD_EVICTED_NO_RESTART, getPodName(pod), getPodStatusMessage(pod));
           }
         }
+        createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
         if (removed && isNotDeleting(info) && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);
-          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
+        createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         break;
 
       case ERROR:
@@ -646,17 +617,21 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info) {
+    Packet packet = new Packet();
+    packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, info);
     Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
-          .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps, null));
+          .ifPresent(steps -> delegate.runSteps(packet, steps, null));
   }
 
   @Override
   public void updateDomainStatus(@Nonnull V1PersistentVolumeClaim pvc, DomainPresenceInfo info) {
+    Packet packet = new Packet();
+    packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, info);
     if (!ProcessingConstants.BOUND.equals(getPhase(pvc))) {
-      delegate.runSteps(new Packet().with(info), DomainStatusUpdater
+      delegate.runSteps(packet, DomainStatusUpdater
               .createPersistentVolumeClaimFailureSteps(getMessage(pvc)), null);
     } else {
-      delegate.runSteps(new Packet().with(info), DomainStatusUpdater
+      delegate.runSteps(packet, DomainStatusUpdater
           .createRemoveSelectedFailuresStep(EventHelper.createEventStep(
               new EventData(PERSISTENT_VOLUME_CLAIM_BOUND)), PERSISTENT_VOLUME_CLAIM), null);
     }
@@ -824,6 +799,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
+        info.addClusterResource(cluster);
         createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, info.getDomainUid()).execute();
         createMakeRightOperation(info)
             .interrupt()
@@ -918,7 +894,14 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleAddedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain))
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    Optional.ofNullable(domain.getSpec()).map(DomainSpec::getClusters).ifPresent(list -> list.forEach(clusterName -> {
+      ClusterPresenceInfo c = getExistingClusterPresenceInfo(domain.getNamespace(), clusterName.getName());
+      if (c != null) {
+        info.addClusterResource(c.getCluster());
+      }
+    }));
+    createMakeRightOperation(info)
         .interrupt()
         .withExplicitRecheck()
         .withEventData(new EventData(DOMAIN_CREATED))
@@ -941,12 +924,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void logThrowable(Throwable throwable) {
-    if (throwable instanceof Step.MultiThrowable multiThrowable) {
-      for (Throwable t : multiThrowable.getThrowables()) {
+    if (throwable instanceof Fiber.MultiThrowable) {
+      for (Throwable t : ((Fiber.MultiThrowable) throwable).getThrowables()) {
         logThrowable(t);
       }
-    } else if (throwable instanceof UnrecoverableCallException uce) {
-      uce.log();
     } else {
       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
     }
@@ -974,7 +955,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public static class PopulatePacketServerMapsStep extends Step {
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       populatePacketServerMapsFromDomain(packet);
       return doNext(packet);
     }
@@ -1036,10 +1017,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       }
   
       private void runFailureSteps(Throwable throwable) {
-        gate.startNewFiberIfCurrentFiberMatches(
+        gate.startFiber(
             ((DomainPresenceInfo)presenceInfo).getDomainUid(),
-            getFailureSteps(throwable),
-            packet,
+            () -> getFailureSteps(throwable),
+            () -> operation.createPacket(),
             new FailureReportCompletionCallback());
       }
 
@@ -1081,7 +1062,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
       final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
-      gate.getExecutor().schedule(retry::execute, delayUntilNextRetry(domainPresenceInfo), TimeUnit.SECONDS);
+      delegate.schedule(retry::execute, delayUntilNextRetry(domainPresenceInfo), TimeUnit.SECONDS);
     }
     
     private long delayUntilNextRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
@@ -1124,19 +1105,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @SuppressWarnings("rawtypes")
   private abstract static class Plan<T extends MakeRightOperation> {
 
-    final T operation;
+    protected final T operation;
     protected final ResourcePresenceInfo presenceInfo;
     protected final FiberGate gate;
-
-    private final Step firstStep;
-    final Packet packet;
+    protected final DomainProcessorDelegate delegate;
 
     public Plan(T operation, DomainProcessorDelegate delegate) {
       this.operation = operation;
       this.presenceInfo = operation.getPresenceInfo();
-      this.firstStep = operation.createSteps();
-      this.packet = operation.createPacket();
       this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
+      this.delegate = delegate;
     }
 
     private FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
@@ -1144,13 +1122,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     void execute() {
-      Optional.ofNullable(debugPrefix).ifPresent(prefix -> packet.put(Fiber.DEBUG_FIBER, prefix));
-
-      if (operation.isWillInterrupt()) {
-        gate.startFiber(presenceInfo.getResourceName(), firstStep, packet, createCompletionCallback());
-      } else {
-        gate.startFiberIfNoCurrentFiber(presenceInfo.getResourceName(), firstStep, packet, createCompletionCallback());
-      }
+      gate.startFiber(presenceInfo.getResourceName(), () -> operation.createSteps(), () -> operation.createPacket(),
+          createCompletionCallback());
     }
 
     abstract CompletionCallback createCompletionCallback();
@@ -1177,9 +1150,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     private void updateStatus() {
       try {
         Step strategy = Step.chain(new DomainPresenceInfoStep(), ServerStatusReader.createStatusStep(timeoutSeconds));
-
         getStatusFiberGate(getNamespace())
-            .startFiberIfNoCurrentFiber(getDomainUid(), strategy, createPacket(), new CompletionCallbackImpl());
+            .startFiber(getDomainUid(), () -> strategy, () -> createPacket(), new CompletionCallbackImpl());
       } catch (Exception t) {
         try (ThreadLoggingContext ignored
                  = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {
@@ -1203,21 +1175,17 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     @Nonnull
     private Packet createPacket() {
       Packet packet = new Packet();
-      packet
-          .getComponents()
-          .put(
-              ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(delegate.getKubernetesVersion()));
+      packet.put(ProcessingConstants.DOMAIN_COMPONENT_NAME, delegate.getKubernetesVersion());
       packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
       return packet;
     }
 
     private class DomainPresenceInfoStep extends Step {
       @Override
-      public NextAction apply(Packet packet) {
+      public @Nonnull Result apply(Packet packet) {
         Optional.ofNullable(domains.get(getNamespace()))
             .map(n -> n.get(getDomainUid()))
-            .ifPresent(i -> i.addToPacket(packet));
+            .ifPresent(i -> packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, i));
 
         return doNext(packet);
       }
