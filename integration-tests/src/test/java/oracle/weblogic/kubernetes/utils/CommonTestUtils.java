@@ -69,6 +69,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
@@ -1716,7 +1717,8 @@ public class CommonTestUtils {
       }
 
       // create WLST property file
-      File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+      File wlstPropertiesFile =
+          assertDoesNotThrow(() -> File.createTempFile("wlst", ".properties", new File(RESULTS_TEMPFILE)),
           "Creating WLST properties file failed");
 
       String localhost = "localhost";
