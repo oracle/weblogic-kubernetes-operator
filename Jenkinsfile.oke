@@ -3,15 +3,18 @@
 //
 
 CRON_SETTINGS = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
-                   H 1 * * * % MAVEN_PROFILE_NAME=oke-parallelnew;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
-
+                   H 2 * * * % MAVEN_PROFILE_NAME=oke-parallelnew;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 pipeline {
     agent { label 'large' }
     options {
         timeout(time: 1800, unit: 'MINUTES')
         //disableConcurrentBuilds()
     }
-
+    triggers {
+        // timer trigger for "nightly build"
+        parameterizedCron(env.JOB_NAME == 'wko-oke-nightly' ?
+        CRON_SETTINGS : '')
+    }
     tools {
         maven 'maven-3.8.7'
         jdk 'jdk21'
@@ -476,13 +479,13 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         clusterName = "${CLUSTER_NAME}"
-                        FSS_DIR = "/oketest1,/oketest2,/oketest3"
+                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15"
 
                     }
                     steps {
                          script {
                              def res = 0
-                             currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME}"
+                             currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME} ${CLUSTER_NAME}"
                              res = sh(script: '''
                                      if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                         echo 'ERROR: All tests cannot be run with integration-tests profile'
