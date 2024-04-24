@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -39,8 +41,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -74,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-sequential1")
+@Tag("oke-gate")
 class ItManagedCoherence {
 
   // constants for Coherence
@@ -129,10 +133,15 @@ class ItManagedCoherence {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domainNamespace = namespaces.get(2);
 
+    String nodePortValue = null;
+    if (!OKE_CLUSTER) {
+      nodePortValue = "NodePort";
+    }
+
     // install and verify Traefik if not running on OKD
     if (!OKD || (TestConstants.KIND_CLUSTER
             && TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
-      traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0, "NodePort");
+      traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0, nodePortValue);
       traefikHelmParams = traefikParams.getHelmParams();
     }
 
@@ -165,6 +174,16 @@ class ItManagedCoherence {
     // create and verify a two-cluster WebLogic domain with a Coherence cluster
     createAndVerifyDomain(domImage);
 
+    String command = KUBERNETES_CLI + " get all --all-namespaces";
+    logger.info("curl command to get all --all-namespaces is: {0}", command);
+
+    try {
+      ExecResult result0 = ExecCommand.exec(command, true);
+      logger.info("result is: {0}", result0.toString());
+    } catch (IOException | InterruptedException ex) {
+      ex.printStackTrace();
+    }
+
     if (OKD) {
       String cluster1HostName = domainUid + "-cluster-cluster-1";
       final String cluster1IngressHost = createRouteForOKD(cluster1HostName, domainNamespace);
@@ -174,12 +193,12 @@ class ItManagedCoherence {
           -> coherenceCacheTest(cluster1IngressHost, 0), "Test Coherence cache failed");
       assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
     } else {
-
       Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
       for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
         clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
       }
-      String hostHeader = domainUid + "." + domainNamespace + ".cluster-1.test";
+
+      String clusterHostname = domainUid + "." + domainNamespace + ".cluster-1.test";
       String hostAndPort;
       int ingressServiceNodePort;
       if (TestConstants.KIND_CLUSTER
@@ -191,10 +210,12 @@ class ItManagedCoherence {
         hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
         ingressServiceNodePort = TRAEFIK_INGRESS_HTTP_HOSTPORT;
       } else {
-        // clusterNameMsPortMap.put(clusterName, managedServerPort);
+        List<String> domainUids = new ArrayList<>();
+        domainUids.add(domainUid);
+
         logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-        createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true, null,
-            traefikParams.getIngressClassName());
+        createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0,
+            clusterNameMsPortMap, true, null, traefikParams.getIngressClassName());
 
         // get ingress service Name and Nodeport
         String ingressServiceName = traefikHelmParams.getReleaseName();
@@ -207,13 +228,13 @@ class ItManagedCoherence {
 
         hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
             ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
-            : getHostAndPort(hostHeader, ingressServiceNodePort);
+            : getHostAndPort(clusterHostname, ingressServiceNodePort);
       }
 
-      assertTrue(checkCoheranceApp(hostAndPort, hostHeader), "Failed to access Coherance Application");
+      assertTrue(checkCoheranceApp(hostAndPort, clusterHostname), "Failed to access Coherance Application");
       // test adding data to the cache and retrieving them from the cache
       boolean testCompletedSuccessfully = assertDoesNotThrow(()
-          -> coherenceCacheTest(hostHeader, ingressServiceNodePort), "Test Coherence cache failed");
+          -> coherenceCacheTest(clusterHostname, ingressServiceNodePort), "Test Coherence cache failed");
       assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
     }
   }
@@ -486,7 +507,6 @@ class ItManagedCoherence {
   }
 
   private boolean checkCoheranceApp(String hostAndPort, String hostHeader) {
-
     StringBuffer curlCmd = new StringBuffer("curl -g --silent --show-error --noproxy '*' ");
     curlCmd
         .append("-d 'action=clear' ")
@@ -509,5 +529,4 @@ class ItManagedCoherence {
         curlCmd);
     return true;
   }
-
 }
