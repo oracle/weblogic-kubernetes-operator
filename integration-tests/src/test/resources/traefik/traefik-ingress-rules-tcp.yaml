@@ -1,0 +1,18 @@
+# Copyright (c) 2024, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: production-secure-tls-passthrough
+  namespace: @NS@
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: HostSNI(`*`)
+    services:
+    - name: mii-default-admin-admin-server
+      port: 9002
+  tls:
+    passthrough: true

@@ -4,30 +4,31 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
-
 /**
  * A simple Http client.
  */
 public class OracleHttpClient {
-
-  private static final HttpClient httpClient = HttpClient.newBuilder()
-      .version(HttpClient.Version.HTTP_1_1)
-      .connectTimeout(Duration.ofSeconds(30))
-      .followRedirects(HttpClient.Redirect.NORMAL)
-      .build();
 
   /**
    * Http GET request.
@@ -42,6 +43,21 @@ public class OracleHttpClient {
   public static HttpResponse<String> get(String url, Map<String, String> headers, boolean debug)
       throws IOException, InterruptedException {
     LoggingFacade logger = getLogger();
+
+    SSLContext sslContext = null;
+    try {
+      sslContext = SSLContext.getInstance("SSL");
+      sslContext.init(null, new TrustManager[]{MOCK_TRUST_MANAGER}, new SecureRandom());
+    } catch (Exception ex) {
+      logger.severe(ex.getLocalizedMessage());
+    }
+    HttpClient httpClient = HttpClient.newBuilder()
+        .sslContext(sslContext)
+        .version(HttpClient.Version.HTTP_1_1)
+        .connectTimeout(Duration.ofSeconds(30))
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build();
+
     HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
     requestBuilder
         .GET()
@@ -108,5 +124,37 @@ public class OracleHttpClient {
       throws IOException, InterruptedException {
     return get(url, headers, false);
   }
+
+  private static final TrustManager MOCK_TRUST_MANAGER = new X509ExtendedTrustManager() {
+    @Override
+    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+      return new java.security.cert.X509Certificate[0];
+    }
+
+    @Override
+    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
+        throws CertificateException {
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] xcs, String string, Socket socket) throws CertificateException {
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] xcs, String string, SSLEngine ssle) throws CertificateException {
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] xcs, String string, Socket socket) throws CertificateException {
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] xcs, String string, SSLEngine ssle) throws CertificateException {
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+    }
+  };
 
 }
