@@ -1,8 +1,9 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
@@ -335,6 +337,16 @@ public class LoggingExporter {
     Map<String, String> labels = new HashMap<>();
     labels.put("app", elasticsearchName);
 
+    List<V1Container> initcontainers = new ArrayList<>();
+    if (TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      V1Container setmaxmap = new V1Container()
+          .name("set-vm-max-map-count")
+          .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)
+          .imagePullPolicy(IMAGE_PULL_POLICY)
+          .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
+          .securityContext(new V1SecurityContext().privileged(true));
+      initcontainers.add(setmaxmap);
+    }
     // create Elasticsearch deployment CR object
     V1Deployment elasticsearchDeployment = new V1Deployment()
         .apiVersion("apps/v1")
@@ -351,12 +363,7 @@ public class LoggingExporter {
                 .metadata(new V1ObjectMeta()
                     .labels(labels))
                 .spec(new V1PodSpec()
-                    .initContainers(List.of(new V1Container()
-                        .name("set-vm-max-map-count")
-                        .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)
-                        .imagePullPolicy(IMAGE_PULL_POLICY)
-                        .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
-                        .securityContext(new V1SecurityContext().privileged(true))))
+                    .initContainers(initcontainers)
                     .containers(List.of(new V1Container()
                         .name(elasticsearchName)
                         .image(elasticsearchImage)
