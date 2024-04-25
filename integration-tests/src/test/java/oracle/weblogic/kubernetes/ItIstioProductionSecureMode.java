@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("oke-arm")
 @Tag("olcne-mrg")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItIstioProductionSecureMode {
 
   private static String opNamespace = null;

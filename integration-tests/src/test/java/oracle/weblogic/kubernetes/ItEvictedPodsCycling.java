@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItEvictedPodsCycling {
 
   // constants for Domain

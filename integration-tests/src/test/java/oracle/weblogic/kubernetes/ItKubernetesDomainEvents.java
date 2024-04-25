@@ -133,7 +133,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-arm")
 @IntegrationTest
 @Tag("olcne-srg")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItKubernetesDomainEvents {
 
   private static String opNamespace = null;

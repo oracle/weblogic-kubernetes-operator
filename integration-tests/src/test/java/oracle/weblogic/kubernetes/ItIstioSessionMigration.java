@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("kind-parallel")
 @Tag("oke-arm")
 @Tag("olcne-mrg")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItIstioSessionMigration {
 
   private static String opNamespace = null;

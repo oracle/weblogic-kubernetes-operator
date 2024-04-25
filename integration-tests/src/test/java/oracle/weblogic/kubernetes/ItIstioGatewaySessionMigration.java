@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
 @Tag("oke-arm")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItIstioGatewaySessionMigration {
 
   private static String opNamespace = null;
