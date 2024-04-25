@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEP
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
@@ -93,7 +94,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisabledOnSlimImage
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("okd-wls-mrg")
 @Tag("oke-parallel")
 class ItRemoteConsole {
 
@@ -410,9 +410,15 @@ class ItRemoteConsole {
   
   private static void installTraefikIngressController() {
 
-    if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
-      logger.info("Installing Traefik controller using helm");
-      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
+    String nodePortValue = null;
+    if (!OKE_CLUSTER) {
+      nodePortValue = "NodePort";
+    }
+
+    if (!OKD || (KIND_CLUSTER
+        && WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0, nodePortValue)
+          .getHelmParams();
     }
 
     createTraefikIngressRoutingRules(domainNamespace);
