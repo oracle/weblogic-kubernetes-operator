@@ -375,6 +375,9 @@ pipeline {
                             if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                                 echo "Deleted orphaned kind cluster ${kind_name}"
                             fi
+                            # settings needed by elastic logging tests
+                            echo "running sudo sysctl -w vm.max_map_count=262144"
+                            sudo sysctl -w vm.max_map_count=262144
                             cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -420,7 +423,7 @@ nodes:
         protocol: TCP
       - containerPort: 32170
         hostPort: 2173
-        protocol: TCP	
+        protocol: TCP
       - containerPort: 32189
         hostPort: 2182
         protocol: TCP
@@ -432,7 +435,22 @@ nodes:
         protocol: TCP
       - containerPort: 32343
         hostPort: 2343
-        protocol: TCP		
+        protocol: TCP
+      - containerPort: 32331
+        hostPort: 2331
+        protocol: TCP
+      - containerPort: 31781
+        hostPort: 2781
+        protocol: TCP
+      - containerPort: 31744
+        hostPort: 2782
+        protocol: TCP	
+      - containerPort: 31785
+        hostPort: 2785
+        protocol: TCP
+      - containerPort: 31746
+        hostPort: 2786
+        protocol: TCP	
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
@@ -447,6 +465,7 @@ EOF
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
                             done
+                            podman exec -it kind-worker bash -c "sysctl vm.max_map_count"
 
                             # Document the local registry
                             # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
