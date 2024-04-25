@@ -1,7 +1,18 @@
 /*
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 */
+
+// Compartment in which to create the cluster resources.
+variable "compartment_name" {
+}
+
+variable "compartment_ocid" {
+}
+
+variable "sub_compartment_ocid" {
+}
+
 variable "cluster_kubernetes_version" {
   default = "v1.17.9"
 }
@@ -51,14 +62,26 @@ variable "node_pool_node_shape" {
 }
 
 variable "node_pool_quantity_per_subnet" {
-  default = 2
+  default = 1
 }
 
 variable "node_pool_ssh_public_key" {
 }
 
+variable "vcn_ocid" {
+}
+variable "mount_target_ocid" {
+}
+
+variable "pub_subnet_ocid" {
+}
+
+variable "cluster_cluster_pod_network_options_cni_type" {
+  default = "OCI_VCN_IP_NATIVE"
+}
+
 data "oci_identity_availability_domains" "tfsample_availability_domains" {
-  compartment_id = var.compartment_ocid
+  compartment_id = var.sub_compartment_ocid
 }
 
 resource "oci_containerengine_cluster" "tfsample_cluster" {
@@ -66,11 +89,17 @@ resource "oci_containerengine_cluster" "tfsample_cluster" {
   compartment_id     = var.compartment_ocid
   kubernetes_version = var.cluster_kubernetes_version
   name               = var.cluster_name
-  vcn_id             = oci_core_virtual_network.oke-vcn.id
+  vcn_id             = var.vcn_ocid
 
+  endpoint_config {
+
+        #Optional
+        is_public_ip_enabled = "true"
+        subnet_id = var.pub_subnet_ocid
+    }
   #Optional
   options {
-    service_lb_subnet_ids = [oci_core_subnet.oke-subnet-loadbalancer-1.id, oci_core_subnet.oke-subnet-loadbalancer-2.id]
+    service_lb_subnet_ids = [var.pub_subnet_ocid]
 
     #Optional
     add_ons {

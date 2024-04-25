@@ -3,7 +3,7 @@
 //
 
 CRON_SETTINGS = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
-                   H 2 * * * % MAVEN_PROFILE_NAME=oke-parallelnew;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
+                   H 2 * * * % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 pipeline {
     agent { label 'large' }
     options {
@@ -57,6 +57,7 @@ pipeline {
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
         kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
         availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
+        oke_run = "${env.JOB_NAME == 'wko-oke-nightly' ? 'okeint' : 'okeintdev'}"
 
     }
 
@@ -74,13 +75,13 @@ pipeline {
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.28.2'
+               defaultValue: '1.29.1'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
                        //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
                        //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaajqv2odwgofwohn2chxfytl4uiupz2filik5e2rrepe3izq26pyrq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa22u45gr3ikxnc6rius2qil2kz5k3e7p476c4usr6qnvql4l5dxea'
                        
                 )
         string(name: 'KUBECTL_VERSION',
@@ -103,26 +104,22 @@ pipeline {
                    '1.9.9'
                ]
         )
-        choice(name: 'CLUSTER_NAME',
-                       description: 'Oke cluster name.',
-                       choices: [
-                           'parone',
-                           'seqone',
-                           'seqtwo'
-                       ]
-                )
+
                 choice(name: 'MAVEN_PROFILE_NAME',
-                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-gate, oke-sequential1,oke-parallelnew. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-gate,oke-parallel. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                         choices: [
                                 'oke-gate',
-                                'oke-sequential1',
-                                'oke-parallelnew'
+                                'oke-parallel'
                         ]
                 )
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
                defaultValue: "3"
         )
+        string(name: 'CLUSTER_NAME',
+                       description: 'OKE cluster name',
+                       defaultValue: "seqone"
+                )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
                //defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
@@ -139,6 +136,10 @@ pipeline {
                        description: '',
                        defaultValue: "VM.Standard.E3.Flex"
         )
+        string(name: 'MOUNT_TARGET_OCID',
+                               description: 'only for debug runs on wko-oke-dev',
+                               defaultValue: "test"
+                )
         string(name: 'BRANCH',
                        description: '',
                        defaultValue: "main"
@@ -351,6 +352,7 @@ vcn.ocid=${vcn_ocid}
 pub.subnet.ocid=${pub_subnet_ocid}
 private.subnet.ocid=${private_subnet_ocid}
 nodepool.shape=${NODE_SHAPE}
+mounttarget.ocid=${MOUNT_TARGET_OCID}
 nodepool.imagename=${IMAGE_ID}
 k8s.version=v${OKE_KUBE_VERSION}
 nodepool.ssh.pubkey=${ssh_pubkey}
@@ -393,7 +395,7 @@ EOF
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         CLUSTER_NAME="${CLUSTER_NAME}"
                         KUBECONFIG ="${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
-                        terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/okeint"
+                        terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/${oke_run}"
 
                     }
                     steps {
@@ -413,7 +415,7 @@ EOF
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
 
-                            clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == '\"$CLUSTER_NAME}\"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
+                            clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == '\"${CLUSTER_NAME}\"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
 
                             echo "clusterIp : $clusterIP"
                             clusterPublicIP=${clusterIP:1:-6}
@@ -454,9 +456,15 @@ EOF
                         compartment_ocid=${compartment_id}
                         echo "creating storage class to setup OFSS ..."
                         echo "getting MountTarget ID"
-                        mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
+                        if [ "${JOB_NAME}" = "wko-oke-nightly" ]; then
+                            mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
+                        else
+                            mount_target_id=${MOUNT_TARGET_OCID}
+                        fi
+
 
                         clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == '\"${CLUSTER_NAME}\"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
+
                         echo "clusterIp : $clusterIP"
                         clusterPublicIP=${clusterIP:1:-6}
                         echo " clusterPublicIP : ${clusterPublicIP}"
@@ -479,7 +487,8 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         clusterName = "${CLUSTER_NAME}"
-                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15"
+                        FSS_DIR = "${env.JOB_NAME == 'wko-oke-nightly' ? '/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15' : '/${clusterName}oketest1,/${clusterName}oketest2'}"
+
 
                     }
                     steps {
@@ -534,8 +543,13 @@ EOF
                                 NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| head -n2 | tail -n1`
                                 echo "second node external IP ${NODE_IP}"
                                 export NODE_IP=${NODE_IP}
+                                if [ "${JOB_NAME}" = "wko-oke-nightly" ]; then
+                                   echo "Mount Target  setup for wko-oke-nightly"
+                                   mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
 
-                                mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
+                                else
+                                   mt_privateip_id=`oci fs mount-target get --mount-target-id=${MOUNT_TARGET_OCID} | jq -r '.data| ."private-ip-ids"[]'`
+                                fi
                                 # Check if the mt_privateip_id is an array
                                 if [ "$(declare -p mt_privateip_id 2>/dev/null | grep -o 'declare -a')" == "declare -a" ]; then
                                     # Select first
