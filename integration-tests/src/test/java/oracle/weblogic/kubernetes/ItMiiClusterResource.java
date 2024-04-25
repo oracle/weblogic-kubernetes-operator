@@ -978,6 +978,8 @@ class ItMiiClusterResource {
            getPodCreationTime(domainNamespace, managedPod2Prefix + i));
     }
 
+    getPodCreationTime(domainNamespace, adminPodName);
+
     // Restart the Cluster(2) make sure it does not affect other Cluster(1)
     patchClusterResourceWithNewRestartVersion(cluster2Res,domainNamespace);
 
