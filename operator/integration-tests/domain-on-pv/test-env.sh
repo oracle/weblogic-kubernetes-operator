@@ -1,4 +1,4 @@
-# Copyright (c) 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -62,3 +62,7 @@ export OCNE=${OCNE:-false}
 
 # default Kubernetes CLI
 export KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+
+# default WLSIMG_BUILDER
+export WLSIMG_BUILDER=${WLSIMG_BUILDER:-docker}
+export WLSIMG_BUILDER_DEFAULT=${WLSIMG_BUILDER_DEFAULT:-docker}

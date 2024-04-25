@@ -37,8 +37,8 @@ get_service_yaml() {
 get_kube_address() {
   # ${KUBERNETES_CLI:-kubectl} cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
   # This is the heuristic used by the integration test framework:
-  if [ "$KIND_CLUSTER" = "true" ]; then
-    echo $(${KUBERNETES_CLI:-kubectl} get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
+  if [ "$KIND_CLUSTER" = "true" ] && [ "$WLSIMG_BUILDER" = "$WLSIMG_BUILDER_DEFAULT" ]; then
+      echo $(${KUBERNETES_CLI:-kubectl} get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
   else
     echo ${K8S_NODEPORT_HOST:-$(hostname)}
   fi
@@ -80,17 +80,10 @@ get_curl_command() {
 #               with an URL that has the cluster service name
 #    "traefik"  invokes curl locally using the traefik node port
 # $2 cluster-1 or cluster-2
-# if k8s cluster is KIND cluster:
-#   $3 appversion
-#   $4 search string expected in curl output
-#   $5 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
-#   $6 max retries (default 15)
-#   For example, 'testapp internal cluster-1 v1 "Hello World!"'.
-# else
-#   $3 search string expected in curl output
-#   $4 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
-#   $5 max retries (default 15)
-#   For example, 'testapp internal cluster-1 "Hello World!"'.
+# $3 search string expected in curl output
+# $4 max retries (default 15)
+# $5 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
+# For example, 'testapp internal cluster-1 "Hello World!"'.
 
 testapp() {
 
@@ -99,13 +92,9 @@ testapp() {
 
   local num_tries=0
   local traefik_nodeport=''
-  if [ "$KIND_CLUSTER" = "true" ]; then
-    local max_tries="${5:-15}"
-    local quiet="${6:-false}"
-  else
-    local max_tries="${4:-15}"
-    local quiet="${5:-false}"
-  fi
+  local max_tries="${4:-15}"
+  local quiet="${5:-false}"
+
   local target_file_prefix="$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0})"
   local target_file=${target_file_prefix}.$(timestamp).testapp.curl.$1.$((num_tries + 1)).out
   local start_secs=$SECONDS
@@ -119,13 +108,11 @@ testapp() {
       local cluster_service_name=$(get_service_name $domain_uid-cluster-$2)
       local admin_service_name=$(get_service_name $domain_uid-admin-server)
       local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
-      if [ "$KIND_CLUSTER" = "true" ]; then
-        local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp-$3/myapp_war/index.jsp\""
-      else
-        local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
-      fi
+      local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
     elif [ "$1" = "traefik" ]; then
-      if [ -z "$traefik_nodeport" ]; then
+      if [ "$KIND_CLUSTER" = "true" ] && [ "$WLSIMG_BUILDER" != "$WLSIMG_BUILDER_DEFAULT" ]; then
+        traefik_nodeport=${TRAEFIK_INGRESS_HTTP_HOSTPORT:-2080}
+      elif [ -z "$traefik_nodeport" ]; then
         echo "@@ Info: Obtaining traefik nodeport by calling:"
         cat<<EOF
           ${KUBERNETES_CLI:-kubectl} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
@@ -136,11 +123,7 @@ EOF
           return 1
         fi
       fi
-      if [ "$KIND_CLUSTER" = "true" ]; then
-        local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp-$3/myapp_war/index.jsp"
-      else
-        local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp_war/index.jsp"
-      fi
+      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp_war/index.jsp"
     elif [ "$1" = "OKD" ]; then
       echo "In testapp OKD case"
       local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://${ROUTE_HOST}/myapp_war/index.jsp"
@@ -152,11 +135,7 @@ EOF
 
     fi
 
-    if [ "$KIND_CLUSTER" = "true" ]; then
-      local outstr="@@ Info: Searching for '$4' in '$1' mode curl app invoke of cluster '$2' using '$command', "
-    else
-      local outstr="@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command', "
-    fi
+    local outstr="@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command', "
     if [ $quiet = 'false' ]; then
       echo -n "${outstr} output file '$target_file'."
     else
