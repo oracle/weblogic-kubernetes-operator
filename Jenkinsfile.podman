@@ -20,9 +20,7 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel
-                   H 2 * * * % MAVEN_PROFILE_NAME=kind-sequential
-                   H 3 * * * % MAVEN_PROFILE_NAME=wls-srg'''
+CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel'''
 
 pipeline {
     agent { label 'large-ol9' }
@@ -32,7 +30,7 @@ pipeline {
 
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-kind-main-nightly-podman' ?
+        parameterizedCron(env.JOB_NAME == 'wko-kind-release42-nightly-podman' ?
         CRON_SETTINGS : '')
     }
 
@@ -64,7 +62,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH',
                description: 'The branch to run the tests on',
-               defaultValue: 'main'
+               defaultValue: 'release/4.2'
         )
 
         choice(name: 'MAVEN_PROFILE_NAME',
@@ -92,13 +90,13 @@ pipeline {
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.22.0: 1.29, 1.29.2, 1.28, 1.28.7, 1.27, 1.27.11, 1.26, 1.26.14, 1.25, 1.25.16, 1.24, 1.24.17, 1.23, 1.23.17 ',
                choices: [
                     // The first item in the list is the default value...
-                    '1.26.14',
                     '1.29.2',
                     '1.29',
                     '1.28.7',
                     '1.28',
                     '1.27.11',
                     '1.27',
+		    '1.26.14',
                     '1.26',
                     '1.25.16',
                     '1.25',
@@ -605,9 +603,7 @@ EOF
         stage ('Sync') {
             when {
                 anyOf {
-                    branch 'main'
-                    branch 'release/4.0'
-                    branch 'release/3.4'
+                    branch 'release/4.2'
                 }
                 anyOf {
                     not { triggeredBy 'TimerTrigger' }
