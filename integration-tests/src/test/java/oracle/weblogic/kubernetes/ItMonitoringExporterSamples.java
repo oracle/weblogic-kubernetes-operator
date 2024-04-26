@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -771,7 +772,7 @@ class ItMonitoringExporterSamples {
     p.setProperty("MYSQL_PWD", "wlpwd123");
     // create a temporary WebLogic domain property file as a input for WDT model file
     File domainPropertiesFile = assertDoesNotThrow(() ->
-            File.createTempFile("domain", "properties"),
+            File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
         "Failed to create domain properties file");
     assertDoesNotThrow(() ->
             p.store(new FileOutputStream(domainPropertiesFile), "WDT properties file"),
