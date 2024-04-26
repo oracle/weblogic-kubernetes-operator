@@ -122,6 +122,12 @@ class ItElasticLoggingSample {
         "elasticsearch:7.8.1", ELASTICSEARCH_IMAGE),"Failed to replace String: " + ELASTICSEARCH_IMAGE);
     assertDoesNotThrow(() -> replaceStringInFile(destELKConfigFilePath.toString(),
         "kibana:7.8.1", KIBANA_IMAGE),"Failed to replace String: " + KIBANA_IMAGE);
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      assertDoesNotThrow(() -> replaceStringInFile(destELKConfigFilePath.toString(),
+          "'-w', 'vm.max_map_count=262144'", "'vm.max_map_count'"),
+          "Failed to replace String: " + "'-w', 'vm.max_map_count=262144'");
+    }
 
     // install and verify Elasticsearch and Kibana;
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
