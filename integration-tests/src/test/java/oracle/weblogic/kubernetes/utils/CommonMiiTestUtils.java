@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.http.HttpResponse;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.Set;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -70,6 +72,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -96,6 +99,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourc
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
@@ -1245,15 +1249,15 @@ public class CommonMiiTestUtils {
     }
 
     String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    formatIPv6Host(host);
     String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      int port = getServicePort(domainNamespace, adminServerPodName, "internal-t3");
+      String channel = "internal-t3";
+      int port = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+          sslChannelName.isEmpty() ? channel : sslChannelName);
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;
       String ingressName = domainNamespace + "-" + domainName + "-" + serviceName + "-" + port;
@@ -1262,19 +1266,21 @@ public class CommonMiiTestUtils {
       try {
         List<String> ingresses = TestActions.listIngresses(domainNamespace);
         ingressFound = ingresses.stream().filter(ingress -> ingress.equals(ingressName)).findAny();
-        if (ingressFound.isEmpty()) {
+        if (ingressFound.isEmpty() && sslChannelName.isEmpty()) {
           createIngressHostRouting(domainNamespace, domainName, serviceName, port);
         } else {
-          logger.info("Ingress {0} found, skipping ingress resource creation...", ingressFound);
+          logger.info("Ingress {0} found or secure channel, skipping ingress resource creation...", ingressFound);
         }
-      } catch (Exception ex) {
+      } catch (ApiException ex) {
         logger.severe(ex.getMessage());
       }
-      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      hostAndPort = assertDoesNotThrow(()
+          -> formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":"
+          + (isSecureMode ? TRAEFIK_INGRESS_HTTPS_HOSTPORT : TRAEFIK_INGRESS_HTTP_HOSTPORT));
       Map<String, String> headers = new HashMap<>();
       headers.put("host", hostHeader);
       headers.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
-      String url = "http://" + hostAndPort + resourcePath;
+      String url = (isSecureMode ? "https" : "http") + "://" + hostAndPort + resourcePath;
       HttpResponse<String> response;
       try {
         response = OracleHttpClient.get(url, headers, true);
