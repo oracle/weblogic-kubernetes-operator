@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -83,6 +83,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
@@ -687,7 +688,8 @@ public class DomainUtils {
 
 
     // create a temporary WebLogic domain property file as a input for WDT model file
-    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domainonpv" + domainUid, "properties"),
+    File domainPropertiesFile =
+        assertDoesNotThrow(() -> createTempFile("domainonpv" + domainUid, ".properties", new File(RESULTS_TEMPFILE)),
         "Failed to create domain properties file");
 
     Properties p = new Properties();
@@ -815,7 +817,8 @@ public class DomainUtils {
 
 
     // create a temporary WebLogic domain property file as a input for WDT model file
-    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domainonpv" + domainUid, "properties"),
+    File domainPropertiesFile =
+        assertDoesNotThrow(() -> createTempFile("domainonpv" + domainUid, ".properties", new File(RESULTS_TEMPFILE)),
         "Failed to create domain properties file");
 
     Properties p = new Properties();
