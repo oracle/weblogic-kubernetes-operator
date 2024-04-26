@@ -838,6 +838,11 @@ checkSecureModeForUpgrade() {
     local cur_wl_ver="`getWebLogicVersion`"
     local exp_wl_ver="14.1.2.0.0"
     trace "Current pod version " $cur_wl_ver
+
+    if [ "${cur_wl_ver}" == "9999.9999.9999.9999" ] ; then
+      trace "Cannot determine weblogic version ignore upgrade check"
+      return
+    fi
     # Only do this if the wls version in the pod is >= 14.1.2.0
     if versionGE "${cur_wl_ver}" "${exp_wl_ver}" ; then
       trace "Checking if upgrade to 14.1.2.0 or higher needs model patch"
