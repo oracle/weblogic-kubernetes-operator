@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,19 +29,28 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WEBAPPACCESSNGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WEBAPPACCESSNGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WEBAPPACCESSNGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.callTestWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -124,15 +135,24 @@ class ItWebAppAccessWithDBTest {
 
     if (!OKD) {
       // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+          IT_WEBAPPACCESSNGINX_INGRESS_HTTP_NODEPORT, IT_WEBAPPACCESSNGINX_INGRESS_HTTPS_NODEPORT,
+          NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
           ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST;
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        try {
+          ingressIP = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+        } catch (UnknownHostException ex) {
+          logger.severe(ex.getLocalizedMessage());
+        }
+        nodeportshttp = IT_WEBAPPACCESSNGINX_INGRESS_HTTP_HOSTPORT;
+      }
+
       logger.info("NGINX http node port: {0}", nodeportshttp);
-      logger.info("NGINX https node port: {0}", nodeportshttps);
     }
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(cluster1Name, managedServerPort);
@@ -179,8 +199,9 @@ class ItWebAppAccessWithDBTest {
       if (OKE_CLUSTER_PRIVATEIP) {
         verifyMyAppAccessThroughNginx(ingressHostList.get(0), managedServersCount, ingressIP);
       } else {
+        String hostPort = ingressIP  + ":" + nodeportshttp;
         verifyMyAppAccessThroughNginx(ingressHostList.get(0), managedServersCount,
-            K8S_NODEPORT_HOST + ":" + nodeportshttp);
+            hostPort);
       }
     }
   }

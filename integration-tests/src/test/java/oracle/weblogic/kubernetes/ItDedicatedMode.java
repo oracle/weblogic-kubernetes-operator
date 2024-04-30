@@ -31,8 +31,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATED_MODE_CONAINERPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATED_MODE_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATEDMODE_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATEDMODE_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -88,7 +88,7 @@ class ItDedicatedMode {
        domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private final String managedServerPodPrefix =
        domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static int externalRestHttpsPort = IT_DEDICATED_MODE_CONAINERPORT;
+  private static int externalRestHttpsPort = IT_DEDICATEDMODE_NODEPORT;
 
   // operator constants
   private static HelmParams opHelmParams;
@@ -202,7 +202,7 @@ class ItDedicatedMode {
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       externalRestHttpshost = "localhost";
-      externalRestHttpsPort = IT_DEDICATED_MODE_HOSTPORT;
+      externalRestHttpsPort = IT_DEDICATEDMODE_HOSTPORT;
       logger.info("Running in podman using Operator hostport {0}:{1}", externalRestHttpshost, externalRestHttpsPort);
     } else {
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
