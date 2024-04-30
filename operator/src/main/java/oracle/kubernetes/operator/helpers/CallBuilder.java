@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1696,10 +1696,6 @@ public class CallBuilder {
             callback);
   }
 
-  private final CallFactory<V1JobList> listJob =
-      (requestParams, usage, cont, callback) ->
-          wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
-
   /**
    * Asynchronous step for listing jobs.
    *
@@ -1711,6 +1707,10 @@ public class CallBuilder {
     return createRequestAsync(
         responseStep, new RequestParams("listJob", namespace, null, null, callParams), listJob);
   }
+
+  private final CallFactory<V1JobList> listJob =
+          (requestParams, usage, cont, callback) ->
+                  wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
 
   private Call createJobAsync(
       ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
