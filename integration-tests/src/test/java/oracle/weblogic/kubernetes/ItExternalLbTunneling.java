@@ -47,10 +47,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTPS_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLB_TUNNELING_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLBTUNNELING_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLBTUNNELING_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLBTUNNELING_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_EXTERNALLBTUNNELING_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
@@ -218,8 +218,8 @@ class ItExternalLbTunneling {
 
     if (!OKD) {
       logger.info("Installing Traefik controller using helm");
-      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 
-          IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT, IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT).getHelmParams();
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace,
+          IT_EXTERNALLBTUNNELING_HTTP_NODEPORT, IT_EXTERNALLBTUNNELING_HTTPS_NODEPORT).getHelmParams();
     }
 
     // Create SSL certificate and key using openSSL with SAN extension
@@ -296,10 +296,10 @@ class ItExternalLbTunneling {
     String service
         = TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
-    int httpTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTP_CONAINERPORT;
+    int httpTunnelingPort = IT_EXTERNALLBTUNNELING_HTTP_NODEPORT;
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      httpTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTP_HOSTPORT;
+      httpTunnelingPort = IT_EXTERNALLBTUNNELING_HTTP_HOSTPORT;
     }
     assertNotEquals(-1, httpTunnelingPort,
         "Could not get the Traefik HttpTunnelingPort service node port");
@@ -357,10 +357,10 @@ class ItExternalLbTunneling {
     String service
         = TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
-    int httpsTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTPS_CONAINERPORT;
+    int httpsTunnelingPort = IT_EXTERNALLBTUNNELING_HTTPS_NODEPORT;
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      httpsTunnelingPort = IT_EXTERNALLB_TUNNELING_HTTPS_HOSTPORT;
+      httpsTunnelingPort = IT_EXTERNALLBTUNNELING_HTTPS_HOSTPORT;
     }
     assertNotEquals(-1, httpsTunnelingPort,
         "Could not get the Traefik HttpsTunnelingPort service node port");

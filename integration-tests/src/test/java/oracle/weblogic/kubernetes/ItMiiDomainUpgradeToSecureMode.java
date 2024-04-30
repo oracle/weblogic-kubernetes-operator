@@ -54,10 +54,10 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_CONAINERPORT;
 import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_CONAINERPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
@@ -872,9 +872,9 @@ class ItMiiDomainUpgradeToSecureMode {
   private static void installNginx() {
     // install and verify Nginx ingress controller
     logger.info("Installing Nginx controller using helm");
-    nginxParams = installAndVerifyNginx(ingressNamespace, 
-        IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_CONAINERPORT, 
-        IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_CONAINERPORT);
+    nginxParams = installAndVerifyNginx(ingressNamespace,
+        IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTP_NODEPORT,
+        IT_ITMIIDOMAINUPGRADETOSECUREMODE_HTTPS_NODEPORT);
   }
 
   /**
