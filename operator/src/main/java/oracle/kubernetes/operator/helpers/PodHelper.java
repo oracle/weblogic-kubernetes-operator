@@ -142,7 +142,7 @@ public class PodHelper {
     return Optional.ofNullable(getServerName(pod)).map(s -> !s.equals(adminServerName)).orElse(true);
   }
 
-  private static String getServerName(@Nullable V1Pod pod) {
+  static String getServerName(@Nullable V1Pod pod) {
     return Optional.ofNullable(pod)
             .map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getLabels)

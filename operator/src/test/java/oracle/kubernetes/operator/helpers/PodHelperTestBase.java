@@ -76,6 +76,7 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -250,6 +251,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private final DomainResource domain = createDomain();
   protected final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   protected final List<Memento> mementos = new ArrayList<>();
   protected final List<LogRecord> logRecords = new ArrayList<>();
   final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
@@ -354,6 +356,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(testSupport.install());
+    mementos.add(httpSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(hashMemento = UnitTestHash.install());
     mementos.add(InMemoryCertificates.install());
