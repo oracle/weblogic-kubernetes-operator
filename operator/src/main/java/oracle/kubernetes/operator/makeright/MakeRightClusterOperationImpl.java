@@ -11,6 +11,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.MakeRightClusterOperation;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
@@ -26,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<ClusterPresenceInfo>
     implements MakeRightClusterOperation {
+
+  MakeRightDomainOperation domainOperation;
 
   /**
    * Create the operation.
@@ -49,6 +52,17 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   public MakeRightClusterOperation withExplicitRecheck() {
     explicitRecheck = true;
     return this;
+  }
+
+  @Override
+  public MakeRightClusterOperation andThen(MakeRightDomainOperation domainOperation) {
+    this.domainOperation = domainOperation;
+    return this;
+  }
+
+  @Override
+  public MakeRightDomainOperation getAndThen() {
+    return domainOperation;
   }
 
   /**

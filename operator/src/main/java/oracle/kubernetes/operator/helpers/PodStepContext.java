@@ -66,6 +66,7 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
+import oracle.kubernetes.operator.steps.ShutdownManagedServerStep;
 import oracle.kubernetes.operator.tuning.PodTuning;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -94,7 +95,6 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFai
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTER_OBSERVED_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAIN_OBSERVED_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -1058,24 +1058,26 @@ public abstract class PodStepContext extends BasePodStepContext {
       this.message = message;
     }
 
-    private ResponseStep<V1Pod> deleteResponse(V1Pod pod, Step next) {
-      return new DeleteResponseStep(pod, next);
+    private ResponseStep<V1Pod> replaceResponse(Step next) {
+      return new ReplacePodResponseStep(next);
     }
 
     /**
-     * Deletes the specified pod.
+     * Creates the specified replacement pod and records it.
      *
-     * @param pod the existing pod
-     * @param next the next step to perform after the pod deletion is complete.
+     * @param next the next step to perform after the pod creation is complete.
      * @return a step to be scheduled.
      */
-    private Step deletePod(V1Pod pod, Step next) {
-      return RequestBuilder.POD.delete(getNamespace(), getPodName(), deleteResponse(pod, next));
+    private Step replacePod(Step next) {
+      return createPodAsync(replaceResponse(next));
     }
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(createCyclePodEventStep(deletePod(pod, getNext())), packet);
+      String serverName = PodHelper.getServerName(pod);
+      return doNext(createCyclePodEventStep(
+          ShutdownManagedServerStep.createShutdownManagedServerStep(
+              PodHelper.deletePodStep(serverName, true, replacePod(getNext())), serverName, pod)), packet);
     }
 
     private Step createCyclePodEventStep(Step next) {
@@ -1474,53 +1476,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     protected boolean isPodReady(V1Pod result) {
       return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
-    }
-  }
-
-  private class DeleteResponseStep extends ResponseStep<V1Pod> {
-    private final V1Pod pod;
-
-    DeleteResponseStep(V1Pod pod, Step next) {
-      super(next);
-      this.pod = pod;
-    }
-
-    @Override
-    protected String getDetail() {
-      return getServerName();
-    }
-
-    @Override
-    public Result onFailure(Packet packet, KubernetesApiResponse<V1Pod> callResponses) {
-      if (callResponses.getHttpStatusCode() == HTTP_NOT_FOUND) {
-        return onSuccess(packet, callResponses);
-      }
-      return super.onFailure(getConflictStep(), packet, callResponses);
-    }
-
-    private ResponseStep<V1Pod> replaceResponse(Step next) {
-      return new ReplacePodResponseStep(next);
-    }
-
-    /**
-     * Creates the specified replacement pod and records it.
-     *
-     * @param next the next step to perform after the pod creation is complete.
-     * @return a step to be scheduled.
-     */
-    private Step replacePod(Step next) {
-      return createPodAsync(replaceResponse(next));
-    }
-
-    @Override
-    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponses) {
-      if (callResponses.getHttpStatusCode() == HTTP_NOT_FOUND) {
-        setRecordedPod(null);
-        return doNext(replacePod(getNext()), packet);
-      }
-
-      // requeue to wait for the pod to be deleted
-      return doRequeue(packet);
     }
   }
 

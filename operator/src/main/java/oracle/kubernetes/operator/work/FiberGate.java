@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +24,7 @@ public class FiberGate {
   private final ScheduledExecutorService scheduledExecutorService;
 
   /** A map of domain UIDs to the fiber charged with running processing on that domain. **/
-  private final Map<String, Fiber> gateMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<>();
 
   /**
    * Constructor taking Engine for running Fibers.
@@ -100,7 +101,8 @@ public class FiberGate {
 
       private void scheduledExecution(Fiber fiber) {
         Fiber scheduledReplacement = Fiber.copyWithNewStepsAndPacket(fiber, stepSupplier.get(), packetSupplier.get());
-        if (gateMap.replace(domainUid, fiber, scheduledReplacement)) {
+        if (gateMap.compute(domainUid,
+            (k, v) -> (v == null || v == fiber) ? scheduledReplacement : v) == scheduledReplacement) {
           scheduledExecutorService.execute(scheduledReplacement);
         }
       }

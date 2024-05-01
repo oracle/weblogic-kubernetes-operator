@@ -565,16 +565,23 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     String serverName = getPodLabel(pod, LabelConstants.SERVERNAME_LABEL);
     switch (watchType) {
       case ADDED:
+        info.setServerPodFromEvent(serverName, pod);
+        break;
       case MODIFIED:
         boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
-        if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
+        boolean isEvicted = PodHelper.isEvicted(pod);
+        if (isEvicted && !podPreviouslyEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
             LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
           } else {
             LOGGER.info(MessageKeys.POD_EVICTED_NO_RESTART, getPodName(pod), getPodStatusMessage(pod));
           }
         }
-        createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        boolean isReady = PodHelper.isReady(pod);
+        boolean isLabedlForShutdown = PodHelper.isPodAlreadyLabeledForShutdown(pod);
+        if ((isEvicted || isReady != isLabedlForShutdown || PodHelper.isFailed(pod)) && !PodHelper.isDeleting(pod)) {
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        }
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
@@ -800,10 +807,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
         info.addClusterResource(cluster);
-        createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, info.getDomainUid()).execute();
-        createMakeRightOperation(info)
-            .interrupt()
-            .withExplicitRecheck()
+        createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, info.getDomainUid())
+            .andThen(createMakeRightOperation(info)
+                .interrupt()
+                .withExplicitRecheck())
             .execute();
       });
     }
@@ -817,16 +824,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, null).execute();
     } else {
       hostingDomains.forEach(info -> {
-        ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
-        if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
+        if (!cluster.isGenerationLaterThanObservedGeneration()) {
           return;
         }
 
         LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
-        createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, info.getDomainUid()).execute();
-        createMakeRightOperation(info)
-            .interrupt()
-            .withExplicitRecheck()
+        createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, info.getDomainUid())
+            .andThen(createMakeRightOperation(info)
+                .interrupt()
+                .withExplicitRecheck())
             .execute();
       });
     }
@@ -841,11 +847,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getMetadata().getName(), info.getDomainUid());
-        createMakeRightOperationForClusterEvent(EventItem.CLUSTER_DELETED, cluster, info.getDomainUid()).execute();
         info.removeClusterResource(cluster.getClusterName());
-        createMakeRightOperation(info)
-            .interrupt()
-            .withExplicitRecheck()
+        createMakeRightOperationForClusterEvent(EventItem.CLUSTER_DELETED, cluster, info.getDomainUid())
+            .andThen(createMakeRightOperation(info)
+                .interrupt()
+                .withExplicitRecheck())
             .execute();
       });
     }
@@ -909,6 +915,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleModifiedDomain(DomainResource domain) {
+    if (!domain.isGenerationLaterThanObservedGeneration()) {
+      return;
+    }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
@@ -1081,14 +1090,22 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     @Override
     public CompletionCallback createCompletionCallback() {
-      return new ClusterPlanCompletionCallback();
+      return new ClusterPlanCompletionCallback(operation.getAndThen());
     }
 
     static class ClusterPlanCompletionCallback implements CompletionCallback {
 
+      private final MakeRightDomainOperation domainOperation;
+
+      public ClusterPlanCompletionCallback(MakeRightDomainOperation domainOperation) {
+        this.domainOperation = domainOperation;
+      }
+
       @Override
       public void onCompletion(Packet packet) {
-        // no op
+        if (domainOperation != null) {
+          domainOperation.execute();
+        }
       }
 
       @Override

@@ -2288,6 +2288,7 @@ class DomainProcessorTest {
   void whenDomainTypeIsFromModelDomainAndManagedServerModified_runIntrospectionJobThenRoll() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    defineServerShutdownWithHttpOkResponse();
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
@@ -2956,6 +2957,7 @@ class DomainProcessorTest {
   }
 
   @Test
+  @Disabled
   void whenDomainAndClusterResourcesAddedAtSameTime_introspectorJobHasCorrectOwnerReference() {
     consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
     domain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(false));

@@ -70,7 +70,7 @@ public class ShutdownManagedServerStep extends Step {
    * @param pod server pod
    * @return asynchronous step
    */
-  static Step createShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
+  public static Step createShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
     return new ShutdownManagedServerStep(next, serverName, pod);
   }
 
@@ -79,16 +79,15 @@ public class ShutdownManagedServerStep extends Step {
     LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
     V1Service service = getDomainPresenceInfo(packet).getServerService(serverName);
 
-    if (service == null) {
+    if (service == null || !PodHelper.isReady(pod) || PodHelper.isFailed(pod)) {
       return doNext(PodHelper.labelPodAsNeedingToShutdown(pod, getNext()), packet);
-    } else {
-      return doNext(
-            Step.chain(
-                SecretHelper.createAuthorizationSourceStep(),
-                PodHelper.labelPodAsNeedingToShutdown(pod,
-                    new ShutdownManagedServerWithHttpStep(service, pod, getNext()))),
-            packet);
     }
+    return doNext(
+          Step.chain(
+              SecretHelper.createAuthorizationSourceStep(),
+              PodHelper.labelPodAsNeedingToShutdown(pod,
+                  new ShutdownManagedServerWithHttpStep(service, pod, getNext()))),
+          packet);
   }
 
   static final class ShutdownManagedServerProcessing extends HttpRequestProcessing {
