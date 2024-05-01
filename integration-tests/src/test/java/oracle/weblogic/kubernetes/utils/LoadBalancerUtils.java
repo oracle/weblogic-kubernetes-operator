@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_URL;
@@ -248,7 +249,8 @@ public class LoadBalancerUtils {
         .namespace(traefikNamespace)
         .repoUrl(TRAEFIK_REPO_URL)
         .repoName(TRAEFIK_REPO_NAME)
-        .chartName(TRAEFIK_CHART_NAME);
+        .chartName(TRAEFIK_CHART_NAME)
+        .chartVersion(TRAEFIK_CHART_VERSION);
 
     // Traefik chart values to override
     TraefikParams traefikParams = new TraefikParams()
