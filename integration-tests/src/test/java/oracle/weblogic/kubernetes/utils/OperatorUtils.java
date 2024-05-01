@@ -314,7 +314,7 @@ public class OperatorUtils {
         domainNamespaceSelectionStrategy,
         domainNamespaceSelector,
         enableClusterRoleBinding,
-        "FINE",
+        "INFO",
         domainNamespace);
   }
 
