@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -12,6 +12,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.swagger.annotations.ApiModel;
 import oracle.kubernetes.common.logging.BaseLoggingFormatter;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
@@ -43,7 +44,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
   private String getDomainUidFromLoggingContext(Fiber fiber) {
     return Optional.ofNullable(fiber)
             .map(Fiber::getPacket)
-            .map(p -> p.getSpi(LoggingContext.class))
+            .map(p -> (LoggingContext) p.get(LoggingContext.LOGGING_CONTEXT_KEY))
             .map(LoggingContext::domainUid)
             .orElse(getDomainUidFromThreadContext());
   }
@@ -53,7 +54,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
-    return packet.getSpi(DomainPresenceInfo.class);
+    return (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
   }
 
   /**
@@ -75,7 +76,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
   private String getNamespaceFromLoggingContext(Fiber fiber) {
     return Optional.ofNullable(fiber)
             .map(Fiber::getPacket)
-            .map(p -> p.getSpi(LoggingContext.class))
+            .map(p -> (LoggingContext) p.get(LoggingContext.LOGGING_CONTEXT_KEY))
             .or(ThreadLoggingContext::optionalContext)
             .map(LoggingContext::namespace)
             .orElse("");

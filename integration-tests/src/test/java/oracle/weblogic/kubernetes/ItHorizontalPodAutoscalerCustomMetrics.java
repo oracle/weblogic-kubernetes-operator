@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,13 +49,21 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_HPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_HPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_HPACUSTOMNGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
@@ -212,8 +222,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     );
 
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, IT_HPACUSTOMNGINX_INGRESS_HTTP_NODEPORT,
+        IT_HPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
     String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
@@ -221,6 +231,14 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
     ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
         ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : host;
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      try {
+        ingressIP = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      } catch (UnknownHostException ex) {
+        logger.severe(ex.getLocalizedMessage());
+      }
+      nodeportshttp = IT_HPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
+    }
 
     // create cluster resouce with limits and requests in serverPod
     ClusterResource clusterResource =
@@ -289,6 +307,15 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     //invoke app 20 times to generate metrics with number of opened sessions > 5
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
     String hostPort = OKE_CLUSTER_PRIVATEIP ? ingressIP : host + ":" + nodeportshttp;
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      try {
+        host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      } catch (UnknownHostException ex) {
+        logger.severe(ex.getLocalizedMessage());
+      }
+      nodeportshttp = IT_HPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
+      hostPort = host + ":" + nodeportshttp;
+    }
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s/" + SESSMIGT_APP_URL,
             ingressHostList.get(0),

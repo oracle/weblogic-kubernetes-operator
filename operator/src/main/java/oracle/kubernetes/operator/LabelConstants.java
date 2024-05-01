@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -25,6 +25,7 @@ public interface LabelConstants {
   String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configChangesPendingRestart";
   String INTROSPECTION_DOMAIN_SPEC_GENERATION = "weblogic.domainSpecGeneration";
   String TO_BE_ROLLED_LABEL = "weblogic.awaitingPodRoll";
+  String TO_BE_SHUTDOWN_LABEL = "weblogic.awaitingShutdown";
   String DOMAIN_OBSERVED_GENERATION_LABEL = "weblogic.domainObservedGeneration";
   String CLUSTER_OBSERVED_GENERATION_LABEL = "weblogic.clusterObservedGeneration";
   String SERVICE_TYPE_LABEL = "serviceType";

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
@@ -40,7 +43,6 @@ import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.CrdHelperTestBase;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -53,7 +55,8 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
-import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.watcher.NoopWatcherStarter;
+import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -275,20 +278,6 @@ public class WebhookMainTest extends CrdHelperTestBase {
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {DOMAIN, CLUSTER})
-  void whenNoCRDOnFirstAttempt_severeMessageNotLoggedOnRerty(String resourceType) {
-    TuningParametersStub.setParameter(CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT, "1");
-    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
-    simulateMissingCRD(resourceType);
-
-    recheckCRD();
-
-    recheckCRD();
-
-    assertThat(logRecords, not(containsSevere(CRD_NOT_INSTALLED)));
-  }
-
   @Test
   void whenCRDsExist_resourceVersionsAreCached() {
     V1CustomResourceDefinition domainCrd = defineCrd(PRODUCT_VERSION, DOMAIN_CRD_NAME);
@@ -409,7 +398,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
         not(containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME)));
     assertThat(logRecords,
         containsInfo(READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME));
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+    testSupport.verifyCompletionThrowable(ApiException.class);
   }
 
   @Test
@@ -520,7 +509,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
         not(containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME)));
     assertThat(logRecords,
         containsInfo(CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME));
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+    testSupport.verifyCompletionThrowable(ApiException.class);
   }
 
   @Test
@@ -604,7 +593,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
     logRecords.clear();
     assertThat(logRecords,
         not(containsInfo(REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME)));
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+    testSupport.verifyCompletionThrowable(ApiException.class);
   }
 
   @Test
@@ -633,7 +622,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
   @Test
   void whenShutdownMarkerIsCreated_stopWebhook() throws NoSuchFieldException {
     mementos.add(StaticStubSupport.install(
-            BaseMain.class, "wrappedExecutorService", testSupport.getScheduledExecutorService()));
+            BaseMain.class, "executor", testSupport.getScheduledExecutorService()));
     inMemoryFileSystem.defineFile(delegate.getShutdownMarker(), "shutdown");
     testSupport.presetFixedDelay();
 
@@ -656,7 +645,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
     private boolean isStopCalled = false;
 
     @Override
-    public void start(Container container) throws UnrecoverableKeyException, CertificateException, IOException,
+    public void start() throws UnrecoverableKeyException, CertificateException, IOException,
         NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
       // no-op
     }
@@ -819,6 +808,12 @@ public class WebhookMainTest extends CrdHelperTestBase {
       testSupport.withPacket(packet)
                  .withCompletionAction(completionAction)
                  .runSteps(firstStep);
+    }
+
+    @Override
+    public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+      ScheduledFuture<?> future = testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+      return () -> future.cancel(true);
     }
 
     @Override

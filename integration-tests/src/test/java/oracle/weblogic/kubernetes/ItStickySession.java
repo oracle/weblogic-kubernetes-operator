@@ -83,7 +83,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItStickySession {
 
   // constants for creating domain image using model in image

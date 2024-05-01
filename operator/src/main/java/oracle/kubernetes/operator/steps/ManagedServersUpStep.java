@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
@@ -28,7 +29,6 @@ import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.OperatorUtils;
@@ -104,7 +104,7 @@ public class ManagedServersUpStep extends Step {
 
   private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {
     return (info.getServerPod(ssi.getServerName()) != null
-            && !info.isServerPodBeingDeleted(ssi.getServerName()))
+            && !info.isServerPodDeleted(ssi.getServerName()))
             || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
   }
 
@@ -113,9 +113,9 @@ public class ManagedServersUpStep extends Step {
   }
 
   @Override
-  public NextAction apply(Packet packet) {
+  public @Nonnull Result apply(Packet packet) {
     LOGGER.entering();
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
     ServersUpStepFactory factory = new ServersUpStepFactory(config, info);
@@ -135,6 +135,13 @@ public class ManagedServersUpStep extends Step {
         nextStepFactory.createServerStep(
             info, config, factory, factory.createNextStep(getNext())),
         packet);
+  }
+
+  private static Collection<String> getServerNames(Collection<? extends DomainPresenceInfo.ServerInfo> serverInfos) {
+    if (serverInfos != null) {
+      return serverInfos.stream().map(DomainPresenceInfo.ServerInfo::getServerName).toList();
+    }
+    return Collections.emptyList();
   }
 
   private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig,

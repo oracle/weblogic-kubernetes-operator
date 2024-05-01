@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -7,8 +7,6 @@ import java.io.File;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -18,16 +16,14 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.MainDelegate;
-import oracle.kubernetes.operator.calls.RetryStrategy;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_KEY;
 
 /**
@@ -42,13 +38,15 @@ import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_
  */
 @SuppressWarnings("UnusedReturnValue")
 public class FiberTestSupport {
-  private static final Container container = new Container();
   private final CompletionCallbackStub completionCallback = new CompletionCallbackStub();
   private final ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
-  private final Engine engine = new Engine(schedule);
-  private final MainDelegateStub mainDelegate = createStrictStub(MainDelegateStub.class);
 
-  private Packet packet = new Packet().with(mainDelegate);
+  private Packet packet = new Packet();
+
+  public FiberTestSupport() {
+    MainDelegateStub mainDelegate = createStrictStub(MainDelegateStub.class);
+    packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, mainDelegate);
+  }
 
   public ScheduledExecutorService getScheduledExecutorService() {
     return schedule;
@@ -56,7 +54,7 @@ public class FiberTestSupport {
 
   /** Creates a single-threaded FiberGate instance. */
   public FiberGate createFiberGate() {
-    return new FiberGate(engine);
+    return new FiberGate(schedule);
   }
 
   /**
@@ -112,15 +110,6 @@ public class FiberTestSupport {
   }
 
   /**
-   * Returns the engine used by this support object.
-   *
-   * @return the current engine object
-   */
-  public Engine getEngine() {
-    return engine;
-  }
-
-  /**
    * Sets the simulated time, thus triggering the execution of any runnable items associated with
    * earlier times.
    *
@@ -129,11 +118,6 @@ public class FiberTestSupport {
    */
   public void setTime(long time, TimeUnit unit) {
     schedule.setTime(time, unit);
-  }
-
-  /** Returns an unmodifiable map of the components in the test packet. */
-  public Map<String, Component> getPacketComponents() {
-    return Collections.unmodifiableMap(packet.getComponents());
   }
 
   public Packet getPacket() {
@@ -151,39 +135,13 @@ public class FiberTestSupport {
   }
 
   public FiberTestSupport addDomainPresenceInfo(DomainPresenceInfo info) {
-    packet.with(info);
+    packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, info);
     return this;
   }
 
   public FiberTestSupport addLoggingContext(LoggingContext loggingContext) {
-    packet.getComponents().put(LOGGING_CONTEXT_KEY, Component.createFor(loggingContext));
+    packet.put(LOGGING_CONTEXT_KEY, loggingContext);
     return this;
-  }
-
-  public FiberTestSupport addRetryStrategy(RetryStrategy retryStrategy) {
-    packet.getComponents().put("retry", Component.createFor(RetryStrategy.class, retryStrategy));
-    return this;
-  }
-
-  public <T> FiberTestSupport addComponent(String key, Class<T> aaClass, T component) {
-    packet.getComponents().put(key, Component.createFor(aaClass, component));
-    return this;
-  }
-
-  /**
-   * Returns true if the specified action indicates that the fiber should be suspended.
-   * @param nextAction the action to check
-   * @return an indicator of the state of the nextAction instance
-   */
-  public static boolean isSuspendRequested(NextAction nextAction) {
-    return nextAction.kind == NextAction.Kind.SUSPEND;
-  }
-
-  /**
-   * Passes the specified fiber to the onExit function, if any.
-   */
-  public static void doOnExit(NextAction nextAction, AsyncFiber fiber) {
-    Optional.ofNullable(nextAction.onExit).orElse(f -> {}).accept(fiber);
   }
 
   /**
@@ -217,8 +175,8 @@ public class FiberTestSupport {
    * @param step the first step to run
    */
   public Packet runSteps(Packet packet, Step step) {
-    Fiber fiber = engine.createFiber();
-    fiber.start(step, packet, completionCallback);
+    Fiber fiber = new Fiber(schedule, step, packet, completionCallback);
+    fiber.start();
 
     return packet;
   }
@@ -322,14 +280,8 @@ public class FiberTestSupport {
 
     private void runNextRunnable() {
       while (null != (current = queue.poll())) {
-        ThreadLocalContainerResolver cr = ContainerResolver.getDefault();
-        Container old = cr.enterContainer(container);
-        try {
-          current.run();
-          numItemsRun++;
-        } finally {
-          cr.exitContainer(old);
-        }
+        current.run();
+        numItemsRun++;
         current = null;
       }
     }
@@ -485,11 +437,6 @@ public class FiberTestSupport {
   abstract static class MainDelegateStub implements MainDelegate {
     public File getDeploymentHome() {
       return new File("/deployment");
-    }
-
-    @Override
-    public void addToPacket(Packet packet) {
-      packet.getComponents().put(DELEGATE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
     }
   }
 }

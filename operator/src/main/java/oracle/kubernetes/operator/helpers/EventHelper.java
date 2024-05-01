@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,10 +7,12 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainNamespaces;
@@ -18,11 +20,11 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
@@ -86,6 +88,7 @@ import static oracle.kubernetes.operator.EventConstants.PERSISTENT_VOLUME_CLAIM_
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
+import static oracle.kubernetes.operator.calls.ResponseStep.isForbidden;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -174,7 +177,7 @@ public class EventHelper {
     private static CoreV1Event createEventModel(
         Packet packet,
         EventData eventData) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       EventItem eventItem = eventData.eventItem;
       eventData.domainPresenceInfo(info);
       addAdditionalMessage(eventData, info);
@@ -192,7 +195,7 @@ public class EventHelper {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 
@@ -204,23 +207,15 @@ public class EventHelper {
     private Step createCreateEventCall(CoreV1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       event.firstTimestamp(event.getLastTimestamp());
-      return new CallBuilder()
-          .createEventAsync(
-              event.getMetadata().getNamespace(),
-              event,
-              new CreateEventResponseStep(getNext()));
+      return RequestBuilder.EVENT.create(event, new CreateEventResponseStep(getNext()));
     }
 
     private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
-      return new CallBuilder()
-          .replaceEventAsync(
-              existingEvent.getMetadata().getName(),
-              existingEvent.getMetadata().getNamespace(),
-              existingEvent,
-              new ReplaceEventResponseStep(this, existingEvent, getNext()));
+      return RequestBuilder.EVENT.update(existingEvent,
+          new ReplaceEventResponseStep(this, existingEvent, getNext()));
     }
 
     private CoreV1Event getExistingEvent(CoreV1Event event) {
@@ -234,7 +229,7 @@ public class EventHelper {
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
           LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
           domainNamespaces.shouldStartNamespace(eventData.getNamespace());
@@ -243,7 +238,7 @@ public class EventHelper {
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
         }
@@ -284,20 +279,19 @@ public class EventHelper {
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         return doNext(packet);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         restoreExistingEvent();
         if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
         }
-        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
-            || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
+        if (isNotFound(callResponse) || hasConflict(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
-        } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+        } else if (isUnrecoverable(callResponse)) {
           return onFailureNoRetry(packet, callResponse);
         } else {
           return onFailure(createRetry(existingEvent), packet, callResponse);
@@ -316,20 +310,18 @@ public class EventHelper {
       }
 
       private Step createEventRefreshStep(CoreV1Event event) {
-        return new CallBuilder().readEventAsync(
-            event.getMetadata().getName(),
-            event.getMetadata().getNamespace(),
-            new ReadEventResponseStep(getNext()));
+        return RequestBuilder.EVENT.get(
+            event.getMetadata().getNamespace(), event.getMetadata().getName(), new ReadEventResponseStep(getNext()));
       }
     }
 
     private boolean isForbiddenForNSWatchStoppedEvent(
-        ResponseStep<CoreV1Event> responseStep, CallResponse<CoreV1Event> callResponse) {
-      return responseStep.isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
+        ResponseStep<CoreV1Event> responseStep, KubernetesApiResponse<CoreV1Event> callResponse) {
+      return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
     }
 
     private boolean hasLoggedForbiddenNSWatchStoppedEvent(
-        ResponseStep<CoreV1Event> responseStep, CallResponse<CoreV1Event> callResponse) {
+        ResponseStep<CoreV1Event> responseStep, KubernetesApiResponse<CoreV1Event> callResponse) {
       if (isForbiddenForNSWatchStoppedEvent(responseStep, callResponse)) {
         LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN, eventData.eventItem.getReason(), eventData.getNamespace());
         return true;
@@ -343,8 +335,8 @@ public class EventHelper {
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        DomainProcessorImpl.updateEventK8SObjects(callResponse.getResult());
+      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+        DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
         return doNext(packet);
       }
     }
@@ -1101,8 +1093,7 @@ public class EventHelper {
    */
   public static void createConversionWebhookEvent(EventData eventData) {
     try {
-      new CallBuilder()
-          .createEvent(getWebhookNamespace(), createConversionWebhookEventModel(eventData.getItem(), eventData));
+      RequestBuilder.EVENT.create(createConversionWebhookEventModel(eventData.getItem(), eventData));
     } catch (ApiException apiException) {
       LOGGER.warning(EXCEPTION, apiException);
     }
@@ -1183,7 +1174,7 @@ public class EventHelper {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       return doNext(createEventAPICall(createEventModel(eventData)), packet);
     }
 
@@ -1195,23 +1186,15 @@ public class EventHelper {
     private Step createCreateEventCall(CoreV1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       event.firstTimestamp(event.getLastTimestamp());
-      return new CallBuilder()
-          .createEventAsync(
-              event.getMetadata().getNamespace(),
-              event,
-              new CreateClusterResourceEventResponseStep(getNext()));
+      return RequestBuilder.EVENT.create(event, new CreateClusterResourceEventResponseStep(getNext()));
     }
 
     private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
-      return new CallBuilder()
-          .replaceEventAsync(
-              existingEvent.getMetadata().getName(),
-              existingEvent.getMetadata().getNamespace(),
-              existingEvent,
-              new ReplaceClusterResourceEventResponseStep(this, existingEvent, getNext()));
+      return RequestBuilder.EVENT.update(
+          existingEvent, new ReplaceClusterResourceEventResponseStep(this, existingEvent, getNext()));
     }
 
     private CoreV1Event getExistingClusterEvent(CoreV1Event event) {
@@ -1225,7 +1208,7 @@ public class EventHelper {
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         return doNext(packet);
       }
     }
@@ -1242,17 +1225,16 @@ public class EventHelper {
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         return doNext(packet);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         restoreExistingClusterEvent();
-        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
-            || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
+        if (isNotFound(callResponse) || hasConflict(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(eventData)), getNext()), packet);
-        } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+        } else if (isUnrecoverable(callResponse)) {
           return onFailureNoRetry(packet, callResponse);
         } else {
           return onFailure(createClusterEventRetryStep(existingClusterEvent), packet, callResponse);
@@ -1271,10 +1253,8 @@ public class EventHelper {
       }
 
       private Step createClusterEventRefreshStep(CoreV1Event event) {
-        return new CallBuilder().readEventAsync(
-            event.getMetadata().getName(),
-            event.getMetadata().getNamespace(),
-            new ReadEventResponseStep(getNext()));
+        return RequestBuilder.EVENT.get(
+            event.getMetadata().getNamespace(), event.getMetadata().getName(), new ReadEventResponseStep(getNext()));
       }
     }
 
@@ -1284,8 +1264,8 @@ public class EventHelper {
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        DomainProcessorImpl.updateEventK8SObjects(callResponse.getResult());
+      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+        DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
         return doNext(packet);
       }
     }

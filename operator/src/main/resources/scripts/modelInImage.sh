@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of model in image
@@ -28,7 +28,7 @@ LOCAL_PRIM_DOMAIN_TAR="/tmp/prim_domain.tar"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
-
+DOMAIN_BIN_LIB_LIST="/weblogic-operator/introspector/binliblist"
 # we export the opss password file location because it's also used by introspectDomain.py
 export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
@@ -1122,6 +1122,8 @@ wdtUpdateModelDomain() {
   #
   local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
+  captureBinLibAdded
+
   gzip ${DOMAIN_HOME}/wlsdeploy/domain_model.json || exitOrLoop
   base64 ${DOMAIN_HOME}/wlsdeploy/domain_model.json.gz > ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 || exitOrLoop
   encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
@@ -1132,6 +1134,12 @@ wdtUpdateModelDomain() {
   # restore trap
   start_trap
   trace "Exiting wdtUpdateModelDomain"
+}
+
+captureBinLibAdded() {
+  local BINLIBDIR_NAME="/tmp/binlibdir.txt"
+  find $DOMAIN_HOME/bin -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/bin|wlsdeploy/domainBin|g" > $BINLIBDIR_NAME
+  find $DOMAIN_HOME/lib -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/bin|wlsdeploy/domainLibraries|g" >> $BINLIBDIR_NAME
 }
 
 wdtHandleOnlineUpdate() {
@@ -1363,7 +1371,11 @@ restoreAppAndLibs() {
 
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
-        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        if [ -f $DOMAIN_BIN_LIB_LIST ] ; then
+          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $(awk '{print $0}' <<< $(grep "wlsdeploy/domainLibraries" $DOMAIN_BIN_LIB_LIST))
+        else
+          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        fi
         ret=$?
         if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
@@ -1374,7 +1386,13 @@ restoreAppAndLibs() {
         # expand the domain bin, in update case user may only update a file in the domainBin archive, 11 is caution when
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
-        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
+        if [ -f $DOMAIN_BIN_LIB_LIST ] ; then
+          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $(awk '{print $0}' <<< $(grep "wlsdeploy/domainBin" $DOMAIN_BIN_LIB_LIST))
+        else
+          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
+        fi
+
+        #unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
         ret=$?
         if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \

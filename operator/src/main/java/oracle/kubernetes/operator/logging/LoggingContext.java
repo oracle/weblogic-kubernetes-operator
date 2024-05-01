@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -15,7 +15,7 @@ public class LoggingContext {
   protected String domainUid;
 
   public static Optional<LoggingContext> fromPacket(Packet packet) {
-    return Optional.ofNullable(packet.getSpi(LoggingContext.class));
+    return Optional.ofNullable((LoggingContext) packet.get(LOGGING_CONTEXT_KEY));
   }
   
   public LoggingContext namespace(String namespace) {

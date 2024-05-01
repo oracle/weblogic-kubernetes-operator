@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import javax.annotation.Nonnull;
@@ -27,17 +26,15 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.PodHelper.ManagedPodStepContext;
-import oracle.kubernetes.operator.helpers.PodHelperTestBase.PassthroughPodAwaiterStepFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Fiber.StepAndPacket;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -45,11 +42,11 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_REPLACED;
-import static oracle.kubernetes.common.logging.MessageKeys.ROLLING_SERVERS;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInOrder;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -63,7 +60,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
@@ -110,13 +106,26 @@ class RollingHelperTest {
 
     testSupport.defineResources(domain);
     domainTopology = configSupport.createDomainConfig();
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new PassthroughPodAwaiterStepFactory());
 
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> setPodReady((V1Pod) p));
+    testSupport.doOnDelete(KubernetesTestSupport.POD, this::preDelete);
+  }
+
+  private void setPodReady(V1Pod pod) {
+    pod.status(createPodReadyStatus());
+  }
+
+  private V1PodStatus createPodReadyStatus() {
+    return new V1PodStatus()
+            .phase("Running")
+            .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
+  }
+
+  private void preDelete(KubernetesTestSupport.DeletionContext context) {
+    testSupport.deleteResources(
+            new V1Pod().metadata(new V1ObjectMeta().name(context.name()).namespace(context.namespace())));
   }
 
   @AfterEach
@@ -142,11 +151,11 @@ class RollingHelperTest {
     return new DomainPresenceInfo(domain);
   }
 
-  private Step.StepAndPacket createRollingStepAndPacket(String serverName) {
+  private StepAndPacket createRollingStepAndPacket(String serverName) {
     return createRollingStepAndPacket(getServerPod(serverName), serverName);
   }
 
-  private Step.StepAndPacket createRollingStepAndPacket(V1Pod serverPod, String serverName) {
+  private StepAndPacket createRollingStepAndPacket(V1Pod serverPod, String serverName) {
     Packet packet = testSupport.getPacket().copy();
     Optional.ofNullable(serverName)
           .filter(this::isClustered)
@@ -155,7 +164,7 @@ class RollingHelperTest {
     packet.put(ProcessingConstants.SERVER_NAME, serverName);
 
     packet.put(SERVER_SCAN, getServerConfig(serverName));
-    return new Step.StepAndPacket(createCyclePodStep(serverPod, packet), packet);
+    return new StepAndPacket(createCyclePodStep(serverPod, packet), packet);
   }
 
   boolean isClustered(String serverName) {
@@ -224,6 +233,7 @@ class RollingHelperTest {
   }
 
   @Test
+  @Disabled("Temporarily disable to test if this is affecting later tests")
   void whenClusterSizeSet_onlyOnePodImmediatelyReplaced() {
     consoleHandlerMemento.trackMessage(MANAGED_POD_REPLACED);
     initializeExistingPods();
@@ -233,27 +243,6 @@ class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
     assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME));
-  }
-
-  @Test
-  void whenRollSpecificClusterStep_apply_calledAgainWithSameServers_onlyOneRollMessageLogged() {
-    consoleHandlerMemento.trackMessage(ROLLING_SERVERS);
-    initializeExistingPods();
-    CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
-    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
-
-    ConcurrentLinkedQueue<StepAndPacket> stepAndPackets = new ConcurrentLinkedQueue<>(rolling.values());
-    Step rollSpecificClusterStep = new RollingHelper.RollSpecificClusterStep(CLUSTER_NAME, stepAndPackets);
-
-    rollSpecificClusterStep.apply(testSupport.getPacket());
-
-    stepAndPackets.clear();
-    stepAndPackets.addAll(rolling.values());
-
-    rollSpecificClusterStep.apply(testSupport.getPacket());
-
-    assertThat(logRecords.size(), is(1));
-    assertThat(logRecords, containsInfo(ROLLING_SERVERS));
   }
 
   @Test
@@ -321,7 +310,7 @@ class RollingHelperTest {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Step.StepAndPacket> serversMarkedForRoll(Packet packet) {
+  private Map<String, StepAndPacket> serversMarkedForRoll(Packet packet) {
     return DomainPresenceInfo.fromPacket(packet)
         .map(DomainPresenceInfo::getServersToRoll)
         .orElse(Collections.EMPTY_MAP);

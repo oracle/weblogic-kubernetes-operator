@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -11,9 +11,11 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
-import oracle.kubernetes.operator.builders.WatchBuilder;
+import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.watcher.Watcher;
 
 /**
  * This class handles pod disruption budget watching. It receives pod disruption budget change events and sends them
@@ -56,10 +58,9 @@ public class PodDisruptionBudgetWatcher extends Watcher<V1PodDisruptionBudget> {
   }
 
   @Override
-  public Watchable<V1PodDisruptionBudget> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
-    return watchBuilder
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .createPodDisruptionBudgetWatch(ns);
+  public Watchable<V1PodDisruptionBudget> initiateWatch(ListOptions options) throws ApiException {
+    return RequestBuilder.PDB.watch(ns,
+            options.labelSelector(LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL));
   }
 
   @Override

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,8 +7,6 @@ import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.MakeRightClusterOperation;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 
 /**
@@ -16,7 +14,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
  */
 public class ClusterPresenceInfo extends ResourcePresenceInfo {
 
-  private static final String COMPONENT_KEY = "cpi";
   private ClusterResource cluster;
 
   /**
@@ -40,11 +37,6 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
 
   public void setCluster(ClusterResource cluster) {
     this.cluster = cluster;
-  }
-
-  @Override
-  public void addToPacket(Packet packet) {
-    packet.getComponents().put(COMPONENT_KEY, Component.createFor(this));
   }
 
   /**

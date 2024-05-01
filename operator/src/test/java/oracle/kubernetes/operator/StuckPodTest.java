@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -19,7 +19,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
-import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.watcher.NoopWatcherStarter;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
@@ -36,7 +36,6 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
-import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -58,7 +57,7 @@ class StuckPodTest {
   private final V1Pod managedPod1 = defineManagedPod(SERVER_POD_1);
   private final V1Pod managedPod2 = defineManagedPod(SERVER_POD_2);
   private final V1Pod foreignPod = defineForeignPod(FOREIGN_POD);
-  private Integer gracePeriodSeconds;
+  private Long gracePeriodSeconds;
   private TestUtils.ConsoleHandlerMemento consoleMemento;
 
   @BeforeEach
@@ -128,11 +127,11 @@ class StuckPodTest {
 
     processing.checkStuckPods(NS);
 
-    assertThat(gracePeriodSeconds, equalTo(0));
+    assertThat(gracePeriodSeconds, equalTo(0L));
   }
 
-  private void recordGracePeriodSeconds(Integer gracePeriodSeconds) {
-    this.gracePeriodSeconds = gracePeriodSeconds;
+  private void recordGracePeriodSeconds(KubernetesTestSupport.DeletionContext context) {
+    this.gracePeriodSeconds = context.gracePeriodSeconds();
   }
 
   @Test
@@ -209,11 +208,6 @@ class StuckPodTest {
     @Override
     public void runSteps(Packet packet, Step firstStep,  Runnable completionAction) {
       testSupport.runSteps(packet, firstStep);
-    }
-
-    @Override
-    public void addToPacket(Packet packet) {
-      packet.getComponents().put(DELEGATE_COMPONENT_NAME, Component.createFor(MainDelegate.class, this));
     }
 
     @Override

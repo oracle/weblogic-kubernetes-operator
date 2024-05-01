@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -9,26 +9,26 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -63,7 +63,7 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   @Override
-  public NextAction apply(Packet packet) {
+  public @Nonnull Result apply(Packet packet) {
     if (startupInfos.isEmpty()) {
       return doNext(packet);
     }
@@ -74,27 +74,27 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     initialServersToRoll(packet);
-    Collection<StepAndPacket> startDetails =
+    Collection<Fiber.StepAndPacket> startDetails =
         startupInfos.stream()
             .filter(ssi -> !isServerInCluster(ssi))
             .map(ssi -> createManagedServerUpDetails(packet, ssi)).toList();
 
-    Collection<StepAndPacket> work = new ArrayList<>();
+    Collection<Fiber.StepAndPacket> work = new ArrayList<>();
     if (!startDetails.isEmpty()) {
       work.add(
-              new StepAndPacket(
+              new Fiber.StepAndPacket(
                       new StartManagedServersStep(null, 0, startDetails, null), packet));
     }
 
     for (Map.Entry<String, StartClusteredServersStepFactory> entry
             : getStartClusteredServersStepFactories(startupInfos, packet).entrySet()) {
       work.add(
-              new StepAndPacket(
+              new Fiber.StepAndPacket(
                       new StartManagedServersStep(entry.getKey(), entry.getValue().getMaxConcurrency(),
                               entry.getValue().getServerStartsStepAndPackets(), null), packet.copy()));
     }
 
-    Collection<StepAndPacket> startupWaiters =
+    Collection<Fiber.StepAndPacket> startupWaiters =
             startupInfos.stream()
                     .map(ssi -> createManagedServerUpWaiters(packet, ssi)).toList();
     work.addAll(startupWaiters);
@@ -109,34 +109,57 @@ public class ManagedServerUpIteratorStep extends Step {
 
   // Adds an empty map to both the packet and the domain presence info to track servers that need to be rolled
   private void initialServersToRoll(Packet packet) {
-    final Map<String, StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
+    final Map<String, Fiber.StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
     packet.put(ProcessingConstants.SERVERS_TO_ROLL, serversToRoll);
     DomainPresenceInfo.fromPacket(packet).ifPresent(dpi -> dpi.setServersToRoll(serversToRoll));
   }
 
 
   private String getDomainUid(Packet packet) {
-    return packet.getSpi(DomainPresenceInfo.class).getDomain().getDomainUid();
+    DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+    return info.getDomain().getDomainUid();
   }
 
   private List<String> getServerNames(Collection<ServerStartupInfo> startupInfos) {
     return startupInfos.stream().map(ServerStartupInfo::getName).toList();
   }
 
-  private StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
-    return new StepAndPacket(ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(null)),
+  private Fiber.StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
+    return new Fiber.StepAndPacket(ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(null)),
             createPacketForServer(packet, ssi));
   }
 
-  private StepAndPacket createManagedServerUpWaiters(Packet packet, ServerStartupInfo ssi) {
-    String podName = getPodName(packet.getSpi(DomainPresenceInfo.class), ssi.getServerName());
-    return new StepAndPacket(Optional.ofNullable(packet.getSpi(PodAwaiterStepFactory.class))
-            .map(p -> p.waitForReady(podName, null)).orElse(null),
+  private Fiber.StepAndPacket createManagedServerUpWaiters(Packet packet, ServerStartupInfo ssi) {
+    return new Fiber.StepAndPacket(new ManagedPodReadyStep(ssi.getServerName(), null),
             createPacketForServer(packet, ssi));
   }
 
-  private String getPodName(DomainPresenceInfo info, String serverName) {
-    return LegalNames.toPodName(info.getDomainUid(), serverName);
+  static class ManagedPodReadyStep extends Step {
+    private final String serverName;
+
+    ManagedPodReadyStep(String serverName, Step next) {
+      super(next);
+      this.serverName = serverName;
+    }
+
+    @Override
+    public @Nonnull Result apply(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+      WlsDomainConfig domainTopology =
+              (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      V1Pod managedPod = info.getServerPod(serverName);
+
+      if (managedPod == null || !isPodReady(managedPod)) {
+        // requeue to wait for managed pod to be ready
+        return doRequeue(packet);
+      }
+
+      return doNext(packet);
+    }
+
+    protected boolean isPodReady(V1Pod result) {
+      return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
+    }
   }
 
   private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
@@ -146,7 +169,7 @@ public class ManagedServerUpIteratorStep extends Step {
   private Map<String, StartClusteredServersStepFactory> getStartClusteredServersStepFactories(
       Collection<ServerStartupInfo> startupInfos,
       Packet packet) {
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
 
     Map<String, StartClusteredServersStepFactory> factories = new HashMap<>();
     startupInfos.stream()
@@ -164,24 +187,25 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   static class StartManagedServersStep extends Step {
-    final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
+    final Queue<Fiber.StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
     final int maxConcurrency;
     final AtomicInteger numStarted = new AtomicInteger(0);
 
-    StartManagedServersStep(String clusterName, int maxConcurrency, Collection<StepAndPacket> startDetails, Step next) {
+    StartManagedServersStep(String clusterName, int maxConcurrency,
+                            Collection<Fiber.StepAndPacket> startDetails, Step next) {
       super(next);
       this.clusterName = clusterName;
       this.maxConcurrency = maxConcurrency;
       startDetails.forEach(this::add);
     }
 
-    void add(StepAndPacket serverToStart) {
-      startDetailsQueue.add(new StepAndPacket(serverToStart.step(), serverToStart.packet()));
+    void add(Fiber.StepAndPacket serverToStart) {
+      startDetailsQueue.add(new Fiber.StepAndPacket(serverToStart.step(), serverToStart.packet()));
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
 
       if (startDetailsQueue.isEmpty()) {
         return doNext(packet);
@@ -194,7 +218,7 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     private boolean hasServerAvailableToStart(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
       return (getNumServersStarted() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
               && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName))));
@@ -223,7 +247,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
   private static class StartClusteredServersStepFactory {
 
-    private final Queue<StepAndPacket> serversToStart = new ConcurrentLinkedQueue<>();
+    private final Queue<Fiber.StepAndPacket> serversToStart = new ConcurrentLinkedQueue<>();
     private final int maxConcurrency;
 
     StartClusteredServersStepFactory(int maxConcurrency) {
@@ -234,11 +258,11 @@ public class ManagedServerUpIteratorStep extends Step {
       return this.maxConcurrency;
     }
 
-    void add(StepAndPacket serverToStart) {
+    void add(Fiber.StepAndPacket serverToStart) {
       serversToStart.add(serverToStart);
     }
 
-    Collection<StepAndPacket> getServerStartsStepAndPackets() {
+    Collection<Fiber.StepAndPacket> getServerStartsStepAndPackets() {
       return serversToStart;
     }
   }

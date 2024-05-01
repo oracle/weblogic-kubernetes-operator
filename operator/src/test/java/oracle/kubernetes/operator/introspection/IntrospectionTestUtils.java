@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.introspection;
@@ -8,11 +8,15 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -99,9 +103,15 @@ public class IntrospectionTestUtils {
         new V1Pod()
             .metadata(
                 new V1ObjectMeta()
-                    .putLabelsItem("job-name", "")
+                    .putLabelsItem("job-name", LegalNames.toJobIntrospectorName(UID))
                     .name(LegalNames.toJobIntrospectorName(UID))
-                    .namespace(NS)));
+                    .namespace(NS))
+            .status(createJobPodTerminatedStatus()));
+  }
+
+  private static V1PodStatus createJobPodTerminatedStatus() {
+    return new V1PodStatus().addContainerStatusesItem(new V1ContainerStatus().name("introspector")
+            .state(new V1ContainerState().terminated(new V1ContainerStateTerminated().exitCode(0))));
   }
 
   public static V1JobStatus createCompletedStatus() {

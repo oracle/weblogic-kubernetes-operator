@@ -4,7 +4,8 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
-import java.net.http.HttpResponse;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,15 +42,22 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -63,6 +71,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressPathRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -110,23 +119,16 @@ class ItWseeSSO {
   private static int nodeportshttp = 0;
   private static String WDT_MODEL_FILE_SENDER = "model.wsee1.yaml";
   private static String WDT_MODEL_FILE_RECEIVER = "model.wsee2.yaml";
-  private static List<String> ingressHostList1 = null;
-  private static List<String> ingressHostList2 = null;
   private String receiverURI = null;
   private String senderURI = null;
   final String domain1Uid = "mywseedomain1";
   final String domain2Uid = "mywseedomain2";
   final String clusterName = "cluster-1";
   final String adminServerName = "admin-server";
-  private static List<String> ingressHost1List = null;
   final String adminServerPodName1 = domain1Uid + "-" + adminServerName;
   final String adminServerPodName2 = domain2Uid + "-" + adminServerName;
   final String managedServerNameBase = "managed-server";
   Path keyStoresPath;
-  final int managedServerPort = 8001;
-  int t3ChannelPort;
-
-  final String wlSecretName = "weblogic-credentials";
 
   int replicaCount = 2;
   String adminSvcExtHost1 = null;
@@ -170,7 +172,8 @@ class ItWseeSSO {
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
     if (!OKD) {
       // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, IT_WSEESSONGINX_INGRESS_HTTP_NODEPORT,
+          IT_WSEESSONGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
 
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       logger.info("NGINX service name: {0}", nginxServiceName);
@@ -179,7 +182,6 @@ class ItWseeSSO {
           ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST;
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       logger.info("NGINX http node port: {0}", nodeportshttp);
-
     }
     keyStoresPath = Paths.get(RESULTS_ROOT, "mydomainwsee", "keystores");
     assertDoesNotThrow(() -> deleteDirectory(keyStoresPath.toFile()));
@@ -214,7 +216,7 @@ class ItWseeSSO {
    */
   @Test
   @DisplayName("Test Wsee connect with sso")
-  void testInvokeWsee() {
+  void testInvokeWsee() throws Exception {
     //deploy application to view server configuration
     deployApplication(clusterName + "," + adminServerName, domain2Namespace, domain2Uid, wseeServiceAppPath);
     //deploy application to view server configuration
@@ -223,46 +225,49 @@ class ItWseeSSO {
         "/samlSenderVouches/EchoService");
     senderURI = checkWSDLAccess(domain1Namespace, domain1Uid, adminSvcExtHost1,
         "/EchoServiceRef/Echo");
+    
     testUntil(() -> callPythonScript(domain1Uid, domain1Namespace,
-            "addSAMLRelyingPartySenderConfig.py", receiverURI),
+        "addSAMLRelyingPartySenderConfig.py", receiverURI),
         logger,
         "Failed to run python script addSAMLRelyingPartySenderConfig.py");
 
     int serviceNodePort = assertDoesNotThrow(()
-            -> getServiceNodePort(domain2Namespace, getExternalServicePodName(adminServerPodName2),
+        -> getServiceNodePort(domain2Namespace, getExternalServicePodName(adminServerPodName2),
             "default"),
         "Getting admin server node port failed");
     String hostPort = OKE_CLUSTER_PRIVATEIP ? ingressIP + " 80" : K8S_NODEPORT_HOST + " " + serviceNodePort;
-    testUntil(() -> callPythonScript(domain1Uid, domain1Namespace,
-            "setupPKI.py", hostPort),
-        logger,
-        "Failed to run python script setupPKI.py");
+    testUntil(() -> callPythonScript(domain1Uid, domain1Namespace, "setupPKI.py", hostPort),
+        logger, "Failed to run python script setupPKI.py");
 
     buildRunClientOnPod();
   }
 
   private String checkWSDLAccess(String domainNamespace, String domainUid,
-                                 String adminSvcExtHost,
-                                 String appURI) {
+      String adminSvcExtHost,
+      String appURI) throws UnknownHostException, IOException, InterruptedException {
 
     String adminServerPodName = domainUid + "-" + adminServerName;
-    HttpResponse<String> response;
     String hostAndPort;
     if (!OKE_CLUSTER_PRIVATEIP) {
       int serviceTestNodePort = assertDoesNotThrow(()
-              -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
-              "default"),
+          -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
           "Getting admin server node port failed");
-
       logger.info("admin svc host = {0}", adminSvcExtHost);
       hostAndPort = getHostAndPort(adminSvcExtHost, serviceTestNodePort);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        // to access app url in podman we have to use mapped nodeport and localhost
+        String url = "http://" + formatIPv6Host(InetAddress.getLocalHost().getHostAddress())
+            + ":" + IT_WSEESSONGINX_INGRESS_HTTP_HOSTPORT + appURI;
+        assertEquals(200, OracleHttpClient.get(url, true).statusCode());
+        // to access app url inside admin pod we have to use nodehost and nodeport
+        return "http://" + K8S_NODEPORT_HOST + ":" + serviceTestNodePort + appURI;
+      }
     } else {
       hostAndPort = ingressIP + ":80";
     }
-    String urlTest = "http://" + hostAndPort + appURI;
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(urlTest, true));
-    assertEquals(200, response.statusCode());
-    return urlTest;
+    String url = "http://" + hostAndPort + appURI;
+    assertEquals(200, OracleHttpClient.get(url, true).statusCode());
+    return url;
   }
 
   private void createDomain(String domainNamespace, String domainUid, String modelFileName) {

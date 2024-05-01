@@ -92,13 +92,13 @@ pipeline {
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.22.0: 1.29, 1.29.2, 1.28, 1.28.7, 1.27, 1.27.11, 1.26, 1.26.14, 1.25, 1.25.16, 1.24, 1.24.17, 1.23, 1.23.17 ',
                choices: [
                     // The first item in the list is the default value...
-                    '1.26.14',
                     '1.29.2',
                     '1.29',
                     '1.28.7',
                     '1.28',
                     '1.27.11',
                     '1.27',
+		    '1.26.4',
                     '1.26',
                     '1.25.16',
                     '1.25',
@@ -375,6 +375,9 @@ pipeline {
                             if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                                 echo "Deleted orphaned kind cluster ${kind_name}"
                             fi
+                            # settings needed by elastic logging tests
+                            echo "running sudo sysctl -w vm.max_map_count=262144"
+                            sudo sysctl -w vm.max_map_count=262144
                             cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -420,7 +423,7 @@ nodes:
         protocol: TCP
       - containerPort: 32170
         hostPort: 2173
-        protocol: TCP	
+        protocol: TCP
       - containerPort: 32189
         hostPort: 2182
         protocol: TCP
@@ -432,7 +435,28 @@ nodes:
         protocol: TCP
       - containerPort: 32343
         hostPort: 2343
-        protocol: TCP		
+        protocol: TCP
+      - containerPort: 30538
+        hostPort: 2538
+        protocol: TCP
+      - containerPort: 30544
+        hostPort: 2539
+        protocol: TCP
+      - containerPort: 32331
+        hostPort: 2331
+        protocol: TCP
+      - containerPort: 31781
+        hostPort: 2781
+        protocol: TCP
+      - containerPort: 31744
+        hostPort: 2782
+        protocol: TCP	
+      - containerPort: 31785
+        hostPort: 2785
+        protocol: TCP
+      - containerPort: 31746
+        hostPort: 2786
+        protocol: TCP
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
@@ -447,6 +471,7 @@ EOF
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
                             done
+                            podman exec -it kind-worker bash -c "sysctl vm.max_map_count"
 
                             # Document the local registry
                             # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
@@ -577,7 +602,7 @@ EOF
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                             '''
                             archiveArtifacts(artifacts:
-                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*")
+                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*,integration-tests/target/failsafe-reports/*.xml")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
                         }
                     }

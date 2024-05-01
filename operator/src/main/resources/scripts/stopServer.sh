@@ -113,7 +113,8 @@ check_for_shutdown
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
 trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> ${STOP_OUT_FILE}
-${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> ${STOP_OUT_FILE}
+# Use the default wlst.sh memory settings for stopping the server -Xms32m -X1024m should be enough
+USER_MEM_ARGS="" ${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> ${STOP_OUT_FILE}
 trace "After stop-server.py" &>> ${STOP_OUT_FILE}
 
 # at this point node manager should have terminated the server

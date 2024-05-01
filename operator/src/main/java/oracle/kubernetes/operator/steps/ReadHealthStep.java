@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -20,6 +20,7 @@ import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -39,7 +40,6 @@ import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
@@ -75,9 +75,9 @@ public class ReadHealthStep extends Step {
   // overallHealthState, healthState
 
   @Override
-  public NextAction apply(Packet packet) {
+  public @Nonnull Result apply(Packet packet) {
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
     V1Service service = info.getServerService(serverName);
     if (service == null) {
       return doNext(packet);
@@ -160,7 +160,7 @@ public class ReadHealthStep extends Step {
     }
 
     private WlsDomainConfig getWlsDomainConfig() {
-      DomainPresenceInfo info = getPacket().getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = (DomainPresenceInfo) getPacket().get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       WlsDomainConfig domainConfig =
           (WlsDomainConfig) getPacket().get(ProcessingConstants.DOMAIN_TOPOLOGY);
       if (domainConfig == null) {
@@ -189,7 +189,7 @@ public class ReadHealthStep extends Step {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       ReadHealthProcessing processing = new ReadHealthProcessing(packet, service, pod);
       if (processing.getWlsServerConfig() == null) {
         return doNext(packet);
@@ -215,7 +215,7 @@ public class ReadHealthStep extends Step {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
+    public Result onSuccess(Packet packet, HttpResponse<String> response) {
       try {
         HealthResponseProcessing responseProcessing = new HealthResponseProcessing(packet, response);
         responseProcessing.recordStateAndHealth();
@@ -243,7 +243,7 @@ public class ReadHealthStep extends Step {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+    public Result onFailure(Packet packet, HttpResponse<String> response) {
       new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
       return doNext(packet);
     }
@@ -379,7 +379,7 @@ public class ReadHealthStep extends Step {
       }
 
       private DomainPresenceInfo getDomainPresenceInfo() {
-        return getPacket().getSpi(DomainPresenceInfo.class);
+        return (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       }
 
       Packet getPacket() {

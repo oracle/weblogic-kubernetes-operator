@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -21,7 +21,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.helpers.AuthorizationSource;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
+import oracle.kubernetes.operator.http.client.HttpRequestStep;
 import oracle.kubernetes.operator.http.client.HttpResponseStep;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.work.Packet;
@@ -43,9 +43,9 @@ abstract class HttpRequestProcessing {
     this.packet = packet;
   }
 
-  static HttpAsyncRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep) {
+  static HttpRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep) {
     responseStep.setCallback(HttpRequestProcessing::addCookies);
-    return HttpAsyncRequestStep.create(request, responseStep)
+    return HttpRequestStep.create(request, responseStep)
         .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
   }
 

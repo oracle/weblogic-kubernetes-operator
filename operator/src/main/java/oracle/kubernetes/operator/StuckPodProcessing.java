@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -11,17 +11,20 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.DeleteOptions;
+import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
@@ -42,9 +45,9 @@ public class StuckPodProcessing {
   }
 
   void checkStuckPods(String namespace) {
-    Step step = new CallBuilder()
-          .withLabelSelectors(LabelConstants.getCreatedByOperatorSelector())
-          .listPodAsync(namespace, new PodListProcessing(namespace, SystemClock.now()));
+    Step step = RequestBuilder.POD.list(namespace,
+        new ListOptions().labelSelector(LabelConstants.getCreatedByOperatorSelector()),
+        new PodListProcessing(namespace, SystemClock.now()));
     mainDelegate.runSteps(OperatorMain.createPacketWithLoggingContext(namespace), step, null);
   }
 
@@ -63,8 +66,8 @@ public class StuckPodProcessing {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      callResponse.getResult().getItems().stream()
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1PodList> callResponse) {
+      callResponse.getObject().getItems().stream()
             .filter(pod -> isStuck(pod, now))
             .forEach(pod -> addStuckPodToPacket(packet, pod));
       
@@ -101,15 +104,15 @@ public class StuckPodProcessing {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       final List<V1Pod> stuckPodList = getStuckPodList(packet);
       if (stuckPodList.isEmpty()) {
         return doNext(packet);
       } else {
-        Collection<StepAndPacket> startDetails = new ArrayList<>();
+        Collection<Fiber.StepAndPacket> startDetails = new ArrayList<>();
 
         for (V1Pod pod : stuckPodList) {
-          startDetails.add(new StepAndPacket(createForcedDeletePodStep(pod), packet.copy()));
+          startDetails.add(new Fiber.StepAndPacket(createForcedDeletePodStep(pod), packet.copy()));
         }
         return doForkJoin(readExistingNamespaces(), packet, startDetails);
       }
@@ -122,10 +125,9 @@ public class StuckPodProcessing {
     }
 
     private Step createForcedDeletePodStep(V1Pod pod) {
-      return new CallBuilder()
-            .withGracePeriodSeconds(0)
-            .deletePodAsync(getName(pod), getNamespace(pod), getDomainUid(pod), null,
-                  new ForcedDeleteResponseStep(getName(pod), getNamespace(pod), getDomainUid(pod)));
+      return RequestBuilder.POD.delete(getNamespace(pod), getName(pod),
+          (DeleteOptions) new DeleteOptions().gracePeriodSeconds(0L),
+          new ForcedDeleteResponseStep(getName(pod), getNamespace(pod), getDomainUid(pod)));
     }
 
     private String getName(V1Pod pod) {
@@ -141,7 +143,7 @@ public class StuckPodProcessing {
     }
   }
 
-  static class ForcedDeleteResponseStep extends DefaultResponseStep<Object> {
+  static class ForcedDeleteResponseStep extends DefaultResponseStep<V1Pod> {
 
     private final String name;
     private final String namespace;
@@ -155,7 +157,7 @@ public class StuckPodProcessing {
 
     @Override
     @SuppressWarnings("try")
-    public NextAction onSuccess(Packet packet, CallResponse<Object> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
       try (ThreadLoggingContext ignored =
                ThreadLoggingContext.setThreadContext().namespace(namespace).domainUid(domainUID)) {
         LOGGER.info(POD_FORCE_DELETED, name, namespace);

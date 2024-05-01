@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
@@ -29,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -39,15 +41,14 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
@@ -102,11 +103,11 @@ public class JobStepContext extends BasePodStepContext {
   private final WlsDomainConfig domainTopology;
   private static final CommonUtils.CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
   private V1Job jobModel;
-  private Step conflictStep;
+  private Step conflict;
   private Packet packet;
 
   JobStepContext(Packet packet) {
-    super(packet.getSpi(DomainPresenceInfo.class));
+    super((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
     this.packet = packet;
     domainTopology = packet.getValue(ProcessingConstants.DOMAIN_TOPOLOGY);
     init();
@@ -283,8 +284,8 @@ public class JobStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step createJob() {
-    conflictStep = new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), newCreateResponse());
-    return conflictStep;
+    conflict = RequestBuilder.JOB.create(getJobModel(), newCreateResponse());
+    return conflict;
   }
 
   String getJobCreatedMessageKey() {
@@ -1058,16 +1059,16 @@ public class JobStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+    public Result onFailure(Packet packet, KubernetesApiResponse<V1Job> callResponse) {
+      if (isUnrecoverable(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
-        return onFailure(conflictStep, packet, callResponse);
+        return onFailure(conflict, packet, callResponse);
       }
     }
 
-    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
-      return doNext(createKubernetesFailureSteps(callResponse), packet);
+    private Result updateDomainStatus(Packet packet, KubernetesApiResponse<V1Job> callResponse) {
+      return doNext(createKubernetesFailureSteps(callResponse, createFailureMessage(callResponse)), packet);
     }
 
     private void logJobCreated() {
@@ -1075,9 +1076,9 @@ public class JobStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Job> callResponse) {
       logJobCreated();
-      V1Job job = callResponse.getResult();
+      V1Job job = callResponse.getObject();
       if (job != null) {
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
       }

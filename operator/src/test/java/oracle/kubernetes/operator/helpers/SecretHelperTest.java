@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -46,7 +46,7 @@ class SecretHelperTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
 
   @BeforeEach
-  public void setUp() {
+  public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, SECRET_NOT_FOUND, SECRET_DATA_NOT_FOUND));
     mementos.add(testSupport.install());

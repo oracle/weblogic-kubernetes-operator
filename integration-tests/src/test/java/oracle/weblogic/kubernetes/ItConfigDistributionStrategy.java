@@ -71,6 +71,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_12213;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -142,7 +143,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 @IntegrationTest
 @Tag("olcne-mrg")
 class ItConfigDistributionStrategy {
@@ -227,7 +228,6 @@ class ItConfigDistributionStrategy {
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(domainNamespace);
 
-
     //start two MySQL database instances
     String dbService1 = createMySQLDB("mysqldb-1", "root", "root123", domainNamespace, null);
     V1Pod pod = getPod(domainNamespace, null, "mysqldb-1");
@@ -242,7 +242,6 @@ class ItConfigDistributionStrategy {
     dsUrl2 = "jdbc:mysql://" + dbService2 + "." + domainNamespace + ".svc:3306";
     logger.info(dsUrl1);
     logger.info(dsUrl2);
-
 
     // build the clusterview application
     Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
@@ -261,7 +260,6 @@ class ItConfigDistributionStrategy {
           serviceName, ADMIN_SERVER_PORT, hostAndPort);
     }
 
-
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
 
@@ -270,7 +268,6 @@ class ItConfigDistributionStrategy {
     createJdbcDataSource(dsName1, "root", "root123", dsUrl1);
     //deploy application to view server configuration
     deployApplication(clusterName + "," + adminServerName);
-
   }
 
   /**
@@ -1000,7 +997,7 @@ class ItConfigDistributionStrategy {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
-            -> File.createTempFile("domain", ".properties"),
+            -> File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", uniquePath);
@@ -1181,7 +1178,7 @@ class ItConfigDistributionStrategy {
       // 12.2.1.3 - com.mysql.jdbc.Driver
       // 12.2.1.4 and above - com.mysql.cj.jdbc.Driver
       // create a temporary WebLogic domain property file
-      File domainPropertiesFile = File.createTempFile("domain", "properties");
+      File domainPropertiesFile = File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE));
       Properties p = new Properties();
       p.setProperty("admin_host", adminServerPodName);
       p.setProperty("admin_port", Integer.toString(defaultChannelPort));

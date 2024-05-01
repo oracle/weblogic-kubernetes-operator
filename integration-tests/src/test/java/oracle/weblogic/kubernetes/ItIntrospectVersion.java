@@ -78,6 +78,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
@@ -305,7 +306,8 @@ class ItIntrospectVersion {
 
     logger.info("change the cluster1 size to 3 and verify the introspector runs and updates the domain status");
     // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+    File wlstPropertiesFile =
+        assertDoesNotThrow(() -> File.createTempFile("wlst", ".properties", new File(RESULTS_TEMPFILE)),
         "Creating WLST properties file failed");
     Properties p1 = new Properties();
     p1.setProperty("admin_host", adminServerPodName);
@@ -552,9 +554,9 @@ class ItIntrospectVersion {
           getPodCreationTime(introDomainNamespace, cluster1ManagedServerPodNamePrefix + i));
     }
 
-
     // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+    File wlstPropertiesFile =
+        assertDoesNotThrow(() -> File.createTempFile("wlst", ".properties", new File(RESULTS_TEMPFILE)),
         "Creating WLST properties file failed");
     Properties p = new Properties();
     p.setProperty("admin_host", adminServerPodName);
@@ -677,7 +679,8 @@ class ItIntrospectVersion {
         = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+    File wlstPropertiesFile =
+        assertDoesNotThrow(() -> File.createTempFile("wlst", ".properties", new File(RESULTS_TEMPFILE)),
         "Creating WLST properties file failed");
     Properties p = new Properties();
     p.setProperty("admin_host", adminServerPodName);
@@ -1143,7 +1146,7 @@ class ItIntrospectVersion {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
-            File.createTempFile("domain", "properties"),
+            File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", uniquePath);
@@ -1366,7 +1369,6 @@ class ItIntrospectVersion {
       } else {
         // In non-internal OKE env, verifyMemberHealth using adminSvcExtHost by sending HTTP request from local VM
 
-        // TEST, HERE
         String extSvcPodName = getExternalServicePodName(adminServerPodName);
         logger.info("**** adminServerPodName={0}", adminServerPodName);
         logger.info("**** extSvcPodName={0}", extSvcPodName);
@@ -1570,7 +1572,7 @@ class ItIntrospectVersion {
   }
   
   private void updateIngressBackendServicePort(int newAdminPort) throws ApiException {
-    String ingressName = introDomainNamespace + "-" + domainUid + "-" + adminServerName;
+    String ingressName = introDomainNamespace + "-" + domainUid + "-" + adminServerName + "-7001";
     V1Ingress ingress = Ingress.getIngress(introDomainNamespace, ingressName).orElse(null);
     if (ingress != null) {
       logger.info("Updating ingress {0} with new admin port {1}", ingressName, newAdminPort);
@@ -1579,7 +1581,7 @@ class ItIntrospectVersion {
           .setPort(new V1ServiceBackendPort().number(newAdminPort));
       updateIngress(introDomainNamespace, ingress);
     } else {
-      fail("Failed to update ingress");
+      fail("Ingress is null, failed to update ingress");
     }
   }
   

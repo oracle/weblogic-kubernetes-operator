@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,13 +15,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
@@ -30,8 +31,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -90,16 +90,14 @@ class DomainRecheck {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
 
       // we don't have the domain presence information, yet
       // we add a logging context to pass the namespace information to the LoggingFormatter
 
       if (isDomainNamespace) {
-        packet.getComponents().put(
-            LoggingContext.LOGGING_CONTEXT_KEY,
-            Component.createFor(new LoggingContext().namespace(ns)));
+        packet.put(LoggingContext.LOGGING_CONTEXT_KEY, new LoggingContext().namespace(ns));
       }
 
       V1SubjectRulesReviewStatus status = nss.getRulesReviewStatus().updateAndGet(prev -> {
@@ -144,8 +142,7 @@ class DomainRecheck {
    * identified as domain namespaces.
    */
   Step readExistingNamespaces() {
-    return new CallBuilder()
-          .listNamespaceAsync(new NamespaceListResponseStep());
+    return RequestBuilder.NAMESPACE.list(new NamespaceListResponseStep());
   }
 
   private class NamespaceListResponseStep extends DefaultResponseStep<V1NamespaceList> {
@@ -158,20 +155,20 @@ class DomainRecheck {
     // If unable to list the namespaces, we may still be able to start them if we are using
     // a strategy that specifies them explicitly.
     @Override
-    protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+    protected Result onFailureNoRetry(Packet packet, KubernetesApiResponse<V1NamespaceList> callResponse) {
       return useBackupStrategy(callResponse)
             ? doNext(createStartNamespacesStep(Namespaces.getConfiguredDomainNamespaces()), packet)
             : super.onFailureNoRetry(packet, callResponse);
     }
 
     // Returns true if the failure wasn't due to authorization, and we have a list of namespaces to manage.
-    private boolean useBackupStrategy(CallResponse<V1NamespaceList> callResponse) {
+    private boolean useBackupStrategy(KubernetesApiResponse<V1NamespaceList> callResponse) {
       return haveExplicitlyConfiguredNamespacesToManage() && isNotAuthorizedOrForbidden(callResponse);
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      final Set<String> namespacesToStart = getNamespacesToStart(callResponse.getResult());
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1NamespaceList> callResponse) {
+      final Set<String> namespacesToStart = getNamespacesToStart(callResponse.getObject());
       Namespaces.getFoundDomainNamespaces(packet).addAll(namespacesToStart);
 
       return doContinueListOrNext(callResponse, packet, createNextSteps(namespacesToStart));
@@ -237,7 +234,7 @@ class DomainRecheck {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       if (domainNamespaces.shouldStartNamespace(ns)) {
         return doNext(addNSWatchingStartingEventsStep(), packet);
       }
@@ -285,15 +282,15 @@ class DomainRecheck {
 
     @Override
     @SuppressWarnings("try")
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       if (domainNamespaces == null) {
         return doNext(packet);
       } else {
-        Collection<StepAndPacket> startDetails = new ArrayList<>();
+        Collection<Fiber.StepAndPacket> startDetails = new ArrayList<>();
 
         for (String ns : domainNamespaces) {
           try (ThreadLoggingContext ignored = setThreadContext().namespace(ns)) {
-            startDetails.add(new StepAndPacket(stepFactory.apply(ns), packet.copy()));
+            startDetails.add(new Fiber.StepAndPacket(stepFactory.apply(ns), packet.copy()));
           }
         }
         return doForkJoin(getNext(), packet, startDetails);

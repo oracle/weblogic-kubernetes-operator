@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -164,6 +164,9 @@ class OfflineWlstEnv(object):
 
     # Check environment variable that skip leasing validation
     self.SKIP_LEASING_VALIDATIONS = self.getEnvOrDef('SKIP_LEASING_VALIDATIONS', "False")
+
+    # Extracted list for bin lib during domain creation
+    self.DOMAIN_LIB_BIN_LIST = self.INTROSPECT_HOME + "/binliblist"
 
     # maintain a list of errors that we include in topology.yaml on completion, if any
 
@@ -1970,6 +1973,8 @@ class DomainIntrospector(SecretManager):
         trace("cfgmap write domain wdt version")
         if os.path.exists('/tmp/domain_wdt_version'):
           MII_IntrospectCMFileGenerator(self.env, self.env.MII_DOMAIN_WDT_VERSION, '/tmp/domain_wdt_version').generate()
+        if os.path.exists('/tmp/binlibdir.txt'):
+          MII_IntrospectCMFileGenerator(self.env, self.env.DOMAIN_LIB_BIN_LIST, '/tmp/binlibdir.txt').generate()
 
       if self.isFromModelAndJRFDomain() or self.isInitializeDomainJRFOnPV():
         trace("cfgmap write JRF wallet")

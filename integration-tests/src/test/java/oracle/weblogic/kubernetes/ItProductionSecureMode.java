@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,10 +25,13 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -45,7 +51,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -102,7 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItProductionSecureMode {
 
   private static String opNamespace = null;
@@ -187,6 +192,25 @@ class ItProductionSecureMode {
         domainNamespace);
   }
 
+  @AfterAll
+  public static void cleanup() {
+    Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules-tcp.yaml");
+    assertDoesNotThrow(() -> {
+      String command = KUBERNETES_CLI + " delete -f " + dstFile;
+      logger.info("Running {0}", command);
+      ExecResult result;
+      try {
+        result = ExecCommand.exec(command, true);
+        String response = result.stdout().trim();
+        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        assertEquals(0, result.exitValue(), "Command didn't succeed");
+      } catch (IOException | InterruptedException ex) {
+        logger.severe(ex.getMessage());
+      }
+    });
+  }
+  
   /**
    * Verify all server pods are running.
    * Verify all k8s services for all servers are created.
@@ -251,49 +275,36 @@ class ItProductionSecureMode {
     logger.info("The hostAndPort is {0}", hostAndPort);
 
     String resourcePath = "/weblogic/ready";
-    if (!WEBLOGIC_SLIM) {
-      if (OKE_CLUSTER) {
-        ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName,7002, resourcePath);
-        logger.info("result in OKE_CLUSTER is {0}", result.toString());
-        assertEquals(0, result.exitValue(), "Failed to access WebLogic readyapp");
-      } else {
-        String curlCmd = "curl -g -sk --show-error --noproxy '*' "
-            + " https://" + hostAndPort
-            + "/weblogic/ready --write-out %{http_code} "
-            + " -o /dev/null";
-        logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
-        assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-      }
-      logger.info("WebLogic readyapp is accessible thru default-admin service");
+    ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName, 7002, resourcePath);
+    logger.info("result in OKE_CLUSTER is {0}", result.toString());
+    assertEquals(0, result.exitValue(), "Failed to access WebLogic readyapp");
+    logger.info("WebLogic readyapp is accessible thru default-admin service");
 
-      String localhost = "localhost";
-      String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 9002);
-      assertNotNull(forwardPort, "port-forward fails to assign local port");
-      logger.info("Forwarded admin-port is {0}", forwardPort);
-      String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + localhost + ":" + forwardPort
-          + "/weblogic/ready --write-out %{http_code} "
-          + " -o /dev/null";
-      logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-      logger.info("WebLogic readyapp is accessible thru admin port forwarding");
+    String localhost = "localhost";
+    String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 9002);
+    assertNotNull(forwardPort, "port-forward fails to assign local port");
+    logger.info("Forwarded admin-port is {0}", forwardPort);
+    String curlCmd = "curl -sk --show-error --noproxy '*' "
+        + " https://" + localhost + ":" + forwardPort
+        + "/weblogic/ready --write-out %{http_code} "
+        + " -o /dev/null";
+    logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+    logger.info("WebLogic readyapp is accessible thru admin port forwarding");
 
-      // When port-forwarding is happening on admin-port, port-forwarding will
-      // not work for SSL port i.e. 7002
-      forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7002);
-      assertNotNull(forwardPort, "port-forward fails to assign local port");
-      logger.info("Forwarded ssl port is {0}", forwardPort);
-      curlCmd = "curl -g -sk --show-error --noproxy '*' "
-          + " https://" + localhost + ":" + forwardPort
-          + "/weblogic/ready --write-out %{http_code} "
-          + " -o /dev/null";
-      logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
-      assertFalse(callWebAppAndWaitTillReady(curlCmd, 10));
-      logger.info("WebLogic readyapp should not be accessible thru ssl port forwarding");
-      stopPortForwardProcess(domainNamespace);
-    } else {
-      logger.info("Skipping WebLogic reeadyapp check in WebLogic slim image");
-    }
+    // When port-forwarding is happening on admin-port, port-forwarding will
+    // not work for SSL port i.e. 7002
+    forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7002);
+    assertNotNull(forwardPort, "port-forward fails to assign local port");
+    logger.info("Forwarded ssl port is {0}", forwardPort);
+    curlCmd = "curl -g -sk --show-error --noproxy '*' "
+        + " https://" + localhost + ":" + forwardPort
+        + "/weblogic/ready --write-out %{http_code} "
+        + " -o /dev/null";
+    logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
+    assertFalse(callWebAppAndWaitTillReady(curlCmd, 10));
+    logger.info("WebLogic readyapp should not be accessible thru ssl port forwarding");
+    stopPortForwardProcess(domainNamespace);
 
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -337,6 +348,11 @@ class ItProductionSecureMode {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     verifyIntrospectorRuns(domainUid, domainNamespace);
+    String sslChannelName = "default-admin";
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      createTraefikIngressRoutingRules(domainNamespace);
+    }
 
     String resourcePath = "/management/weblogic/latest/domainRuntime/serverRuntimes/"
         + MANAGED_SERVER_NAME_BASE + "1"
@@ -356,7 +372,7 @@ class ItProductionSecureMode {
                   + MANAGED_SERVER_NAME_BASE + "1"
                   + "/applicationRuntimes/" + MII_BASIC_APP_DEPLOYMENT_NAME
                   + "/workManagerRuntimes/newWM",
-              "200", true, "default-admin"),
+              "200", true, sslChannelName),
               logger, "work manager configuration to be updated.");
     }
 
@@ -422,5 +438,29 @@ class ItProductionSecureMode {
                     domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
+  }
+
+  private static void createTraefikIngressRoutingRules(String domainNamespace) {
+    logger.info("Creating ingress rules for domain traffic routing");
+    Path srcFile = Paths.get(ActionConstants.RESOURCE_DIR, "traefik/traefik-ingress-rules-tcp.yaml");
+    Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules-tcp.yaml");
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+      Files.createDirectories(dstFile.getParent());
+      Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
+          .getBytes(StandardCharsets.UTF_8));
+    });
+    String command = KUBERNETES_CLI + " create -f " + dstFile;
+    logger.info("Running {0}", command);
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -14,19 +14,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.client.HttpResponseStep;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
-import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -55,7 +57,7 @@ public class MonitoringExporterSteps {
   public static Step updateExporterSidecars() {
     return new Step() {
       @Override
-      public NextAction apply(Packet packet) {
+      public @Nonnull Result apply(Packet packet) {
         return doNext(updateExportersWithConfiguration(packet), packet);
       }
 
@@ -142,7 +144,7 @@ public class MonitoringExporterSteps {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       if (PodHelper.isDeleting(getServerPod(packet))) {
         return doNext(packet);
       } else if (PodHelper.isReady(getServerPod(packet))) {
@@ -168,7 +170,7 @@ public class MonitoringExporterSteps {
     // if not match, response should run update step
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       ExporterRequestProcessing processing = new ExporterRequestProcessing(packet);
 
       return doNext(createRequestStep(processing.createConfigurationQueryRequest(),
@@ -183,7 +185,7 @@ public class MonitoringExporterSteps {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
+    public Result onSuccess(Packet packet, HttpResponse<String> response) {
       if (hasUpToDateConfiguration(packet, response)) {
         return doNext(packet);
       } else {
@@ -210,7 +212,7 @@ public class MonitoringExporterSteps {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+    public Result onFailure(Packet packet, HttpResponse<String> response) {
       return doNext(packet);
     }
   }
@@ -228,7 +230,7 @@ public class MonitoringExporterSteps {
   private static class ConfigurationUpdateStep extends Step {
 
     @Override
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       ExporterRequestProcessing processing = new ExporterRequestProcessing(packet);
 
       return doNext(createRequestStep(processing.createConfigurationUpdateRequest(packet),
@@ -241,7 +243,7 @@ public class MonitoringExporterSteps {
 
     ExporterRequestProcessing(Packet packet) {
       super(packet, getServerService(packet), getServerPod(packet));
-      info = packet.getSpi(DomainPresenceInfo.class);
+      info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
     }
 
     private static V1Service getServerService(Packet packet) {
@@ -310,12 +312,12 @@ public class MonitoringExporterSteps {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
+    public Result onSuccess(Packet packet, HttpResponse<String> response) {
       return doNext(packet);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+    public Result onFailure(Packet packet, HttpResponse<String> response) {
       return doNext(packet);
     }
   }
@@ -348,15 +350,15 @@ public class MonitoringExporterSteps {
 
     @Override
     @SuppressWarnings("try")
-    public NextAction apply(Packet packet) {
+    public @Nonnull Result apply(Packet packet) {
       if (serverNames == null) {
         return doNext(packet);
       } else {
-        Collection<StepAndPacket> startDetails = new ArrayList<>();
+        Collection<Fiber.StepAndPacket> startDetails = new ArrayList<>();
 
         try (ThreadLoggingContext ignored = ThreadLoggingContext.setThreadContext().namespace(getNamespace(packet))) {
           for (String serverName : serverNames) {
-            startDetails.add(new StepAndPacket(stepFactory.apply(serverName), packet.copy()));
+            startDetails.add(new Fiber.StepAndPacket(stepFactory.apply(serverName), packet.copy()));
           }
         }
         return doForkJoin(getNext(), packet, startDetails);

@@ -1,9 +1,8 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -13,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 /** Kubernetes pods and services associated with a single WebLogic server. */
 class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
-  private final AtomicBoolean isPodBeingDeleted = new AtomicBoolean(false);
   private final AtomicInteger httpRequestFailureCount = new AtomicInteger(0);
   private final AtomicReference<LastKnownStatus> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
@@ -29,15 +27,6 @@ class ServerKubernetesObjects {
    */
   AtomicReference<V1Pod> getPod() {
     return pod;
-  }
-
-  /**
-   * Flag indicating if the operator is deleting this pod.
-   *
-   * @return true, if operator is deleting this pod
-   */
-  AtomicBoolean isPodBeingDeleted() {
-    return isPodBeingDeleted;
   }
 
   AtomicInteger getHttpRequestFailureCount() {

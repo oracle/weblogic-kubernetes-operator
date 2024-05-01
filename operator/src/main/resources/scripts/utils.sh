@@ -1,4 +1,5 @@
-# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+#!/bin/sh
+# Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -494,21 +495,16 @@ hasWebLogicPatches()
 }
 
 # getWebLogicVersion
-#   parse wl version from install inventory
 #   - if we can't get a version number then we return
 #     a high dummy version number that's sufficient
 #     to pass version checks "9999.9999.9999.9999"
-#   - we parse the install inventory as this is far faster than
-#     using opatch or weblogic.version
 getWebLogicVersion()
 {
-  local reg_file=$ORACLE_HOME/inventory/registry.xml
+  $ORACLE_HOME/oracle_common/common/bin/wlst.sh /weblogic-operator/scripts/wlversion.py > /dev/null 2>&1
 
-  [ ! -f $reg_file ] && echo "9999.9999.9999.9999" && return
-
-  # The following grep captures both "WebLogic Server" and "WebLogic Server for FMW"
-  local wlver="`grep 'name="WebLogic Server.*version=' $reg_file \
-               | sed 's/.*version="\([0-9.]*\)".*/\1/g'`"
+  if [ $? -eq 0 ] ; then
+    wlver=$(cat /tmp/wlsversion.txt)
+  fi
 
   echo ${wlver:-"9999.9999.9999.9999"}
 }
@@ -538,9 +534,9 @@ getMajorVersion()
 # checkWebLogicVersion
 #   check if the WL version is supported by the Operator
 #   - skip check if SKIP_WL_VERSION_CHECK = "true"
-#   - log an error if WL version < 12.2.1.3
-#   - log an error if WL version == 12.2.1.3 && patch 29135930 is missing
-#     - you can override the required 12.2.1.3 patches by exporting
+#   - log an error if WL version < 12.2.1.3.0
+#   - log an error if WL version == 12.2.1.3.0 && patch 29135930 is missing
+#     - you can override the required 12.2.1.3.0 patches by exporting
 #       global WL12213REQUIREDPATCHES to an empty string or to other
 #       patch number(s)
 #   - return 1 if logged an error
@@ -549,11 +545,11 @@ checkWebLogicVersion()
 {
   [ "$SKIP_WL_VERSION_CHECK" = "true" ] && return 0
   local cur_wl_ver="`getWebLogicVersion`"
-  local exp_wl_ver="12.2.1.3" 
+  local exp_wl_ver="12.2.1.3.0"
   local exp_wl_12213_patches="${WL12213REQUIREDPATCHES:-"29135930"}"
-  if versionEQ "$cur_wl_ver" "12.2.1.3" ; then
+  if versionEQ "$cur_wl_ver" "12.2.1.3.0" ; then
     if ! hasWebLogicPatches $exp_wl_12213_patches ; then
-      trace SEVERE "The Operator requires that WebLogic version '12.2.1.3' have patch '$exp_wl_12213_patches'. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
+      trace SEVERE "The Operator requires that WebLogic version '12.2.1.3.0' have patch '$exp_wl_12213_patches'. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
       return 1
     fi
   fi

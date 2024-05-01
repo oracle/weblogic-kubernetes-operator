@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
@@ -37,6 +38,7 @@ import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.V1IngressBackend;
 import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainCondition;
@@ -69,6 +71,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
@@ -1716,7 +1719,8 @@ public class CommonTestUtils {
       }
 
       // create WLST property file
-      File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+      File wlstPropertiesFile =
+          assertDoesNotThrow(() -> File.createTempFile("wlst", ".properties", new File(RESULTS_TEMPFILE)),
           "Creating WLST properties file failed");
 
       String localhost = "localhost";
@@ -2354,10 +2358,26 @@ public class CommonTestUtils {
    * @param domainUid domain resource name
    * @param serviceName name of the service for which to create ingress routing
    * @param port container port of the service
-   * @return hostheader
+   * @return hostheader host header
    */
   public static String createIngressHostRouting(String domainNamespace, String domainUid,
       String serviceName, int port) {
+    return createIngressHostRouting(domainNamespace, domainUid, serviceName, port, null, null, false);
+  }
+
+  /**
+   * Create ingress resource for a single service.
+   *
+   * @param domainNamespace namespace in which the service exists
+   * @param domainUid domain resource name
+   * @param serviceName name of the service for which to create ingress routing
+   * @param port container port of the service
+   * @param annoations ingress annotations
+   * @param tlsList list of tls secrets
+   * @return hostheader host header
+   */
+  public static String createIngressHostRouting(String domainNamespace, String domainUid,
+      String serviceName, int port, Map<String, String> annoations, List<V1IngressTLS> tlsList, boolean isSecureMode) {
     // create an ingress in domain namespace
     // set the ingress rule host
     String ingressHost = domainNamespace + "." + domainUid + "." + serviceName;
@@ -2381,17 +2401,18 @@ public class CommonTestUtils {
     ingressRules.add(ingressRule);
 
     String ingressName = domainNamespace + "-" + domainUid + "-" + serviceName + "-" + port;
-    assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, null,
-        Files.readString(INGRESS_CLASS_FILE_NAME), ingressRules, null));
+    assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annoations,
+        Files.readString(INGRESS_CLASS_FILE_NAME), ingressRules, tlsList));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
         .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
         .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
         .contains(ingressName);
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-        + "' http://localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT
-        + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+    String curlCmd = assertDoesNotThrow(() -> "curl -g -k --silent --show-error --noproxy '*' -H 'host: "
+        + ingressHost + "' " + (isSecureMode ? "https" : "http") + "://"
+        + formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + +TRAEFIK_INGRESS_HTTP_HOSTPORT
+        + "/weblogic/ready --write-out %{http_code} -o /dev/null");
     getLogger().info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 

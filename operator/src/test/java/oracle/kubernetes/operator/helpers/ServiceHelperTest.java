@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -25,10 +25,9 @@ import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
-import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -67,7 +66,7 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
@@ -444,22 +443,11 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  void onFailedRun_reportFailure() {
-    testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(SERVICE, NS, HTTP_INTERNAL_ERROR);
-
-    runServiceHelper();
-
-    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
-  }
-
-  @Test
   void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(SERVICE, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage(FAILURE_MESSAGE)
-        .build());
+    testSupport.failOnCreate(SERVICE, NS, new V1Status()
+        .reason("FieldValueNotFound")
+        .message(FAILURE_MESSAGE), HTTP_BAD_REQUEST);
 
     runServiceHelper();
 
@@ -470,10 +458,9 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   void whenServiceCreationFailsDueToUnprocessableEntityFailure_createFailedEventWithKubernetesReason() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(SERVICE, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage(FAILURE_MESSAGE)
-        .build());
+    testSupport.failOnCreate(SERVICE, NS, new V1Status()
+        .reason("FieldValueNotFound")
+        .message(FAILURE_MESSAGE), HTTP_BAD_REQUEST);
 
     runServiceHelper();
 
@@ -486,9 +473,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
     List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
-    //System.out.println(events);
     return Optional.ofNullable(events)
-        .filter(list -> list.size() != 0)
+        .filter(list -> !list.isEmpty())
         .map(n -> n.get(0))
         .map(CoreV1Event::getMessage)
         .orElse("Event not found");
@@ -501,10 +487,9 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnCreate(SERVICE, NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage(FAILURE_MESSAGE)
-        .build());
+    testSupport.failOnCreate(SERVICE, NS, new V1Status()
+        .reason("FieldValueNotFound")
+        .message(FAILURE_MESSAGE), HTTP_BAD_REQUEST);
 
     runServiceHelper();
 

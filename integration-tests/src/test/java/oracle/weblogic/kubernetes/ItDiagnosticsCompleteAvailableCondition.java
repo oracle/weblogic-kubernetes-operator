@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-arm")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItDiagnosticsCompleteAvailableCondition {
 
   private static final String cluster1Name = "cluster-1";

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -14,29 +14,6 @@ import oracle.kubernetes.operator.work.FiberGate;
 
 /** A set of underlying services required during domain processing. */
 public interface DomainProcessorDelegate extends CoreDelegate {
-
-  /**
-   * Returns a factory that creates a step to wait for a pod in the specified namespace to be ready.
-   *
-   * @param namespace the namespace for the pod
-   * @return a step-creating factory
-   */
-  PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace);
-
-  /**
-   * Returns a factory that creates a step to wait for a pod in the specified namespace to be ready.
-   *
-   * @param namespace the namespace for the pod
-   * @return a step-creating factory
-   */
-  JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace);
-
-  /**
-   * Returns a factory that creates a step to wait for a pvc in the specified namespace to be bound.
-   *
-   * @return a step-creating factory
-   */
-  PvcAwaiterStepFactory getPvcAwaiterStepFactory();
 
   /**
    * Returns true if the namespace is running.
