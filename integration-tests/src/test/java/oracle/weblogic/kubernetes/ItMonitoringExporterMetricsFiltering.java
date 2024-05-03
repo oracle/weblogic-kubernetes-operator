@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -36,11 +38,20 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_ALERT_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -135,7 +146,7 @@ class ItMonitoringExporterMetricsFiltering {
    */
   @BeforeAll
 
-  public void initAll(@Namespaces(4) List<String> namespaces) {
+  public void initAll(@Namespaces(4) List<String> namespaces) throws IOException {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
@@ -174,6 +185,9 @@ class ItMonitoringExporterMetricsFiltering {
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, modelList,
         STICKYSESS_APP_NAME, SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     host = formatIPv6Host(K8S_NODEPORT_HOST);
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+    }
 
     if (!OKD) {
       // install and verify Traefik
@@ -511,15 +525,27 @@ class ItMonitoringExporterMetricsFiltering {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
-      String promHelmValuesFileDir = Paths.get(RESULTS_ROOT,this.getClass().getSimpleName(),
+      String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
           "prometheus" + releaseSuffix).toString();
-      promHelmParams = installAndVerifyPrometheus(releaseSuffix,
-          monitoringNS,
-          promChartVersion,
-          prometheusRegexValue, promHelmValuesFileDir);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir, null,
+            IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_NODEPORT, IT_MONITORINGEXPORTERMF_ALERT_HTTP_NODEPORT);
+      } else {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir);
+      }
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       String host = formatIPv6Host(K8S_NODEPORT_HOST);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+        nodeportPrometheus = IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_HOSTPORT;
+      }
       hostPortPrometheus = host + ":" + nodeportPrometheus;
 
       if (OKE_CLUSTER_PRIVATEIP) {
@@ -542,7 +568,8 @@ class ItMonitoringExporterMetricsFiltering {
     // create ingress rules with non-tls host routing, tls host routing and path routing for Traefik
 
     createIngressPathRouting(monitoringNS, "/api",
-        prometheusReleaseName + "-server", 80, ingressClassName);
+        prometheusReleaseName + "-server", 80, ingressClassName, prometheusReleaseName
+        + "." + monitoringNS);
 
   }
 
@@ -683,7 +710,8 @@ class ItMonitoringExporterMetricsFiltering {
       Thread.sleep(20 * 1000);
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
       checkMetricsViaPrometheus(checkMetricsPrometheusString,
-          expectedValue, hostPortPrometheus);
+          expectedValue, hostPortPrometheus, prometheusReleaseName
+          + "." + monitoringNS);
     }
   }
 
@@ -733,18 +761,25 @@ class ItMonitoringExporterMetricsFiltering {
   }
 
 
-  private static void installTraefikIngressController() {
+  private static void installTraefikIngressController() throws IOException {
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
-    traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
-    traefikHelmParams = traefikParams.getHelmParams();
-    ingressClassName = traefikParams.getIngressClassName();
+    if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+      traefikHelmParams = traefikParams.getHelmParams();
+      ingressClassName = traefikParams.getIngressClassName();
+    } else {
+      ingressClassName = Files.readString(INGRESS_CLASS_FILE_NAME);
+    }
   }
 
   private int getTraefikLbNodePort(boolean isHttps) {
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      return isHttps ? TRAEFIK_INGRESS_HTTPS_HOSTPORT : TRAEFIK_INGRESS_HTTP_HOSTPORT;
+    }
     logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
-    return assertDoesNotThrow(() ->
-            getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
+    return assertDoesNotThrow(()
+        -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
   }
 }
