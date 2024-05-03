@@ -100,6 +100,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiInOpPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
@@ -465,7 +466,8 @@ public class CommonTestUtils {
                                            String myWebAppName,
                                            String curlCmdForWLDFApp,
                                            String curlCmd,
-                                           List<String> expectedServerNames) {
+                                           List<String> expectedServerNames,
+                                           String... args) {
     LoggingFacade logger = getLogger();
     // get the original managed server pod creation timestamp before scale
     List<OffsetDateTime> listOfPodCreationTimestamp = new ArrayList<>();
@@ -482,13 +484,25 @@ public class CommonTestUtils {
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
         clusterName, domainUid, domainNamespace, replicasAfterScale);
     if (withRestApi) {
-      assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
-          replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
-          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
-              clusterName, domainUid, domainNamespace))
-          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
-              clusterName, domainUid, domainNamespace))
-          .isTrue();
+      if (OKE_CLUSTER && args != null && args.length > 0) {
+        String operatorPodName = (args == null || args.length == 0) ? null : args[0];
+        int opExtPort = 8081;
+        assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApiInOpPod(domainUid, clusterName,
+            replicasAfterScale, operatorPodName, opExtPort, opNamespace, opServiceAccount)))
+            .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
+                clusterName, domainUid, domainNamespace))
+            .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
+                clusterName, domainUid, domainNamespace))
+            .isTrue();
+      } else {
+        assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
+            replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
+            .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
+                clusterName, domainUid, domainNamespace))
+            .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
+                clusterName, domainUid, domainNamespace))
+            .isTrue();
+      }
     } else if (withWLDF) {
       // scale the cluster using WLDF policy
       assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
@@ -1337,7 +1351,7 @@ public class CommonTestUtils {
    * @return formatted for ipv6
    */
   public static String formatIPv6Host(String hostname) {
-    return hostname.contains(":") ? "[" + hostname + "]" : hostname;
+    return hostname.contains(":") ? hostname.contains("[") ? hostname : "[" + hostname + "]" : hostname;
   }
 
   /**
@@ -2359,7 +2373,6 @@ public class CommonTestUtils {
    * @param port container port of the service
    * @param annoations ingress annotations
    * @param tlsList list of tls secrets
-   * @param isSecureMode if TLS
    * @return hostheader host header
    */
   public static String createIngressHostRouting(String domainNamespace, String domainUid,
@@ -2386,7 +2399,7 @@ public class CommonTestUtils {
             .paths(Collections.singletonList(httpIngressPath)));
     ingressRules.add(ingressRule);
 
-    String ingressName = domainNamespace + "-" + domainUid + "-" + serviceName + '-' + port;
+    String ingressName = domainNamespace + "-" + domainUid + "-" + serviceName + "-" + port;
     assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annoations,
         Files.readString(INGRESS_CLASS_FILE_NAME), ingressRules, tlsList));
 
@@ -2455,9 +2468,52 @@ public class CommonTestUtils {
    * @param serviceName name of the service for which to create ingress routing
    * @param port container port of the service
    * @param ingressClassName ingress class name
+   * @param host ingress host name
    */
   public static void createIngressPathRouting(String namespace, String path,
-                                              String serviceName, int port, String ingressClassName) {
+                                              String serviceName, int port, String ingressClassName,
+                                              String host) {
+    // create an ingress in domain namespace
+    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
+        .path(path)
+        .pathType("Prefix")
+        .backend(new V1IngressBackend()
+            .service(new V1IngressServiceBackend()
+                .name(serviceName)
+                .port(new V1ServiceBackendPort().number(port)))
+        );
+
+    // create ingress rule
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    V1IngressRule ingressRule = new V1IngressRule()
+        .host(host)
+        .http(new V1HTTPIngressRuleValue()
+            .paths(Collections.singletonList(httpIngressPath)));
+    ingressRules.add(ingressRule);
+
+    String ingressName = namespace + "-" + serviceName;
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null,
+        ingressClassName, ingressRules, null));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
+        .contains(ingressName);
+    getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
+  }
+
+  /**
+   * Create ingress resource for a single service.
+   *
+   * @param namespace namespace in which the service exists
+   * @param path path prefix
+   * @param serviceName name of the service for which to create ingress routing
+   * @param port container port of the service
+   * @param ingressClassName ingress class name
+   */
+  public static void createIngressPathRouting(String namespace, String path,
+                                                     String serviceName, int port, String ingressClassName) {
     // create an ingress in domain namespace
     V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
         .path(path)

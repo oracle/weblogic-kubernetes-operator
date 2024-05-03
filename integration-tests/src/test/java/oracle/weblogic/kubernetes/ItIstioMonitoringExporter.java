@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_ISTIOMONITORINGEXPORTER_PROM_HTTP_CONAINERPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_ISTIOMONITORINGEXPORTER_PROM_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ISTIOMONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ISTIOMONITORINGEXPORTER_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -146,7 +146,7 @@ class ItIstioMonitoringExporter {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
-    prometheusPort = IT_ISTIOMONITORINGEXPORTER_PROM_HTTP_CONAINERPORT;
+    prometheusPort = IT_ISTIOMONITORINGEXPORTER_PROMETHEUS_HTTP_NODEPORT;
   }
 
   /**
@@ -232,7 +232,7 @@ class ItIstioMonitoringExporter {
       if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !OCNE) {
         try {
           hostPortPrometheus = InetAddress.getLocalHost().getHostAddress()
-              + ":" + IT_ISTIOMONITORINGEXPORTER_PROM_HTTP_HOSTPORT;
+              + ":" + IT_ISTIOMONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
         } catch (UnknownHostException ex) {
           logger.severe(ex.getLocalizedMessage());
         }

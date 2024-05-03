@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +38,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,6 +62,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -77,15 +82,15 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -145,6 +150,8 @@ class ItUsabilityOperatorHelmChart {
   private String adminSvcExtRouteHost = null;
 
   private static LoggingFacade logger = null;
+  private static String hostHeader;
+  private static int adminPort = 7001;
 
   /**
    * Get namespaces for operator, domain.
@@ -230,7 +237,7 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("install operator helm chart and domain, "
       + " then uninstall operator helm chart and verify the domain is still running")
-  void testDeleteOperatorButNotDomain() {
+  void testDeleteOperatorButNotDomain() throws UnknownHostException {
     try {
       // install and verify operator
       logger.info("Installing and verifying operator");
@@ -863,7 +870,7 @@ class ItUsabilityOperatorHelmChart {
               checkPodExists(managedServerPodName2, domain5Uid, domain4Namespace),
           "operator failed to manage domain2, scaling was not succeeded");
 
-      logger.info("Domain4 scaled to 3 servers");
+      logger.info("Domain5 scaled to 3 servers");
 
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain4Uid, domain4Namespace,
@@ -912,17 +919,16 @@ class ItUsabilityOperatorHelmChart {
   }
 
   private boolean createVerifyDomain(String domainNamespace, String domainUid) {
-
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
-    createAndVerifyMiiDomain(domainNamespace, domainUid);
+    assertDoesNotThrow(() -> createAndVerifyMiiDomain(domainNamespace, domainUid));
     return true;
   }
 
   /**
    * Create a model in image domain and verify the domain pods are ready.
    */
-  private void createAndVerifyMiiDomain(String domainNamespace, String domainUid) {
+  private void createAndVerifyMiiDomain(String domainNamespace, String domainUid) throws UnknownHostException {
 
     // get the pre-built image created by IntegrationTestWatcher
     String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
@@ -974,7 +980,7 @@ class ItUsabilityOperatorHelmChart {
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
-                        .nodePort(getNextFreePort()))))
+                        .nodePort(0))))
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(280L)
                 .model(new Model()
@@ -1033,6 +1039,12 @@ class ItUsabilityOperatorHelmChart {
           managedServerPodName, domainNamespace);
       checkServiceExists(managedServerPodName, domainNamespace);
     }
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(domainNamespace, domainUid, ADMIN_SERVER_NAME_BASE, adminPort);
+      assertDoesNotThrow(() -> verifyAdminServerRESTAccess(InetAddress.getLocalHost().getHostAddress(), 
+          TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    }     
     //check the access to managed server mbean via rest api
     checkManagedServerConfiguration(domainNamespace, domainUid);
   }
@@ -1256,35 +1268,28 @@ class ItUsabilityOperatorHelmChart {
    * @param managedServer name of the managed server
    * @returns true if MBEAN is found otherwise false
    **/
-  private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) {
+  private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) 
+      throws UnknownHostException {
     ExecResult result;
     String adminServerPodName = domainUid + adminServerPrefix;
     String managedServer = "managed-server1";
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuilder checkCluster = new StringBuilder("status=$(curl -g --user ")
-        .append(ADMIN_USERNAME_DEFAULT)
-        .append(":")
-        .append(ADMIN_PASSWORD_DEFAULT)
-        .append(" ")
-        .append("http://")
-        .append(hostAndPort)
-        .append("/management/tenant-monitoring/servers/")
-        .append(managedServer)
-        .append(" --silent --show-error ")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
-    try {
-      result = exec(new String(checkCluster), true);
-    } catch (Exception ex) {
-      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
-      return false;
+
+    Map<String, String> httpHeaders = new HashMap<>();
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      httpHeaders.put("host", domainNamespace + "." + domainUid + "." + ADMIN_SERVER_NAME_BASE);
+      hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
     }
-    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    return result.stdout().equals("200");
+    httpHeaders.put("Authorization", ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
+    String url = "http://" + hostAndPort + "/management/tenant-monitoring/servers/" + managedServer;
+    testUntil(() -> {
+      HttpResponse<String> response = OracleHttpClient.get(url, httpHeaders, true);
+      return (response.statusCode() == 200 && response.body().contains("HEALTH_OK"));
+    }, logger, "WebLogic managed server to be running {0}", managedServer);
+    return true;
   }
 
   private void cleanUpDomainSecrets(String domainNamespace) {

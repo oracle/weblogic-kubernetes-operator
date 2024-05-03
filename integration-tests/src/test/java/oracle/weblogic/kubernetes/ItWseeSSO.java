@@ -42,9 +42,9 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.ITWSEESSONGINX_INGRESS_HTTPS_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.ITWSEESSONGINX_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.ITWSEESSONGINX_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -172,8 +172,8 @@ class ItWseeSSO {
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
     if (!OKD) {
       // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, ITWSEESSONGINX_INGRESS_HTTP_NODEPORT,
-          ITWSEESSONGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, IT_WSEESSONGINX_INGRESS_HTTP_NODEPORT,
+          IT_WSEESSONGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
 
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       logger.info("NGINX service name: {0}", nginxServiceName);
@@ -257,7 +257,7 @@ class ItWseeSSO {
       if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
         // to access app url in podman we have to use mapped nodeport and localhost
         String url = "http://" + formatIPv6Host(InetAddress.getLocalHost().getHostAddress())
-            + ":" + ITWSEESSONGINX_INGRESS_HTTP_HOSTPORT + appURI;
+            + ":" + IT_WSEESSONGINX_INGRESS_HTTP_HOSTPORT + appURI;
         assertEquals(200, OracleHttpClient.get(url, true).statusCode());
         // to access app url inside admin pod we have to use nodehost and nodeport
         return "http://" + K8S_NODEPORT_HOST + ":" + serviceTestNodePort + appURI;

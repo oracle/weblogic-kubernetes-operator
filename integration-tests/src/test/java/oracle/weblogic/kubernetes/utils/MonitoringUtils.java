@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,6 +69,7 @@ import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
@@ -88,6 +91,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
@@ -234,6 +238,7 @@ public class MonitoringUtils {
         .execute());
   }
 
+
   /**
    * Check metrics using Prometheus.
    *
@@ -242,13 +247,45 @@ public class MonitoringUtils {
    * @param hostPortPrometheus host:nodePort for prometheus
    * @throws Exception if command to check metrics fails
    */
-  public static void checkMetricsViaPrometheus(String searchKey, String expectedVal, String hostPortPrometheus)
+  public static void checkMetricsViaPrometheus(String searchKey, String expectedVal,
+                                               String hostPortPrometheus)
       throws Exception {
 
     LoggingFacade logger = getLogger();
     // url
     String curlCmd =
-        String.format("curl -g --silent --show-error --noproxy '*'  http://%s/api/v1/query?query=%s",
+        String.format("curl -g --silent --show-error --noproxy '*'  -H 'host: *'"
+                + " http://%s/api/v1/query?query=%s",
+            hostPortPrometheus, searchKey);
+
+    logger.info("Executing Curl cmd {0}", curlCmd);
+    logger.info("Checking searchKey: {0}", searchKey);
+    logger.info(" expected Value {0} ", expectedVal);
+    testUntil(
+        searchForKey(curlCmd, expectedVal),
+        logger,
+        "Check prometheus metric {0} against expected {1}",
+        searchKey,
+        expectedVal);
+  }
+
+  /**
+   * Check metrics using Prometheus.
+   *
+   * @param searchKey   - metric query expression
+   * @param expectedVal - expected metrics to search
+   * @param hostPortPrometheus host:nodePort for prometheus
+   * @throws Exception if command to check metrics fails
+   */
+  public static void checkMetricsViaPrometheus(String searchKey, String expectedVal,
+                                               String hostPortPrometheus, String ingressHost)
+      throws Exception {
+
+    LoggingFacade logger = getLogger();
+    // url
+    String curlCmd =
+        String.format("curl -g --silent --show-error --noproxy '*'  -H 'host: " + ingressHost + "'"
+                + " http://%s/api/v1/query?query=%s",
             hostPortPrometheus, searchKey);
 
     logger.info("Executing Curl cmd {0}", curlCmd);
@@ -360,6 +397,7 @@ public class MonitoringUtils {
    *                            default is regex: default;domain1
    * @param promHelmValuesFileDir path to prometheus helm values file directory
    * @param webhookNS namespace for webhook namespace
+   * @param ports optional prometheus and alert manager ports
    * @return the prometheus Helm installation parameters
    */
   public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
@@ -367,7 +405,8 @@ public class MonitoringUtils {
                                                       String promVersion,
                                                       String prometheusRegexValue,
                                                       String promHelmValuesFileDir,
-                                                      String webhookNS) {
+                                                      String webhookNS,
+                                                      int...ports) {
     LoggingFacade logger = getLogger();
     String prometheusReleaseName = "prometheus" + promReleaseSuffix;
     logger.info("create a staging location for prometheus scripts");
@@ -436,6 +475,10 @@ public class MonitoringUtils {
     }
     int promServerNodePort = getNextFreePort();
     int alertManagerNodePort = getNextFreePort();
+    if (ports.length != 0 && KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      promServerNodePort = ports[0];
+      alertManagerNodePort = ports[1];
+    }
 
     assertTrue(imageRepoLogin(TestConstants.BASE_IMAGES_REPO,
         BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), WLSIMG_BUILDER + " login failed");
@@ -1153,7 +1196,8 @@ public class MonitoringUtils {
    * @param replicaCount number of managed servers
    * @param nodeport  nginx nodeport
    */
-  public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount, int nodeport) {
+  public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount, 
+      int nodeport) throws UnknownHostException {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -1162,6 +1206,9 @@ public class MonitoringUtils {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      host = InetAddress.getLocalHost().getHostAddress();
+    }
     String curlCmd =
         String.format("curl -g --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
             nginxHost,

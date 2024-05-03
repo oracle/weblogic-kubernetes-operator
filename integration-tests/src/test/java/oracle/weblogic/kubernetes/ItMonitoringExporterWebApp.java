@@ -1,9 +1,11 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -43,11 +45,21 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_ALERT_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -151,7 +163,7 @@ class ItMonitoringExporterWebApp {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) throws UnknownHostException {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
@@ -193,16 +205,30 @@ class ItMonitoringExporterWebApp {
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
     if (!OKD) {
       // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      if (!OKE_CLUSTER_PRIVATEIP) {
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+            IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_NODEPORT, 
+            IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_NODEPORT);
+      } else {
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace,
+            0,0);
+      }
 
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
           ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST;
       logger.info("NGINX service name: {0}", nginxServiceName);
-      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        nodeportshttp = IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_HOSTPORT;
+        nodeportshttps = IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_HOSTPORT;
+        host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      } else {
+        nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+        nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      }
     }
     logger.info("NGINX http node port: {0}", nodeportshttp);
     logger.info("NGINX https node port: {0}", nodeportshttps);
@@ -211,8 +237,6 @@ class ItMonitoringExporterWebApp {
     clusterNameMsPortMap.put(cluster2Name, managedServerPort);
     clusterNames.add(cluster1Name);
     clusterNames.add(cluster2Name);
-
-    String host = formatIPv6Host(K8S_NODEPORT_HOST);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/", host, nodeportshttp);
     if (OKE_CLUSTER_PRIVATEIP) {
@@ -425,14 +449,27 @@ class ItMonitoringExporterWebApp {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
       String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
               "prometheus" + releaseSuffix).toString();
-      promHelmParams = installAndVerifyPrometheus(releaseSuffix,
-              monitoringNS,
-              promChartVersion,
-              prometheusRegexValue, promHelmValuesFileDir);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir, null,
+            IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_NODEPORT, IT_MONITORINGEXPORTERWEBAPP_ALERT_HTTP_NODEPORT);
+      } else {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir);
+      }
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
-      nodeportPrometheus = promHelmParams.getNodePortServer();
       String host = formatIPv6Host(K8S_NODEPORT_HOST);
+      nodeportPrometheus = promHelmParams.getNodePortServer();
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        nodeportPrometheus = IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_HOSTPORT;
+        host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      }
+
       hostPortPrometheus = host + ":" + nodeportPrometheus;
       if (OKE_CLUSTER_PRIVATEIP) {
         hostPortPrometheus = ingressIP;
@@ -443,7 +480,9 @@ class ItMonitoringExporterWebApp {
       }
       String ingressClassName = nginxHelmParams.getIngressClassName();
       createIngressPathRouting(monitoringNS, "/api",
-          prometheusReleaseName + "-server", 80, ingressClassName);
+          prometheusReleaseName + "-server", 80, ingressClassName,
+          prometheusReleaseName
+              + "." + monitoringNS);
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -626,7 +665,8 @@ class ItMonitoringExporterWebApp {
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
       checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22"
               + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-          cluster1Name + "-managed-server1", hostPortPrometheus);
+          cluster1Name + "-managed-server1", hostPortPrometheus, prometheusReleaseName
+              + "." + monitoringNS);
     }
 
   }
@@ -648,7 +688,9 @@ class ItMonitoringExporterWebApp {
     if (!OKD) {
       String sessionAppPrometheusSearchKey =
           "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus,
+          prometheusReleaseName
+              + "." + monitoringNS);
     }
   }
 
@@ -789,7 +831,8 @@ class ItMonitoringExporterWebApp {
     assertFalse(page.asNormalizedText().contains("metricsNameSnakeCase"));
     if (!OKD) {
       String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
+      checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus, prometheusReleaseName
+          + "." + monitoringNS);
     }
   }
 
@@ -811,7 +854,8 @@ class ItMonitoringExporterWebApp {
 
       String prometheusSearchKey1 =
           "heap_free_current";
-      checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1", hostPortPrometheus);
+      checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1", hostPortPrometheus, prometheusReleaseName
+          + "." + monitoringNS);
     }
   }
 
@@ -829,7 +873,9 @@ class ItMonitoringExporterWebApp {
     assertTrue(page.asNormalizedText().contains("domainQualifier"));
     if (!OKD) {
       String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"", hostPortPrometheus);
+      checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"", hostPortPrometheus,
+          prometheusReleaseName
+              + "." + monitoringNS);
     }
   }
 

@@ -1256,7 +1256,7 @@ public class CommonMiiTestUtils {
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       String channel = "internal-t3";
-      int port = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+      int port = getServicePort(domainNamespace, adminServerPodName,
           sslChannelName.isEmpty() ? channel : sslChannelName);
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;

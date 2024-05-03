@@ -49,9 +49,9 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ITHPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.ITHPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.ITHPACUSTOMNGINX_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_HPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_HPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_HPACUSTOMNGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
@@ -222,8 +222,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     );
 
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, ITHPACUSTOMNGINX_INGRESS_HTTP_NODEPORT,
-        ITHPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, IT_HPACUSTOMNGINX_INGRESS_HTTP_NODEPORT,
+        IT_HPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
 
     String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
@@ -238,7 +238,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       } catch (UnknownHostException ex) {
         logger.severe(ex.getLocalizedMessage());
       }
-      nodeportshttp = ITHPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
+      nodeportshttp = IT_HPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
     }
 
     // create cluster resouce with limits and requests in serverPod
@@ -314,7 +314,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       } catch (UnknownHostException ex) {
         logger.severe(ex.getLocalizedMessage());
       }
-      nodeportshttp = ITHPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
+      nodeportshttp = IT_HPACUSTOMNGINX_INGRESS_HTTP_HOSTPORT;
       hostPort = host + ":" + nodeportshttp;
     }    
     String curlCmd =
