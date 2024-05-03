@@ -475,6 +475,9 @@ public class OperatorUtils {
         .domainNamespaces(Arrays.asList(domainNamespace))
         .javaLoggingLevel(loggingLevel)
         .serviceAccount(opServiceAccount);
+    if (System.getProperty("OPERATOR_LOG_LEVEL") != null && !System.getProperty("OPERATOR_LOG_LEVEL").isBlank()) {
+      opParams.javaLoggingLevel(System.getProperty("OPERATOR_LOG_LEVEL").trim());
+    }
     
     if (webhookOnly) {
       opParams.webHookOnly(webhookOnly);
@@ -680,6 +683,9 @@ public class OperatorUtils {
         .domainNamespaces(Arrays.asList(domainNamespace))
         .javaLoggingLevel(loggingLevel)
         .serviceAccount(opServiceAccount);
+    if (System.getProperty("OPERATOR_LOG_LEVEL") != null && !System.getProperty("OPERATOR_LOG_LEVEL").isBlank()) {
+      opParams.javaLoggingLevel(System.getProperty("OPERATOR_LOG_LEVEL").trim());
+    }    
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
