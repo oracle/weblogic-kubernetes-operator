@@ -395,72 +395,86 @@ nodes:
   - role: worker
     image: ${kind_image}
     extraPortMappings:
-      - containerPort: 30880
-        hostPort: 2080
-        protocol: TCP
-      - containerPort: 30443
-        hostPort: 2443
-        protocol: TCP
-      - containerPort: 31880
-        hostPort: 2180
-        protocol: TCP
-      - containerPort: 31443
-        hostPort: 2543
-      - containerPort: 30881
-        hostPort: 2081
-        protocol: TCP
-      - containerPort: 30444
-        hostPort: 2444
-        protocol: TCP
+      - containerPort: 30511
+        hostPort: 1511    
       - containerPort: 32480
         hostPort: 2480
       - containerPort: 32490
-        hostPort: 2490
-      - containerPort: 32156
+        hostPort: 2490    
+      - containerPort: 30080
+        hostPort: 2080
+      - containerPort: 30443
+        hostPort: 2043
+      - containerPort: 30180
+        hostPort: 2090
+      - containerPort: 30143
+        hostPort: 2053
+      - containerPort: 31000
+        hostPort: 2100
+      - containerPort: 31004
+        hostPort: 2104
+      - containerPort: 31008
+        hostPort: 2108
+      - containerPort: 31012
+        hostPort: 2112
+      - containerPort: 31016
+        hostPort: 2116
+      - containerPort: 31020
+        hostPort: 2120
+      - containerPort: 31024
+        hostPort: 2124
+      - containerPort: 31028
+        hostPort: 2128
+      - containerPort: 31032
+        hostPort: 2132
+      - containerPort: 31036
+        hostPort: 2136
+      - containerPort: 31040
+        hostPort: 2140
+      - containerPort: 31044
+        hostPort: 2144
+      - containerPort: 31048
+        hostPort: 2148
+      - containerPort: 31052
+        hostPort: 2152
+      - containerPort: 31056
         hostPort: 2156
-      - containerPort: 30511
-        hostPort: 1511
-      - containerPort: 32159
+      - containerPort: 31060
         hostPort: 2160
-      - containerPort: 32169
+      - containerPort: 31064
+        hostPort: 2164
+      - containerPort: 31068
+        hostPort: 2168
+      - containerPort: 31072
         hostPort: 2172
-        protocol: TCP
-      - containerPort: 32170
-        hostPort: 2173
-        protocol: TCP
-      - containerPort: 32189
-        hostPort: 2182
-        protocol: TCP
-      - containerPort: 32185
-        hostPort: 2175
-        protocol: TCP
-      - containerPort: 32143
-        hostPort: 2143
-        protocol: TCP
-      - containerPort: 32343
-        hostPort: 2343
-        protocol: TCP
-      - containerPort: 30538
-        hostPort: 2538
-        protocol: TCP
-      - containerPort: 30544
-        hostPort: 2539
-        protocol: TCP
-      - containerPort: 32331
-        hostPort: 2331
-        protocol: TCP
-      - containerPort: 31781
-        hostPort: 2781
-        protocol: TCP
-      - containerPort: 31744
-        hostPort: 2782
-        protocol: TCP	
-      - containerPort: 31785
-        hostPort: 2785
-        protocol: TCP
-      - containerPort: 31746
-        hostPort: 2786
-        protocol: TCP
+      - containerPort: 31076
+        hostPort: 2176
+      - containerPort: 31080
+        hostPort: 2180
+      - containerPort: 31084
+        hostPort: 2184
+      - containerPort: 31088
+        hostPort: 2188
+      - containerPort: 31092
+        hostPort: 2192
+      - containerPort: 31096 
+        hostPort: 2196
+      - containerPort: 31100
+        hostPort: 2200
+      - containerPort: 31104 
+        hostPort: 2204
+      - containerPort: 31108
+        hostPort: 2208
+      - containerPort: 31112
+        hostPort: 2212
+      - containerPort: 31116
+        hostPort: 2216
+      - containerPort: 31120
+        hostPort: 2220
+      - containerPort: 31124
+        hostPort: 2224
+      - containerPort: 31128
+        hostPort: 2228
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}

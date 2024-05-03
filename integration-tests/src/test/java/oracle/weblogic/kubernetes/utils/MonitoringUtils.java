@@ -68,9 +68,8 @@ import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_ALERT_HTTP_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
@@ -92,6 +91,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
@@ -397,6 +397,7 @@ public class MonitoringUtils {
    *                            default is regex: default;domain1
    * @param promHelmValuesFileDir path to prometheus helm values file directory
    * @param webhookNS namespace for webhook namespace
+   * @param ports optional prometheus and alert manager ports
    * @return the prometheus Helm installation parameters
    */
   public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
@@ -404,7 +405,8 @@ public class MonitoringUtils {
                                                       String promVersion,
                                                       String prometheusRegexValue,
                                                       String promHelmValuesFileDir,
-                                                      String webhookNS) {
+                                                      String webhookNS,
+                                                      int...ports) {
     LoggingFacade logger = getLogger();
     String prometheusReleaseName = "prometheus" + promReleaseSuffix;
     logger.info("create a staging location for prometheus scripts");
@@ -473,10 +475,9 @@ public class MonitoringUtils {
     }
     int promServerNodePort = getNextFreePort();
     int alertManagerNodePort = getNextFreePort();
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      promServerNodePort = IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_NODEPORT;
-      alertManagerNodePort = IT_MONITORINGEXPORTER_ALERT_HTTP_NODEPORT;
+    if (ports.length != 0 && KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      promServerNodePort = ports[0];
+      alertManagerNodePort = ports[1];
     }
 
     assertTrue(imageRepoLogin(TestConstants.BASE_IMAGES_REPO,
@@ -1205,8 +1206,7 @@ public class MonitoringUtils {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       host = InetAddress.getLocalHost().getHostAddress();
     }
     String curlCmd =
