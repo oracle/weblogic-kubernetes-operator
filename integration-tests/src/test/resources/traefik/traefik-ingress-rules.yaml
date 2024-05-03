@@ -1,7 +1,7 @@
 # Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -19,7 +19,7 @@ spec:
       name: @domain1uid@-cluster-cluster-1
       port: 7100
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -39,7 +39,7 @@ spec:
   tls:
      secretName: @domain1uid@-traefik-tls-secret
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -57,7 +57,7 @@ spec:
       name: @domain2uid@-cluster-cluster-1
       port: 7100
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -77,7 +77,7 @@ spec:
   tls:
      secretName: @domain2uid@-tls-secret
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -95,7 +95,7 @@ spec:
       name: @domain1uid@-admin-server
       port: 7001
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -113,7 +113,7 @@ spec:
       name: @domain2uid@-admin-server
       port: 7001
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -132,7 +132,7 @@ spec:
       name: @domain1uid@-cluster-cluster-1
       port: 7100
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: middleware-domain1
@@ -142,7 +142,7 @@ spec:
     regex: ^/domain1(.*)
     replacement: /$1
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
@@ -161,7 +161,7 @@ spec:
       name: @domain2uid@-cluster-cluster-1
       port: 7100
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: middleware-domain2

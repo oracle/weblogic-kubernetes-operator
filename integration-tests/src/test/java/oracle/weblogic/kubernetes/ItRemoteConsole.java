@@ -38,15 +38,15 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_REMOTECONSOLENGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWai
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
@@ -381,19 +382,15 @@ class ItRemoteConsole {
     logger.info("nginxServiceName is {0}", nginxServiceName);
 
     if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
-      nginxNodePort = NGINX_INGRESS_HTTP_HOSTPORT;
+      nginxNodePort = IT_REMOTECONSOLENGINX_INGRESS_HTTP_HOSTPORT;
     } else if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
         "Getting Nginx loadbalancer service node port failed");
     }
     logger.info("nginxNodePort is {0}", nginxNodePort);
 
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    if (KIND_CLUSTER
-        && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       host = InetAddress.getLocalHost().getHostAddress();
     }
 
@@ -401,7 +398,7 @@ class ItRemoteConsole {
         ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : host + ":" + nginxNodePort;
     logger.info("nginxHostAndPort is {0}", nginxHostAndPort);
 
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + nginxHostAndPort
+    String curlCmd = "curl --noproxy '*' -g --silent --show-error --noproxy '*' http://" + nginxHostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
@@ -409,20 +406,12 @@ class ItRemoteConsole {
   }
   
   private static void installTraefikIngressController() {
-
-    String nodePortValue = null;
-    if (!OKE_CLUSTER) {
-      nodePortValue = "NodePort";
-    }
-
     if (!OKD || (KIND_CLUSTER
-        && WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
-      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0, nodePortValue)
+        && WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT))) {
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0, (OKE_CLUSTER ? null : "NodePort"))
           .getHelmParams();
     }
-
     createTraefikIngressRoutingRules(domainNamespace);
-
   }
 
   private static void installNgnixIngressController() throws UnknownHostException {
@@ -432,9 +421,9 @@ class ItRemoteConsole {
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
     } else if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("Installing Ngnix controller using http_nodeport {0}, https_nodeport {1}",
-          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+          IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT, IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT);
       nginxHelmParams = installAndVerifyNginx(nginxNamespace,
-          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+          IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT, IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT);
     }
 
     createNginxIngressPathRoutingRules();
@@ -449,7 +438,7 @@ class ItRemoteConsole {
 
     logger.info("For loadbalancer {0} hostAndPort is {0}", type, hostAndPort);
 
-    String curlCmd = "curl -g -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+    String curlCmd = "curl --noproxy '*' -g -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H "
         + "\"" + "Content-Type:application/json" + "\""
         + " --data "
@@ -463,11 +452,8 @@ class ItRemoteConsole {
   }
 
   private static String getLBhostAndPort(int nodePortOfLB, String type) {
-    String host = K8S_NODEPORT_HOST;
     String hostAndPort = null;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
     String ingressServiceName = null;
     String traefikNamespace = null;
     if (type.equalsIgnoreCase("traefik")) {
