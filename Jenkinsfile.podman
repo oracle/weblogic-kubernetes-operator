@@ -82,6 +82,10 @@ pipeline {
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
+        string(name: 'OPERATOR_LOG_LEVEL',
+               description: 'The default log level is not set',
+               defaultValue: ''
+        )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
@@ -552,7 +556,8 @@ EOF
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
                             echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config    
+                            echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
