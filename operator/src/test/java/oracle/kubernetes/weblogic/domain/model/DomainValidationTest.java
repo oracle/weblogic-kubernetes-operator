@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -92,7 +92,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms2"));
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -100,7 +100,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("managedServers", "ms1")));
   }
 
@@ -109,7 +109,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("Server-1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("server_1"));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("managedServers", "server-1")));
   }
 
@@ -120,7 +120,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withRuntimeEncryptionSecret("mysecret")
           .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("auxiliary images", "mountPath", "already in use")));
   }
 
@@ -130,7 +130,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withModelConfigMap("wdt-cm")
           .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -142,7 +142,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomainWithRuntimeEncryptionSecret(domain)
           .withAuxiliaryImages(auxiliaryImages);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("More than one auxiliary image under",
                 "'spec.configuration.model.auxiliaryImages'",
                 "sets a 'sourceWDTInstallHome'")));
@@ -158,7 +158,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPv(new InitializeDomainOnPV()
             .domain(new DomainOnPV().domainCreationImages(domainCreationImages)));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("More than one domain creation image under",
             "'spec.configuration.initializeDomainOnPV.domain.domainCreationImages'",
             "sets a 'sourceWDTInstallHome'")));
@@ -173,7 +173,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomainWithRuntimeEncryptionSecret(domain)
           .withAuxiliaryImages(auxiliaryImages);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -186,7 +186,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPv(new InitializeDomainOnPV()
             .domain(new DomainOnPV().domainCreationImages(domainCreationImages)));
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -198,7 +198,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomainWithRuntimeEncryptionSecret(domain)
           .withAuxiliaryImages(auxiliaryImages);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -211,7 +211,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPv(new InitializeDomainOnPV()
             .domain(new DomainOnPV().domainCreationImages(domainCreationImages)));
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -220,7 +220,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withWDTInstallationHome("/aux")
           .withModelHome("/aux/y");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("modelHome", "is invalid",
                 "modelHome must be outside the directory for the wdtInstallHome")));
   }
@@ -236,7 +236,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withWDTInstallationHome("/aux/y")
           .withModelHome("/aux");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("wdtInstallHome", "is invalid",
                 "wdtInstallHome must be outside the directory for the modelHome")));
   }
@@ -246,7 +246,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     addClusterWithName("cluster1");
     addClusterWithName("cluster2");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -254,8 +254,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
     addClusterWithName("cluster1");
     addClusterWithName("cluster1");
 
-    assertThat(domain.getValidationFailures(resourceLookup), hasSize(2));
-    assertTrue(domain.getValidationFailures(resourceLookup).get(0).contains("cluster1"));
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), hasSize(2));
+    assertTrue(domain.getValidationFailures(resourceLookup).failures().get(0).contains("cluster1"));
   }
 
   private void addClusterWithName(String clusterName) {
@@ -268,7 +268,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     addClusterWithName("Cluster-1");
     addClusterWithName("cluster_1");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("clusters", "cluster-1")));
   }
 
@@ -276,21 +276,21 @@ public class DomainValidationTest extends DomainValidationTestBase {
   void whenLogHomeDisabled_dontReportError() {
     configureDomain(domain).withLogHomeEnabled(false);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
   void whenPortForwardingDisabled_dontReportError() {
     configureDomain(domain).withAdminChannelPortForwardingEnabled(false);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
   void whenVolumeMountHasNonValidPath_reportError() {
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "shared/logs");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("shared/logs", "sharedlogs")));
   }
 
@@ -299,7 +299,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withLogHomeEnabled(true).withLogHome("/shared/logs/mydomain");
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "/shared/logs");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -307,7 +307,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withLogHomeEnabled(true).withLogHome("/private/log/mydomain");
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "/shared/logs");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("log home", "/private/log/mydomain")));
   }
 
@@ -315,7 +315,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   void whenNoVolumeMountHasImplicitLogHomeDirectory_reportError() {
     configureDomain(domain).withLogHomeEnabled(true);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("log home", "/shared/logs/" + UID)));
   }
 
@@ -324,7 +324,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder(
                 "The mount path", BAD_MOUNT_PATH_1, "volume1", "of domain resource", "is not valid")));
   }
@@ -334,7 +334,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withAdditionalVolumeMount("volume2", BAD_MOUNT_PATH_2);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder(
                 "The mount path", BAD_MOUNT_PATH_2, "volume2", "of domain resource", "is not valid")));
   }
@@ -344,7 +344,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withAdditionalVolumeMount("volume3", BAD_MOUNT_PATH_3);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder(
                 "The mount path", BAD_MOUNT_PATH_3, "volume3", "of domain resource", "is not valid")));
   }
@@ -354,7 +354,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -363,7 +363,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
           .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -371,7 +371,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder(
                 "The mount path", RAW_MOUNT_PATH_2, "volume1", "of domain resource", "is not valid")));
   }
@@ -383,7 +383,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .getAdminServer()
           .addAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("The mount path", BAD_MOUNT_PATH_1,
                 "volume1", "of domain resource", "is not valid")));
   }
@@ -395,7 +395,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .getAdminServer()
           .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -406,7 +406,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .getAdminServer()
           .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -416,7 +416,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .getAdminServer()
           .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
   }
 
@@ -427,7 +427,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
     info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("The mount path", "of domain resource", "is not valid")));
   }
 
@@ -438,7 +438,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .configureCluster(info,"Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
     ClusterResource cluster1 = createTestCluster("Cluster-1");
     resourceLookup.defineResource(cluster1);
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -449,7 +449,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
     ClusterResource cluster1 = createTestCluster("Cluster-1");
     resourceLookup.defineResource(cluster1);
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -459,7 +459,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
     info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
   }
 
@@ -467,7 +467,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   void whenNonReservedEnvironmentVariableSpecifiedAtDomainLevel_dontReportError() {
     configureDomain(domain).withEnvironmentVariable("testname", "testValue");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -476,7 +476,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withEnvironmentVariable("ADMIN_NAME", "testValue")
           .withEnvironmentVariable("INTROSPECT_HOME", "/shared/home/introspection");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("variables", "ADMIN_NAME", "INTROSPECT_HOME", "spec.serverPod.env", "are")));
   }
 
@@ -487,7 +487,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withEnvironmentVariable("LOG_HOME", "testValue")
           .withEnvironmentVariable("NAMESPACE", "badValue");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(
                 stringContainsInOrder("variables", "LOG_HOME", "NAMESPACE", "spec.adminServer.serverPod.env", "are")));
   }
@@ -498,7 +498,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .configureServer("ms1")
           .withEnvironmentVariable("SERVER_NAME", "testValue");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("variable", "SERVER_NAME", "spec.managedServers[ms1].serverPod.env", "is")));
   }
 
@@ -510,13 +510,13 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withEnvironmentVariable("DOMAIN_HOME", "testValue");
     info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("variable", "DOMAIN_HOME", "spec.clusters[cluster1].serverPod.env", "is")));
   }
 
   @Test
   void whenWebLogicCredentialsSecretNameFound_dontReportError() {
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -524,14 +524,14 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withWebLogicCredentialsSecret(SECRET_NAME);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
   void whenLivenessProbeSuccessThresholdValueInvalidForDomain_reportError() {
     configureDomain(domain).withDefaultLivenessProbeThresholds(2, 3);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
                 "adminServer")));
   }
@@ -544,7 +544,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withLivenessProbeSettings(5, 4, 3).withLivenessProbeThresholds(2, 3);
     info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
                 "cluster-1")));
   }
@@ -555,7 +555,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .configureServer("managed-server1")
           .withLivenessProbeSettings(5, 4, 3).withLivenessProbeThresholds(2, 3);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
                 "managed-server1")));
   }
@@ -565,7 +565,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "adminServer",
                 "is reserved", "operator")));
   }
@@ -578,7 +578,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
     info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "cluster-1",
                 "is reserved", "operator")));
   }
@@ -589,7 +589,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .configureServer("managed-server1")
           .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "managed-server1",
                 "is reserved", "operator")));
   }
@@ -600,7 +600,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withContainer(new V1Container().name("Test")
                 .ports(List.of(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), contains(stringContainsInOrder(
           "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "adminServer", "Test",
           "exceeds maximum allowed length '15'")));
   }
@@ -614,7 +614,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
                 .ports(List.of(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
     info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), contains(stringContainsInOrder(
           "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "cluster-1", "Test",
           "exceeds maximum allowed length '15'")));
   }
@@ -626,7 +626,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withContainer(new V1Container().name("Test")
                 .ports(List.of(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), contains(stringContainsInOrder(
           "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "managed-server1", "Test",
           "exceeds maximum allowed length '15'")));
   }
@@ -635,7 +635,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   void whenWebLogicCredentialsSecretNameNotFound_reportError() {
     resourceLookup.undefineResource(SECRET_NAME, V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("WebLogicCredentials", SECRET_NAME, "not found", NS)));
   }
 
@@ -644,14 +644,14 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("a-secret", V1Secret.class, NS);
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
   void whenConfigOverrideSecretSpecifiedButDoesNotExist_reportError() {
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("ConfigOverride", "override-secret", "not found", NS)));
 
   }
@@ -661,7 +661,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("override-secret", V1Secret.class, NS);
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -669,7 +669,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("overrides-cm-image", V1ConfigMap.class, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType(IMAGE);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -680,7 +680,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withRuntimeEncryptionSecret("wdt-cm-secret")
           .withDomainHomeSourceType(FROM_MODEL);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("Configuration overridesConfigMap",
                 "overrides-cm", "not supported", "FromModel")));
   }
@@ -694,7 +694,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withModelConfigMap("wdt-cm")
           .withDomainHomeSourceType(FROM_MODEL);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -704,7 +704,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withModelConfigMap("wdt-configmap")
           .withDomainHomeSourceType(FROM_MODEL);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("ConfigMap", "wdt-configmap", "spec.configuration.model.configMap",
                 "not found", NS)));
   }
@@ -714,7 +714,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withDomainHomeSourceType(IMAGE)
           .withModelConfigMap("wdt-configmap");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -722,14 +722,14 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withDomainHomeSourceType(IMAGE)
           .withRuntimeEncryptionSecret("runtime-secret");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
   void whenRuntimeEncryptionSecretUnspecified_Image_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(IMAGE);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -737,7 +737,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
           .withRuntimeEncryptionSecret("runtime-secret");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("RuntimeEncryption", "runtime-secret", "not found", NS)));
   }
 
@@ -747,14 +747,14 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withRuntimeEncryptionSecret("runtime-good-secret");
     resourceLookup.defineResource("runtime-good-secret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
   void whenRuntimeEncryptionSecretUnspecified_fromModel_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("spec.configuration.model.runtimeEncryptionSecret",
                 "must be specified", "FromModel")));
   }
@@ -767,7 +767,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("secret", "wallet-password-secret-missing", "not found", NS)));
   }
 
@@ -779,7 +779,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("secret",
                 "wallet-file-secret-missing", "not found", NS)));
   }
@@ -792,7 +792,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
     defineWalletPasswordSecretWithRequiredData("wallet-password-secret-good");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -803,7 +803,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
     resourceLookup.defineResource("wallet-password-secret-good", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OPSS wallet password secret",
             "configuration.opss.walletPasswordSecret", "wallet-password-secret-good")));
   }
@@ -816,7 +816,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
     defineWalletPasswordSecretWithRequiredData("wallet-password-secret-good");
 
-    assertThat(domain.getValidationFailures(resourceLookup),empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),empty());
   }
 
   private void defineWalletPasswordSecretWithRequiredData(String s2) {
@@ -846,7 +846,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
     resourceLookup.defineResource("wallet-file-secret-good", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -856,7 +856,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withDomainType(ModelInImageDomainType.JRF);
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(stringContainsInOrder("spec.configuration.opss.walletPasswordSecret",
                 "must be specified", "FromModel", "JRF")));
   }
@@ -871,7 +871,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
     defineWalletPasswordSecretWithRequiredData("wallet-password-secret-good");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -881,7 +881,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     resourceLookup.defineResource("wallet-file-secret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -894,7 +894,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
     resourceLookup.defineResource("wallet-file-secret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -909,7 +909,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
+    assertThat(myDomain.getValidationFailures(resourceLookup).failures(), contains(stringContainsInOrder(
           "DomainUID ", domainUID, "exceeds maximum allowed length")));
   }
 
@@ -926,7 +926,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withChannel("default");
 
     TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "introspect-domain-job");
-    assertThat(myDomain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
+    assertThat(myDomain.getValidationFailures(resourceLookup).failures(), contains(stringContainsInOrder(
           "DomainUID ", domainUID, "exceeds maximum allowed length")));
   }
 
@@ -943,7 +943,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withChannel("default");
 
     TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-job");
-    assertThat(myDomain.getValidationFailures(resourceLookup), empty());
+    assertThat(myDomain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -959,7 +959,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withChannel("default");
 
     TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
-    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
+    assertThat(myDomain.getValidationFailures(resourceLookup).failures(),  empty());
   }
 
   @Test
@@ -968,7 +968,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withFluentdConfiguration(false, null, null, null,
             null);
     domain.getValidationFailures(resourceLookup);
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("When fluentdSpecification is specified in the domain "
             + "spec, a secret containing elastic search credentials must be specified in",
             "spec.fluentdSpecification.elasticSearchCredentials")));
@@ -980,7 +980,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     setupCluster(domain, new String[] {"cluster-1"});
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
   }
 
@@ -992,7 +992,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     setupCluster(domain, new String[] {"cluster-1"});
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
   }
 
@@ -1004,7 +1004,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     setupCluster(domain, new String[] {"cluster-1"});
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
   }
 
@@ -1022,7 +1022,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain, clusters);
     setupCluster(domain2, clusters);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("cluster resource", CLUSTER_1, "it is used by", UID2)));
   }
 
@@ -1036,7 +1036,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain, new ClusterResource[] {cluster1});
     setupCluster(domain2, new ClusterResource[] {cluster2});
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1050,7 +1050,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
     setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
   }
 
@@ -1071,7 +1071,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
     setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
   }
 
@@ -1080,7 +1080,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).configureIntrospector()
         .withEnvironmentVariable(new V1EnvVar().name("Test1").value("Test1"))
         .withEnvironmentVariable(new V1EnvVar().name("Test2").value("Test2"));
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Unsupported", "environment variable", "Test1", "Test2", "defined")));
   }
 
@@ -1092,7 +1092,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withDomainCreationConfigMap("domain-creation-cm");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1102,7 +1102,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withDomainCreationConfigMap("domain-creation-cm");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("ConfigMap", "domain-creation-cm",
             "spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap",
             "not found", NS)));
@@ -1114,7 +1114,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVType(WLS)
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("secret", "wfSecret", "not found", NS)));
   }
 
@@ -1126,7 +1126,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     defineWalletPasswordSecretWithRequiredData("wpSecret");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("secret", "wfSecret", "not found", NS)));
   }
 
@@ -1138,7 +1138,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1147,7 +1147,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withDomainHomeSourceType(PERSISTENT_VOLUME)
         .withOpssWalletPasswordSecret("wpSecret");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("secret", "wpSecret", "not found", NS)));
   }
 
@@ -1158,7 +1158,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     defineWalletPasswordSecretWithRequiredData("wpSecret");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1166,7 +1166,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(new DomainOnPV()));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("secret",
             "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret", "must be specified",
             "spec.configuration.initializeDomainOnPV.domain.domainType", "JRF")));
@@ -1177,7 +1177,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVType(WLS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1189,7 +1189,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.getSecrets().stream()
         .filter(s -> isSpecifiedSecret(s, "wpSecret", NS)).findFirst().ifPresent(s -> s.setMetadata(null));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OpssWalletPassword secret", "wpSecret", "not found", NS)));
   }
 
@@ -1200,7 +1200,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
     resourceLookup.defineResource("wpSecret", V1Secret.class, "NS2");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OpssWalletPassword secret", "wpSecret", "not found", NS)));
   }
 
@@ -1211,7 +1211,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OPSS wallet password secret",
             "configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret", "wpSecret")));
   }
@@ -1223,7 +1223,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     defineWalletPasswordSecretWithRequiredData("wpSecret");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1235,7 +1235,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OPSS secrets",
             "spec.configuration.initializeDomainOnPV.domain.opss",
             "spec.configuration.opss", "JRF")));
@@ -1250,7 +1250,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OPSS secrets",
             "spec.configuration.initializeDomainOnPV.domain.opss",
             "spec.configuration.opss", "JRF")));
@@ -1266,7 +1266,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OPSS secrets",
             "spec.configuration.initializeDomainOnPV.domain.opss",
             "spec.configuration.opss", "JRF")));
@@ -1282,7 +1282,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OPSS secrets",
             "spec.configuration.initializeDomainOnPV.domain.opss",
             "spec.configuration.opss", "JRF")));
@@ -1299,7 +1299,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("OPSS secrets",
             "spec.configuration.initializeDomainOnPV.domain.opss",
             "spec.configuration.opss", "JRF")));
@@ -1311,7 +1311,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPV(getInitPvDomainWithDomainTypeWLS())
         .withModel(new Model());
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("configuration",
             "spec.configuration.model", "not allowed",
             "spec.configuration.initializeDomainOnPV",
@@ -1327,7 +1327,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPV(getInitPvDomainWithDomainTypeWLS());
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1335,7 +1335,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(new PersistentVolume()));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Persistent volume",
             "spec.configuration.initializeDomainOnPV.persistentVolume", "is invalid", "metadata.name",
             "must be specified")));
@@ -1348,7 +1348,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
             new PersistentVolume().metadata(new V1ObjectMeta().name("Test"))
                 .spec(new PersistentVolumeSpec().storageClassName("SC"))));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Persistent volume Test",
             "is invalid", "spec.capacity", "must be specified")));
   }
@@ -1360,7 +1360,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
             new PersistentVolume().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeSpec()
                 .capacity(Collections.singletonMap("storage", new Quantity("50Gi"))))));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Persistent volume Test",
             "is invalid", "spec.storageClass", "must be specified")));
   }
@@ -1370,7 +1370,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(new PersistentVolumeClaim()));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Persistent volume claim",
             "spec.configuration.initializeDomainOnPV.persistentVolumeClaim", "is invalid", "metadata.name",
             "must be specified")));
@@ -1383,7 +1383,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
             new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test"))
                 .spec(new PersistentVolumeClaimSpec().storageClassName("SC"))));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Persistent volume claim Test",
             "is invalid", "spec.resources", "must be specified")));
   }
@@ -1395,7 +1395,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
             new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
                 .resources(createResources()))));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("Persistent volume claim Test",
             "is invalid", "spec.storageClass", "must be specified")));
   }
@@ -1406,7 +1406,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withAdditionalVolumeMount("volume1", "/domain-path1")
         .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
             "volume", "and the mount path", "in entry", "volume", "are", "overlapping.")));
   }
@@ -1418,7 +1418,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withAdditionalVolumeMount("volume1", "/domain-path1/dir1")
         .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
             "volume", "and the mount path", "in entry", "volume", "are", "overlapping.")));
   }
@@ -1441,7 +1441,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withAdditionalVolumeMount("volume2", "/domain-path2");
 
-    assertThat(domain.getValidationFailures(resourceLookup),empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),empty());
   }
 
   public static V1ResourceRequirements createResources() {
@@ -1453,7 +1453,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withDomainHome("/shared/domains/mydomain");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1461,7 +1461,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withDomainHome("/private/domains/mydomain");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("domain home", "/private/domains/mydomain")));
   }
 
@@ -1471,7 +1471,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withAdditionalVolumeMount("volume2", "/private")
         .withDomainHome("/private/mydomain");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("domain home", "/private/mydomain")));
   }
 
@@ -1481,7 +1481,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withAdditionalVolumeMount("volume2", "/private")
         .withDomainHome("/private/wls/domains/mydomain");
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1494,7 +1494,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1508,7 +1508,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
@@ -1517,7 +1517,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
             new DomainOnPV().domainType(WLS).createMode(CreateIfNotExists.DOMAIN_AND_RCU)));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV.domain.createIfNotExists",
             "DomainAndRCU", "WLS")));
   }
@@ -1529,7 +1529,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
             new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
                 .resources(createResources()).storageClassName("mystoreage"))));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
             "spec.configuration.initializeDomainOnPV.persistentVolumeClaim")));
   }
@@ -1538,7 +1538,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   void whenServerPodHasNoVolumesForPVC_initDomainOnPV_reportError() {
     configuredDomainWithInitializeDomainOnPV();
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "at least one of the volumes",
             "PVC")));
   }
@@ -1552,7 +1552,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
                 .metadata(new V1ObjectMeta().name("TestPVC")).spec(new PersistentVolumeClaimSpec()
                 .resources(createResources()).storageClassName("mystoreage"))));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
+    assertThat(domain.getValidationFailures(resourceLookup).failures(),
         contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
             "spec.configuration.initializeDomainOnPV.persistentVolumeClaim", "TestPVC")));
   }
@@ -1565,14 +1565,14 @@ public class DomainValidationTest extends DomainValidationTestBase {
             new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
                 .resources(createResources()).storageClassName("mystoreage"))));
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @Test
   void whenServerPodHasPVCVolumesWhenPVCNotSpecified_initDomainOnPV_dontReportError() {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume();
 
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
+    assertThat(domain.getValidationFailures(resourceLookup).failures(), empty());
   }
 
   @SafeVarargs

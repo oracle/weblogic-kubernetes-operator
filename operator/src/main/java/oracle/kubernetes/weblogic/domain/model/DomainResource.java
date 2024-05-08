@@ -49,6 +49,7 @@ import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -964,7 +965,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   // used by the operator
-  public List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+  public ValidationResult getValidationFailures(KubernetesResourceLookup kubernetesResources) {
     return new DomainValidator().getValidationFailures(kubernetesResources);
   }
 
@@ -1038,14 +1039,18 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
   }
 
+  public static record ValidationResult(List<String> failures, boolean isDelay) {
+  }
+
   class DomainValidator extends Validator {
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
+    private boolean isDelay;
 
-    private List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+    private ValidationResult getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addFatalValidationFailures();
       addCrossReferenceValidationFailures(kubernetesResources);
-      return failures;
+      return new ValidationResult(failures, isDelay);
     }
 
     private void addCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
@@ -1542,9 +1547,17 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           .forEach(cluster -> verifyClusterExists(resourceLookup, cluster));
     }
 
+    private boolean isRecentlyCreatedDomain() {
+      return Optional.ofNullable(getMetadata()).map(V1ObjectMeta::getCreationTimestamp)
+              .map(timestamp -> timestamp.isAfter(SystemClock.now().minusSeconds(10))).orElse(false);
+    }
+
     private void verifyClusterExists(KubernetesResourceLookup resourceLookup, V1LocalObjectReference cluster) {
       if (resourceLookup.findClusterInNamespace(cluster, getNamespace()) == null) {
         failures.add(missingClusterResource(cluster.getName(), getNamespace()));
+        if (isRecentlyCreatedDomain()) {
+          isDelay = true;
+        }
       }
     }
 
@@ -1552,6 +1565,9 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
       if (secretName != null && !isSecretExists(resources.getSecrets(), secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
+        if (isRecentlyCreatedDomain()) {
+          isDelay = true;
+        }
       }
     }
 
@@ -1611,6 +1627,9 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName,
             "spec.configuration.model.configMap", getNamespace()));
+        if (isRecentlyCreatedDomain()) {
+          isDelay = true;
+        }
       }
     }
 
@@ -1621,6 +1640,9 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           && !resources.isConfigMapExists(configMapName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(configMapName,
             "spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap", getNamespace()));
+        if (isRecentlyCreatedDomain()) {
+          isDelay = true;
+        }
       }
     }
 
@@ -1629,9 +1651,15 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         if (isPVCConfigured()) {
           if (noMatchVolumeWithPVC(getInitPvDomainPVCName())) {
             failures.add(DomainValidationMessages.noMatchVolumeWithPVC(getInitPvDomainPVCName()));
+            if (isRecentlyCreatedDomain()) {
+              isDelay = true;
+            }
           }
         } else if (noVolumeWithPVC()) {
           failures.add(DomainValidationMessages.noVolumeWithPVC());
+          if (isRecentlyCreatedDomain()) {
+            isDelay = true;
+          }
         }
       }
     }
