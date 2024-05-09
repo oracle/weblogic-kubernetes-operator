@@ -135,12 +135,9 @@ class ItFmwDomainOnPVSample {
     envMap.put("OKD", "" +  OKD);
     envMap.put("KIND_CLUSTER", "" + KIND_CLUSTER);
     envMap.put("OCNE", "" + OCNE);
-
-    if (OCNE) {
-      envMap.put("OPER_IMAGE_NAME", TEST_IMAGES_PREFIX + IMAGE_NAME_OPERATOR);
-      envMap.put("DOMAIN_CREATION_IMAGE_NAME", TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME);
-      envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET_NAME);
-    }
+    envMap.put("OPER_IMAGE_NAME", TEST_IMAGES_PREFIX + IMAGE_NAME_OPERATOR);
+    envMap.put("DOMAIN_CREATION_IMAGE_NAME", TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME);
+    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET_NAME);
 
     // kind cluster uses openjdk which is not supported by image tool
     if (WIT_JAVA_HOME != null) {
@@ -231,15 +228,9 @@ class ItFmwDomainOnPVSample {
 
     // load the image to kind if using kind cluster
     String imageCreated;
-    if (KIND_REPO != null) {
-      imageCreated = DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_JRF_TAG;
-      logger.info("loading image {0} to kind", imageCreated);
-      imagePush(imageCreated);
-    } else if (OCNE) {
-      imageCreated = TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_JRF_TAG;
-      logger.info("pushing image {0} to repo", imageCreated);
-      imagePush(imageCreated);
-    }
+    imageCreated = TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_JRF_TAG;
+    logger.info("pushing image {0} to repo", imageCreated);
+    imagePush(imageCreated);
   }
 
   /**
