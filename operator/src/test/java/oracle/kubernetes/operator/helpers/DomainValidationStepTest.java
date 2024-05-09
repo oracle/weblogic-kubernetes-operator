@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
@@ -231,6 +232,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToUnknownSecret_updateStatus() {
     domain.getSpec().withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"));
+    domain.getMetadata().setCreationTimestamp(SystemClock.now().minusSeconds(20));
 
     testSupport.runSteps(domainValidationSteps);
 

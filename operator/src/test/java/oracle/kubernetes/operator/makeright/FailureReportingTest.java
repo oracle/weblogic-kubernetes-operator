@@ -191,6 +191,11 @@ class FailureReportingTest {
     executeMakeRight((String) null);
   }
 
+  private void updateDomain() {
+    removeCredentialsSecret();
+    domain.getMetadata().setCreationTimestamp(SystemClock.now().minusSeconds(20));
+  }
+
   private void removeCredentialsSecret() {
     DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
     commonConfigurator.withWebLogicCredentialsSecret("no-such-secret");
@@ -292,7 +297,7 @@ class FailureReportingTest {
     DOMAIN_VALIDATION_FAILURE {
       @Override
       Consumer<FailureReportingTest> getMutator() {
-        return FailureReportingTest::removeCredentialsSecret;
+        return FailureReportingTest::updateDomain;
       }
 
       @Override

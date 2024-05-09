@@ -139,11 +139,14 @@ public class DomainValidationSteps {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       DomainResource domain = info.getDomain();
       List<String> fatalValidationFailures = domain.getFatalValidationFailures();
-      List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
-      String errorMsg = getErrorMessage(fatalValidationFailures, validationFailures);
-      if (validationFailures.isEmpty()) {
+      DomainResource.ValidationResult validationResult
+          = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
+      if (validationResult.isDelay()) {
+        return doRequeue(packet);
+      } else if (validationResult.failures().isEmpty()) {
         return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet);
       } else {
+        String errorMsg = getErrorMessage(fatalValidationFailures, validationResult.failures());
         LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), errorMsg);
         return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(errorMsg), packet);
       }
