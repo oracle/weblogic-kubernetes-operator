@@ -2,6 +2,7 @@
 title = "Upgrade managed domains to v14.1.2.0"
 date = 2023-10-05T16:43:45-05:00
 weight = 7
+draft = true
 pre = "<b> </b>"
 description = "Upgrade managed domains to v14.1.2.0."
 +++
@@ -443,7 +444,7 @@ serverPod:
 
 ### Sample WDT model for secured production mode and SSL
 
-If you are upgrading an existing domain to 14.1.2.0 and your existing domain does not have secured production mode enabled, the operator, by default, will _disable_ secured production mode. If you want to override this behavior, you must enable it explicitly. Optionally, you can delete the existing domain and let the operator completely rebuild the domain and, by default, secured production mode will be enabled; you do not have to enable it explicitly. 
+If you are upgrading an existing domain to 14.1.2.0 and your existing domain does not have secured production mode enabled, the operator, by default, will _disable_ secured production mode. If you want to override this behavior, you must enable it explicitly. Optionally, you can delete the existing domain and let the operator completely rebuild the domain and, by default, secured production mode will be enabled; you do not have to enable it explicitly.
 
 The following is a code snippet of a WDT model for setting up secured production mode and SSL.
 
