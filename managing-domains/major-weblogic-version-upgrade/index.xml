@@ -19,14 +19,5 @@ Before the upgrade, you must do the following:
 If your domain home source type is Domain on Persistent Volume (DoPV), then back up the domain home.</description>
     </item>
     
-    <item>
-      <title>Upgrade managed domains to v14.1.2.0</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/</link>
-      <pubDate>Thu, 05 Oct 2023 16:43:45 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/</guid>
-      <description>Contents Important considerations General upgrade procedures Back up the OPSS wallet and save it in a secret Deploy a WebLogic Server pod to access the domain home on a persistent volume Upgrade the JRF database Reconfigure the domain Upgrade use cases WLS Domain on Persistent Volume FMW/JRF Domain on Persistent Volume WLS domain using Model in Image FMW/JRF domain using Model in Image Sample WDT model for secured production mode and SSL This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to v14.</description>
-    </item>
-    
   </channel>
 </rss>

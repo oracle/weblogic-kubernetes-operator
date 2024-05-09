@@ -98,7 +98,7 @@ Use a kubectl port-forward connection</description>
 The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
 Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
 For example:
-$ cd /tmp $ git clone --branch v https://github.</description>
+$ cd /tmp $ git clone --branch v4.</description>
     </item>
     
     <item>
@@ -110,7 +110,7 @@ $ cd /tmp $ git clone --branch v https://github.</description>
       <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
 Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
 For example:
-$ cd /tmp $ git clone --branch v https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
+$ cd /tmp $ git clone --branch v4.2.2 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
 For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
     </item>
     
@@ -779,7 +779,7 @@ Create a Kubernetes Secret containing the Administration Server boot credentials
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release :
+      <description>For the current production release 4.2.2 :
 Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, and 1.28.2+ (check with kubectl version).
 Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.
 Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).
@@ -894,15 +894,6 @@ documentation/latest: This documentation documentation/&amp;lt;numbered director
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/platforms/environments/</guid>
       <description>Contents Overview Important notes about specific environments Oracle Cloud Infrastructure Oracle Cloud Native Environment Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure Microsoft Azure Kubernetes Service (AKS) Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace) VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions Pricing and licensing WebLogic Kubernetes Operator WebLogic Server Oracle Linux Oracle Java WebLogic Server or Fusion Middleware Infrastructure images Additional references Overview The operator supports running on production-quality Kubernetes environments, including on-premises, cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.</description>
-    </item>
-    
-    <item>
-      <title>Upgrade managed domains to v14.1.2.0</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/</link>
-      <pubDate>Thu, 05 Oct 2023 16:43:45 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/</guid>
-      <description>Contents Important considerations General upgrade procedures Back up the OPSS wallet and save it in a secret Deploy a WebLogic Server pod to access the domain home on a persistent volume Upgrade the JRF database Reconfigure the domain Upgrade use cases WLS Domain on Persistent Volume FMW/JRF Domain on Persistent Volume WLS domain using Model in Image FMW/JRF domain using Model in Image Sample WDT model for secured production mode and SSL This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to v14.</description>
     </item>
     
     <item>
@@ -1051,7 +1042,7 @@ $ git checkout -b your-branch Make your documentation updates by editing the sou
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/overview/</guid>
-      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Using demo SSL certificates in v14.1.2.0.0 or later Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
+      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
     </item>
     
     <item>
