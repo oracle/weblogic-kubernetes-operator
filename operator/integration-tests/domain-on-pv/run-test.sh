@@ -393,8 +393,6 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
     testapp internal cluster-1 "Hello World!"
     if [ "$OKD" = "true" ]; then
       testapp OKD  cluster-1 "Hello World!" 
-    else
-      testapp traefik  cluster-1 "Hello World!"
     fi
   fi
 
