@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -90,7 +90,7 @@ initialize() {
 initialize
 
 # Get the domain in json format
-domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+domainJson=$(${kubernetesCli} get domain.v9.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
 if [ -z "${domainJson}" ]; then
   printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
   exit 1
@@ -105,7 +105,7 @@ fi
 
 getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+clusterJson=$(${kubernetesCli} get cluster.v1.weblogic.oracle ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
 if [ -z "${clusterJson}" ]; then
   printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
   exit 1
