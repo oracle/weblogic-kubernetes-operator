@@ -1349,7 +1349,8 @@ restoreAppAndLibs() {
         #   zip, the original xml in the archive may have wdt tokenized notations.
         cd ${DOMAIN_HOME} || return 1
         unzip -o ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/domainBin/*" "wlsdeploy/domainLibraries/*"  "config/*"
-        if [ $? -ne 0 ] && [ $ret -ne 11 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi
