@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -978,9 +978,9 @@ getClusterResource() {
 
   clusterReferences=$(echo ${domainJson} | jq -r .spec.clusters[].name)
   for clusterReference in ${clusterReferences}; do
-    clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .spec.clusterName)
+    clusterNameFromReference=$(${kubernetesCli} get cluster.v1.weblogic.oracle "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .spec.clusterName)
     if [ -z "${clusterNameFromReference}" ]; then
-      clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .metadata.name)
+      clusterNameFromReference=$(${kubernetesCli} get cluster.vi.weblogic.oracle "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .metadata.name)
     fi
     if [ "${clusterNameFromReference}" == "${clusterName}" ]; then
       __clusterResource=$clusterReference
@@ -1045,10 +1045,10 @@ executePatchCommand() {
   local verboseMode=$5
 
   if [ "${verboseMode}" == "true" ]; then
-    printInfo "Executing command --> ${kubernetesCli} patch domain ${domainUid} \
+    printInfo "Executing command --> ${kubernetesCli} patch domain.v9.weblogic.oracle ${domainUid} \
       -n ${domainNamespace} --type=merge --patch \"${patchJson}\""
   fi
-  ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
+  ${kubernetesCli} patch domain.v9.weblogic.oracle ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
 }
 
 #
@@ -1067,10 +1067,10 @@ executeClusterPatchCommand() {
   local verboseMode=$5
 
   if [ "${verboseMode}" == "true" ]; then
-    printInfo "Executing command --> ${kubernetesCli} patch cluster ${clusterResource} \
+    printInfo "Executing command --> ${kubernetesCli} patch cluster.v1.weblogic.oracle ${clusterResource} \
       -n ${domainNamespace} --type=merge --patch \"${patchJson}\""
   fi
-  ${kubernetesCli} patch cluster ${clusterResource} -n ${domainNamespace} --type=merge --patch "${patchJson}"
+  ${kubernetesCli} patch cluster.v1.weblogic.oracle ${clusterResource} -n ${domainNamespace} --type=merge --patch "${patchJson}"
 }
 
 # timestamp
