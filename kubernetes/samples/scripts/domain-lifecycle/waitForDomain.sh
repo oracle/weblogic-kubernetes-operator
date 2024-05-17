@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -eu
@@ -246,7 +246,7 @@ getClusterValue() {
   local ljpath="{$3}"
   local attvalue
   set +e
-  attvalue=$(${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get cluster ${cname} -o=jsonpath="$ljpath" 2>&1)
+  attvalue=$(${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get cluster.v1.weblogic.oracle ${cname} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
     if [ "$EXPECTED_STATE" = "Completed" ]; then
       trace "Error: Could not obtain '$ljpath' from cluster '${cname}' in namespace '${DOMAIN_NAMESPACE}'. Is your cluster resource deployed? Err='$attvalue'"
@@ -256,7 +256,7 @@ getClusterValue() {
       attvalue=''
     fi
   fi
-  # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get cluster ${cname} -o=jsonpath=\"$ljpath\" 2>&1"
+  # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get cluster.v1.weblogic.oracle ${cname} -o=jsonpath=\"$ljpath\" 2>&1"
   # echo "DEBUG   = '$attvalue'"
   eval "$__retvar='$attvalue'"
   set -e
