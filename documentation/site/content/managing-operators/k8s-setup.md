@@ -27,148 +27,78 @@ We have provided our hints and tips for several of these options in the followin
 
 ### Set up Kubernetes on bare compute resources in a cloud
 
-Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Cloud Infrastructure](https://github.com/oracle/terraform-kubernetes-installer).
+Follow the basic steps from the  [Terraform OKE Module Installer for Oracle Cloud Infrastructure](https://oracle-terraform-modules.github.io/terraform-oci-oke/).
 
 #### Prerequisites
 
-1. Download and install [Terraform](https://www.terraform.io/) (v0.10.3 or later).
-2. Download and install the [Terraform Provider for Oracle Cloud Infrastructure](https://github.com/terraform-providers/terraform-provider-oci) (v2.0.0 or later).
-3. Create an Terraform configuration file at  `~/.terraformrc` that specifies the path to the Oracle Cloud Infrastructure provider:
+1. Download and install the [Terraform OKE Module Installer for Oracle Cloud Infrastructure](https://github.com/oracle-terraform-modules/terraform-oci-oke).
+1. Create directory for the Terraform module:
    ```
-   providers {
-     oci = "<path_to_provider_binary>/terraform-provider-oci"
-   }
+   $ mkdir terraformmodule
+   $ cd terraformmodule
+
    ```
-4.  Ensure that you have [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed if you plan to interact with the cluster locally.
+1.  Ensure that you have [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed if you plan to interact with the cluster locally.
 
 #### Quick start
+
+The quick start uses the sample provided in [Multi-region service mesh with Istio and OKE](https://github.com/oracle-terraform-modules/terraform-oci-oke/tree/main/examples/istio-mc).
 
 1. Do a `git clone` of the Terraform Kubernetes Installer project:
 
     ```shell
-    $ git clone https://github.com/oracle/terraform-kubernetes-installer.git
+    $ git clone https://github.com/oracle-terraform-modules/terraform-oci-oke.git
     ```
-1. Initialize your project:
+1. Run the following commands:
 
     ```shell
-    $ cd terraform-kubernetes-installer
+    $ cd terraform-oci-oke/examples
+    $ mkdir okewko
+    $ cp -rf istio-mc okewko
+    $ cd okewko
     ```
+
+1.  Edit `c1.tf` and `c2.tf` to add:
+
     ```shell
-    $ terraform init
+    allow_bastion_cluster_access = true
+    bastion_is_public = true
+    control_plane_is_public = true
     ```
-
-1.  Copy the example `terraform.tvfars`:
 
     ```shell
-    $ cp terraform.example.tfvars terraform.tfvars
+    $ cp terraform.tfvars.example terraform.tfvars
     ```
 
-1.  Edit the `terraform.tvfars` file to include values for your tenancy, user, and compartment.  Optionally, edit the variables to change the `Shape` of the VMs for your Kubernetes master and workers, and your `etcd` cluster.   For example:
+1.  In the `terraform.tfvars` file, update all values with the correct paths to the keys and IDs.  
 
-     ```properties
-     #give a label to your cluster to help identify it if you have multiple
-     label_prefix="weblogic-operator-1-"
+1.  Run the commands:
 
-     #identification/authorization info
-     tenancy_ocid = "ocid1.tenancy...."
-     compartment_ocid = "ocid1.compartment...."
-     fingerprint = "..."
-     private_key_path = "/Users/username/.oci/oci_api_key.pem"
-     user_ocid = "ocid1.user..."
-
-     #shapes for your VMs
-     etcdShape = "VM.Standard1.2"
-     k8sMasterShape = "VM.Standard1.8"
-     k8sWorkerShape = "VM.Standard1.8"
-     k8sMasterAd1Count = "1"
-     k8sWorkerAd1Count = "2"
-
-     #this ingress is set to wide-open for testing **not secure**
-     etcd_ssh_ingress = "0.0.0.0/0"
-     master_ssh_ingress = "0.0.0.0/0"
-     worker_ssh_ingress = "0.0.0.0/0"
-     master_https_ingress = "0.0.0.0/0"
-     worker_nodeport_ingress = "0.0.0.0/0"
-
-     #create iscsi volumes to store your etcd and /var/lib/docker info
-     worker_iscsi_volume_create = true
-     worker_iscsi_volume_size = 100
-     etcd_iscsi_volume_create = true
-     etcd_iscsi_volume_size = 50
+     ```shell   
+     $ terraform init
+     $ terraform plan
+     $ terraform apply --auto-approve
      ```
 
-1.  Test and apply your changes:
+    This will create two OKE clusters.
 
+1.  Log in to the OCI dashboard.
+
+    a. Go to Developer Services > OKE clusters.
+
+    b. Select c1 cluster > Access Cluster.
+
+    c. Copy and paste this command to create the kubeconfig, for example:
     ```shell
-    $ terraform plan
-    ```
-    ```shell
-    $ terraform apply
-    ```
+    $ oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1...... --file $HOME/.kube/config --region us-phoenix-1 --token-version 2.0.0 --kube-endpoint PUBLIC_ENDPOINT
 
-1.  Test your cluster using the built-in script `scripts/cluster-check.sh`:
-
-    ```shell
-    $ scripts/cluster-check.sh
-    ```
-1. Output the SSH private key:
-    ```
-    # output the ssh private key for use later
-    ```
-    ```shell
-    $ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generated/instances_id_rsa && chmod 600 generated/instances_id_rsa
+    $ export KUBECONFIG= $HOME/.kube/config
     ```
 
-1. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
-
-In the current GA version, the Oracle Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only).
-If you choose to place your domain on a persistent volume,
-you must use a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes.
-Oracle recommends that you use the Oracle Cloud Infrastructure File Storage Service (or equivalent on other cloud providers).
-Alternatively, you may install an NFS server on one node and share the file system across all the nodes.
-
-{{% notice note %}} Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on Oracle Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
-{{% /notice %}}
-
-```shell
-$ terraform output worker_public_ips
-```
-```
-IP1,
-IP2
-```
-```shell
-$ terraform output worker_private_ips
-```
-```
-PRIVATE_IP1,
-PRIVATE_IP2
-```
-```shell
-$ ssh -i `pwd`/generated/instances_id_rsa opc@IP1
-```
-```
-worker-1$ sudo su -
-worker-1# yum install -y nfs-utils
-worker-1# mkdir /scratch
-worker-1# echo "/scratch PRIVATE_IP2(rw)" >> /etc/exports
-worker-1# systemctl restart nfs
-worker-1# exit
-worker-1$ exit
-# configure worker-2 to mount the share from worker-1
-```
-```shell
-$ ssh -i `pwd`/generated/instances_id_rsa opc@IP2
-```
-```
-worker-2$ sudo su -
-worker-2# yum install -y nfs-utils
-worker-2# mkdir /scratch
-worker-2# echo "PRIVATE_IP1:/scratch /scratch  nfs nfsvers=3 0 0" >> /etc/fstab
-worker-2# mount /scratch
-worker-2# exit
-worker-2$ exit
-```
+1. Verify that the cluster is accessible:
+   ```shell
+   $ kubectl get nodes
+   ```
 
 ### Install Kubernetes on your own compute resources
 
