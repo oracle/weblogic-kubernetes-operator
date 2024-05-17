@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -268,8 +268,8 @@ class ItMiiUpdateDomainConfig {
     for (int i = 0; i < envList.size(); i++) {
       logger.info("The name is: {0}, value is: {1}", envList.get(i).getName(), envList.get(i).getValue());
       if (envList.get(i).getName().equalsIgnoreCase("CUSTOM_ENV")) {
-        assertTrue(
-            envList.get(i).getValue().equalsIgnoreCase("${DOMAIN_UID}~##!'%*$(ls)"),
+        assertTrue(envList.get(i).getValue() != null
+                && envList.get(i).getValue().equalsIgnoreCase("${DOMAIN_UID}~##!'%*$(ls)"),
             "Expected value for CUSTOM_ENV variable does not mtach");
         found = true;
       }

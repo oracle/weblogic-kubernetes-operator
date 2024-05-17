@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -368,7 +368,7 @@ public class ImageUtils {
 
       if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
         // build an application archive using what is in resources/apps/APP_NAME
-        String zipFile = "";
+        String zipFile;
         if (oneArchiveContainsMultiApps) {
           for (String buildAppDirs : buildAppDirList) {
             assertTrue(buildAppArchive(appParams
@@ -549,7 +549,8 @@ public class ImageUtils {
     V1SecretList listSecrets = listSecrets(namespace);
     if (listSecrets != null) {
       for (V1Secret item : listSecrets.getItems()) {
-        if (item.getMetadata().getName().equals(secretName)) {
+        if (item.getMetadata() != null && item.getMetadata().getName() != null
+            && item.getMetadata().getName().equals(secretName)) {
           logger.info("Secret {0} already exists in namespace {1}, skipping secret creation", secretName, namespace);
           return;
         }

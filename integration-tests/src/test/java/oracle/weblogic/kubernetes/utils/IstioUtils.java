@@ -140,8 +140,8 @@ public class IstioUtils {
    */
   public static int getIstioHttpIngressPort() {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer getIngressPort = null;
+    ExecResult result;
+    StringBuffer getIngressPort;
     getIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
     logger.info("getIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getIngressPort));
@@ -166,8 +166,8 @@ public class IstioUtils {
    */
   public static int getIstioSecureIngressPort() {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer getSecureIngressPort = null;
+    ExecResult result;
+    StringBuffer getSecureIngressPort;
     getSecureIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getSecureIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"https\")].nodePort}'");
     logger.info("getSecureIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getSecureIngressPort));
@@ -192,8 +192,8 @@ public class IstioUtils {
    */
   public static int getIstioTcpIngressPort() {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer getTcpIngressPort = null;
+    ExecResult result;
+    StringBuffer getTcpIngressPort;
     getTcpIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getTcpIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"tcp\")].nodePort}'");
     logger.info("getTcpIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getTcpIngressPort));
@@ -219,8 +219,8 @@ public class IstioUtils {
    */
   public static boolean deployHttpIstioGatewayAndVirtualservice(Path configPath) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
+    ExecResult result;
+    StringBuffer deployIstioGateway;
     deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioGateway: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
@@ -243,8 +243,8 @@ public class IstioUtils {
   public static boolean deployTcpIstioGatewayAndVirtualservice(
       Path configPath) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
+    ExecResult result;
+    StringBuffer deployIstioGateway;
     deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioGateway: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
@@ -267,8 +267,8 @@ public class IstioUtils {
   public static boolean deployIstioDestinationRule(
       Path configPath) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
+    ExecResult result;
+    StringBuffer deployIstioGateway;
     deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioDestinationRule: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
@@ -323,8 +323,8 @@ public class IstioUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "prometheus_tag",
         PROMETHEUS_IMAGE_TAG));
-    ExecResult result = null;
-    StringBuffer deployIstioPrometheus = null;
+    ExecResult result;
+    StringBuffer deployIstioPrometheus;
     deployIstioPrometheus = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioPrometheus.append(targetPromFile.toString());
     logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " command {0}", new String(deployIstioPrometheus));
@@ -337,13 +337,12 @@ public class IstioUtils {
     logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " returned {0}", result.toString());
     try {
       for (var item : listPods("istio-system", null).getItems()) {
-        if (item.getMetadata() != null) {
-          if (item.getMetadata().getName().contains("prometheus")) {
-            logger.info("Waiting for pod {0} to be ready in namespace {1}",
-                item.getMetadata().getName(), "istio-system");
-            checkPodReady(item.getMetadata().getName(), null, "istio-system");
-            checkServiceExists("prometheus", "istio-system");
-          }
+        if (item.getMetadata() != null && item.getMetadata().getName() != null
+            && item.getMetadata().getName().contains("prometheus")) {
+          logger.info("Waiting for pod {0} to be ready in namespace {1}",
+              item.getMetadata().getName(), "istio-system");
+          checkPodReady(item.getMetadata().getName(), null, "istio-system");
+          checkServiceExists("prometheus", "istio-system");
         }
       }
     } catch (ApiException e) {

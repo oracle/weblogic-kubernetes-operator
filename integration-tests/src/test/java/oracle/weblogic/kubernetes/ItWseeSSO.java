@@ -388,6 +388,8 @@ class ItWseeSSO {
 
     logger.info("Setting up WebLogic pod to access PV");
     V1Pod pvPod = setupWebLogicPod(domainNamespace, pvName, pvcName, "/shared");
+    assertNotNull(pvPod, "pvPod is null");
+    assertNotNull(pvPod.getMetadata(), "pvPod metadata is null");
 
     logger.info("Creating directory {0} in PV", jksMountPath);
     execInPod(pvPod, null, true, "mkdir -p " + jksMountPath);

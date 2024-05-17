@@ -134,7 +134,6 @@ public class DbUtils {
 
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
-  private static int suffixCount = 0;
   private static Map<String, String> dbMap = new HashMap<>();
 
   /**
@@ -146,7 +145,7 @@ public class DbUtils {
    * @param dbNamespace namespace where DB and RCU schema are going to start
    * @param dbPort NodePort of DB
    * @param dbUrl URL of DB
-   * @throws Exception if any error occurs when setting up RCU database
+   * @throws ApiException if any error occurs when setting up RCU database
    */
 
   public static synchronized void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix,
@@ -167,7 +166,6 @@ public class DbUtils {
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
         + " dbNamespace: {3}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
     createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
-
   }
 
   /**
@@ -448,15 +446,15 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     boolean status = false;
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod != null) {
 
+    if (pod != null && pod.getStatus() != null && pod.getStatus().getConditions() != null) {
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
           .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 
-      if (v1PodReadyCondition != null) {
+      if (v1PodReadyCondition != null && v1PodReadyCondition.getStatus() != null) {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
         if (status) {
           logger.info("Pod {0} is READY in namespace {1}", podName, namespace);
@@ -536,11 +534,11 @@ public class DbUtils {
    */
   public static String getPodNameOfDb(String dbNamespace, String podPrefix) throws ApiException {
     String podName = null;
-    V1PodList pods = null;
-    pods = Kubernetes.listPods(dbNamespace, null);
+    V1PodList pods = Kubernetes.listPods(dbNamespace, null);
     if (pods.getItems().size() != 0) {
       for (V1Pod pod : pods.getItems()) {
-        if (pod != null && pod.getMetadata().getName().startsWith(podPrefix)) {
+        if (pod != null && pod.getMetadata() != null && pod.getMetadata().getName() != null
+            && pod.getMetadata().getName().startsWith(podPrefix)) {
           podName = pod.getMetadata().getName();
           break;
         }
@@ -604,7 +602,9 @@ public class DbUtils {
     logger.info(dump(Kubernetes.listServices(dbNamespace)));
     List<V1Service> services = listServices(dbNamespace).getItems();
     for (V1Service service : services) {
-      if (service.getMetadata().getName().startsWith(dbName)) {
+      if (service.getMetadata() != null && service.getMetadata().getName() != null
+          && service.getMetadata().getName().startsWith(dbName) && service.getSpec() != null
+          && service.getSpec().getPorts() != null) {
         return service.getSpec().getPorts().get(0).getNodePort();
       }
     }
@@ -1051,19 +1051,23 @@ public class DbUtils {
             .putCapacityItem("storage", Quantity.fromString("100Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .accessModes(Arrays.asList("ReadWriteMany")));
-    if (OKD) {
-      v1pv.getSpec()
-          .storageClassName("okd-nfsmnt")
-          .nfs(new V1NFSVolumeSource()
-              .path(PV_ROOT)
-              .server(NFS_SERVER)
-              .readOnly(false));
-    } else {
-      v1pv.getSpec()
-          .storageClassName("weblogic-domain-storage-class")
-          .hostPath(new V1HostPathVolumeSource()
-              .path(pvHostPath.toString()));
+
+    if (v1pv != null && v1pv.getSpec() != null) {
+      if (OKD) {
+        v1pv.getSpec()
+            .storageClassName("okd-nfsmnt")
+            .nfs(new V1NFSVolumeSource()
+                .path(PV_ROOT)
+                .server(NFS_SERVER)
+                .readOnly(false));
+      } else {
+        v1pv.getSpec()
+            .storageClassName("weblogic-domain-storage-class")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString()));
+      }
     }
+
     logger.info(Yaml.dump(v1pv));
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");

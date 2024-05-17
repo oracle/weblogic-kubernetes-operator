@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -33,6 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MYSQL_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -92,7 +93,11 @@ public class MySQLDBUtils {
                     .name("mysql")
                     .containerPort(3306))))));
     V1Pod pod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, mysqlPod));
-    checkPodReady(pod.getMetadata().getName(), null, namespace);
+    if (pod != null && pod.getMetadata() != null) {
+      checkPodReady(pod.getMetadata().getName(), null, namespace);
+    } else {
+      getLogger().info("pod is null or pod metadata is null");
+    }
   }
 
   //create services for MySQL database

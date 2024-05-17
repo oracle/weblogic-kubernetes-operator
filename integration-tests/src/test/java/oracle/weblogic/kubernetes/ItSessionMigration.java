@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -246,6 +246,8 @@ class ItSessionMigration {
     assertNotNull(managedServerPod,
         "The managed server pod does not exist in namespace " + domainNamespace);
     V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
+    assertNotNull(managedServerMetadata, "managed server metadata is null");
+    assertNotNull(managedServerMetadata.getAnnotations(), "managed server metadata annotation is null");
     String myAnnotationValue = managedServerMetadata.getAnnotations().get(annotationKey);
     String myAnnotationValue2 = managedServerMetadata.getAnnotations().get(annotationKey2);
     String myAnnotationValue3 = managedServerMetadata.getAnnotations().get(annotationKey3);

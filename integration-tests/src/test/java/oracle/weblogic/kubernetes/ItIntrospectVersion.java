@@ -1351,6 +1351,7 @@ class ItIntrospectVersion {
         } catch (IOException | InterruptedException ex) {
           logger.severe(ex.getMessage());
         }
+        assertNotNull(result, "result is null");
         String response = result.stdout().trim();
         logger.info(response);
         logger.info(result.stderr());
@@ -1574,7 +1575,10 @@ class ItIntrospectVersion {
   private void updateIngressBackendServicePort(int newAdminPort) throws ApiException {
     String ingressName = introDomainNamespace + "-" + domainUid + "-" + adminServerName + "-7001";
     V1Ingress ingress = Ingress.getIngress(introDomainNamespace, ingressName).orElse(null);
-    if (ingress != null) {
+    if (ingress != null
+        && ingress.getSpec() != null
+        && ingress.getSpec().getRules() != null
+        && !ingress.getSpec().getRules().isEmpty()) {
       logger.info("Updating ingress {0} with new admin port {1}", ingressName, newAdminPort);
       ingress.getSpec().getRules().getFirst().getHttp()
           .getPaths().getFirst().getBackend().getService()

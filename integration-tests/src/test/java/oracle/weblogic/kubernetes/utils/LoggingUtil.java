@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -25,7 +25,9 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -40,6 +42,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.VZ_ENV;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumeClaims;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumes;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -112,7 +116,7 @@ public class LoggingUtil {
     // get namespaces
     try {
       for (var ns : Kubernetes.listNamespacesAsObjects().getItems()) {
-        if (namespace.equals(ns.getMetadata().getName())) {
+        if (ns.getMetadata() != null && namespace.equals(ns.getMetadata().getName())) {
           writeToFile(ns, resultDir, namespace + ".list.namespace.log");
         }
       }
@@ -122,7 +126,7 @@ public class LoggingUtil {
 
     // get pvc
     try {
-      writeToFile(Kubernetes.listPersistentVolumeClaims(namespace), resultDir,
+      writeToFile(listPersistentVolumeClaims(namespace), resultDir,
           namespace + ".list.persistent-volume-claims.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -130,13 +134,17 @@ public class LoggingUtil {
 
     // archive persistent volume contents
     List<V1PersistentVolume> pvList = new ArrayList<>();
-    for (var pv : Kubernetes.listPersistentVolumes().getItems()) {
-      for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
-        if (pv.getSpec().getStorageClassName()
-            .equals(pvc.getSpec().getStorageClassName())
-            && pv.getMetadata().getName()
-                .equals(pvc.getSpec().getVolumeName())) {
-          pvList.add(pv);
+    V1PersistentVolumeList persistentVolumeList = listPersistentVolumes();
+    V1PersistentVolumeClaimList persistentVolumeClaimList = listPersistentVolumeClaims(namespace);
+    if (persistentVolumeList != null && persistentVolumeClaimList != null) {
+      for (var pv : persistentVolumeList.getItems()) {
+        for (var pvc : persistentVolumeClaimList.getItems()) {
+          if (pv.getSpec() != null && pvc.getSpec() != null && pv.getSpec().getStorageClassName() != null
+              && pv.getSpec().getStorageClassName().equals(pvc.getSpec().getStorageClassName())
+              && pv.getMetadata() != null && pv.getMetadata().getName() != null
+              && pv.getMetadata().getName().equals(pvc.getSpec().getVolumeName())) {
+            pvList.add(pv);
+          }
         }
       }
     }
@@ -550,33 +558,5 @@ public class LoggingUtil {
         expectedString,
         podName,
         namespace);
-  }
-  
-  private void archivePV(String namespace, String resultDir) {
-    // archive persistent volume contents
-    List<V1PersistentVolume> pvList = new ArrayList<>();
-    for (var pv : Kubernetes.listPersistentVolumes().getItems()) {
-      for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
-        if (pv.getSpec().getStorageClassName()
-            .equals(pvc.getSpec().getStorageClassName())
-            && pv.getMetadata().getName()
-                .equals(pvc.getSpec().getVolumeName())) {
-          pvList.add(pv);
-          String pvName = pv.getMetadata().getName();
-          String pvcName = pvc.getMetadata().getName();
-          try {
-            if (pv.getMetadata().getDeletionTimestamp() == null) {
-              copyFromPV(namespace, pvcName, pvName,
-                  Files.createDirectories(
-                      Paths.get(resultDir, pvcName, pvName)));
-            }
-          } catch (ApiException ex) {
-            getLogger().warning(ex.getResponseBody());
-          } catch (IOException ex) {
-            getLogger().warning(ex.getMessage());
-          }
-        }
-      }
-    }
   }
 }

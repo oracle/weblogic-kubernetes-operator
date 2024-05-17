@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -52,6 +52,7 @@ public class VerrazzanoUtils {
     for (String namespace : namespaces) {
       V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespace(namespace));
       assertNotNull(namespaceObject, "Can't find namespace with name " + namespace);
+      assertNotNull(namespaceObject.getMetadata(), "namespace " + namespace + " metadata is null");
       namespaceObject.getMetadata().setLabels(labels);
       assertDoesNotThrow(() -> replaceNamespace(namespaceObject));
     }
@@ -153,7 +154,8 @@ public class VerrazzanoUtils {
     testUntil(() -> {
       try {
         return Kubernetes.listComponents(namespace).getItems().stream()
-            .anyMatch(comp -> comp.getMetadata().getName().equals(componentName));
+            .anyMatch(comp -> comp.getMetadata().getName() != null
+                      && comp.getMetadata().getName().equals(componentName));
       } catch (ApiException ex) {
         logger.warning(ex.getResponseBody());
       }
@@ -177,7 +179,8 @@ public class VerrazzanoUtils {
     testUntil(() -> {
       try {
         return !Kubernetes.listComponents(namespace).getItems().stream()
-            .anyMatch(component -> component.getMetadata().getName().equals(componentName));
+            .anyMatch(component -> component.getMetadata().getName() != null
+                && component.getMetadata().getName().equals(componentName));
       } catch (ApiException ex) {
         logger.warning(ex.getResponseBody());
       }

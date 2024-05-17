@@ -337,7 +337,7 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (event.getMetadata() != null) {
+        if (event != null && event.getMetadata() != null) {
           Map<String, String> labels = event.getMetadata().getLabels();
           if (event.getReason() != null && event.getReason().equals(reason)
               && event.getType() != null && event.getType().equals(type)

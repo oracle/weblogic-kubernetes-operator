@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 
@@ -78,6 +78,8 @@ public class PersistentVolumeUtils {
 
     assertNotNull(v1pv, "v1pv is null");
     assertNotNull(v1pvc, "v1pvc is null");
+    assertNotNull(v1pv.getMetadata(), "v1pv metadata is null");
+    assertNotNull(v1pvc.getMetadata(), "v1pvc metadata is null");
 
     String pvName = v1pv.getMetadata().getName();
     String pvcName = v1pvc.getMetadata().getName();
@@ -124,6 +126,11 @@ public class PersistentVolumeUtils {
                                           String labelSelector,
                                           String namespace, String storageClassName, Path pvHostPath) {
     LoggingFacade logger = getLogger();
+    assertNotNull(v1pv, "v1pv is null");
+    assertNotNull(v1pvc, "v1pvc is null");
+    assertNotNull(v1pv.getSpec(), "v1pv spec is null");
+    assertNotNull(v1pvc.getSpec(), "v1pvc spec is null");
+
     if (!OKE_CLUSTER && !OKD) {
       logger.info("Creating PV directory {0}", pvHostPath);
       assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
@@ -212,6 +219,9 @@ public class PersistentVolumeUtils {
   }
 
   private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv, String storageClassName) {
+    assertNotNull(v1pv, "v1pv is null");
+    assertNotNull(v1pv.getSpec(), "v1pv spec is null");
+
     if (OKE_CLUSTER) {
       String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
       LoggingFacade logger = getLogger();
@@ -298,6 +308,9 @@ public class PersistentVolumeUtils {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
 
+    assertNotNull(v1pvc, "v1pvc is null");
+    assertNotNull(v1pvc.getSpec(), "v1pvc spec is null");
+
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
           .storageClassName("oci-fss");
@@ -380,7 +393,7 @@ public class PersistentVolumeUtils {
                                     HashMap<String,String> labels, String className)
       throws IOException {
     LoggingFacade logger = getLogger();
-    V1PersistentVolume v1pv = null;
+    V1PersistentVolume v1pv;
     logger.info("creating persistent volume and persistent volume claim");
     // create persistent volume and persistent volume claims
     // when tests are running in local box the PV directories need to exist
@@ -405,7 +418,7 @@ public class PersistentVolumeUtils {
 
     boolean hasLabels = false;
     String labelSelector = null;
-    if (labels != null || !labels.isEmpty()) {
+    if (labels != null && !labels.isEmpty() && v1pv.getMetadata() != null) {
       hasLabels = true;
       v1pv.getMetadata().setLabels(labels);
       labelSelector = labels.entrySet()
@@ -424,9 +437,11 @@ public class PersistentVolumeUtils {
         .metadata(new V1ObjectMeta()
             .name("pvc-" + nameSuffix)
             .namespace(namespace));
-    if (hasLabels) {
+    if (hasLabels && v1pvc.getMetadata() != null) {
       v1pvc.getMetadata().setLabels(labels);
     }
+
+    assertNotNull(v1pvc.getSpec(), "v1pvc spec is null");
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
           .storageClassName("oci-fss");
@@ -500,6 +515,7 @@ public class PersistentVolumeUtils {
     assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
         String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
             commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
+    assertNotNull(serverPod.getMetadata(), "serverpod metadata is null");
     assertDoesNotThrow(() -> deletePod(serverPod.getMetadata().getName(), domainNamespace));
   }
 
