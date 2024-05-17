@@ -565,11 +565,9 @@ public class CommonMiiTestUtils {
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImageAndVolume(domainResourceName,
+    return createDomainResourceWithAuxiliaryImageAndVolume(domainResourceName,
         domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName,
         auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
-
-    return domainCR;
   }
 
   /**
@@ -608,15 +606,7 @@ public class CommonMiiTestUtils {
     domainCR.spec().configuration().model()
         .withModelHome(auxiliaryImagePath + "/models")
         .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
-    for (String cmImageName: auxiliaryImageName) {
-      /* Commented out due to auxiliary image 4.0 changes
-      domainCR.spec().serverPod()
-          .addAuxiliaryImagesItem(new AuxiliaryImage()
-                  .image(cmImageName)
-                  .volume(auxiliaryImageVolumeName)
-                  .imagePullPolicy("IfNotPresent"));
-       */
-    }
+
     return domainCR;
   }
 
@@ -806,7 +796,6 @@ public class CommonMiiTestUtils {
       String javaOpt,
       boolean onlineUpdateEnabled,
       boolean setDataHome) {
-    LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
     if (dbSecretName != null) {
@@ -1087,7 +1076,7 @@ public class CommonMiiTestUtils {
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;
       String ingressName = domainNamespace + "-" + domainName + "-" + serviceName + "-" + port;
-      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
+      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;
       Optional<String> ingressFound;
       try {
         List<String> ingresses = TestActions.listIngresses(domainNamespace);
@@ -1112,7 +1101,7 @@ public class CommonMiiTestUtils {
         ex.printStackTrace();
       }
     } else {
-      String curlString = null;
+      String curlString;
       if (OKE_CLUSTER_PRIVATEIP) {
         String protocol = "http";
         String port = "7001";
@@ -1261,7 +1250,7 @@ public class CommonMiiTestUtils {
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;
       String ingressName = domainNamespace + "-" + domainName + "-" + serviceName + "-" + port;
-      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
+      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;
       Optional<String> ingressFound;
       try {
         List<String> ingresses = TestActions.listIngresses(domainNamespace);
@@ -1416,7 +1405,7 @@ public class CommonMiiTestUtils {
       // check job status and fail test if the job failed
       V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
           "Getting the job failed");
-      if (job != null) {
+      if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
             v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
             .findAny()
@@ -1481,7 +1470,7 @@ public class CommonMiiTestUtils {
       // check job status and fail test if the job failed
       V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
           "Getting the job failed");
-      if (job != null) {
+      if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
                 v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
             .findAny()

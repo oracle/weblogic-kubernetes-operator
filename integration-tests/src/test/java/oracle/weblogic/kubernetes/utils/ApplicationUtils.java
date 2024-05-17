@@ -36,16 +36,16 @@ public class ApplicationUtils {
    * @return true if curl command returns HTTP code 200 otherwise false
    */
   public static boolean checkAppUsingHostHeader(String url, String hostHeader, Boolean... args) {
-    boolean checlReadyAppAccessible = (args.length == 0) ? true : false;
+    boolean checlReadyAppAccessible = args.length == 0;
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    StringBuffer headerString = null;
+    StringBuffer headerString;
     if (hostHeader != null) {
       headerString = new StringBuffer("-H 'host: ");
       headerString.append(hostHeader)
           .append("' ");
     } else {
-      headerString = new StringBuffer("");
+      headerString = new StringBuffer();
     }
     curlString.append(" -g -sk --noproxy '*' ")
         .append(" --silent --show-error ")
@@ -426,7 +426,7 @@ public class ApplicationUtils {
                                                   String port,
                                                   boolean secureMode,
                                                   Boolean... args) {
-    boolean checlReadyAppAccessible = (args.length == 0) ? true : false;
+    boolean checlReadyAppAccessible = args.length == 0;
     LoggingFacade logger = getLogger();
     String httpKey = "http://";
     if (secureMode) {

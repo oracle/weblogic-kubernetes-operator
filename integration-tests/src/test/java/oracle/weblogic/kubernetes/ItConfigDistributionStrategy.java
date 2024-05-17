@@ -207,10 +207,15 @@ class ItConfigDistributionStrategy {
     //start two MySQL database instances
     String dbService1 = createMySQLDB("mysqldb-1", "root", "root123", domainNamespace, null);
     V1Pod pod = getPod(domainNamespace, null, "mysqldb-1");
+    assertNotNull(pod, "pod is null");
+    assertNotNull(pod.getMetadata(), "pod metadata is null");
     createFileInPod(pod.getMetadata().getName(), domainNamespace, "root123");
     runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root123");
+
     String dbService2 = createMySQLDB("mysqldb-2", "root", "root456", domainNamespace, null);
     pod = getPod(domainNamespace, null, "mysqldb-2");
+    assertNotNull(pod, "pod is null");
+    assertNotNull(pod.getMetadata(), "pod metadata is null");
     createFileInPod(pod.getMetadata().getName(), domainNamespace, "root456");
     runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root456");
     
@@ -404,8 +409,9 @@ class ItConfigDistributionStrategy {
 
     testUntil(
         withLongRetryPolicy,
-        () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
-            -> (cm.getMetadata().getName().equals(overridecm))),
+        () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch(cm
+            -> cm.getMetadata() != null && cm.getMetadata().getName() != null
+               && cm.getMetadata().getName().equals(overridecm)),
         logger,
         "configmap {0} to be deleted.");
 
@@ -1195,7 +1201,10 @@ class ItConfigDistributionStrategy {
     logger.info(dump(Kubernetes.listServices(namespace)));
     List<V1Service> services = listServices(namespace).getItems();
     for (V1Service service : services) {
-      if (service.getMetadata().getName().startsWith(dbName)) {
+      if (service.getMetadata() != null && service.getMetadata().getName() != null
+          && service.getSpec() != null && service.getSpec().getPorts() != null
+          && !service.getSpec().getPorts().isEmpty()
+          && service.getMetadata().getName().startsWith(dbName)) {
         return service.getSpec().getPorts().get(0).getNodePort();
       }
     }
@@ -1206,7 +1215,8 @@ class ItConfigDistributionStrategy {
     logger.info(dump(Kubernetes.listServices(namespace)));
     List<V1Service> services = listServices(namespace).getItems();
     for (V1Service service : services) {
-      if (service.getMetadata().getName().startsWith(dbName)) {
+      if (service.getMetadata() != null && service.getMetadata().getName() != null
+          && service.getMetadata().getName().startsWith(dbName)) {
         return service.getMetadata().getName();
       }
     }
@@ -1227,7 +1237,8 @@ class ItConfigDistributionStrategy {
     } catch (Exception e) {
       getLogger().info("Got exception, command failed with errors " + e.getMessage());
     }
-    return  result.stdout();
+    assertNotNull(result, "result is null");
+    return result.stdout();
   }
 
   private static void runMysqlInsidePod(String podName, String namespace, String password) {

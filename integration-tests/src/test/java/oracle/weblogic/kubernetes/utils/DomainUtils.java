@@ -467,7 +467,7 @@ public class DomainUtils {
     logger.info("Removing the cluster {0} from domain resource {1}", clusterName, domainUid);
     DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
     Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
-        .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
+        .getClusters().stream().filter(o -> o.getName() != null && o.getName().equals(clusterName)).findAny();
     int clusterIndex = -1;
     if (cluster.isPresent()) {
       clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster.get());
@@ -482,8 +482,8 @@ public class DomainUtils {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, namespace).getSpec()
-          .getClusters().stream().anyMatch(c -> c.getName().equals(clusterName));
+      Callable<Boolean> clusterNotFound = () -> getDomainCustomResource(domainUid, namespace).getSpec()
+          .getClusters().stream().noneMatch(c -> c.getName() != null && c.getName().equals(clusterName));
       testUntil(clusterNotFound, logger, "cluster {0} to be removed from domain resource in namespace {1}",
           clusterName, namespace);
     } else {
@@ -533,7 +533,7 @@ public class DomainUtils {
     assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
 
     String searchString;
-    int index = 0;
+    int index;
 
     AuxiliaryImage ai = auxiliaryImageList.stream()
         .filter(auxiliaryImage -> oldImageName.equals(auxiliaryImage.getImage()))

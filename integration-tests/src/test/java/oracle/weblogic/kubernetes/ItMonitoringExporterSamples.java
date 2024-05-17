@@ -295,6 +295,8 @@ class ItMonitoringExporterSamples {
       dbService = createMySQLDB("mysql", "root", "root123", domain2Namespace, null);
       assertNotNull(dbService, "Failed to create database");
       V1Pod pod = getPod(domain2Namespace, null, "mysql");
+      assertNotNull(pod, "pod is null");
+      assertNotNull(pod.getMetadata(), "pod metadata is null");
       createFileInPod(pod.getMetadata().getName(), domain2Namespace, "root123");
       runMysqlInsidePod(pod.getMetadata().getName(), domain2Namespace, "root123", "/tmp/grant.sql");
       runMysqlInsidePod(pod.getMetadata().getName(), domain2Namespace, "root123", "/tmp/create.sql");
@@ -390,10 +392,8 @@ class ItMonitoringExporterSamples {
     List<V1Pod> pods = listPods(webhookNS, "app=webhook").getItems();
     assertNotNull((pods), "No pods are running in namespace : " + webhookNS);
     V1Pod pod = pods.stream()
-        .filter(testpod -> testpod
-            .getMetadata()
-            .getName()
-            .contains("webhook"))
+        .filter(testpod -> testpod.getMetadata() != null && testpod.getMetadata().getName() != null
+            && testpod.getMetadata().getName().contains("webhook"))
         .findAny()
         .orElse(null);
 
@@ -706,7 +706,7 @@ class ItMonitoringExporterSamples {
     String serviceName = null;
     String deploymentName = null;
     try {
-      if (service != null) {
+      if (service != null && service.getMetadata() != null) {
         serviceName = service.getMetadata().getName();
         namespace = service.getMetadata().getNamespace();
         Kubernetes.deleteService(serviceName, namespace);
@@ -717,7 +717,7 @@ class ItMonitoringExporterSamples {
           serviceName, namespace);
     }
     try {
-      if (deployment != null) {
+      if (deployment != null && deployment.getMetadata() != null) {
         deploymentName = deployment.getMetadata().getName();
         namespace = deployment.getMetadata().getNamespace();
         Kubernetes.deleteDeployment(namespace, deploymentName);

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -29,7 +29,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
@@ -90,10 +89,7 @@ public class FileUtils {
    */
   public static boolean doesFileExist(String fileName) {
     File file = new File(fileName);
-    if (file.exists() && file.isFile()) {
-      return true;
-    }
-    return false;
+    return  file.exists() && file.isFile();
   }
 
   /**
@@ -104,10 +100,7 @@ public class FileUtils {
    */
   public static boolean doesDirExist(String dirName) {
     File dir = new File(dirName);
-    if (dir.exists() && dir.isDirectory()) {
-      return true;
-    }
-    return false;
+    return dir.exists() && dir.isDirectory();
   }
 
   /**
@@ -125,7 +118,6 @@ public class FileUtils {
     }
 
     cleanDirectory(file);
-
   }
 
   /**
@@ -355,7 +347,7 @@ public class FileUtils {
    */
   public static ExecResult copyFileToImageContainer(String containerName, String source, String dest) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
+    ExecResult result;
 
     // create a WebLogic container
     String cpToContainerCmd = new StringBuffer(WLSIMG_BUILDER + " cp ")
@@ -425,7 +417,7 @@ public class FileUtils {
       logger.info("checkCmd: caught unexpected exception {0}", ex.getMessage());
     }
 
-    return result.stdout().contains(dest);
+    return result != null && result.stdout() != null && result.stdout().contains(dest);
   }
 
   /**
@@ -436,7 +428,6 @@ public class FileUtils {
    */
   public static void readFileCopiedInImageContainer(String containerName, String dest) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
 
     // check the file is copied over successfully
     //String readCmd = new StringBuffer(WLSIMG_BUILDER + " exec -it "
@@ -448,7 +439,7 @@ public class FileUtils {
     logger.info("Command to cat file {0}: ", dest, readCmd);
 
     try {
-      result = exec(readCmd, true);
+      exec(readCmd, true);
     } catch (Exception ex) {
       logger.info("checkCmd: caught unexpected exception {0}", ex.getMessage());
     }
@@ -464,7 +455,7 @@ public class FileUtils {
     String zipFileName = dirPath.toString().concat(".zip");
     try {
       final ZipOutputStream outputStream = new ZipOutputStream(new FileOutputStream(zipFileName));
-      Files.walkFileTree(dirPath, new SimpleFileVisitor<Path>() {
+      Files.walkFileTree(dirPath, new SimpleFileVisitor<>() {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
           try {
@@ -528,11 +519,7 @@ public class FileUtils {
     ExecResult result = execCommand(namespace, podName, null, true,
         "/bin/sh", "-c", "find " + filename);
 
-    if (result.stdout().contains(filename)) {
-      return true;
-    } else {
-      return false;
-    }
+    return  result.stdout().contains(filename);
   }
 
   /**
@@ -606,10 +593,7 @@ public class FileUtils {
    */
   public static Callable<Boolean> isFileExistAndNotEmpty(String fileName) {
     File file = new File(fileName);
-    return () -> {
-      boolean fileReady = (file.exists() && file.length() != 0);
-      return fileReady;
-    };
+    return () -> file.exists() && file.length() != 0;
   }
 
   /**

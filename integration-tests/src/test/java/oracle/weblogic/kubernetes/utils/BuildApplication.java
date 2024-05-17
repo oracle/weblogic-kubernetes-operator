@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -37,6 +37,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 /**
@@ -117,7 +118,7 @@ public class BuildApplication {
     Path destArchiveBaseDir = 
          targetPath == null  ? Paths.get(WORK_DIR, appSrcPath.getFileName().toString()) : targetPath;
     logger.info("DestArchiveBaseDir set to {0}", destArchiveBaseDir.toString());
-    Path destDir = null;
+
 
     assertDoesNotThrow(() -> {
       // recreate WORK_DIR/j2eeapplications/<application_directory_name>
@@ -137,7 +138,6 @@ public class BuildApplication {
 
     // zip up the application source to be copied to pod for building
     Path zipFile = Paths.get(FileUtils.createZipFile(tempAppPath));
-
 
     // add ant properties as env variable in pod
     V1Container buildContainer = new V1Container();
@@ -165,6 +165,8 @@ public class BuildApplication {
 
     //setup temporary WebLogic pod to build application
     V1Pod webLogicPod = setupWebLogicPod(namespace, buildContainer);
+    assertNotNull(webLogicPod, "webLogicPod is null");
+    assertNotNull(webLogicPod.getMetadata(), "webLogicPod metadata is null");
 
     try {
       //copy the zip file to /u01 location inside pod
@@ -221,7 +223,7 @@ public class BuildApplication {
       logger.info("Exception while copying file " + Paths.get(APPLICATIONS_PATH, archiveDistDir) + " from pod", ioex);
     }
 
-    return destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
+    return Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
   }
 
 

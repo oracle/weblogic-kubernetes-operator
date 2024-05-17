@@ -339,7 +339,7 @@ public class MonitoringUtils {
                                       String prometheusNS, String cmName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(prometheusNS).getItems();
     V1ConfigMap promCm = cmList.stream()
-        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && cmName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
@@ -683,7 +683,8 @@ public class MonitoringUtils {
     V1SecretList listSecrets = listSecrets(grafanaNamespace);
     if (null != listSecrets) {
       for (V1Secret item : listSecrets.getItems()) {
-        if (item.getMetadata().getName().equals("grafana-secret")) {
+        if (item.getMetadata() != null && item.getMetadata().getName() != null
+            && item.getMetadata().getName().equals("grafana-secret")) {
           secretExists = true;
           break;
         }

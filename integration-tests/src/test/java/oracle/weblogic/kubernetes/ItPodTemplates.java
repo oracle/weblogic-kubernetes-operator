@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -139,6 +139,8 @@ class ItPodTemplates {
     //check that managed server pod is up and all applicable variable values are initialized.
     assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNamespace);
     V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
+    assertNotNull(managedServerMetadata, "managed server pod metadata is null");
+    assertNotNull(managedServerMetadata.getLabels(), "managed server metadata label is null");
     String serverName = managedServerMetadata.getLabels().get("servername");
     logger.info("Checking that variables used in the labels and annotations "
         + "in the serverPod for servername, domainname, clustername are initialized");
@@ -170,6 +172,7 @@ class ItPodTemplates {
 
     logger.info("Checking that applicable variables used "
         + "in the annotations for domainhome and loghome are initialized");
+    assertNotNull(managedServerMetadata.getAnnotations(), "managed server metadata annotation is null");
     String loghome = managedServerMetadata.getAnnotations().get("loghome");
     //check that annotation contains loghome in the pod
     assertNotNull(loghome, "Can't find annotation loghome");

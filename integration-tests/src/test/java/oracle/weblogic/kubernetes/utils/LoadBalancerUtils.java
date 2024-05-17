@@ -651,7 +651,6 @@ public class LoadBalancerUtils {
    * @throws Exception fails if not generated after MaxIterations number is reached.
    */
   public static String getLbExternalIp(String lbrelname, String lbns) throws Exception {
-    int i = 0;
     LoggingFacade logger = getLogger();
 
     String cmdip = KUBERNETES_CLI + " get svc --namespace " + lbns
