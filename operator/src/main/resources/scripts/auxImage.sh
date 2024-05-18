@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Init container script for the auxiliary image feature.
@@ -25,6 +25,21 @@
 scriptDir="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 if [ "${debug}" == "true" ]; then set -x; fi;
+
+# This script runs in the auxiliary image container, which is often using
+# busybox or some other very sparse base image.  This script relies on
+# the determining that the shell supports the "starts with" test so
+# make sure that it works and exit if it does not.
+
+SHELL_TEST=abcd
+if [[ "${SHELL_TEST}" == "ab"* ]]; then
+  SHELL_IS_GOOD=true
+fi
+
+if [ -z "${SHELL_IS_GOOD}" ]; then
+  echo "[SEVERE] The shell in the auxiliary image is missing required functionality. Exiting."
+  exit 1
+fi
 
 . ${scriptDir}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils_base.sh" && exit 1
