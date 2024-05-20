@@ -697,7 +697,7 @@
     <voyager-client-version>0.1.0</voyager-client-version>
     <jsonpath-version>2.9.0</jsonpath-version>
     <jose4j-version>0.9.6</jose4j-version>
-    <mojo-build-helper-version>3.5.0</mojo-build-helper-version>
+    <mojo-build-helper-version>3.6.0</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.25.3</assertj.core.version>
     <commons.io.version>2.16.1</commons.io.version>
