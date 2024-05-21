@@ -35,7 +35,6 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SE
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
@@ -51,6 +50,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultC
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -489,19 +489,17 @@ public class IstioUtils {
 
   
   /**
-   * Check WebLogic console thru Istio Ingress Port.
+   * Check WebLogic access through Istio Ingress Port.
+   * @param istioHost Host
    * @param istioIngressPort Istio Ingress Port
    * @param domainNamespace Domain namespace that the domain is hosted
    */
-  public static void checkIstioService(int istioIngressPort, String domainNamespace) {
+  public static void checkIstioService(String istioHost, int istioIngressPort, String domainNamespace) {
     // We can not verify Rest Management console thru Administration NodePort
     // in istio, as we can not enable Administration NodePort
     LoggingFacade logger = getLogger();
     logger.info("Verifying Istio Service @IngressPort [{0}]", istioIngressPort);
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    String host = formatIPv6Host(istioHost);
     String readyAppUrl = "http://" + host + ":" + istioIngressPort + "/weblogic/ready";
     boolean checlReadyApp =
         checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
