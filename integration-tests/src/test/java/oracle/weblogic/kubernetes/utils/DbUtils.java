@@ -41,7 +41,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1PolicyRule;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleRef;
@@ -275,8 +274,6 @@ public class DbUtils {
                                 .name("tns")
                                 .protocol("TCP")
                                 .hostPort(dbListenerPort)))
-                            .resources(new V1ResourceRequirements()
-                                .limits(limits))
                             .terminationMessagePath("/dev/termination-log")
                             .terminationMessagePolicy("File")))
                     .dnsPolicy("ClusterFirst")
