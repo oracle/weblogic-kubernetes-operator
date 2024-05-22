@@ -1,8 +1,9 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,9 +50,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -63,9 +66,12 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -77,12 +83,13 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
@@ -124,7 +131,9 @@ class ItOperatorWlsUpgrade {
 
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
-  private String adminServerPodName = domainUid + "-admin-server";
+  private String adminServerName = "admin-server";
+  private int adminPort = 7001;
+  private String adminServerPodName = domainUid + "-" + adminServerName;
   private String managedServerPodNamePrefix = domainUid + "-managed-server";
   private int replicaCount = 2;
   private List<String> namespaces;
@@ -137,6 +146,7 @@ class ItOperatorWlsUpgrade {
   private Path destDomainYaml = null;
   private static String miiAuxiliaryImageTag = "aux-explict-upgrade";
   private static final String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
+  private static String hostHeader;
 
   /**
    * For each test:
@@ -174,37 +184,27 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.4.8 to current.
+   * Operator upgrade from 3.4.12 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.8 to current")
+  @DisplayName("Upgrade Operator from 3.4.12 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom348ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom348ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.8", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom3412ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom3412ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.12", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.4.9 to current.
+   * Operator upgrade from 3.4.13 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.9 to current")
+  @DisplayName("Upgrade Operator from 3.4.13 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom349ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom346ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.9", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom3413ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom3413ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.13", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
-  /**
-   * Operator upgrade from 4.0.7 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.7 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom407ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom407ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
 
   /**
    * Operator upgrade from 4.0.8 to current.
@@ -212,33 +212,78 @@ class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 4.0.8 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom406ToCurrent(String domainType) {
+  void testOperatorWlsUpgradeFrom408ToCurrent(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom408ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.8", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "4.0.8", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+  
+  /**
+   * Operator upgrade from 4.0.9 to current.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 4.0.9 to current")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom409ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom409ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.0.9", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 4.1.0 to current.
+   * Operator upgrade from 4.0.10 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.1.0 to current")
+  @DisplayName("Upgrade Operator from 4.0.10 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom410ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom410ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.1.0", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom4010ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom4010ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.0.10", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+  
+
+  /**
+   * Operator upgrade from 4.1.7 to current.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 4.1.7 to current")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom417ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom417ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.1.7", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 4.1.1 to current.
+   * Operator upgrade from 4.1.8 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.1.1 to current")
+  @DisplayName("Upgrade Operator from 4.1.8 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom411ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom411ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.1.1", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom418ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom418ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.1.8", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
+  /**
+   * Operator upgrade from 4.2.2 to current.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 4.2.2 to current")
+  @ValueSource(strings = {"Image", "FromModel"})
+  void testOperatorWlsUpgradeFrom422ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom422ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.2.2", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Operator upgrade from 4.2.3 to current.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 4.2.3 to current")
+  @ValueSource(strings = {"Image", "FromModel"})
+  void testOperatorWlsUpgradeFrom423ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom423ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.2.3", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+  
   /**
    * Auxiliary Image Domain upgrade from Operator 3.4.1 to current.
    */
@@ -661,26 +706,6 @@ class ItOperatorWlsUpgrade {
     boolean result = Command.withParams(params).execute();
   }
 
-  private void checkAdminPortForwarding(String domainNamespace, boolean successExpected) {
-
-    logger.info("Checking port forwarding [{0}]", successExpected);
-    String forwardPort =
-           startPortForwardProcess("localhost", domainNamespace,
-           domainUid, 7001);
-    assertNotNull(forwardPort, "port-forward fails to assign local port");
-    logger.info("Forwarded admin-port is {0}", forwardPort);
-    if (successExpected) {
-      verifyAdminConsoleAccessible(domainNamespace, "localhost",
-           forwardPort, false);
-      logger.info("ready app is accessible thru port forwarding");
-    } else {
-      verifyAdminConsoleAccessible(domainNamespace, "localhost",
-           forwardPort, false, false);
-      logger.info("WebLogic console shouldn't accessible thru port forwarding");
-    }
-    stopPortForwardProcess(domainNamespace);
-  }
-
   /**
    * Replace the fields in domain yaml file with testing attributes.
    * For example, namespace, domainUid,  and image. Then create domain using
@@ -754,17 +779,23 @@ class ItOperatorWlsUpgrade {
   private void verifyDomain(String domainUidString, String domainNamespace, String externalServiceNameSuffix) {
 
     checkDomainStarted(domainUid, domainNamespace);
+    
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      hostHeader = createIngressHostRouting(domainNamespace, domainUidString, adminServerName, adminPort);
+      assertDoesNotThrow(() -> verifyAdminServerRESTAccess(formatIPv6Host(InetAddress.getLocalHost().getHostAddress()),
+          TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+    }
 
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-    logger.info("Got node port {0} for default channel for domainNameSpace {1}", serviceNodePort, domainNamespace);
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST,
-           String.valueOf(serviceNodePort), false);
-
+    if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      logger.info("Getting node port for default channel");
+      int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+          domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
+          "Getting admin server node port failed");
+      logger.info("Got node port {0} for default channel for domainNameSpace {1}", serviceNodePort, domainNamespace);
+      logger.info("Validating WebLogic admin server access by login to console");
+      verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST,
+          String.valueOf(serviceNodePort), false);
+    }
   }
 
 }

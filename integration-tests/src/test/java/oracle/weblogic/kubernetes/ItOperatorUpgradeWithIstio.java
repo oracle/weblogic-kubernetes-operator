@@ -1,8 +1,10 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
@@ -28,11 +30,16 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
@@ -40,6 +47,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CleanupUtil.cleanup;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
@@ -208,12 +216,25 @@ class ItOperatorUpgradeWithIstio {
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
     istioIngressPort = 
        createIstioService(domainUid,clusterName,adminServerPodName,domainNamespace);
-    checkIstioService(istioIngressPort,domainNamespace);
+    istioIngressPort
+        = createIstioService(domainUid, clusterName, adminServerPodName, domainNamespace);
+    String istioHost = null;
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      try {
+        istioHost = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+      } catch (UnknownHostException ex) {
+        logger.severe(ex.getLocalizedMessage());
+      }
+      istioIngressPort = ISTIO_HTTP_HOSTPORT;
+    } else {
+      istioHost = K8S_NODEPORT_HOST;
+    }
+    checkIstioService(istioHost, istioIngressPort, domainNamespace);
     upgradeOperatorToCurrent(opNamespace);
     checkDomainStatus(domainNamespace,domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
     // Re check the istio Service After Upgrade
-    checkIstioService(istioIngressPort,domainNamespace);
+    checkIstioService(istioHost, istioIngressPort,domainNamespace);
   }
 
   private void createSecrets() {
