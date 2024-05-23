@@ -204,9 +204,12 @@ class ItEvictedPodsCycling {
       boolean gotEvent = false;
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (event.getType().equals(type)
+        if (event.getType() != null && event.getType().equals(type)
+            && event.getInvolvedObject().getName() != null
             && event.getInvolvedObject().getName().equals(adminServerpodName)
+            && event.getReason() != null
             && event.getReason().equals(reason)
+            && event.getMessage() != null
             && event.getMessage().contains(message)) {
           logger.info(Yaml.dump(event));
           gotEvent = true;

@@ -40,13 +40,12 @@ import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
-import oracle.weblogic.domain.ClusterSpec;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -103,6 +102,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRes
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiInOpPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
@@ -166,11 +166,8 @@ public class CommonTestUtils {
   }
 
   public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
-  public static ConditionFactory withStandardRetryPolicyIgnoringExceptions =
-      createStandardRetryPolicyWithAtMost(5).ignoreExceptions();
   public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
 
-  private static final String TMP_FILE_NAME = "temp-download-file.out";
   private static int adminListenPort = 7001;
 
   /**
@@ -241,7 +238,7 @@ public class CommonTestUtils {
 
   private static <T> ConditionEvaluationListener<T> createConditionEvaluationListener(
       LoggingFacade logger, String msg, Object... params) {
-    return new ConditionEvaluationListener<T>() {
+    return new ConditionEvaluationListener<>() {
       @Override
       public void conditionEvaluated(EvaluatedCondition<T> condition) {
         int paramsSize = params != null ? params.length : 0;
@@ -389,9 +386,10 @@ public class CommonTestUtils {
    * @return true, if the cluster replica count is matched
    */
   public static boolean checkClusterReplicaCountMatches(String clusterName,
-                                                        String namespace, Integer replicaCount) throws ApiException {
-    ClusterSpec clusterSpec = Kubernetes.getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION).getSpec();
-    return Optional.ofNullable(clusterSpec).get().replicas() == replicaCount;
+                                                        String namespace, int replicaCount) throws ApiException {
+    ClusterResource clusterResource = getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION);
+    return clusterResource != null
+        && clusterResource.getSpec().replicas() == replicaCount;
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
@@ -486,7 +484,7 @@ public class CommonTestUtils {
         clusterName, domainUid, domainNamespace, replicasAfterScale);
     if (withRestApi) {
       if (OKE_CLUSTER && args != null && args.length > 0) {
-        String operatorPodName = (args == null || args.length == 0) ? null : args[0];
+        String operatorPodName = args[0];
         int opExtPort = 8081;
         assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApiInOpPod(domainUid, clusterName,
             replicasAfterScale, operatorPodName, opExtPort, opNamespace, opServiceAccount)))
@@ -1107,15 +1105,15 @@ public class CommonTestUtils {
    * Adds proxy extra arguments for image builder command.
    **/
   public static String getImageBuilderExtraArgs() {
-    StringBuffer extraArgs = new StringBuffer("");
+    StringBuffer extraArgs = new StringBuffer();
 
     String httpsproxy = HTTPS_PROXY;
     String httpproxy = HTTP_PROXY;
     String noproxy = NO_PROXY;
     LoggingFacade logger = getLogger();
     logger.info(" httpsproxy : " + httpsproxy);
-    String proxyHost = "";
-    StringBuffer mvnArgs = new StringBuffer("");
+    String proxyHost;
+    StringBuffer mvnArgs = new StringBuffer();
     if (httpsproxy != null) {
       logger.info(" httpsproxy : " + httpsproxy);
       proxyHost = httpsproxy.substring(httpsproxy.lastIndexOf("www"), httpsproxy.lastIndexOf(":"));
@@ -1136,7 +1134,7 @@ public class CommonTestUtils {
       logger.info(" noproxy : " + noproxy);
       extraArgs.append(String.format(" --build-arg no_proxy=%s",noproxy));
     }
-    if (!mvnArgs.equals("")) {
+    if (mvnArgs.length() > 0) {
       extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
     }
     return extraArgs.toString();
@@ -1167,7 +1165,8 @@ public class CommonTestUtils {
             } catch (IOException | InterruptedException ex) {
               logger.severe(ex.getMessage());
             }
-            String response = result.stdout().trim();
+
+            String response = result != null ? result.stdout().trim() : "result is null";
             logger.info(response);
             for (var managedServer : managedServers.entrySet()) {
               boolean connectToOthers = true;
@@ -1833,7 +1832,7 @@ public class CommonTestUtils {
       ex.printStackTrace();
     }
 
-    return result.stdout().contains("The server started in RUNNING mode");
+    return result != null && result.stdout() != null && result.stdout().contains("The server started in RUNNING mode");
   }
 
   /**

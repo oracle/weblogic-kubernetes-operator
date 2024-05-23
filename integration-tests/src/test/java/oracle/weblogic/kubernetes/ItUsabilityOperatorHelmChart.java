@@ -1246,6 +1246,7 @@ class ItUsabilityOperatorHelmChart {
         return result.stderr();
       }
     } catch (Exception e) {
+      assertNotNull(result, "result is null");
       getLogger().info("Got exception, command failed with errors " + e.getMessage());
       return result.stderr();
     }
@@ -1256,9 +1257,11 @@ class ItUsabilityOperatorHelmChart {
     V1ServiceAccountList sas = Kubernetes.listServiceAccounts(namespace);
     if (sas != null) {
       for (V1ServiceAccount sa : sas.getItems()) {
-        String saName = sa.getMetadata().getName();
-        deleteServiceAccount(saName, namespace);
-        checkServiceDoesNotExist(saName, namespace);
+        if (sa.getMetadata() != null) {
+          String saName = sa.getMetadata().getName();
+          deleteServiceAccount(saName, namespace);
+          checkServiceDoesNotExist(saName, namespace);
+        }
       }
     }
   }
@@ -1270,7 +1273,6 @@ class ItUsabilityOperatorHelmChart {
    **/
   private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) 
       throws UnknownHostException {
-    ExecResult result;
     String adminServerPodName = domainUid + adminServerPrefix;
     String managedServer = "managed-server1";
     int adminServiceNodePort

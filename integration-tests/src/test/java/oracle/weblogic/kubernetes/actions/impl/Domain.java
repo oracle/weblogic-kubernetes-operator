@@ -428,7 +428,7 @@ public class Domain {
     logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
         + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    if (secretToken.isEmpty()) {
+    if (secretToken == null || secretToken.isEmpty()) {
       logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
           secretName, opServiceAccount, opNamespace);
       return false;
@@ -504,7 +504,7 @@ public class Domain {
 
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
-    if (secretName.isEmpty()) {
+    if (secretName == null || secretName.isEmpty()) {
       logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
       return false;
     }
@@ -513,7 +513,7 @@ public class Domain {
     logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
         + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    if (secretToken.isEmpty()) {
+    if (secretToken == null || secretToken.isEmpty()) {
       logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
           secretName, opServiceAccount, opNamespace);
       return false;
@@ -595,7 +595,7 @@ public class Domain {
     logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
         + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    if (secretToken.isEmpty()) {
+    if (secretToken == null || secretToken.isEmpty()) {
       logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
           secretName, opServiceAccount, opNamespace);
       return new ExecResult(12, "", "secret token is empty");
@@ -1126,6 +1126,8 @@ public class Domain {
     String commandToExecuteInsidePod = scalingCommand.toString();
 
     ExecResult result = null;
+    assertNotNull(adminPod, "admin pod is null");
+    assertNotNull(adminPod.getMetadata(), "admin pod metadata is null");
     try {
       result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
           "/bin/sh", "-c", commandToExecuteInsidePod),
@@ -1134,8 +1136,10 @@ public class Domain {
       logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
           commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
     } catch (Error err) {
-      logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-          commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+      if (result != null) {
+        logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+      }
       // copy scalingAction.log to local
       testUntil(
               () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
