@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -143,7 +143,7 @@ public class WLSTUtils {
 
     // check job status and fail test if the job failed to execute WLST
     V1Job job = getJob(jobName, namespace);
-    if (job != null) {
+    if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
           v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
@@ -151,13 +151,13 @@ public class WLSTUtils {
       if (jobCondition != null) {
         logger.severe("Job {0} failed to execute WLST script", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
-        if (!pods.isEmpty()) {
+        if (!pods.isEmpty() && pods.get(0).getMetadata() != null) {
           logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
           fail("WLST execute job failed");
         }
       }
       List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
-      if (!pods.isEmpty()) {
+      if (!pods.isEmpty() && pods.get(0).getMetadata() != null) {
         logger.info(getPodLog(pods.get(0).getMetadata().getName(), namespace));
       }
     }
@@ -236,7 +236,9 @@ public class WLSTUtils {
       result = exec(checkImageBuilderVersion, true);
       logger.info(WLSIMG_BUILDER + " version: {0}", result.stdout());
     } catch (Exception ex) {
-      logger.info(WLSIMG_BUILDER + " version failed error {0} and {1}", result.stderr(), ex.getMessage());
+      if (result != null) {
+        logger.info(WLSIMG_BUILDER + " version failed error {0} and {1}", result.stderr(), ex.getMessage());
+      }
       ex.printStackTrace();
     }
 

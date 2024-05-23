@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -61,7 +61,7 @@ public class PodUtils {
    */
   public static void execInPod(V1Pod pod, String containerName, boolean redirectToStdout, String command) {
     LoggingFacade logger = getLogger();
-    ExecResult exec = null;
+    ExecResult exec;
     try {
       logger.info("Executing command {0}", command);
       exec = Exec.exec(pod, containerName, redirectToStdout, "/bin/sh", "-c", command);
@@ -551,11 +551,12 @@ public class PodUtils {
    */
   public static String getPodName(String namespace, String podPrefix) throws ApiException {
     String podName = null;
-    V1PodList pods = null;
+    V1PodList pods;
     pods = Kubernetes.listPods(namespace, null);
     if (pods.getItems().size() != 0) {
       for (V1Pod pod : pods.getItems()) {
-        if (pod != null && pod.getMetadata().getName().startsWith(podPrefix)) {
+        if (pod != null && pod.getMetadata() != null && pod.getMetadata().getName() != null
+            && pod.getMetadata().getName().startsWith(podPrefix)) {
           podName = pod.getMetadata().getName();
           break;
         }

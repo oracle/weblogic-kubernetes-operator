@@ -109,7 +109,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @IntegrationTest
 class ItLiftAndShiftFromOnPremDomain {
-  private static String opNamespace = null;
   private static String traefikNamespace = null;
   private static String domainNamespace = null;
   private static final String LIFT_AND_SHIFT_WORK_DIR = WORK_DIR + "/liftandshiftworkdir";
@@ -124,10 +123,8 @@ class ItLiftAndShiftFromOnPremDomain {
   private static final Path BUILD_SCRIPT_SOURCE_PATH = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
   private static final String domainUid = "onprem-domain";
   private static final String adminServerName = "admin-server";
-  private static final String appPath = "opdemo/index.jsp";
   private static String imageName = null;
   private static LoggingFacade logger = null;
-  private Path zipFile;
 
   private static HelmParams traefikHelmParams = null;
   private int traefikNodePort = 0;
@@ -145,7 +142,7 @@ class ItLiftAndShiftFromOnPremDomain {
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     // get a unique traefik namespace
     logger.info("Get a unique namespace for traefik");
@@ -220,13 +217,17 @@ class ItLiftAndShiftFromOnPremDomain {
     }
 
     Path tempDomainDir = Paths.get(DOMAIN_TEMP_DIR);
-    zipFile = Paths.get(createZipFile(tempDomainDir));
+    String tmpDomainDirZip = createZipFile(tempDomainDir);
+    assertNotNull(tmpDomainDirZip);
+    Path zipFile = Paths.get(tmpDomainDirZip);
     logger.info("zipfile is in {0}", zipFile.toString());
 
     // Call WDT DiscoverDomain tool with wko target to get the required file to create a
     // Mii domain image. Since WDT requires weblogic installation, we start a pod and run
     // wdt discoverDomain tool in the pod
     V1Pod webLogicPod = callSetupWebLogicPod(domainNamespace);
+    assertNotNull(webLogicPod, "webLogicPod is null");
+    assertNotNull(webLogicPod.getMetadata(), "webLogicPod metadata is null");
 
     // copy the onprem domain zip file to /u01 location inside pod
     try {
@@ -351,7 +352,7 @@ class ItLiftAndShiftFromOnPremDomain {
       }
     }
 
-    String hostAndPort = null;
+    String hostAndPort;
     if (OKD) {
       hostAndPort = getHostAndPort(hostName, traefikNodePort);
     } else {
@@ -378,7 +379,7 @@ class ItLiftAndShiftFromOnPremDomain {
         "opdemo/index.jsp",
         "WebLogic on prem to wko App");
 
-    ExecResult execResult = null;
+    ExecResult execResult;
     logger.info("curl command {0}", curlString);
 
     execResult = assertDoesNotThrow(

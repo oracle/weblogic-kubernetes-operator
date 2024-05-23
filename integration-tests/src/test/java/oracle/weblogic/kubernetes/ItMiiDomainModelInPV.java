@@ -202,6 +202,8 @@ public class ItMiiDomainModelInPV {
 
     logger.info("Setting up WebLogic pod to access PV");
     V1Pod pvPod = setupWebLogicPod(domainNamespace);
+    assertNotNull(pvPod, "pvPod is null");
+    assertNotNull(pvPod.getMetadata(), "pvPod metadata is null");
 
     logger.info("Creating directory {0} in PV", modelMountPath + "/applications");
     execInPod(pvPod, null, true, "mkdir -p " + modelMountPath + "/applications");
@@ -344,6 +346,7 @@ public class ItMiiDomainModelInPV {
         } catch (IOException | InterruptedException ex) {
           logger.severe(ex.getMessage());
         }
+        assertNotNull(result, "execResult is null");
         String response = result.stdout().trim();
         logger.info(response);
         boolean health = true;
@@ -395,6 +398,7 @@ public class ItMiiDomainModelInPV {
         }
 
         boolean health = true;
+        assertNotNull(result, "result is null");
         for (String managedServer : managedServerNames) {
           health = health && result.stdout().contains(managedServer + ":HEALTH_OK");
           if (health) {

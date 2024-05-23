@@ -351,7 +351,7 @@ class ItT3Channel {
         } catch (IOException | InterruptedException ex) {
           logger.severe(ex.getMessage());
         }
-
+        assertNotNull(result, "exec result is null");
         String response = result.stdout().trim();
         logger.info(response);
         boolean health = true;

@@ -202,7 +202,7 @@ public class DeployUtil {
 
     // check job status and fail test if the job failed to deploy
     V1Job job = getJob(jobName, namespace);
-    if (job != null) {
+    if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
           v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
@@ -211,12 +211,14 @@ public class DeployUtil {
         logger.severe("Job {0} failed to do deployment", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
         if (!pods.isEmpty()) {
-          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          V1Pod pod = pods.get(0);
+          if (pod != null && pod.getMetadata() != null) {
+            logger.severe(getPodLog(pod.getMetadata().getName(), namespace));
+          }
           fail("Deployment job failed");
         }
       }
     }
-
   }
 
   /**
@@ -277,7 +279,7 @@ public class DeployUtil {
   public static ExecResult deployUsingRest(String host, String port,
             String userName, String password, String targets, 
             Path archivePath, String hostHeader, String appName) {
-    ExecResult result = null;
+    ExecResult result;
     host = formatIPv6Host(host);
     result = deployUsingRest(host + ":" + port, userName, password, targets, archivePath,
            hostHeader, appName);
@@ -305,14 +307,14 @@ public class DeployUtil {
             String userName, String password, String targets, 
             Path archivePath, String hostHeader, String appName) {
     final LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer headerString = null;
+    ExecResult result;
+    StringBuffer headerString;
     if (hostHeader != null) {
       headerString = new StringBuffer("-H 'host: ");
       headerString.append(hostHeader)
                   .append(" ' ");
     } else {
-      headerString = new StringBuffer("");
+      headerString = new StringBuffer();
     }
     StringBuffer curlString = new StringBuffer("status=$(curl -g --noproxy '*' ");
     curlString.append(" --user " + userName + ":" + password);

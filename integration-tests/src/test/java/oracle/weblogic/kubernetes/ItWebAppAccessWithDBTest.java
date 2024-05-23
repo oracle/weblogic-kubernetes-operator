@@ -168,6 +168,8 @@ class ItWebAppAccessWithDBTest {
         String dbService = createMySQLDB("mysql", "root", "root123", domainNamespace, null);
         assertNotNull(dbService, "Failed to create database");
         V1Pod pod = getPod(domainNamespace, null, "mysql");
+        assertNotNull(pod, "pod is null");
+        assertNotNull(pod.getMetadata(), "pod metadata is null");
         createFileInPod(pod.getMetadata().getName(), domainNamespace, "root123");
         runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root123", "/tmp/grant.sql");
         runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root123", "/tmp/create.sql");

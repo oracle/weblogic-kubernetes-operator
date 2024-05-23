@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -375,7 +375,8 @@ class ItPodsRestart {
     envList = domain1.getSpec().getServerPod().getEnv();
     String envValue = envList.get(0).getValue();
     logger.info("In the new patched domain envValue is: {0}", envValue);
-    assertTrue(envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
+    assertTrue(envValue != null
+        && envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
         + " in the new patched domain");
 
     // verify the server pods are rolling restarted and back to ready state

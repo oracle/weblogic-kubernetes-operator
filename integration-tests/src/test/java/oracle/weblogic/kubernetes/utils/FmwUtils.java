@@ -189,7 +189,7 @@ public class FmwUtils {
       String opssWalletPasswordSecretName, int replicaCount, String miiImage, String configmapName) {
 
     // create the domain CR
-    DomainResource domain = new DomainResource()
+    return new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -225,8 +225,6 @@ public class FmwUtils {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .addSecretsItem(rcuAccessSecretName)
                 .introspectorJobActiveDeadlineSeconds(600L)));
-
-    return domain;
   }
 
   /**
@@ -253,7 +251,7 @@ public class FmwUtils {
                                                         int t3ChannelPort) {
 
     // create a domain custom resource configuration object
-    DomainResource domain = new DomainResource()
+    return new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -299,8 +297,6 @@ public class FmwUtils {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort)))));
-
-    return domain;
   }
 
   /**
@@ -683,7 +679,7 @@ public class FmwUtils {
                                          Map<String, Quantity> pvCapacity, Map<String, Quantity> pvcRequest,
                                          String storageClassName, String testClass) {
     Configuration configuration = new Configuration();
-    PersistentVolume pv = null;
+    PersistentVolume pv;
     if (OKE_CLUSTER) {
       storageClassName = "oci-fss";
     } else if (OKD) {

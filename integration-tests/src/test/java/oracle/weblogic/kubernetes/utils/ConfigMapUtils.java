@@ -1,6 +1,5 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-
 
 package oracle.weblogic.kubernetes.utils;
 
@@ -162,17 +161,11 @@ public class ConfigMapUtils {
   public static Callable<Boolean> configMapExist(String nameSpace, String configMapName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
     V1ConfigMap configMapToModify = cmList.stream()
-        .filter(cm -> configMapName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && configMapName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
-    return () -> {
-      if (configMapToModify != null) {
-        return true;
-      } else {
-        return false;
-      }
-    };
+    return () -> configMapToModify != null;
   }
 
   /**
@@ -183,17 +176,11 @@ public class ConfigMapUtils {
   public static Callable<Boolean> configMapDoesNotExist(String nameSpace, String configMapName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
     V1ConfigMap configMapToModify = cmList.stream()
-        .filter(cm -> configMapName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && configMapName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
-    return () -> {
-      if (configMapToModify == null) {
-        return true;
-      } else {
-        return false;
-      }
-    };
+    return () -> configMapToModify == null;
   }
 
   /**
@@ -241,14 +228,16 @@ public class ConfigMapUtils {
                                    String configFileName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
     V1ConfigMap configMapToModify = cmList.stream()
-        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && cmName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
     assertNotNull(configMapToModify,"Can't find cm for " + cmName);
     Map<String, String> cmData = configMapToModify.getData();
-
-    String values = cmData.get("logstash.conf").replace(oldRegex,newRegex);
+    String values = null;
+    if (cmData != null && cmData.get("logstash.conf") != null) {
+      values = cmData.get("logstash.conf").replace(oldRegex, newRegex);
+    }
     assertNotNull(values, "can't find values for key prometheus.yml");
     cmData.replace(configFileName, values);
 
@@ -258,7 +247,7 @@ public class ConfigMapUtils {
     cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
 
     configMapToModify = cmList.stream()
-        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && cmName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
