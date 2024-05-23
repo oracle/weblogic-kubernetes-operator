@@ -78,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test dynamic updates to a model in image domain, part3")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-sequential")
+@Tag("oke-gate")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
@@ -302,8 +302,7 @@ class ItMiiDynamicUpdatePart3 {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, OffsetDateTime> pods =
-        helper.addDataSourceAndVerify(false);
+    LinkedHashMap<String, OffsetDateTime> pods = helper.addDataSourceAndVerify(false);
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
@@ -327,7 +326,6 @@ class ItMiiDynamicUpdatePart3 {
         "Rolling restart failed");
 
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
-
 
     // check datasource configuration using REST api
     if (OKE_CLUSTER) {
@@ -377,8 +375,7 @@ class ItMiiDynamicUpdatePart3 {
 
     // write sparse yaml to delete datasource to file, delete ds to keep the config clean
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
-    String yamlToDeleteDS = "resources:\n"
-        + "  JDBCSystemResource:\n";
+    String yamlToDeleteDS = "resources:\n" + "  JDBCSystemResource:\n";
 
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
@@ -426,12 +423,9 @@ class ItMiiDynamicUpdatePart3 {
     }
     logger.info("JDBCSystemResource Datasource is deleted");
 
-
-
     // check that the domain status condition contains the correct type and expected status
     logger.info("verifying the domain status condition contains the correct type and expected status");
     helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
-
   }
 
   private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {

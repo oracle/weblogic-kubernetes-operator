@@ -30,6 +30,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -48,7 +49,9 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -61,6 +64,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
@@ -73,8 +77,10 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServe
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.exeAppInServerPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
@@ -97,6 +103,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -114,7 +121,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     + "rolling restart behavior in a multi-cluster MII domain and "
     + "the sample application can be accessed via NGINX ingress controller")
 @Tag("kind-sequential")
-@Tag("oke-sequential")
+@Tag("oke-gate")
 @IntegrationTest
 class ItMultiDomainModelsScale {
 
@@ -140,6 +147,7 @@ class ItMultiDomainModelsScale {
   private static String opNamespace = null;
   private static String opServiceAccount = null;
   private static NginxParams nginxHelmParams = null;
+  private static String nginxNamespace = null;
   private static int nodeportshttp = 0;
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
@@ -170,7 +178,7 @@ class ItMultiDomainModelsScale {
     // get a unique NGINX namespace
     logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    String nginxNamespace = namespaces.get(1);
+    nginxNamespace = namespaces.get(1);
 
     // get unique namespaces for three different type of domains
     logger.info("Getting unique namespaces for three different type of domains");
@@ -245,29 +253,51 @@ class ItMultiDomainModelsScale {
         numberOfServers = 3;
       }
 
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers);
-      curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-      List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-          replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
+      if (OKE_CLUSTER) {
+        logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+            clusterName, domainUid, domainNamespace, numberOfServers);
+        scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+            replicaCount, numberOfServers, null, null);
 
-      // then scale cluster back to 1 servers
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-      managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-          numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
+        // then scale cluster back to 1 servers
+        logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+            clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+        scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+            numberOfServers, replicaCount, null, null);
+      } else {
+        logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+            clusterName, domainUid, domainNamespace, numberOfServers);
+        curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+        List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
+        scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+            replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
+
+        // then scale cluster back to 1 servers
+        logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+            clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+        managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
+        scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+            numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
+      }
     }
 
     // verify admin console login
-    if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (OKE_CLUSTER) {
+      String resourcePath = "/console/login/LoginForm.jsp";
+      final String adminServerPodName = domainUid + "-admin-server";
+      ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName, ADMIN_SERVER_PORT, resourcePath);
+      logger.info("result in OKE_CLUSTER is {0}", result.toString());
+      assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
+
+      // verify admin console login using ingress controller
+      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
+    } else if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
       assertDoesNotThrow(()
           -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
     } else {
       verifyReadyAppUsingAdminNodePort(domainUid, domainNamespace);
-      // verify ready app using ingress controller
+      // verify admin console login using ingress controller
       verifyReadyAppUsingIngressController(domainUid, domainNamespace);
     }
 
@@ -305,14 +335,26 @@ class ItMultiDomainModelsScale {
     String clusterName = domain.getSpec().getClusters().get(0).getName();
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
     int numberOfServers = 3;
+    String operatorPodName = null;
+    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+
+    if (OKE_CLUSTER) {
+      // get operator pod name
+      operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+      assertNotNull(operatorPodName, "Operator pod name returned is null");
+      logger.info("Operator pod name {0}", operatorPodName);
+      curlCmd = domainType.contains("modelInImage")
+          ? generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT) : null;
+    }
 
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    //curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, numberOfServers, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+        false, "", "", 0, "", "",
+        curlCmd, managedServersBeforeScale, operatorPodName);
 
     // then scale cluster back to 2 servers
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
@@ -320,16 +362,26 @@ class ItMultiDomainModelsScale {
     managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         numberOfServers, replicaCount, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+        false, "", "", 0, "", "",
+        curlCmd, managedServersBeforeScale, operatorPodName);
 
     // verify admin console login
-    if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (OKE_CLUSTER) {
+      String resourcePath = "/console/login/LoginForm.jsp";
+      final String adminServerPodName = domainUid + "-admin-server";
+      ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName,ADMIN_SERVER_PORT, resourcePath);
+      logger.info("result in OKE_CLUSTER is {0}", result.toString());
+      assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
+
+      // verify admin console login using ingress controller
+      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
+    } else if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
       assertDoesNotThrow(()
           -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
     } else {
       verifyReadyAppUsingAdminNodePort(domainUid, domainNamespace);
-      // verify ready app using ingress controller
+      // verify admin console login using ingress controller
       verifyReadyAppUsingIngressController(domainUid, domainNamespace);
     }
 
@@ -340,6 +392,10 @@ class ItMultiDomainModelsScale {
   /**
    * Scale cluster using WLDF policy for three different type of domains.
    * i.e. domain-on-pv, domain-in-image and model-in-image
+   *
+   * In internal OKE env, we only test scaling cluster using WLDF policy for domain type, model-in-image.
+   * domain type, domain-in-image is excluded and domain type, domain-on-pv is tested in
+   * ItMultiDomainModelsScaleWithWLDFDomainOnPV.java
    *
    * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
    */
@@ -361,7 +417,13 @@ class ItMultiDomainModelsScale {
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
     curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-    logger.info("BR: curlCmd = {0}", curlCmd);
+    logger.info("Generated curlCmd = {0}", curlCmd);
+
+    // domain type, domain-in-image is excluded and domain type, domain-on-pv is tested in
+    // ItMultiDomainModelsScaleWithWLDFDomainOnPV.java
+    if (OKE_CLUSTER && (domainType.contains("domainInImage") || domainType.contains("domainOnPV"))) {
+      return;
+    }
 
     // scale up the cluster by 1 server
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
@@ -369,7 +431,7 @@ class ItMultiDomainModelsScale {
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     String curlCmdForWLDFScript =
         generateCurlCmd(domainUid, domainNamespace, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
-    logger.info("BR: curlCmdForWLDFScript = {0}", curlCmdForWLDFScript);
+    logger.info("Generated: curlCmdForWLDFScript = {0}", curlCmdForWLDFScript);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, replicaCount + 1, false, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
@@ -387,13 +449,22 @@ class ItMultiDomainModelsScale {
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 
     // verify admin console login
-    if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (OKE_CLUSTER) {
+      String resourcePath = "/console/login/LoginForm.jsp";
+      final String adminServerPodName = domainUid + "-admin-server";
+      ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName,ADMIN_SERVER_PORT, resourcePath);
+      logger.info("result in OKE_CLUSTER is {0}", result.toString());
+      assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
+
+      // verify admin console login using ingress controller
+      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
+    } else if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
       assertDoesNotThrow(()
           -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
     } else {
       verifyReadyAppUsingAdminNodePort(domainUid, domainNamespace);
-      // verify ready app using ingress controller
+      // verify admin console login using ingress controller
       verifyReadyAppUsingIngressController(domainUid, domainNamespace);
     }
 
@@ -575,22 +646,30 @@ class ItMultiDomainModelsScale {
    * @param appContextRoot the context root of the application
    * @return curl command string
    */
-  private static String generateCurlCmd(String domainUid, String domainNamespace, String clusterName,
+  private static String generateCurlCmd(String domainUid,
+                                        String domainNamespace,
+                                        String clusterName,
                                         String appContextRoot) {
     if (OKD) {
       String routeHost = getRouteHost(domainNamespace, domainUid + "-cluster-" + clusterName);
       logger.info("routeHost = {0}", routeHost);
-      return String.format("curl -g -v --show-error --noproxy '*' http://%s/%s/index.jsp",
-          routeHost, appContextRoot);
-
+      return String.format("curl -g -v --show-error --noproxy '*' http://%s/%s/index.jsp", routeHost, appContextRoot);
     } else {
       String host = K8S_NODEPORT_HOST;
       if (host.contains(":")) {
         host = "[" + host + "]";
       }
-      return String.format("curl -g -v --show-error --noproxy '*' -H 'host: %s' http://%s/%s/index.jsp",
+      if (OKE_CLUSTER) {
+        String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+
+        return String.format("curl -g -v --show-error --noproxy '*' -H 'host: %s' http://%s/%s/index.jsp",
           domainUid + "." + domainNamespace + "." + clusterName + ".test",
-          getHostAndPort(host, nodeportshttp), appContextRoot);
+          getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace), appContextRoot);
+      } else {
+        return String.format("curl -g -v --show-error --noproxy '*' -H 'host: %s' http://%s/%s/index.jsp",
+            domainUid + "." + domainNamespace + "." + clusterName + ".test",
+            getHostAndPort(host, nodeportshttp), appContextRoot);
+      }
     }
   }
 
@@ -740,7 +819,10 @@ class ItMultiDomainModelsScale {
 
     if (!OKD) {
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-      if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      if (OKE_CLUSTER) {
+        createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
+            false, nginxHelmParams.getIngressClassName(), false, 0);
+      } else if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
         createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
             true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
       } else {
@@ -795,7 +877,7 @@ class ItMultiDomainModelsScale {
     }
   }
 
-  // verify the ready app using admin node port
+  // verify the admin console login using admin node port
   private void verifyReadyAppUsingAdminNodePort(String domainUid, String domainNamespace) {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -816,26 +898,34 @@ class ItMultiDomainModelsScale {
         "readyapp validation");
   }
 
-  // Verify ready app using ingress controller
+  // Verify admin console login using ingress controller
   private void verifyReadyAppUsingIngressController(String domainUid, String domainNamespace) {
 
     if (!OKD) {
+      if (OKE_CLUSTER) {
+        final String adminServerPodName = domainUid + "-admin-server";
+        String resourcePath = "/weblogic/ready";
+        ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName, 7002, resourcePath);
+        logger.info("result in OKE_CLUSTER is {0}", result.toString());
+        assertEquals(0, result.exitValue(), "Failed to access WebLogic ready app");
+      } else {
+        String host = K8S_NODEPORT_HOST;
+        if (host.contains(":")) {
+          host = "[" + host + "]";
+        }
 
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
+        String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: "
+            + domainUid + "." + domainNamespace + ".adminserver.test"
+            + "' http://" + host + ":" + nodeportshttp
+            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+        logger.info("Executing curl command {0}", curlCmd);
+        testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
+            logger,
+            "Ready app on domain {0} in namespace {1} is accessible",
+            domainUid,
+            domainNamespace);
       }
-      String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: "
-          + domainUid + "." + domainNamespace + ".adminserver.test"
-          + "' http://" + host + ":" + nodeportshttp
-          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
-
-      logger.info("Executing curl command {0}", curlCmd);
-      testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
-          logger,
-          "Ready app on domain {0} in namespace {1} is accessible",
-          domainUid,
-          domainNamespace);
 
       logger.info("Ready app on domain1 is accessible");
     } else {

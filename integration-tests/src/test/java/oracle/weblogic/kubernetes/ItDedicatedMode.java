@@ -37,6 +37,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -46,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.actions.impl.Domain.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyClusterAfterScaling;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -66,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
 @Tag("kind-sequential")
-@Tag("oke-sequential")
+@Tag("oke-gate")
 @Tag("okd-wls-mrg")
 @IntegrationTest
 class ItDedicatedMode {
@@ -208,8 +210,13 @@ class ItDedicatedMode {
     }
 
     logger.info("scaling the cluster from {0} servers to {1} servers", replicaCount, replicaCount + 1);
-    scaleClusterWithRestApi(domainUid, clusterName, replicaCount + 1,
-        externalRestHttpshost, externalRestHttpsPort, opNamespace, opServiceAccount);
+    if (OKE_CLUSTER) {
+      scaleAndVerifyCluster(clusterResName, domainUid, domain1Namespace, managedServerPodPrefix,
+          replicaCount, replicaCount + 1, null, null);
+    } else {
+      scaleClusterWithRestApi(domainUid, clusterName, replicaCount + 1,
+          externalRestHttpshost, externalRestHttpsPort, opNamespace, opServiceAccount);
+    }
 
     verifyClusterAfterScaling(domainUid, domain1Namespace, managedServerPodPrefix,
         replicaCount, replicaCount + 1, null, null, listOfPodCreationTimestamp);
