@@ -479,6 +479,10 @@ nodes:
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
+kubeadmConfigPatches:
+- |
+  kind: KubeletConfiguration
+  localStorageCapacityIsolation: true	
 EOF
 
                             export KUBECONFIG=${kubeconfig_file}
