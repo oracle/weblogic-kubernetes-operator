@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.calls;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.monitoring.Monitoring;
@@ -34,6 +36,13 @@ public class Client {
       try {
         LOGGER.fine(MessageKeys.CREATING_API_CLIENT);
         ApiClient client = factory.get();
+        String proxy = System.getenv("HTTPS_PROXY");
+        if (proxy != null) {
+          String[] components = proxy.split(":");
+          client.setHttpClient(client.getHttpClient().newBuilder()
+              .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(components[0], Integer.valueOf(components[1]))))
+              .build());
+        }
         Monitoring.installMetrics(client);
         Configuration.setDefaultApiClient(client);
         return client;
