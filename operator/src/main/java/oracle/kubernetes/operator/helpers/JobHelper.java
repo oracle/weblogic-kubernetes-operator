@@ -64,8 +64,10 @@ import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveFailuresStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_CLUSTER_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_TIME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -359,7 +361,8 @@ public class JobHelper {
       }
 
       private boolean isBringingUpNewDomain(Packet packet) {
-        return getNumRunningServers() == 0 && creatingServers(info) && isDomainGenerationChanged(packet);
+        return getNumRunningServers() == 0 && creatingServers(info)
+           && (isDomainGenerationChanged(packet) || isAnyClusterGenerationChanged(packet));
       }
 
       private int getNumRunningServers() {
@@ -377,6 +380,31 @@ public class JobHelper {
               .map(V1ObjectMeta::getGeneration)
               .map(Object::toString)
               .orElse("");
+      }
+
+      private boolean isAnyClusterGenerationChanged(Packet packet) {
+        List<ClusterResource> referencedClusters = info.getReferencedClusters();
+        if (referencedClusters.size() != packet.entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith(INTROSPECTION_CLUSTER_SPEC_GENERATION)).count()) {
+          return true;
+        }
+
+        for (ClusterResource clusterResource : referencedClusters) {
+          if (Optional.ofNullable(packet.get(INTROSPECTION_CLUSTER_SPEC_GENERATION
+                  + "." + clusterResource.getMetadata().getName()))
+                  .map(gen -> !gen.equals(getClusterGeneration(clusterResource))).orElse(true)) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      private String getClusterGeneration(ClusterResource clusterResource) {
+        return Optional.ofNullable(clusterResource.getMetadata())
+                .map(V1ObjectMeta::getGeneration)
+                .map(Object::toString)
+                .orElse("");
       }
 
       // Returns true if an introspection was requested. Clears the flag in any case.
@@ -509,6 +537,9 @@ public class JobHelper {
 
         String jobPodName = JobHelper.getName(jobPod);
 
+        Optional.ofNullable(jobPod).map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getCreationTimestamp).map(OffsetDateTime::toString)
+                .ifPresent(creationTime -> packet.put(INTROSPECTION_TIME, creationTime.replace(':', '_')));
         return doNext(readDomainIntrospectorPodLog(jobPodName, containerName, getNext()), packet);
       }
 
