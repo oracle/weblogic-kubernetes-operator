@@ -83,6 +83,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_OPERATOR_NS;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_MOUNT_PATH;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_VOLUME;
@@ -767,10 +768,11 @@ public class DbUtils {
   /**
    * Install Oracle Database Operator.
    *
-   * @param namespace name of the namespace
    * @throws IOException when fails to modify operator yaml file
    */
-  public static void installDBOperator(String namespace) throws IOException {
+  public static synchronized void installDBOperator() throws IOException {
+    String namespace = ORACLE_OPERATOR_NS;
+    String dbOpPodName = "oracle-database-operator-controller-manager";
     Path operatorYamlSrcFile = Paths.get(RESOURCE_DIR, "dboperator", "oracle-database-operator.yaml");
     Path operatorYamlDestFile = Paths.get(DOWNLOAD_DIR, namespace, "oracle-database-operator.yaml");
 
@@ -790,8 +792,6 @@ public class DbUtils {
     params.command(KUBERNETES_CLI + " apply -f " + operatorYamlDestFile);
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
-
-    String dbOpPodName = "oracle-database-operator-controller-manager";
 
     // wait for the pod to be ready
     getLogger().info("Wait for the database operator {0} pod to be ready in namespace {1}",

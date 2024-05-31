@@ -104,8 +104,6 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperat
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
-import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
@@ -220,10 +218,8 @@ class ItVzDBOperator {
     createBaseRepoSecret(fmwDomainNamespace);
     createBaseRepoSecret(wlsDomainNamespace);
 
-    //install Oracle Database Operator
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
-
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
@@ -649,7 +645,6 @@ class ItVzDBOperator {
   public void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
-      uninstallDBOperator(dbNamespace);
       Kubernetes.deletePv(pvName);
     }
   }
