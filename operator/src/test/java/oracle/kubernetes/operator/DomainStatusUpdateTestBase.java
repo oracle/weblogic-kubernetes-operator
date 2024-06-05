@@ -238,6 +238,22 @@ abstract class DomainStatusUpdateTestBase {
     return info.getServerPod(serverName);
   }
 
+  private void setPodUnschedulable(String serverName) {
+    V1Pod pod = getPod(serverName);
+    V1PodStatus status = pod.getStatus();
+    if (status == null) {
+      status = new V1PodStatus();
+    }
+    pod.setStatus(status
+            .startTime(SystemClock.now())
+            .phase("Pending")
+            .addConditionsItem(new V1PodCondition().type("PodScheduled").status("False").reason("Unschedulable")
+                    .message("0/1 nodes are available: 1 node(s) didn't match pod topology"
+                            + " spread constraints (missing required label). preemption: 0/1 nodes are available: "
+                            + "1 Preemption is not helpful for scheduling.."))
+    );
+  }
+
   @Test
   void statusStep_usesServerFromWlsConfig() {
     defineScenario()
@@ -1031,6 +1047,20 @@ abstract class DomainStatusUpdateTestBase {
 
     assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
   }
+
+  @Test
+  void whenPodIsUnschedulable_reportServerPodFailure() {
+    defineScenario()
+            .withServerState("server1", new V1ContainerStateWaiting().reason(null))
+            .build();
+    setPodUnschedulable("server1");
+
+    SystemClockTestSupport.increment(21);
+    updateDomainStatus();
+    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(SERVER_POD)
+            .withMessageContaining("One or more pods in the domain cannot be scheduled."));
+  }
+
 
   // todo remove server pod failures when OK
 

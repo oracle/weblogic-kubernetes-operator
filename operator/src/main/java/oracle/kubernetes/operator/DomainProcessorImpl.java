@@ -24,7 +24,9 @@ import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.logging.LoggingFilter;
@@ -64,9 +66,12 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.POD_UNSCHEDULABLE;
 import static oracle.kubernetes.common.logging.MessageKeys.PVC_NOT_BOUND_ERROR;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
+import static oracle.kubernetes.operator.KubernetesConstants.POD_SCHEDULED;
+import static oracle.kubernetes.operator.KubernetesConstants.UNSCHEDULABLE_REASON;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
@@ -582,6 +587,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         if ((isEvicted || isReady != isLabedlForShutdown || PodHelper.isFailed(pod)) && !PodHelper.isDeleting(pod)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
+        boolean isUnschedulable = PodHelper.hasUnSchedulableCondition(pod);
+        if (isUnschedulable) {
+          LOGGER.info(POD_UNSCHEDULABLE,  getPodName(pod), getUnSchedulableConditionMessage(pod));
+        }
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
@@ -595,6 +604,25 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       default:
     }
   }
+
+  /**
+   * If a pod is unschedulable, return the condition's message.
+   * @param pod Kubernetes V1Pod
+   * @return message for the unschedulable pod condition
+   */
+  public static String getUnSchedulableConditionMessage(V1Pod pod) {
+    return Optional.ofNullable(pod)
+            .filter(PodHelper::isPending)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getConditions)
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(condition -> POD_SCHEDULED.equals(condition.getType())
+                    && UNSCHEDULABLE_REASON.equals(condition.getReason()))
+            .map(V1PodCondition::getMessage)
+            .findFirst().orElse(null);
+  }
+
 
   private String getPodLabel(V1Pod pod, String labelName) {
     return Optional.ofNullable(pod)

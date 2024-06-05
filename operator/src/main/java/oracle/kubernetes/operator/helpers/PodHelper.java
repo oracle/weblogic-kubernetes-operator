@@ -51,6 +51,8 @@ import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.POD_SCHEDULED;
+import static oracle.kubernetes.operator.KubernetesConstants.UNSCHEDULABLE_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -214,6 +216,11 @@ public class PodHelper {
     return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
+  private static boolean isUnSchedulableTheReason(V1PodCondition condition) {
+    return POD_SCHEDULED.equals(condition.getType()) && "False".equals(condition.getStatus())
+            && UNSCHEDULABLE_REASON.equals(condition.getReason());
+  }
+
   private static boolean isReadyNotTrueCondition(V1PodCondition condition) {
     return "Ready".equals(condition.getType()) && !"True".equals(condition.getStatus());
   }
@@ -297,6 +304,21 @@ public class PodHelper {
    */
   public static boolean shouldRestartEvictedPod(V1Pod pod) {
     return isEvicted(pod) && TuningParameters.getInstance().isRestartEvictedPods();
+  }
+
+  /**
+   * Return true if the pod has unschedulable condition.
+   * @param pod  Kubernetes Pod
+   * @return true if the pod is unschedulable
+   */
+  public static boolean hasUnSchedulableCondition(V1Pod pod) {
+    return Optional.ofNullable(pod)
+            .filter(PodHelper::isPending)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getConditions)
+            .orElse(Collections.emptyList())
+            .stream()
+            .anyMatch(PodHelper::isUnSchedulableTheReason);
   }
 
   /**
