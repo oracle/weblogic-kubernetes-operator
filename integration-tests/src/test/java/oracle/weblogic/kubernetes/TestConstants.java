@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getBaseImagesPrefixLength;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDomainImagePrefix;
@@ -461,15 +460,10 @@ public interface TestConstants {
   // metrics server constants
   public static final String METRICS_SERVER_YAML =
       "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
-  
-  // verrazzano related constants
-  public static final String VZ_INGRESS_NS = "ingress-nginx";
-  public static final String VZ_SYSTEM_NS = "verrazzano-system";
-  public static final String VZ_ISTIO_NS = "istio-system";
-  public static final boolean VZ_ENV = assertDoesNotThrow(() -> listNamespaces().stream()
-        .anyMatch(ns -> ns.equals(VZ_SYSTEM_NS)));
+
   public static final String LARGE_DOMAIN_TESTING_PROPS_FILE =
       "largedomaintesting.props";
+  public static final String ORACLE_OPERATOR_NS = "ns-oracle-operator";
   
   //node ports used by the integration tests
   public static final int IT_EXTERNALNODEPORTSERVICE_NODEPORT = 31000;

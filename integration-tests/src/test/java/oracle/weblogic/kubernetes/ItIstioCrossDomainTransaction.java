@@ -65,11 +65,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -112,13 +112,10 @@ class ItIstioCrossDomainTransaction {
   private static String adminServerName = "admin-server";  
   private static String domain1AdminServerPodName = domainUid1 + "-" + adminServerName;
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
-  private static String domain2AdminServerPodName = domainUid2 + "-" + adminServerName;
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static String clusterName = "cluster-1";
   private static final String SYSPASSWORD = "Oradoc_db1";
   private static String dbName = "my-istiocxt-sidb";  
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static LoggingFacade logger = null;
   private static String dbUrl;
   static int istioIngressPort;
@@ -148,10 +145,8 @@ class ItIstioCrossDomainTransaction {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
-    //install Oracle Database Operator
-    assertDoesNotThrow(() -> installDBOperator(domain2Namespace), "Failed to install database operator");
-
     logger.info("Create Oracle DB in namespace: {0} ", domain2Namespace);
+    createBaseRepoSecret(domain2Namespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, SYSPASSWORD, domain2Namespace));
 
     // Now that we got the namespaces for both the domains, we need to update the model properties
