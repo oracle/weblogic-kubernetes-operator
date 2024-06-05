@@ -74,6 +74,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.NO_APPLICATION_SERVER
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
+import static oracle.kubernetes.common.logging.MessageKeys.POD_UNSCHEDULABLE_MESSAGE;
 import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.MINIMUM_CLUSTER_COUNT;
@@ -744,6 +745,11 @@ public class DomainStatusUpdater {
         if (isHasFailedPod()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
               .withFailureInfo(getDomain().getSpec()).withMessage(getPodFailedMessage()));
+        } else if (isPodUnSchedulable()) {
+          if (!alreadyReportedPodUnSchedulableCondition(status)) {
+            addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
+                    .withFailureInfo(getDomain().getSpec()).withMessage(getPodUnSchedulableMessage()));
+          }
         } else if (hasPodNotRunningInTime()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
               .withFailureInfo(getDomain().getSpec()).withMessage(getPodNotRunningMessage()));
@@ -768,6 +774,10 @@ public class DomainStatusUpdater {
 
       private String getPodNotReadyMessage() {
         return LOGGER.formatMessage(PODS_NOT_READY);
+      }
+
+      private String getPodUnSchedulableMessage() {
+        return LOGGER.formatMessage(POD_UNSCHEDULABLE_MESSAGE);
       }
 
       private String getPodFailedMessage() {
@@ -1251,6 +1261,11 @@ public class DomainStatusUpdater {
             .anyMatch(m -> m.containsKey(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL));
       }
 
+      private boolean alreadyReportedPodUnSchedulableCondition(DomainStatus status) {
+        return status.getConditions().stream().anyMatch(
+                condition -> getPodUnSchedulableMessage().equals(condition.getMessage()));
+      }
+
       private V1Pod getServerPod(ServerStatus serverStatus) {
         return getInfo().getServerPod(serverStatus.getServerName());
       }
@@ -1316,6 +1331,14 @@ public class DomainStatusUpdater {
 
       private boolean hasPodNotRunningInTime() {
         return getInfo().getServerPodsNotBeingDeleted().anyMatch(this::isNotRunningInTime);
+      }
+
+      private boolean isPodUnSchedulable() {
+        return getInfo().getServerPodsNotBeingDeleted().anyMatch(this::isPodUnSchedulable);
+      }
+
+      private boolean isPodUnSchedulable(V1Pod pod) {
+        return PodHelper.isPending(pod) && PodHelper.hasUnSchedulableCondition(pod);
       }
 
       private boolean isNotRunningInTime(V1Pod pod) {
