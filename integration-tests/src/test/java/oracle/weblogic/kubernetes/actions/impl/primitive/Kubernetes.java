@@ -90,10 +90,6 @@ import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
-import oracle.verrazzano.weblogic.ApplicationConfiguration;
-import oracle.verrazzano.weblogic.ApplicationList;
-import oracle.verrazzano.weblogic.Component;
-import oracle.verrazzano.weblogic.ComponentList;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
@@ -145,8 +141,6 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
   private static GenericKubernetesApi<DomainResource, DomainList> crdClient = null;
-  private static GenericKubernetesApi<ApplicationConfiguration, ApplicationList> vzAppCrdClient = null;
-  private static GenericKubernetesApi<Component, ComponentList> vzComCrdClient = null;
   private static GenericKubernetesApi<ClusterResource, ClusterList> clusterCrdClient = null;
   private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
   private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
@@ -203,27 +197,7 @@ public class Kubernetes {
             DOMAIN_PLURAL, // the resource plural
             apiClient //the api client
         );
-    
-    vzAppCrdClient =
-        new GenericKubernetesApi<>(
-            ApplicationConfiguration.class,  // the api type class
-            ApplicationList.class, // the api list type class
-            APPLICATION_GROUP, // the api group
-            APPLICATION_VERSION, // the api version
-            APPLICATION_PLURAL, // the resource plural
-            apiClient //the api client
-        );
-    
-    vzComCrdClient =
-        new GenericKubernetesApi<>(
-            Component.class,  // the api type class
-            ComponentList.class, // the api list type class
-            COMPONENT_GROUP, // the api group
-            COMPONENT_VERSION, // the api version
-            COMPONENT_PLURAL, // the resource plural
-            apiClient //the api client
-        );    
-    
+
     clusterCrdClient =
         new GenericKubernetesApi<>(
             ClusterResource.class,  // the api type class
@@ -1327,161 +1301,6 @@ public class Kubernetes {
     }
 
     return true;
-  }
-
-  /**
-   * Create a Verrazzano Component resource.
-   *
-   * @param component Component custom resource model object
-   * @param comVersion custom resource's version
-   * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean createComponent(Component component, String... comVersion) throws ApiException {
-    String componentVersion = (comVersion.length == 0) ? COMPONENT_VERSION : comVersion[0];
-
-    if (component == null) {
-      throw new IllegalArgumentException(
-          "Parameter 'component' cannot be null when calling createComponent()");
-    }
-
-    if (component.metadata() == null) {
-      throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'component' cannot be null when calling createComponent()");
-    }
-
-    if (component.metadata().getNamespace() == null) {
-      throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createComponent()");
-    }
-
-    String namespace = component.metadata().getNamespace();
-
-    JsonElement json = convertToJson(component);
-
-    Object response;
-    try {
-      response = customObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
-          componentVersion, //custom resource's version
-          namespace, // custom resource's namespace
-          COMPONENT_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null // field manager
-      );
-    } catch (ApiException apex) {
-      getLogger().severe(apex.getResponseBody());
-      throw apex;
-    }
-
-    return true;
-  }
-
-  /**
-   * Delete Component Custom Resources from a given namespace.
-   *
-   * @param name of the component to delete
-   * @param namespace namespace name
-   * @return true if the resource exists and deleted
-   * @throws io.kubernetes.client.openapi.ApiException when list fails
-   */
-  public static boolean deleteComponent(String name, String namespace)
-      throws ApiException {
-    KubernetesApiResponse<Component> response = null;
-    try {
-      response = vzComCrdClient.delete(namespace, name);
-    } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
-      throw ex;
-    }
-
-    if (!response.isSuccess()) {
-      getLogger().warning("Failed to delete config map '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
-      return false;
-    }
-    return response.isSuccess();
-  }
-  
-  /**
-   * List Component Custom Resources from a given namespace.
-   *
-   * @param namespace namespace name
-   * @return List of Component Custom Resources
-   * @throws io.kubernetes.client.openapi.ApiException when list fails
-   */
-  public static ComponentList listComponents(String namespace)
-      throws ApiException {
-    KubernetesApiResponse<ComponentList> response = null;
-    try {
-      response = vzComCrdClient.list(namespace);
-    } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
-      throw ex;
-    }
-    return response != null ? response.getObject() : new ComponentList();
-  }
-  
-  /**
-   * Create a Verrazzano ApplicationConfiguration Custom Resource.
-   *
-   * @param application ApplicationConfiguration custom resource model object
-   * @param appVersion custom resource's version
-   * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean createApplication(ApplicationConfiguration application, String... appVersion) 
-      throws ApiException {
-    String applicationVersion = (appVersion.length == 0) ? APPLICATION_VERSION : appVersion[0];
-
-    if (application == null) {
-      throw new IllegalArgumentException(
-          "Parameter 'application' cannot be null when calling createApplication()");
-    }
-
-    if (application.metadata() == null) {
-      throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'application' cannot be null when calling createApplication()");
-    }
-    String namespace = application.metadata().getNamespace();
-    JsonElement json = convertToJson(application);
-    Object response;    
-    try {
-      response = customObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
-          applicationVersion, //custom resource's version
-          namespace, // custom resource's namespace
-          APPLICATION_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null // field manager
-      );
-    } catch (ApiException apex) {
-      getLogger().severe(apex.getResponseBody());
-      throw apex;
-    }
-
-    return true;
-  }
-  
-  /**
-   * List ApplicationConfiguration Custom Resources from a given namespace.
-   *
-   * @param namespace namespace name
-   * @return List of ApplicationConfiguration Custom Resources
-   * @throws io.kubernetes.client.openapi.ApiException when list fails
-   */
-  public static ApplicationList listApplications(String namespace)
-      throws ApiException {
-    KubernetesApiResponse<ApplicationList> response = null;
-    try {
-      response = vzAppCrdClient.list(namespace);
-    } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
-      throw ex;
-    }
-    return response != null ? response.getObject() : new ApplicationList();
   }
   
   /**

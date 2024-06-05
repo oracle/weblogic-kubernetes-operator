@@ -66,7 +66,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
@@ -103,7 +102,6 @@ class ItFmwDomainOnPV {
   private static String dbNamespace = null;
 
   private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static final String storageClassName = "fmw-domain-storage-class";
@@ -115,7 +113,6 @@ class ItFmwDomainOnPV {
   private static final int replicaCount = 2;
 
   private final String fmwModelFilePrefix = "model-fmwdomain-onpv-simplified";
-  private final String wlsModelFilePrefix = "model-wlsdomain-onpv-simplified";
 
   /**
    * Assigns unique namespaces for DB, operator and domain.
@@ -145,9 +142,8 @@ class ItFmwDomainOnPV {
 
     //install Oracle Database Operator
     String dbName = "fmwdomainonpv1" + "my-oracle-db";
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
-
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     // install operator and verify its running in ready state

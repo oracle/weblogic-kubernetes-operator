@@ -40,7 +40,6 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
@@ -72,8 +71,6 @@ class ItFmwDomainInPVUsingWDT {
   private static String java_home = null;
 
   private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -87,8 +84,6 @@ class ItFmwDomainInPVUsingWDT {
   private static final String clusterName = "cluster-1";
   private static final String adminServerName = "admin-server";
   private static final String managedServerNameBase = "managed-server";
-  private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   private static final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
@@ -124,10 +119,8 @@ class ItFmwDomainInPVUsingWDT {
 
     DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
 
-    //install Oracle Database Operator
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
-
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "

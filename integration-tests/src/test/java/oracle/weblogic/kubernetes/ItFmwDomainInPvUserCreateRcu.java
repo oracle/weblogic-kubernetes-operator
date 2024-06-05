@@ -66,7 +66,6 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
@@ -107,14 +106,11 @@ public class ItFmwDomainInPvUserCreateRcu {
   private static String dbNamespace = null;
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainpv";
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
 
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
-  private static String DOMAINHOMEPREFIX = null;
   private static final String domainUid1 = "jrfdomainonpv-userrcu1";
   private static final String domainUid3 = "jrfdomainonpv-userrcu3";
   private static final String domainUid4 = "jrfdomainonpv-userrcu4";
@@ -167,9 +163,8 @@ public class ItFmwDomainInPvUserCreateRcu {
     
     //install Oracle Database Operator
     String dbName = "fmwdomainonpv2" + "my-oracle-db";
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
-
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     // install operator with DomainOnPvSimplification=true"

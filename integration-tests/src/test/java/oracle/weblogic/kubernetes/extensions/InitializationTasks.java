@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_OPERATOR_NS;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -107,6 +108,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
@@ -308,6 +310,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
           installTraefikLB();
         }
+        //install Oracle Database operator as a one time task
+        installOracleDBOperator();        
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
@@ -363,6 +367,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       if (!OKD && !OKE_CLUSTER && !OCNE && !CRIO) {
         logger.info("Delete istio-system namespace after all test suites are run");
         deleteNamespace("istio-system");
+        deleteNamespace(ORACLE_OPERATOR_NS);
       }
       logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
       try {
@@ -663,5 +668,12 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     //oc -n ns-abcdef expose service nginx-release-nginx-ingress-nginx-controller
     //oc -n ns-abcdef get routes nginx-release-nginx-ingress-nginx-controller '-o=jsonpath={.spec.host}'
   }  
+
+  private void installOracleDBOperator() {
+    //install Oracle Database Operator
+    String namespace = ORACLE_OPERATOR_NS;
+    assertDoesNotThrow(() -> new Namespace().name(namespace).create());
+    assertDoesNotThrow(() -> installDBOperator(), "Failed to install database operator");
+  }
 
 }

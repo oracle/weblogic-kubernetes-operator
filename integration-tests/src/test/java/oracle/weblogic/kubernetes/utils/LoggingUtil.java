@@ -40,7 +40,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.VZ_ENV;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumeClaims;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumes;
@@ -278,20 +277,6 @@ public class LoggingUtil {
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
-    }
-
-    // get verrazzano applications and components
-    if (VZ_ENV) {
-      try {
-        writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.applications.log");
-      } catch (Exception ex) {
-        logger.warning("Listing applications failed, not collecting any data for applications");
-      }
-      try {
-        writeToFile(Kubernetes.listComponents(namespace), resultDir, namespace + ".list.components.log");
-      } catch (Exception ex) {
-        logger.warning("Listing components failed, not collecting any data for components");
-      }
     }
   }
 
