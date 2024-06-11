@@ -56,7 +56,8 @@ public interface KubernetesConstants {
   String NAMESPACE = "Namespace";
   String POD = "Pod";
   String EVICTED_REASON = "Evicted";
-
+  String UNSCHEDULABLE_REASON = "Unschedulable";
+  String POD_SCHEDULED = "PodScheduled";
   int DEFAULT_EXPORTER_SIDECAR_PORT = 8080;
 
   //---------- HTTP statuses returned from Kubernetes ----------
