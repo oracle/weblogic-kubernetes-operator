@@ -1461,7 +1461,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private boolean mapsLogHome(String mountPath) {
-      return getLogHome().startsWith(separatorTerminated(mountPath));
+      return separatorTerminated(getLogHome()).startsWith(separatorTerminated(mountPath));
     }
 
     private String separatorTerminated(String path) {
