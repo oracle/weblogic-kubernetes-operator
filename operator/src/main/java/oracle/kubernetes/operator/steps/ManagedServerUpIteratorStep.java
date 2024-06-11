@@ -149,7 +149,7 @@ public class ManagedServerUpIteratorStep extends Step {
               (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       V1Pod managedPod = info.getServerPod(serverName);
 
-      if (managedPod == null || !isPodReady(managedPod)) {
+      if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod))) {
         // requeue to wait for managed pod to be ready
         return doRequeue(packet);
       }
@@ -158,7 +158,11 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     protected boolean isPodReady(V1Pod result) {
-      return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
+      return PodHelper.isReady(result);
+    }
+
+    protected boolean isPodMarkedForShutdown(V1Pod result) {
+      return PodHelper.isDeleting(result) || PodHelper.isPodAlreadyLabeledForShutdown(result);
     }
   }
 
