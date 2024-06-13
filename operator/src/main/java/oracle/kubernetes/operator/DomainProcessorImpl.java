@@ -19,6 +19,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -51,6 +52,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.watcher.JobWatcher;
 import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -542,6 +544,42 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
           .map(p -> (DomainPresenceInfo) p.get(ProcessingConstants.DOMAIN_PRESENCE_INFO))
           .map(DomainPresenceInfo::getDomainUid).orElse("");
   }
+
+  /**
+   * Dispatch job watch event.
+   * @param item watch event
+   */
+  public void dispatchJobWatch(Watch.Response<V1Job> item) {
+    V1Job job = item.object;
+    String domainUid = getJobDomainUid(job);
+    String namespace = Optional.ofNullable(job.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null);
+    if (domainUid == null || namespace == null) {
+      return;
+    }
+
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(namespace, domainUid);
+    if (info == null) {
+      return;
+    }
+
+    switch (item.type) {
+      case MODIFIED:
+        if (JobWatcher.isComplete(job) || JobWatcher.isFailed(job)) {
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        }
+        break;
+      default:
+    }
+  }
+
+  private static String getJobDomainUid(V1Job job) {
+    return Optional.ofNullable(job)
+            .map(V1Job::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .orElse(Collections.emptyMap())
+            .get(LabelConstants.DOMAINUID_LABEL);
+  }
+
 
   /**
    * Dispatch pod watch event.

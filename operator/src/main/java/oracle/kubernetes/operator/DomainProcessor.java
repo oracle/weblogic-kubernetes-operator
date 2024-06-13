@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
@@ -70,6 +71,12 @@ public interface DomainProcessor {
    * @param item a Kubernetes watch event
    */
   void dispatchDomainWatch(Watch.Response<DomainResource> item);
+
+  /**
+   * Handles a watch event for jobs in the managed namespaces.
+   * @param item a Kubernetes watch event
+   */
+  void dispatchJobWatch(Watch.Response<V1Job> item);
 
   /**
    * Handles a watch event for pods in the managed namespaces.

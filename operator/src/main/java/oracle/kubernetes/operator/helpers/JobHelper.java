@@ -459,7 +459,7 @@ public class JobHelper {
       return new CheckForFailedIntrospectorStep();
     }
 
-    private static class CheckForFailedIntrospectorStep extends Step {
+    private class CheckForFailedIntrospectorStep extends Step {
 
       @Override
       public @Nonnull Result apply(Packet packet) {
@@ -467,8 +467,8 @@ public class JobHelper {
 
         if (JobWatcher.isFailed(domainIntrospectorJob)) {
           return doNext(
-              Step.chain(createIntrospectionFailureSteps(
-                  getFailedReason(domainIntrospectorJob), domainIntrospectorJob), getNext()), packet);
+              Step.chain(createIntrospectionFailureSteps(getFailedReason(domainIntrospectorJob), domainIntrospectorJob),
+                  cleanUpAndReintrospect(getNext())), packet);
         }
         if (JobWatcher.isComplete(domainIntrospectorJob)) {
           return doNext(createRemoveFailuresStep(getNext()), packet);
