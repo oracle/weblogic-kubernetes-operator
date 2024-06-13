@@ -311,7 +311,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
-        if (!OCNE && !OKD) {
+        if (!OCNE && !OKD && !CRIO) {
           installOracleDBOperator();
         }
 
