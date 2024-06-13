@@ -70,7 +70,7 @@ public class DomainNamespaces {
   private final WatcherControl<CoreV1Event, OperatorEventWatcher> operatorEventWatchers
       = new WatcherControl<>(OperatorEventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
-        = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
+        = new WatcherControl<>(JobWatcher::create, d -> d::dispatchJobWatch);
   private final WatcherControl<V1Pod, PodWatcher> podWatchers
         = new WatcherControl<>(PodWatcher::create, d -> d::dispatchPodWatch);
   private final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
