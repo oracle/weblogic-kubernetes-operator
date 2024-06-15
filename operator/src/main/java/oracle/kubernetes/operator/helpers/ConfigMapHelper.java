@@ -59,7 +59,6 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONF
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SIT_CONFIG_FILE_PREFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
-import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_CLUSTER_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_TIME;
@@ -332,11 +331,6 @@ public class ConfigMapHelper {
             .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
         Optional.ofNullable(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getGeneration)
             .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
-        DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getReferencedClusters)
-            .ifPresent(list -> list.forEach(cluster -> Optional.ofNullable(cluster.getMetadata())
-                .map(V1ObjectMeta::getGeneration)
-                .ifPresent(value -> addLabel(INTROSPECTION_CLUSTER_SPEC_GENERATION + "."
-                    + cluster.getMetadata().getName(), value.toString()))));
         Optional.ofNullable((String) packet.get(INTROSPECTION_TIME))
                 .ifPresent(value -> addLabel(INTROSPECTION_TIME, value));
         V1ConfigMap existingMap = withoutTransientData(callResponse.getObject());
@@ -927,9 +921,6 @@ public class ConfigMapHelper {
                       () -> packet.remove(INTROSPECTION_STATE_LABEL));
       Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
               .ifPresent(generation -> packet.put(INTROSPECTION_DOMAIN_SPEC_GENERATION, generation));
-      Optional.ofNullable(labels).ifPresent(x -> x.entrySet().stream()
-              .filter(entry -> entry.getKey().startsWith(INTROSPECTION_CLUSTER_SPEC_GENERATION))
-              .forEach(entry -> packet.put(entry.getKey(), entry.getValue())));
       Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_TIME))
               .ifPresent(value -> packet.put(INTROSPECTION_TIME, value));
     }
