@@ -315,7 +315,12 @@ public abstract class Step {
         fiber.addBreadcrumb("[" + ++count + "of" + startDetails.size() + "]");
       }
 
-      Result r = sap.step().doStepNext(sap.packet());
+      Packet sapPacket = sap.packet();
+      Result r = sap.step().doStepNext(sapPacket);
+      Throwable t = Optional.ofNullable(sapPacket).map(p -> (Throwable) p.getValue(THROWABLE)).orElse(null);
+      if (t != null) {
+        return doTerminate(t, packet);
+      }
       if (r != null && r.isRequeue()) {
         requeue = true;
         duration = minDuration(duration, r.getRequeueAfter());
