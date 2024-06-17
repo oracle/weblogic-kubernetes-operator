@@ -239,7 +239,7 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isInProgressJobOutdated(job)) {
+        if (isInProgressJobOutdated(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processExistingIntrospectorJob(getNext()), packet);
@@ -330,20 +330,6 @@ public class JobHelper {
             .map(V1ObjectMeta::getLabels)
             .map(m -> m.get(INTROSPECTION_STATE_LABEL))
             .orElse(null);
-      }
-
-      private boolean isKnownFailedJob(V1Job job) {
-        return getUid(job).equals(getLastFailedUid());
-      }
-
-      @Nonnull
-      private String getUid(V1Job job) {
-        return Optional.ofNullable(job).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse("");
-      }
-
-      @Nullable
-      private String getLastFailedUid() {
-        return getDomain().getOrCreateStatus().getFailedIntrospectionUid();
       }
 
       private boolean isIntrospectionNeeded(Packet packet) {

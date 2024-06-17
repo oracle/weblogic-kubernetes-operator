@@ -208,10 +208,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return item.object.getMetadata().getName();
   }
 
-  public static boolean isJobTimedOut(V1Job job) {
-    return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job)));
-  }
-
   public static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
     @Serial
     private static final long serialVersionUID  = 1L;

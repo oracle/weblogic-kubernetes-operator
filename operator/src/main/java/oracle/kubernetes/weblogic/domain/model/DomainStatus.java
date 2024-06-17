@@ -733,7 +733,7 @@ public class DomainStatus {
   public DomainCondition createAdjustedFailedCondition(DomainFailureReason reason, String message,
                                                        boolean isInitDomainOnPV, DomainSpec spec) {
     DomainFailureReason effectiveReason = reason;
-    String effectiveMessage = message;
+    String effectiveMessage = Optional.ofNullable(message).orElse("");
     if (hasJustGotFatalIntrospectorError(effectiveMessage)
         || initDomainOnPVIntropsectionFailure(reason, isInitDomainOnPV)) {
       effectiveReason = ABORTED;
