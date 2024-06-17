@@ -63,7 +63,8 @@ pipeline {
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
         kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
         availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
-        oke_run = "${env.JOB_NAME == 'wko-oke-nightly' ? 'okeint' : 'okeintdev'}"
+        //oke_run = "${env.JOB_NAME == 'wko-oke-nightly' ? 'okeint' : 'okeintdev'}"
+        oke_run = "okemodule"
 
     }
 
@@ -336,6 +337,7 @@ pipeline {
                         #export IMAGE_TAG_WEBLOGIC="12.2.1.4"
                         #export IMAGE_TAG_FMWINFRA="12.2.1.4"
                         ssh_pubkey=`cat ${wkotest_ssh_pubcert}`
+                        ssh_pk=`cat ${wkotest_ssh_pk}`
 
                         #################
                         echo "Generating property file oci.prop for terraform scripts"
@@ -362,13 +364,15 @@ mounttarget.ocid=${MOUNT_TARGET_OCID}
 nodepool.imagename=${IMAGE_ID}
 k8s.version=v${OKE_KUBE_VERSION}
 nodepool.ssh.pubkey=${ssh_pubkey}
+nodepool.ssh.pk=${ssh_pk}
+nodepool.ssh.pubkeypath=${wkotest_ssh_pubcert}
+nodepool.ssh.pkpath=${wkotest_ssh_pk}
 terraform.installdir=${WORKSPACE}/terraform/terraforminstall
 EOF
 
                         ##################
                         echo "prop files "
                         cat $OCI_PROP_FILE
-                        cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
                         mkdir -p ${WORKSPACE}/terraform/terraforminstall
                         '''
 
@@ -415,7 +419,7 @@ EOF
 
                             echo 'Create a OKE cluster ${CLUSTER_NAME}'
 
-                            cp -rf ${terraform_script_dir_name}/*.* ${WORKSPACE}/terraform/.
+                            cp -rf ${terraform_script_dir_name}/* ${WORKSPACE}/terraform/.
 
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
@@ -462,12 +466,7 @@ EOF
                         compartment_ocid=${compartment_id}
                         echo "creating storage class to setup OFSS ..."
                         echo "getting MountTarget ID"
-                        if [ "${JOB_NAME}" = "wko-oke-nightly" ]; then
-                            mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
-                        else
-                            mount_target_id=${MOUNT_TARGET_OCID}
-                        fi
-
+                        mount_target_id=${MOUNT_TARGET_OCID}
 
                         clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == '\"${CLUSTER_NAME}\"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
 
@@ -493,7 +492,7 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         clusterName = "${CLUSTER_NAME}"
-                        FSS_DIR = "${env.JOB_NAME == 'wko-oke-nightly' ? '/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15' : '/${clusterName}oketest1,/${clusterName}oketest2'}"
+                        FSS_DIR = "${env.JOB_NAME == 'wko-oke-nightly' ? '/${clusterName}oketest1,/${clusterName}oketest2' : '/${clusterName}oketest1,/${clusterName}oketest2'}"
 
 
                     }
@@ -549,13 +548,9 @@ EOF
                                 NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| head -n2 | tail -n1`
                                 echo "second node external IP ${NODE_IP}"
                                 export NODE_IP=${NODE_IP}
-                                if [ "${JOB_NAME}" = "wko-oke-nightly" ]; then
-                                   echo "Mount Target  setup for wko-oke-nightly"
-                                   mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
 
-                                else
-                                   mt_privateip_id=`oci fs mount-target get --mount-target-id=${MOUNT_TARGET_OCID} | jq -r '.data| ."private-ip-ids"[]'`
-                                fi
+                                mt_privateip_id=`oci fs mount-target get --mount-target-id=${MOUNT_TARGET_OCID} | jq -r '.data| ."private-ip-ids"[]'`
+
                                 # Check if the mt_privateip_id is an array
                                 if [ "$(declare -p mt_privateip_id 2>/dev/null | grep -o 'declare -a')" == "declare -a" ]; then
                                     # Select first
