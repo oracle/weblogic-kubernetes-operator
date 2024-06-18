@@ -243,7 +243,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   public boolean isRetriableFailure() {
-    return getType() == FAILED && getSeverity() == SEVERE;
+    return getType() == FAILED && (getSeverity() == null || getSeverity() == SEVERE);
   }
 
   boolean isMarkedForDeletion() {

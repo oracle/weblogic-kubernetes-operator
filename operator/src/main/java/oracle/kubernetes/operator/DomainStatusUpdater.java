@@ -581,7 +581,7 @@ public class DomainStatusUpdater {
     }
 
     private boolean hasReachedRetryLimit(DomainStatus status, DomainCondition condition) {
-      return condition.getSeverity() == SEVERE
+      return (condition.getSeverity() == null || condition.getSeverity() == SEVERE)
           && status.getInitialFailureTime() != null
           && status.getMinutesFromInitialToLastFailure() >= getDomain().getFailureRetryLimitMinutes();
     }
