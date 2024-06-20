@@ -362,12 +362,12 @@ public class ShutdownManagedServerStep extends Step {
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
       removeShutdownRequestRetryCount(packet);
-      return doNext(Step.chain(createDomainRefreshStep(getDomainPresenceInfo(packet).getDomainName(),
-          getDomainPresenceInfo(packet).getNamespace()), getNext()), packet);
+      return doNext(createDomainRefreshStep(getDomainPresenceInfo(packet).getDomainName(),
+          getDomainPresenceInfo(packet).getNamespace(), getNext()), packet);
     }
 
-    private Step createDomainRefreshStep(String domainName, String namespace) {
-      return RequestBuilder.DOMAIN.get(namespace, domainName, new DomainUpdateStep());
+    private Step createDomainRefreshStep(String domainName, String namespace, Step next) {
+      return RequestBuilder.DOMAIN.get(namespace, domainName, new DomainUpdateStep(next));
     }
 
     private boolean shouldRetry(Packet packet) {
@@ -402,6 +402,11 @@ public class ShutdownManagedServerStep extends Step {
   }
 
   static class DomainUpdateStep extends DefaultResponseStep<DomainResource> {
+
+    DomainUpdateStep(Step next) {
+      super(next);
+    }
+
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
       if (callResponse.getObject() != null) {
