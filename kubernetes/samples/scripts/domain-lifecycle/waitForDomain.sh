@@ -308,7 +308,7 @@ getDomainInfo() {
   getDomainValue    domain_info_observed_generation    ".status.observedGeneration"
   getDomainValue    domain_info_condition_completed    ".status.conditions[?(@.type==\"Completed\")].status" # "True" when complete
 
-  domain_info_clusters=$( echo "$domain_info_clusters" | sed 's/"name"//g' | tr -d '[]{}:' | sortlist | sed 's/,/ /') # convert to sorted space separated list
+  domain_info_clusters=$( echo "$domain_info_clusters" | sed 's/"name"//g' | tr -d '[]{}:' | sortlist | sed 's/,/ /g') # convert to sorted space separated list
 
   # gather observed and goal generation for each cluster:
   cl_info_observed_generations=""
