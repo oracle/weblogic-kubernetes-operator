@@ -47,6 +47,8 @@
 #
 #   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
 #
+umask 027
+
 export AUXILIARY_IMAGE_COMMAND_LOGS_DIR="${AUXILIARY_IMAGE_COMMAND_LOGS_DIR:-compatibilityModeInitContainerLogs}"
 
 trace() {
