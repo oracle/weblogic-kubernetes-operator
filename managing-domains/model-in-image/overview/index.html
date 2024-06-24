@@ -12,20 +12,20 @@
     <title>Overview :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1719199375" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1719199375" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1719260353" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1719260353" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1719199375"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1719260353"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1719199375"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1719199375"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1719260353"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1719260353"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1719199375"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1719260353"></script>
 
     
   </div>
@@ -3962,17 +3962,27 @@ The WDT model format is fully described in the open source,
 <li>
 <p>The operator will run a Kubernetes Job called the &lsquo;introspector job&rsquo; that:</p>
 <ul>
-<li>Merges your WDT models.</li>
-<li>Runs WDT tooling to generate a domain home.</li>
-<li>Packages the domain home and passes it to the operator.</li>
+<li>For an <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary Image</a> deployment, an init container is used to copy and set up the WDT installer in the main container, and all the WDT models are also copied to the main container.</li>
+<li>Sets up the call parameters for WDT to create the domain. The ordering of the models follow the pattern <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model files naming and ordering</a>.</li>
+<li>Runs WDT tooling to generate a domain home using the parameters from the previous step.</li>
+<li>Encrypts the domain salt key <code>SerializedSystemIni.dat</code>.</li>
+<li>Packages the domain home and passes it to the operator.  The packaged domain has two parts. The first part <code>primordial domain</code> contains the basic configuration including the encrypted salt key. The second part <code>domain config</code> contains the rest of the configuration <code>config/**/*.xml</code>.  These files are compressed but do not contain any applications, libraries, key stores, and such, because they can be restored from the WDT archives.</li>
 </ul>
 </li>
 <li>
 <p>After the introspector job completes:</p>
 <ul>
-<li>The operator creates one or more ConfigMaps following the pattern <code>DOMAIN_UID-weblogic-domain-introspect-cm***</code>.</li>
-<li>The operator subsequently boots your domain&rsquo;s WebLogic Server pods.</li>
-<li>The pods will obtain their domain home from the ConfigMap.</li>
+<li>The operator creates one or more ConfigMaps following the pattern <code>DOMAIN_UID-weblogic-domain-introspect-cm***</code>.  These ConfigMaps contain the packaged domains from the introspector job and other information for starting the domain.</li>
+</ul>
+</li>
+<li>
+<p>After completion of the introspector job, the operator will start the domain:</p>
+<ul>
+<li>For an <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary Image</a> deployment, an init container is used to copy and set up the WDT installer in the main container, and all the WDT models are also copied to the main container first.</li>
+<li>Restore the packaged domains in the server pod.</li>
+<li>Restore applications, libraries, key stores, and such, from the WDT archives.</li>
+<li>Decrypt the domain salt key.</li>
+<li>Start the domain.</li>
 </ul>
 </li>
 </ul>
@@ -6600,19 +6610,19 @@ and still others may require shutting down the entire domain before applying the
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1719199375"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1719199375"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1719199375"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1719199375"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1719199375"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1719199375"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1719260353"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1719260353"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1719260353"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1719260353"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1719260353"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1719260353"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1719199375"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1719199375"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1719199375"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1719260353"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1719260353"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1719260353"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1719199375"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1719260353"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
