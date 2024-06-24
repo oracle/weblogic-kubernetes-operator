@@ -129,12 +129,14 @@ public class ClusterResourceStatusUpdater {
     }
 
     private Step createRetry() {
-      return createClusterResourceRefreshStep(new SingleClusterResourceStatusUpdateStep(context.getClusterName()));
+      return Step.chain(
+          createClusterResourceRefreshStep(),
+          new SingleClusterResourceStatusUpdateStep(context.getClusterName()));
     }
 
-    private Step createClusterResourceRefreshStep(Step next) {
+    private Step createClusterResourceRefreshStep() {
       return RequestBuilder.CLUSTER.get(
-          context.getNamespace(), context.getClusterResourceName(), new ReadClusterResponseStep(next));
+          context.getNamespace(), context.getClusterResourceName(), new ReadClusterResponseStep());
     }
   }
 
@@ -284,11 +286,6 @@ public class ClusterResourceStatusUpdater {
   }
 
   private static class ReadClusterResponseStep extends ResponseStep<ClusterResource> {
-
-    private ReadClusterResponseStep(Step step) {
-      super(step);
-    }
-
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<ClusterResource> callResponse) {
       if (callResponse.getObject() != null) {
