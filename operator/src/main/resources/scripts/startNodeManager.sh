@@ -322,7 +322,7 @@ export NODEMGR_HOME="${NODEMGR_HOME?}"
 export DOMAIN_HOME="${DOMAIN_HOME?}"
 
 # Apply JAVA_OPTIONS to Node Manager if NODEMGR_JAVA_OPTIONS not specified
-if [ -z ${NODEMGR_JAVA_OPTIONS} ]; then
+if [ -z "${NODEMGR_JAVA_OPTIONS}" ]; then
   NODEMGR_JAVA_OPTIONS="${JAVA_OPTIONS}"
 fi
 
