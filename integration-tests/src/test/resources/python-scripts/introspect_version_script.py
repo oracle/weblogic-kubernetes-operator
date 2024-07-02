@@ -32,7 +32,7 @@ def change_server_count():
     connect_to_adminserver()
     edit()
     startEdit()
-    cd('/Clusters/' + cluster_name + '/DynamicServers/' + cluster_name)
+    cd('/Clusters/' + cluster_name + '/DynamicServers/NO_NAME_0')
     cmo.setDynamicClusterSize(int(max_cluster_size))
     cmo.setMaxDynamicClusterSize(int(max_cluster_size))
     save()
