@@ -15,8 +15,10 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -41,18 +43,18 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -61,9 +63,9 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabase
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readRuntimeResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
@@ -74,7 +76,6 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
@@ -82,6 +83,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
@@ -93,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -106,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
-@Tag("oke-sequential")
+@Tag("oke-gate")
 @Tag("kind-parallel")
 class ItDBOperator {
 
@@ -114,6 +117,7 @@ class ItDBOperator {
   private static String opNamespace = null;
   private static String fmwDomainNamespace = null;
   private static String wlsDomainNamespace = null;
+  private static String traefikNamespace = null;
   private static String fmwMiiImage = null;
 
   private static final String RCUSCHEMAPREFIX = "FMWDOMAINMII";
@@ -124,6 +128,7 @@ class ItDBOperator {
   private static String dbUrl = null;
   private static String dbName = "my-oracle-sidb";
   private static LoggingFacade logger = null;
+  private static HelmParams traefikHelmParams;
 
   private String fmwDomainUid = "fmwdomain-mii-db";
   private String adminServerName = "admin-server";
@@ -153,6 +158,7 @@ class ItDBOperator {
   private final String wlsClusterResName = wlsDomainUid + "-" + clusterName;
   
   private static String hostHeader;
+  private static TraefikParams traefikParams;
 
   /**
    * Start DB service and create RCU schema.
@@ -162,7 +168,7 @@ class ItDBOperator {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(5) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for DB and RCU");
@@ -181,6 +187,18 @@ class ItDBOperator {
     assertNotNull(namespaces.get(3), "Namespace is null");
     wlsDomainNamespace = namespaces.get(3);
 
+    // get a unique Traefik namespace
+    logger.info("Get a unique namespace for Traefik");
+    assertNotNull(namespaces.get(4), "Namespace list is null");
+    traefikNamespace = namespaces.get(4);
+
+    // install and verify Traefik
+    if (OKE_CLUSTER_PRIVATEIP) {
+      traefikParams =
+          installAndVerifyTraefik(traefikNamespace, 0, 0);
+      traefikHelmParams = traefikParams.getHelmParams();
+    }
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(fmwDomainNamespace);
@@ -197,6 +215,17 @@ class ItDBOperator {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, fmwDomainNamespace, wlsDomainNamespace);
+  }
+
+  @AfterAll
+  void tearDown() {
+    // uninstall Traefik
+    if (traefikHelmParams != null) {
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstallTraefik returns true")
+          .withFailMessage("uninstallTraefik() did not return true")
+          .isTrue();
+    }
   }
 
   /**
@@ -553,32 +582,26 @@ class ItDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJmsServerRuntime(String jmsServer, String managedServer) {
-    ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuffer curlString = new StringBuffer("status=$(curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
-      curlString.append(" -H 'host: " + hostHeader + "' ");
-    }
-    curlString.append("http://" + hostAndPort)
-        .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
-        .append(managedServer)
-        .append("/JMSRuntime/JMSServers/")
-        .append(jmsServer)
-        .append(" --silent --show-error ")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkJmsServerRuntime: curl command {0}", new String(curlString));
     testUntil(
-        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true).stdout().contains("200")),
+        assertDoesNotThrow(() -> () -> getJMSRunTimeOutput(jmsServer,
+            managedServer).contains("destinationsCurrentCount")),
         logger,
         "JMS Server Service to migrate");
     return true;
+  }
+
+  private String getJMSRunTimeOutput(String jmsServer, String managedServer) {
+    String output = readRuntimeResource(
+        adminSvcExtHost,
+        wlsDomainNamespace,
+        wlsAdminServerPodName,
+        "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+            + managedServer
+            + "/JMSRuntime/JMSServers/"
+            + jmsServer,
+        "checkJmsServerRuntime");
+    logger.info("Got output " + output);
+    return output;
   }
 
   /*
@@ -589,31 +612,19 @@ class ItDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkStoreRuntime(String storeName, String managedServer) {
-    ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuffer curlString = new StringBuffer("status=$(curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
-      curlString.append(" -H 'host: " + hostHeader + "' ");
-    }    
-    curlString.append("http://" + hostAndPort)
-        .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
-        .append(managedServer)
-        .append("/persistentStoreRuntimes/")
-        .append(storeName)
-        .append(" --silent --show-error ")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkStoreRuntime: curl command {0}", new String(curlString));
     testUntil(
-        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true).stdout().contains("200")),
+        assertDoesNotThrow(() -> () -> readRuntimeResource(
+            adminSvcExtHost,
+            wlsDomainNamespace,
+            wlsAdminServerPodName,
+            "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+                + managedServer
+                + "/persistentStoreRuntimes/"
+                + storeName,
+            "checkPersistentStoreRuntime").contains("PersistentStoreRuntime")),
         logger,
         "PersistentStoreRuntimes Service to migrate");
+
     return true;
   }
 
@@ -627,28 +638,16 @@ class ItDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
-    ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuffer curlString = new StringBuffer("curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
-      curlString.append(" -H 'host: " + hostHeader + "' ");
-    }
-    curlString.append("\"http://" + hostAndPort)
-        .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
-        .append(managedServer)
-        .append("/JTARuntime/recoveryRuntimeMBeans/")
-        .append(recoveryService)
-        .append("?fields=active&links=none\"")
-        .append(" --show-error ");
-    logger.info("checkJtaRecoveryServiceRuntime: curl command {0}", new String(curlString));
     testUntil(
-        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true)
-        .stdout().contains("\"active\": " + active)),
+        assertDoesNotThrow(() -> () -> readRuntimeResource(
+            adminSvcExtHost,
+            wlsDomainNamespace,
+            wlsAdminServerPodName,
+            "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+                + managedServer
+                + "/JTARuntime/recoveryRuntimeMBeans/"
+                + recoveryService,
+            "checkRecoveryServiceRuntime").contains("\"active\": " + active)),
         logger,
         "JTA Recovery Service to migrate");
     return true;
