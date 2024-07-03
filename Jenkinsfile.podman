@@ -26,7 +26,7 @@ CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel
 		   H 4 * * * % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.24.17'''
 
 pipeline {
-    agent { label 'large-ol9' }
+    agent { label 'large-ol9u4' }
     options {
         timeout(time: 800, unit: 'MINUTES')
     }
