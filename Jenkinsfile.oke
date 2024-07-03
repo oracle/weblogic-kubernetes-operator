@@ -141,7 +141,7 @@ pipeline {
         )
         string(name: 'NODE_SHAPE',
                        description: '',
-                       defaultValue: "VM.Standard.E3.Flex"
+                       defaultValue: "VM.Standard.E4.Flex"
         )
         string(name: 'MOUNT_TARGET_OCID',
                                description: 'only for debug runs on wko-oke-dev',
