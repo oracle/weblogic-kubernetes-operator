@@ -89,7 +89,7 @@ public class Cluster {
       logger.info("ClusterResource {0} not found in NameSpace {1}", clusterRes, namespace);
       return false;
     }
-
+    
     // construct the patch string for scaling the cluster
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
