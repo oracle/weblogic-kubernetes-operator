@@ -1,0 +1,63 @@
+domainInfo:
+    AdminUserName: '@@PROP:WebLogicAdminUserName@@'
+    AdminPassword: '@@PROP:WebLogicAdminPassword@@'
+topology:
+    Name: mysitconfigdomain
+    AdminServerName: admin-server
+    ProductionModeEnabled: true
+    Cluster:
+        mycluster:
+            DynamicServers:
+                DynamicClusterSize: 2
+                MaxDynamicClusterSize: 2
+                ServerNamePrefix: ms-
+                ServerTemplate: mycluster-template
+                CalculatedListenPorts: false
+    Server:
+        admin-server:
+            NetworkAccessPoint:
+                T3Channel:
+                    PublicAddress: '@@PROP:K8S_NODEPORT_HOST@@'
+                    ListenPort: '@@PROP:T3_CHANNEL_PORT@@'
+                    PublicPort: '@@PROP:T3_CHANNEL_PORT@@'
+    ServerTemplate:
+        mycluster-template:
+            Cluster: mycluster
+            ResolveDNSName: true
+            ListenPort: 8001
+            NetworkAccessPoint:
+                ms-nap:
+                    ListenPort: 8011
+resources:
+    FileStore:
+        ClusterFileStore:
+            Target: mycluster
+            Directory: JmsFileStores
+    JMSServer:
+        ClusterJmsServer:
+            Target: mycluster
+            PersistentStore: ClusterFileStore
+    JMSSystemResource:
+        ClusterJmsSystemResource:
+            Target: mycluster
+            SubDeployment:
+                ClusterSubDeployment:
+                    Target: mycluster
+            JmsResource:
+                ConnectionFactory:
+                    ClusterConnectionFactory:
+                        DefaultTargetingEnabled: true
+                        JNDIName: jms/ClusterConnectionFactory
+                UniformDistributedQueue:
+                    UniformDistributedTestQueue:
+                        JNDIName: jms/UniformDistributedTestQueue
+                        DefaultTargetingEnabled: true
+                UniformDistributedTopic:
+                    UniformReplicatedTestTopic:
+                        JNDIName: jms/UniformReplicatedTestTopic
+                        DefaultTargetingEnabled: true
+                        DeliveryFailureParams:
+                            ExpirationPolicy: Log
+    WLDFSystemResource:
+        WLDF-MODULE-0:
+            Target: mycluster

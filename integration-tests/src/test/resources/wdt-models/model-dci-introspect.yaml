@@ -1,0 +1,33 @@
+domainInfo:
+    AdminUserName: '@@PROP:WebLogicAdminUserName@@'
+    AdminPassword: '@@PROP:WebLogicAdminPassword@@'
+topology:
+    Name: mydomain
+    AdminServerName: admin-server
+    ProductionModeEnabled: true
+    Cluster:
+        mycluster:
+            WeblogicPluginEnabled: true
+            DynamicServers:
+                DynamicClusterSize: 2
+                MaxDynamicClusterSize: 2
+                ServerNamePrefix: managed-server
+                ServerTemplate: mycluster-template
+                CalculatedListenPorts: false
+                MinDynamicClusterSize: 2
+    Server:
+        admin-server:
+            WeblogicPluginEnabled: true
+            NetworkAccessPoint:
+                T3Channel:
+                    PublicAddress: '@@PROP:K8S_NODEPORT_HOST@@'
+                    ListenPort: '@@PROP:T3_CHANNEL_PORT@@'
+                    PublicPort: '@@PROP:T3_CHANNEL_PORT@@'
+    ServerTemplate:
+        mycluster-template:
+            Cluster: mycluster
+            ResolveDNSName: true
+            NetworkAccessPoint:
+                ms-nap:
+                    ListenPort: 7110
+
