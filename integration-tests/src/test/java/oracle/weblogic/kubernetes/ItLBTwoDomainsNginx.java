@@ -121,7 +121,7 @@ class ItLBTwoDomainsNginx {
 
     // get a unique Nginx namespace
     logger.info("Assign a unique namespace for Nginx");
-    assertNotNull(namespaces.get(1), "Namespace list is null");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
     nginxNamespace = namespaces.get(2);
 
     // set the service account name for the operator

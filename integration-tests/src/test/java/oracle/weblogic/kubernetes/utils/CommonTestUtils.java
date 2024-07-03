@@ -69,6 +69,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
@@ -1337,6 +1338,9 @@ public class CommonTestUtils {
       }
       host = formatIPv6Host(host);
       String hostAndPort = ((OKD) ? hostName : host + ":" + servicePort);
+      if (OKE_CLUSTER_PRIVATEIP) {
+        hostAndPort = hostName;
+      }
       logger.info("hostAndPort = {0} ", hostAndPort);
       return hostAndPort;
     } catch (UnknownHostException e) {
