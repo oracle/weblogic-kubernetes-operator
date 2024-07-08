@@ -163,6 +163,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
     return server.getReadinessProbe();
   }
 
+  @Override
+  public V1Probe getStartupProbe() {
+    return server.getStartupProbe();
+  }
+
   @Nonnull
   @Override
   public Shutdown getShutdown() {

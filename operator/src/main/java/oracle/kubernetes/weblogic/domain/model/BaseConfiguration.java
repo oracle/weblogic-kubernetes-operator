@@ -148,7 +148,7 @@ public abstract class BaseConfiguration {
   }
 
   V1Probe getLivenessProbe() {
-    return serverPod.getLivenessProbeTuning();
+    return serverPod.getLivenessProbe();
   }
 
   void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
@@ -164,7 +164,11 @@ public abstract class BaseConfiguration {
   }
 
   V1Probe getReadinessProbe() {
-    return serverPod.getReadinessProbeTuning();
+    return serverPod.getReadinessProbe();
+  }
+
+  V1Probe getStartupProbe() {
+    return serverPod.getStartupProbe();
   }
 
   Shutdown getShutdown() {
