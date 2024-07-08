@@ -752,7 +752,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     V1Container v1Container = super.createPrimaryContainer()
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
-            .livenessProbe(createLivenessProbe(podTuning));
+            .livenessProbe(createLivenessProbe(podTuning))
+            .startupProbe(getStartupProbe());
 
     if (!mockWls()) {
       v1Container.readinessProbe(createReadinessProbe(podTuning));
@@ -1001,6 +1002,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   private V1Probe getLivenessProbe() {
     return Optional.ofNullable(getServerSpec().getLivenessProbe())
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
+  }
+
+  private V1Probe getStartupProbe() {
+    return getServerSpec().getStartupProbe();
   }
 
   private boolean mockWls() {

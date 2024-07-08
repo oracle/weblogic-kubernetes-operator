@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: ee0c6f79288b000cd61aa9438ab7f24f63b6334072e3520f25ee454f8bff6175
+    weblogic.sha256: b48d0f17054d017bd3d9df2d30929bab24882235a628b715f59092f288dd569e
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1301,6 +1301,74 @@ spec:
                               items:
                                 type: string
                         type: array
+                      startupProbe:
+                        description: Settings for the startup probe associated with
+                          a WebLogic Server instance. If not specified, the operator
+                          will not create a default startup probe.
+                        properties:
+                          terminationGracePeriodSeconds:
+                            type: integer
+                          failureThreshold:
+                            type: integer
+                          periodSeconds:
+                            type: integer
+                          tcpSocket:
+                            properties:
+                              port:
+                                x-kubernetes-int-or-string: true
+                              host:
+                                type: string
+                            required:
+                            - port
+                            type: object
+                          timeoutSeconds:
+                            type: integer
+                          successThreshold:
+                            type: integer
+                          initialDelaySeconds:
+                            type: integer
+                          exec:
+                            properties:
+                              command:
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          grpc:
+                            properties:
+                              port:
+                                type: integer
+                              service:
+                                type: string
+                            required:
+                            - port
+                            type: object
+                          httpGet:
+                            properties:
+                              path:
+                                type: string
+                              scheme:
+                                type: string
+                              port:
+                                x-kubernetes-int-or-string: true
+                              host:
+                                type: string
+                              httpHeaders:
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - name
+                                  - value
+                                type: array
+                            required:
+                            - port
+                            type: object
+                        type: object
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -4482,6 +4550,74 @@ spec:
                           items:
                             type: string
                     type: array
+                  startupProbe:
+                    description: Settings for the startup probe associated with a
+                      WebLogic Server instance. If not specified, the operator will
+                      not create a default startup probe.
+                    properties:
+                      terminationGracePeriodSeconds:
+                        type: integer
+                      failureThreshold:
+                        type: integer
+                      periodSeconds:
+                        type: integer
+                      tcpSocket:
+                        properties:
+                          port:
+                            x-kubernetes-int-or-string: true
+                          host:
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      timeoutSeconds:
+                        type: integer
+                      successThreshold:
+                        type: integer
+                      initialDelaySeconds:
+                        type: integer
+                      exec:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      grpc:
+                        properties:
+                          port:
+                            type: integer
+                          service:
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      httpGet:
+                        properties:
+                          path:
+                            type: string
+                          scheme:
+                            type: string
+                          port:
+                            x-kubernetes-int-or-string: true
+                          host:
+                            type: string
+                          httpHeaders:
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                            type: array
+                        required:
+                        - port
+                        type: object
+                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -7303,6 +7439,74 @@ spec:
                                 type: array
                                 items:
                                   type: string
+                        startupProbe:
+                          description: Settings for the startup probe associated with
+                            a WebLogic Server instance. If not specified, the operator
+                            will not create a default startup probe.
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: integer
+                            failureThreshold:
+                              type: integer
+                            periodSeconds:
+                              type: integer
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  x-kubernetes-int-or-string: true
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: integer
+                            successThreshold:
+                              type: integer
+                            initialDelaySeconds:
+                              type: integer
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: integer
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                port:
+                                  x-kubernetes-int-or-string: true
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
                         nodeSelector:
                           description: Selector which must match a Node's labels for
                             the Pod to be scheduled on that Node. See `kubectl explain

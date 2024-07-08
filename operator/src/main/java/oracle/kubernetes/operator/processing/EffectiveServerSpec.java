@@ -93,6 +93,8 @@ public interface EffectiveServerSpec {
   @Nonnull
   V1Probe getReadinessProbe();
 
+  V1Probe getStartupProbe();
+
   @Nonnull
   Shutdown getShutdown();
 

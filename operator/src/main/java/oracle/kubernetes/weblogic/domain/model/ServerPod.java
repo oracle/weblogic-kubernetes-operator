@@ -109,6 +109,15 @@ class ServerPod extends KubernetesResource {
   private V1Probe readinessProbe = null;
 
   /**
+   * Defines the settings for a startup probe.
+   *
+   * @since 4.2.4
+   */
+  @Description("Settings for the startup probe associated with a WebLogic Server instance."
+      + " If not specified, the operator will not create a default startup probe.")
+  private V1Probe startupProbe = null;
+
+  /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
    * indicated key-value pairs as labels.
    *
@@ -411,7 +420,7 @@ class ServerPod extends KubernetesResource {
         .skipWaitingCohEndangeredState(skipWaitingCohEndangeredState);
   }
 
-  V1Probe getReadinessProbeTuning() {
+  V1Probe getReadinessProbe() {
     return this.readinessProbe;
   }
 
@@ -433,7 +442,7 @@ class ServerPod extends KubernetesResource {
         .httpGet(new V1HTTPGetAction().path(httpGetActionPath));
   }
 
-  V1Probe getLivenessProbeTuning() {
+  V1Probe getLivenessProbe() {
     return this.livenessProbe;
   }
 
@@ -448,6 +457,10 @@ class ServerPod extends KubernetesResource {
     livenessProbe = Optional.ofNullable(livenessProbe).orElse(new V1Probe())
         .successThreshold(successThreshold)
         .failureThreshold(failureThreshold);
+  }
+
+  V1Probe getStartupProbe() {
+    return startupProbe;
   }
 
   public Long getMaxReadyWaitTimeSeconds() {
@@ -485,6 +498,11 @@ class ServerPod extends KubernetesResource {
       readinessProbe = serverPod1.readinessProbe;
     } else {
       copyValues(readinessProbe, serverPod1.readinessProbe);
+    }
+    if (startupProbe == null) {
+      startupProbe = serverPod1.startupProbe;
+    } else {
+      copyValues(startupProbe, serverPod1.startupProbe);
     }
     shutdown.copyValues(serverPod1.shutdown);
     for (V1Volume volume : serverPod1.getAdditionalVolumes()) {
@@ -855,6 +873,7 @@ class ServerPod extends KubernetesResource {
         .append("envFrom", envFrom)
         .append("livenessProbe", livenessProbe)
         .append("readinessProbe", readinessProbe)
+        .append("startupProbe", startupProbe)
         .append("additionalVolumes", volumes)
         .append("additionalVolumeMounts", volumeMounts)
         .append("nodeSelector", nodeSelector)
@@ -898,6 +917,7 @@ class ServerPod extends KubernetesResource {
         .append(envFrom, that.envFrom)
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
+        .append(startupProbe, that.startupProbe)
         .append(
             DomainResource.sortList(volumes, VOLUME_COMPARATOR),
             DomainResource.sortList(that.volumes, VOLUME_COMPARATOR))
@@ -933,6 +953,7 @@ class ServerPod extends KubernetesResource {
         .append(envFrom)
         .append(livenessProbe)
         .append(readinessProbe)
+        .append(startupProbe)
         .append(DomainResource.sortList(volumes, VOLUME_COMPARATOR))
         .append(DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector)

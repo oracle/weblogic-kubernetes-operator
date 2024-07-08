@@ -1066,6 +1066,10 @@
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.HostAlias"
           }
         },
+        "startupProbe": {
+          "description": "Settings for the startup probe associated with a WebLogic Server instance. If not specified, the operator will not create a default startup probe.",
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
         "nodeSelector": {
           "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.",
           "additionalProperties": {
