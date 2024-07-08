@@ -53,7 +53,7 @@ To join our public channel, please visit this site to get an invitation. The inv
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release :
+      <description>For the current production release 4.2.3 :
 Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, 1.28.2+, and 1.29.1+ (check with kubectl version).
 Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.
 Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).
