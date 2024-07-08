@@ -178,6 +178,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `schedulerName` | string | If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler. See `kubectl explain pods.spec.schedulerName`. |
 | `serviceAccountName` | string | Name of the ServiceAccount to be used to run this Pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created. See `kubectl explain pods.spec.serviceAccountName`. |
 | `shutdown` | [Shutdown](#shutdown) | Configures how the operator should shut down the server instance. |
+| `startupProbe` | [Probe](k8s1.28.2.md#probe) | Settings for the startup probe associated with a WebLogic Server instance. If not specified, the operator will not create a default startup probe. |
 | `tolerations` | Array of [Toleration](k8s1.28.2.md#toleration) | If specified, the Pod's tolerations. See `kubectl explain pods.spec.tolerations`. |
 | `topologySpreadConstraints` | Array of [Topology Spread Constraint](k8s1.28.2.md#topology-spread-constraint) | TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed. |
 | `volumeMounts` | Array of [Volume Mount](k8s1.28.2.md#volume-mount) | Additional volume mounts for the container running a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`. |
