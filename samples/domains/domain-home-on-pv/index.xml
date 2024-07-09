@@ -17,7 +17,7 @@
 The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
 Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
 For example:
-$ cd /tmp $ git clone --branch v4.</description>
+$ cd /tmp $ git clone --branch v https://github.</description>
     </item>
     
     <item>
