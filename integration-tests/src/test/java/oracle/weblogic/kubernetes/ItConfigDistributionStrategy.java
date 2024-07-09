@@ -64,7 +64,6 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
@@ -92,6 +91,7 @@ import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPush
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
@@ -986,18 +986,19 @@ class ItConfigDistributionStrategy {
     File wlsModelPropFile = ItIntrospectVersion.createWdtPropertyFile(wlsModelFilePrefix, 
         K8S_NODEPORT_HOST, t3ChannelPort);
     // create domainCreationImage
-    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "configdist-domain-on-pv-image";
+    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-image";
+    String domainCreationImagetag = getDateAndTimeStamp();
     // create image with model and wdt installation files
     WitParams witParams
         = new WitParams()
             .modelImageName(domainCreationImageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageTag(domainCreationImagetag)
             .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
             .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
-    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
+    createAndPushAuxiliaryImage(domainCreationImageName, domainCreationImagetag, witParams);
 
     DomainCreationImage domainCreationImage
-        = new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
+        = new DomainCreationImage().image(domainCreationImageName + ":" + domainCreationImagetag);
 
     // create a domain resource
     logger.info("Creating domain custom resource");
@@ -1030,7 +1031,8 @@ class ItConfigDistributionStrategy {
         uniqueDomainHome,
         2,
         t3ChannelPort,
-        configuration);
+        configuration,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     domain.spec().serverPod().addEnvItem(new V1EnvVar()
         .name("JAVA_OPTIONS")
         .value("-Dweblogic.debug.DebugSituationalConfig=true "

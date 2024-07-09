@@ -14,6 +14,7 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -48,8 +49,10 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SE
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.YAML_MAX_FILE_SIZE_PROPERTY;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -674,8 +677,6 @@ public class FmwUtils {
     } else if (OKD) {
       storageClassName = "okd-nfsmnt";
     }
-
-
     pv = new PersistentVolume()
         .spec(new PersistentVolumeSpec()
             .capacity(pvCapacity)
@@ -683,9 +684,15 @@ public class FmwUtils {
             .persistentVolumeReclaimPolicy("Retain"))
         .metadata(new V1ObjectMeta()
             .name(pvName));
-    if (!OKE_CLUSTER) {
+    if (!OKE_CLUSTER && !OKD) {
       pv.getSpec().hostPath(new V1HostPathVolumeSource()
           .path(getHostPath(pvName, testClass)));
+    }
+    if (OKD) {
+      pv.getSpec().nfs(new V1NFSVolumeSource()
+          .path(PV_ROOT)
+          .server(NFS_SERVER)
+          .readOnly(false));
     }
     configuration
         .introspectorJobActiveDeadlineSeconds(3000L)
