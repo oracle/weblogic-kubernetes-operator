@@ -61,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -75,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVeri
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -178,18 +178,19 @@ class ItT3Channel {
         K8S_NODEPORT_HOST, t3ChannelPort);
 
     // create domainCreationImage
-    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "t3channel-domain-on-pv-image";
+    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-image";
+    String domainCreationImagetag = getDateAndTimeStamp();
     // create image with model and wdt installation files
     WitParams witParams
         = new WitParams()
             .modelImageName(domainCreationImageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageTag(domainCreationImagetag)
             .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
             .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
-    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
+    createAndPushAuxiliaryImage(domainCreationImageName, domainCreationImagetag, witParams);
 
     DomainCreationImage domainCreationImage
-        = new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
+        = new DomainCreationImage().image(domainCreationImageName + ":" + domainCreationImagetag);
 
     // create a domain resource
     logger.info("Creating domain custom resource");

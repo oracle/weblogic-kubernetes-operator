@@ -23,7 +23,6 @@ import java.util.Properties;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -121,6 +120,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -129,7 +129,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
@@ -140,7 +139,6 @@ import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
@@ -1152,18 +1150,19 @@ class ItIntrospectVersion {
     File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix, K8S_NODEPORT_HOST, t3ChannelPort);
 
     // create domainCreationImage
-    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "introspect-domain-on-pv-image";
+    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-image";
+    String domainCreationImagetag = getDateAndTimeStamp();
     // create image with model and wdt installation files
     WitParams witParams
         = new WitParams()
             .modelImageName(domainCreationImageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageTag(domainCreationImagetag)
             .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
             .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
-    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
+    createAndPushAuxiliaryImage(domainCreationImageName, domainCreationImagetag, witParams);
 
     DomainCreationImage domainCreationImage
-        = new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
+        = new DomainCreationImage().image(domainCreationImageName + ":" + domainCreationImagetag);
 
     // create a domain resource
     logger.info("Creating domain custom resource");
@@ -1194,7 +1193,8 @@ class ItIntrospectVersion {
         uniqueDomainHome,
         cluster1ReplicaCount,
         t3ChannelPort,
-        configuration);
+        configuration,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
 
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
@@ -1251,48 +1251,6 @@ class ItIntrospectVersion {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
-  }
-
-
-  /**
-   * Create a WebLogic domain on a persistent volume by doing the following.
-   * Create a configmap containing WLST script and property file.
-   * Create a Kubernetes job to create domain on persistent volume.
-   *
-   * @param wlstScriptFile       python script to create domain
-   * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName               name of the persistent volume to create domain in
-   * @param pvcName              name of the persistent volume claim
-   * @param namespace            name of the domain namespace in which the job is created
-   */
-  private static void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-                                         String pvName, String pvcName, String namespace) {
-    logger.info("Preparing to run create domain job using WLST");
-
-    List<Path> domainScriptFiles = new ArrayList<>();
-    domainScriptFiles.add(wlstScriptFile);
-    domainScriptFiles.add(domainPropertiesFile);
-
-    logger.info("Creating a config map to hold domain creation scripts");
-    String domainScriptConfigMapName = "create-domain-scripts-cm";
-    assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation(
-            domainScriptConfigMapName, domainScriptFiles, namespace, ItIntrospectVersion.class.getSimpleName()),
-        "Create configmap for domain creation failed");
-
-    // create a V1Container with specific scripts and properties for creating domain
-    V1Container jobCreationContainer = new V1Container()
-        .addCommandItem("/bin/sh")
-        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
-        .addArgsItem("/u01/weblogic/" + wlstScriptFile.getFileName()) //wlst.sh script
-        .addArgsItem("-skipWLSModuleScanning")
-        .addArgsItem("-loadProperties")
-        .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
-
-    logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
-        namespace, jobCreationContainer);
-
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
