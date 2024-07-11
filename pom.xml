@@ -675,7 +675,7 @@
     <maven-surefire-plugin-version>3.2.5</maven-surefire-plugin-version>
     <maven-checkstyle-plugin-version>3.4.0</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.1.0</maven-release-plugin-version>
-    <maven-javadoc-plugin-version>3.6.3</maven-javadoc-plugin-version>
+    <maven-javadoc-plugin-version>3.7.0</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.2.5</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.7.1</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.6.0</maven-shade-plugin-version>
@@ -716,7 +716,7 @@
     <jersey-version>3.1.7</jersey-version>
     <parsson-version>1.1.6</parsson-version>
     <grizzly-version>4.0.2</grizzly-version>
-    <jakarta-version>6.0.0</jakarta-version>
+    <jakarta-version>6.1.0</jakarta-version>
     <prometheus-version>0.16.0</prometheus-version>
     <jackson-version>2.17.1</jackson-version>
     <jackson-databind-version>2.17.1</jackson-databind-version>
