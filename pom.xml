@@ -663,11 +663,11 @@
     <java.version.range>21</java.version.range>
     <maven.version.range>[3.8.1,)</maven.version.range>
     <maven-enforcer-plugin-version>3.5.0</maven-enforcer-plugin-version>
-    <maven-clean-plugin-version>3.3.2</maven-clean-plugin-version>
+    <maven-clean-plugin-version>3.4.0</maven-clean-plugin-version>
     <maven-compiler-plugin-version>3.13.0</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.1.2</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.1.2</maven-install-plugin-version>
-    <maven-jar-plugin-version>3.4.1</maven-jar-plugin-version>
+    <maven-jar-plugin-version>3.4.2</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.3.1</maven-resources-plugin-version>
     <maven-site-plugin-version>3.12.1</maven-site-plugin-version>
     <maven-surefire-plugin-version>3.3.1</maven-surefire-plugin-version>
@@ -688,7 +688,7 @@
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <commons-cli-version>1.8.0</commons-cli-version>
-    <networknt-jsonschmema-validator-version>1.4.0</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.5.0</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.4.0</commons-exec-version>
     <commons-codec-version>1.17.0</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -697,7 +697,7 @@
     <jose4j-version>0.9.6</jose4j-version>
     <mojo-build-helper-version>3.6.0</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <assertj.core.version>3.26.0</assertj.core.version>
+    <assertj.core.version>3.26.3</assertj.core.version>
     <commons.io.version>2.16.1</commons.io.version>
     <awaitility-version>4.2.1</awaitility-version>
     <client-java-version>19.0.1</client-java-version>
