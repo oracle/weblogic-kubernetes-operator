@@ -140,7 +140,7 @@ public class FmwUtils {
                     .domainType("JRF")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .addSecretsItem(rcuAccessSecretName)
-                .introspectorJobActiveDeadlineSeconds(900L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     return domain;
   }
@@ -227,7 +227,7 @@ public class FmwUtils {
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .addSecretsItem(rcuAccessSecretName)
-                .introspectorJobActiveDeadlineSeconds(600L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
   }
 
   /**

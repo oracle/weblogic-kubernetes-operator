@@ -433,7 +433,7 @@ public class IstioUtils {
                     .configMap(configmapName)
                     .onlineUpdate(new OnlineUpdate().enabled(true))
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource
     domain = createClusterResourceAndAddReferenceToDomain(domainUid + "-" + clusterName,

@@ -897,7 +897,7 @@ class ItDiagnosticsFailedCondition {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
+                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 3000L)));
     setPodAntiAffinity(domain);
 
 
@@ -944,7 +944,7 @@ class ItDiagnosticsFailedCondition {
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
 
     ClusterResource cluster = createClusterResource(clusterResName, wlClusterName, domNamespace, replicaCount);

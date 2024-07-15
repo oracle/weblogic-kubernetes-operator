@@ -512,7 +512,7 @@ public class CommonMiiTestUtils {
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(600L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     domain.spec().setImagePullSecrets(secrets);
 
@@ -711,7 +711,7 @@ public class CommonMiiTestUtils {
                             .model(new oracle.weblogic.domain.Model()
                                     .domainType("WLS")
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                            .introspectorJobActiveDeadlineSeconds(600L)));
+                            .introspectorJobActiveDeadlineSeconds(3000L)));
     domain.spec().setImagePullSecrets(secrets);
     setPodAntiAffinity(domain);
     return domain;
@@ -843,7 +843,7 @@ public class CommonMiiTestUtils {
                 .runtimeEncryptionSecret(encryptionSecretName)
                 .onlineUpdate(new OnlineUpdate()
                     .enabled(onlineUpdateEnabled)))
-            .introspectorJobActiveDeadlineSeconds(600L));
+            .introspectorJobActiveDeadlineSeconds(3000L));
 
     if (setDataHome) {
       domainSpec.dataHome(uniquePath + "/data");
@@ -1993,7 +1993,7 @@ public class CommonMiiTestUtils {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionsecret))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     setPodAntiAffinity(domain);
 
@@ -2114,7 +2114,7 @@ public class CommonMiiTestUtils {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return domain;
   }

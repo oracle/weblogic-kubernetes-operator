@@ -645,7 +645,7 @@ class ItOperatorWlsUpgrade {
                             .model(new Model()
                                 .runtimeEncryptionSecret(encryptionSecretName)
                                 .domainType("WLS"))
-                            .introspectorJobActiveDeadlineSeconds(300L)));
+                            .introspectorJobActiveDeadlineSeconds(3000L)));
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain, domVersion),
           String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
           domainUid, domainNamespace));

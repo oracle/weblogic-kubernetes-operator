@@ -121,7 +121,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
-@Tag("oke-parallel")
+@Tag("oke-gate")
 class ItMiiAuxiliaryImage {
 
   private static String domainNamespace = null;

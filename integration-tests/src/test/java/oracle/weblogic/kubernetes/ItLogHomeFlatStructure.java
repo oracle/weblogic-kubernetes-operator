@@ -337,7 +337,7 @@ class ItLogHomeFlatStructure {
                                     .domainType("WLS")
                                     .configMap(configmapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                        .introspectorJobActiveDeadlineSeconds(300L))
+                        .introspectorJobActiveDeadlineSeconds(3000L))
                 .replicas(replicaCount));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",

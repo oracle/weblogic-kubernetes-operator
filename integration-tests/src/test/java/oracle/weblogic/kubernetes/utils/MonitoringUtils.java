@@ -1039,7 +1039,7 @@ public class MonitoringUtils {
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // add clusters to the domain resource
     ClusterList clusters = Cluster.listClusterCustomResources(namespace);

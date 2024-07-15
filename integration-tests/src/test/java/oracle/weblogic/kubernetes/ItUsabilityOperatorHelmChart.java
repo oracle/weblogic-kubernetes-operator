@@ -982,7 +982,7 @@ class ItUsabilityOperatorHelmChart {
                         .channelName("default")
                         .nodePort(0))))
             .configuration(new Configuration()
-                .introspectorJobActiveDeadlineSeconds(280L)
+                .introspectorJobActiveDeadlineSeconds(3000L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));

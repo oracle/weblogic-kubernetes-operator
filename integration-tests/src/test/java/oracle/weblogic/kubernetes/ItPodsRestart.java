@@ -686,7 +686,7 @@ class ItPodsRestart {
             .serverStartPolicy("IfNeeded")
             .serverPod(srvrPod)
             .configuration(new Configuration()
-                .introspectorJobActiveDeadlineSeconds(300L)
+                .introspectorJobActiveDeadlineSeconds(3000L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));

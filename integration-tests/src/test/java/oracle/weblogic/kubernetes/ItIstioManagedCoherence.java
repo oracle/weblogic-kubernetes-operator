@@ -75,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to associate a Coherence Cluster with multiple WebLogic server clusters")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-parallelnew")
+@Tag("oke-parallel")
 class ItIstioManagedCoherence {
 
   // constants for Coherence
@@ -475,7 +475,7 @@ class ItIstioManagedCoherence {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS"))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource in mii domain
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
