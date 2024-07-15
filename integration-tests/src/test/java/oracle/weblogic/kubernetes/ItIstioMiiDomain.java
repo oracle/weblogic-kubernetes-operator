@@ -327,7 +327,7 @@ class ItIstioMiiDomain {
                     .onlineUpdate(new OnlineUpdate()
                         .enabled(true))
                     .runtimeEncryptionSecret(encryptionSecretName))
-            .introspectorJobActiveDeadlineSeconds(300L)));
+            .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return createClusterResourceAndAddReferenceToDomain(
         domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);

@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
@@ -519,8 +520,14 @@ class ItLBTwoDomainsNginx {
       nodePortValue = "NodePort";
     }
 
-    NginxParams params = installAndVerifyNginx(nginxNamespace, IT_LBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT,
-        IT_LBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, nodePortValue);
+    NginxParams params = null;
+    if (OKE_CLUSTER_PRIVATEIP) {
+      params = installAndVerifyNginx(nginxNamespace, 0,
+          0, NGINX_CHART_VERSION, nodePortValue);
+    } else {
+      params = installAndVerifyNginx(nginxNamespace, IT_LBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT,
+          IT_LBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, nodePortValue);
+    }
 
     return params;
   }

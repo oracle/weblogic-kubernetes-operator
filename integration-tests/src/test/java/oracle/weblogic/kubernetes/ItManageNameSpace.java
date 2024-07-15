@@ -520,7 +520,7 @@ class ItManageNameSpace {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(600L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     domain = createClusterResourceAndAddReferenceToDomain(domainUid + "-" + clusterName,
         clusterName, domainNamespace, domain, replicaCount);

@@ -249,7 +249,7 @@ class ItIstioProductionSecureMode {
                          .configMap(configmapName)
                          .onlineUpdate(new OnlineUpdate().enabled(true))
                          .runtimeEncryptionSecret(encryptionSecretName))
-            .introspectorJobActiveDeadlineSeconds(300L)));
+            .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return domain;
   }

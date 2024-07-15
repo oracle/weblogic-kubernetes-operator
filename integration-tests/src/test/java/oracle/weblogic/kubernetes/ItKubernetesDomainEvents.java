@@ -150,7 +150,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-arm")
 @IntegrationTest
 @Tag("olcne-srg")
-@Tag("oke-parallel")
+@Tag("oke-gate")
 class ItKubernetesDomainEvents {
 
   private static String opNamespace = null;
