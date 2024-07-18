@@ -154,17 +154,16 @@ def main():
         rcfh = open('/tmp/model_diff_rc', 'w')
         rcfh.write(",".join(map(str,changed_items)))
         rcfh.close()
-        System.exit(0)
+        exit()
     except:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
         print eeString
-        System.exit(-1)
-if __name__ == "__main__":
-    all_changes = []
-    all_added = []
-    all_removed = []
-    changed_items = []
-    main()
+        sys.exit(2)
+all_changes = []
+all_added = []
+all_removed = []
+changed_items = []
+main()
 
 
