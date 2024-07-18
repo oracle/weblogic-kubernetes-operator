@@ -631,7 +631,8 @@ diff_model() {
     local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
     local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
     # Get partial models for sanity check for forbidden attribute change
-    local SERVER_OR_SERVERTEMPLATES_NAMES=$(jq '{ topology: { Server: (.topology.Server | with_entries(.value = {})),
+    local SERVER_OR_SERVERTEMPLATES_NAMES
+    SERVER_OR_SERVERTEMPLATES_NAMES=$(jq '{ topology: { Server: (.topology.Server | with_entries(.value = {})),
      ServerTemplate: (if .topology.ServerTemplate then (.topology.ServerTemplate | with_entries(.value = {})) else empty end)
        }} | if .topology.ServerTemplate == {} then del(.topology.ServerTemplate) else . end' $2)
     rc=$?
@@ -639,19 +640,22 @@ diff_model() {
       trace SEVERE "Failed to extract server names from original model using jq "$rc
       exitOrLoop
     fi
-    local PARTIAL_DIFFED_MODEL=$(jq '{domainInfo: .domainInfo, topology: .topology} | with_entries(select(.value != null))' /tmp/diffed_model.json)
-    rc=$?
-    if [ $rc -ne 0 ] ; then
-      trace SEVERE "Failed to extract domainInfo and topology from delta model using jq "$rc
-      exitOrLoop
+    local PARTIAL_DIFFED_MODEL
+    if [ -f /tmp/diffed_model.json ] ; then
+      PARTIAL_DIFFED_MODEL=$(jq '{domainInfo: .domainInfo, topology: .topology} | with_entries(select(.value != null))' /tmp/diffed_model.json)
+      rc=$?
+      if [ $rc -ne 0 ] ; then
+        trace SEVERE "Failed to extract domainInfo and topology from delta model using jq "$rc
+        exitOrLoop
+      fi
+    else
+      PARTIAL_DIFFED_MODEL="{}"
     fi
-
-    ${JAVA_HOME}/bin/java -cp ${CP} \
-      ${JAVA_PROPS} \
-      org.python.util.jython \
-      ${SCRIPTPATH}/model-diff.py "$SERVER_OR_SERVERTEMPLATES_NAMES" "$PARTIAL_DIFFED_MODEL" > ${WDT_OUTPUT} 2>&1
+    # Use the real wlst.sh and not the operator wrap script, calling jypthon directory has problem understanding WLST boolean false, true etc..
+    # eval will fail
+    ${ORACLE_HOME}/oracle_common/common/bin/wlst.sh ${SCRIPTPATH}/model-diff.py "${SERVER_OR_SERVERTEMPLATES_NAMES}" "${PARTIAL_DIFFED_MODEL}" > ${WDT_OUTPUT} 2>&1
     if [ $? -ne 0 ] ; then
-      trace SEVERE "Failed to compare models. Error output:"
+      trace SEVERE "Failed to interpret models results . Error output:"
       cat ${WDT_OUTPUT}
       exitOrLoop
     fi
