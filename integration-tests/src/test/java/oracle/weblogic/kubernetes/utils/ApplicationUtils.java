@@ -382,7 +382,7 @@ public class ApplicationUtils {
               httpStatusCode, responseCode, i, maxIterations);
 
           try {
-            Thread.sleep(1000);
+            Thread.sleep(5000);
           } catch (InterruptedException ignore) {
             // ignore
           }
