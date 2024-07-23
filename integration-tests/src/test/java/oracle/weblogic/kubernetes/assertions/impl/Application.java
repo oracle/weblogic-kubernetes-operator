@@ -109,6 +109,7 @@ public class Application {
         podName,
         port,
         appPath);
+    getLogger().info("The command to access app is: {0}", cmd);
 
     CommandParams params = Command
         .defaultCommandParams()
