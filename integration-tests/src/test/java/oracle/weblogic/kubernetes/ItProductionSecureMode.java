@@ -429,7 +429,7 @@ class ItProductionSecureMode {
                                     .runtimeEncryptionSecret(encryptionSecretName)
                                     .onlineUpdate(new OnlineUpdate()
                                             .enabled(true)))
-                            .introspectorJobActiveDeadlineSeconds(300L)));
+                            .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             domainUid, domNamespace);

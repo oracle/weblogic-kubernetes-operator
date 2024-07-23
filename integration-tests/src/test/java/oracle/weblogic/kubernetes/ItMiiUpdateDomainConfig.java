@@ -119,7 +119,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
-@Tag("oke-parallel")
+@Tag("oke-gate")
 class ItMiiUpdateDomainConfig {
 
   private static String opNamespace = null;
@@ -1015,7 +1015,7 @@ class ItMiiUpdateDomainConfig {
                                     .domainType("WLS")
                                     .configMap(configmapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                        .introspectorJobActiveDeadlineSeconds(300L))
+                        .introspectorJobActiveDeadlineSeconds(3000L))
                 .replicas(replicaCount));
     setPodAntiAffinity(domain);
     return domain;

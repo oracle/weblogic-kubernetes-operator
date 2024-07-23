@@ -203,7 +203,6 @@ class ItDBOperator {
       traefikHelmParams = traefikParams.getHelmParams();
     }
 
-
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(fmwDomainNamespace);

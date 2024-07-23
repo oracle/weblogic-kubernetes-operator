@@ -92,7 +92,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create a FMW domain in persistent volume with new simplified feature")
 @IntegrationTest
-@Tag("kind-parallel")
+@Tag("kind-sequential")
 @Tag("oke-gate")
 @Tag("okd-fmw-cert")
 @Tag("olcne-sequential")
@@ -145,7 +145,6 @@ class ItFmwDomainOnPV {
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
     createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
-
     // install operator and verify its running in ready state
     HelmParams opHelmParams =
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
