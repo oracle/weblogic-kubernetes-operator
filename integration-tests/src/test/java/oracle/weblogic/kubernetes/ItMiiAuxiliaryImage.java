@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -79,7 +80,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
@@ -304,6 +304,7 @@ class ItMiiAuxiliaryImage {
    * Verify domain is rolling restarted.
    */
   @Test
+  @Order(1)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   @Tag("gate")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
@@ -390,6 +391,7 @@ class ItMiiAuxiliaryImage {
    * Verify configured JMS and JDBC resources.
    */
   @Test
+  @Order(2)
   @DisplayName("Test to update Base Weblogic Image Name")
   void testUpdateBaseImageName() {
     // get the original domain resource before update
@@ -1559,7 +1561,7 @@ class ItMiiAuxiliaryImage {
       int replicaCount, String expectedResponse) {
     for (int i = 1; i <= replicaCount; i++) {
       int index = i;
-      testUntil(withStandardRetryPolicy,
+      testUntil(withLongRetryPolicy,
           () -> appAccessibleInPod(domainNamespace, managedServerPrefixDomain1 + index, "8001",
               "sample-war/index.jsp", expectedResponse + index),
           logger,
