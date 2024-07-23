@@ -512,7 +512,7 @@ public class CommonMiiTestUtils {
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(600L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     domain.spec().setImagePullSecrets(secrets);
 
@@ -711,7 +711,7 @@ public class CommonMiiTestUtils {
                             .model(new oracle.weblogic.domain.Model()
                                     .domainType("WLS")
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                            .introspectorJobActiveDeadlineSeconds(600L)));
+                            .introspectorJobActiveDeadlineSeconds(3000L)));
     domain.spec().setImagePullSecrets(secrets);
     setPodAntiAffinity(domain);
     return domain;
@@ -843,7 +843,7 @@ public class CommonMiiTestUtils {
                 .runtimeEncryptionSecret(encryptionSecretName)
                 .onlineUpdate(new OnlineUpdate()
                     .enabled(onlineUpdateEnabled)))
-            .introspectorJobActiveDeadlineSeconds(600L));
+            .introspectorJobActiveDeadlineSeconds(3000L));
 
     if (setDataHome) {
       domainSpec.dataHome(uniquePath + "/data");
@@ -1065,7 +1065,6 @@ public class CommonMiiTestUtils {
         expectedStatusCode);
   }
 
-
   /**
    * Use REST APIs to check the application runtime mbean from the WebLogic server.
    * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
@@ -1080,7 +1079,6 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
     String returnString = "";
     String curlString = null;
-
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       int port = getServicePort(domainNamespace, adminServerPodName, "internal-t3");
@@ -1246,7 +1244,6 @@ public class CommonMiiTestUtils {
     }
 
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
-    
     String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
@@ -1994,7 +1991,7 @@ public class CommonMiiTestUtils {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionsecret))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     setPodAntiAffinity(domain);
 
@@ -2115,7 +2112,7 @@ public class CommonMiiTestUtils {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return domain;
   }

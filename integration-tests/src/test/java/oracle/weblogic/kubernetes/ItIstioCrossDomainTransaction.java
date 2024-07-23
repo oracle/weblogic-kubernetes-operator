@@ -627,7 +627,7 @@ class ItIstioCrossDomainTransaction {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS"))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domNamespace);

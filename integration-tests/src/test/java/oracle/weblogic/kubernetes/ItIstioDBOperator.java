@@ -605,7 +605,7 @@ class ItIstioDBOperator {
                 .runtimeEncryptionSecret(encryptionSecretName)
                 .onlineUpdate(new OnlineUpdate()
                     .enabled(onlineUpdateEnabled)))
-            .introspectorJobActiveDeadlineSeconds(300L));
+            .introspectorJobActiveDeadlineSeconds(3000L));
 
     if (setDataHome) {
       domainSpec.dataHome("/shared/data");

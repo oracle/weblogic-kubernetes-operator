@@ -84,13 +84,32 @@ createRoleBindings () {
 checkClusterRunning () {
 
     echo "Confirm we have ${KUBERNETES_CLI:-kubectl} working..."
-    myline=`${KUBERNETES_CLI:-kubectl} get nodes | awk '{print $2}'| tail -n+2`
-    status="NotReady"
-    max=50
-    count=1
-
-    privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
     privateIP=${vcn_cidr_prefix}
+    myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
+    if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
+        echo "[ERROR] Unable to connect to the server: net/http: TLS handshake timeout"
+
+        echo '- could not talk to cluster, aborting'
+        cd ${terraformVarDir}
+        terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+        terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+        echo "retrying to execute KUBERNETES_CLI"
+        clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
+        echo "clusterIp : $clusterIP"
+        clusterPublicIP=${clusterIP:1:-6}
+        echo " clusterPublicIP : ${clusterPublicIP}"
+        echo "NO_PROXY before : ${NO_PROXY}"
+        export NO_PROXY=${clusterPublicIP}
+        echo "NO_PROXY:" $NO_PROXY
+        myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
+        if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
+                echo "[ERROR] Unable to connect to the server: net/http: TLS handshake timeout"
+                echo '- could not talk to cluster, aborting'
+                cd ${terraformVarDir}
+                terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+                exit 1
+        fi
+    fi
     declare -a myline
     myline=(`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`)
     NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
@@ -189,7 +208,8 @@ clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data
 echo "clusterIp : $clusterIP"
 clusterPublicIP=${clusterIP:1:-6}
 echo " clusterPublicIP : ${clusterPublicIP}"
-export NO_PROXY=$NO_PROXY,${clusterPublicIP}
+echo "NO_PROXY before : ${NO_PROXY}"
+export NO_PROXY=${clusterPublicIP}
 echo "NO_PROXY:" $NO_PROXY
 
 

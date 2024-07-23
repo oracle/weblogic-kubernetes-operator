@@ -1460,7 +1460,7 @@ public class DomainUtils {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterResName, CLUSTER_VERSION, domainNamespace)) {
@@ -1578,7 +1578,7 @@ public class DomainUtils {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-            .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
+            .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 3000L)));
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
@@ -1658,7 +1658,7 @@ public class DomainUtils {
                   .model(new Model()
                       .domainType(WLS_DOMAIN_TYPE)
                       .configMap(configmapName))
-            .introspectorJobActiveDeadlineSeconds(300L)));
+            .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource for the domain
     if (!doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {

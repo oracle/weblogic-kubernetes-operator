@@ -1342,6 +1342,9 @@ public class CommonTestUtils {
         hostAndPort = hostName;
       }
       logger.info("hostAndPort = {0} ", hostAndPort);
+      if (OKE_CLUSTER_PRIVATEIP) {
+        hostAndPort = hostName;
+      }
       return hostAndPort;
     } catch (UnknownHostException e) {
       throw new RuntimeException(e);
