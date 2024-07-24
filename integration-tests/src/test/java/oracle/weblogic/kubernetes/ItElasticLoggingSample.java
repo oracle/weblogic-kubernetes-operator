@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -68,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("ELK Stack sample to test to use Elasticsearch API to query Operator logs")
 @IntegrationTest
 @Tag("kind-parallel")
+@Tag("oke-parallel")
 class ItElasticLoggingSample {
   // constants for namespaces
   private static String domainNamespace = null;
