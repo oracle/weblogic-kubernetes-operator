@@ -633,7 +633,7 @@ diff_model() {
     # Get partial models for sanity check for forbidden attribute change
     local SERVER_OR_SERVERTEMPLATES_NAMES
     SERVER_OR_SERVERTEMPLATES_NAMES=$(jq '{ topology: { Server: (.topology.Server | with_entries(.value = {})),
-     ServerTemplate: (if .topology.ServerTemplate then (.topology.ServerTemplate | with_entries(.value = {})) else empty end)
+     ServerTemplate: (if .topology.ServerTemplate then (.topology.ServerTemplate | with_entries(.value = {})) else {} end)
        }} | if .topology.ServerTemplate == {} then del(.topology.ServerTemplate) else . end' $2)
     rc=$?
     if [ $rc -ne 0 ] ; then
