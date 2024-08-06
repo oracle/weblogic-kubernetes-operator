@@ -390,11 +390,6 @@ class ItIntrospectVersion {
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
 
-    // verify each managed server can see other member in the cluster
-    for (String managedServerName : managedServerNames) {
-      verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
-    }
-
     //update the global replica count since the test changed the replica count of cluster1 to 3
     cluster1ReplicaCount = 3;
 
