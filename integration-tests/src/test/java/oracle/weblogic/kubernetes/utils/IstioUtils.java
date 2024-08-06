@@ -139,11 +139,21 @@ public class IstioUtils {
    * @return ingress port for istio-ingressgateway
    */
   public static int getIstioHttpIngressPort() {
+    return getIstioHttpIngressPort("http2");
+  }
+  
+  /**
+   * Get the http ingress port of istio installation.
+   *
+   * @param portName name of port to get
+   * @return ingress port for istio-ingressgateway
+   */
+  public static int getIstioHttpIngressPort(String portName) {
     LoggingFacade logger = getLogger();
     ExecResult result;
     StringBuffer getIngressPort;
     getIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
-    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
+    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"" + portName.trim() + "\")].nodePort}'");
     logger.info("getIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getIngressPort));
     try {
       result = exec(new String(getIngressPort), true);
