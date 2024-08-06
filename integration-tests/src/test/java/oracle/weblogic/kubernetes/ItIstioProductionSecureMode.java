@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -31,20 +33,26 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -71,6 +79,8 @@ class ItIstioProductionSecureMode {
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final int replicaCount = 1;
+  private static final String istioNamespace = "istio-system";
+  private static final String istioIngressServiceName = "istio-ingressgateway";
   private static LoggingFacade logger = null;
 
   /**
@@ -115,7 +125,7 @@ class ItIstioProductionSecureMode {
    */
   @Test
   @DisplayName("Create WebLogic SecureMode Domain with mii model with istio")
-  void testIstioModelInImageSecureModeDomain() {
+  void testIstioModelInImageSecureModeDomain() throws UnknownHostException {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -178,34 +188,36 @@ class ItIstioProductionSecureMode {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-
-    Map<String, String> templateMap  = new HashMap<>();
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
-    templateMap.put("DUID", domainUid);
-    templateMap.put("ADMIN_SERVICE",adminServerPodName);
-    templateMap.put("CLUSTER_SERVICE", clusterService);
 
-    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
+    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-productionsecure-tls-mode.yaml");
     Path targetHttpFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
+        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-productionsecure-tls-mode.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
 
     boolean deployRes = assertDoesNotThrow(
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
-
-    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
-    Path targetDrFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
-    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
-
-    deployRes = assertDoesNotThrow(
-        () -> deployIstioDestinationRule(targetDrFile));
-    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
-
-    int istioIngressPort = getIstioHttpIngressPort();
+    
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
+    int istioIngressPort = getIstioHttpIngressPort("https");
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    logger.info("host {0}", host);
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+
+    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !OCNE) {
+      istioIngressPort = ISTIO_HTTPS_HOSTPORT;
+      hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
+    }
+    String url = "https://" + hostAndPort + "/weblogic/ready";
+    testUntil(
+        () -> checkAppUsingHostHeader(url,
+            "istio-mii-securemode-admin-server.NAMESPACE.svc.cluster.local".replace("NAMESPACE", domainNamespace)),
+        logger,
+        "application to be ready {0}",
+        url);
 
   }
 

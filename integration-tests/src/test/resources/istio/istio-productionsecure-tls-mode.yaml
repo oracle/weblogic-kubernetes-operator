@@ -1,0 +1,82 @@
+# Copyright (c) 2024, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: wls-domain-gateway
+  namespace: NAMESPACE
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+    - port:
+        number: 443
+        name: https-default-admin
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - "*"
+    - port:
+        number: 9002
+        name: https-cluster-admin
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - "*"
+    - port:
+        number: 7002
+        name: https-cluster-ssl
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - "*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: wls-domain-virtualservice
+  namespace: NAMESPACE
+spec:
+  gateways:
+    - wls-domain-gateway
+  hosts:
+    - "*"
+  tls:
+    - match:
+        - port: 443
+          sniHosts:
+          - "*"
+      route:
+        - destination:
+            host: istio-mii-securemode-admin-server.NAMESPACE.svc.cluster.local
+            port:
+              number: 9002
+    - match:
+        - port: 9002
+          sniHosts:
+          - "*"
+      route:
+        - destination:
+            host: istio-mii-securemode-cluster-cluster-1.NAMESPACE.svc.cluster.local
+            port:
+              number: 9002
+    - match:
+        - port: 7002
+          sniHosts:
+          - "*"
+      route:
+        - destination:
+            host: istio-mii-securemode-cluster-cluster-1.NAMESPACE.svc.cluster.local
+            port:
+              number: 7002
+
