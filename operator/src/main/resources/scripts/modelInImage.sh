@@ -1329,14 +1329,17 @@ restoreAppAndLibs() {
 
   createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
   local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
-
+  local TMP_EXTRACT_LIST=""
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
 
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         if [ -f $DOMAIN_BIN_LIB_LIST ] ; then
-          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $(awk '{print $0}' <<< $(grep "wlsdeploy/domainLibraries" $DOMAIN_BIN_LIB_LIST))
+          TMP_EXTRACT_LIST=$(awk '{print $0}' <<< $(grep "wlsdeploy/domainLibraries" $DOMAIN_BIN_LIB_LIST))
+          if [ -n "$TMP_EXTRACT_LIST" ] ; then
+            unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $TMP_EXTRACT_LIST
+          fi
         else
           unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
         fi
@@ -1351,7 +1354,10 @@ restoreAppAndLibs() {
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         if [ -f $DOMAIN_BIN_LIB_LIST ] ; then
-          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $(awk '{print $0}' <<< $(grep "wlsdeploy/domainBin" $DOMAIN_BIN_LIB_LIST))
+          TMP_EXTRACT_LIST=$(awk '{print $0}' <<< $(grep "wlsdeploy/domainBin" $DOMAIN_BIN_LIB_LIST))
+          if [ -n "$TMP_EXTRACT_LIST" ] ; then
+            unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $TMP_EXTRACT_LIST
+          fi
         else
           unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
         fi
