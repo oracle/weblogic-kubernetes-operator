@@ -677,7 +677,7 @@
     <maven-failsafe-plugin-version>3.3.1</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.7.1</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.6.0</maven-shade-plugin-version>
-    <exec-maven-plugin-version>3.3.0</exec-maven-plugin-version>
+    <exec-maven-plugin-version>3.4.0</exec-maven-plugin-version>
     <checkstyle-version>10.17.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.4.0</maven-jxr-plugin-version>
@@ -699,7 +699,7 @@
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.26.3</assertj.core.version>
     <commons.io.version>2.16.1</commons.io.version>
-    <awaitility-version>4.2.1</awaitility-version>
+    <awaitility-version>4.2.2</awaitility-version>
     <client-java-version>19.0.1</client-java-version>
     <findbugs-version>3.0.1u2</findbugs-version>
     <kotlin-stdlib-version>2.0.10</kotlin-stdlib-version>
@@ -721,7 +721,7 @@
     <snakeyaml-version>2.2</snakeyaml-version>
     <gson-version>2.11.0</gson-version>
     <dependency-check-version>10.0.3</dependency-check-version>
-    <slf4j-version>2.0.13</slf4j-version>
+    <slf4j-version>2.0.15</slf4j-version>
     <logback-classic-version>1.5.6</logback-classic-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
