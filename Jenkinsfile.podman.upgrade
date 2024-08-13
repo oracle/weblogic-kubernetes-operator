@@ -2,24 +2,25 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
-    '0.23.0': [
-        '1.30.0':  'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e',
-        '1.30':    'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e',
-        '1.29.4':  'kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8',
-        '1.29':    'kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8',
-        '1.28.9':  'kindest/node:v1.28.9@sha256:dca54bc6a6079dd34699d53d7d4ffa2e853e46a20cd12d619a09207e35300bd0',
-        '1.28':    'kindest/node:v1.28.9@sha256:dca54bc6a6079dd34699d53d7d4ffa2e853e46a20cd12d619a09207e35300bd0',
-        '1.27.13': 'kindest/node:v1.27.13@sha256:17439fa5b32290e3ead39ead1250dca1d822d94a10d26f1981756cd51b24b9d8',
-        '1.27':    'kindest/node:v1.27.13@sha256:17439fa5b32290e3ead39ead1250dca1d822d94a10d26f1981756cd51b24b9d8',
-        '1.26.15': 'kindest/node:v1.26.15@sha256:84333e26cae1d70361bb7339efb568df1871419f2019c80f9a12b7e2d485fe19',
-        '1.26':    'kindest/node:v1.26.15@sha256:84333e26cae1d70361bb7339efb568df1871419f2019c80f9a12b7e2d485fe19',
-        '1.25.16': 'kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b',
-        '1.25':    'kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b'
+    '0.22.0': [
+        '1.29.2':  'kindest/node:v1.29.2@sha256:51a1434a5397193442f0be2a297b488b6c919ce8a3931be0ce822606ea5ca245',
+        '1.29':    'kindest/node:v1.29.2@sha256:51a1434a5397193442f0be2a297b488b6c919ce8a3931be0ce822606ea5ca245',
+        '1.28.7':  'kindest/node:v1.28.7@sha256:9bc6c451a289cf96ad0bbaf33d416901de6fd632415b076ab05f5fa7e4f65c58',
+        '1.28':    'kindest/node:v1.28.7@sha256:9bc6c451a289cf96ad0bbaf33d416901de6fd632415b076ab05f5fa7e4f65c58',
+        '1.27.11': 'kindest/node:v1.27.11@sha256:681253009e68069b8e01aad36a1e0fa8cf18bb0ab3e5c4069b2e65cafdd70843',
+        '1.27':    'kindest/node:v1.27.11@sha256:681253009e68069b8e01aad36a1e0fa8cf18bb0ab3e5c4069b2e65cafdd70843',
+        '1.26.14': 'kindest/node:v1.26.14@sha256:5d548739ddef37b9318c70cb977f57bf3e5015e4552be4e27e57280a8cbb8e4f',
+        '1.26':    'kindest/node:v1.26.14@sha256:5d548739ddef37b9318c70cb977f57bf3e5015e4552be4e27e57280a8cbb8e4f',
+        '1.25.16': 'kindest/node:v1.25.16@sha256:e8b50f8e06b44bb65a93678a65a26248fae585b3d3c2a669e5ca6c90c69dc519',
+        '1.25':    'kindest/node:v1.25.16@sha256:e8b50f8e06b44bb65a93678a65a26248fae585b3d3c2a669e5ca6c90c69dc519',
+        '1.24.17': 'kindest/node:v1.24.17@sha256:bad10f9b98d54586cba05a7eaa1b61c6b90bfc4ee174fdc43a7b75ca75c95e51',
+        '1.24':    'kindest/node:v1.24.17@sha256:bad10f9b98d54586cba05a7eaa1b61c6b90bfc4ee174fdc43a7b75ca75c95e51',
+        '1.23.17': 'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3',
+        '1.23':    'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3'
     ]
 ]
 def _kind_image = null
-CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel
-                   H 2 * * * % MAVEN_PROFILE_NAME=kind-sequential'''
+CRON_SETTINGS = '''H 4 * * * % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.24.17'''
 
 pipeline {
     agent { label 'large-ol9u4' }
@@ -29,7 +30,7 @@ pipeline {
 
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-kind-release42-nightly-podman' ?
+        parameterizedCron(env.JOB_NAME == 'wko-kind-main-nightly-podman-upgrade' ?
         CRON_SETTINGS : '')
     }
 
@@ -61,7 +62,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH',
                description: 'The branch to run the tests on',
-               defaultValue: 'release/4.2'
+               defaultValue: 'main'
         )
 
         choice(name: 'MAVEN_PROFILE_NAME',
@@ -79,28 +80,34 @@ pipeline {
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
+        string(name: 'OPERATOR_LOG_LEVEL',
+               description: 'The default log level is not set',
+               defaultValue: ''
+        )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                   '0.23.0'
+                   '0.22.0'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.23.0: 1.30, 1.30.0, 1.29, 1.29.4, 1.28, 1.28.9, 1.27, 1.27.13, 1.26, 1.26.15, 1.25, 1.25.16 ',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.22.0: 1.29, 1.29.2, 1.28, 1.28.7, 1.27, 1.27.11, 1.26, 1.26.14, 1.25, 1.25.16, 1.24, 1.24.17, 1.23, 1.23.17 ',
                choices: [
                     // The first item in the list is the default value...
-                    '1.30.0',
-                    '1.30',
-                    '1.29.4',
+                    '1.29.2',
                     '1.29',
-                    '1.28.9',
+                    '1.28.7',
                     '1.28',
-                    '1.27.13',
+                    '1.27.11',
                     '1.27',
-                    '1.26.15',
+		    '1.26.4',
                     '1.26',
                     '1.25.16',
-                    '1.25'
+                    '1.25',
+                    '1.24.17',
+                    '1.24',
+                    '1.23.17',
+                    '1.23'
                ]
         )
         string(name: 'HELM_VERSION',
@@ -344,7 +351,7 @@ pipeline {
                               podman stop "${registry_name}"
                               podman rm --force "${registry_name}"
                             fi
-
+        
                             podman run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
                                 ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2.8.2
                             echo "Registry Host: ${registry_host}"
@@ -484,6 +491,7 @@ EOF
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
                             done
+                            podman exec -it kind-worker bash -c "sysctl vm.max_map_count"
 
                             # Document the local registry
                             # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
@@ -564,12 +572,12 @@ EOF
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
                             echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config    
+                            echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
-                            kubectl describe node kind-worker
                         '''
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             withCredentials([
@@ -615,7 +623,7 @@ EOF
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                             '''
                             archiveArtifacts(artifacts:
-                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*")
+                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*,integration-tests/target/failsafe-reports/*.xml")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
                         }
                     }
@@ -643,7 +651,9 @@ EOF
         stage ('Sync') {
             when {
                 anyOf {
-                    branch 'release/4.2'
+                    branch 'main'
+                    branch 'release/4.0'
+                    branch 'release/3.4'
                 }
                 anyOf {
                     not { triggeredBy 'TimerTrigger' }
