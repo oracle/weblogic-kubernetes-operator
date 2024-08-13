@@ -666,10 +666,6 @@
                 <includes-failsafe>
                   **/ItFmwDomainInPVUsingWLST,
                   **/ItFmwDomainInPVUsingWDT,
-                  **/ItFmwDynamicClusterMiiDomain,
-                  **/ItFmwMiiDomain,
-                  **/ItMiiSampleFmwMain,
-                  **/ItMiiSampleFmwAux,
                   **/ItFmwDomainOnPV
                 </includes-failsafe>
             </properties>
