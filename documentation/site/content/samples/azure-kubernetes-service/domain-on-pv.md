@@ -10,7 +10,6 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 #### Contents
 
  - [Prerequisites](#prerequisites)
- - [Prepare Parameters](#prepare-parameters)
  - [Create Resource Group](#create-resource-group)
  - [Create an AKS cluster](#create-the-aks-cluster)
  - [Create and configure storage](#create-storage)
@@ -30,6 +29,31 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
  - [Useful links](#useful-links)
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-01.txt" >}}
+
+##### Prepare parameters
+
+```shell
+# Change these parameters as needed for your own environment
+export ORACLE_SSO_EMAIL=<replace with your oracle account email>
+export ORACLE_SSO_PASSWORD="<replace with your oracle password>"
+
+# Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters
+export BASE_DIR=~
+export NAME_PREFIX=wls
+export WEBLOGIC_USERNAME=weblogic
+export WEBLOGIC_PASSWORD=Secret123456
+export domainUID=domain1
+# Used to generate resource names.
+export TIMESTAMP=`date +%s`
+export AKS_CLUSTER_NAME="${NAME_PREFIX}aks${TIMESTAMP}"
+export AKS_PERS_RESOURCE_GROUP="${NAME_PREFIX}resourcegroup${TIMESTAMP}"
+export AKS_PERS_LOCATION=eastus
+export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
+export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
+export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
+export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
+
+```
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
@@ -56,37 +80,12 @@ The steps in this section show you how to sign in to the Azure CLI.
 1. Set the subscription ID. Be sure to replace the placeholder with the appropriate value.
 
    ```shell
-   $ export SUBSCRIPTION_ID=<your-subscription-id>
+   $ export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
    $ az account set -s $SUBSCRIPTION_ID
    ```
 
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
-
-#### Prepare parameters
-
-```shell
-# Change these parameters as needed for your own environment
-export ORACLE_SSO_EMAIL=<replace with your oracle account email>
-export ORACLE_SSO_PASSWORD=<replace with your oracle password>
-
-# Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters
-export BASE_DIR=~
-export NAME_PREFIX=wls
-export WEBLOGIC_USERNAME=weblogic
-export WEBLOGIC_PASSWORD=Secret123456
-export domainUID=domain1
-# Used to generate resource names.
-export TIMESTAMP=`date +%s`
-export AKS_CLUSTER_NAME="${NAME_PREFIX}aks${TIMESTAMP}"
-export AKS_PERS_RESOURCE_GROUP="${NAME_PREFIX}resourcegroup${TIMESTAMP}"
-export AKS_PERS_LOCATION=eastus
-export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
-export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
-export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
-export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
-
-```
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
 

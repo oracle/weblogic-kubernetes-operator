@@ -99,7 +99,7 @@ Update the repo to get the latest Helm charts. It is a best practice to do this 
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --version 4.1.8 \
+  --version 4.2.5 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --wait
 ```
@@ -115,7 +115,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.1.8` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.2.5` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -126,7 +126,7 @@ $ helm list -A
 ```
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
-weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.1.8  4.1.8
+weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.5  4.2.5
 ```
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
@@ -696,7 +696,7 @@ Events:             <none>
 Access the Administration Console using the admin load balancer IP address.
 
 ```shell
-$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
+$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
 $ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
@@ -704,7 +704,7 @@ Access the sample application using the cluster load balancer IP address.
 
 ```shell
 ## Access the sample application using the cluster load balancer IP.
-$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
+$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
 ```shell
