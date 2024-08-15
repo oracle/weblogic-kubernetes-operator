@@ -62,7 +62,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH',
                description: 'The branch to run the tests on',
-               defaultValue: 'main'
+               defaultValue: 'release/4.2'
         )
 
         choice(name: 'MAVEN_PROFILE_NAME',
