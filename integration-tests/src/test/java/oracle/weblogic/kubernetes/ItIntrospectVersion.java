@@ -284,7 +284,6 @@ class ItIntrospectVersion {
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   @Tag("gate")
-  @Tag("crio")
   void testDomainIntrospectVersionNotRolling() {
     // get the pod creation time stamps
     Map<String, OffsetDateTime> pods = new LinkedHashMap<>();
