@@ -239,11 +239,40 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
+        // TEST
+        if (job != null) {
+          System.out.println("**** RJE: verifying existing job, creation: " + job.getMetadata().getCreationTimestamp()
+              + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
+              + getDomain().getMetadata().getResourceVersion());
+        } else {
+          System.out.println("**** RJE: verifying existing job, NO JOB "
+                  + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
+                  + getDomain().getMetadata().getResourceVersion());
+        }
+
         if (isInProgressJobOutdated(job)) {
+
+          // TEST
+          System.out.println("**** RJE: job is outdated, creation: " + job.getMetadata().getCreationTimestamp()
+                  + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
+                  + getDomain().getMetadata().getResourceVersion());
+
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
+
+          // TEST
+          System.out.println("**** RJE: processing existing, creation: " + job.getMetadata().getCreationTimestamp()
+                  + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
+                  + getDomain().getMetadata().getResourceVersion());
+
           return doNext(processExistingIntrospectorJob(getNext()), packet);
         } else if (isIntrospectionNeeded(packet)) {
+
+          // TEST
+          System.out.println("**** RJE: new introspection, domain generation: "
+                  + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
+                  + getDomain().getMetadata().getResourceVersion());
+
           return doNext(createIntrospectionSteps(getNext()), packet);
         } else {
           return doNext(packet);

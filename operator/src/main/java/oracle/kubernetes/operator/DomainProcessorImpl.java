@@ -981,7 +981,20 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleModifiedDomain(DomainResource domain) {
+
+    // TEST
+    System.out.println("**** RJE: domain modified, creation: " + domain.getMetadata().getCreationTimestamp()
+            + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
+            + domain.getMetadata().getResourceVersion());
+
     if (!domain.isGenerationLaterThanObservedGeneration()) {
+
+      // TEST
+      System.out.println("**** RJE: no make right, creation: " + domain.getMetadata().getCreationTimestamp()
+              + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
+              + domain.getMetadata().getResourceVersion() + ", observed: "
+              + domain.getStatus().getObservedGeneration());
+
       return;
     }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
