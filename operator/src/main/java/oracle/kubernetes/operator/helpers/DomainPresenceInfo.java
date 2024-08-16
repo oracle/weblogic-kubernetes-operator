@@ -763,6 +763,14 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param domain Domain
    */
   public void setDomain(DomainResource domain) {
+
+    // TEST
+    if (domain != null && domain.getMetadata() != null) {
+      System.out.println("**** RJE: setting domain, creation: " + domain.getMetadata().getCreationTimestamp()
+              + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
+              + domain.getMetadata().getResourceVersion());
+    }
+
     this.domain.set(domain);
   }
 

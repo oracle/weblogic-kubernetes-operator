@@ -375,6 +375,13 @@ public class DomainStatusUpdater {
     public Result onSuccess(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
       if (callResponse.getObject() != null) {
         DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+
+        DomainResource domain = callResponse.getObject();
+        System.out.println("**** RJE: after patch, creation: " + domain.getMetadata().getCreationTimestamp()
+                + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
+                + domain.getMetadata().getResourceVersion()
+                + ", observedGeneration: " + domain.getStatus().getObservedGeneration());
+
         info.setDomain(callResponse.getObject());
       }
       return doNext(createClusterResourceStatusUpdaterStep(getNext()), packet);
@@ -522,6 +529,15 @@ public class DomainStatusUpdater {
           .withMetadata(oldDomain.getMetadata())
           .withSpec(null)
           .withStatus(status);
+
+      // TEST
+      System.out.println("**** RJE: domain update status OLD, creation: "
+              + oldDomain.getMetadata().getCreationTimestamp()
+              + ", generation: " + oldDomain.getMetadata().getGeneration() + ", resourceVersion: "
+              + oldDomain.getMetadata().getResourceVersion()
+              + "; NEW, creation: " + newDomain.getMetadata().getCreationTimestamp()
+              + ", generation: " + newDomain.getMetadata().getGeneration() + ", resourceVersion: "
+              + newDomain.getMetadata().getResourceVersion());
 
       return RequestBuilder.DOMAIN.updateStatus(newDomain, DomainResource::getStatus,
           domainStatusUpdaterStep.createResponseStep(this));
