@@ -37,6 +37,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
@@ -66,6 +68,8 @@ import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
  * including the scan and the Pods and Services for servers.
  */
 public class DomainPresenceInfo extends ResourcePresenceInfo {
+  public static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final String domainUid;
   private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
@@ -757,6 +761,45 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return domain.get();
   }
 
+  // TEST
+  /**
+   * Diagnostic print of domain.
+   * @param domain Domain
+   * @return Print
+   */
+  public static String print(DomainResource domain) {
+    StringBuilder sb = new StringBuilder();
+    if (domain != null) {
+      V1ObjectMeta metadata = domain.getMetadata();
+      if (metadata != null) {
+        sb.append("name: ");
+        sb.append(metadata.getName());
+        sb.append(", creation: ");
+        sb.append(metadata.getCreationTimestamp());
+        sb.append(", generation: ");
+        sb.append(metadata.getGeneration());
+        sb.append(", resourceVersion: ");
+        sb.append(metadata.getResourceVersion());
+      } else {
+        sb.append("no metadata");
+      }
+      DomainSpec spec = domain.getSpec();
+      if (spec != null) {
+        sb.append(", image: ");
+        sb.append(spec.getImage());
+      }
+      DomainStatus status = domain.getStatus();
+      if (status != null) {
+        sb.append(", observedGeneration: ");
+        sb.append(status.getObservedGeneration());
+      }
+    } else {
+      sb.append("null");
+    }
+    return sb.toString();
+  }
+
+
   /**
    * Sets the domain.
    *
@@ -766,9 +809,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
     // TEST
     if (domain != null && domain.getMetadata() != null) {
-      System.out.println("**** RJE: setting domain, creation: " + domain.getMetadata().getCreationTimestamp()
-              + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
-              + domain.getMetadata().getResourceVersion());
+      LOGGER.severe("**** RJE: setting domain,  " + print(domain));
     }
 
     this.domain.set(domain);

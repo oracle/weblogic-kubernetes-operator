@@ -90,6 +90,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
+import static oracle.kubernetes.operator.helpers.DomainPresenceInfo.print;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
@@ -376,11 +377,9 @@ public class DomainStatusUpdater {
       if (callResponse.getObject() != null) {
         DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
 
+        // TEST
         DomainResource domain = callResponse.getObject();
-        System.out.println("**** RJE: after patch, creation: " + domain.getMetadata().getCreationTimestamp()
-                + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
-                + domain.getMetadata().getResourceVersion()
-                + ", observedGeneration: " + domain.getStatus().getObservedGeneration());
+        LOGGER.severe("**** RJE: after patch, " + print(domain));
 
         info.setDomain(callResponse.getObject());
       }
@@ -531,13 +530,7 @@ public class DomainStatusUpdater {
           .withStatus(status);
 
       // TEST
-      System.out.println("**** RJE: domain update status OLD, creation: "
-              + oldDomain.getMetadata().getCreationTimestamp()
-              + ", generation: " + oldDomain.getMetadata().getGeneration() + ", resourceVersion: "
-              + oldDomain.getMetadata().getResourceVersion()
-              + "; NEW, creation: " + newDomain.getMetadata().getCreationTimestamp()
-              + ", generation: " + newDomain.getMetadata().getGeneration() + ", resourceVersion: "
-              + newDomain.getMetadata().getResourceVersion());
+      LOGGER.severe("**** RJE: domain update status OLD, " + print(oldDomain) + "; NEW, " + print(newDomain));
 
       return RequestBuilder.DOMAIN.updateStatus(newDomain, DomainResource::getStatus,
           domainStatusUpdaterStep.createResponseStep(this));

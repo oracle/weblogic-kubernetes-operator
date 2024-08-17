@@ -75,6 +75,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CON
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.helpers.ConfigMapHelper.readExistingIntrospectorConfigMap;
+import static oracle.kubernetes.operator.helpers.DomainPresenceInfo.print;
 import static oracle.kubernetes.operator.watcher.JobWatcher.getFailedReason;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 
@@ -208,6 +209,37 @@ public class JobHelper {
 
   }
 
+  private static String printJob(V1Job job) {
+    StringBuilder sb = new StringBuilder();
+    if (job != null) {
+      V1ObjectMeta metadata = job.getMetadata();
+      if (metadata != null) {
+        sb.append("name: ");
+        sb.append(metadata.getName());
+        sb.append(", creation: ");
+        sb.append(metadata.getCreationTimestamp());
+        sb.append(", generation: ");
+        sb.append(metadata.getGeneration());
+        sb.append(", resourceVersion: ");
+        sb.append(metadata.getResourceVersion());
+      } else {
+        sb.append("no metadata");
+      }
+      V1JobSpec spec = job.getSpec();
+      if (spec != null) {
+        spec.getTemplate().getSpec().getContainers().forEach(c -> {
+          sb.append(", image: ");
+          sb.append(c.getImage());
+        });
+      } else {
+        sb.append("no spec");
+      }
+    } else {
+      sb.append("null");
+    }
+    return sb.toString();
+  }
+
   private static class IntrospectorJobStepContext extends JobStepContext {
 
     IntrospectorJobStepContext(Packet packet) {
@@ -241,37 +273,32 @@ public class JobHelper {
 
         // TEST
         if (job != null) {
-          System.out.println("**** RJE: verifying existing job, creation: " + job.getMetadata().getCreationTimestamp()
-              + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
-              + getDomain().getMetadata().getResourceVersion());
+          LOGGER.severe("**** RJE: verifying existing job, " + printJob(job)
+              + ", domain " + print(getDomain()));
         } else {
-          System.out.println("**** RJE: verifying existing job, NO JOB "
-                  + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
-                  + getDomain().getMetadata().getResourceVersion());
+          LOGGER.severe("**** RJE: verifying existing job, NO JOB "
+                  + ", domain " + print(getDomain()));
         }
 
         if (isInProgressJobOutdated(job)) {
 
           // TEST
-          System.out.println("**** RJE: job is outdated, creation: " + job.getMetadata().getCreationTimestamp()
-                  + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
-                  + getDomain().getMetadata().getResourceVersion());
+          LOGGER.severe("**** RJE: job is outdated, " + printJob(job)
+                  + ", domain " + print(getDomain()));
 
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
 
           // TEST
-          System.out.println("**** RJE: processing existing, creation: " + job.getMetadata().getCreationTimestamp()
-                  + ", domain generation: " + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
-                  + getDomain().getMetadata().getResourceVersion());
+          LOGGER.severe("**** RJE: processing existing, " + printJob(job)
+                  + ", domain " + print(getDomain()));
 
           return doNext(processExistingIntrospectorJob(getNext()), packet);
         } else if (isIntrospectionNeeded(packet)) {
 
           // TEST
-          System.out.println("**** RJE: new introspection, domain generation: "
-                  + getDomain().getMetadata().getGeneration() + ", resourceVersion: "
-                  + getDomain().getMetadata().getResourceVersion());
+          LOGGER.severe("**** RJE: new introspection, domain "
+                  + print(getDomain()));
 
           return doNext(createIntrospectionSteps(getNext()), packet);
         } else {

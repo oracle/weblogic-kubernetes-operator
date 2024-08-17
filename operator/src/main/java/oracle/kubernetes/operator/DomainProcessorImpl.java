@@ -76,6 +76,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.POD_SCHEDULED;
 import static oracle.kubernetes.operator.KubernetesConstants.UNSCHEDULABLE_REASON;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.helpers.DomainPresenceInfo.print;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
@@ -983,17 +984,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private void handleModifiedDomain(DomainResource domain) {
 
     // TEST
-    System.out.println("**** RJE: domain modified, creation: " + domain.getMetadata().getCreationTimestamp()
-            + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
-            + domain.getMetadata().getResourceVersion());
+    LOGGER.severe("**** RJE: domain modified, " + print(domain));
 
     if (!domain.isGenerationLaterThanObservedGeneration()) {
 
       // TEST
-      System.out.println("**** RJE: no make right, creation: " + domain.getMetadata().getCreationTimestamp()
-              + ", generation: " + domain.getMetadata().getGeneration() + ", resourceVersion: "
-              + domain.getMetadata().getResourceVersion() + ", observed: "
-              + domain.getStatus().getObservedGeneration());
+      LOGGER.severe("**** RJE: no make right, " + print(domain));
 
       return;
     }
