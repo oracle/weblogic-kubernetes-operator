@@ -208,37 +208,6 @@ public class JobHelper {
 
   }
 
-  private static String printJob(V1Job job) {
-    StringBuilder sb = new StringBuilder();
-    if (job != null) {
-      V1ObjectMeta metadata = job.getMetadata();
-      if (metadata != null) {
-        sb.append("name: ");
-        sb.append(metadata.getName());
-        sb.append(", creation: ");
-        sb.append(metadata.getCreationTimestamp());
-        sb.append(", generation: ");
-        sb.append(metadata.getGeneration());
-        sb.append(", resourceVersion: ");
-        sb.append(metadata.getResourceVersion());
-      } else {
-        sb.append("no metadata");
-      }
-      V1JobSpec spec = job.getSpec();
-      if (spec != null) {
-        spec.getTemplate().getSpec().getContainers().forEach(c -> {
-          sb.append(", image: ");
-          sb.append(c.getImage());
-        });
-      } else {
-        sb.append("no spec");
-      }
-    } else {
-      sb.append("null");
-    }
-    return sb.toString();
-  }
-
   private static class IntrospectorJobStepContext extends JobStepContext {
 
     IntrospectorJobStepContext(Packet packet) {
@@ -310,7 +279,7 @@ public class JobHelper {
 
     private boolean hasIntrospectVersionChanged(@Nonnull V1Job job) {
       return !Objects.equals(getIntrospectVersionLabelFromJob(job),
-              getIntrospectVersionLabelFromJob(getJobModel()));
+            getIntrospectVersionLabelFromJob(getJobModel()));
     }
 
     String getImageFromJob(V1Job job) {
@@ -327,21 +296,21 @@ public class JobHelper {
 
     Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
       return Optional.ofNullable(job)
-              .map(V1Job::getSpec)
-              .map(V1JobSpec::getTemplate)
-              .map(V1PodTemplateSpec::getSpec);
+            .map(V1Job::getSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec);
     }
 
     @Nullable
     String getImageFromPodSpec(@Nonnull V1PodSpec pod) {
       return getContainer(pod)
-              .map(V1Container::getImage)
-              .orElse(null);
+            .map(V1Container::getImage)
+            .orElse(null);
     }
 
     Stream<String> getAuxiliaryImagesFromPodSpec(@Nonnull V1PodSpec pod) {
       return getAuxiliaryContainers(pod)
-              .map(V1Container::getImage);
+            .map(V1Container::getImage);
     }
 
     @Nullable
@@ -355,17 +324,17 @@ public class JobHelper {
 
     Stream<String> getJobModelPodSpecAuxiliaryImages() {
       return Optional.ofNullable(getJobModelPodSpec())
-              .map(this::getAuxiliaryImagesFromPodSpec)
-              .orElse(Stream.empty());
+            .map(this::getAuxiliaryImagesFromPodSpec)
+            .orElse(Stream.empty());
     }
 
     @Nullable
     String getIntrospectVersionLabelFromJob(V1Job job) {
       return Optional.ofNullable(job)
-              .map(V1Job::getMetadata)
-              .map(V1ObjectMeta::getLabels)
-              .map(m -> m.get(INTROSPECTION_STATE_LABEL))
-              .orElse(null);
+            .map(V1Job::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+            .orElse(null);
     }
 
     private boolean isIntrospectionNeeded(Packet packet) {

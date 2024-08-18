@@ -522,6 +522,7 @@ public class DomainStatusUpdater {
           .withMetadata(oldDomain.getMetadata())
           .withSpec(null)
           .withStatus(status);
+
       return RequestBuilder.DOMAIN.updateStatus(newDomain, DomainResource::getStatus,
           domainStatusUpdaterStep.createResponseStep(this));
     }
