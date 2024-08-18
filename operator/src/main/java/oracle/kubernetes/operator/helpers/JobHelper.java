@@ -308,150 +308,154 @@ public class JobHelper {
 
       private boolean isInProgressJobOutdated(V1Job job) {
         return Optional.ofNullable(job)
-            .map(j -> hasNotCompleted(j) && (hasAnyImageChanged(j) || hasIntrospectVersionChanged(j)))
+            .map(j -> hasNotCompleted(j) && isOutdated(j))
             .orElse(false);
       }
+    }
 
-      private boolean hasNotCompleted(V1Job job) {
-        return job != null && !JobWatcher.isComplete(job);
-      }
+    private boolean hasNotCompleted(V1Job job) {
+      return job != null && !JobWatcher.isComplete(job);
+    }
 
-      private boolean hasAnyImageChanged(V1Job job) {
-        return hasImageChanged(job) || hasAuxiliaryImageChanged(job);
-      }
+    private boolean isOutdated(V1Job job) {
+      return job != null && (hasAnyImageChanged(job) || hasIntrospectVersionChanged(job));
+    }
 
-      private boolean hasImageChanged(@Nonnull V1Job job) {
-        return !Objects.equals(getImageFromJob(job), getJobModelPodSpecImage());
-      }
+    private boolean hasAnyImageChanged(V1Job job) {
+      return hasImageChanged(job) || hasAuxiliaryImageChanged(job);
+    }
 
-      private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
-        return ! getSortedJobModelPodSpecAuxiliaryImages().equals(getSortedAuxiliaryImagesFromJob(job));
-      }
+    private boolean hasImageChanged(@Nonnull V1Job job) {
+      return !Objects.equals(getImageFromJob(job), getJobModelPodSpecImage());
+    }
 
-      private boolean hasIntrospectVersionChanged(@Nonnull V1Job job) {
-        return !Objects.equals(getIntrospectVersionLabelFromJob(job),
-            getIntrospectVersionLabelFromJob(getJobModel()));
-      }
+    private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
+      return ! getSortedJobModelPodSpecAuxiliaryImages().equals(getSortedAuxiliaryImagesFromJob(job));
+    }
 
-      String getImageFromJob(V1Job job) {
-        return getPodSpecFromJob(job).map(this::getImageFromPodSpec).orElse(null);
-      }
+    private boolean hasIntrospectVersionChanged(@Nonnull V1Job job) {
+      return !Objects.equals(getIntrospectVersionLabelFromJob(job),
+              getIntrospectVersionLabelFromJob(getJobModel()));
+    }
 
-      List<String> getSortedAuxiliaryImagesFromJob(V1Job job) {
-        return getAuxiliaryImagesFromJob(job).sorted().toList();
-      }
+    String getImageFromJob(V1Job job) {
+      return getPodSpecFromJob(job).map(this::getImageFromPodSpec).orElse(null);
+    }
 
-      Stream<String> getAuxiliaryImagesFromJob(V1Job job) {
-        return getPodSpecFromJob(job).map(this::getAuxiliaryImagesFromPodSpec).orElse(Stream.empty());
-      }
+    List<String> getSortedAuxiliaryImagesFromJob(V1Job job) {
+      return getAuxiliaryImagesFromJob(job).sorted().toList();
+    }
 
-      Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
-        return Optional.ofNullable(job)
-            .map(V1Job::getSpec)
-            .map(V1JobSpec::getTemplate)
-            .map(V1PodTemplateSpec::getSpec);
-      }
+    Stream<String> getAuxiliaryImagesFromJob(V1Job job) {
+      return getPodSpecFromJob(job).map(this::getAuxiliaryImagesFromPodSpec).orElse(Stream.empty());
+    }
 
-      @Nullable
-      String getImageFromPodSpec(@Nonnull V1PodSpec pod) {
-        return getContainer(pod)
-            .map(V1Container::getImage)
-            .orElse(null);
-      }
+    Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
+      return Optional.ofNullable(job)
+              .map(V1Job::getSpec)
+              .map(V1JobSpec::getTemplate)
+              .map(V1PodTemplateSpec::getSpec);
+    }
 
-      Stream<String> getAuxiliaryImagesFromPodSpec(@Nonnull V1PodSpec pod) {
-        return getAuxiliaryContainers(pod)
-            .map(V1Container::getImage);
-      }
+    @Nullable
+    String getImageFromPodSpec(@Nonnull V1PodSpec pod) {
+      return getContainer(pod)
+              .map(V1Container::getImage)
+              .orElse(null);
+    }
 
-      @Nullable
-      String getJobModelPodSpecImage() {
-        return Optional.ofNullable(getJobModelPodSpec()).map(this::getImageFromPodSpec).orElse(null);
-      }
+    Stream<String> getAuxiliaryImagesFromPodSpec(@Nonnull V1PodSpec pod) {
+      return getAuxiliaryContainers(pod)
+              .map(V1Container::getImage);
+    }
 
-      List<String> getSortedJobModelPodSpecAuxiliaryImages() {
-        return getJobModelPodSpecAuxiliaryImages().sorted().toList();
-      }
+    @Nullable
+    String getJobModelPodSpecImage() {
+      return Optional.ofNullable(getJobModelPodSpec()).map(this::getImageFromPodSpec).orElse(null);
+    }
 
-      Stream<String> getJobModelPodSpecAuxiliaryImages() {
-        return Optional.ofNullable(getJobModelPodSpec())
-            .map(this::getAuxiliaryImagesFromPodSpec)
-            .orElse(Stream.empty());
-      }
+    List<String> getSortedJobModelPodSpecAuxiliaryImages() {
+      return getJobModelPodSpecAuxiliaryImages().sorted().toList();
+    }
 
-      @Nullable
-      String getIntrospectVersionLabelFromJob(V1Job job) {
-        return Optional.ofNullable(job)
-            .map(V1Job::getMetadata)
-            .map(V1ObjectMeta::getLabels)
-            .map(m -> m.get(INTROSPECTION_STATE_LABEL))
-            .orElse(null);
-      }
+    Stream<String> getJobModelPodSpecAuxiliaryImages() {
+      return Optional.ofNullable(getJobModelPodSpec())
+              .map(this::getAuxiliaryImagesFromPodSpec)
+              .orElse(Stream.empty());
+    }
 
-      private boolean isIntrospectionNeeded(Packet packet) {
-        return getDomainTopology() == null
+    @Nullable
+    String getIntrospectVersionLabelFromJob(V1Job job) {
+      return Optional.ofNullable(job)
+              .map(V1Job::getMetadata)
+              .map(V1ObjectMeta::getLabels)
+              .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+              .orElse(null);
+    }
+
+    private boolean isIntrospectionNeeded(Packet packet) {
+      return getDomainTopology() == null
               || isBringingUpNewDomain(packet)
               || isIntrospectionRequested(packet)
               || isModelInImageUpdate(packet)
               || isIntrospectVersionChanged(packet);
-      }
+    }
 
-      @Nonnull
-      private Collection<String> getRunningServerNames() {
-        return Optional.ofNullable(info).map(DomainPresenceInfo::getServerNames).orElse(Collections.emptyList());
-      }
+    @Nonnull
+    private Collection<String> getRunningServerNames() {
+      return Optional.ofNullable(info).map(DomainPresenceInfo::getServerNames).orElse(Collections.emptyList());
+    }
 
-      private boolean isBringingUpNewDomain(Packet packet) {
-        return getNumRunningServers() == 0 && creatingServers(info) && (isDomainGenerationChanged(packet));
-      }
+    private boolean isBringingUpNewDomain(Packet packet) {
+      return getNumRunningServers() == 0 && creatingServers(info) && (isDomainGenerationChanged(packet));
+    }
 
-      private int getNumRunningServers() {
-        return info.getServerNames().size();
-      }
+    private int getNumRunningServers() {
+      return info.getServerNames().size();
+    }
 
-      private boolean isDomainGenerationChanged(Packet packet) {
-        return Optional.ofNullable(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
-                .map(gen -> !gen.equals(getDomainGeneration())).orElse(true);
-      }
+    private boolean isDomainGenerationChanged(Packet packet) {
+      return Optional.ofNullable(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
+              .map(gen -> !gen.equals(getDomainGeneration())).orElse(true);
+    }
 
-      private String getDomainGeneration() {
-        return Optional.ofNullable(getDomain())
+    private String getDomainGeneration() {
+      return Optional.ofNullable(getDomain())
               .map(DomainResource::getMetadata)
               .map(V1ObjectMeta::getGeneration)
               .map(Object::toString)
               .orElse("");
-      }
+    }
 
-      // Returns true if an introspection was requested. Clears the flag in any case.
-      private boolean isIntrospectionRequested(Packet packet) {
-        return packet.remove(DOMAIN_INTROSPECT_REQUESTED) != null;
-      }
+    // Returns true if an introspection was requested. Clears the flag in any case.
+    private boolean isIntrospectionRequested(Packet packet) {
+      return packet.remove(DOMAIN_INTROSPECT_REQUESTED) != null;
+    }
 
-      private boolean isModelInImageUpdate(Packet packet) {
-        return isModelInImage() && !getCurrentImageSpecHash().equals(getIntrospectionImageSpecHash(packet));
-      }
+    private boolean isModelInImageUpdate(Packet packet) {
+      return isModelInImage() && !getCurrentImageSpecHash().equals(getIntrospectionImageSpecHash(packet));
+    }
 
-      private boolean isModelInImage() {
-        return getDomain().getDomainHomeSourceType() == FROM_MODEL;
-      }
+    private boolean isModelInImage() {
+      return getDomain().getDomainHomeSourceType() == FROM_MODEL;
+    }
 
-      private String getCurrentImageSpecHash() {
-        return String.valueOf(ConfigMapHelper.getModelInImageSpecHash(getDomain().getSpec().getImage()));
-      }
+    private String getCurrentImageSpecHash() {
+      return String.valueOf(ConfigMapHelper.getModelInImageSpecHash(getDomain().getSpec().getImage()));
+    }
 
-      private String getIntrospectionImageSpecHash(Packet packet) {
-        return (String) packet.get(IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH);
-      }
+    private String getIntrospectionImageSpecHash(Packet packet) {
+      return (String) packet.get(IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH);
+    }
 
-      private boolean isIntrospectVersionChanged(Packet packet) {
-        return Optional.ofNullable(packet.get(INTROSPECTION_STATE_LABEL))
-                .map(introspectVersionLabel -> !introspectVersionLabel.equals(getIntrospectVersion())).orElse(false);
-      }
+    private boolean isIntrospectVersionChanged(Packet packet) {
+      return Optional.ofNullable(packet.get(INTROSPECTION_STATE_LABEL))
+              .map(introspectVersionLabel -> !introspectVersionLabel.equals(getIntrospectVersion())).orElse(false);
+    }
 
-      private String getIntrospectVersion() {
-        return Optional.ofNullable(getDomain()).map(DomainResource::getSpec).map(DomainSpec::getIntrospectVersion)
-                .orElse("");
-      }
+    private String getIntrospectVersion() {
+      return Optional.ofNullable(getDomain()).map(DomainResource::getSpec).map(DomainSpec::getIntrospectVersion)
+              .orElse("");
     }
 
     private Step cleanUpAndReintrospect(Step next) {
@@ -485,7 +489,20 @@ public class JobHelper {
               Step.chain(createIntrospectionFailureSteps(getFailedReason(domainIntrospectorJob), domainIntrospectorJob),
                   cleanUpAndReintrospect(getNext())), packet);
         }
+
+        // TEST
+        LOGGER.severe("**** RJE: job complete, " + printJob(domainIntrospectorJob)
+                + ", domain " + print(getDomain()));
+
         if (JobWatcher.isComplete(domainIntrospectorJob)) {
+          if (isOutdated(domainIntrospectorJob)) {
+
+            // TEST
+            LOGGER.severe("**** RJE: job outdated; replace, " + printJob(domainIntrospectorJob)
+                    + ", domain " + print(getDomain()));
+
+            return doNext(cleanUpAndReintrospect(getNext()), packet);
+          }
           return doNext(createRemoveFailuresStep(getNext()), packet);
         }
         return doNext(packet);
