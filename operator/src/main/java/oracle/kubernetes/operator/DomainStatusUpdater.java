@@ -90,7 +90,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
-import static oracle.kubernetes.operator.helpers.DomainPresenceInfo.print;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
@@ -376,11 +375,6 @@ public class DomainStatusUpdater {
     public Result onSuccess(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
       if (callResponse.getObject() != null) {
         DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-
-        // TEST
-        DomainResource domain = callResponse.getObject();
-        LOGGER.severe("**** RJE: after patch, " + print(domain));
-
         info.setDomain(callResponse.getObject());
       }
       return doNext(createClusterResourceStatusUpdaterStep(getNext()), packet);
@@ -528,10 +522,6 @@ public class DomainStatusUpdater {
           .withMetadata(oldDomain.getMetadata())
           .withSpec(null)
           .withStatus(status);
-
-      // TEST
-      LOGGER.severe("**** RJE: domain update status OLD, " + print(oldDomain) + "; NEW, " + print(newDomain));
-
       return RequestBuilder.DOMAIN.updateStatus(newDomain, DomainResource::getStatus,
           domainStatusUpdaterStep.createResponseStep(this));
     }

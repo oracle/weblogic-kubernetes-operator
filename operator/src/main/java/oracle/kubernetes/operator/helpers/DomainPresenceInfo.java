@@ -761,57 +761,12 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return domain.get();
   }
 
-  // TEST
-  /**
-   * Diagnostic print of domain.
-   * @param domain Domain
-   * @return Print
-   */
-  public static String print(DomainResource domain) {
-    StringBuilder sb = new StringBuilder();
-    if (domain != null) {
-      V1ObjectMeta metadata = domain.getMetadata();
-      if (metadata != null) {
-        sb.append("name: ");
-        sb.append(metadata.getName());
-        sb.append(", creation: ");
-        sb.append(metadata.getCreationTimestamp());
-        sb.append(", generation: ");
-        sb.append(metadata.getGeneration());
-        sb.append(", resourceVersion: ");
-        sb.append(metadata.getResourceVersion());
-      } else {
-        sb.append("no metadata");
-      }
-      DomainSpec spec = domain.getSpec();
-      if (spec != null) {
-        sb.append(", image: ");
-        sb.append(spec.getImage());
-      }
-      DomainStatus status = domain.getStatus();
-      if (status != null) {
-        sb.append(", observedGeneration: ");
-        sb.append(status.getObservedGeneration());
-      }
-    } else {
-      sb.append("null");
-    }
-    return sb.toString();
-  }
-
-
   /**
    * Sets the domain.
    *
    * @param domain Domain
    */
   public void setDomain(DomainResource domain) {
-
-    // TEST
-    if (domain != null && domain.getMetadata() != null) {
-      LOGGER.severe("**** RJE: setting domain,  " + print(domain));
-    }
-
     this.domain.set(domain);
   }
 

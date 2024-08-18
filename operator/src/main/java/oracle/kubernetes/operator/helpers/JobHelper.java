@@ -75,7 +75,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CON
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.helpers.ConfigMapHelper.readExistingIntrospectorConfigMap;
-import static oracle.kubernetes.operator.helpers.DomainPresenceInfo.print;
 import static oracle.kubernetes.operator.watcher.JobWatcher.getFailedReason;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 
@@ -271,35 +270,11 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        // TEST
-        if (job != null) {
-          LOGGER.severe("**** RJE: verifying existing job, " + printJob(job)
-              + ", domain " + print(getDomain()));
-        } else {
-          LOGGER.severe("**** RJE: verifying existing job, NO JOB "
-                  + ", domain " + print(getDomain()));
-        }
-
         if (isInProgressJobOutdated(job)) {
-
-          // TEST
-          LOGGER.severe("**** RJE: job is outdated, " + printJob(job)
-                  + ", domain " + print(getDomain()));
-
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
-
-          // TEST
-          LOGGER.severe("**** RJE: processing existing, " + printJob(job)
-                  + ", domain " + print(getDomain()));
-
           return doNext(processExistingIntrospectorJob(getNext()), packet);
         } else if (isIntrospectionNeeded(packet)) {
-
-          // TEST
-          LOGGER.severe("**** RJE: new introspection, domain "
-                  + print(getDomain()));
-
           return doNext(createIntrospectionSteps(getNext()), packet);
         } else {
           return doNext(packet);
@@ -489,18 +464,8 @@ public class JobHelper {
               Step.chain(createIntrospectionFailureSteps(getFailedReason(domainIntrospectorJob), domainIntrospectorJob),
                   cleanUpAndReintrospect(getNext())), packet);
         }
-
-        // TEST
-        LOGGER.severe("**** RJE: job complete, " + printJob(domainIntrospectorJob)
-                + ", domain " + print(getDomain()));
-
         if (JobWatcher.isComplete(domainIntrospectorJob)) {
           if (isOutdated(domainIntrospectorJob)) {
-
-            // TEST
-            LOGGER.severe("**** RJE: job outdated; replace, " + printJob(domainIntrospectorJob)
-                    + ", domain " + print(getDomain()));
-
             return doNext(cleanUpAndReintrospect(getNext()), packet);
           }
           return doNext(createRemoveFailuresStep(getNext()), packet);
