@@ -1116,9 +1116,13 @@ public abstract class PodStepContext extends BasePodStepContext {
           patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
       KubernetesUtils.addPatches(
           patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getNonHashedPodAnnotations());
+
+      String patch = patchBuilder.build().toString();
+      patch = updateForDeepSubstitution(currentPod.getSpec(), patch);
+
       return RequestBuilder.POD.patch(getNamespace(), getPodName(),
           V1Patch.PATCH_FORMAT_JSON_PATCH,
-          new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+          new V1Patch(patch), patchResponse(next));
     }
 
     private Step patchCurrentPod(V1Pod currentPod, Step next) {
