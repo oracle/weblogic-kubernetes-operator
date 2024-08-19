@@ -57,32 +57,7 @@ export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
-##### Sign in with Azure CLI
-
-The steps in this section show you how to sign in to the Azure CLI.
-
-1. Open a Bash shell.
-
-1. Sign out and delete some authentication files to remove any lingering credentials.
-
-   ```shell
-   $ az logout
-   $ rm ~/.azure/accessTokens.json
-   $ rm ~/.azure/azureProfile.json
-   ```
-
-1. Sign in to your Azure CLI.
-
-   ```shell
-   $ az login
-   ```
-
-1. Set the subscription ID. Be sure to replace the placeholder with the appropriate value.
-
-   ```shell
-   $ export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-   $ az account set -s $SUBSCRIPTION_ID
-   ```
+{{< readfile file="/samples/azure-kubernetes-service/includes/sign-in-azure.txt" >}}
 
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
@@ -138,10 +113,7 @@ This sample requires [Domain creation images]({{< relref "/managing-domains/doma
 
 ##### Image creation - Introduction
 
-The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image tagged as `wdt-domain-image:WLS-v1` from files that you will stage to `${WDT_MODEL_FILES_PATH}/WLS-v1`.
-
-  - The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image’s `/auxiliary/weblogic-deploy` directory, by default.
-  - WDT model YAML (model), WDT variable (property), and WDT archive ZIP (archive) files, expected in directory `/auxiliary/models`, by default.
+{{< readfile file="/samples/azure-kubernetes-service/includes/auxiliary-image-directory.txt" >}}
 
 ##### Understanding your first archive
 
@@ -170,46 +142,11 @@ An image can contain multiple properties files, archive ZIP files, and model YAM
 
 ##### Creating the image with WIT
 
-At this point, you have all of the files needed for `image wdt-domain-image:WLS-v1` staged; they include:
+{{< readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" >}}
 
-  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.yaml`
-  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.properties`
-  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip`
-
-Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You’ve already set up this tool during the prerequisite steps.
-
-Run the following commands to create the image and verify that it worked. Note that `amagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).
-
-```shell
-$ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh createAuxImage \
-  --tag wdt-domain-image:WLS-v1 \
-  --wdtModel ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.yaml \
-  --wdtVariables ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.properties \
-  --wdtArchive ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
-```
-
-This command runs the WebLogic Image Tool to create the domain creation image and does the following:
-
-  - Builds the final container image as a layer on a small `busybox` base image.
-  - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
-    - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
-    - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
-  - Copies the specified WDT model, properties, and application archives to image location `/auxiliary/models`.
-
-When the command succeeds, it should end with output like the following:
-
-```
-[INFO   ] Build successful. Build time=70s. Image tag=wdt-domain-image:WLS-v1
-```
-
-Verify the image is available in the local Docker server with the following command.
-
-```shell
-$ docker images | grep WLS-v1
-```
-```
-wdt-domain-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
-```
+{{% notice note %}}
+The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).
+{{% /notice %}}
 
 {{% notice note %}}
 You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).

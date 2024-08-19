@@ -1,0 +1,4 @@
+The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image tagged as `wdt-domain-image:WLS-v1` from files that you will stage to `${WDT_MODEL_FILES_PATH}/WLS-v1/`.
+
+  - The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image’s `/auxiliary/weblogic-deploy` directory, by default.
+  - WDT model YAML (model), WDT variable (property), and WDT archive ZIP (archive) files, expected in directory `/auxiliary/models`, by default.
