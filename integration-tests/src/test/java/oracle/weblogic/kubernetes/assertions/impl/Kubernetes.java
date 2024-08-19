@@ -462,21 +462,42 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
-    V1PodList v1PodList =
-        coreV1Api.listNamespacedPod(
-            namespace, // namespace in which to look for the pods.
-            Boolean.FALSE.toString(), // // pretty print output.
-            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-            null, // continue to query when there is more results to return.
-            null, // selector to restrict the list of returned objects by their fields
-            labelSelector, // selector to restrict the list of returned objects by their labels.
-            null, // maximum number of responses to return for a list call.
-            null, // shows changes that occur after that particular version of a resource.
-            RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-            SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-            null, // Timeout for the list/watch call.
-            Boolean.FALSE // Watch for changes to the described resources.
-        );
+    V1PodList v1PodList = null;
+    int maxRetries = 3;
+    int retryCount = 0;
+    boolean success = false;
+    while (retryCount < maxRetries && !success) {
+      try {
+        v1PodList
+            = coreV1Api.listNamespacedPod(
+                namespace, // namespace in which to look for the pods.
+                Boolean.FALSE.toString(), // // pretty print output.
+                Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+                null, // continue to query when there is more results to return.
+                null, // selector to restrict the list of returned objects by their fields
+                labelSelector, // selector to restrict the list of returned objects by their labels.
+                null, // maximum number of responses to return for a list call.
+                null, // shows changes that occur after that particular version of a resource.
+                RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+                SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
+                null, // Timeout for the list/watch call.
+                Boolean.FALSE // Watch for changes to the described resources.
+            );
+        success = true;
+      } catch (ApiException ex) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          System.out.println("Max retries reached. Giving up.");
+          throw ex;
+        } else {
+          try {
+            Thread.sleep(1000); // Wait for 1 second
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
+    }
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
         getLogger().info("Name: {0}, Namespace: {1}, Phase: {2}",
