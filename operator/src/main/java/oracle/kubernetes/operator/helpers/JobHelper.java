@@ -840,7 +840,12 @@ public class JobHelper {
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
-          return doNext(cleanUpAndReintrospect(getNext()), packet);
+
+          String reason = getImagePullError(jobPod);
+          V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
+          return doNext(Step.chain(
+              createIntrospectionFailureSteps(reason, domainIntrospectorJob),
+              cleanUpAndReintrospect(getNext())), packet);
         } else if (isJobPodTimedOut(jobPod)) {
           // process job pod timed out same way as job timed out, which is to
           // terminate current fiber
@@ -903,11 +908,31 @@ public class JobHelper {
                         .map(V1ContainerStateWaiting::getReason)
                         .anyMatch(IntrospectionStatus::isImagePullError))
                 .orElse(false);
-
       }
 
       private List<V1ContainerStatus> getInitContainerStatuses(V1Pod pod) {
         return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
+      }
+
+      private String getImagePullError(V1Pod pod) {
+        String reason = getJobPodContainerWaitingReason(pod);
+        if (!IntrospectionStatus.isImagePullError(reason)) {
+
+          List<V1ContainerStatus> statuses = getInitContainerStatuses(pod);
+          if (statuses != null) {
+            for (V1ContainerStatus status : statuses) {
+              if (status != null && status.getState() != null) {
+                V1ContainerStateWaiting waiting = status.getState().getWaiting();
+                if (waiting != null && waiting.getReason() != null) {
+                  if (IntrospectionStatus.isImagePullError(waiting.getReason())) {
+                    reason = waiting.getReason();
+                  }
+                }
+              }
+            }
+          }
+        }
+        return reason;
       }
 
       private void recordJobPod(Packet packet, V1Pod jobPod) {
