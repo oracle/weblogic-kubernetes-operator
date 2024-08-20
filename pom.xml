@@ -672,7 +672,7 @@
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.26.3</assertj.core.version>
     <commons.io.version>2.16.1</commons.io.version>
-    <commons.compress.version>1.26.2</commons.compress.version>
+    <commons.compress.version>1.27.1</commons.compress.version>
     <awaitility-version>4.2.2</awaitility-version>
     <client-java-version>16.0.3</client-java-version>
     <kotlin-stdlib-version>2.0.10</kotlin-stdlib-version>
