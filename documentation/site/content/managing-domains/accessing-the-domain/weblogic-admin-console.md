@@ -75,7 +75,7 @@ The following example sets up an ingress path routing rule to access a WebLogic 
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
-If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
+If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
 ```
 http://${HOSTNAME}:${LB_PORT}/em
@@ -152,7 +152,7 @@ The following example sets up load balancer routing for access to the WebLogic S
    https://${HOSTNAME}:${SSLPORT}/console
    ```
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
+   If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
    ```
    https://${HOSTNAME}:${SSLPORT}/em
@@ -173,7 +173,7 @@ Use the following steps to configure a `NodePort` to access the WebLogic Server 
    ```
    The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
+   If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
    ```
    http://hostname:adminserver-NodePort/em
@@ -206,7 +206,7 @@ A Kubernetes port forward command is convenient for development use cases but is
 
      * `${LOCAL_PORT}` is the local port specified on the `kubectl port-forward` command line.
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
+   If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
    ```
    http://${HOSTNAME}:${LOCAL_PORT}/em
