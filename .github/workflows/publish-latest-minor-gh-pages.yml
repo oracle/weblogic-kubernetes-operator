@@ -38,7 +38,7 @@ jobs:
 
       - name: Build and publish site
         run: |
-          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.108.0/hugo_0.108.0_Linux-64bit.tar.gz"
+          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.133.0/hugo_0.133.0_Linux-64bit.tar.gz"
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
@@ -50,6 +50,7 @@ jobs:
           latest_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | tail -1 | cut -c12-)
           echo "Latest tag is $latest_tag..."
           echo $latest_tag >| $GITHUB_WORKSPACE/branch/documentation/site/layouts/shortcodes/latestVersion.html
+          cat $GITHUB_WORKSPACE/branch/documentation/site/layouts/shortcodes/latestVersion.html
           echo "Building documentation for latest minor version..."
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
           echo "Copying static files into place..."
