@@ -6,7 +6,14 @@
     <description>Recent content in Upgrade managed domains on WebLogic Kubernetes Operator</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate></lastBuildDate>
+    <lastBuildDate>Thu, 05 Oct 2023 16:43:45 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Upgrade managed domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/</link>
+      <pubDate>Thu, 05 Oct 2023 16:43:45 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/</guid>
+      <description>This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to a higher, major version.&#xA;In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the Fusion Middleware Upgrade Guide.&#xA;Before the upgrade, you must do the following:&#xA;If your domain home source type is Domain on Persistent Volume (DoPV), then back up the domain home.</description>
+    </item>
   </channel>
 </rss>

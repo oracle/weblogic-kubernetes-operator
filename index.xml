@@ -6,7 +6,7 @@
     <description>Recent content on WebLogic Kubernetes Operator</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 14 Sep 2023 18:22:31 -0500</lastBuildDate>
+    <lastBuildDate>Thu, 05 Oct 2023 16:43:45 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Overview</title>
@@ -76,7 +76,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/</link>
       <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/</guid>
-      <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.&#xA;Get the operator source and put it in /tmp/weblogic-kubernetes-operator.&#xA;For example:&#xA;$ cd /tmp $ git clone --branch v4.1.8 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.&#xA;For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
+      <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.&#xA;Get the operator source and put it in /tmp/weblogic-kubernetes-operator.&#xA;For example:&#xA;$ cd /tmp $ git clone --branch v4.2.5 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.&#xA;For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
     </item>
     <item>
       <title>Contribute to the operator</title>
@@ -139,7 +139,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</link>
       <pubDate>Thu, 14 Sep 2023 18:22:31 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</guid>
-      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.&#xA;Contents Prerequisites Prepare Parameters Create Resource Group Create an AKS cluster Create and configure storage Create an Azure Storage account and NFS share Create SC and PVC Create a domain creation image Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Access sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
+      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.&#xA;Contents Prerequisites Create Resource Group Create an AKS cluster Create and configure storage Create an Azure Storage account and NFS share Create SC and PVC Create a domain creation image Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Access sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
     </item>
     <item>
       <title>Usage</title>
@@ -538,7 +538,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release 4.1.8 :&#xA;Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, and 1.28.2+ (check with kubectl version).&#xA;Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.&#xA;Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).&#xA;Helm 3.3.4+ (check with helm version --client --short).&#xA;For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
+      <description>For the current production release 4.2.5 :&#xA;Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, 1.28.2+, and 1.29.1+ (check with kubectl version).&#xA;Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.&#xA;Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).&#xA;Helm 3.3.4+ (check with helm version --client --short).&#xA;For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     <item>
       <title>Under the covers</title>
@@ -546,6 +546,13 @@
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/summary/</guid>
       <description>Here&amp;rsquo;s some insight into what&amp;rsquo;s happening under the covers during the Quick Start tutorial.&#xA;The Quick Start guide first installs the WebLogic Kubernetes Operator, then creates a domain using the Model in Image domain home source type.&#xA;For a comparison of Model in Image to other domain home source types, see Choose a domain home source type. To learn more about Model in Image domains, see the detailed Model in Image user guide.</description>
+    </item>
+    <item>
+      <title>Upgrade managed domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/</link>
+      <pubDate>Thu, 05 Oct 2023 16:43:45 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/</guid>
+      <description>This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to a higher, major version.&#xA;In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the Fusion Middleware Upgrade Guide.&#xA;Before the upgrade, you must do the following:&#xA;If your domain home source type is Domain on Persistent Volume (DoPV), then back up the domain home.</description>
     </item>
     <item>
       <title>Disabling Fast Application Notifications</title>
@@ -730,13 +737,6 @@
       <description>Contents Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud Prerequisites Quick start Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes Important note about persistent volumes Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
     </item>
     <item>
-      <title>Manage FMW Infrastructure domains</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/</link>
-      <pubDate>Thu, 18 Apr 2019 06:46:23 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/</guid>
-      <description>Contents Limitations Obtaining the FMW Infrastructure image Creating an FMW Infrastructure image Configuring access to your database Running the database inside Kubernetes Running the database outside Kubernetes Running the Repository Creation Utility to set up your database schema Creating schemas Dropping schemas Create a Kubernetes Secret with the RCU credentials Creating an FMW Infrastructure domain Patching the FMW Infrastructure image Additional considerations for Coherence The operator supports FMW Infrastructure domains, that is, domains that are created with the FMW Infrastructure installer rather than the WebLogic Server installer.</description>
-    </item>
-    <item>
       <title>Monitoring exporter</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/monitoring-exporter/</link>
       <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
@@ -779,11 +779,11 @@
       <description>After applying the July2021 PSU, I&amp;rsquo;m now seeing security warnings, such as:&#xA;Description: Production Mode is enabled but user lockout settings are not secure in realm: myrealm, i.e. LockoutThreshold should not be greater than 5, LockoutDuration should not be less than 30.&#xA;SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.&#xA;WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production.</description>
     </item>
     <item>
-      <title>Domain debugging</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</link>
-      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</guid>
-      <description>Here are some suggestions for debugging problems with a domain after your Domain or Cluster YAML files are deployed.&#xA;Contents Understand failure types, severities, and tuning Check the Domain status Check the Cluster status Check the Domain events Check the introspector job Check the WebLogic Server pods Check the docs Check the operator Understand failure types, severities, and tuning When debugging, it helps to understand failure types, failure severities, retry behavior, and retry tuning, see Domain failure retry processing.</description>
+      <title>Manage FMW Infrastructure domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/</link>
+      <pubDate>Thu, 18 Apr 2019 06:46:23 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/</guid>
+      <description>Contents Limitations Obtaining the FMW Infrastructure image Creating an FMW Infrastructure image Configuring access to your database Running the database inside Kubernetes Running the database outside Kubernetes Running the Repository Creation Utility to set up your database schema Creating schemas Dropping schemas Create a Kubernetes Secret with the RCU credentials Creating an FMW Infrastructure domain Patching the FMW Infrastructure image Additional considerations for Coherence The operator supports FMW Infrastructure domains, that is, domains that are created with the FMW Infrastructure installer rather than the WebLogic Server installer.</description>
     </item>
     <item>
       <title>Scheduling pods to particular nodes</title>
@@ -791,6 +791,13 @@
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/</guid>
       <description>How do I constrain scheduling WebLogic Server pods to a particular set of nodes?&#xA;To do this:&#xA;First, set a label on the nodes on which the WebLogic Server pods will run. For example:&#xA;$ kubectl label nodes name=weblogic-pods In the Domain CR, set a nodeSelector: a selector which must match a node&amp;rsquo;s labels for the pod to be scheduled on that node. See kubectl explain pods.spec.nodeSelector.&#xA;You can set nodeSelector labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain.</description>
+    </item>
+    <item>
+      <title>Domain debugging</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</guid>
+      <description>Here are some suggestions for debugging problems with a domain after your Domain or Cluster YAML files are deployed.&#xA;Contents Understand failure types, severities, and tuning Check the Domain status Check the Cluster status Check the Domain events Check the introspector job Check the WebLogic Server pods Check the docs Check the operator Understand failure types, severities, and tuning When debugging, it helps to understand failure types, failure severities, retry behavior, and retry tuning, see Domain failure retry processing.</description>
     </item>
     <item>
       <title>Usage</title>
