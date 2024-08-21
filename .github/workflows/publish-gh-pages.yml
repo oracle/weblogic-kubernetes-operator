@@ -38,13 +38,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 32
-          ref: release/4.0
-          path: branch-4.0
-
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 32
           ref: release/3.4
           path: branch-3.4
 
@@ -57,7 +50,7 @@ jobs:
 
       - name: Build and publish site
         run: |
-          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.108.0/hugo_0.108.0_Linux-64bit.tar.gz"
+          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.133.0/hugo_0.133.0_Linux-64bit.tar.gz"
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
@@ -69,6 +62,7 @@ jobs:
           latest_42_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | tail -1 | cut -c12-)
           echo "Latest tag is $latest_42_tag..."
           echo $latest_41_tag >| $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
+          cat $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
           echo "Copying static files into place..."
           cp -R domains "$GITHUB_WORKSPACE/WORK"
@@ -78,14 +72,8 @@ jobs:
           latest_41_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.1 | tail -1 | cut -c12-)
           echo "Latest tag is $latest_41_tag..."
           echo $latest_41_tag >| $GITHUB_WORKSPACE/branch-4.1/documentation/site/layouts/shortcodes/latestVersion.html
+          cat $GITHUB_WORKSPACE/branch-4.1/documentation/site/layouts/shortcodes/latestVersion.html
           hugo -s site -d "$GITHUB_WORKSPACE/WORK/4.1" -b https://oracle.github.io/weblogic-kubernetes-operator/4.1
-
-          cd $GITHUB_WORKSPACE/branch-4.0/documentation
-          echo "Building documentation for 4.0 minor version..."
-          latest_40_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.0 | tail -1 | cut -c12-)
-          echo "Latest tag is $latest_40_tag..."
-          echo $latest_40_tag >| $GITHUB_WORKSPACE/branch-4.0/documentation/site/layouts/shortcodes/latestVersion.html
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK/4.0" -b https://oracle.github.io/weblogic-kubernetes-operator/4.0
 
           cd $GITHUB_WORKSPACE/branch-3.4/documentation
           echo "Building documentation for 3.4 minor version..."
@@ -93,7 +81,7 @@ jobs:
 
           cd $GITHUB_WORKSPACE/gh-pages
           find . -maxdepth 1 -mindepth 1 -not -name '[0-9]*' -not -name '.git*' -exec rm -Rf {} \;
-          rm -Rf 3.4 4.0 4.1
+          rm -Rf 3.4 4.1
 
           cp -R $GITHUB_WORKSPACE/WORK/* .
           git config --global user.name "github-actions[bot]"
