@@ -4,45 +4,37 @@
     <title>WebLogic images on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/base-images/</link>
     <description>Recent content in WebLogic images on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 16:45:55 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 23 Feb 2019 16:45:55 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>OCR images</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/</link>
       <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/</guid>
       <description>Contents Overview Understand Oracle Container Registry images Compare General Availability to Critical Patch Updates images WebLogic distribution installer type Compare &amp;ldquo;dated&amp;rdquo; and &amp;ldquo;undated&amp;rdquo; images Example OCR image names Obtain images from the Oracle Container Registry Inspect images Ensure you are using recently patched images Use or create WebLogic images depending on the domain home source type Overview A container image with WebLogic Server or Fusion Middleware Infrastructure is required to run WebLogic domains in Kubernetes.</description>
     </item>
-    
     <item>
       <title>Create custom images</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/</link>
       <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/</guid>
       <description>Contents Use the WebLogic Image Tool to create custom images Create a custom image with patches applied Create a custom base image Create a custom image with your domain inside the image Create a custom image with your model inside the image Use the WebLogic Image Tool to create custom images You can use the WebLogic Image Tool (WIT) to build your own WebLogic Server or Fusion Middleware Infrastructure images (with the latest Oracle Linux images, Java updates, and WebLogic Server patches), apply one-off patches to existing OCR images, or overlay your own files and applications on top of an OCR image.</description>
     </item>
-    
     <item>
       <title>Patch running domains</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/</link>
       <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/</guid>
-      <description>Apply patched images to a running domain When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image, the operator applies the update in a zero downtime fashion. The procedure for the operator to update the running domain differs depending on the domain home source type. See the following corresponding sections:
-Domain on PV Model in Image with auxiliary images Model in Image without auxiliary images Domain in Image For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see CI/CD.</description>
+      <description>Apply patched images to a running domain When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image, the operator applies the update in a zero downtime fashion. The procedure for the operator to update the running domain differs depending on the domain home source type. See the following corresponding sections:&#xA;Domain on PV Model in Image with auxiliary images Model in Image without auxiliary images Domain in Image For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see CI/CD.</description>
     </item>
-    
     <item>
       <title>Access domain images</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/base-images/access-images/</link>
       <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/base-images/access-images/</guid>
       <description>In most operator samples, it is assumed that the Kubernetes cluster has a single worker node and any images that are needed by that node have either been created on that node or externally pulled to the node from a registry (using docker pull). This is fine for most demonstration purposes, and if this assumption is correct, then no additional steps are needed to ensure that Kubernetes has access to the image.</description>
     </item>
-    
   </channel>
 </rss>
