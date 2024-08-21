@@ -5,7 +5,7 @@
 # Description:
 #
 #  This script install a given version of istio using Helm v3.x
-#  Default istio version is 1.13.2
+#  Default istio version is 1.23.0
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
 #  https://github.com/istio/istio/releases
@@ -56,7 +56,7 @@ ${KUBERNETES_CLI} create namespace istio-system
 }
 
 # MAIN
-version=${1:-1.13.2}
+version=${1:-1.23.0}
 workdir=${2:-`pwd`}
 wko_tenancy=${3:-devweblogic}
 arch=${4:-linux-amd64}
