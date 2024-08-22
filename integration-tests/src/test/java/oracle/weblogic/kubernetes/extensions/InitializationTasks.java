@@ -311,7 +311,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
-        installOracleDBOperator();        
+        if (!OCNE && !OKD && !CRIO) {
+          installOracleDBOperator();
+        }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
@@ -672,7 +674,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   private void installOracleDBOperator() {
     //install Oracle Database Operator
     String namespace = ORACLE_OPERATOR_NS;
-    assertDoesNotThrow(() -> new Namespace().name(namespace).create());
+    if (!assertDoesNotThrow(() -> Namespace.exists(namespace))) {
+      assertDoesNotThrow(() -> new Namespace().name(namespace).create());
+    }
     assertDoesNotThrow(() -> installDBOperator(), "Failed to install database operator");
   }
 
