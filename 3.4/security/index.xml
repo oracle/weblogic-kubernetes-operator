@@ -4,64 +4,51 @@
     <title>Security on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/</link>
     <description>Recent content in Security on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 17:34:48 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 04 Oct 2019 08:08:08 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Certificates</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/certificates/</link>
       <pubDate>Wed, 06 Mar 2019 21:14:18 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/certificates/</guid>
       <description>This document is now located in the operator user guide, see REST Services.</description>
     </item>
-    
     <item>
       <title>Encryption</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/encryption/</link>
       <pubDate>Sat, 23 Feb 2019 17:36:29 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/encryption/</guid>
-      <description>Contents Introspector encryption Encryption of Kubernetes Secrets Additional reading Introspector encryption The operator has an introspection job that handles WebLogic domain encryption. The introspection job also addresses the use of Kubernetes Secrets with configuration overrides. For additional information on the configuration handling, see Configuration overrides.
-The introspection job also creates a boot.properties file that is made available to the pods in the WebLogic domain. The credential used for the WebLogic domain is kept in a Kubernetes Secret which follows the naming pattern &amp;lt;domainUID&amp;gt;-weblogic-credentials, where &amp;lt;domainUID&amp;gt; is the unique identifier of the domain, for example, mydomain-weblogic-credentials.</description>
+      <description>Contents Introspector encryption Encryption of Kubernetes Secrets Additional reading Introspector encryption The operator has an introspection job that handles WebLogic domain encryption. The introspection job also addresses the use of Kubernetes Secrets with configuration overrides. For additional information on the configuration handling, see Configuration overrides.&#xA;The introspection job also creates a boot.properties file that is made available to the pods in the WebLogic domain. The credential used for the WebLogic domain is kept in a Kubernetes Secret which follows the naming pattern &amp;lt;domainUID&amp;gt;-weblogic-credentials, where &amp;lt;domainUID&amp;gt; is the unique identifier of the domain, for example, mydomain-weblogic-credentials.</description>
     </item>
-    
     <item>
       <title>Service accounts</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/service-accounts/</link>
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/service-accounts/</guid>
       <description>This document is now located in the operator user guide, see Service Accounts.</description>
     </item>
-    
     <item>
       <title>RBAC</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/rbac/</link>
       <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/rbac/</guid>
       <description>This document is now located in the operator user guide, see RBAC.</description>
     </item>
-    
     <item>
       <title>Secrets</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/secrets/</link>
       <pubDate>Sat, 23 Feb 2019 17:36:33 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/secrets/</guid>
       <description>Contents Domain credentials secret Domain image pull secret Domain configuration override or runtime update secrets Operator image pull secret Operator external REST interface secret Operator internal REST interface secret Domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
     </item>
-    
     <item>
       <title>OpenShift</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/openshift/</link>
       <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/security/openshift/</guid>
-      <description>Security requirements to run WebLogic in OpenShift WebLogic Kubernetes Operator images starting with version 3.1 and WebLogic Server or Fusion Middleware Infrastructure images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
-Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:</description>
+      <description>Security requirements to run WebLogic in OpenShift WebLogic Kubernetes Operator images starting with version 3.1 and WebLogic Server or Fusion Middleware Infrastructure images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.&#xA;Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:</description>
     </item>
-    
   </channel>
 </rss>

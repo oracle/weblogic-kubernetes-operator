@@ -475,7 +475,8 @@
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/4.1/</loc>
     <lastmod>2023-10-05T16:43:45-05:00</lastmod>
-    <priority>0</priority>
+  </url><url>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/4.1/table_of_contents/</loc>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/4.1/categories/</loc>
   </url><url>

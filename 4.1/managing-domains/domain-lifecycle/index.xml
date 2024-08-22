@@ -4,79 +4,58 @@
     <title>Domain life cycle on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/</link>
     <description>Recent content in Domain life cycle on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 16:50:09 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 10 Oct 2022 08:14:51 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Startup and shutdown</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/startup/</link>
       <pubDate>Sat, 23 Feb 2019 17:04:41 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/startup/</guid>
-      <description>This document describes approaches for stopping, starting, rolling, and restarting WebLogic Server instances in a Kubernetes environment.
-Contents Introduction Starting and stopping servers serverStartPolicy rules Available serverStartPolicy values Administration Server start and stop rules Standalone Managed Server start and stop rules Clustered Managed Server start and stop rules Common starting and stopping scenarios Normal running state Shut down all the servers Only start the Administration Server Shut down a cluster Shut down a specific standalone server Force a specific clustered Managed Server to start Shutdown options Shutdown environment variables shutdown rules Restarting servers Fields that cause servers to be restarted Rolling restarts Draining a node and PodDisruptionBudget Common restarting scenarios Using restartVersion to force the operator to restart servers Restart all the servers in the domain Restart all the servers in the cluster Restart the Administration Server Restart a standalone or clustered Managed Server Full domain restarts Domain lifecycle sample scripts Introduction There are fields on the Domain and the Cluster that specify which servers should be running, which servers should be restarted, and the desired initial state.</description>
+      <description>This document describes approaches for stopping, starting, rolling, and restarting WebLogic Server instances in a Kubernetes environment.&#xA;Contents Introduction Starting and stopping servers serverStartPolicy rules Available serverStartPolicy values Administration Server start and stop rules Standalone Managed Server start and stop rules Clustered Managed Server start and stop rules Common starting and stopping scenarios Normal running state Shut down all the servers Only start the Administration Server Shut down a cluster Shut down a specific standalone server Force a specific clustered Managed Server to start Shutdown options Shutdown environment variables shutdown rules Restarting servers Fields that cause servers to be restarted Rolling restarts Draining a node and PodDisruptionBudget Common restarting scenarios Using restartVersion to force the operator to restart servers Restart all the servers in the domain Restart all the servers in the cluster Restart the Administration Server Restart a standalone or clustered Managed Server Full domain restarts Domain lifecycle sample scripts Introduction There are fields on the Domain and the Cluster that specify which servers should be running, which servers should be restarted, and the desired initial state.</description>
     </item>
-    
     <item>
       <title>Restarting</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/restarting/</link>
       <pubDate>Sat, 23 Feb 2019 20:58:51 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/restarting/</guid>
-      <description>This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.
-Contents Overview Common restart scenarios Use cases Modifying the WebLogic domain configuration Domain in Image Model in Image Domain on PV Changing the domain configuration overrides Changing the WebLogic Server credentials Changing fields on the Domain that affect WebLogic Server instance Pods Applying WebLogic Server patches Updating deployed applications Rolling out an updated domain home in image or model in image Avoiding a rolling restart when changing the image field on a Domain Other considerations for restarting a domain Overview There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</description>
+      <description>This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.&#xA;Contents Overview Common restart scenarios Use cases Modifying the WebLogic domain configuration Domain in Image Model in Image Domain on PV Changing the domain configuration overrides Changing the WebLogic Server credentials Changing fields on the Domain that affect WebLogic Server instance Pods Applying WebLogic Server patches Updating deployed applications Rolling out an updated domain home in image or model in image Avoiding a rolling restart when changing the image field on a Domain Other considerations for restarting a domain Overview There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</description>
     </item>
-    
     <item>
       <title>Scaling</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scaling/</link>
       <pubDate>Sat, 23 Feb 2019 17:04:45 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scaling/</guid>
-      <description>This document describes approaches for scaling WebLogic clusters in a Kubernetes environment.
-Contents Overview kubectl CLI commands kubectl scale command kubectl patch command On-demand, updating the Cluster or Domain directly Updating the Cluster directly Updating the Domain directly Using Domain lifecycle sample scripts Calling the operator&amp;rsquo;s REST scale API Operator REST endpoints What does the operator do in response to a scaling request? Supported autoscaling controllers Kubernetes Horizontal Pod Autoscaler (HPA) Using a WLDF policy rule and script action to call the operator&amp;rsquo;s REST scale API Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics Using a Prometheus alert action to call the operator&amp;rsquo;s REST scale API Helpful tips Debugging scalingAction.</description>
+      <description>This document describes approaches for scaling WebLogic clusters in a Kubernetes environment.&#xA;Contents Overview kubectl CLI commands kubectl scale command kubectl patch command On-demand, updating the Cluster or Domain directly Updating the Cluster directly Updating the Domain directly Using Domain lifecycle sample scripts Calling the operator&amp;rsquo;s REST scale API Operator REST endpoints What does the operator do in response to a scaling request? Supported autoscaling controllers Kubernetes Horizontal Pod Autoscaler (HPA) Using a WLDF policy rule and script action to call the operator&amp;rsquo;s REST scale API Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics Using a Prometheus alert action to call the operator&amp;rsquo;s REST scale API Helpful tips Debugging scalingAction.</description>
     </item>
-    
     <item>
       <title>Domain introspection</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/introspection/</link>
       <pubDate>Tue, 07 Jul 2020 08:14:51 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/introspection/</guid>
-      <description>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in a Kubernetes environment.
-Contents Overview When introspection occurs automatically Initiating introspection Failed introspection Introspection use cases Adding clusters or Managed Servers to a Domain on PV configuration Distributing changes to configuration overrides Distributing changes to running Model in Image domains Overview To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job.</description>
+      <description>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in a Kubernetes environment.&#xA;Contents Overview When introspection occurs automatically Initiating introspection Failed introspection Introspection use cases Adding clusters or Managed Servers to a Domain on PV configuration Distributing changes to configuration overrides Distributing changes to running Model in Image domains Overview To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job.</description>
     </item>
-    
     <item>
       <title>Liveness and readiness probes customization</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/</link>
       <pubDate>Sat, 23 Feb 2019 20:58:51 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/</guid>
-      <description>This document describes how to customize the liveness and readiness probes for WebLogic Server instance Pods.
-Contents Liveness probe customization Automatic restart of failed server instances by Node Manager Readiness probe customization Liveness probe customization The liveness probe is configured to check that a server is alive by querying the Node Manager process. By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.</description>
+      <description>This document describes how to customize the liveness and readiness probes for WebLogic Server instance Pods.&#xA;Contents Liveness probe customization Automatic restart of failed server instances by Node Manager Readiness probe customization Liveness probe customization The liveness probe is configured to check that a server is alive by querying the Node Manager process. By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.</description>
     </item>
-    
     <item>
       <title>Domain failure retry processing</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/retry/</link>
       <pubDate>Mon, 10 Oct 2022 08:14:51 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/retry/</guid>
-      <description>This document describes domain failure retry processing in the Oracle WebLogic Server in Kubernetes environment.
-Contents Overview Domain failure severities Retry behavior Domain failure reasons Overview The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource. Failures are reported using Kubernetes events and conditions in the status.conditions field in the Domain resource. See Domain debugging. Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries.</description>
+      <description>This document describes domain failure retry processing in the Oracle WebLogic Server in Kubernetes environment.&#xA;Contents Overview Domain failure severities Retry behavior Domain failure reasons Overview The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource. Failures are reported using Kubernetes events and conditions in the status.conditions field in the Domain resource. See Domain debugging. Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries.</description>
     </item>
-    
     <item>
       <title>Lifecycle scripts</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scripts/</link>
       <pubDate>Sun, 05 Dec 2021 17:04:41 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-domains/domain-lifecycle/scripts/</guid>
-      <description>Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
-Versions 3.2 and 3.3 have subsequently added sample scripts for restarting a server, scaling a cluster, rolling a domain or a cluster, monitoring a cluster, and reinitiating introspection.
-The scripts are located in the kubernetes/samples/scripts/domain-lifecycle directory. They are helpful when scripting the life cycle of a WebLogic Server domain.</description>
+      <description>Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.&#xA;Versions 3.2 and 3.3 have subsequently added sample scripts for restarting a server, scaling a cluster, rolling a domain or a cluster, monitoring a cluster, and reinitiating introspection.&#xA;The scripts are located in the kubernetes/samples/scripts/domain-lifecycle directory. They are helpful when scripting the life cycle of a WebLogic Server domain.</description>
     </item>
-    
   </channel>
 </rss>

@@ -4,71 +4,51 @@
     <title>Introduction on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/</link>
     <description>Recent content in Introduction on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 22 Feb 2019 15:27:38 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 23 Feb 2019 20:51:51 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Important terms</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/terms/</link>
       <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/terms/</guid>
-      <description>This documentation uses several important terms which are intended to have a specific meaning.
-Term Definition Cluster A WebLogic cluster is a group of WebLogic Managed Servers that together host some application or component and which are able to share load and state between them; a single WebLogic domain can define multiple WebLogic clusters. The 4.0 release adds a cluster resource which is a Kubernetes resource that is of custom resource type Cluster.</description>
+      <description>This documentation uses several important terms which are intended to have a specific meaning.&#xA;Term Definition Cluster A WebLogic cluster is a group of WebLogic Managed Servers that together host some application or component and which are able to share load and state between them; a single WebLogic domain can define multiple WebLogic clusters. The 4.0 release adds a cluster resource which is a Kubernetes resource that is of custom resource type Cluster.</description>
     </item>
-    
     <item>
       <title>Design philosophy</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/design/</link>
       <pubDate>Sat, 23 Feb 2019 20:51:51 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/design/</guid>
-      <description>The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various lifecycle operations on a domain correctly.
-Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.</description>
+      <description>The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various lifecycle operations on a domain correctly.&#xA;Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.</description>
     </item>
-    
     <item>
       <title>Architecture</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/architecture/</link>
       <pubDate>Sat, 23 Feb 2019 20:51:45 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/architecture/</guid>
-      <description>Contents Overall architecture Domain UID Domain architecture Network name predictability Domain state stored outside container images Overall architecture The operator consists of the following parts:
-The operator runtime, which is a process that: Runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. Performs the actual management tasks for domain and cluster resources deployed to these namespaces. A Helm chart for installing the operator runtime and its related resources.</description>
+      <description>Contents Overall architecture Domain UID Domain architecture Network name predictability Domain state stored outside container images Overall architecture The operator consists of the following parts:&#xA;The operator runtime, which is a process that: Runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. Performs the actual management tasks for domain and cluster resources deployed to these namespaces. A Helm chart for installing the operator runtime and its related resources.</description>
     </item>
-    
     <item>
       <title>Get help</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/get-help/</link>
       <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/get-help/</guid>
-      <description>Oracle Slack We have a closely monitored public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. We can also create dedicated private channels upon request. We would love to hear from you.
-To join our public channel, please visit this site to get an invitation. The invitation email will include details of how to access our Slack workspace.</description>
+      <description>Oracle Slack We have a closely monitored public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. We can also create dedicated private channels upon request. We would love to hear from you.&#xA;To join our public channel, please visit this site to get an invitation. The invitation email will include details of how to access our Slack workspace.</description>
     </item>
-    
     <item>
       <title>Operator prerequisites</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/prerequisites/introduction/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release 4.1.8 :
-Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, and 1.28.2+ (check with kubectl version).
-Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.
-Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).
-Helm 3.3.4+ (check with helm version --client --short).
-For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
+      <description>For the current production release 4.1.8 :&#xA;Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, and 1.28.2+ (check with kubectl version).&#xA;Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.&#xA;Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).&#xA;Helm 3.3.4+ (check with helm version --client --short).&#xA;For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
-    
     <item>
       <title>Supported environments</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/platforms/environments/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/introduction/platforms/environments/</guid>
       <description>Contents Overview Important notes about specific environments Oracle Cloud Infrastructure Oracle Cloud Native Environment Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure Microsoft Azure Kubernetes Service (AKS) Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace) VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions Pricing and licensing WebLogic Kubernetes Operator WebLogic Server Oracle Linux Oracle Java WebLogic Server or Fusion Middleware Infrastructure images Additional references Overview The operator supports running on production-quality Kubernetes environments, including on-premises, cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.</description>
     </item>
-    
   </channel>
 </rss>

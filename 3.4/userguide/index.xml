@@ -4,45 +4,37 @@
     <title>User Guide on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/</link>
     <description>Recent content in User Guide on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 22 Feb 2019 15:27:48 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 15 Aug 2019 13:30:04 -0400</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Operator prerequisites</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/prerequisites/introduction/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/prerequisites/introduction/</guid>
-      <description>For the current production release 3.4.7 :
-Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, 1.23.4+, and 1.24.0+ (check with kubectl version). NOTE: Kubernetes 1.25 and 1.26 will be supported only by 4.0 releases. Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).</description>
+      <description>For the current production release 3.4.7 :&#xA;Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, 1.23.4+, and 1.24.0+ (check with kubectl version). NOTE: Kubernetes 1.25 and 1.26 will be supported only by 4.0 releases. Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).</description>
     </item>
-    
     <item>
       <title>Supported environments</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/platforms/environments/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/platforms/environments/</guid>
       <description>Contents Overview Important notes about specific environments Oracle Cloud Infrastructure (OCI) Oracle Linux Cloud Native Environment (OLCNE) Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions Pricing and licensing WebLogic Kubernetes Operator WebLogic Server Oracle Linux Oracle Java WebLogic Server or Fusion Middleware Infrastructure Images Additional references Overview The operator supports running on production grade Kubernetes environments, including on-premises, cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.</description>
     </item>
-    
     <item>
       <title>Istio support</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/istio/istio/</link>
       <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/istio/istio/</guid>
       <description>Contents Overview Limitations Determining the Istio version Setting up an operator with Istio support Creating a domain with Istio support Setting up the domain namespace Configuring the domain resource Applying a Domain YAML file Exposing applications in Istio-enabled domains Traffic management Distributed tracing Automatically added network channels Added network channels for Istio versions prior to v1.10 Added network channel for Istio versions v1.10 and later Added network channel for WebLogic EJB and servlet session state replication traffic Security Mutual TLS Authorization policy Destination rule Ingress gateway Overview These instructions assume that you are using a Kubernetes cluster with Istio installed and configured already.</description>
     </item>
-    
     <item>
       <title>Set up Kubernetes</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/kubernetes/k8s-setup/</link>
       <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/kubernetes/k8s-setup/</guid>
       <description>Contents Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud Prerequisites Quick start Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
     </item>
-    
   </channel>
 </rss>

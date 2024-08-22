@@ -4,8 +4,9 @@
     <title>Tanzu Kubernetes Service on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/tanzu-kubernetes-service/</link>
     <description>Recent content in Tanzu Kubernetes Service on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 16 Nov 2020 13:34:31 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/tanzu-kubernetes-service/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate></lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/tanzu-kubernetes-service/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

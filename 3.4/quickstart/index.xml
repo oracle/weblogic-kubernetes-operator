@@ -4,68 +4,44 @@
     <title>Quick Start on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/</link>
     <description>Recent content in Quick Start on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 22 Feb 2019 15:27:38 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 22 Feb 2019 15:44:42 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Get images</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/get-images/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/get-images/</guid>
-      <description>Get these images and put them into your local registry. Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.7 Pull the Traefik ingress controller image:
-$ docker pull traefik:2.2.1 Obtain the WebLogic Server image from the Oracle Container Registry.
-a. First time users, follow these directions.
-b. Find and then pull the WebLogic 12.2.1.4 General Availability (GA) installation image.
-GA images are suitable for demonstration and development purposes only where the environments are not available from the public Internet; they are not acceptable for production use.</description>
+      <description>Get these images and put them into your local registry. Pull the operator image:&#xA;$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.7 Pull the Traefik ingress controller image:&#xA;$ docker pull traefik:2.2.1 Obtain the WebLogic Server image from the Oracle Container Registry.&#xA;a. First time users, follow these directions.&#xA;b. Find and then pull the WebLogic 12.2.1.4 General Availability (GA) installation image.&#xA;GA images are suitable for demonstration and development purposes only where the environments are not available from the public Internet; they are not acceptable for production use.</description>
     </item>
-    
     <item>
       <title>Install the operator and ingress controller</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/install/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/install/</guid>
-      <description>Use Helm to install the operator and Traefik ingress controller. First, set up Helm:
-$ helm repo add traefik https://helm.traefik.io/traefik --force-update Create a Traefik ingress controller. Create a namespace for the ingress controller.
-$ kubectl create namespace traefik Use the values.yaml file in the sample but set kubernetes.namespaces specifically.
-$ helm install traefik-operator traefik/traefik \ --namespace traefik \ --values kubernetes/samples/charts/traefik/values.yaml \ --set &amp;#34;kubernetes.namespaces={traefik}&amp;#34; Install the operator. Create a namespace for the operator:</description>
+      <description>Use Helm to install the operator and Traefik ingress controller. First, set up Helm:&#xA;$ helm repo add traefik https://helm.traefik.io/traefik --force-update Create a Traefik ingress controller. Create a namespace for the ingress controller.&#xA;$ kubectl create namespace traefik Use the values.yaml file in the sample but set kubernetes.namespaces specifically.&#xA;$ helm install traefik-operator traefik/traefik \ --namespace traefik \ --values kubernetes/samples/charts/traefik/values.yaml \ --set &amp;#34;kubernetes.namespaces={traefik}&amp;#34; Install the operator. Create a namespace for the operator:</description>
     </item>
-    
     <item>
       <title>Prepare for a domain</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/prepare/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/prepare/</guid>
-      <description>Create and label a namespace that can host one or more domains:
-$ kubectl create namespace sample-domain1-ns $ kubectl label ns sample-domain1-ns weblogic-operator=enabled Configure Traefik to manage ingresses created in this namespace:
-$ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-values \ --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34; If you have reached this point while following the &amp;ldquo;Model in Image&amp;rdquo; sample, please stop here and return to the sample instructions.</description>
+      <description>Create and label a namespace that can host one or more domains:&#xA;$ kubectl create namespace sample-domain1-ns $ kubectl label ns sample-domain1-ns weblogic-operator=enabled Configure Traefik to manage ingresses created in this namespace:&#xA;$ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-values \ --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34; If you have reached this point while following the &amp;ldquo;Model in Image&amp;rdquo; sample, please stop here and return to the sample instructions.</description>
     </item>
-    
     <item>
       <title>Create a domain</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/create-domain/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/create-domain/</guid>
-      <description>For use in the following steps:
-Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:
-$ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \ -u &amp;lt;username&amp;gt; -p &amp;lt;password&amp;gt; -n sample-domain1-ns -d sample-domain1 The sample will create a secret named domainUID-weblogic-credentials where the domainUID is replaced with the value specified by the -d flag.</description>
+      <description>For use in the following steps:&#xA;Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:&#xA;$ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \ -u &amp;lt;username&amp;gt; -p &amp;lt;password&amp;gt; -n sample-domain1-ns -d sample-domain1 The sample will create a secret named domainUID-weblogic-credentials where the domainUID is replaced with the value specified by the -d flag.</description>
     </item>
-    
     <item>
       <title>Clean up</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/cleanup/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/cleanup/</guid>
-      <description>Remove the domain. Remove the domain&amp;rsquo;s ingress by using helm:
-$ helm uninstall sample-domain1-ingress -n sample-domain1-ns Remove the Kubernetes resources associated with the domain by using the sample delete-weblogic-domain-resources script:
-$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1 Use kubectl to confirm that the WebLogic Server instance Pods and Domain are gone:
-$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns Remove the domain namespace. Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace:</description>
+      <description>Remove the domain. Remove the domain&amp;rsquo;s ingress by using helm:&#xA;$ helm uninstall sample-domain1-ingress -n sample-domain1-ns Remove the Kubernetes resources associated with the domain by using the sample delete-weblogic-domain-resources script:&#xA;$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1 Use kubectl to confirm that the WebLogic Server instance Pods and Domain are gone:&#xA;$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns Remove the domain namespace. Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace:</description>
     </item>
-    
   </channel>
 </rss>

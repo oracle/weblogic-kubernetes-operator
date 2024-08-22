@@ -4,122 +4,93 @@
     <title>Manage operators on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/</link>
     <description>Recent content in Manage operators on WebLogic Kubernetes Operator</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 16:43:38 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 05 Dec 2021 16:47:21 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Overview</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/overview/</link>
       <pubDate>Sun, 05 Dec 2021 16:47:21 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/overview/</guid>
-      <description>An operator runtime is a process that runs in a container deployed into a Kubernetes Pod and that automatically manages domain resources. A domain resource references WebLogic domain configuration, a WebLogic installation image, Kubernetes secrets, and anything else necessary to run a particular WebLogic domain. The operator requires Helm for its installation and tuning.
-A single operator instance is capable of managing multiple domains in multiple namespaces depending on how it is configured.</description>
+      <description>An operator runtime is a process that runs in a container deployed into a Kubernetes Pod and that automatically manages domain resources. A domain resource references WebLogic domain configuration, a WebLogic installation image, Kubernetes secrets, and anything else necessary to run a particular WebLogic domain. The operator requires Helm for its installation and tuning.&#xA;A single operator instance is capable of managing multiple domains in multiple namespaces depending on how it is configured.</description>
     </item>
-    
     <item>
       <title>Prepare for installation</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/preparation/</link>
       <pubDate>Sun, 05 Dec 2021 16:47:21 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/preparation/</guid>
-      <description>Introduction A single operator instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured. A Kubernetes cluster can host multiple operators, but no more than one per namespace.
-Before installing an operator, ensure that each of these prerequisite requirements is met:
-Check environment Set up the operator Helm chart access Inspect the operator Helm chart Prepare an operator namespace and service account Prepare operator image Locating an operator image Default operator image Pulling operator image Customizing operator image name, pull secret, and private registry Determine the platform setting Choose a security strategy Any namespace with cluster role binding enabled Any namespace with cluster role binding disabled Local namespace only with cluster role binding disabled Choose a domain namespace selection strategy Choose a Helm release name Be aware of advanced operator configuration options Special use cases: How to download the Helm chart if Internet access is not available How to manually install the Domain resource custom resource definition (CRD) Check environment Review the Operator prerequisites to ensure that your Kubernetes cluster supports the operator.</description>
+      <description>Introduction A single operator instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured. A Kubernetes cluster can host multiple operators, but no more than one per namespace.&#xA;Before installing an operator, ensure that each of these prerequisite requirements is met:&#xA;Check environment Set up the operator Helm chart access Inspect the operator Helm chart Prepare an operator namespace and service account Prepare operator image Locating an operator image Default operator image Pulling operator image Customizing operator image name, pull secret, and private registry Determine the platform setting Choose a security strategy Any namespace with cluster role binding enabled Any namespace with cluster role binding disabled Local namespace only with cluster role binding disabled Choose a domain namespace selection strategy Choose a Helm release name Be aware of advanced operator configuration options Special use cases: How to download the Helm chart if Internet access is not available How to manually install the Domain resource custom resource definition (CRD) Check environment Review the Operator prerequisites to ensure that your Kubernetes cluster supports the operator.</description>
     </item>
-    
     <item>
       <title>Installation and upgrade</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/installation/</link>
       <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/installation/</guid>
       <description>Contents Introduction Install the operator Install the WebLogic domain resource conversion webhook Set up domain namespaces Update a running operator Upgrade the operator Uninstall the operator Installation sample Introduction This installation guide describes how to configure, install (deploy), update, upgrade, and uninstall an instance of the WebLogic Kubernetes Operator. A single instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured. A Kubernetes cluster can host multiple operators, but no more than one per namespace.</description>
     </item>
-    
     <item>
       <title>Upgrade operator from version 3.x to 4.x</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/</link>
       <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/conversion-webhook/</guid>
       <description>Contents Introduction Conversion webhook components Install the conversion webhook Uninstall the conversion webhook Troubleshooting the conversion webhook Introduction The conversion webhook that is described in this document transparently handles a weblogic.oracle/v8 schema domain resource at runtime, but if you want to use the new fields introduced in the latest weblogic.oracle/v9 schema with a Domain that is currently weblogic.oracle/v8, then you will need to update its Domain resource file and potentially create new Cluster resource files.</description>
     </item>
-    
     <item>
       <title>Configuration reference</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/using-helm/</link>
       <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/using-helm/</guid>
       <description>Contents Introduction Useful Helm operations Operator Helm configuration values Overall operator information serviceAccount kubernetesPlatform enableClusterRoleBinding Creating the operator pod image imagePullPolicy imagePullSecrets annotations labels nodeSelector affinity runAsUser WebLogic domain conversion webhook webhookOnly operatorOnly preserveWebhook WebLogic domain management domainNamespaceSelectionStrategy domainNamespaces domainNamespaceLabelSelector domainNamespaceRegExp introspectorJobNameSuffix and externalServiceNameSuffix clusterSizePaddingValidationEnabled istioLocalhostBindingsEnabled Elastic Stack integration elkIntegrationEnabled logStashImage elasticSearchHost elasticSearchPort elasticSearchProtocol createLogStashConfigMap REST interface configuration enableRest externalRestEnabled externalRestHttpsPort externalRestIdentitySecret externalOperatorCert (Deprecated) externalOperatorKey (Deprecated) tokenReviewAuthentication Debugging options javaLoggingLevel remoteDebugNodePortEnabled internalDebugHttpPort externalDebugHttpPort Introduction The operator requires Helm for its installation and tuning, and this document is a reference guide for useful Helm commands and operator configuration values.</description>
     </item>
-    
     <item>
       <title>Namespace management</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/</link>
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/namespace-management/</guid>
       <description>Contents Overview Choose a domain namespace selection strategy Ensuring the operator has permission to manage a namespace Check the namespaces that a running operator manages Altering namespaces for a running operator Add a Kubernetes namespace to a running operator Delete a Kubernetes namespace from a running operator Recreate a previously deleted Kubernetes namespace with a running operator Overview An operator deployment must be configured to manage Kubernetes namespaces, and a number of Kubernetes resources must be present in a namespace before any WebLogic Server instances can be successfully started by operator.</description>
     </item>
-    
     <item>
       <title>Service accounts</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/service-accounts/</link>
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/service-accounts/</guid>
-      <description>WebLogic Kubernetes Operator ServiceAccounts When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed.
-The operator will use this service account when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.
-To display the service account used by the operator, where the operator was installed using the Helm release name weblogic-operator, look for the serviceAccount value using the Helm command:</description>
+      <description>WebLogic Kubernetes Operator ServiceAccounts When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed.&#xA;The operator will use this service account when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.&#xA;To display the service account used by the operator, where the operator was installed using the Helm release name weblogic-operator, look for the serviceAccount value using the Helm command:</description>
     </item>
-    
     <item>
       <title>RBAC</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/rbac/</link>
       <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/rbac/</guid>
-      <description>Contents Overview Operator RBAC definitions Kubernetes Role and RoleBinding naming conventions Kubernetes ClusterRole and ClusterRoleBinding naming conventions RoleBindings ClusterRoleBindings Overview This document describes the Kubernetes Role-Based Access Control (RBAC) roles that an operator installation Helm chart automatically creates for you.
-The general design goal of the operator installation is to automatically provide the operator with the minimum amount of permissions that the operator requires and to favor built-in roles over custom roles where it makes sense to use the Kubernetes built-in roles.</description>
+      <description>Contents Overview Operator RBAC definitions Kubernetes Role and RoleBinding naming conventions Kubernetes ClusterRole and ClusterRoleBinding naming conventions RoleBindings ClusterRoleBindings Overview This document describes the Kubernetes Role-Based Access Control (RBAC) roles that an operator installation Helm chart automatically creates for you.&#xA;The general design goal of the operator installation is to automatically provide the operator with the minimum amount of permissions that the operator requires and to favor built-in roles over custom roles where it makes sense to use the Kubernetes built-in roles.</description>
     </item>
-    
     <item>
       <title>REST services</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/the-rest-api/</link>
       <pubDate>Sat, 23 Feb 2019 17:08:32 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/the-rest-api/</guid>
       <description>Contents Introduction Configure the operator&amp;rsquo;s external REST HTTPS interface Updating operator external certificates Use the operator&amp;rsquo;s REST services How to add your certificate to your operating system trust store Sample SSL certificate and private key for the REST interface Sample operator REST client script Introduction The operator provides an optional REST API for advanced users. You can use the API as an alternative method for getting a list of WebLogic domains and clusters (for example, instead of calling kubectl get domains), or for getting certain aspects of a domain&amp;rsquo;s status (for example, instead of calling kubectl get domain MYDOMAIN -o yaml).</description>
     </item>
-    
     <item>
       <title>Set up Kubernetes</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/k8s-setup/</link>
       <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/k8s-setup/</guid>
       <description>Contents Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud Prerequisites Quick start Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes Important note about persistent volumes Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
     </item>
-    
     <item>
       <title>Common mistakes and solutions</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/common-mistakes/</link>
       <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/common-mistakes/</guid>
       <description>Contents Namespace related Changes in default Helm chart values from WebLogic Kubernetes Operator version 3.4 to 4.0 Deleting and recreating a namespace that an operator manages without informing the operator Forgetting to configure the operator to monitor a namespace Installing the operator a second time into the same namespace Installing an operator and having it manage a domain namespace that another operator is already managing Upgrading an operator and having it manage a domain namespace that another operator is already managing Installing an operator and having it manage a domain namespace that doesn&amp;rsquo;t exist Upgrading an operator and having it manage a domain namespace that doesn&amp;rsquo;t exist REST port conflict Installing an operator and assigning it the same external REST port number as another operator Upgrading an operator and assigning it the same external REST port number as another operator Missing service account Installing an operator and assigning it a service account that doesn&amp;rsquo;t exist Upgrading an operator and assigning it a service account that doesn&amp;rsquo;t exist Namespace related Common namespace-related mistakes.</description>
     </item>
-    
     <item>
       <title>Troubleshooting</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/troubleshooting/</link>
       <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
-      
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.1/managing-operators/troubleshooting/</guid>
       <description>Contents Troubleshooting a particular domain resource Check Helm status Ensure the operator CRDs are installed Check the operator deployment Check the conversion webhook deployment Check common operator issues Check for operator events Check for conversion webhook events Check the operator log Check the conversion webhook log Operator ConfigMap Force the operator to restart Operator and conversion webhook logging level Troubleshooting the conversion webhook Ensure the conversion webhook is deployed and running X509: Certificate signed by unknown authority error from the webhook Webhook errors in older operator versions Webhook errors in operator dedicated Mode Check for runtime errors during conversion See also Troubleshooting a particular domain resource After you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.</description>
     </item>
-    
   </channel>
 </rss>
