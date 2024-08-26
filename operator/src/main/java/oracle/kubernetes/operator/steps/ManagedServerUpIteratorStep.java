@@ -162,7 +162,7 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     protected boolean isPodMarkedForShutdown(V1Pod result) {
-      return PodHelper.isDeleting(result) || PodHelper.isPodAlreadyLabeledForShutdown(result);
+      return PodHelper.isDeleting(result) || PodHelper.isPodAlreadyAnnotatedForShutdown(result);
     }
   }
 

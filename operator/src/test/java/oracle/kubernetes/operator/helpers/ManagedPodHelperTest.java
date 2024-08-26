@@ -157,22 +157,22 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenPodNeedsToRoll_addRollLabel() {
+  void whenPodNeedsToRoll_addRollAnnotation() {
     initializeExistingPod();
     configureServer().withRestartVersion("123");
 
-    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
+    assertThat(getCreatedPod().getMetadata().getAnnotations(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
   }
 
   @Test
-  void whenPodNeedsToRollAndAlreadyMarkedForRoll_dontUpdateRollLabel() {
+  void whenPodNeedsToRollAndAlreadyMarkedForRoll_dontUpdateRollAnnotation() {
     initializeExistingPod();
     configureServer().withRestartVersion("123");
     final V1Pod pod = (V1Pod) testSupport.getResources(KubernetesTestSupport.POD).get(0);
-    pod.getMetadata().putLabelsItem(TO_BE_ROLLED_LABEL, "true");
+    pod.getMetadata().putAnnotationsItem(TO_BE_ROLLED_LABEL, "true");
     testSupport.doOnUpdate(KubernetesTestSupport.POD, this::reportUnexpectedUpdate);
 
-    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
+    assertThat(getCreatedPod().getMetadata().getAnnotations(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
   }
 
   private void reportUnexpectedUpdate(@Nonnull Object object) {

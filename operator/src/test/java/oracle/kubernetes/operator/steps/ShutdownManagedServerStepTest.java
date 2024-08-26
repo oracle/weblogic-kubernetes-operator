@@ -357,7 +357,8 @@ class ShutdownManagedServerStepTest {
     return createPodMetadata(name)
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL,"true")
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, UID)
-        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, name);
+        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, name)
+        .putAnnotationsItem("Placeholder", "At-Least-One-Annotation");
   }
 
   private V1ObjectMeta createPodMetadata(String name) {

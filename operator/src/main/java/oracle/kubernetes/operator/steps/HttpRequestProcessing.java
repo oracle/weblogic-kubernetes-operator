@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.steps;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +31,8 @@ import org.jetbrains.annotations.NotNull;
 
 abstract class HttpRequestProcessing {
 
-  private static final Long HTTP_TIMEOUT_SECONDS = 60L;
+  public static final Long HTTP_TIMEOUT_SECONDS = 60L;
+
   private static final Map<String, CookieList> COOKIES = new ConcurrentHashMap<>();
 
   private final Packet packet;
@@ -84,10 +86,11 @@ abstract class HttpRequestProcessing {
     return SecretHelper.getAuthorizationSource(getPacket());
   }
 
-  final HttpRequest.Builder createRequestBuilder(String url) {
+  final HttpRequest.Builder createRequestBuilder(String url, long timeout) {
     final URI uri = URI.create(url);
     HttpRequest.Builder builder = HttpRequest.newBuilder()
           .uri(uri)
+          .timeout(Duration.ofSeconds(timeout))
           .header("Accept", "application/json")
           .header("Content-Type", "application/json")
           .header("X-Requested-By", "WebLogic Operator");

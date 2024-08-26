@@ -229,8 +229,10 @@ class DomainUpPlanTest {
 
   private void establishExistingPodsAndServices() {
     Map<String, String> labels = getLabels();
-    V1Pod pod = new V1Pod().metadata(new V1ObjectMeta().name(ADMIN_SERVER_NAME).namespace(NS).labels(labels)).spec(
-        new V1PodSpec().addContainersItem(new V1Container().name("weblogic-server")
+    V1Pod pod = new V1Pod()
+        .metadata(new V1ObjectMeta().name(ADMIN_SERVER_NAME).namespace(NS).labels(labels)
+            .putAnnotationsItem("Placeholder", "At-Least-One-Annotation"))
+        .spec(new V1PodSpec().addContainersItem(new V1Container().name("weblogic-server")
                 .addPortsItem(new V1ContainerPort().name(NAP_NAME_1).containerPort(NAP_PORT_1))
                 .addPortsItem(new V1ContainerPort().name(NAP_NAME_2).containerPort(NAP_PORT_2))
                 .addPortsItem(new V1ContainerPort().name(DEFAULT_PORT_NAME).containerPort(DEFAULT_PORT)))

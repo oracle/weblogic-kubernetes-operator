@@ -621,8 +621,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
           }
         }
         boolean isReady = PodHelper.isReady(pod);
-        boolean isLabedlForShutdown = PodHelper.isPodAlreadyLabeledForShutdown(pod);
-        if ((isEvicted || isReady != isLabedlForShutdown || PodHelper.isFailed(pod)) && !PodHelper.isDeleting(pod)) {
+        boolean isLabeledForShutdown = PodHelper.isPodAlreadyAnnotatedForShutdown(pod);
+        if ((isEvicted || isReady != isLabeledForShutdown || PodHelper.isFailed(pod)) && !PodHelper.isDeleting(pod)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         boolean isUnschedulable = PodHelper.hasUnSchedulableCondition(pod);
