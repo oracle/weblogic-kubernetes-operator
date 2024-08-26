@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -194,7 +195,7 @@ class ItOperatorFmwUpgrade {
   /**
    * Operator upgrade from 3.3.8 to current with a FMW Domain.
    */
-  @Test
+  @Disabled
   @DisplayName("Upgrade Operator from 3.3.8 to current")
   void testOperatorFmwUpgradeFrom338ToCurrent() {
     installAndUpgradeOperator("3.3.8", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);

@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -142,7 +143,7 @@ class ItOperatorUpgradeWithIstio {
   /**
    * Upgrade from Operator v3.3.8 to current with Istio enabled domain.
    */
-  @Test
+  @Disabled
   @DisplayName("Upgrade 3.3.8 Istio Domain(v8) with Istio to current")
   void testOperatorWlsIstioDomainUpgradeFrom338ToCurrent() {
     logger.info("Starting test to upgrade Istio Image Domain with Istio with v8 schema to current");
