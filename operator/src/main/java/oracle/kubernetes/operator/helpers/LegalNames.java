@@ -141,7 +141,7 @@ public class LegalNames {
    * @return nearest DNS-1123 legal name
    */
   public static String toDns1123LegalName(String value) {
-    return value.toLowerCase().replace('_', '-');
+    return value.toLowerCase().replace('_', '-').replace('.', '-');
   }
 
   public static boolean isDns1123LegalName(String value) {

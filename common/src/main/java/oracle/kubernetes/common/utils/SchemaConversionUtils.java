@@ -1054,10 +1054,6 @@ public class SchemaConversionUtils {
     }
   }
 
-  public static String toDns1123LegalName(String value) {
-    return value.toLowerCase().replace('_', '-');
-  }
-
   private Map<String, Object> generateCluster(Map<String, Object> domainMeta,
                                               Map<String, Object> existingCluster) {
     Map<String, Object> cluster = new LinkedHashMap<>();
@@ -1065,7 +1061,7 @@ public class SchemaConversionUtils {
     cluster.put("kind", "Cluster");
     Map<String, Object> clusterMeta = new LinkedHashMap<>();
     clusterMeta.put("name", domainMeta.get("name") + "-"
-        + toDns1123LegalName((String) existingCluster.get(CLUSTER_NAME)));
+        + CommonUtils.toDns1123LegalName((String) existingCluster.get(CLUSTER_NAME)));
     clusterMeta.put(NAMESPACE, domainMeta.get(NAMESPACE));
     Map<String, Object> labels = new LinkedHashMap<>();
     labels.put("weblogic.createdByOperator", "true");

@@ -525,18 +525,18 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   @Test
   void whenJobCreatedWithInitializeDomainOnPVCreateDomainCMDefined_hasConfigMapVolumeAndMounts() {
-    V1ConfigMap cm = new V1ConfigMap().metadata(new V1ObjectMeta().name("initPvDomainCM").namespace(NS));
+    V1ConfigMap cm = new V1ConfigMap().metadata(new V1ObjectMeta().name("initpvdomaincm").namespace(NS));
     testSupport.defineResources(cm);
-    getConfigurator().withDomainCreationConfigMap("initPvDomainCM");
+    getConfigurator().withDomainCreationConfigMap("initpvdomaincm");
 
     List<V1Job> jobs = runStepsAndGetJobs();
     V1Job job = jobs.get(0);
 
     assertThat(getJobPodSpec(job).getVolumes(),
-        hasItem(new V1Volume().name("initPvDomainCM-volume").configMap(
-            new V1ConfigMapVolumeSource().name("initPvDomainCM").defaultMode(365))));
+        hasItem(new V1Volume().name("initpvdomaincm-volume").configMap(
+            new V1ConfigMapVolumeSource().name("initpvdomaincm").defaultMode(365))));
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
-        hasItem(new V1VolumeMount().name("initPvDomainCM-volume")
+        hasItem(new V1VolumeMount().name("initpvdomaincm-volume")
             .mountPath(WDTCONFIGMAP_MOUNT_PATH).readOnly(true)));
   }
 
