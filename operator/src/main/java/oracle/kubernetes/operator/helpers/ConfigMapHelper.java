@@ -220,7 +220,8 @@ public class ConfigMapHelper {
     private final String name;
     private final String namespace;
     private V1ConfigMap model;
-    private final Map<String, String> labels = new HashMap<>();
+    private Map<String, String> annotations;
+    private Map<String, String> labels;
     protected final SemanticVersion productVersion;
 
     ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents,
@@ -275,6 +276,7 @@ public class ConfigMapHelper {
           new V1ObjectMeta()
           .name(name)
           .namespace(namespace)
+          .annotations(annotations)
           .labels(labels));
 
       if (productVersion != null) {
@@ -285,7 +287,19 @@ public class ConfigMapHelper {
     }
 
     @SuppressWarnings("SameParameterValue")
+    void addAnnotation(String name, String value) {
+      if (annotations == null) {
+        annotations = new HashMap<>();
+      }
+      annotations.put(name, value);
+      model = null;
+    }
+
+    @SuppressWarnings("SameParameterValue")
     void addLabel(String name, String value) {
+      if (labels == null) {
+        labels = new HashMap<>();
+      }
       labels.put(name, value);
       model = null;
     }
@@ -332,7 +346,7 @@ public class ConfigMapHelper {
         Optional.ofNullable(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getGeneration)
             .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
         Optional.ofNullable((String) packet.get(INTROSPECTION_TIME))
-                .ifPresent(value -> addLabel(INTROSPECTION_TIME, value));
+                .ifPresent(value -> addAnnotation(INTROSPECTION_TIME, value));
         V1ConfigMap existingMap = withoutTransientData(callResponse.getObject());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
@@ -369,8 +383,12 @@ public class ConfigMapHelper {
         return RequestBuilder.CM.update(model, createReplaceResponseStep(next));
       }
 
+      private Map<String,String> getAnnotations() {
+        return Optional.ofNullable(annotations).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
+      }
+
       private Map<String,String> getLabels() {
-        return Collections.unmodifiableMap(labels);
+        return Optional.ofNullable(labels).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
       }
 
       private boolean mustPatchCurrentMap(V1ConfigMap currentMap) {
@@ -921,7 +939,12 @@ public class ConfigMapHelper {
                       () -> packet.remove(INTROSPECTION_STATE_LABEL));
       Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
               .ifPresent(generation -> packet.put(INTROSPECTION_DOMAIN_SPEC_GENERATION, generation));
-      Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_TIME))
+
+      Map<String, String> annotations = Optional.ofNullable(result)
+              .map(V1ConfigMap::getMetadata)
+              .map(V1ObjectMeta::getAnnotations).orElse(null);
+
+      Optional.ofNullable(annotations).map(l -> l.get(INTROSPECTION_TIME))
               .ifPresent(value -> packet.put(INTROSPECTION_TIME, value));
     }
 

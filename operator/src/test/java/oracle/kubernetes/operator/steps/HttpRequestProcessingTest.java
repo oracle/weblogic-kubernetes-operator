@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -59,7 +59,7 @@ class HttpRequestProcessingTest {
 
   @Test
   void initiallyRequestsCreatedWithoutCookies() {
-    final HttpRequest request = processing.createRequestBuilder(HOST1_URL_STRING1).GET().build();
+    final HttpRequest request = processing.createRequestBuilder(HOST1_URL_STRING1, 1L).GET().build();
 
     assertThat(request.headers().allValues("Cookie"), empty());
   }
@@ -127,7 +127,7 @@ class HttpRequestProcessingTest {
   }
 
   private HttpRequest createGetRequest(String url) {
-    return processing.createRequestBuilder(url).GET().build();
+    return processing.createRequestBuilder(url, 1L).GET().build();
   }
 
   private static class AuthorizationSourceStub implements AuthorizationSource {

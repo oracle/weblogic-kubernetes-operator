@@ -505,7 +505,7 @@ public class JobHelper {
 
         Optional.ofNullable(jobPod).map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getCreationTimestamp).map(OffsetDateTime::toString)
-                .ifPresent(creationTime -> packet.put(INTROSPECTION_TIME, creationTime.replace(':', '_')));
+                .ifPresent(creationTime -> packet.put(INTROSPECTION_TIME, creationTime));
         return doNext(readDomainIntrospectorPodLog(jobPodName, containerName, getNext()), packet);
       }
 

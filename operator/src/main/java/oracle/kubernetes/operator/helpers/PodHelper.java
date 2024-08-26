@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -374,10 +375,45 @@ public class PodHelper {
         .map(l -> l.containsKey(label)).orElse(false);
   }
 
-  private static Step patchPod(V1Pod pod, String label, Step next) {
+  private static Step patchPodLabel(V1Pod pod, String label, Step next) {
     if (!hasLabel(pod, label)) {
       JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
       patchBuilder.add("/metadata/labels/" + label, "true");
+      V1ObjectMeta meta = pod.getMetadata();
+      return RequestBuilder.POD.patch(meta.getNamespace(), meta.getName(),
+              V1Patch.PATCH_FORMAT_JSON_PATCH,
+              new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+    }
+    return next;
+  }
+
+  /**
+   * get pod's annotation value for a annotation name.
+   * @param pod pod
+   * @param annotationName annotation name
+   * @return annotation value
+   */
+  public static String getPodAnnotation(V1Pod pod, String annotationName) {
+    return Optional.ofNullable(pod)
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getAnnotations)
+            .map(m -> m.get(annotationName))
+            .orElse(null);
+  }
+
+  private static boolean hasAnnotation(V1Pod pod, String annotation) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getAnnotations)
+            .map(l -> l.containsKey(annotation)).orElse(false);
+  }
+
+  private static Step patchPodAnnotation(V1Pod pod, String annotation, Step next) {
+    return patchPodAnnotation(pod, annotation, "true", next);
+  }
+
+  private static Step patchPodAnnotation(V1Pod pod, String annotation, String value, Step next) {
+    if (!hasAnnotation(pod, annotation)) {
+      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+      patchBuilder.add("/metadata/annotations/" + annotation, value);
       V1ObjectMeta meta = pod.getMetadata();
       return RequestBuilder.POD.patch(meta.getNamespace(), meta.getName(),
               V1Patch.PATCH_FORMAT_JSON_PATCH,
@@ -413,22 +449,26 @@ public class PodHelper {
   }
 
   /**
-   * Label pod as needing to shut down.
+   * Annotate pod as needing to shut down.
    * @param pod Pod
    * @param next Next step
-   * @return Step that will check for existing label and add if it is missing
+   * @return Step that will check for existing annotation and add if it is missing
    */
-  public static Step labelPodAsNeedingToShutdown(V1Pod pod, Step next) {
-    return patchPod(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL, next);
+  public static Step annotatePodAsNeedingToShutdown(V1Pod pod, String value, Step next) {
+    return patchPodAnnotation(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL, value, next);
   }
 
   /**
-   * Check if the pod is already labeld for shut down.
+   * Check if the pod is already annotated for shut down.
    * @param pod Pod
-   * @return true, if the pod is already labeled.
+   * @return true, if the pod is already annotated.
    */
-  public static boolean isPodAlreadyLabeledForShutdown(V1Pod pod) {
-    return hasLabel(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL);
+  public static boolean isPodAlreadyAnnotatedForShutdown(V1Pod pod) {
+    return !Objects.isNull(getPodShutdownAnnotation(pod));
+  }
+
+  public static String getPodShutdownAnnotation(V1Pod pod) {
+    return getPodAnnotation(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL);
   }
 
   /**
@@ -711,7 +751,7 @@ public class PodHelper {
     @Override
     // let the pod rolling step update the pod
     Step replaceCurrentPod(V1Pod pod, Step next) {
-      return labelPodAsNeedingToRoll(pod, new DeferProcessing(pod, next));
+      return annotatePodAsNeedingToRoll(pod, new DeferProcessing(pod, next));
     }
 
     private class DeferProcessing extends Step {
@@ -767,8 +807,8 @@ public class PodHelper {
     }
 
     // Patch the pod to indicate a pending roll.
-    private Step labelPodAsNeedingToRoll(V1Pod pod, Step next) {
-      return patchPod(pod, LabelConstants.TO_BE_ROLLED_LABEL, next);
+    private Step annotatePodAsNeedingToRoll(V1Pod pod, Step next) {
+      return patchPodAnnotation(pod, LabelConstants.TO_BE_ROLLED_LABEL, next);
     }
 
     private Fiber.StepAndPacket createRollRequest(Step deferredStep) {

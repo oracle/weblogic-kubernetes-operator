@@ -81,7 +81,7 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
     if (lastTransitionTime != null) {
       String time = packet.getValue(INTROSPECTION_TIME);
       if (time != null) {
-        OffsetDateTime lastIntrospectionTime = OffsetDateTime.parse(time.replace('_', ':'));
+        OffsetDateTime lastIntrospectionTime = OffsetDateTime.parse(time);
         if (lastIntrospectionTime.isAfter(lastTransitionTime)) {
           return true;
         }

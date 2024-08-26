@@ -1297,11 +1297,11 @@ public class DomainStatusUpdater {
             && isNotMarkedForRoll(serverName);
       }
 
-      // returns true if the server pod does not have a label indicating that it needs to be rolled
+      // returns true if the server pod does not have an annotation indicating that it needs to be rolled
       private boolean isNotMarkedForRoll(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName))
             .map(V1Pod::getMetadata)
-            .map(V1ObjectMeta::getLabels)
+            .map(V1ObjectMeta::getAnnotations)
             .map(Map::keySet).orElse(Collections.emptySet()).stream()
             .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
       }

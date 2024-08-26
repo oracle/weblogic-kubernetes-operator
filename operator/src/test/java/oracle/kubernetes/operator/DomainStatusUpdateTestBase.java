@@ -596,8 +596,8 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenAnyServerHasRollNeededLabel_establishCompletedConditionFalse() {
     defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
-    addRollNeededLabel("ms1");
-    addRollNeededLabel("ms2");
+    addRollNeededAnnotation("ms1");
+    addRollNeededAnnotation("ms2");
 
     updateDomainStatus();
 
@@ -608,8 +608,8 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @SuppressWarnings("ConstantConditions")
-  private void addRollNeededLabel(String serverName) {
-    info.getServerPod(serverName).getMetadata().getLabels().put(LabelConstants.TO_BE_ROLLED_LABEL, "true");
+  private void addRollNeededAnnotation(String serverName) {
+    info.getServerPod(serverName).getMetadata().putAnnotationsItem(LabelConstants.TO_BE_ROLLED_LABEL, "true");
   }
 
   @Test

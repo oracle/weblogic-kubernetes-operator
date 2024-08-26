@@ -2282,7 +2282,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void whenServerConfigurationAddsIntrospectionVersion_patchPod() {
+  void whenServerConfigurationAddsIntrospectionVersion_patchPodLabel() {
     initializeExistingPod();
 
     configurator.withIntrospectVersion("123");
@@ -2294,7 +2294,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPod() {
+  void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPodLabel() {
     initializeExistingPodWithIntrospectVersion("123");
 
     configurator.withIntrospectVersion("123");
