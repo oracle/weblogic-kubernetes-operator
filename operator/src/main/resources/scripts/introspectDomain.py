@@ -2075,8 +2075,8 @@ def isSecureModeEnabledForDomain(domain):
       if attributes['SecureModeEnabled']:
         secureModeEnabled = True
   else:
-    secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
-
+    secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0") \
+                    and domain.isAdministrationPortEnabled()
   return secureModeEnabled
 
 def isAdministrationPortEnabledForDomain(domain):
@@ -2133,7 +2133,9 @@ def isListenPortEnabledForServer(server, domain, is_server_template=False):
     cd('/Server')
   cd(server.getName())
   if not isSet('ListenPortEnabled') and isSecureModeEnabledForDomain(domain):
-    enabled = False
+      enabled = False
+      if not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0") and domain.isListenPortEnabled():
+          enabled = True
   return enabled
 
 def isSSLListenPortEnabled(ssl, domain):
@@ -2161,6 +2163,7 @@ def getSSLPortIfEnabled(server, domain, is_server_template=True):
   """
   ssl = None
   ssl_listen_port = None
+
   try:
     # this can throw if SSL mbean not there
     ssl = server.getSSL()
@@ -2178,6 +2181,14 @@ def getSSLPortIfEnabled(server, domain, is_server_template=True):
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
   elif ssl is None and isSecureModeEnabledForDomain(domain):
     ssl_listen_port = "7002"
+
+  # Check override for 14.1.2.x
+  if not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0"):
+    if ssl is None and domain.isSSLEnabled():
+        ssl_listen_port = 7002
+    elif ssl is None and not domain.isSSLEnabled():
+        ssl_listen_port = None
+
   return ssl_listen_port
 
 def get_server_template_listening_ports_from_configxml(config_xml):
