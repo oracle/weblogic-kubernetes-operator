@@ -758,10 +758,10 @@ public class JobStepContext extends BasePodStepContext {
 
   private String getVolumeName(String resourceName, String type) {
     try {
-      return getLegalVolumeName(resourceName, type);
+      return CommonUtils.toDns1123LegalName(getLegalVolumeName(resourceName, type));
     } catch (Exception ex) {
       LOGGER.severe(MessageKeys.EXCEPTION, ex);
-      return resourceName;
+      return CommonUtils.toDns1123LegalName(resourceName);
     }
   }
 
