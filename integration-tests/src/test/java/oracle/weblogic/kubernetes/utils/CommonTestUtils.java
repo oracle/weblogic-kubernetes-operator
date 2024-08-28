@@ -1569,7 +1569,7 @@ public class CommonTestUtils {
   }
 
   /**
-   * Generate the model.sessmigr.yaml for a given test class
+   * Generate the model.sessmigr.yaml for a given test class.
    *
    * @param domainUid unique domain identifier
    * @param className test class name

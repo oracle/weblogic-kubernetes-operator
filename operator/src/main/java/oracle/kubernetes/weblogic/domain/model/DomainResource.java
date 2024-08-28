@@ -321,7 +321,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   /**
-   * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod
+   * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod.
    * @return {@link MIINonDynamicChangesMethod}
    */
   public MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
