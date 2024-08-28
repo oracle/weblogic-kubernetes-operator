@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -1067,7 +1067,7 @@ public class TestActions {
 
   /**
    * Create an application archive that can be used by WebLogic Image Tool
-   * to create an image with coh-proxy-server.gar for testing Coherence use case
+   * to create an image with coh-proxy-server.gar for testing Coherence use case.
    *
    * @param params the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds

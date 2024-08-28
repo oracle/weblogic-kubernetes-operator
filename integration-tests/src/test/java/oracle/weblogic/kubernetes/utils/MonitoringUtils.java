@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -162,7 +162,7 @@ public class MonitoringUtils {
   }
 
   /**
- * Build monitoring exporter web applicaiont wls-exporter.war with provided configuration
+   * Build monitoring exporter web applicaiont wls-exporter.war with provided configuration.
    * @param monitoringExporterSrcDir directory containing github monitoring exporter
    * @param configFile configuration file for weblogic domain monitoring
    * @param appDir directory where war file will be created

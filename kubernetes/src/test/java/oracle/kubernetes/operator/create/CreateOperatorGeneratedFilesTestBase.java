@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
@@ -70,7 +70,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
- * generates
+ * generates.
  */
 abstract class CreateOperatorGeneratedFilesTestBase {
 

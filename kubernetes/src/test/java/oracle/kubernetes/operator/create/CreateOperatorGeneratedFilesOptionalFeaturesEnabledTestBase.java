@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
@@ -18,7 +18,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh creates are correct
  * when all optional features are enabled: external rest self signed cert remote debug port enabled
- * elk enabled have image pull secret
+ * elk enabled have image pull secret.
  */
 public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase
     extends CreateOperatorGeneratedFilesTestBase {

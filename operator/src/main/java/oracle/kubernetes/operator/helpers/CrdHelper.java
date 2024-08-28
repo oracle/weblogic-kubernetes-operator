@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -66,7 +66,7 @@ public class CrdHelper {
   }
 
   /**
-   * Used by build to generate crd-validation.yaml
+   * Used by build to generate crd-validation.yaml.
    * @param args Arguments that must be one value giving file name to create
    */
   public static void main(String[] args) throws URISyntaxException {

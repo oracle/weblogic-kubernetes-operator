@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -60,7 +60,7 @@ public class StubWatchFactory<T> implements WatchFactory<T> {
   }
 
   /**
-   * Adds the events to be returned from a single call to Watch.next()
+   * Adds the events to be returned from a single call to Watch.next().
    *
    * @param events the events; will be converted to Watch.Response objects
    */

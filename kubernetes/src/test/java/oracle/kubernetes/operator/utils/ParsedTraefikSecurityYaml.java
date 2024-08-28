@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 /**
  * Parses a generated
  * weblogic-domain-traefik-security-inputs.LegalNames.toDns1123LegalName(getClusterName()).yaml file
- * into a set of typed k8s java objects
+ * into a set of typed k8s java objects.
  */
 public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1004,7 +1004,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   /**
-   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
+   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh.
    * @param vars a list to which new variables are to be added
    */
   void addStartupEnvVars(List<V1EnvVar> vars) {
