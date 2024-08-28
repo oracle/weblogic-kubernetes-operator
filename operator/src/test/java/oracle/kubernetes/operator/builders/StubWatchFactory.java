@@ -59,7 +59,7 @@ public class StubWatchFactory<T> implements WatchFactory<T> {
   }
 
   /**
-   * Adds the events to be returned from a single call to Watch.next()
+   * Adds the events to be returned from a single call to Watch.next().
    *
    * @param events the events; will be converted to Watch.Response objects
    */
