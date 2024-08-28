@@ -825,7 +825,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   /**
-   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
+   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh.
    * @param vars a list to which new variables are to be added
    */
   void addStartupEnvVars(List<V1EnvVar> vars) {

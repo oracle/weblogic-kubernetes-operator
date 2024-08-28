@@ -748,7 +748,7 @@ class ItIntrospectVersion {
   }
 
   /**
-   * Modify the domain scope property
+   * Modify the domain scope property.
    * From: "image: container-registry.oracle.com/middleware/weblogic:ImageTagBeingUsed" to
    * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
    * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"

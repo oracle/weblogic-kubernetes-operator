@@ -1235,7 +1235,7 @@ public class TestActions {
 
   /**
    * Create an application archive that can be used by WebLogic Image Tool
-   * to create an image with coh-proxy-server.gar for testing Coherence use case
+   * to create an image with coh-proxy-server.gar for testing Coherence use case.
    *
    * @param params the parameters for creating a model-in-image image
    * @return true if the operation succeeds

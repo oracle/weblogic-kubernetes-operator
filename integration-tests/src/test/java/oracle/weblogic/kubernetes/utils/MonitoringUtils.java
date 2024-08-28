@@ -189,7 +189,7 @@ public class MonitoringUtils {
   }
 
   /**
- * Build monitoring exporter web applicaiont wls-exporter.war with provided configuration
+   * Build monitoring exporter web applicaiont wls-exporter.war with provided configuration.
    * @param monitoringExporterSrcDir directory containing github monitoring exporter
    * @param configFile configuration file for weblogic domain monitoring
    * @param appDir directory where war file will be created

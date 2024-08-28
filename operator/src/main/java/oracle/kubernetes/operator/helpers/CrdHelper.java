@@ -105,7 +105,7 @@ public class CrdHelper {
   }
 
   /**
-   * Used by build to generate crd-validation.yaml
+   * Used by build to generate crd-validation.yaml.
    * @param args Arguments that must be one value giving file name to create
    */
   public static void main(String... args) throws URISyntaxException {

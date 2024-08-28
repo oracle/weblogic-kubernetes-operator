@@ -80,7 +80,7 @@ import static org.hamcrest.Matchers.not;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
- * generates
+ * generates.
  */
 abstract class CreateOperatorGeneratedFilesTestBase {
 
