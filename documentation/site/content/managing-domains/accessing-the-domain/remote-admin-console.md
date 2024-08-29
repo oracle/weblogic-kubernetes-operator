@@ -45,14 +45,14 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
 
    **NOTE**: These instructions assume that you are installing and running the Remote Console externally to your Kubernetes cluster.
 
-1. For [additional functionality](https://oracle.github.io/weblogic-remote-console/setup/console/#ext), incorporate and deploy the WebLogic Remote Console extension in your 12.2.1.4 and 14.1.1 domains.
+1. For [additional functionality](https://oracle.github.io/weblogic-remote-console/setup/console/#ext), incorporate and deploy the WebLogic Remote Console extension in your 12.2.1.4 and 14.1.1 domains. **NOTE**: As a best practice, make sure that you are using the same versions of the WebLogic Remote Console and the WebLogic Remote Console Extension, otherwise you might lose functionality.
 
     a. From [https://github.com/oracle/weblogic-remote-console/releases](https://github.com/oracle/weblogic-remote-console/releases), download the Remote Console extension WAR file, [console-rest-ext-[version].war](https://github.com/oracle/weblogic-remote-console/releases/download/v2.4.10/console-rest-ext-9.0.war).
 
     b. Using the WebLogic Deploy Tooling (WDT) Archive Helper Tool, modify the WDT application archive to include the Remote Console Extension downloaded in the previous step. For example:
 
     ```
-    /Directory to WDT/weblogic-deploy/bin/archiveHelper.sh add weblogicRemoteConsoleExtension archive_file=/Directory to WDT application archive/archive.zip -source=/Directory to Remote Console Extension/console-rest-ext[version].war
+    /Directory to WDT/weblogic-deploy/bin/archiveHelper.sh add weblogicRemoteConsoleExtension -archive_file=/Directory to WDT application archive/archive.zip -source=/Directory to Remote Console Extension/console-rest-ext[version].war
     ```
 
     For more information, see the [Archive Helper Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/) documentation.
