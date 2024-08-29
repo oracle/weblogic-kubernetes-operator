@@ -1,0 +1,32 @@
+# Copyright (c) 2024, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'secure'
+topology:
+    Name: '@@PROP:DomainName@@'
+    ListenPortEnabled: true
+    SSLEnabled: false
+    AdminServerName: adminserver
+    ServerTemplate:
+        myserver-template:
+            Cluster: mycluster
+    Cluster:        
+        mycluster:
+            SecureReplicationEnabled: false
+            DynamicServers:
+                ServerTemplate: myserver-template
+                ServerNamePrefix: mycluster-ms-
+                DynamicClusterSize: 2
+                MinDynamicClusterSize: 0
+                CalculatedListenPorts: false
+appDeployments:
+    Application:
+        sample-app:
+            Target: [
+              mycluster,
+              adminserver
+            ]
+            SourcePath: wlsdeploy/applications/sample-app.ear                
