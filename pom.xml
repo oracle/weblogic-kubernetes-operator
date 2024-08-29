@@ -674,7 +674,7 @@
     <commons.io.version>2.16.1</commons.io.version>
     <commons.compress.version>1.27.1</commons.compress.version>
     <awaitility-version>4.2.2</awaitility-version>
-    <client-java-version>16.0.3</client-java-version>
+    <client-java-version>21.0.1-legacy</client-java-version>
     <kotlin-stdlib-version>2.0.20</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
     <okio-version>3.9.0</okio-version>
