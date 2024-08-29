@@ -538,6 +538,7 @@ EOF
                                 MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
+			    echo "-Dmaven.wagon.http.retryHandler.count=3"                                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
