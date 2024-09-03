@@ -34,7 +34,7 @@ jobs:
         with:
           ref: gh-pages
           path: gh-pages
-          token: ${{ secrets.PUBLISH_SECRET }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and publish site
         run: |
