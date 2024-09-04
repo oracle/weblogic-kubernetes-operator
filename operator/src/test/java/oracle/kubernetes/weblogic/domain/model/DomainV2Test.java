@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
@@ -1788,7 +1789,7 @@ class DomainV2Test extends DomainTestBase {
         .spec(new PersistentVolumeClaimSpec()
             .volumeName("test-pv")
             .storageClassName("oke-pv")
-            .resources(new V1ResourceRequirements()
+            .resources(new V1VolumeResourceRequirements()
                 .requests(Collections.singletonMap("storage", new Quantity("50Gi")))));
   }
 

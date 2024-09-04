@@ -20,8 +20,8 @@ import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -1444,8 +1444,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
     assertThat(domain.getValidationFailures(resourceLookup).failures(),empty());
   }
 
-  public static V1ResourceRequirements createResources() {
-    return new V1ResourceRequirements().requests(Collections.singletonMap("storage", new Quantity("5Gi")));
+  public static V1VolumeResourceRequirements createResources() {
+    return new V1VolumeResourceRequirements().requests(Collections.singletonMap("storage", new Quantity("5Gi")));
   }
 
   @Test

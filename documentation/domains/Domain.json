@@ -977,7 +977,7 @@
         },
         "resources": {
           "description": "Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements.",
-          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "#/definitions/V1VolumeResourceRequirements"
         }
       }
     },
@@ -1297,6 +1297,20 @@
         "subsystemName": {
           "description": "Name of subsystem providing symptom information.",
           "type": "string"
+        }
+      }
+    },
+    "V1VolumeResourceRequirements": {
+      "description": "VolumeResourceRequirements describes the storage resource requirements for a volume.",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "description": "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "$ref": "#/definitions/Map"
+        },
+        "limits": {
+          "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "$ref": "#/definitions/Map"
         }
       }
     },

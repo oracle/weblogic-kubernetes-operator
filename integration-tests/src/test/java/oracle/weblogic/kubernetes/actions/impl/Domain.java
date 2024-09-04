@@ -12,6 +12,7 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.RbacV1Subject;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -20,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleRef;
-import io.kubernetes.client.openapi.models.V1Subject;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -952,7 +952,7 @@ public class Domain {
           .apiVersion(RBAC_API_VERSION)
           .metadata(new V1ObjectMeta()
               .name(clusterRoleBindingName))
-          .addSubjectsItem(new V1Subject()
+          .addSubjectsItem(new RbacV1Subject()
               .kind("ServiceAccount")
               .name("default")
               .namespace(domainNamespace)
@@ -979,7 +979,7 @@ public class Domain {
           .metadata(new V1ObjectMeta()
               .name(roleBindingName)
               .namespace(opNamespace))
-          .addSubjectsItem(new V1Subject()
+          .addSubjectsItem(new RbacV1Subject()
               .kind("ServiceAccount")
               .name("default")
               .namespace(domainNamespace)

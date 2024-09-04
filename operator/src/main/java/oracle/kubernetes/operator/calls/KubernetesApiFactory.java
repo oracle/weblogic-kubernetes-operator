@@ -3,18 +3,24 @@
 
 package oracle.kubernetes.operator.calls;
 
+import java.util.Arrays;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.apis.VersionApi;
+import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
+import io.kubernetes.client.util.generic.options.UpdateOptions;
 
 public interface KubernetesApiFactory {
   default <A extends KubernetesObject, L extends KubernetesListObject>
@@ -27,11 +33,52 @@ public interface KubernetesApiFactory {
 
   class KubernetesApiImpl<A extends KubernetesObject, L extends KubernetesListObject>
       extends GenericKubernetesApi<A, L> implements KubernetesApi<A, L> {
+    private final Class<A> apiTypeClass;
+    private final Class<L> apiListTypeClass;
+    private final String apiGroup;
+    private final String apiVersion;
+    private final String resourcePlural;
+
+    /**
+     * Create the impl class.
+     * @param apiTypeClass API type class
+     * @param apiListTypeClass API list type class
+     * @param apiGroup group
+     * @param apiVersion version
+     * @param resourcePlural plural
+     * @param clientSelector client selector
+     */
     public KubernetesApiImpl(Class<A> apiTypeClass, Class<L> apiListTypeClass,
                              String apiGroup, String apiVersion, String resourcePlural,
                              UnaryOperator<ApiClient> clientSelector) {
       super(apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
               clientSelector.apply(Client.getInstance()));
+      this.apiTypeClass = apiTypeClass;
+      this.apiListTypeClass = apiListTypeClass;
+      this.apiGroup = apiGroup;
+      this.apiVersion = apiVersion;
+      this.resourcePlural = resourcePlural;
+    }
+
+    @Override
+    public KubernetesApiResponse<A> updateStatus(
+        A object, Function<A, Object> status, final UpdateOptions updateOptions) {
+      CustomObjectsApi c = new CustomObjectsApi(Client.getInstance());
+      try {
+        return new KubernetesApiResponse<>(PatchUtils.patch(
+            apiTypeClass,
+            () ->
+                c.patchNamespacedCustomObjectStatusCall(
+                    apiGroup, apiVersion, object.getMetadata().getNamespace(), resourcePlural,
+                        object.getMetadata().getName(),
+                        Arrays.asList(new StatusPatch(status.apply(object))),
+                        null, null, null, null, null
+                    ),
+            V1Patch.PATCH_FORMAT_JSON_PATCH,
+            c.getApiClient()));
+      } catch (ApiException e) {
+        return RequestStep.responseFromApiException(c.getApiClient(), e);
+      }
     }
 
     @Override

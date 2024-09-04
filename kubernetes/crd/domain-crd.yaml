@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 71f7e932ff00465bdd41107cd2f1c5c8d16d658ba6787269b714574e62397b71
+    weblogic.sha256: ca8128664853553ca1a885bf40ecfbd8d16aef61493b9f0766c404902d529f8f
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -481,15 +481,6 @@ spec:
                                   ResourceRequirements describes the compute resource
                                   requirements.
                                 properties:
-                                  claims:
-                                    items:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
-                                      required:
-                                      - name
-                                    type: array
                                   requests:
                                     additionalProperties:
                                       type: string
@@ -901,6 +892,8 @@ spec:
                           type: boolean
                         subPath:
                           type: string
+                        recursiveReadOnly:
+                          type: string
                         subPathExpr:
                           type: string
                       required:
@@ -1131,6 +1124,8 @@ spec:
                           type: boolean
                         subPath:
                           type: string
+                        recursiveReadOnly:
+                          type: string
                         subPathExpr:
                           type: string
                       required:
@@ -1227,6 +1222,15 @@ spec:
                                 type: string
                               user:
                                 type: string
+                            type: object
+                          appArmorProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
                             type: object
                           fsGroup:
                             type: integer
@@ -1392,6 +1396,8 @@ spec:
                               type: boolean
                             subPath:
                               type: string
+                            recursiveReadOnly:
+                              type: string
                             subPathExpr:
                               type: string
                           required:
@@ -1534,6 +1540,15 @@ spec:
                                 type: string
                               user:
                                 type: string
+                            type: object
+                          appArmorProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
                             type: object
                           seccompProfile:
                             properties:
@@ -1890,18 +1905,11 @@ spec:
                                           - name
                                         volumeName:
                                           type: string
+                                        volumeAttributesClassName:
+                                          type: string
                                         resources:
                                           type: object
                                           properties:
-                                            claims:
-                                              type: array
-                                              items:
-                                                type: object
-                                                properties:
-                                                  name:
-                                                    type: string
-                                                required:
-                                                - name
                                             requests:
                                               additionalProperties:
                                                 type: string
@@ -2069,6 +2077,42 @@ spec:
                                             type: string
                                           expirationSeconds:
                                             type: integer
+                                        required:
+                                        - path
+                                      clusterTrustBundle:
+                                        type: object
+                                        properties:
+                                          path:
+                                            type: string
+                                          labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                  - key
+                                                  - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                          signerName:
+                                            type: string
                                         required:
                                         - path
                                 defaultMode:
@@ -2706,6 +2750,15 @@ spec:
                                       type: string
                                     user:
                                       type: string
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                  required:
+                                  - type
                                 seccompProfile:
                                   type: object
                                   properties:
@@ -2874,6 +2927,8 @@ spec:
                                     type: integer
                                 required:
                                 - containerPort
+                            restartPolicy:
+                              type: string
                             command:
                               type: array
                               items:
@@ -2893,6 +2948,8 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
+                                  recursiveReadOnly:
+                                    type: string
                                   subPathExpr:
                                     type: string
                                 required:
@@ -2908,6 +2965,13 @@ spec:
                                 postStart:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -2952,6 +3016,13 @@ spec:
                                 preStop:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -3244,6 +3315,15 @@ spec:
                                       type: string
                                     user:
                                       type: string
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                  required:
+                                  - type
                                 seccompProfile:
                                   type: object
                                   properties:
@@ -3412,6 +3492,8 @@ spec:
                                     type: integer
                                 required:
                                 - containerPort
+                            restartPolicy:
+                              type: string
                             command:
                               type: array
                               items:
@@ -3431,6 +3513,8 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
+                                  recursiveReadOnly:
+                                    type: string
                                   subPathExpr:
                                     type: string
                                 required:
@@ -3446,6 +3530,13 @@ spec:
                                 postStart:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -3490,6 +3581,13 @@ spec:
                                 preStop:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -3828,6 +3926,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -3890,6 +3996,14 @@ spec:
                                               type: object
                                         topologyKey:
                                           type: string
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaces:
                                           type: array
                                           items:
@@ -3957,6 +4071,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -4019,6 +4141,14 @@ spec:
                                               type: object
                                         topologyKey:
                                           type: string
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaces:
                                           type: array
                                           items:
@@ -4161,6 +4291,15 @@ spec:
                                 type: string
                               user:
                                 type: string
+                            type: object
+                          appArmorProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
                             type: object
                           fsGroup:
                             type: integer
@@ -4477,6 +4616,15 @@ spec:
                           user:
                             type: string
                         type: object
+                      appArmorProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
                       fsGroup:
                         type: integer
                       seccompProfile:
@@ -4640,6 +4788,8 @@ spec:
                           type: boolean
                         subPath:
                           type: string
+                        recursiveReadOnly:
+                          type: string
                         subPathExpr:
                           type: string
                       required:
@@ -4779,6 +4929,15 @@ spec:
                             type: string
                           user:
                             type: string
+                        type: object
+                      appArmorProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
                         type: object
                       seccompProfile:
                         properties:
@@ -5134,18 +5293,11 @@ spec:
                                       - name
                                     volumeName:
                                       type: string
+                                    volumeAttributesClassName:
+                                      type: string
                                     resources:
                                       type: object
                                       properties:
-                                        claims:
-                                          type: array
-                                          items:
-                                            type: object
-                                            properties:
-                                              name:
-                                                type: string
-                                            required:
-                                            - name
                                         requests:
                                           additionalProperties:
                                             type: string
@@ -5313,6 +5465,42 @@ spec:
                                         type: string
                                       expirationSeconds:
                                         type: integer
+                                    required:
+                                    - path
+                                  clusterTrustBundle:
+                                    type: object
+                                    properties:
+                                      path:
+                                        type: string
+                                      labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                              - key
+                                              - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      signerName:
+                                        type: string
                                     required:
                                     - path
                             defaultMode:
@@ -5949,6 +6137,15 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             seccompProfile:
                               type: object
                               properties:
@@ -6117,6 +6314,8 @@ spec:
                                 type: integer
                             required:
                             - containerPort
+                        restartPolicy:
+                          type: string
                         command:
                           type: array
                           items:
@@ -6136,6 +6335,8 @@ spec:
                                 type: boolean
                               subPath:
                                 type: string
+                              recursiveReadOnly:
+                                type: string
                               subPathExpr:
                                 type: string
                             required:
@@ -6151,6 +6352,13 @@ spec:
                             postStart:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -6195,6 +6403,13 @@ spec:
                             preStop:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -6487,6 +6702,15 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             seccompProfile:
                               type: object
                               properties:
@@ -6655,6 +6879,8 @@ spec:
                                 type: integer
                             required:
                             - containerPort
+                        restartPolicy:
+                          type: string
                         command:
                           type: array
                           items:
@@ -6674,6 +6900,8 @@ spec:
                                 type: boolean
                               subPath:
                                 type: string
+                              recursiveReadOnly:
+                                type: string
                               subPathExpr:
                                 type: string
                             required:
@@ -6689,6 +6917,13 @@ spec:
                             postStart:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -6733,6 +6968,13 @@ spec:
                             preStop:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -7070,6 +7312,14 @@ spec:
                                       type: object
                                 topologyKey:
                                   type: string
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
+                                mismatchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 namespaces:
                                   type: array
                                   items:
@@ -7132,6 +7382,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -7199,6 +7457,14 @@ spec:
                                       type: object
                                 topologyKey:
                                   type: string
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
+                                mismatchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 namespaces:
                                   type: array
                                   items:
@@ -7261,6 +7527,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -7366,6 +7640,15 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             fsGroup:
                               type: integer
                             seccompProfile:
@@ -7532,6 +7815,8 @@ spec:
                                 type: boolean
                               subPath:
                                 type: string
+                              recursiveReadOnly:
+                                type: string
                               subPathExpr:
                                 type: string
                             required:
@@ -7675,6 +7960,15 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             seccompProfile:
                               type: object
                               properties:
@@ -8031,18 +8325,11 @@ spec:
                                             - name
                                           volumeName:
                                             type: string
+                                          volumeAttributesClassName:
+                                            type: string
                                           resources:
                                             type: object
                                             properties:
-                                              claims:
-                                                type: array
-                                                items:
-                                                  type: object
-                                                  properties:
-                                                    name:
-                                                      type: string
-                                                  required:
-                                                  - name
                                               requests:
                                                 additionalProperties:
                                                   type: string
@@ -8210,6 +8497,42 @@ spec:
                                               type: string
                                             expirationSeconds:
                                               type: integer
+                                          required:
+                                          - path
+                                        clusterTrustBundle:
+                                          type: object
+                                          properties:
+                                            path:
+                                              type: string
+                                            labelSelector:
+                                              type: object
+                                              properties:
+                                                matchExpressions:
+                                                  type: array
+                                                  items:
+                                                    type: object
+                                                    properties:
+                                                      values:
+                                                        type: array
+                                                        items:
+                                                          type: string
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                            name:
+                                              type: string
+                                            optional:
+                                              type: boolean
+                                            signerName:
+                                              type: string
                                           required:
                                           - path
                                   defaultMode:
@@ -8848,6 +9171,15 @@ spec:
                                         type: string
                                       user:
                                         type: string
+                                  appArmorProfile:
+                                    type: object
+                                    properties:
+                                      localhostProfile:
+                                        type: string
+                                      type:
+                                        type: string
+                                    required:
+                                    - type
                                   seccompProfile:
                                     type: object
                                     properties:
@@ -9016,6 +9348,8 @@ spec:
                                       type: integer
                                   required:
                                   - containerPort
+                              restartPolicy:
+                                type: string
                               command:
                                 type: array
                                 items:
@@ -9035,6 +9369,8 @@ spec:
                                       type: boolean
                                     subPath:
                                       type: string
+                                    recursiveReadOnly:
+                                      type: string
                                     subPathExpr:
                                       type: string
                                   required:
@@ -9050,6 +9386,13 @@ spec:
                                   postStart:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -9094,6 +9437,13 @@ spec:
                                   preStop:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -9386,6 +9736,15 @@ spec:
                                         type: string
                                       user:
                                         type: string
+                                  appArmorProfile:
+                                    type: object
+                                    properties:
+                                      localhostProfile:
+                                        type: string
+                                      type:
+                                        type: string
+                                    required:
+                                    - type
                                   seccompProfile:
                                     type: object
                                     properties:
@@ -9554,6 +9913,8 @@ spec:
                                       type: integer
                                   required:
                                   - containerPort
+                              restartPolicy:
+                                type: string
                               command:
                                 type: array
                                 items:
@@ -9573,6 +9934,8 @@ spec:
                                       type: boolean
                                     subPath:
                                       type: string
+                                    recursiveReadOnly:
+                                      type: string
                                     subPathExpr:
                                       type: string
                                   required:
@@ -9588,6 +9951,13 @@ spec:
                                   postStart:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -9632,6 +10002,13 @@ spec:
                                   preStop:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -9972,6 +10349,14 @@ spec:
                                             type: object
                                       topologyKey:
                                         type: string
+                                      matchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
+                                      mismatchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
                                       namespaces:
                                         type: array
                                         items:
@@ -10034,6 +10419,14 @@ spec:
                                                 type: object
                                           topologyKey:
                                             type: string
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaces:
                                             type: array
                                             items:
@@ -10101,6 +10494,14 @@ spec:
                                             type: object
                                       topologyKey:
                                         type: string
+                                      matchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
+                                      mismatchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
                                       namespaces:
                                         type: array
                                         items:
@@ -10163,6 +10564,14 @@ spec:
                                                 type: object
                                           topologyKey:
                                             type: string
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaces:
                                             type: array
                                             items:
