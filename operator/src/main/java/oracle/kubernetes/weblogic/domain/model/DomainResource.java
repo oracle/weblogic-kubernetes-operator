@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
@@ -1344,7 +1345,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       return Optional.ofNullable(metadata).map(V1ObjectMeta::getName).orElse(null);
     }
 
-    private V1ResourceRequirements getResourceRequirements(PersistentVolumeClaim pvc) {
+    private V1VolumeResourceRequirements getResourceRequirements(PersistentVolumeClaim pvc) {
       return Optional.ofNullable(pvc.getSpec()).map(PersistentVolumeClaimSpec::getResources).orElse(null);
     }
 

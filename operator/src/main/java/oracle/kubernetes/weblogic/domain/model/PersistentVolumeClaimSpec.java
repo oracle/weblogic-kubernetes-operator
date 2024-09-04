@@ -1,9 +1,9 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -14,7 +14,7 @@ public class PersistentVolumeClaimSpec {
   @Description("Resources represents the minimum resources the volume should have."
       + " More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources."
       + " ResourceRequirements describes the compute resource requirements.")
-  private V1ResourceRequirements resources;
+  private V1VolumeResourceRequirements resources;
 
   @Description("StorageClassName is the name of StorageClass to which this persistent volume belongs."
       + " Empty value means that this volume does not belong to any StorageClass.")
@@ -23,11 +23,11 @@ public class PersistentVolumeClaimSpec {
   @Description("VolumeName is the binding reference to the PersistentVolume backing this claim.")
   private String volumeName;
 
-  public V1ResourceRequirements getResources() {
+  public V1VolumeResourceRequirements getResources() {
     return resources;
   }
 
-  public PersistentVolumeClaimSpec resources(V1ResourceRequirements resources) {
+  public PersistentVolumeClaimSpec resources(V1VolumeResourceRequirements resources) {
     this.resources = resources;
     return this;
   }

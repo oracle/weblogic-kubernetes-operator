@@ -18,6 +18,7 @@ import javax.net.ssl.SSLProtocolException;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.RbacV1Subject;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -54,7 +55,6 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1StorageClass;
-import io.kubernetes.client.openapi.models.V1Subject;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
@@ -1206,7 +1206,7 @@ public class DbUtils {
         .metadata(new V1ObjectMeta()
             .name(name))
         .subjects(Arrays.asList(
-            new V1Subject()
+            new RbacV1Subject()
                 .kind("ServiceAccount")
                 .name(name)
                 .namespace(namespace)))
@@ -1247,7 +1247,7 @@ public class DbUtils {
             .name("leader-locking-hostpath-provisioner")
             .namespace(namespace))
         .subjects(Arrays.asList(
-            new V1Subject()
+            new RbacV1Subject()
                 .kind("ServiceAccount")
                 .name(name)
                 .namespace(namespace)))

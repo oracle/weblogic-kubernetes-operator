@@ -395,7 +395,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
+| `resources` | [V 1 Volume Resource Requirements](#v-1-volume-resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
 | `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
 | `volumeName` | string | VolumeName is the binding reference to the PersistentVolume backing this claim. |
 
@@ -411,3 +411,12 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `startApplicationTimeoutMillis` | integer | WDT application start timeout in milliseconds. Default: 180000. |
 | `stopApplicationTimeoutMillis` | integer | WDT application stop timeout in milliseconds. Default: 180000. |
 | `undeployTimeoutMillis` | integer | WDT application or library undeployment timeout in milliseconds. Default: 180000. |
+
+### V 1 Volume Resource Requirements
+
+VolumeResourceRequirements describes the storage resource requirements for a volume.
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `limits` | Map | Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
+| `requests` | Map | Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |

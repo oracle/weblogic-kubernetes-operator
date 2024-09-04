@@ -1,7 +1,6 @@
 // Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
@@ -27,9 +26,9 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -307,7 +306,7 @@ public class PersistentVolumeUtils {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeName(pvName)
-            .resources(new V1ResourceRequirements()
+            .resources(new V1VolumeResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
         .metadata(new V1ObjectMeta()
             .name(pvcName)
@@ -439,7 +438,7 @@ public class PersistentVolumeUtils {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeName("pv-test" + nameSuffix)
-            .resources(new V1ResourceRequirements()
+            .resources(new V1VolumeResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("10Gi"))))
         .metadata(new V1ObjectMeta()
             .name("pvc-" + nameSuffix)

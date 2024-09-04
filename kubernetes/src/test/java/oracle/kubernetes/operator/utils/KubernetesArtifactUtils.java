@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -9,6 +9,7 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.RbacV1Subject;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -55,7 +56,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import io.kubernetes.client.openapi.models.V1Subject;
 import io.kubernetes.client.openapi.models.V1TCPSocketAction;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -187,8 +187,8 @@ public class KubernetesArtifactUtils {
     return (new V1RoleRef()).apiGroup(API_GROUP_RBAC).kind(KIND_CLUSTER_ROLE);
   }
 
-  public static V1Subject newSubject() {
-    return new V1Subject();
+  public static RbacV1Subject newSubject() {
+    return new RbacV1Subject();
   }
 
   public static V1ObjectMeta newObjectMeta() {

@@ -34,9 +34,9 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -163,7 +163,7 @@ public class CommonLBTestUtils {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeName(sharingPvName)
-            .resources(new V1ResourceRequirements()
+            .resources(new V1VolumeResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("6Gi"))))
         .metadata(new V1ObjectMetaBuilder()
             .withName(sharingPvcName)
