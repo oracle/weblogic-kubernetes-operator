@@ -399,13 +399,12 @@ createWLDomain() {
   if [  -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
     checkSecureModeForUpgrade
   fi
-
   if  [ ${WDT_ARTIFACTS_CHANGED} -ne 0 ] || [ ${jdk_changed} -eq 1 ] \
     || [ ${SECRETS_AND_ENV_CHANGED} -ne 0 ] || [ ${DISABLE_SM_FOR_12214_NONSM_UPG} -eq 1 ] ; then
-
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     createModelDomain
-    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
+    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] || [ ${DISABLE_SM_FOR_12214_NONSM_UPG} -eq 1 ] ; then
+      # Make sure it will run the introspectDomain.py
       DOMAIN_CREATED=1
     fi
   else
@@ -500,7 +499,8 @@ createModelDomain() {
   trace "Entering createModelDomain"
   createPrimordialDomain
 
-  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
+  # If model changes or upgrade image scenario, run update domain.
+  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] || [ $DISABLE_SM_FOR_12214_NONSM_UPG -eq 1 ] ; then
     # if there is a new primordial domain created then use newly created primordial domain otherwise
     # if the primordial domain already in the configmap, restore it
     #
@@ -780,9 +780,6 @@ createPrimordialDomain() {
 
     trace "No primordial domain or need to create again because of changes require domain recreation"
 
-    #if } -eq 1 ] && [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ]; then
-
-
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
     MII_USE_ONLINE_UPDATE=false
@@ -846,6 +843,7 @@ checkSecureModeForUpgrade() {
       if [ -f /tmp/mii_domain_upgrade.txt ] && [ $(grep -i False /tmp/mii_domain_upgrade.txt | wc -l ) -gt 0 ] ; then
         if [ -f /tmp/mii_domain_before14120.txt ] && [ $(grep -i True /tmp/mii_domain_before14120.txt | wc -l ) -gt 0 ] ; then
           # Set this so that the upgrade image only scenario 12.2.1.4 to 14.1.2 will recreate the domain
+          trace "Domain version is earlier than 14.1.2, upgrade only image to 14.1.2 detected"
           DISABLE_SM_FOR_12214_NONSM_UPG=1
         fi
       fi
