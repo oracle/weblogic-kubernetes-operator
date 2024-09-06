@@ -183,6 +183,9 @@ def filter_model(model):
   try:
 
     if model is not None:
+
+      upgradeServerIfNeeded(model)
+
       if getOfflineWlstEnv() is None:
         initOfflineWlstEnv(model)
 
@@ -216,7 +219,6 @@ def filter_model(model):
         if 'ServerTemplate' in topology:
           customizeServerTemplates(model)
 
-        upgradeServerIfNeeded(model)
   except:
       exc_type, exc_obj, exc_tb = sys.exc_info()
       ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
@@ -413,14 +415,18 @@ def upgradeServerIfNeeded(model):
         # if domainInfo already set to secure or in dev mode then do not set it, prod mode will not be secure
         # regardless of others
         # if the model disabled `ProductionModeEnabled`  specifically now, do nothing
-
+        prod_mode = False
         if 'domainInfo' in model and 'ServerStartMode' in model['domainInfo']:
-          return
+          mode = model['domainInfo']['ServerStartMode']
+          if mode == 'secure' or mode == 'dev':
+              return
+          else:
+              prod_mode = True
 
         if 'topology' in model:
 
             topology = model['topology']
-            if 'ProductionModeEnabled' not in topology:
+            if not prod_mode and 'ProductionModeEnabled' not in topology:
               return
 
             if 'ProductionModeEnabled' in topology:
