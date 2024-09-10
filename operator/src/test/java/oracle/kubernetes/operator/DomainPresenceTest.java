@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -410,7 +410,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithMissingInfo_dontRecordAdminServerService() {
+  void whenK8sHasOneDomainWithMissingInfo_recordAdminServerService() {
     addDomainResource(UID1, NS);
     V1Service service = createServerService(UID1, NS, "admin");
     testSupport.defineResources(service);
@@ -418,7 +418,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(null));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
   }
 
   @Test
@@ -466,7 +466,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithPodButMissingInfo_dontRecordPodPresence() {
+  void whenK8sHasOneDomainWithPodButMissingInfo_recordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
@@ -474,7 +474,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(pod));
   }
 
   @Test
