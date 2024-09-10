@@ -411,7 +411,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithMissingInfo_dontRecordAdminServerService() {
+  void whenK8sHasOneDomainWithMissingInfo_recordAdminServerService() {
     addDomainResource(UID1, NS);
     V1Service service = createServerService(UID1, NS, "admin");
     testSupport.defineResources(service);
@@ -419,7 +419,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(null));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
   }
 
   @Test
@@ -467,7 +467,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithPodButMissingInfo_dontRecordPodPresence() {
+  void whenK8sHasOneDomainWithPodButMissingInfo_recordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
@@ -475,7 +475,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(pod));
   }
 
   @Test
