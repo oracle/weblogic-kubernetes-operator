@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -154,7 +154,7 @@ class DomainResourcesValidation {
   private void addPod(V1Pod pod) {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
+    DomainPresenceInfo info = getOrComputeDomainPresenceInfo(domainUid);
     Optional.ofNullable(info).ifPresent(i -> i.addServerNameFromPodList(serverName));
 
     if (domainUid != null && serverName != null) {
@@ -173,10 +173,6 @@ class DomainResourcesValidation {
     return getDomainPresenceInfoMap().computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
   }
 
-  private DomainPresenceInfo getExistingDomainPresenceInfo(String domainUid) {
-    return getDomainPresenceInfoMap().get(domainUid);
-  }
-
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap() {
     return processor.getDomainPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
   }
@@ -192,7 +188,7 @@ class DomainResourcesValidation {
   private void addService(V1Service service) {
     String domainUid = ServiceHelper.getServiceDomainUid(service);
     if (domainUid != null) {
-      ServiceHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), service);
+      ServiceHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), service);
     }
   }
 
@@ -203,7 +199,7 @@ class DomainResourcesValidation {
   private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
     String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
     if (domainUid != null) {
-      PodDisruptionBudgetHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), pdb);
+      PodDisruptionBudgetHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), pdb);
     }
   }
 
@@ -231,7 +227,8 @@ class DomainResourcesValidation {
     DomainPresenceInfo cachedInfo = getDomainPresenceInfoMap().get(domain.getDomainUid());
     if (domain.getStatus() == null) {
       newDomainNames.add(domain.getDomainUid());
-    } else if (cachedInfo != null && domain.isGenerationChanged(cachedInfo.getDomain())) {
+    } else if (cachedInfo != null && cachedInfo.getDomain() != null
+        && domain.isGenerationChanged(cachedInfo.getDomain())) {
       modifiedDomainNames.add(domain.getDomainUid());
     }
     getOrComputeDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
