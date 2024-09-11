@@ -237,6 +237,7 @@ public abstract class BaseMain {
 
     acquireShutdownSignal();
 
+    executor.shutdown();
     stopAllWatchers();
   }
 
