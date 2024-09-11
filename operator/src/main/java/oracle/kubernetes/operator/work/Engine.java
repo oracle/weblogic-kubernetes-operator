@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -48,7 +48,12 @@ public class Engine {
    * @return executor service
    */
   public static ScheduledExecutorService wrappedExecutorService(Container container) {
-    ScheduledThreadPoolExecutor threadPool = new ScheduledThreadPoolExecutor(DEFAULT_THREAD_COUNT);
+    ScheduledThreadPoolExecutor threadPool = new ScheduledThreadPoolExecutor(
+        DEFAULT_THREAD_COUNT, r -> {
+          Thread t = Executors.defaultThreadFactory().newThread(r);
+          t.setDaemon(true);
+          return t;
+        });
     threadPool.setRemoveOnCancelPolicy(true);
     return wrap(container, new VirtualScheduledExectuorService(threadPool));
   }
