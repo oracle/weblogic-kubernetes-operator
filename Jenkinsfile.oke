@@ -6,6 +6,7 @@ CRON_SETTINGS_MAIN = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seq
                    H 2 * * * % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 
 CRON_SETTINGS_42 = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seq42one;PARALLEL_RUN=false
+                    H 1 * * * % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
                    H 2 * * * % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
 
 CRON_SETTINGS = "${env.JOB_NAME == 'wko-oke-nightly' ? CRON_SETTINGS_MAIN : CRON_SETTINGS_42}"
@@ -114,9 +115,10 @@ pipeline {
         )
 
                 choice(name: 'MAVEN_PROFILE_NAME',
-                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-gate,oke-parallel. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-gate,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                         choices: [
                                 'oke-gate',
+                                'oke-sequential',
                                 'oke-parallel'
                         ]
                 )
