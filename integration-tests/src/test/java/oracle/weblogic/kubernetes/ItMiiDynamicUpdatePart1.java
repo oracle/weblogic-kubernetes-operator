@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("oke-arm")
 @Tag("olcne-srg")
 class ItMiiDynamicUpdatePart1 {

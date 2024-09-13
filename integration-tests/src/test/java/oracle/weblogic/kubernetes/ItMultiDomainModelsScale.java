@@ -121,7 +121,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     + "rolling restart behavior in a multi-cluster MII domain and "
     + "the sample application can be accessed via NGINX ingress controller")
 @Tag("kind-sequential")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @IntegrationTest
 class ItMultiDomainModelsScale {
 
