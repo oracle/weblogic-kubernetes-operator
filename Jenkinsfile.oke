@@ -5,9 +5,9 @@
 CRON_SETTINGS_MAIN = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
                    H 2 * * * % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 
-CRON_SETTINGS_42 = '''H 3 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seq42one;PARALLEL_RUN=false
-                    H 1 * * * % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
-                   H 2 * * * % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
+CRON_SETTINGS_42 = '''H 1 * * * % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seq42one;PARALLEL_RUN=false
+                    H 11 * * * % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
+                   H 14 * * * % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
 
 CRON_SETTINGS = "${env.JOB_NAME == 'wko-oke-nightly' ? CRON_SETTINGS_MAIN : CRON_SETTINGS_42}"
 
@@ -671,7 +671,7 @@ EOF
                             ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
                         fi
 
-                        if [ "${MAVEN_PROFILE_NAME}" = "oke-gate" ] && [ "${BRANCH}" = "main" ]; then
+                        if [ "${MAVEN_PROFILE_NAME}" = "oke-gate" ] && [ "${BRANCH}" = "release/4.2" ]; then
                             compname="wkt"
                             wkt_compartment_ocid=$(oci iam compartment list --compartment-id-in-subtree true --all | jq --arg compname "$compname" '.data[] | select(."name"==$compname)' | jq -r ."id")
                             sec_list_id=$(oci network security-list list --compartment-id="$wkt_compartment_ocid" --display-name=Security-List-wktiso1 | jq -r '.data[] | ."id"')
