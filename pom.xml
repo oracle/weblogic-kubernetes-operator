@@ -662,7 +662,7 @@
     <jakarta-json-version>2.0.1</jakarta-json-version>
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
-    <networknt-jsonschmema-validator-version>1.5.1</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.5.2</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.4.0</commons-exec-version>
     <commons-codec-version>1.17.1</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
