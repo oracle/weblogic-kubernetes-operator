@@ -48,6 +48,7 @@
         <wko.it.grafana.chart.version>${env.GRAFANA_CHART_VERSION}</wko.it.grafana.chart.version>
         <wko.it.istio.version>${env.ISTIO_VERSION}</wko.it.istio.version>
         <wko.it.oke.cluster>${env.OKE_CLUSTER}</wko.it.oke.cluster>
+        <wko.it.oci.compartment.ocid>${env.COMPARTMENT_OCID}</wko.it.oci.compartment.ocid>
         <wko.it.arm.cluster>${env.ARM}</wko.it.arm.cluster>
         <wko.it.oke.cluster.privateip>${env.OKE_CLUSTER_PRIVATEIP}</wko.it.oke.cluster.privateip>
         <wko.it.nfs.server>${env.NFS_SERVER}</wko.it.nfs.server>

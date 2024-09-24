@@ -693,7 +693,7 @@ class ItCrossDomainTransaction {
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
     if (OKE_CLUSTER) {
       try {
-        if (!callWebAppAndWaitTillReady(curlCmd, 60)) {
+        if (!callWebAppAndWaitTillReady(curlCmd, 20)) {
           ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
           logger.info(result.stdout());
           //restart core-dns service
@@ -709,6 +709,6 @@ class ItCrossDomainTransaction {
     }
 
     logger.info("Executing curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 20));
   }
 }
