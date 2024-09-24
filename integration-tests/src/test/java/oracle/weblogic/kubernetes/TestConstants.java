@@ -370,6 +370,7 @@ public interface TestConstants {
   public static final String MYSQL_VERSION = "8.0.29";
 
   //OKE constants
+  public static final String COMPARTMENT_OCID = System.getProperty("wko.it.oci.compartment.ocid", "");
   public static final boolean OKE_CLUSTER =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final boolean OKE_CLUSTER_PRIVATEIP =

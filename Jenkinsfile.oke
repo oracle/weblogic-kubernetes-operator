@@ -2,11 +2,14 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
+
 CRON_SETTINGS_MAIN = '''H 3 * * 1-5 % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
                    H 2 * * 1-5 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 CRON_SETTINGS_42 = '''H 1 * * 1-5 % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seq42one;PARALLEL_RUN=false
                     H 11 * * 1-5 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
                    H 14 * * 1-5 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
+
+
 
 CRON_SETTINGS = "${env.JOB_NAME == 'wko-oke-nightly' ? CRON_SETTINGS_MAIN : CRON_SETTINGS_42}"
 
@@ -527,6 +530,8 @@ EOF
                                 export OCI_CLI_CONFIG_FILE=${jenkins_home_directory}/.oci/config
                                 export OCI_CLI_PROFILE=${oci_profile}
                                 compartment_ocid=${compartment_id}
+                                export COMPARTMENT_OCID=${compartment_id}
+                                echo "COMPARTMENT_OCID : ${COMPARTMENT_OCID}"
                                 mkdir -m777 -p "${WORKSPACE}/.mvn"
                                 touch ${WORKSPACE}/.mvn/maven.config
                                 export KUBECONFIG=${kubeconfig_file}
@@ -597,6 +602,7 @@ EOF
                                 echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.oci.compartment.ocid=\"${COMPARTMENT_OCID}\""                                             >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
@@ -618,6 +624,7 @@ EOF
                                     export PATH=${runtime_path}
                                     export OKE_CLUSTER="true"
                                     export OKE_CLUSTER_PRIVATEIP="true"
+                                    export COMPARTMENT_OCID=${compartment_id}
                                     export OKD="false"
                                     export KUBECONFIG=${kubeconfig_file}
                                     export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
