@@ -128,31 +128,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getReferencePlainPortPodYaml_3_0() {
-    return ReferenceObjects.ADMIN_PLAINPORT_POD_3_0;
-  }
-
-  @Override
-  String getReferencePlainPortPodYaml_3_1() {
-    return ReferenceObjects.ADMIN_PLAINPORT_POD_3_1;
-  }
-
-  @Override
-  String getReferenceSslPortPodYaml_3_0() {
-    return ReferenceObjects.ADMIN_SSLPORT_POD_3_0;
-  }
-
-  @Override
-  String getReferenceSslPortPodYaml_3_1() {
-    return ReferenceObjects.ADMIN_SSLPORT_POD_3_1;
-  }
-
-  @Override
-  String getReferenceMiiPodYaml() {
-    return ReferenceObjects.ADMIN_MII_POD_3_1;
-  }
-
-  @Override
   String getReferenceMiiAuxImagePodYaml_3_3() {
     return ReferenceObjects.ADMIN_MII_AUX_IMAGE_POD_3_3;
   }

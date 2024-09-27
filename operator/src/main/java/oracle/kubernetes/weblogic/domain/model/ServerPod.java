@@ -202,10 +202,10 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. "
-      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "If no value is specified for this field, the operator will use default "
       + "content for the pod-level `securityContext`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
-  private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+  private V1PodSecurityContext podSecurityContext = null;
 
   /**
    * InitContainers holds a list of initialization containers that should be run before starting the
@@ -242,10 +242,10 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Container-level security attributes. Will override any matching Pod-level attributes. "
       + "See `kubectl explain pods.spec.containers.securityContext`. "
-      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "If no value is specified for this field, the operator will use default "
       + "content for container-level `securityContext`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
-  private V1SecurityContext containerSecurityContext = new V1SecurityContext();
+  private V1SecurityContext containerSecurityContext = null;
 
   public List<V1Volume> getVolumes() {
     return volumes;
@@ -338,57 +338,85 @@ class ServerPod extends KubernetesResource {
   }
 
   @SuppressWarnings("Duplicates")
-  private void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getFsGroup() == null) {
-      to.fsGroup(from.getFsGroup());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
-    }
-    if (to.getSupplementalGroups() == null) {
-      to.supplementalGroups(from.getSupplementalGroups());
-    }
-    if (to.getSysctls() == null) {
-      to.sysctls(from.getSysctls());
+  private void copyValues(V1PodSecurityContext from) {
+    if (from != null) {
+      if (podSecurityContext == null) {
+        podSecurityContext = new V1PodSecurityContext();
+      }
+      if (podSecurityContext.getRunAsNonRoot() == null) {
+        podSecurityContext.runAsNonRoot(from.getRunAsNonRoot());
+      }
+      if (podSecurityContext.getFsGroup() == null) {
+        podSecurityContext.fsGroup(from.getFsGroup());
+      }
+      if (podSecurityContext.getRunAsGroup() == null) {
+        podSecurityContext.runAsGroup(from.getRunAsGroup());
+      }
+      if (podSecurityContext.getRunAsUser() == null) {
+        podSecurityContext.runAsUser(from.getRunAsUser());
+      }
+      if (podSecurityContext.getSeLinuxOptions() == null) {
+        podSecurityContext.seLinuxOptions(from.getSeLinuxOptions());
+      }
+      if (podSecurityContext.getSupplementalGroups() == null) {
+        podSecurityContext.supplementalGroups(from.getSupplementalGroups());
+      }
+      if (podSecurityContext.getSysctls() == null) {
+        podSecurityContext.sysctls(from.getSysctls());
+      }
+      if (podSecurityContext.getFsGroupChangePolicy() == null) {
+        podSecurityContext.fsGroupChangePolicy(from.getFsGroupChangePolicy());
+      }
+      if (podSecurityContext.getSeccompProfile() == null) {
+        podSecurityContext.seccompProfile(from.getSeccompProfile());
+      }
+      if (podSecurityContext.getWindowsOptions() == null) {
+        podSecurityContext.windowsOptions(from.getWindowsOptions());
+      }
     }
   }
 
   @SuppressWarnings("Duplicates")
-  private void copyValues(V1SecurityContext to, V1SecurityContext from) {
-    if (to.getAllowPrivilegeEscalation() == null) {
-      to.allowPrivilegeEscalation(from.getAllowPrivilegeEscalation());
-    }
-    if (to.getPrivileged() == null) {
-      to.privileged(from.getPrivileged());
-    }
-    if (to.getReadOnlyRootFilesystem() == null) {
-      to.readOnlyRootFilesystem(from.getReadOnlyRootFilesystem());
-    }
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getCapabilities() == null) {
-      to.setCapabilities(from.getCapabilities());
-    } else {
-      copyValues(to.getCapabilities(), from.getCapabilities());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
+  private void copyValues(V1SecurityContext from) {
+    if (from != null) {
+      if (containerSecurityContext == null) {
+        containerSecurityContext = new V1SecurityContext();
+      }
+      if (containerSecurityContext.getAllowPrivilegeEscalation() == null) {
+        containerSecurityContext.allowPrivilegeEscalation(from.getAllowPrivilegeEscalation());
+      }
+      if (containerSecurityContext.getPrivileged() == null) {
+        containerSecurityContext.privileged(from.getPrivileged());
+      }
+      if (containerSecurityContext.getReadOnlyRootFilesystem() == null) {
+        containerSecurityContext.readOnlyRootFilesystem(from.getReadOnlyRootFilesystem());
+      }
+      if (containerSecurityContext.getRunAsNonRoot() == null) {
+        containerSecurityContext.runAsNonRoot(from.getRunAsNonRoot());
+      }
+      if (containerSecurityContext.getCapabilities() == null) {
+        containerSecurityContext.setCapabilities(from.getCapabilities());
+      } else {
+        copyValues(containerSecurityContext.getCapabilities(), from.getCapabilities());
+      }
+      if (containerSecurityContext.getRunAsGroup() == null) {
+        containerSecurityContext.runAsGroup(from.getRunAsGroup());
+      }
+      if (containerSecurityContext.getRunAsUser() == null) {
+        containerSecurityContext.runAsUser(from.getRunAsUser());
+      }
+      if (containerSecurityContext.getSeLinuxOptions() == null) {
+        containerSecurityContext.seLinuxOptions(from.getSeLinuxOptions());
+      }
+      if (containerSecurityContext.getProcMount() == null) {
+        containerSecurityContext.procMount(from.getProcMount());
+      }
+      if (containerSecurityContext.getSeccompProfile() == null) {
+        containerSecurityContext.seccompProfile(from.getSeccompProfile());
+      }
+      if (containerSecurityContext.getWindowsOptions() == null) {
+        containerSecurityContext.windowsOptions(from.getWindowsOptions());
+      }
     }
   }
 
@@ -520,8 +548,8 @@ class ServerPod extends KubernetesResource {
     fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
     copyValues(resources, serverPod1.resources);
-    copyValues(podSecurityContext, serverPod1.podSecurityContext);
-    copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
+    copyValues(serverPod1.podSecurityContext);
+    copyValues(serverPod1.containerSecurityContext);
     if (maxReadyWaitTimeSeconds == null) {
       maxReadyWaitTimeSeconds = serverPod1.maxReadyWaitTimeSeconds;
     }

@@ -44,7 +44,7 @@ By default, the introspector job pod uses the same CPU and memory settings as th
 domain's WebLogic Administration Server pod. Similarly, the operator created init containers in the
 introspector job pod for the [Auxiliary Images]({{< relref "/managing-domains/model-in-image/auxiliary-images" >}})
 based domains use the same CPU and memory settings as the domain's WebLogic Administration Server pod.
-Beginning with operator version 4.0.5, you can override the settings of the introspector job pod using
+You can override the settings of the introspector job pod using
 the `domain.spec.introspector.serverPod` element.
 A resource request sets the minimum amount of a resource that a container requires.
 A resource limit is the maximum amount of a resource a container is given
@@ -63,7 +63,7 @@ and you can override the setting for individual WebLogic Server instances using 
 setting for member servers of a cluster using the `cluster.spec.serverPod` element.
 Note that the introspector job pod uses the same settings
 as the WebLogic Administration Server pod.
-Beginning with operator version 4.0.5, you can override the settings of the introspector job pod
+You can override the settings of the introspector job pod
 using the `domain.spec.introspector.serverPod` element.
 
 Values set in the `.serverPod` stanzas for a more specific type of pod, override

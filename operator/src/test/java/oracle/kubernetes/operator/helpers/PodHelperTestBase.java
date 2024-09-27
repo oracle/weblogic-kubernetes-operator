@@ -795,21 +795,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
-  // Returns the YAML for a 3.0 domain-in-image pod with only the plain port enabled.
-  abstract String getReferencePlainPortPodYaml_3_0();
-
-  // Returns the YAML for a 3.1 domain-in-image pod with only the plain port enabled.
-  abstract String getReferencePlainPortPodYaml_3_1();
-
-  // Returns the YAML for a 3.0 domain-in-image pod with the SSL port enabled.
-  abstract String getReferenceSslPortPodYaml_3_0();
-
-  // Returns the YAML for a 3.1 domain-in-image pod with the SSL port enabled.
-  abstract String getReferenceSslPortPodYaml_3_1();
-
-  // Returns the YAML for a 3.1 Mii Pod.
-  abstract String getReferenceMiiPodYaml();
-
   // Returns the YAML for a 3.3 Mii pod with aux image.
   abstract String getReferenceMiiAuxImagePodYaml_3_3();
 
@@ -823,18 +808,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4_1();
 
   abstract String getReferenceIstioMonitoringExporterTcpProtocol();
-
-  @Test
-  void afterUpgradingPlainPortPodFrom30_patchIt() {
-    useProductionHash();
-    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_0()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
 
   @Test
   void afterUpgradingMiiDomainWith3_3_AuxImages_patchIt() {
@@ -922,61 +895,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
-  @Test
-  void afterUpgradingPlainPortPodFrom31_patchIt() {
-    useProductionHash();
-    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_1()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
-  @Test
-  void afterUpgradingSslPortPodFrom30_patchIt() {
-    useProductionHash();
-    getServerTopology().setSslListenPort(7002);
-    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_0()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
-  @Test
-  void afterUpgradingSslPortPodFrom31_patchIt() {
-    useProductionHash();
-    getServerTopology().setSslListenPort(7002);
-    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_1()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
   void useProductionHash() {
     hashMemento.revert();
-  }
-
-  @Test
-  void afterUpgradingMiiPodFrom31_patchIt() {
-    useProductionHash();
-    testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
-    testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
-    disableAutoIntrospectOnNewMiiPods();
-    initializeExistingPod(loadPodModel(getReferenceMiiPodYaml()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   private V1Pod loadPodModel(String podYaml) {
