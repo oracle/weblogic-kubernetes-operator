@@ -761,7 +761,7 @@
       "type": "object",
       "properties": {
         "podSecurityContext": {
-          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. If no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "resources": {
@@ -1045,7 +1045,7 @@
           "type": "string"
         },
         "podSecurityContext": {
-          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. If no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "priorityClassName": {
@@ -1100,7 +1100,7 @@
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "containerSecurityContext": {
-          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. If no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "envFrom": {
