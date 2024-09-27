@@ -113,6 +113,8 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultContainerSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultPodSecurityContext;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_VOLUME;
@@ -1776,10 +1778,11 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenNotConfigured_introspectorPodContainers_hasEmptySecurityContext() {
+  void whenNotConfigured_introspectorPodContainers_hasDefaultSecurityContext() {
     V1JobSpec jobSpec = createJobSpec();
 
-    getContainerStream(jobSpec).forEach(c -> assertThat(c.getSecurityContext(), is(new V1SecurityContext())));
+    getContainerStream(jobSpec)
+        .forEach(c -> assertThat(c.getSecurityContext(), is(getDefaultContainerSecurityContext())));
   }
 
   @Test
@@ -1793,12 +1796,12 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenNotConfigured_introspectorPodSpec_hasEmptySecurityContext() {
+  void whenNotConfigured_introspectorPodSpec_hasDefaultSecurityContext() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
           getPodSpec(jobSpec).getSecurityContext(),
-          is(new V1PodSecurityContext()));
+          is(getDefaultPodSecurityContext()));
   }
 
   @Test

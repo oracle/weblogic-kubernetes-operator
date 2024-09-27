@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -69,10 +69,10 @@ class IntrospectorJobPod {
    *
    */
   @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. "
-      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "If no value is specified for this field, the operator will use default "
       + "content for the pod-level `securityContext`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
-  private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+  private V1PodSecurityContext podSecurityContext = null;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -85,27 +85,41 @@ class IntrospectorJobPod {
     }
   }
 
-  void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getFsGroup() == null) {
-      to.fsGroup(from.getFsGroup());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
-    }
-    if (to.getSupplementalGroups() == null) {
-      to.supplementalGroups(from.getSupplementalGroups());
-    }
-    if (to.getSysctls() == null) {
-      to.sysctls(from.getSysctls());
+  private void copyValues(V1PodSecurityContext from) {
+    if (from != null) {
+      if (podSecurityContext == null) {
+        podSecurityContext = new V1PodSecurityContext();
+      }
+      if (podSecurityContext.getRunAsNonRoot() == null) {
+        podSecurityContext.runAsNonRoot(from.getRunAsNonRoot());
+      }
+      if (podSecurityContext.getFsGroup() == null) {
+        podSecurityContext.fsGroup(from.getFsGroup());
+      }
+      if (podSecurityContext.getRunAsGroup() == null) {
+        podSecurityContext.runAsGroup(from.getRunAsGroup());
+      }
+      if (podSecurityContext.getRunAsUser() == null) {
+        podSecurityContext.runAsUser(from.getRunAsUser());
+      }
+      if (podSecurityContext.getSeLinuxOptions() == null) {
+        podSecurityContext.seLinuxOptions(from.getSeLinuxOptions());
+      }
+      if (podSecurityContext.getSupplementalGroups() == null) {
+        podSecurityContext.supplementalGroups(from.getSupplementalGroups());
+      }
+      if (podSecurityContext.getSysctls() == null) {
+        podSecurityContext.sysctls(from.getSysctls());
+      }
+      if (podSecurityContext.getFsGroupChangePolicy() == null) {
+        podSecurityContext.fsGroupChangePolicy(from.getFsGroupChangePolicy());
+      }
+      if (podSecurityContext.getSeccompProfile() == null) {
+        podSecurityContext.seccompProfile(from.getSeccompProfile());
+      }
+      if (podSecurityContext.getWindowsOptions() == null) {
+        podSecurityContext.windowsOptions(from.getWindowsOptions());
+      }
     }
   }
 
@@ -120,7 +134,7 @@ class IntrospectorJobPod {
       envFrom.addAll(serverPod1.envFrom);
     }
     copyValues(resources, serverPod1.resources);
-    copyValues(podSecurityContext, serverPod1.podSecurityContext);
+    copyValues(serverPod1.podSecurityContext);
   }
 
   private void addIfMissing(V1EnvVar envVar) {

@@ -9,7 +9,7 @@ The WebLogic Kubernetes Operator [enforces pod and container security best pract
 for the pods and containers that the operator creates for WebLogic Server instances, the init container for
 auxiliary images, sidecar containers for Fluentd or the WebLogic Monitoring Exporter, and the introspection job.
 
-Beginning with operator version 4.0.5, the operator adds the following pod-level `securityContext` content:
+The operator adds the following pod-level `securityContext` content:
 
 ```yaml
 securityContext:
