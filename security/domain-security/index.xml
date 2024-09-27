@@ -13,7 +13,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/</link>
       <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/</guid>
-      <description>The WebLogic Kubernetes Operator enforces pod and container security best practices for the pods and containers that the operator creates for WebLogic Server instances, the init container for auxiliary images, sidecar containers for Fluentd or the WebLogic Monitoring Exporter, and the introspection job.&#xA;Beginning with operator version 4.0.5, the operator adds the following pod-level securityContext content:&#xA;securityContext: seccompProfile: type: RuntimeDefault The operator also adds the following container-level securityContext content to each container:</description>
+      <description>The WebLogic Kubernetes Operator enforces pod and container security best practices for the pods and containers that the operator creates for WebLogic Server instances, the init container for auxiliary images, sidecar containers for Fluentd or the WebLogic Monitoring Exporter, and the introspection job.&#xA;The operator adds the following pod-level securityContext content:&#xA;securityContext: seccompProfile: type: RuntimeDefault The operator also adds the following container-level securityContext content to each container:&#xA;securityContext: runAsUser: 1000 runAsNonRoot: true privileged: false allowPrivilegeEscalation: false capabilities: drop: - ALL On OpenShift environments, the operator omits the runAsUser element.</description>
     </item>
     <item>
       <title>Container image protection</title>
