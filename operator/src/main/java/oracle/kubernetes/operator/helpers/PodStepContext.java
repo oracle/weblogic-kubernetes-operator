@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,12 +37,14 @@ import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ProbeBuilder;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
@@ -58,6 +59,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
+import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.RequestBuilder;
@@ -496,14 +498,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     } catch (Exception e) {
       return false;
     }
-  }
-
-  private void addLegacyPrometheusAnnotationsFrom31(V1Pod pod) {
-    AnnotationHelper.annotateForPrometheus(pod.getMetadata(), WLS_EXPORTER, getMetricsPort());
-  }
-
-  private Integer getMetricsPort() {
-    return getListenPort() != null ? getListenPort() : getSslListenPort();
   }
 
   private String getLabel(V1Pod currentPod, String key) {
@@ -1142,17 +1136,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       return pod.getMetadata().getLabels().containsKey(key);
     }
 
-    private boolean isLegacyPod(V1Pod currentPod) {
-      return !hasLabel(currentPod, OPERATOR_VERSION);
-    }
-
     private boolean isPodFromRecentOperator(V1Pod currentPod) {
       return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
           .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isRecentOperator).orElse(false);
-    }
-
-    private boolean isLegacyMiiPod(V1Pod currentPod) {
-      return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH);
     }
 
     private void setLabel(V1Pod currentPod, String key, String value) {
@@ -1164,35 +1150,11 @@ public abstract class PodStepContext extends BasePodStepContext {
       setLabel(toPod, key, getLabel(fromPod, key));
     }
 
-    private String adjustedLegacyHash(V1Pod currentPod, Consumer<V1Pod> adjustment) {
+    private String adjustedHash(V1Pod currentPod, List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments) {
       V1Pod recipe = createPodRecipe();
-      adjustment.accept(recipe);
-
-      if (isLegacyMiiPod(currentPod)) {
-        copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
-      }
-
-      restoreAffinityContent(recipe, currentPod);
+      adjustments.forEach(adjustment -> adjustment.right().accept(recipe, currentPod));
 
       return AnnotationHelper.createHash(recipe);
-    }
-
-    private String adjustedHash(V1Pod currentPod, List<BiConsumer<V1Pod, V1Pod>> adjustments) {
-      V1Pod recipe = createPodRecipe();
-      adjustments.forEach(adjustment -> adjustment.accept(recipe, currentPod));
-
-      return AnnotationHelper.createHash(recipe);
-    }
-
-    private void addLegacyPrometheusAnnotationsFrom30(V1Pod pod) {
-      AnnotationHelper.annotateForPrometheus(pod.getMetadata(), WLS_EXPORTER, getOldMetricsPort());
-    }
-
-    private boolean canAdjustLegacyHashToMatch(V1Pod currentPod, String requiredHash) {
-      // Legacy pods could be created by operator version 3.0 or 3.1
-      return requiredHash.equals(adjustedLegacyHash(currentPod, this::addLegacyPrometheusAnnotationsFrom30))
-          || requiredHash.equals(
-              adjustedLegacyHash(currentPod, PodStepContext.this::addLegacyPrometheusAnnotationsFrom31));
     }
 
     private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
@@ -1372,31 +1334,53 @@ public abstract class PodStepContext extends BasePodStepContext {
           }));
     }
 
+    private void restoreSecurityContextEmpty(V1Pod recipe, V1Pod currentPod) {
+      if (PodSecurityHelper.getDefaultPodSecurityContext().equals(recipe.getSpec().getSecurityContext())) {
+        recipe.getSpec().setSecurityContext(new V1PodSecurityContext());
+      }
+      Optional.ofNullable(recipe.getSpec().getContainers())
+          .ifPresent(containers -> containers.forEach(container -> {
+            if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(container.getSecurityContext())) {
+              container.setSecurityContext(
+                  getContainerName().equals(container.getName()) ? new V1SecurityContext() : null);
+            }
+          }));
+    }
+
+    private void restoreSecurityContextEmptyInitContainer(V1Pod recipe, V1Pod currentPod) {
+      Optional.ofNullable(recipe.getSpec().getInitContainers())
+          .ifPresent(initContainers -> initContainers.forEach(initContainer -> {
+            if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(initContainer.getSecurityContext())) {
+              initContainer.setSecurityContext(isAuxiliaryContainer(initContainer) ? null : new V1SecurityContext());
+            }
+          }));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
       // for each combination, start with pod recipe, apply all adjustments, and generate hash
       // return true if any adjusted hash matches required hash
-      List<BiConsumer<V1Pod, V1Pod>> adjustments = List.of(
-          this::restoreMetricsExporterSidecarPortTcpMetrics,
-          this::convertAuxImagesInitContainerVolumeAndMounts,
-          this::restoreLegacyIstioPortsConfig,
-          this::restoreAffinityContent,
-          this::restoreLogHomeLayoutEnvVar,
-          this::restoreFluentdVolume,
-          this::restoreSecurityContext);
+      List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments = List.of(
+          Pair.of("restoreMetricsExporterSidecarPortTcpMetrics", this::restoreMetricsExporterSidecarPortTcpMetrics),
+          Pair.of("convertAuxImagesInitContainerVolumeAndMounts",
+              this::convertAuxImagesInitContainerVolumeAndMounts),
+          Pair.of("restoreLegacyIstioPortsConfig", this::restoreLegacyIstioPortsConfig),
+          Pair.of("restoreAffinityContent", this::restoreAffinityContent),
+          Pair.of("restoreLogHomeLayoutEnvVar", this::restoreLogHomeLayoutEnvVar),
+          Pair.of("restoreFluentdVolume", this::restoreFluentdVolume),
+          Pair.of("restoreSecurityContext", this::restoreSecurityContext),
+          Pair.of("restoreSecurityContextEmpty", this::restoreSecurityContextEmpty),
+          Pair.of("restoreSecurityContextEmptyInitContainer", this::restoreSecurityContextEmptyInitContainer));
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-
-      return (isLegacyPod(currentPod)
-              && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
+      return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
           || (isPodFromRecentOperator(currentPod)
-              && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
-          || AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+            && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)));
     }
 
     private boolean canUseCurrentPod(V1Pod currentPod) {
