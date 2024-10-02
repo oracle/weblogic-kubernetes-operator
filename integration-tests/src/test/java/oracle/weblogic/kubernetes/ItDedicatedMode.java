@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
 @Tag("kind-sequential")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 @Tag("okd-wls-mrg")
 @IntegrationTest
 class ItDedicatedMode {

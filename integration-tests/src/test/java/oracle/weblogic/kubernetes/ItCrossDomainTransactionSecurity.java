@@ -99,7 +99,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify cross domain transaction is successful with CrossDomainSecurityEnabled set to true")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 class ItCrossDomainTransactionSecurity {
 
   private static final String auxImageName1 = DOMAIN_IMAGES_PREFIX + "domain1-cdxaction-aux";

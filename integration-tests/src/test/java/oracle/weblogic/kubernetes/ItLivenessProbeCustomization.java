@@ -86,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-arm")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 class ItLivenessProbeCustomization {
 
   // domain constants

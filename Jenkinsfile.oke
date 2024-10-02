@@ -3,11 +3,11 @@
 //
 
 
-CRON_SETTINGS_MAIN = '''H 3 * * 1-5 % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seqone;PARALLEL_RUN=false
-                   H 2 * * 1-5 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
-CRON_SETTINGS_42 = '''H 1 * * 1-5 % MAVEN_PROFILE_NAME=oke-gate;CLUSTER_NAME=seq42one;PARALLEL_RUN=false
-                    H 11 * * 1-5 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
-                   H 14 * * 1-5 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
+CRON_SETTINGS_MAIN = '''H 3 * * 0-4 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seqweekly;PARALLEL_RUN=false
+                   H 2 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
+CRON_SETTINGS_42 = '''H 1 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seq42weekly;PARALLEL_RUN=false
+                    H 23 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
+                   H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
 
 
 
@@ -117,9 +117,9 @@ pipeline {
         )
 
                 choice(name: 'MAVEN_PROFILE_NAME',
-                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-gate,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-weekly-sequential,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                         choices: [
-                                'oke-gate',
+                                'oke-weekly-sequential',
                                 'oke-sequential',
                                 'oke-parallel'
                         ]
@@ -633,6 +633,8 @@ EOF
                                     export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    export no_proxy="${NO_PROXY},localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,login.oracle.com"
+                                    export NO_PROXY="${no_proxy}"
                                     
                                     if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"; then
                                         echo "integration-tests failed"
@@ -677,7 +679,7 @@ EOF
                             ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
                         fi
 
-                        if [ "${MAVEN_PROFILE_NAME}" = "oke-gate" ] && [ "${BRANCH}" = "release/4.2" ]; then
+                        if [ "${MAVEN_PROFILE_NAME}" = "oke-sequential" ] && [ "${BRANCH}" = "release/4.2" ]; then
                             compname="wkt"
                             wkt_compartment_ocid=$(oci iam compartment list --compartment-id-in-subtree true --all | jq --arg compname "$compname" '.data[] | select(."name"==$compname)' | jq -r ."id")
                             sec_list_id=$(oci network security-list list --compartment-id="$wkt_compartment_ocid" --display-name=Security-List-wktiso1 | jq -r '.data[] | ."id"')

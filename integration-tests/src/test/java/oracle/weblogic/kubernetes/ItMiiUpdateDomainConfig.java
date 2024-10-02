@@ -119,7 +119,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
-@Tag("oke-sequential")
+@Tag("oke-weekly-sequential")
 class ItMiiUpdateDomainConfig {
 
   private static String opNamespace = null;
