@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -182,7 +184,6 @@ class ItStickySession {
   @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testSameSessionStickinessUsingTraefik() {
-    
     final String channelName = "web";
 
     // create Traefik ingress resource
@@ -216,7 +217,11 @@ class ItStickySession {
     }
 
     // verify that two HTTP connections are sticky to the same server
-    sendHttpRequestsToTestSessionStickinessAndVerify(hostName, ingressServiceNodePort);
+    testUntil(
+        withLongRetryPolicy,
+        isHttpRequestsResponded(hostName, ingressServiceNodePort),
+        logger,
+        "Waiting until Http Requests response");
   }
 
   /**
@@ -230,23 +235,26 @@ class ItStickySession {
   @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testSameSessionStickinessinOKD() {
     final String serviceName = domainUid + "-cluster-" + clusterName;
-    //final String channelName = "web";
 
     // create route for cluster service
     String ingressHost = createRouteForOKD(serviceName, domainNamespace);
 
     // Since the app seems to take a bit longer to be available,
     // checking if the app is running by executing the curl command
-    String curlString
-        = buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
+    String curlString = buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME
+        + "/?getCounter", " -b ");
     logger.info("Command to set HTTP request or get HTTP response {0} ", curlString);
-    testUntil(
-        assertDoesNotThrow(()
-            -> () -> exec(curlString, true).stdout().contains("managed-server")),
+    testUntil(assertDoesNotThrow(()
+        -> () -> exec(curlString, true).stdout().contains("managed-server")),
         logger,
         "Checking if app is available");
+
     // verify that two HTTP connections are sticky to the same server
-    sendHttpRequestsToTestSessionStickinessAndVerify(ingressHost, 0);
+    testUntil(
+        withLongRetryPolicy,
+        isHttpRequestsResponded(ingressHost, 0),
+        logger,
+        "Waiting until Http Requests response");
   }
 
   /**
@@ -278,7 +286,11 @@ class ItStickySession {
     logger.info("cluster port for cluster server {0} is: {1}", clusterAddress, clusterPort);
 
     // verify that two HTTP connections are sticky to the same server
-    sendHttpRequestsToTestSessionStickinessAndVerify(hostName, clusterPort, clusterAddress);
+    testUntil(
+        withLongRetryPolicy,
+        isHttpRequestsResponded(hostName, clusterPort, clusterAddress),
+        logger,
+        "Waiting until Http Requests response");
   }
 
   private static String createAndVerifyDomainImage() {
@@ -405,6 +417,10 @@ class ItStickySession {
     String serverName = httpAttrInfo.get(serverNameAttr);
     String sessionId = httpAttrInfo.get(sessionIdAttr);
     String countStr = httpAttrInfo.get(countAttr);
+
+    if (serverName == null || sessionId == null || countStr == null) {
+      return new HashMap<String, String>();
+    }
 
     // verify that the HTTP response data are not null
     assertAll("Check that WebLogic server and session vars is not null or empty",
@@ -548,7 +564,15 @@ class ItStickySession {
     return ingressServiceNodePort;
   }
 
-  private void sendHttpRequestsToTestSessionStickinessAndVerify(String hostname,
+  private Callable<Boolean> isHttpRequestsResponded(String hostname,
+                                                    int servicePort,
+                                                    String... clusterAddress) {
+    return () -> {
+      return sendHttpRequestsToTestSessionStickinessAndVerify(hostname, servicePort, clusterAddress);
+    };
+  }
+
+  private boolean sendHttpRequestsToTestSessionStickinessAndVerify(String hostname,
                                                                 int servicePort,
                                                                 String... clusterAddress) {
     final int counterNum = 4;
@@ -561,6 +585,7 @@ class ItStickySession {
     // send a HTTP request to set http session state(count number) and save HTTP session info
     Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(hostname,
             servicePort, webServiceSetUrl, " -c ", clusterAddress);
+
     // get server and session info from web service deployed on the cluster
     String serverName1 = httpDataInfo.get(serverNameAttr);
     String sessionId1 = httpDataInfo.get(sessionIdAttr);
@@ -570,6 +595,11 @@ class ItStickySession {
     // send a HTTP request again to get server and session info
     httpDataInfo = getServerAndSessionInfoAndVerify(hostname,
         servicePort, webServiceGetUrl, " -b ", clusterAddress);
+
+    if (httpDataInfo.isEmpty()) {
+      return false;
+    }
+
     // get server and session info from web service deployed on the cluster
     String serverName2 = httpDataInfo.get(serverNameAttr);
     String sessionId2 = httpDataInfo.get(sessionIdAttr);
@@ -591,5 +621,7 @@ class ItStickySession {
     logger.info("SUCCESS --- test same session stickiness \n"
         + "Two HTTP connections are sticky to server {0} The session state "
         + "from the second HTTP connections is {2}", serverName2, SESSION_STATE);
+
+    return true;
   }
 }
