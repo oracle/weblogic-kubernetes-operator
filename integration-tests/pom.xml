@@ -469,10 +469,10 @@
         </profile>
 
         <profile>
-            <id>oke-gate</id>
+            <id>oke-weekly-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>oke-gate</groups>
+                <groups>oke-weekly-sequential</groups>
             </properties>
         </profile>
         <profile>
