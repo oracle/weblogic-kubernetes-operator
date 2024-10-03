@@ -394,7 +394,8 @@ class ItFmwDomainOnPVUpgrade {
     String podName = "pvhelper";
 
     String script = ITTESTS_DIR + "/../kubernetes/samples/scripts/domain-lifecycle/pv-pvc-helper.sh";
-    String command = "/bin/bash " + script + " -n " + namespace + " -c " + pvcName + " -m /shared -i " + image1412;
+    String command = "/bin/bash " + script + " -n " + namespace + " -p " + BASE_IMAGES_REPO_SECRET_NAME
+        + " -c " + pvcName + " -m /shared -i " + image1412;
     ExecResult result = null;
     try {
       result = exec(new String(command), true);
