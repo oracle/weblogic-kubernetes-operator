@@ -1,0 +1,84 @@
+[GENERAL]
+fileFormatVersion = 3
+
+# The next section contains information for accessing a WebLogic Server domain.
+
+[UAWLSINTERNAL.UAWLS]
+pluginInstance = 1
+
+# Specifies the WebLogic Server domain directory:
+UASVR.path = DOMAIN_HOME
+
+# Do not change the next line.
+[OPSS.OPSS_SCHEMA_PLUGIN]
+pluginInstance = 10
+
+OPSS.databaseType = Oracle Database
+
+# Specifies the database connection string for the DBA user.
+# The format depends upon the database type.
+
+OPSS.databaseConnectionString = DB_CONNECTION_STRING
+
+# Specifies the database connection string for the user schema.
+# The format depends upon the database type.
+
+OPSS.schemaConnectionString = DB_CONNECTION_STRING
+
+# Specifies the name of the schema or database user
+
+#OPSS.schemaUserName = FMWTEST_OPSS
+OPSS.schemaUserName = RCU_SCHEMA_PREFIX_OPSS
+
+# Specifies the password for the schema, in encrypted form.
+# To specify a different password in cleartext, use the "cleartextSchemaPassword" keyword instead:
+
+OPSS.cleartextSchemaPassword = Oradoc_db1
+
+# encrypted password can be generated with command line option -createResponse
+#OPSS.encryptedSchemaPassword = 0551CF2EACFC4FE7BCB1F860FCF68E13AA6E61A724E7CFC09E
+# Specifies the name of the database administrator account.
+
+OPSS.dbaUserName = sys as sysdba
+
+# Specifies the password for the database administrator account, in encrypted form.
+# To specify a different password in cleartext, use the "cleartextDbaPassword" keyword
+# instead:
+
+OPSS.cleartextDbaPassword = Oradoc_db1
+
+#OPSS.encryptedDbaPassword = 057B3698F71FB2EE583D32EF36234174DCC2C7276FC11F77E7
+
+[MDS.SCHEMA_UPGRADE]
+pluginInstance = 11
+
+MDS.databaseConnectionString = DB_CONNECTION_STRING
+MDS.schemaConnectionString = DB_CONNECTION_STRING
+MDS.schemaUserName = RCU_SCHEMA_PREFIX_MDS
+MDS.cleartextSchemaPassword = Oradoc_db1
+MDS.dbaUserName = sys as sysdba
+MDS.cleartextDbaPassword = Oradoc_db1
+
+[IAU.AUDIT_SCHEMA_PLUGIN]
+pluginInstance = 6
+
+IAU.databaseType = Oracle Database
+IAU.databaseConnectionString = DB_CONNECTION_STRING
+IAU.schemaConnectionString = DB_CONNECTION_STRING
+IAU.schemaUserName = RCU_SCHEMA_PREFIX_IAU
+IAU.cleartextSchemaPassword = Oradoc_db1
+IAU.dbaUserName = sys as sysdba
+IAU.cleartextDbaPassword = Oradoc_db1
+
+
+[FMWCONFIG.CIE_SCHEMA_PLUGIN]
+pluginInstance = 4
+
+STB.databaseType = Oracle Database
+STB.databaseConnectionString = DB_CONNECTION_STRING
+STB.schemaConnectionString = DB_CONNECTION_STRING
+STB.schemaUserName = RCU_SCHEMA_PREFIX_STB
+STB.cleartextSchemaPassword = Oradoc_db1
+STB.dbaUserName = sys as sysdba
+STB.cleartextDbaPassword = Oradoc_db1
+
