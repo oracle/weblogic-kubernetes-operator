@@ -80,6 +80,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.createWdtPropertyFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -174,7 +175,7 @@ class ItT3Channel {
     
     final String wlsModelFilePrefix = "model-dci-introspect";
     final String wlsModelFile = wlsModelFilePrefix + ".yaml";
-    File wlsModelPropFile = ItIntrospectVersion.createWdtPropertyFile(wlsModelFilePrefix,
+    File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix,
         K8S_NODEPORT_HOST, t3ChannelPort);
 
     // create domainCreationImage
@@ -205,7 +206,7 @@ class ItT3Channel {
       configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
     } else {
       configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
-          ItIntrospectVersion.class.getName());
+          ItT3Channel.class.getSimpleName());
     }
     configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
         .createMode(CreateIfNotExists.DOMAIN)
