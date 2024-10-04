@@ -5,7 +5,7 @@
 
 CRON_SETTINGS_MAIN = '''H 3 * * 0-4 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seqweekly;PARALLEL_RUN=false
                    H 2 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
-CRON_SETTINGS_42 = '''H 1 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seq42weekly;PARALLEL_RUN=false
+CRON_SETTINGS_42 = '''H 1 * * 6 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seq42weekly;PARALLEL_RUN=false
                     H 23 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
                    H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
 
