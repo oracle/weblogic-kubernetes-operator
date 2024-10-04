@@ -54,6 +54,8 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_A
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
@@ -61,6 +63,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
@@ -78,6 +81,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
@@ -89,8 +93,10 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -853,6 +859,111 @@ class ItDiagnosticsFailedCondition {
     }
   }
 
+  /**
+   * Test domain status condition with a bad model file.
+   * Verify the following conditions are generated in an order after an introspector failure.
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
+   * Verify the introspector reruns to make it right when model file is fixed.
+   */
+  @Test
+  @DisplayName("Test domain status condition with bad model file")
+  void testIntrospectorMakerightAvailableFromFailure() {
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        domainNamespace,
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        domainNamespace,
+        ENCRYPION_USERNAME_DEFAULT,
+        ENCRYPION_PASSWORD_DEFAULT),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    // create WDT config map without any files
+    createConfigMapAndVerify("empty-cm", domainUid, domainNamespace, Collections.emptyList());
+    String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+
+    // create the domain object
+    DomainResource domain = createDomainResourceWithConfigMap(domainUid,
+        domainNamespace,
+        adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME,
+        encryptionSecretName,
+        2,
+        image,
+        "empty-cm",
+        180L,
+        "mymii-cluster-resource");
+
+    logger.info("Creating a domain resource with model file image");
+    createDomainAndVerify(domain, domainNamespace);
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");    
+    
+    //patch the domain with bad image
+    //check the desired completed, available and failed status
+    //verify the condition type Failed exists
+    StringBuffer patchStr = new StringBuffer("[{");    
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/image\",")
+        .append("\"value\": \"")
+        .append("bad-mii-image:doesntexist")
+        .append("\"}]");
+    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+
+    assertTrue(patchDomainResource(domainUid, domainNamespace, patchStr),
+        "patchDomainCustomResource(imageUpdate) failed");
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+    //fix the domain failure by patching the domain resource with good image
+    patchStr = new StringBuffer("["
+        + "{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/image\",")
+        .append("\"value\": \"")
+        .append(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+        .append("\"},")
+        .append("{\"op\": \"add\",")
+        .append(" \"path\": \"/spec/restartVersion\",").append("\"value\": ").append("\"1\"")
+        .append("}"
+            + "]");
+    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+
+    assertTrue(patchDomainResource(domainUid, domainNamespace, patchStr),
+        "patchDomainCustomResource(imageUpdate) failed");
+
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    // check managed server pods are ready
+    for (int i = 1; i <= 2; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+  }
+  
   // Create a domain resource with a custom ConfigMap
   private DomainResource createDomainResourceWithConfigMap(String domainUid,
                                                            String domNamespace, String adminSecretName,
