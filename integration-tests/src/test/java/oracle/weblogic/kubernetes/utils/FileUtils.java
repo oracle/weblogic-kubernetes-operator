@@ -17,6 +17,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,8 +32,11 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
@@ -615,5 +619,34 @@ public class FileUtils {
 
     logger.info("Failed to find string {0} in the file {1}", searchString, fileName);
     return false;
+  }
+
+  /**
+   * Create WDT property file.
+   * @param wlsModelFilePrefix the model file prefix
+   * @param nodePortHost the K8S node port host name
+   * @param t3Port T3_CHANNEL_PORT
+   * @return WDT property file
+   */
+  public static File createWdtPropertyFile(String wlsModelFilePrefix, String nodePortHost, int t3Port) {
+
+    // create property file used with domain model file
+    Properties p = new Properties();
+    p.setProperty("WebLogicAdminUserName", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("WebLogicAdminPassword", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("K8S_NODEPORT_HOST", nodePortHost);
+    p.setProperty("T3_CHANNEL_PORT", Integer.toString(t3Port));
+
+    // create a model property file
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+            File.createTempFile(wlsModelFilePrefix, ".properties", new File(RESULTS_TEMPFILE)),
+        "Failed to create WLS model properties file");
+
+    // create the property file
+    assertDoesNotThrow(() ->
+            p.store(new FileOutputStream(domainPropertiesFile), "WLS properties file"),
+        "Failed to write WLS properties file");
+
+    return domainPropertiesFile;
   }
 }

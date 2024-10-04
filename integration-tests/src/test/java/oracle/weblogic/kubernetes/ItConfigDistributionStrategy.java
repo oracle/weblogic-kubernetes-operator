@@ -104,6 +104,7 @@ import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.createWdtPropertyFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -983,7 +984,7 @@ class ItConfigDistributionStrategy {
     final String wlsModelFilePrefix = "model-dci-introspect";
     final String wlsModelFile = wlsModelFilePrefix + ".yaml";
     t3ChannelPort = getNextFreePort();
-    File wlsModelPropFile = ItIntrospectVersion.createWdtPropertyFile(wlsModelFilePrefix, 
+    File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix,
         K8S_NODEPORT_HOST, t3ChannelPort);
     // create domainCreationImage
     String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-image";
@@ -1013,7 +1014,7 @@ class ItConfigDistributionStrategy {
       configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
     } else {
       configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
-          ItIntrospectVersion.class.getName());
+          ItConfigDistributionStrategy.class.getSimpleName());
     }
     configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
         .createMode(CreateIfNotExists.DOMAIN)
