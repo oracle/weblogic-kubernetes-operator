@@ -34,6 +34,9 @@ topology:
     Server:
         "@@PROP:ADMIN_SERVER_NAME@@":
             ListenPort: 7001
+            SSL:
+              Enabled: true
+              ListenPort: 7002
             NetworkAccessPoint:
                 T3Channel:
                     ListenPort: '@@PROP:T3CHANNELPORT@@'
@@ -43,6 +46,9 @@ topology:
         "@@PROP:CLUSTER_NAME@@-template":
             Cluster: "@@PROP:CLUSTER_NAME@@"
             ListenPort : '@@PROP:MANAGED_SERVER_PORT@@'
+            SSL:
+              Enabled: true
+              ListenPort: 8500
 resources:
     WebAppContainer:
          WeblogicPluginEnabled: true
