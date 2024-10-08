@@ -107,7 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 class ItCrossDomainTransaction {
@@ -666,7 +666,7 @@ class ItCrossDomainTransaction {
 
     ingressRules.add(ingressRule);
 
-    createIngressAndRetryIfFail(60, false, ingressName, domain1Namespace, null, ingressClassName, ingressRules, null);
+    createIngressAndRetryIfFail(20, false, ingressName, domain1Namespace, null, ingressClassName, ingressRules, null);
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domain1Namespace)))
@@ -681,6 +681,6 @@ class ItCrossDomainTransaction {
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 20));
   }
 }

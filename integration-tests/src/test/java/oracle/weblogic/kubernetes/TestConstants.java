@@ -370,6 +370,7 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster.privateip", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String NODE_IP = System.getProperty("wko.it.node.ip", "");
+  public static final String COMPARTMENT_OCID = System.getProperty("wko.it.oci.compartment.ocid", "");
   public static final String [] FSS_DIR = System.getProperty("wko.it.fss.dir","").split(",");
   public static final String IMAGE_PULL_POLICY = "IfNotPresent";
 
