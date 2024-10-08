@@ -11,7 +11,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
@@ -30,6 +32,8 @@ import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.Service;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -40,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.net.InetAddress.getLocalHost;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -77,6 +82,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
@@ -118,6 +124,7 @@ class ItCrossDomainTransactionSecurity {
   private static String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static LoggingFacade logger = null;
   private static int replicaCount = 2;
+  private static String clusterName = "cluster-2";
   private static int t3ChannelPort1 = getNextFreePort();
   private static int t3ChannelPort2 = getNextFreePort();
   private static String domain1AdminExtSvcRouteHost = null;
@@ -126,6 +133,11 @@ class ItCrossDomainTransactionSecurity {
   private static String nginxNamespace = null;
   private static NginxParams nginxHelmParams = null;
   private static int nginxNodePort;
+  private static Path tlsCertFile;
+  private static Path tlsKeyFile;
+  private static Path jksTrustFile;
+  private static String tlsSecretName = domainUid2 + "-test-tls-secret";
+  private static String hostAddress = K8S_NODEPORT_HOST;
 
 
 
@@ -135,7 +147,7 @@ class ItCrossDomainTransactionSecurity {
    *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -152,6 +164,7 @@ class ItCrossDomainTransactionSecurity {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     nginxNamespace = namespaces.get(2);
 
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
@@ -166,25 +179,6 @@ class ItCrossDomainTransactionSecurity {
     }
 
     buildDomains();
-
-  }
-
-  /**
-   * Configure two domains d1 and d2 with CrossDomainSecurityEnabled set to true
-   * On both domains create a user (cross-domain) with group CrossDomainConnectors
-   * Add required Credential Mapping
-   * Deploy a JSP on d1's admin server that takes 2 parameteers
-   * a. The tx aaction b. the d2's cluster service url
-   * Starts a User transcation
-   * Send 10 messgaes to a distributed destination (jms.testUniformQueue) on d2 that has 2 members
-   * Send a message to local destination (jms.admin.adminQueue) on d1
-   * Commit/rollback the transation
-   * Receive the messages from the distributed destination (jms.testUniformQueue) on d2
-   * Receive the message from the local destination (jms.admin.adminQueue) on d1
-   */
-  @Test
-  @DisplayName("Check cross domain transaction works")
-  void testCrossDomainTransactionCommitSecurityEnable() throws UnknownHostException {
 
     logger.info("2 domains with crossDomainSecurity enabled start up!");
     int domain1AdminServiceNodePort
@@ -212,7 +206,25 @@ class ItCrossDomainTransactionSecurity {
     }
     logger.info("hostHeader1 for domain1 is: " + hostHeader1);
     logger.info("hostAndPort1 for domain1 is: " + hostAndPort1);
+  }
 
+  /**
+   * Configure two domains d1 and d2 with CrossDomainSecurityEnabled set to true
+   * On both domains create a user (cross-domain) with group CrossDomainConnectors
+   * Add required Credential Mapping
+   * Deploy a JSP on d1's admin server that takes 2 parameteers
+   * a. The tx action b. the d2's cluster service url
+   * Starts a User transcation
+   * Using t3 send 10 messgaes to a distributed destination (jms.testUniformQueue) on d2 that has 2 members
+   * Using t3 Send a message to local destination (jms.admin.adminQueue) on d1
+   * Commit/rollback the transation
+   * Using t3 receive the messages from the distributed destination (jms.testUniformQueue) on d2
+   * Using t3 receive the message from the local destination (jms.admin.adminQueue) on d1
+   */
+  @Test
+  @DisplayName("Check cross domain transaction works")
+  void testCrossDomainTxWithCrossDomainSecurityEnabled() throws UnknownHostException {
+    
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
@@ -292,6 +304,122 @@ class ItCrossDomainTransactionSecurity {
             "t3://" + "localhost" + ":" + "7001", "receive", "jms.admin.adminQueue", "0"),
         logger,
         "Wait for JMS Client to send/recv msg");
+  }
+
+  /**
+   * Configure two domains d1 and d2 with CrossDomainSecurityEnabled set to true
+   * On both domains create a user (cross-domain) with group CrossDomainConnectors
+   * Add required Credential Mapping
+   * Deploy a JSP on d1's admin server that takes 2 parameteers
+   * a. The tx action b. the d2's cluster service url
+   * Starts a User transcation
+   * Using t3s send 10 messgaes to a distributed destination (jms.testUniformQueue) on d2 that has 2 members
+   * Using t3s Send a message to local destination (jms.admin.adminQueue) on d1
+   * Commit/rollback the transation
+   * Using t3s receive the messages from the distributed destination (jms.testUniformQueue) on d2
+   * Using t3s Receive the message from the local destination (jms.admin.adminQueue) on d1
+   */
+  @Test
+  @DisplayName("Check cross domain transaction works when SSL enabled")
+  @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
+  void testCrossDomainTxWithCrossDomainSecurityAndSSLEnabled() throws UnknownHostException {
+
+    // Create SSL certificate and key using openSSL with SAN extension
+    createCertKeyFiles(hostAddress);
+    // Create kubernates secret using genereated certificate and key
+    createSecretWithTLSCertKey(tlsSecretName);
+    // Import the tls certificate into a JKS truststote to be used while
+    // running the standalone client.
+    importKeytoTrustStore();
+
+    //In a UserTransaction send 10 msg to remote udq and 1 msg to local queue and commit the tx
+    StringBuffer curlCmd1 = new StringBuffer("curl -skg --show-error --noproxy '*' ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      curlCmd1.append(" -H 'host: " + hostHeader1 + "' ");
+    }
+    String url1 = "\"http://" + hostAndPort1
+        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2:8500&action=commit\"";
+    curlCmd1.append(url1);
+    logger.info("Executing curl command: {0}", curlCmd1);
+    assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
+          "Didn't send expected msg ");
+
+    //receive msg from the udq that has 2 memebers
+    StringBuffer curlCmd2 = new StringBuffer("curl -j --show-error --noproxy '*' ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      curlCmd2.append(" -H 'host: " + hostHeader1 + "' ");
+    }
+    String url2 = "\"http://" + hostAndPort1
+          + "/sample_war/get.jsp?remoteurl="
+          + "t3s://domain2-cluster-cluster-2:8500&action=recv&dest=jms.testUniformQueue\"";
+    curlCmd2.append(url2);
+    logger.info("Executing curl command: {0}", curlCmd2);
+    for (int i = 0; i < 2; i++) {
+      assertTrue(getCurlResult(curlCmd2.toString()).contains("Total Message(s) Received : 5"),
+          "Didn't receive expected msg count from remote queue");
+    }
+
+    // receive 1 msg from the local queue
+    logger.info("Receiving 1 msg from the local queue");
+    StringBuffer curlCmdx = new StringBuffer("curl -j --show-error --noproxy '*' ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      curlCmdx.append(" -H 'host: " + hostHeader1 + "' ");
+    }
+    String urlx = "\"http://" + hostAndPort1
+          + "/sample_war/get.jsp?remoteurl="
+          + "t3s://domain1-admin-server:7002&action=recv&dest=jms.admin.adminQueue\"";
+    curlCmdx.append(urlx);
+    logger.info("Executing curl command for local queue: {0}", curlCmdx);
+    assertTrue(getCurlResult(curlCmdx.toString()).contains("Total Message(s) Received : 1"),
+          "Didn't receive expected msg count from local queue");
+
+    //In a UserTransaction send 10 msg to remote udq and 1 msg to local queue and rollback the tx
+    StringBuffer curlCmd3 = new StringBuffer("curl -skg --show-error --noproxy '*' ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      curlCmd3.append(" -H 'host: " + hostHeader1 + "' ");
+    }
+    String url3 = "\"http://" + hostAndPort1
+        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2:8500&action=rollback\"";
+    curlCmd3.append(url3);
+    logger.info("Executing curl command: {0}", curlCmd3);
+    assertTrue(getCurlResult(curlCmd3.toString()).contains("Message sent in a rolled-back User Transation"),
+          "Didn't send expected msg ");
+
+    //receive 0 msg from the udq that has 2 memebers
+    StringBuffer curlCmd4 = new StringBuffer("curl -j --show-error --noproxy '*' ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      curlCmd4.append(" -H 'host: " + hostHeader1 + "' ");
+    }
+    String url4 = "\"http://" + hostAndPort1
+          + "/sample_war/get.jsp?remoteurl="
+          + "t3s://domain2-cluster-cluster-2:8500&action=recv&dest=jms.testUniformQueue\"";
+    curlCmd4.append(url4);
+    logger.info("Executing curl command: {0}", curlCmd4);
+    for (int i = 0; i < 2; i++) {
+      assertTrue(getCurlResult(curlCmd4.toString()).contains("Total Message(s) Received : 0"),
+          "Didn't receive expected msg count from remote queue");
+    }
+
+    // receive 0 msg from the local queue
+    logger.info("Receiving 0 msg from the local queue");
+    StringBuffer curlCmdy = new StringBuffer("curl -j --show-error --noproxy '*' ");
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      curlCmdy.append(" -H 'host: " + hostHeader1 + "' ");
+    }
+    String urly = "\"http://" + hostAndPort1
+          + "/sample_war/get.jsp?remoteurl="
+          + "t3s://domain1-admin-server:7002&action=recv&dest=jms.admin.adminQueue\"";
+    curlCmdy.append(urly);
+    logger.info("Executing curl command for local queue: {0}", curlCmdy);
+    assertTrue(getCurlResult(curlCmdx.toString()).contains("Total Message(s) Received : 0"),
+          "Didn't receive expected msg count from local queue");
+
   }
 
   private static String createAuxImage(String imageName, String imageTag, List<String> wdtModelFile,
@@ -629,6 +757,64 @@ class ItCrossDomainTransactionSecurity {
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
   }
+
+  // Create and display SSL certificate and key using openSSL with SAN extension
+  private static void createCertKeyFiles(String cn) {
+
+    Map<String, String> sanConfigTemplateMap  = new HashMap<>();
+    sanConfigTemplateMap.put("INGRESS_HOST", hostAddress);
+
+    Path srcFile = Paths.get(RESOURCE_DIR,
+        "tunneling", "san.config.template.txt");
+    Path targetFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcFile.toString(),
+        "san.config.txt", sanConfigTemplateMap));
+    logger.info("Generated SAN config file {0}", targetFile);
+
+    tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
+    tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
+    String opcmd = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
+          + "-keyout " + tlsKeyFile + " -out " + tlsCertFile
+          + " -subj \"/CN=" + cn + "\" -extensions san"
+          + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
+    assertTrue(
+          Command.withParams(new CommandParams()
+             .command(opcmd)).execute(), "openssl req command fails");
+
+    String opcmd2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
+    assertTrue(
+          Command.withParams(new CommandParams()
+             .command(opcmd2)).execute(), "openssl list command fails");
+  }
+
+  // Import the certificate into a JKS TrustStore to be used while running
+  // external JMS client to send message to WebLogic.
+  private static void importKeytoTrustStore() {
+
+    jksTrustFile = Paths.get(RESULTS_ROOT, domainNamespace + "-trust.jks");
+    String keycmd = "keytool -import -file " + tlsCertFile
+        + " --keystore " + jksTrustFile
+        + " -storetype jks -storepass password -noprompt ";
+    assertTrue(
+          Command.withParams(new CommandParams()
+             .command(keycmd)).execute(), "keytool import command fails");
+
+    String keycmd2 = "keytool -list -keystore " + jksTrustFile
+                   + " -storepass password -noprompt";
+    assertTrue(
+          Command.withParams(new CommandParams()
+             .command(keycmd2)).execute(), "keytool list command fails");
+  }
+
+  // Create kubernetes secret from the ssl key and certificate
+  private static void createSecretWithTLSCertKey(String tlsSecretName) {
+    String kcmd = KUBERNETES_CLI + " create secret tls " + tlsSecretName + " --key "
+          + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
+    assertTrue(
+          Command.withParams(new CommandParams()
+             .command(kcmd)).execute(), KUBERNETES_CLI + " create secret command fails");
+  }
+
 
 }
 
