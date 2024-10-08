@@ -93,6 +93,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.removeClusterInDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.FileUtils.createWdtPropertyFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -771,7 +772,7 @@ class ItKubernetesDomainEvents {
     final String wlsModelFilePrefix = "model-dci-introspect";
     final String wlsModelFile = wlsModelFilePrefix + ".yaml";
     int t3ChannelPort = getNextFreePort();
-    File wlsModelPropFile = ItIntrospectVersion.createWdtPropertyFile(wlsModelFilePrefix,
+    File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix,
         K8S_NODEPORT_HOST, t3ChannelPort);
 
     // create domainCreationImage
@@ -801,7 +802,7 @@ class ItKubernetesDomainEvents {
       configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
     } else {
       configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
-          ItIntrospectVersion.class.getName());
+          ItKubernetesDomainEvents.class.getSimpleName());
     }
     configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
         .createMode(CreateIfNotExists.DOMAIN)

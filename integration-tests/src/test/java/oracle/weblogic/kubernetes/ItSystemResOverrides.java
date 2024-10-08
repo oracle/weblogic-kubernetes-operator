@@ -90,6 +90,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.createWdtPropertyFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
@@ -393,7 +394,7 @@ class ItSystemResOverrides {
     final String wlsModelFilePrefix = "sitconfig-dci-model";
     final String wlsModelFile = wlsModelFilePrefix + ".yaml";
     t3ChannelPort = getNextFreePort();
-    File wlsModelPropFile = ItIntrospectVersion.createWdtPropertyFile(wlsModelFilePrefix,
+    File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix,
         K8S_NODEPORT_HOST, t3ChannelPort);
 
     // create domainCreationImage
@@ -423,7 +424,7 @@ class ItSystemResOverrides {
       configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
     } else {
       configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
-          ItIntrospectVersion.class.getName());
+          ItSystemResOverrides.class.getSimpleName());
     }
     configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
         .createMode(CreateIfNotExists.DOMAIN)
