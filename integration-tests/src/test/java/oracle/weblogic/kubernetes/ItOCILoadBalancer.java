@@ -4,15 +4,12 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
-import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,10 +22,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.deleteLoadBalancer;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.getLoadBalancerIP;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyOCILoadBalancer;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -45,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
     + "all managed servers in the domain through OCI Load Balancer")
 @IntegrationTest
 @Tag("oke-arm")
-@Tag("oke-parallel")
+@Tag("oke-gate")
 class ItOCILoadBalancer {
   // domain constants
   private static final int replicaCount = 2;
@@ -88,6 +86,7 @@ class ItOCILoadBalancer {
     if (!SKIP_CLEANUP) {
       Kubernetes.deleteService(OCI_LB_NAME, domainNamespace);
     }
+    deleteLoadBalancer(loadBalancerIP);
   }
 
   /**
@@ -118,35 +117,12 @@ class ItOCILoadBalancer {
     assertDoesNotThrow(() -> installAndVerifyOCILoadBalancer(domainNamespace,
         clusterHttpPort, clusterName, domainUid, OCI_LB_NAME),
         "Installation of OCI Load Balancer failed");
-    loadBalancerIP = getLoadBalancerIP(domainNamespace,OCI_LB_NAME);
+    loadBalancerIP = getLoadBalancerIP(domainNamespace,OCI_LB_NAME, true);
     assertNotNull(loadBalancerIP, "External IP for Load Balancer is undefined");
+    InitializationTasks.registerLoadBalancerExternalIP(loadBalancerIP);
+
     logger.info("LoadBalancer IP is " + loadBalancerIP);
     verifyWebAppAccessThroughOCILoadBalancer(loadBalancerIP, 2, clusterHttpPort);
-  }
-
-  /**
-   * Retreive external IP from OCI LoadBalancer.
-   */
-  private static String getLoadBalancerIP(String namespace, String lbName) throws Exception {
-    Map<String, String> labels = new HashMap<>();
-    labels.put("loadbalancer", lbName);
-    V1Service service = getService(lbName, labels, namespace);
-    assertNotNull(service, "Can't find service with name " + lbName);
-    logger.info("Found service with name {0} in {1} namespace ", lbName, namespace);
-    assertNotNull(service.getStatus(), "service status is null");
-    assertNotNull(service.getStatus().getLoadBalancer(), "service loadbalancer is null");
-    List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
-    if (ingress != null) {
-      logger.info("LoadBalancer Ingress " + ingress.toString());
-      V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
-          c.getIp() != null && !c.getIp().equals("pending")
-      ).findAny().orElse(null);
-      if (lbIng != null) {
-        logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
-        return lbIng.getIp();
-      }
-    }
-    return null;
   }
 
   /**

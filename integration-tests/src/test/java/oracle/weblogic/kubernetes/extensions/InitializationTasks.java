@@ -11,9 +11,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -113,6 +115,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.deleteLoadBalancer;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -133,6 +136,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
+  private static Set<String> lbIPs = new HashSet<>();
   private static boolean isInitializationSuccessful = false;
 
   ConditionFactory withVeryLongRetryPolicy
@@ -355,6 +359,15 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     pushedImages.add(imageName);
   }
 
+  /**
+   * Called when load balancer is created in OCI, allowing conditional cleanup of load balancers.
+   *
+   * @param lbIP external IP of load balancer.
+   */
+  public static void registerLoadBalancerExternalIP(String lbIP) {
+    lbIPs.add(lbIP);
+  }
+
   @Override
   public void close() {
     LoggingFacade logger = getLogger();
@@ -394,6 +407,13 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       // delete all the images from local repo
       for (String image : pushedImages) {
         deleteImage(image);
+      }
+      if (OKE_CLUSTER) {
+        logger.info("Cleanup created in OCI load balancers after all test suites are run");
+        // delete all load balancers in OCI
+        for (String ip : lbIPs) {
+          deleteLoadBalancer(ip);
+        }
       }
     }
 
