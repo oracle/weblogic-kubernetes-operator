@@ -9,7 +9,7 @@ description: "Deploy WebLogic Server on Azure Kubernetes Service."
 
 ### Introduction
 
-This document is the reference documentation for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service. The offer makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type.
+This document is the reference for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service. The offer makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, load-balancer, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type.
 
 To deploy the offer from the Azure portal, see [WebLogic Server on Azure](https://aka.ms/wls-aks-portal).
 
