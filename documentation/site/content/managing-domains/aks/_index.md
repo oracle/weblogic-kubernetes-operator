@@ -298,7 +298,7 @@ When you are satisfied with your selections, select **Next** and open **Autoscal
 
 ### Autoscaling
 
-Use the Autoscaling blade to configure metric that scales the WebLogic cluster. Select **Yes** or **No** for the option **Provision resources for horizontal autoscaling?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by clicking **Review + create**. If you select **Yes**, you must specify the details of your autoscaling option and autoscaling settings.
+Use the Autoscaling blade to configure metrics that scale the WebLogic cluster. Select **Yes** or **No** for the option **Provision resources for horizontal autoscaling?**, based on your preference. If you select **No**, you don't have to provide any details, and can proceed by clicking **Review + create**. If you select **Yes**, you must specify the details of your autoscaling settings.
 
 You must select one of the following two options, each described in turn.
 
@@ -310,19 +310,19 @@ You must select one of the following two options, each described in turn.
 | Field | Description |
 |-------|-------------|
 | Select metric | There are two options:{{< line_break >}}{{< line_break >}} • Average CPU Utilization {{< line_break >}} • Average Memory Utilization |
-| Average CPU Utilization | Pick average CPU utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster members up to maximum of cluster members, and the scale up or down action occur when the average CPU is consistently over the utilization. |
-| Average Memory Utilization | Pick average memory utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster members up to maximum of cluster members, and the scale up or down action occur when the average memory is consistently over the utilization.|
+| Average CPU Utilization | Pick average CPU utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster member up to the maximum of cluster members, and the scale up or down action occurs when the average CPU is consistently over/under the utilization. |
+| Average Memory Utilization | Pick average memory utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster member up to the maximum of cluster members, and the scale up or down action occurs when the average memory is consistently over/under the utilization.|
 
 #### WebLogic Monitoring Exporter (advanced autoscaling)
 
-This option installs all the software necessary to allow you to create Java metric aware KEDA scaling rules. The offer provisions the following deployments. Right-click and select **Open Link in New Tab** to follow links:
+This option installs all the software necessary to allow you to create Java metric aware KEDA scaling rules. The offer provisions the following software. Right-click and select **Open Link in New Tab** to follow links and learn more:
 
 * [Install WebLogic Monitoring Exporter to scrape WebLogic Server metrics](https://aka.ms/wls-exporter).
 * [Install AKS Prometheus metrics addon](https://aka.ms/aks-enable-monitoring).
 * [Feed WebLogic Server metrics to Azure Monitor Managed Service for Prometheus](https://aka.ms/aks-prometheus-metrics-scrape-configuration).
 * [Integrate KEDA with AKS cluster](https://aka.ms/aks-integrate-keda).
 
-After the provisioning is completed, you can create KEDA scaling rules. A sample rule is provided in the deployment outputs. The following steps show how to see the sample rule.
+After the provisioning is complete, you can create KEDA scaling rules. A sample rule is provided in the deployment outputs. The following steps show how to see the sample rule.
 
 * View the resource group for this deployment in the Azure portal.
 * In the **Settings** section, select **Deployments**.
