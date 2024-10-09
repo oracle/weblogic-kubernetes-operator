@@ -13,3 +13,4 @@ This sample assumes the following prerequisite environment.
 * [Helm](https://helm.sh/docs/intro/install/), version 3.1 and later; use `helm version` to check the `helm` version.  This document was tested with version v3.6.2.
 * A Java JDK, Version 8 or 11. Azure recommends [Microsoft Build of OpenJDK](https://docs.microsoft.com/java/openjdk/download). Ensure that your `JAVA_HOME` environment variable is set correctly in the shells in which you run the commands.
 * Ensure that you have the zip/unzip utility installed; use `zip/unzip -v` to test if `zip/unzip` works.
+* You will need an Oracle account.
