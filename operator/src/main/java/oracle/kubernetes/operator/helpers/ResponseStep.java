@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,6 +27,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.CommonConstants.CRD;
@@ -37,6 +40,7 @@ import static oracle.kubernetes.operator.calls.AsyncRequestStep.FIBER_TIMEOUT;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES_NETWORK_EXCEPTION;
 
 /**
  * Step to receive response of Kubernetes API server call.
@@ -79,6 +83,20 @@ public abstract class ResponseStep<T> extends Step {
   public final void setPrevious(Step previousStep) {
     this.previousStep = previousStep;
   }
+
+  /**
+   * Clear out any existing Kubernetes network exception (ConnectException and SocketTimeoutException).
+   *
+   * @param packet packet
+   */
+  public static void clearExistingKubernetesNetworkException(Packet packet) {
+    Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+        .map(DomainPresenceInfo::getDomain)
+        .map(DomainResource::getStatus)
+        .ifPresent(status -> status.removeConditionsMatching(
+            c -> c.hasType(FAILED) && KUBERNETES_NETWORK_EXCEPTION == c.getReason()));
+  }
+
 
   @Override
   public final NextAction apply(Packet packet) {
@@ -233,7 +251,16 @@ public abstract class ResponseStep<T> extends Step {
 
   private void updateFailureStatus(
       @Nonnull DomainResource domain, RequestParams requestParams, ApiException apiException) {
-    DomainCondition condition = new DomainCondition(FAILED).withFailureInfo(domain.getSpec()).withReason(KUBERNETES)
+    DomainFailureReason reason = KUBERNETES;
+    if (apiException != null) {
+      LOGGER.fine("updateFailureStatus: apiException: " + apiException.getCause());
+      LOGGER.fine("updateFailureStatus: status code: " + apiException.getCode());
+    }
+    if (apiException != null && (apiException.getCause() instanceof ConnectException
+        || apiException.getCause() instanceof SocketTimeoutException)) {
+      reason = DomainFailureReason.KUBERNETES_NETWORK_EXCEPTION;
+    }
+    DomainCondition condition = new DomainCondition(FAILED).withFailureInfo(domain.getSpec()).withReason(reason)
         .withMessage(createMessage(requestParams, apiException));
     addFailureStatus(domain, condition);
   }

@@ -193,6 +193,7 @@ public class WebhookHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getResult();
         if (existingWebhookConfig == null) {
           return doNext(createValidatingWebhookConfiguration(getNext()), packet);
@@ -273,6 +274,7 @@ public class WebhookHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         LOGGER.info(VALIDATING_WEBHOOK_CONFIGURATION_CREATED, getName(callResponse.getResult()));
         return doNext(packet);
       }
@@ -306,6 +308,7 @@ public class WebhookHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         LOGGER.info(MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED, getName(callResponse.getResult()));
         return doNext(packet);
       }
