@@ -311,7 +311,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         //install webhook to prevent every operator installation trying to update crd
         installWebHookOnlyOperator("DomainOnPvSimplification=true");
         //install traefik when running with podman container runtime
-        if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !CRIO) {
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
