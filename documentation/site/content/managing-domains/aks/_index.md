@@ -17,7 +17,7 @@ To deploy the offer from the Azure portal, see [WebLogic Server on Azure](https:
 
 For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
-It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}).
+It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}) sample.
 
 The remaining steps on this page document the user experience for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service.
 
