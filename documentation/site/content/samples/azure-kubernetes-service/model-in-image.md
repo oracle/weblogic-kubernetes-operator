@@ -24,7 +24,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 
 ##### Prepare parameters
 
-Set parameters.
+Set required parameters by running the following commands.
 
 ```shell
 # Change these parameters as needed for your own environment
