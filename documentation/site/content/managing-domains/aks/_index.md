@@ -337,9 +337,9 @@ When you are satisfied with your selections, select **Review + create**.
 
 In the **Review + create blade**, review the details you provided for deploying Oracle WebLogic Server on AKS. If you want to make changes to any of the fields, click **< previous** or click on the respective blade and update the details.
 
-If you want to use this template to automate the deployment, download it by selecting **Download a template for automation**.
+If you want to use the underlying template to further customize it yourself (for example, as part of your CI/CD pipeline), download it by selecting **Download a template for automation**.
 
-Click **Create** to create this offer. This process may take 30 to 60 minutes.
+Click **Create** to start the deployment. This process may take 30 to 60 minutes.
 
 ### Template outputs
 
