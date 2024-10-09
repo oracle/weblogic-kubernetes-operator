@@ -118,7 +118,7 @@ When you are satisfied with your selections, select **Next** and open **TLS/SSL*
 
 With the **TLS/SSL** blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA). See [Oracle WebLogic Server Keystores configuration](https://aka.ms/arm-oraclelinux-wls-ssl-configuration) for more information.
 
-Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next**. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
+Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** If you select **No**, you don't have to provide any details, and can proceed by selecting **Next**. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
 
 If you want to upload existing keystores, select **Upload existing KeyStores** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
