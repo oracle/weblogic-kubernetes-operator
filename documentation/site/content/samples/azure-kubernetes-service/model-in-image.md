@@ -24,7 +24,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 
 ##### Prepare parameters
 
-Set parameters.
+Set required parameters by running the following commands.
 
 ```shell
 # Change these parameters as needed for your own environment
@@ -69,12 +69,19 @@ Create a namespace and service account for the operator.
 ```shell
 $ kubectl create namespace sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 namespace/sample-weblogic-operator-ns created
 ```
+
 ```shell
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
+
+The output will show something similar to the following:
+
 ```
 serviceaccount/sample-weblogic-operator-sa created
 ```
@@ -84,13 +91,16 @@ Validate the service account was created with this command.
 ```shell
 $ kubectl -n sample-weblogic-operator-ns get serviceaccount
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                          SECRETS   AGE
 default                       1         9m24s
 sample-weblogic-operator-sa   1         9m5s
 ```
 
-Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from Github. It may take you several minutes to install the operator.
+Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from GitHub. It may take you several minutes to install the operator.
 
 ```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
@@ -128,13 +138,20 @@ Verify the operator with the following commands; the status will be `Running`.
 ```shell
 $ helm list -A
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
 weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.5  4.2.5
 ```
+
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                                         READY   STATUS    RESTARTS   AGE
 weblogic-operator-54b5c8df46-g4rcm           1/1     Running   0          86s
@@ -215,7 +232,7 @@ $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
 ##### Creating the image with WIT
 
@@ -241,6 +258,9 @@ $ docker tag wdt-domain-image:WLS-v1 $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```shell
 $ docker push $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```
+
+The output will show something similar to the following:
+
 ```
 The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/mii-aks-auxiliary-image]
 1.0: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
@@ -295,6 +315,9 @@ $ $BASE_DIR/sample-scripts/create-kubernetes-secrets/create-docker-credentials-s
   -p ${ORACLE_SSO_PASSWORD} \
   -u ${ORACLE_SSO_EMAIL}
 ```
+
+The output will show something similar to the following:
+
 ```
 secret/wlsregcred created
 The secret wlsregcred has been successfully created in the sample-domain1-ns namespace.
