@@ -100,7 +100,7 @@ default                       1         9m24s
 sample-weblogic-operator-sa   1         9m5s
 ```
 
-Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from Github. It may take you several minutes to install the operator.
+Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from GitHub. It may take you several minutes to install the operator.
 
 ```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
