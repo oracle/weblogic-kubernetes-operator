@@ -133,6 +133,7 @@ public class PersistentVolumeHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolume> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         logPersistentVolumeCreated(messageKey);
         return doNext(packet);
       }
@@ -152,6 +153,7 @@ public class PersistentVolumeHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolume> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         V1PersistentVolume persistentVolume = callResponse.getResult();
         if (persistentVolume == null) {

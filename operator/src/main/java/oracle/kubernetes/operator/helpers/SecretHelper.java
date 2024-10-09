@@ -102,6 +102,7 @@ public class SecretHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         V1Secret secret = callResponse.getResult();
         packet.getSpi(DomainPresenceInfo.class).setWebLogicCredentialsSecret(secret);
         insertAuthorizationSource(packet, secret);

@@ -663,6 +663,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         V1Service service = callResponse.getResult();
         if (service == null) {
           removeServiceFromRecord();
@@ -687,6 +688,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         return doNext(createReplacementService(getNext()), packet);
       }
     }
@@ -714,6 +716,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         logServiceCreated(messageKey);
         addServiceToRecord(callResponse.getResult());
         return doNext(packet);

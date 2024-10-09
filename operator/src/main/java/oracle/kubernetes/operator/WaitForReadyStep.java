@@ -254,6 +254,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V> callResponse) {
+      clearExistingKubernetesNetworkException(packet);
       MakeRightDomainOperation makeRightDomainOperation =
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
       if (makeRightDomainOperation != null) {

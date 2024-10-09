@@ -212,6 +212,7 @@ public class WebhookMain extends BaseMain {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
+      clearExistingKubernetesNetworkException(packet);
       warnedOfCrdAbsence = false;
       crdPresenceCheckCount.set(0);
       return super.onSuccess(packet, callResponse);

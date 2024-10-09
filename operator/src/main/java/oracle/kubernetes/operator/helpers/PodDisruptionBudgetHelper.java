@@ -113,6 +113,7 @@ public class PodDisruptionBudgetHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         logPodDisruptionBudgetCreated(messageKey);
         addPodDisruptionBudgetToRecord(callResponse.getResult());
         return doNext(packet);
@@ -133,6 +134,7 @@ public class PodDisruptionBudgetHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         V1PodDisruptionBudget podDisruptionBudget = callResponse.getResult();
         if (podDisruptionBudget == null) {
           removePodDisruptionBudgetFromRecord();
@@ -157,6 +159,7 @@ public class PodDisruptionBudgetHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
+        clearExistingKubernetesNetworkException(packet);
         logPodDisruptionBudgetPatched();
         return doNext(packet);
       }

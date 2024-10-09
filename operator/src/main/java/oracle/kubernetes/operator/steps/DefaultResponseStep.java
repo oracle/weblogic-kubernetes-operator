@@ -36,6 +36,7 @@ public class DefaultResponseStep<T> extends ResponseStep<T> {
 
   @Override
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
+    clearExistingKubernetesNetworkException(packet);
     return doNext(packet);
   }
 }

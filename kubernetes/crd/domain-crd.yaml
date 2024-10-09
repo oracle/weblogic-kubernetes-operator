@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3cad99b24fb84de65dc38d7734ce269fb7058c3b6aed32b85ef590e142921635
+    weblogic.sha256: 8cd5a2176fe99b104c82048d750d42f1130341bdfdba825493bc64de45025424
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -10322,6 +10322,7 @@ spec:
                       - DomainInvalid
                       - Introspection
                       - Kubernetes
+                      - KubernetesNetworkException
                       - ServerPod
                       - PersistentVolumeClaim
                       - ReplicasTooHigh

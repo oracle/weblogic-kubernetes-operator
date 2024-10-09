@@ -64,6 +64,7 @@ public class StuckPodProcessing {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+      clearExistingKubernetesNetworkException(packet);
       callResponse.getResult().getItems().stream()
             .filter(pod -> isStuck(pod, now))
             .forEach(pod -> addStuckPodToPacket(packet, pod));
@@ -156,6 +157,7 @@ public class StuckPodProcessing {
     @Override
     @SuppressWarnings("try")
     public NextAction onSuccess(Packet packet, CallResponse<Object> callResponse) {
+      clearExistingKubernetesNetworkException(packet);
       try (ThreadLoggingContext ignored =
                ThreadLoggingContext.setThreadContext().namespace(namespace).domainUid(domainUID)) {
         LOGGER.info(POD_FORCE_DELETED, name, namespace);
