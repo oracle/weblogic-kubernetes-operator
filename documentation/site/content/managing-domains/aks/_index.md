@@ -93,7 +93,7 @@ In this section, you can configure the image that is deployed using the model-in
 
 #### Application
 
-In this section you can deploy a Java EE Application along with the WebLogic Server deployment.
+In this section, you can deploy an application along with WebLogic Server.
 
 | Field | Description |
 |-------|-------------|
