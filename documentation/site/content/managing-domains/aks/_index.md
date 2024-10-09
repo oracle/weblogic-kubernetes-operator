@@ -343,7 +343,7 @@ Click **Create** to start the deployment. This process may take 30 to 60 minutes
 
 ### Template outputs
 
-After clicking **Create** to create this offer, you will go to the **Deployment is in progress** page. When the deployment is completed, the page shows **Your deployment is complete**. In the left panel, select **Outputs**. These are the outputs from the deployment.  The following table is a reference guide to the deployment outputs.
+After clicking **Create**, you will go to the **Deployment is in progress** page. When the deployment is complete, the page shows **Your deployment is complete**. In the left panel, select **Outputs**. These are the outputs from the deployment. The following table is a reference to the deployment outputs.
 
 | Field | Description |
 |-------|-------------|
