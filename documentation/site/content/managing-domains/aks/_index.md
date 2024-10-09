@@ -97,7 +97,7 @@ In this section, you can deploy an application along with WebLogic Server.
 
 | Field | Description |
 |-------|-------------|
-| Deploy an application? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.|
+| Deploy an application? | If set to **Yes**, you must specify a WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.|
 | Application package (.war,.ear,.jar) | With the **Browse** button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/azure/storage/common/storage-account-create?tabs=azure-portal) and [Create a Storage Container and upload application files](https://docs.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal). |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
