@@ -233,7 +233,7 @@ You can fill in any valid value in this column.
 
 **Target** and **Port** column:
 
-For the ports, the recommended values are the usual 7001 for the **admin-server** and 8001 for the **cluster-1**.
+For the ports, the recommended values are the usual 7001 for **admin-server** and 8001 for **cluster-1**.
 
 When you are satisfied with your selections, select **Next** and open **DNS** blade.
 
