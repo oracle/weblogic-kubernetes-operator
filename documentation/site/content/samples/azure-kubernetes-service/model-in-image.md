@@ -138,13 +138,20 @@ Verify the operator with the following commands; the status will be `Running`.
 ```shell
 $ helm list -A
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
 weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.5  4.2.5
 ```
+
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                                         READY   STATUS    RESTARTS   AGE
 weblogic-operator-54b5c8df46-g4rcm           1/1     Running   0          86s
