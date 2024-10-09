@@ -69,12 +69,19 @@ Create a namespace and service account for the operator.
 ```shell
 $ kubectl create namespace sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 namespace/sample-weblogic-operator-ns created
 ```
+
 ```shell
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
+
+The output will show something similar to the following:
+
 ```
 serviceaccount/sample-weblogic-operator-sa created
 ```
@@ -84,6 +91,9 @@ Validate the service account was created with this command.
 ```shell
 $ kubectl -n sample-weblogic-operator-ns get serviceaccount
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                          SECRETS   AGE
 default                       1         9m24s
