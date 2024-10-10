@@ -103,7 +103,7 @@ Update the repo to get the latest Helm charts. It is a best practice to do this 
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --version 4.2.5 \
+  --version 4.2.8 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --wait
 ```
@@ -119,7 +119,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.2.5` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.2.8` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -130,7 +130,7 @@ $ helm list -A
 ```
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
-weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.5  4.2.5
+weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.8  4.2.8
 ```
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
