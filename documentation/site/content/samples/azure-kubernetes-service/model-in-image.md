@@ -258,6 +258,9 @@ $ docker tag wdt-domain-image:WLS-v1 $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```shell
 $ docker push $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```
+
+The output will show something similar to the following:
+
 ```
 The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/mii-aks-auxiliary-image]
 1.0: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
