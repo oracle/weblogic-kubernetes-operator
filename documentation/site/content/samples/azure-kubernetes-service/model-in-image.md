@@ -315,6 +315,9 @@ $ $BASE_DIR/sample-scripts/create-kubernetes-secrets/create-docker-credentials-s
   -p ${ORACLE_SSO_PASSWORD} \
   -u ${ORACLE_SSO_EMAIL}
 ```
+
+The output will show something similar to the following:
+
 ```
 secret/wlsregcred created
 The secret wlsregcred has been successfully created in the sample-domain1-ns namespace.
