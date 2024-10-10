@@ -35,6 +35,9 @@ Verify the image is available in the local Docker server with the following comm
 ```shell
 $ docker images | grep WLS-v1
 ```
+
+The output will show something similar to the following:
+
 ```
 wdt-domain-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
 ```
