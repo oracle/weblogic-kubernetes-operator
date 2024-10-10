@@ -1,0 +1,511 @@
+
+// Copyright (c) 2024, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+//
+
+CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=wko-okd-wls-srg
+                   H 2 * * * % MAVEN_PROFILE_NAME=wko-okd-wls-mrg
+                   H 3 * * * % MAVEN_PROFILE_NAME=wko-okd-fmw-cert'''
+
+pipeline {
+    agent { label 'large' }
+    options {
+        timeout(time: 1800, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+    triggers {
+        // timer trigger for "nightly build"
+        parameterizedCron(env.JOB_NAME == 'wko-release42-nightly-okd' ?
+        CRON_SETTINGS : '')
+    }
+
+    tools {
+        maven 'maven-3.8.7'
+        jdk 'jdk21'
+    }
+
+    environment {
+        ocir_host = "${env.WKT_OCIR_HOST}"
+        wko_tenancy = "${env.WKT_TENANCY}"
+        ocir_creds = 'wkt-ocir-creds'
+
+        outdir = "${WORKSPACE}/staging"
+        result_root = "${outdir}/wl_k8s_test_results"
+        pv_root = "/export/wls"
+        nfs_server = "${env.OKD_NFS_SERVER}"
+        okd_ip = "${env.OKD_IP}"
+
+        okdkub = 'okdconfig'
+
+        start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
+        wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
+    }
+
+    parameters {
+        string(name: 'BRANCH',
+               description: 'The branch for weblogic-kubernetes-operator project',
+               defaultValue: "release/4.2"
+        )
+
+        choice(name: 'MAVEN_PROFILE_NAME',
+                description: 'Profile to use in mvn command to run the tests.  Possible values are integration-tests. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                choices: [
+                        'wko-okd-wls-srg',
+                        'wko-okd-wls-mrg',
+                        'wko-okd-fmw-cert',
+                        'integration-tests'
+                ]
+        )
+
+        string(name: 'IT_TEST',
+               description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
+               defaultValue: ''
+        )
+
+        string(name: 'OPERATOR_LOG_LEVEL',
+               description: 'The default log level is not set',
+               defaultValue: ''
+        )
+
+        string(name: 'KUBECTL_VERSION',
+                       description: 'kubectl version',
+                       defaultValue: '1.26.2'
+        )
+
+        string(name: 'HELM_VERSION',
+               description: 'Helm version',
+               defaultValue: '3.11.2'
+        )
+
+        choice(name: 'ISTIO_VERSION',
+               description: 'Istio version',
+               choices: [
+                   '1.17.2',
+                   '1.16.1',
+                   '1.13.2',
+                   '1.12.6',
+                   '1.11.1',
+                   '1.10.4',
+                   '1.9.9'
+               ]
+        )
+
+        booleanParam(name: 'PARALLEL_RUN',
+                     description: 'Runs tests in parallel. Default is false, test classes run in parallel.',
+                     defaultValue: false
+        )
+        string(name: 'NUMBER_OF_THREADS',
+               description: 'Number of threads to run the classes in parallel, default is 2.',
+               defaultValue: "3"
+        )
+        string(name: 'WDT_DOWNLOAD_URL',
+               description: 'URL to download WDT.',
+               defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
+        )
+        string(name: 'WIT_DOWNLOAD_URL',
+               description: 'URL to download WIT.',
+               defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
+        )
+        string(name: 'REPO_REGISTRY',
+               description: '',
+               defaultValue: "${env.WKT_OCIR_HOST}"
+        )
+
+        choice(name: 'BASE_IMAGES_REPO',
+               choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
+               description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
+        )
+        string(name: 'TEST_IMAGES_REPO',
+               description: '',
+               defaultValue: "${env.WKT_OCIR_HOST}"
+        )
+        string(name: 'WEBLOGIC_IMAGE_NAME',
+               description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
+               defaultValue: 'test-images/weblogic'
+        )
+        string(name: 'WEBLOGIC_IMAGE_TAG',
+               description: '12.2.1.3  (12.2.1.3-ol7) , 12.2.1.3-dev  (12.2.1.3-dev-ol7), 12.2.1.3-ol8, 12.2.1.3-dev-ol8, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
+               defaultValue: '12.2.1.4'
+        )
+        string(name: 'FMWINFRA_IMAGE_NAME',
+               description: 'FWM Infra image name. Default is the image name in OCIR. Use middleware/fmw-infrastructure for OCR.',
+               defaultValue: 'test-images/fmw-infrastructure'
+        )
+        string(name: 'FMWINFRA_IMAGE_TAG',
+               description: 'FWM Infra image tag',
+               defaultValue: '12.2.1.4'
+        )
+        string(name: 'DB_IMAGE_NAME',
+               description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
+               defaultValue: 'test-images/database/enterprise'
+        )
+        string(name: 'DB_IMAGE_TAG',
+               description: 'Oracle DB image tag',
+               defaultValue: '12.2.0.1-slim'
+        )
+        string(name: 'MONITORING_EXPORTER_BRANCH',
+               description: '',
+               defaultValue: 'main'
+        )
+        string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
+               description: '',
+               defaultValue: '2.1.3'
+        )
+        string(name: 'PROMETHEUS_CHART_VERSION',
+               description: '',
+               defaultValue: '17.0.0'
+        )
+        string(name: 'GRAFANA_CHART_VERSION',
+               description: '',
+               defaultValue: '6.44.11'
+        )
+        booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
+                     description: 'Collect logs for successful runs. Default is false.',
+                     defaultValue: false
+        )
+        string(name: 'REMOTECONSOLE_VERSION',
+               description: 'RemoteConsole version.',
+               defaultValue: '2.4.7'
+        )
+    }
+
+    stages {
+        stage('Filter unwanted branches') {
+            stages {
+                stage('Workaround JENKINS-41929 Parameters bug') {
+                    steps {
+                        echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
+                        evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
+                    }
+                }
+                stage ('Echo environment') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            env|sort
+                            java -version
+                            mvn --version
+                            python --version
+                            docker version
+                            ulimit -a
+                            ulimit -aH
+                        '''
+                    }
+                }
+                stage('Make Workspace bin directory') {
+                    steps {
+                        sh "mkdir -m777 -p ${WORKSPACE}/bin"
+                    }
+                }
+
+                stage('Build WebLogic Kubernetes Operator') {
+                    steps {
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                                                    sh "mvn -DtrimStackTrace=false clean install"
+                        }
+                    }
+                }
+
+                stage('Install Helm') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            echo "$(pwd)"
+
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=helm/helm-v${HELM_VERSION}.tar.gz --file=helm.tar.gz \
+                                --auth=instance_principal
+                            tar zxf helm.tar.gz
+                            mv linux-amd64/helm ${WORKSPACE}/bin/helm
+                            rm -rf linux-amd64
+                            helm version
+                        '''
+                    }
+                }
+
+                stage('Run Helm installation tests') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            sh 'export PATH=${runtime_path} && mvn -pl kubernetes -P helm-installation-test verify'
+                        }
+                    }
+                }
+
+                stage ('Install kubectl') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            echo "$(pwd)"
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                                            --name=kubectl/kubectl-v${KUBECTL_VERSION} --file=${WORKSPACE}/bin/kubectl \
+                                                            --auth=instance_principal
+                            chmod +x ${WORKSPACE}/bin/kubectl
+                            kubectl version --client=true
+                        '''
+                    }
+                }
+
+                stage ('Install OpenShift CLI oc') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            wget -N https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+                            tar xvf oc.tar.gz
+                            mv oc ${WORKSPACE}/bin/
+                            echo "PATH: " $PATH
+                            oc version
+                        '''
+                    }
+                }
+
+                stage('Preparing Integration Test Environment') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        withCredentials([file(credentialsId: "${okdkub}", variable: 'KUBECONFIG_FILE')
+                        ]) {
+
+                           sh '''
+                               export NO_PROXY=${OKD_IP},$NO_PROXY
+                               export no_proxy=${OKD_IP},$no_proxy
+
+                               echo "NO_PROXY:" $NO_PROXY
+                               echo "no_proxy:" $no_proxy
+
+                               export PATH=${runtime_path}
+                               export KUBECONFIG=${KUBECONFIG_FILE}
+                               cat $KUBECONFIG
+
+                               KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+
+                               echo "Checking nodes"
+                               ${KUBERNETES_CLI} get nodes -o wide
+
+                               mkdir -m777 -p ${result_root}
+                               echo "Results will be in ${result_root}"
+
+                               echo "cleaning up k8s artifacts"
+                               ${KUBERNETES_CLI} delete crd $(${KUBERNETES_CLI} get crd | grep weblogic) || true
+
+                               ${KUBERNETES_CLI} get ns --no-headers | awk '$1 ~ /^ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete ns || true
+                               ${KUBERNETES_CLI} get ns --no-headers | awk '/weblogic/{print $1}' | xargs ${KUBERNETES_CLI} delete ns || true
+                               ${KUBERNETES_CLI} get ns --no-headers | awk '/test-/{print $1}' | xargs ${KUBERNETES_CLI} delete ns || true
+                               ${KUBERNETES_CLI} delete pv domain1-weblogic-sample-pv --wait=false || true
+                               ${KUBERNETES_CLI} delete pv domain2-weblogic-sample-pv --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testalertmanager --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testgrafana --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testprometheus --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testalertmanagertest1 --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testgrafanatest1 --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testprometheustest1 --wait=false || true
+
+                               ${KUBERNETES_CLI} delete pv pv-testalertmanagertest2 --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testgrafanatest2 --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testprometheustest2 --wait=false || true
+
+                               ${KUBERNETES_CLI} delete pv pv-testalertmanagertest3 --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testgrafanatest3 --wait=false || true
+                               ${KUBERNETES_CLI} delete pv pv-testprometheustest3 --wait=false || true
+
+                               ${KUBERNETES_CLI} get ingressroutes -A --no-headers | awk '/tdlbs-/{print $2}' | xargs ${KUBERNETES_CLI} delete ingressroute || true
+                               ${KUBERNETES_CLI} get clusterroles --no-headers | awk '/ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
+                               ${KUBERNETES_CLI} get clusterroles --no-headers | awk '/appscode/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
+                               ${KUBERNETES_CLI} get clusterroles --no-headers | awk '/nginx-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
+                               ${KUBERNETES_CLI} get clusterroles --no-headers | awk '/traefik-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
+
+                               ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
+                               ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/appscode/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
+                               ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/nginx-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
+                               ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/traefik-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
+
+                               echo "pv_root: " ${pv_root}
+
+                           '''
+                         }
+                    }
+                }
+
+                stage('Run integration tests') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+
+                    steps {
+                         script {
+                             currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME}"
+                             def res = 0
+                             res = sh(script: '''
+                                     if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
+                                        echo 'ERROR: All tests cannot be run with integration-tests profile'
+                                        exit 1
+                                     fi
+                                 ''', returnStatus: true)
+                             if (res != 0 ) {
+                                 currentBuild.result = 'ABORTED'
+                                 error('Profile/ItTests Validation Failed')
+                             }
+                        }
+
+                        sh '''
+                  
+                            export PATH=${runtime_path}
+                            export OKD=true
+                            export NFS_SERVER=${OKD_NFS_SERVER}
+                            echo "NFS_SERVER is: " $NFS_SERVER
+                            export pv_root="/export/wls"
+                            mkdir -m777 -p "${WORKSPACE}/.mvn"
+                            touch ${WORKSPACE}/.mvn/maven.config
+
+                            if [ -n "${IT_TEST}" ]; then
+                                echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                MAVEN_PROFILE_NAME="integration-tests"
+                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            fi
+
+                            echo "MAVEN_PROFILE_NAME:" $MAVEN_PROFILE_NAME
+                            echo "PARALLEL_RUN:" $PARALLEL_RUN
+                            echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.nfs.server=\"${NFS_SERVER}\""                                                 >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.base.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
+			    echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
+
+                            echo "${WORKSPACE}/.mvn/maven.config contents:"
+                            cat "${WORKSPACE}/.mvn/maven.config"
+                            cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
+
+                        '''
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            withCredentials([
+                                usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS'),
+                                file(credentialsId: "${okdkub}", variable: 'KUBECONFIG_FILE')
+                            ]) {
+                                sh '''
+
+                                    export NO_PROXY=${OKD_IP},$NO_PROXY
+                                    export no_proxy=${OKD_IP},$no_proxy
+
+
+                                    echo "NO_PROXY:" $NO_PROXY
+                                    echo "no_proxy:" $no_proxy
+
+                                    export PATH=${runtime_path}
+                                    export OKD="true"
+                                    export NFS_SERVER=${OKD_NFS_SERVER}
+                                    echo "NFS_SERVER is: " $NFS_SERVER
+                                    export pv_root="/export/wls"
+
+                                    export KUBECONFIG=${KUBECONFIG_FILE}
+                                    cat $KUBECONFIG
+                                    echo "Checking nodes"
+                                    KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+                                    ${KUBERNETES_CLI} get nodes -o wide
+
+				    echo "K8S_NODEPORT_HOST:" $K8S_NODEPORT_HOST
+
+                                    export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export BASE_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export BASE_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
+
+
+                                    if [[ -n "${IT_TEST}" && "${IT_TEST}" != "**/It*" ]]; then
+                                        echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                        export MAVEN_PROFILE_NAME="integration-tests"
+                                    fi
+                                    echo "MAVEN_PROFILE_NAME:" $MAVEN_PROFILE_NAME
+                                    if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/okdtest.log"; then
+                                        echo "integration-tests failed"
+                                        exit 1
+                                    fi
+                                '''
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            sh '''
+                                export PATH="${WORKSPACE}/bin:${PATH}"
+
+                                mkdir -m777 -p ${result_root}/kubelogs
+                                mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                                sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+
+                            '''
+
+                            archiveArtifacts(artifacts:
+                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*,integration-tests/target/failsafe-reports/*.xml")
+                            junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    sh '''
+                        export PATH="${WORKSPACE}/bin:${PATH}"
+
+                        rm -rf ${WORKSPACE}/.mvn
+
+
+                    '''
+                }
+            }
+        }
+
+        stage ('Sync') {
+             when {
+                 anyOf {
+                     branch 'release/4.2'
+                 }
+                 anyOf {
+                     not { triggeredBy 'TimerTrigger' }
+                     tag 'v*'
+                 }
+             }
+             steps {
+                 build job: "wkt-sync", parameters: [ string(name: 'REPOSITORY', value: 'weblogic-kubernetes-operator') ]
+             }
+        }
+    }
+}

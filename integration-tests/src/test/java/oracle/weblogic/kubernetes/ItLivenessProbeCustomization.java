@@ -156,7 +156,6 @@ class ItLivenessProbeCustomization {
    */
   @Test
   @DisplayName("Test custom liveness probe is triggered")
-  @Tag("gate")
   @Tag("crio")
   void testCustomLivenessProbeTriggered() {
     DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
