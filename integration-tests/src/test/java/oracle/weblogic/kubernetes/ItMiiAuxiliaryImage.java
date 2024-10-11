@@ -306,7 +306,6 @@ class ItMiiAuxiliaryImage {
   @Test
   @Order(1)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
-  @Tag("gate")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
     // create stage dir for auxiliary image
