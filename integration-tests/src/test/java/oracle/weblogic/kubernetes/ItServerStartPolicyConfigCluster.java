@@ -143,7 +143,6 @@ class ItServerStartPolicyConfigCluster {
   @Order(1)
   @Test
   @DisplayName("Restart the configured cluster with serverStartPolicy")
-  @Tag("gate")
   void testConfigClusterRestart() {
 
     String configServerPodName = domainUid + "-config-cluster-server1";

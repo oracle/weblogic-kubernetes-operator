@@ -116,6 +116,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @DisabledOnSlimImage
 @Tag("olcne-mrg")
+@Tag("gate")    
 class ItExternalLbTunneling {
 
   private static String opNamespace = null;

@@ -100,6 +100,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-mrg")
 @Tag("oke-weekly-sequential")
 @Tag("kind-sequential")
+@Tag("gate")    
 class ItT3Channel {
   // namespace constants
   private static String opNamespace = null;
