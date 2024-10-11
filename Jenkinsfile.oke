@@ -9,8 +9,6 @@ CRON_SETTINGS_42 = '''H 1 * * 6 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUST
                     H 23 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seq42two;PARALLEL_RUN=false
                    H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=par42one;PARALLEL_RUN=true'''
 
-
-
 CRON_SETTINGS = "${env.JOB_NAME == 'wko-oke-nightly' ? CRON_SETTINGS_MAIN : CRON_SETTINGS_42}"
 
 pipeline {
