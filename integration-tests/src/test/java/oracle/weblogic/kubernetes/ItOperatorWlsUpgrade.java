@@ -15,17 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -35,18 +24,16 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
@@ -64,11 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
@@ -76,7 +59,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -89,7 +71,6 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
@@ -101,7 +82,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.UpgradeUtils.checkCrdVersion;
@@ -173,129 +153,90 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.8 to current.
+   * Operator upgrade from 4.0.9 to current with Mii domain in V8 schema.
    */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.8 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom338ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom338ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.3.8", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 3.4.12 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.12 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom3412ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom3412ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.12", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 3.4.13 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.13 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom3413ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom3413ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.13", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-
-  /**
-   * Operator upgrade from 4.0.8 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.8 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom408ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom408ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.8", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-  
-  /**
-   * Operator upgrade from 4.0.9 to current.
-   */
-  @ParameterizedTest
+  @Test
   @DisplayName("Upgrade Operator from 4.0.9 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom409ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom409ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.9", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 4.0.10 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.10 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom4010ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom4010ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.10", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorUpgradeMiiDomainV8From409ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeMiiDomainV8From409ToCurrent with Mii domain v8 schema");
+    installOperatorCreateMiiDomainAndUpgrade("4.0.9", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
   
+  /**
+   * Upgrade Operator from 4.0.10 to current with Auxiliary image domain, V9 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.0.10 to current")
+  void testOperatorUpgradeAuxDomainV9From4010ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeAuxDomainV9From4010ToCurrent with Auxiliary domain v9 schema");
+    installOperatorCreateAuxDomainAndUpgrade("4.0.10", DOMAIN_VERSION);
+  }
+
 
   /**
-   * Operator upgrade from 4.1.7 to current.
+   * Upgrade Operator from 4.1.7 to current with Mii domain in V8 schema.
    */
-  @ParameterizedTest
+  @Test
   @DisplayName("Upgrade Operator from 4.1.7 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom417ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom417ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.1.7", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorUpgradeMiiDomainV8From417ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeMiiDomainV8From417ToCurrent with Mii domain v8 schema");
+    installOperatorCreateMiiDomainAndUpgrade("4.1.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 4.1.8 to current.
+   * Operator upgrade from 4.1.8 to current with Auxiliary Image Domain, V9 schema.
    */
-  @ParameterizedTest
+  @Test
   @DisplayName("Upgrade Operator from 4.1.8 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom418ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom418ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.1.8", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorUpgradeAuxDomainV9From418ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeAuxDomainV9From418ToCurrent to upgrade Auxiliary Domain "
+        + "with V9 schema to current");
+    installOperatorCreateAuxDomainAndUpgrade("4.1.8", DOMAIN_VERSION);
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operator 3.4.1 to current.
+   * Operator upgrade from 4.2.7 to current with Auxiliary Image Domain, V9 schema.
    */
   @Test
-  @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom341ToCurrent() {
-    logger.info("Starting testOperatorWlsAuxDomainUpgradeFrom341ToCurrent " 
+  @DisplayName("Upgrade Operator from 4.2.7 to current")
+  void testOperatorUpgradeAuxDomainV9From427ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeAuxDomainV9From427ToCurrent to upgrade Domain with "
+        + "Auxiliary Image with v9 schema to current");
+    installOperatorCreateAuxDomainAndUpgrade("4.2.7", DOMAIN_VERSION);
+  }
+
+  /**
+   * Operator upgrade from 4.2.6 to current with Model in Image Domain, V8 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.2.6 to current")
+  void testOperatorUpgradeMiiDomainV8From426ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeMiiDomainV8From426ToCurrent to upgrade Domain with "
+        + "Auxiliary Image with v8 schema to current");
+    installOperatorCreateMiiDomainAndUpgrade("4.2.6", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Operator upgrade from 3.4.13 to current with Auxiliary Image Domain, V8 schema.
+   * V9 schema is from Operator 4.0.
+   */
+  @Test
+  @DisplayName("Upgrade 3.4.13 Auxiliary Domain(v8 schema) Image to current")
+  void testOperatorUpgradeAuxDomainV8From3413ToCurrent() {
+    logger.info("Starting testOperatorUpgradeAuxDomainV8From3413ToCurrent "
          + "to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.4.1");
+    installOperatorCreateAuxDomainAndUpgrade("3.4.13", OLD_DOMAIN_VERSION);
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operator 3.4.4 to current.
+   * Upgrade Operator from 3.4.12 to current with Mii domain in V8 schema.
    */
   @Test
-  @DisplayName("Upgrade 3.4.4 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom344ToCurrent() {
-    logger.info("Starting testOperatorWlsAuxDomainUpgradeFrom344ToCurrent " 
-        + "to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.4.4");
-  }
-
-  /**
-   * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
-   * Currently we do not support AuxDomain upgrade 3.3.8 to Latest with 
-   * independent webhook only WebLogic Operator in Latest branch.
-   * Temporarily disabled, re-enable after webhook not pre-created in 
-   * InitializationTasks or the test is moved to a different test suite.
-   */
-  @Disabled
-  @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
-    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.3.8");
+  @DisplayName("Upgrade 3.4.12 Mii Domain(v8 schema) Image to current")
+  void testOperatorUpgradeMiiDomainV8From3412ToCurrent() {
+    logger.info("Starting testOperatorWlsAuxDomainV8UpgradeFrom3412ToCurrent "
+        + "to upgrade MII Domain with v8 schema to current");
+    installOperatorCreateMiiDomainAndUpgrade("3.4.12", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -310,34 +251,40 @@ class ItOperatorWlsUpgrade {
     }
   }
 
-  void upgradeWlsAuxDomain(String oldVersion) {
-    logger.info("Upgrade version/{0} Auxiliary Domain(v8) to current", oldVersion);
-    installOldOperator(oldVersion,opNamespace,domainNamespace);
+  void installOperatorCreateAuxDomainAndUpgrade(String operatorVersion, String domainApiVersion) {
+
+    logger.info("Upgrade version/{0} Auxiliary Domain(v8) to current", operatorVersion);
+    installOldOperator(operatorVersion, opNamespace, domainNamespace);
     createSecrets();
 
     // Create the repo secret to pull base WebLogic image
     createBaseRepoSecret(domainNamespace);
 
-    // Creating an aux image domain with v8 version
+    // Creating an aux image domain with v8/v9 version
     final String auxiliaryImagePath = "/auxiliary";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+    // modelList.add(MODEL_DIR + "/model.jms2.yaml");
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
     createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, archiveList, modelList);
 
-    // Generate a v8 version of domain.yaml file from a template file
+    // Generate a v8/v9 version of domain.yaml file from a template file
     // by replacing domain namespace, domain uid, base image and aux image
     String auxImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
+    String auxImageDomainYaml = "auxilary.single.image.template.yaml";
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("AUX_IMAGE", auxImage);
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
-    templateMap.put("API_VERSION", "v8");
+    templateMap.put("API_VERSION", domainApiVersion);
+    templateMap.put("CLUSTER_VERSION", CLUSTER_VERSION);
+    if (domainApiVersion.equals(DOMAIN_VERSION)) {
+      auxImageDomainYaml =  "auxiliary.single.image.v9.template.yaml";
+    }
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "auxilary.single.image.template.yaml");
+        "upgrade", auxImageDomainYaml);
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));
@@ -354,7 +301,7 @@ class ItOperatorWlsUpgrade {
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
     testUntil(
-        domainExists(domainUid, "v8", domainNamespace),
+        domainExists(domainUid, domainApiVersion, domainNamespace),
         logger,
         "domain {0} to be created in namespace {1}",
         domainUid,
@@ -369,17 +316,20 @@ class ItOperatorWlsUpgrade {
     // verify there is no status condition type Completed
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, domainApiVersion);
     upgradeOperatorToCurrent(opNamespace);
     checkDomainStatus(domainNamespace,domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
-    scaleClusterUpAndDown();
+    scaleClusterUpAndDown(domainApiVersion);
   }
 
   // After upgrade scale up/down the cluster
-  private void scaleClusterUpAndDown() {
+  private void scaleClusterUpAndDown(String domainApiVersion) {
 
     String clusterName = domainUid + "-" + "cluster-1";
+    if (domainApiVersion.equals(DOMAIN_VERSION)) {
+      clusterName = "cluster-1";
+    }
     logger.info("Updating the cluster {0} replica count to 3", clusterName);
     boolean p1Success = scaleCluster(clusterName, domainNamespace,3);
     assertTrue(p1Success,
@@ -393,8 +343,7 @@ class ItOperatorWlsUpgrade {
             clusterName, domainNamespace));
   }
 
-  private void installDomainResource(
-      String domainType,
+  private void installMiiDomainResource(
       String domainVersion,
       String externalServiceNameSuffix) {
 
@@ -404,27 +353,25 @@ class ItOperatorWlsUpgrade {
             domainUid, domainNamespace);
 
     // create WLS domain and verify
-    createWlsDomainAndVerifyByDomainYaml(domainType, domainNamespace, externalServiceNameSuffix);
+    createWlsMiiDomainByDomainYamlAndVerify(domainNamespace, externalServiceNameSuffix, domainVersion);
 
   }
 
   // Since Operator version 3.1.0 the service pod prefix has been changed
   // from -external to -ext e.g.
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP
-  private void installAndUpgradeOperator(String domainType,
-      String operatorVersion, String domainVersion,
-      String externalServiceNameSuffix) {
+  private void installOperatorCreateMiiDomainAndUpgrade(String operatorVersion, String domainVersion,
+                                                        String externalServiceNameSuffix) {
 
     installOldOperator(operatorVersion,opNamespace,domainNamespace);
-
     // create WLS domain and verify
-    installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
+    installMiiDomainResource(domainVersion, externalServiceNameSuffix);
 
     // upgrade to current operator
-    upgradeOperatorAndVerify(opNamespace, domainNamespace);
+    upgradeOperatorAndVerify(opNamespace, domainNamespace, domainVersion);
   }
 
-  private void upgradeOperatorAndVerify(String opNamespace, String domainNamespace) {
+  private void upgradeOperatorAndVerify(String opNamespace, String domainNamespace, String domainVersion) {
     String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
 
@@ -479,7 +426,7 @@ class ItOperatorWlsUpgrade {
               "Application was not always available when the operator was getting upgraded");
       }
     }
-    scaleClusterUpAndDown();
+    scaleClusterUpAndDown(domainVersion);
 
     // check CRD version is updated
     logger.info("Checking CRD version");
@@ -507,32 +454,6 @@ class ItOperatorWlsUpgrade {
     logger.info("Create encryption secret");
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
-  }
-
-  private void createWlsDomainAndVerify(String domainType,
-        String domainNamespace, String domainVersion,
-        String externalServiceNameSuffix) {
-
-    createSecrets();
-
-    String domainImage = "";
-    if (domainType.equalsIgnoreCase("Image")) {
-      domainImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-    } else {
-      domainImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    }
-
-    // create domain
-    createDomainResource(domainNamespace, domainVersion,
-                         domainType, domainImage);
-    checkDomainStarted(domainUid, domainNamespace);
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-    logger.info("Validating WebLogic admin server access by login to console");
-    verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST,
-           String.valueOf(serviceNodePort), false);
   }
 
   private void checkDomainStarted(String domainUid, String domainNamespace) {
@@ -595,105 +516,17 @@ class ItOperatorWlsUpgrade {
     checkDomainStarted(domainUid, domainNamespace);
   }
 
-  private void createDomainResource(
-      String domainNamespace,
-      String domVersion,
-      String domainHomeSourceType,
-      String domainImage) {
-
-    String domApiVersion = "weblogic.oracle/" + domVersion;
-    logger.info("Default Domain API version {0}", DOMAIN_API_VERSION);
-    logger.info("Domain API version selected {0}", domApiVersion);
-    logger.info("Domain Image name selected {0}", domainImage);
-    logger.info("Create domain resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-                      "weblogicenc", "weblogicenc");
-    DomainResource domain = new DomainResource()
-            .apiVersion(domApiVersion)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domainNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHomeSourceType(domainHomeSourceType)
-                    .image(domainImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(TEST_IMAGES_REPO_SECRET_NAME))
-                    .webLogicCredentialsSecret(new V1LocalObjectReference()
-                            .name(adminSecretName))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("weblogic.oracle/v8".equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value(SSL_PROPERTIES))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                        .adminService(new AdminService()
-                        .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
-                    .configuration(new Configuration()
-                            .model(new Model()
-                                .runtimeEncryptionSecret(encryptionSecretName)
-                                .domainType("WLS"))
-                            .introspectorJobActiveDeadlineSeconds(3000L)));
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain, domVersion),
-          String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-          domainUid, domainNamespace));
-    assertTrue(domCreated,
-         String.format("Create domain custom resource failed with ApiException "
-             + "for %s in namespace %s", domainUid, domainNamespace));
-    setPodAntiAffinity(domain);
-    removePortForwardingAttribute(domainNamespace,domainUid);
-  }
-
-  // Remove the artifact adminChannelPortForwardingEnabled from domain resource
-  // if exist, so that the Operator release default will be effective.
-  // e.g. in Release 3.3.x the default is false, but 4.x.x onward it is true
-  // However in release(s) lower to 3.3.x, the CRD does not contain this attribute
-  // so the patch command to remove this attribute fails. So we do not assert
-  // the result of patch command
-  // assertTrue(result, "Failed to remove PortForwardingAttribute");
-  private void removePortForwardingAttribute(
-      String domainNamespace, String  domainUid) {
-
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"remove\",")
-        .append(" \"path\": \"/spec/adminServer/adminChannelPortForwardingEnabled\"")
-        .append("}]");
-    logger.info("The patch String {0}", patchStr);
-    StringBuffer commandStr = new StringBuffer(KUBERNETES_CLI + " patch domain ");
-    commandStr.append(domainUid)
-              .append(" -n " + domainNamespace)
-              .append(" --type 'json' -p='")
-              .append(patchStr)
-              .append("'");
-    logger.info("The Command String: {0}", commandStr);
-    CommandParams params = new CommandParams().defaults();
-
-    params.command(new String(commandStr));
-    boolean result = Command.withParams(params).execute();
-  }
-
   /**
    * Replace the fields in domain yaml file with testing attributes.
    * For example, namespace, domainUid,  and image. Then create domain using
    * KUBERNETES_CLI and verify the domain is created
-   * @param domainType either domain in image(Image) or model in image (FromModel)
-   * @param domainNamespace namespace in which to create domain
+   *
+   * @param domainNamespace           namespace in which to create domain
    * @param externalServiceNameSuffix suffix of externalServiceName
+   * @param domainVersion             version of the domain
    */
-  private void createWlsDomainAndVerifyByDomainYaml(String domainType,
-      String domainNamespace, String externalServiceNameSuffix) {
+  private void createWlsMiiDomainByDomainYamlAndVerify(String domainNamespace,
+                                                       String externalServiceNameSuffix, String domainVersion) {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -705,13 +538,13 @@ class ItOperatorWlsUpgrade {
         Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
         String.format("Could not create directory under %s", RESULTS_ROOT));
 
-    if (domainType.equalsIgnoreCase("Image")) {
-      logger.info("Domain home in image domain will be created ");
-      srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-v8.yaml");
+    if (domainVersion.equals(DOMAIN_VERSION)) {
+      logger.info("Model in image domain using " + DOMAIN_VERSION + " will be created ");
+      srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "mii-cluster-domain.yaml");
       destDomainYaml =
         Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "domain.yaml");
       assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
-          "File copy failed for domain-v8.yaml");
+          "File copy failed for mii-cluster-domain.yaml");
     } else {
       logger.info("Model in image domain will be created ");
       srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "mii-domain-v8.yaml");
@@ -731,24 +564,19 @@ class ItOperatorWlsUpgrade {
     assertDoesNotThrow(() -> replaceStringInFile(
         destDomainYaml.toString(), "domain1-weblogic-credentials", adminSecretName),
         "Could not modify the webLogicCredentialsSecret in the domain.yaml file");
-    if (domainType.equalsIgnoreCase("Image")) {
-      assertDoesNotThrow(() -> replaceStringInFile(
-          destDomainYaml.toString(), "domain-home-in-image:14.1.1.0",
-          WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
-          "Could not modify image name in the domain.yaml file");
-    } else {
-      assertDoesNotThrow(() -> replaceStringInFile(
-          destDomainYaml.toString(), "domain1-runtime-encryption-secret", encryptionSecretName),
-          "Could not modify runtimeEncryptionSecret in the domain-v8.yaml file");
-      assertDoesNotThrow(() -> replaceStringInFile(
-          destDomainYaml.toString(), "model-in-image:WLS-v1",
-          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
-          "Could not modify image name in the mii-domain-v8.yaml file");
-    }
-    assertTrue(Command
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "domain1-runtime-encryption-secret", encryptionSecretName),
+        "Could not modify runtimeEncryptionSecret in the domain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "model-in-image:WLS-v1",
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
+        "Could not modify image name in the domain.yaml file");
+
+    boolean result = Command
         .withParams(new CommandParams()
             .command(KUBERNETES_CLI + " create -f " + destDomainYaml))
-        .execute(), KUBERNETES_CLI + " create failed");
+        .execute();
+    assertTrue(result, KUBERNETES_CLI + " create failed");
 
     verifyDomain(domainUid, domainNamespace, externalServiceNameSuffix);
 
