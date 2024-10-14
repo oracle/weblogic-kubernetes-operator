@@ -79,6 +79,8 @@ WebLogic Kubernetes Operator is certified for use on OKE with Kubernetes 1.25.0+
 [Oracle Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
 WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Cloud Native Environment (OCNE):
+* OCNE 1.9 with Kubernetes 1.29.3+
+* OCNE 1.8 with Kubernetes 1.28.8+
 * OCNE 1.7 with Kubernetes 1.26.6+
 * OCNE 1.6 with Kubernetes 1.25.11+
 
