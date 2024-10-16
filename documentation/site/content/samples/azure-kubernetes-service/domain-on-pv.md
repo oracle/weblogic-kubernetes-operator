@@ -400,14 +400,7 @@ The sample script will create a WLS domain home on the AKS cluster, including:
   - Creating WLS domain home.
   - Generating the domain resource YAML files, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 
-For input values, you edit `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh` directly. The following values must be specified:
-
-| Name in YAML file | Example value       | Notes                                                                                          |
-|-------------------|---------------------|------------------------------------------------------------------------------------------------|
-| `dockerEmail` | `yourDockerEmail`   | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image.      |
-| `dockerPassword` | `yourDockerPassword` | Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
-| `weblogicUserName` | `weblogic`          | Uername for WebLogic user account.                                                             |
-| `weblogicAccountPassword` | `Secret123456` | Password for WebLogic user account.                                                            |
+To customize the WLS domain, you can directly edit `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh`.
 
 You can now run the script.
 
