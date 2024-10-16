@@ -4,7 +4,7 @@ The following steps will direct you to accept the license agreement for WebLogic
 
   - In a web browser, navigate to https://container-registry.oracle.com and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the **Sign In** link to create them.
   - The Oracle Container Registry provides a WebLogic 12.2.1.4 General Availability (GA) installation image that is used in this sample.
-    - Navigate to **Middleware**, then **weblogic**.
+    - In the Oracle Container Registry, navigate to **Middleware**, then **weblogic**.
     - On the left, choose a language and accept the license agreement. You will then see a message such as: "You last accepted the Oracle Standard Terms and Restrictions on 08/10/2020 at 06:12 AM Coordinated Universal Time (UTC)."
   - **NOTE**: General Availability (GA) images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not
      acceptable for production use**. In production, you should always use CPU (patched) images

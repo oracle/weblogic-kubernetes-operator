@@ -136,6 +136,12 @@ envValidate() {
   echo "Checking host environment passed."
 }
 
+#
+# Function to prompt the user for input
+# $1 - parameter name
+# $2 - parameter type
+# $3 - parameter length
+# $4 - default value
 inputParameter() {
   local paramName="$1"
   local parmType="$2"
@@ -157,6 +163,9 @@ inputParameter() {
   fi
 }
 
+#
+# Function to prompt the user for password input
+# $1 - parameter name
 inputPassword() {
   local paramName="$1"
 
@@ -176,6 +185,9 @@ inputPassword() {
   fi
 }
 
+#
+# Function to prompt the user for email input
+# $1 - parameter name
 inputEmail() {
   local paramName="$1"
 
@@ -190,6 +202,9 @@ inputEmail() {
   fi
 }
 
+#
+# Function to print the parameters
+#
 print_parameters() {
   print_green "image_build_branch_name=${image_build_branch_name}"
   print_green "image_build_base_dir=${image_build_base_dir}"
@@ -206,6 +221,7 @@ print_parameters() {
   print_green "azureStorageShareName=${azureStorageShareName}"
   print_green "oracleSsoK8sSecretName=${oracleSsoK8sSecretName}"
   print_green "domainUID=${domainUID}"
+  print_green "sampleScriptsDir=${sampleScriptsDir}"
 }
 
 parametersValidate() {
@@ -278,10 +294,14 @@ parametersValidate() {
   if [ -z "${weblogicAccountPassword}" ]; then
     inputPassword "Password of weblogic user account"
     export weblogicAccountPassword=$inputValue
-  fi
+  fi  
+
+  ssoAccountValidate
 
   print_parameters
+}
 
+ssoAccountValidate() {
   print_step "Validate Oracle SSO Account. Make sure docker is running."
   # Attempt to login to Docker
   sudo chmod 666 /var/run/docker.sock
@@ -332,8 +352,9 @@ initialize() {
   export azureKubernetesNodepoolName="${azureKubernetesNodepoolNamePrefix}${namePrefix}"
   export azureStorageShareName="${AKS_PERS_SHARE_NAME}"
   export domainUID="${domainUID}"
+  export sampleScriptsDir=${BASE_DIR}/sample-scripts
 
-  print_parameters
+  print_parameters  
 }
 
 createResourceGroup() {
@@ -512,10 +533,10 @@ createWebLogicDomain() {
   echo Creating WebLogic Server domain ${domainUID}
 
   # create credentials
-  cd ${image_build_base_dir}/sample-scripts/create-weblogic-domain-credentials
+  cd ${sampleScriptsDir}/create-weblogic-domain-credentials
   ./create-weblogic-credentials.sh -u ${weblogicUserName} -p ${weblogicAccountPassword} -d ${domainUID}
 
-  cd ${image_build_base_dir}/sample-scripts/create-kubernetes-secrets
+  cd ${sampleScriptsDir}/create-kubernetes-secrets
   ./create-docker-credentials-secret.sh -s ${oracleSsoK8sSecretName} -e ${dockerEmail} -p ${dockerPassword} -u ${dockerEmail}
 
   # generate yaml
@@ -796,16 +817,12 @@ buildDomainOnPvImage() {
 
   ## Build image
   cd ${image_build_base_dir}
-  mkdir sample-scripts
-  curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/releases/download/${image_build_branch_name}/sample-scripts.zip \
-    -o ${image_build_base_dir}/sample-scripts/sample-scripts.zip
-  unzip ${image_build_base_dir}/sample-scripts/sample-scripts.zip -d ${image_build_base_dir}/sample-scripts
 
   mkdir -p ${image_build_base_dir}/sample
-  cp -r ${image_build_base_dir}/sample-scripts/create-weblogic-domain/domain-on-pv/* ${image_build_base_dir}/sample
+  cp -r ${sampleScriptsDir}/create-weblogic-domain/domain-on-pv/* ${image_build_base_dir}/sample
 
   mkdir -p ${image_build_base_dir}/sample/wdt-artifacts
-  cp -r ${image_build_base_dir}/sample-scripts/create-weblogic-domain/wdt-artifacts/* ${image_build_base_dir}/sample/wdt-artifacts
+  cp -r ${sampleScriptsDir}/create-weblogic-domain/wdt-artifacts/* ${image_build_base_dir}/sample/wdt-artifacts
 
   cd ${image_build_base_dir}/sample/wdt-artifacts
 
