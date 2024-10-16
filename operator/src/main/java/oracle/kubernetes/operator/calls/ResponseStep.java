@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,6 +44,7 @@ import static oracle.kubernetes.operator.calls.RequestStep.RESPONSE_COMPONENT_NA
 import static oracle.kubernetes.operator.calls.RequestStep.accessContinue;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES_NETWORK_EXCEPTION;
 
 /**
  * Step to receive response of Kubernetes API server call.
@@ -190,7 +192,14 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
 
   private void updateFailureStatus(
       @Nonnull DomainResource domain, V1Status status) {
-    DomainCondition condition = new DomainCondition(FAILED).withReason(KUBERNETES)
+    DomainFailureReason reason = KUBERNETES;
+    if (status != null) {
+      LOGGER.fine("updateFailureStatus: " + status);
+      if (Integer.valueOf(HTTP_UNAVAILABLE).equals(status.getCode())) {
+        reason = KUBERNETES_NETWORK_EXCEPTION;
+      }
+    }
+    DomainCondition condition = new DomainCondition(FAILED).withReason(reason)
         .withMessage(status.toString());
     addFailureStatus(domain, condition);
   }

@@ -73,6 +73,13 @@ public enum DomainFailureReason {
       return KUBERNETES_EVENT_ERROR;
     }
   },
+  @SerializedName("KubernetesNetworkException")
+  KUBERNETES_NETWORK_EXCEPTION("KubernetesNetworkException") {
+    @Override
+    public String getEventError() {
+      return KUBERNETES_EVENT_ERROR;
+    }
+  },
   @SerializedName("ServerPod")
   SERVER_POD("ServerPod") {
     @Override
