@@ -400,7 +400,7 @@ The sample script will create a WLS domain home on the AKS cluster, including:
   - Creating WLS domain home.
   - Generating the domain resource YAML files, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 
-To customize the WLS domain, you can directly edit `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh`.
+To customize the WLS domain, you can optionally edit `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh`.
 
 You can now run the script.
 
