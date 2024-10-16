@@ -881,7 +881,7 @@ waitForJobComplete() {
   print_step "waiting job to complete"
 
   waiting_time=0
-  max_wait_time=900
+  max_wait_time=1800
   interval=60
 
   echo "Waiting Job to be completed."
