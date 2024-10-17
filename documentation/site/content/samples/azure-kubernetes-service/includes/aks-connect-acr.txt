@@ -1,4 +1,4 @@
-Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS, see [Configure ACR integration for existing AKS clusters](https://learn.microsoft.com/en-us/azure/aks/cluster-container-registry-integration?tabs=azure-cli#configure-acr-integration-for-an-existing-aks-cluster).
+Finally, connect the AKS cluster to the ACR. For more details on connecting ACR to an existing AKS, see [Configure ACR integration for existing AKS clusters](https://learn.microsoft.com/en-us/azure/aks/cluster-container-registry-integration?tabs=azure-cli#configure-acr-integration-for-an-existing-aks-cluster).
 
 ```shell
 $ export ACR_ID=$(az acr show -n $ACR_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)

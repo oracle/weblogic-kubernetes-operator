@@ -5,7 +5,7 @@ weight: 2
 description: "Sample for creating a WebLogic domain home on an existing PV or PVC on the Azure Kubernetes Service."
 ---
 
-This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
+This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
 
 #### Contents
 
@@ -31,6 +31,8 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 {{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-01.txt" >}}
 
 ##### Prepare parameters
+
+Set required parameters by running the following commands.
 
 ```shell
 # Change these parameters as needed for your own environment
@@ -59,10 +61,10 @@ export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/sign-in-azure.txt" >}}
 
+{{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
+
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
-
-{{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
 
@@ -121,7 +123,7 @@ See [Understanding your first archive]({{< relref "/samples/domains/domain-home-
 
 ##### Staging a ZIP file of the archive
 
-Delete existing archive.zip in case we have an old leftover version.
+Delete any possible existing archive.zip in case we have an old leftover version.
 
 ```shell
 $ rm -f ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
@@ -215,7 +217,7 @@ Now that you have created the AKS cluster, installed the operator, and verified 
 
 ##### Create secrets
 
-You will use the `$BASE_DIR/sample-scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:
+You will use the `$BASE_DIR/sample-scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run the following commands:
 
 ```
 cd $BASE_DIR/sample-scripts/create-weblogic-domain-credentials
@@ -223,19 +225,24 @@ cd $BASE_DIR/sample-scripts/create-weblogic-domain-credentials
 ```shell
 $ ./create-weblogic-credentials.sh -u ${WEBLOGIC_USERNAME} -p ${WEBLOGIC_PASSWORD} -d domain1
 ```
+
+The output will show something similar to the following:
+
 ```
 secret/domain1-weblogic-credentials created
 secret/domain1-weblogic-credentials labeled
 The secret domain1-weblogic-credentials has been successfully created in the default namespace.
 ```
 
-
-You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
+You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run the following commands:
 
 ``` shell
 $ cd $BASE_DIR/sample-scripts/create-kubernetes-secrets
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e ${ORACLE_SSO_EMAIL} -p ${ORACLE_SSO_PASSWORD} -u ${ORACLE_SSO_EMAIL}
 ```
+
+The output will show something similar to the following:
+
 ```
 secret/wlsregcred created
 The secret wlsregcred has been successfully created in the default namespace.
@@ -246,6 +253,9 @@ Verify secrets with the following command:
 ```shell
 $ kubectl get secret
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                                      TYPE                             DATA   AGE
 domain1-weblogic-credentials              Opaque                           2      2m32s
@@ -268,7 +278,7 @@ kubectl label namespace default weblogic-operator=enabled
 ##### Create WebLogic Domain
 Now, you deploy a `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.
 
-- Run the following command to generate resource files.
+- Run the following commands to generate resource files.
 
     Export `Domain_Creation_Image_tag`, which will be referred in `create-domain-on-aks-generate-yaml.sh`.
 
@@ -296,12 +306,19 @@ The domain resource references the cluster resource, a WebLogic Server installat
   ```shell
   $ kubectl apply -f admin-lb.yaml
   ```
+
+  The output will show something similar to the following:
+
   ```
   service/domain1-admin-server-external-lb created
   ```
+
   ```shell
   $ kubectl  apply -f cluster-lb.yaml
   ```
+
+  The output will show something similar to the following:
+
   ```
   service/domain1-cluster-1-external-lb created
   ```
@@ -363,7 +380,7 @@ The domain resource references the cluster resource, a WebLogic Server installat
 
   ```
 
-  In the example, the URL to access the Administration Server is: `http://4.157.147.131/console`.
+  In the example, the URL to access the Administration Server is: `http://4.157.147.131:7001/console`.
   The user name and password that you enter for the Administration Console must match the ones you specified for the `domain1-weblogic-credentials` secret in the [Create secrets](#create-secrets) step.
 
   If the WLS Administration Console is still not available, use `kubectl get events --sort-by='.metadata.creationTimestamp' ` to troubleshoot.
@@ -372,25 +389,20 @@ The domain resource references the cluster resource, a WebLogic Server installat
   $ kubectl get events --sort-by='.metadata.creationTimestamp'
   ```
 
-To access the sample application on WLS, you may skip to the section [Access sample application](#access-sample-application).  The next section includes a script that automates all of the preceding steps.
+To access the sample application on WLS, skip to the section [Access sample application](#access-sample-application). The next section includes a script that automates all of the preceding steps.
 
 #### Automation
 
-If you want to automate the above steps of creating AKS cluster and WLS domain, you can use the script `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
+If you want to automate the above steps of creating the AKS cluster and WLS domain, you can use the script `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
 
 The sample script will create a WLS domain home on the AKS cluster, including:
   - Creating a new Azure resource group, with a new Azure Storage Account and Azure File Share to allow WebLogic to persist its configuration and data separately from the Kubernetes pods that run WLS workloads.
   - Creating WLS domain home.
   - Generating the domain resource YAML files, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 
-For input values, you can edit `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh` directly. The following values must be specified:
+To customize the WLS domain, you can optionally edit `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.sh`.
 
-| Name in YAML file | Example value       | Notes                                                                                          |
-|-------------------|---------------------|------------------------------------------------------------------------------------------------|
-| `dockerEmail` | `yourDockerEmail`   | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image.      |
-| `dockerPassword` | `yourDockerPassword` | Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
-| `weblogicUserName` | `weblogic`          | Uername for WebLogic user account.                                                             |
-| `weblogicAccountPassword` | `Secret123456` | Password for WebLogic user account.                                                            |
+You can now run the script.
 
 ```shell
 $ cd ${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service
@@ -400,7 +412,7 @@ $ cd ${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-servi
 $ ./create-domain-on-aks.sh 
 ```
 
-The script will print the Administration Server address after a successful deployment.
+The script will take some time to run. The script will print the Administration Server address after a successful deployment.
 To interact with the cluster using `kubectl`, use `az aks get-credentials` as shown in the script output.
 
 {{% notice info %}} You now have created an AKS cluster with Azure Files NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
@@ -421,12 +433,11 @@ Access the sample application using the cluster load balancer IP address.
 $ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
-
 ```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
 
-The test application will list the server host and server IP on the output, like the following:
+The test application will list the server host on the output, like the following:
 
 ```html
 <html><body><pre>
@@ -478,7 +489,7 @@ wlsstorage1612795811.file.core.windows.net:/wlsstorage1612795811/wls-weblogic-16
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-01.txt" >}}
 
-If you created the AKS cluster step by step, run the following commands to clean up resources.
+If you created the AKS cluster step by step, run the following command to clean up resources.
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
