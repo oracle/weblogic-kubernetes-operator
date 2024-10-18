@@ -83,18 +83,19 @@ pipeline {
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.29.1'
+               defaultValue: '1.30.0'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
                        //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
                        //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa22u45gr3ikxnc6rius2qil2kz5k3e7p476c4usr6qnvql4l5dxea'
+                       //1.29.1 'ocid1.image.oc1.phx.aaaaaaaa22u45gr3ikxnc6rius2qil2kz5k3e7p476c4usr6qnvql4l5dxea'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaahgrs3zcwrvutjtni557ttrt62uggseijsmqxacr7dym423uaokcq'
                        
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.26.2'
+                       defaultValue: '1.30.0'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -144,7 +145,7 @@ pipeline {
         )
         string(name: 'NODE_SHAPE',
                        description: '',
-                       defaultValue: "VM.Standard.E4.Flex"
+                       defaultValue: "VM.Standard.E5.Flex"
         )
         string(name: 'MOUNT_TARGET_OCID',
                                description: 'only for debug runs on wko-oke-dev',
@@ -273,6 +274,7 @@ pipeline {
                                                             --auth=instance_principal
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
+
                         '''
                     }
                 }
@@ -321,6 +323,7 @@ pipeline {
                         chmod 600 ${wkotest_ssh_pk}
 
                         COMPARTMENT_OCID=${compartment_id}
+
                         export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
 
                         echo 'Set env vars needed for integration tests...'

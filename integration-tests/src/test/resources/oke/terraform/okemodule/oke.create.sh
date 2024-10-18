@@ -80,74 +80,90 @@ createRoleBindings () {
     ${KUBERNETES_CLI:-kubectl} config set-credentials $okeclustername-sa --token=$TOKEN
     ${KUBERNETES_CLI:-kubectl} config set-context --current --user=$okeclustername-sa
 }
+checkKubernetesCliConnection() {
+    echo "Confirming ${KUBERNETES_CLI:-kubectl} can connect to the server..."
 
-checkClusterRunning () {
+    # Get the cluster public IP
+    clusterPublicIP=$(oci ce cluster list --compartment-id="${compartment_ocid}" | jq -r '.data[] | select(."name" == "'"${okeclustername}"'" and (."lifecycle-state" == "ACTIVE")) | ."endpoints" | ."public-endpoint" | split(":")[0]')
 
-    echo "Confirm we have ${KUBERNETES_CLI:-kubectl} working..."
-    privateIP=${vcn_cidr_prefix}
-    myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
+    # Check if clusterPublicIP is empty or not
+    if [ -z "$clusterPublicIP" ]; then
+        echo "[ERROR] No active cluster found with name ${okeclustername}."
+        exit 1
+    fi
+    echo "clusterPublicIP: ###$clusterPublicIP###"
+    unset NO_PROXY
+    export NO_PROXY=localhost,127.0.0.1,10.244.0.0/16,10.101.0.0/16,10.196.0.0/16,$clusterPublicIP
+    echo "export NO_PROXY=:$NO_PROXY"
+
+    local myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
+
     if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
         echo "[ERROR] Unable to connect to the server: net/http: TLS handshake timeout"
-
         echo '- could not talk to OKE cluster, aborting'
-        cd ${terraformVarDir}
-        terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-        terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-        echo "retrying to execute KUBERNETES_CLI"
-        clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
-        echo "clusterIp : $clusterIP"
-        clusterPublicIP=${clusterIP:1:-6}
-        echo " clusterPublicIP : ${clusterPublicIP}"
-        echo "NO_PROXY before : ${NO_PROXY}"
-        export NO_PROXY=${clusterPublicIP}
-        echo "NO_PROXY:" $NO_PROXY
+        unset http_proxy
+        unset https_proxy
         myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
         if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
-                echo "[ERROR] Unable to connect to the server: net/http: TLS handshake timeout"
-                echo '- could not talk to OKE cluster, aborting'
-                cd ${terraformVarDir}
-                terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-                exit 1
+          cd "${terraformVarDir}"
+          terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+          exit 1
         fi
     fi
-    declare -a myline
-    myline=(`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`)
-    NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-    status=$myline[0]
-    max=100
-    count=1
+    if echo "$myline_output" | grep -q "couldn't get current server API group"; then
+            echo "[ERROR] Unable to connect to the server: couldn't get current server API group, connection refused"
+            echo '- check errors during OKE cluster creation'
+            echo '- could not talk to OKE cluster, aborting'
 
-    for i in {0..1}
-    do
-    while [ "${myline[i]}" != "Ready" -a $count -le $max ] ; do
-        echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
-        sleep 10
-        myline=(`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`)
-        NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-        echo "myline[i] ${myline[i]}"
-        [[ ${myline[i]} -eq "Ready"  ]]
-        echo "Status is ${myline[i]} Iter [$count/$max]"
-        count=`expr $count + 1`
-      done
+            cd "${terraformVarDir}"
+            terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+            exit 1
+    fi
+
+}
+
+checkClusterRunning() {
+    checkKubernetesCliConnection
+
+    local privateIP=${vcn_cidr_prefix}
+    declare -a myline=($(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'))
+    local NODE_IP=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $7}')
+
+    local status=${myline[0]}
+    local max=100
+    local count=1
+
+    for i in {0..1}; do
+        while [ "${myline[i]}" != "Ready" ] && [ $count -le $max ]; do
+            echo "[ERROR] Some Nodes in the Cluster are not in the Ready Status, sleeping for 10s..."
+            sleep 10
+            myline=($(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'))
+            NODE_IP=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $7}')
+            echo "myline[i]: ${myline[i]}"
+            echo "Status is ${myline[i]} Iter [$count/$max]"
+            count=$((count + 1))
+        done
     done
 
-    NODES=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | wc -l`
-    if [ "$NODES" == "2" ]; then
-      echo '- looks good'
+    local NODES=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | wc -l)
+
+    if [ "$NODES" -eq 2 ]; then
+        echo '- looks good'
     else
-      echo '- could not talk to OKE cluster, aborting'
-      cd ${terraformVarDir}
-      terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-      exit 1
+        echo '- could not talk to OKE cluster, aborting'
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        exit 1
     fi
 
-    if [ $count -gt $max ] ; then
-       echo "[ERROR] Unable to start the nodes in oke cluster after 200s ";
-       cd ${terraformVarDir}
-       terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-       exit 1
+    if [ $count -gt $max ]; then
+        echo "[ERROR] Unable to start the nodes in the OKE cluster after 200s"
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        exit 1
     fi
 }
+
 
 #MAIN
 propsFile=${1:-$PWD/oci.props}
@@ -199,18 +215,18 @@ createCluster
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
 
 
-export okeclustername=\"${okeclustername}\"
+#export okeclustername=\"${okeclustername}\"
 
 
-echo " oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"'"
+#echo " oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"'"
 
-clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
-echo "clusterIp : $clusterIP"
-clusterPublicIP=${clusterIP:1:-6}
-echo " clusterPublicIP : ${clusterPublicIP}"
-echo "NO_PROXY before : ${NO_PROXY}"
-export NO_PROXY=${clusterPublicIP}
-echo "NO_PROXY:" $NO_PROXY
+#clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
+#echo "clusterIp : $clusterIP"
+#clusterPublicIP=${clusterIP:1:-6}
+#echo " clusterPublicIP : ${clusterPublicIP}"
+#echo "NO_PROXY before : ${NO_PROXY}"
+#export NO_PROXY=${clusterPublicIP}
+#echo "NO_PROXY:" $NO_PROXY
 
 checkClusterRunning
-echo "$okeclustername is up and running}"
+echo "${okeclustername} is up and running"
