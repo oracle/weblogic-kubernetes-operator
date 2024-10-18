@@ -33,7 +33,6 @@ public class TraefikParams {
   private static final String TRAEFIK_IMAGE_TAG = "image.tag";
   private static final String INGRESS_CLASS_NAME = "ingressClass.name";
   private static final String TYPE = "service.type";
-
   
   public TraefikParams() {
     ingressClassName = UniqueName.uniqueName("traefik-");
@@ -72,7 +71,7 @@ public class TraefikParams {
     this.traefikImageTag = traefikImageTag;
     return this;
   }
-  
+
   public String getIngressClassName() {
     return ingressClassName;
   }
@@ -106,7 +105,6 @@ public class TraefikParams {
     values.put(TRAEFIK_IMAGE_TAG, traefikImageTag);
     values.put(INGRESS_CLASS_NAME, ingressClassName);
     values.put(TYPE, type);
-
     values.values().removeIf(Objects::isNull);
     return values;
   }

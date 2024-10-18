@@ -35,7 +35,6 @@ public class NginxParams {
   private static final String IP_FAMILY_POLICY = "controller.service.ipFamilyPolicy";
   private static final String IP_FAMILIES = "controller.service.ipFamilies";
   private static final String TYPE = "controller.service.type";
-  
 
   // Adding some of the most commonly used params for now
   private int nodePortsHttp;
