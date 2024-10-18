@@ -24,7 +24,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 
 ##### Prepare parameters
 
-Set parameters.
+Set required parameters by running the following commands.
 
 ```shell
 # Change these parameters as needed for your own environment
@@ -62,19 +62,26 @@ export WEBLOGIC_WDT_PASSWORD=Secret123456
 
 #### Install WebLogic Kubernetes Operator
 
-The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
+The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as container infrastructure hosting WLS instances. The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
 Create a namespace and service account for the operator.
 
 ```shell
 $ kubectl create namespace sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 namespace/sample-weblogic-operator-ns created
 ```
+
 ```shell
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
+
+The output will show something similar to the following:
+
 ```
 serviceaccount/sample-weblogic-operator-sa created
 ```
@@ -84,13 +91,16 @@ Validate the service account was created with this command.
 ```shell
 $ kubectl -n sample-weblogic-operator-ns get serviceaccount
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                          SECRETS   AGE
 default                       1         9m24s
 sample-weblogic-operator-sa   1         9m5s
 ```
 
-Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from Github. It may take you several minutes to install the operator.
+Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from GitHub. It may take you several minutes to install the operator.
 
 ```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
@@ -128,13 +138,20 @@ Verify the operator with the following commands; the status will be `Running`.
 ```shell
 $ helm list -A
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
 weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.8  4.2.8
 ```
+
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                                         READY   STATUS    RESTARTS   AGE
 weblogic-operator-54b5c8df46-g4rcm           1/1     Running   0          86s
@@ -215,7 +232,7 @@ $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
 ##### Creating the image with WIT
 
@@ -241,6 +258,9 @@ $ docker tag wdt-domain-image:WLS-v1 $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```shell
 $ docker push $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```
+
+The output will show something similar to the following:
+
 ```
 The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/mii-aks-auxiliary-image]
 1.0: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
@@ -295,6 +315,9 @@ $ $BASE_DIR/sample-scripts/create-kubernetes-secrets/create-docker-credentials-s
   -p ${ORACLE_SSO_PASSWORD} \
   -u ${ORACLE_SSO_EMAIL}
 ```
+
+The output will show something similar to the following:
+
 ```
 secret/wlsregcred created
 The secret wlsregcred has been successfully created in the sample-domain1-ns namespace.
@@ -376,7 +399,7 @@ wlsregcred                                 kubernetes.io/dockerconfigjson   1   
 
 Now, you create a domain YAML file. Think of the domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
-We provide a script at `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-mii-generate-yaml.sh` to generate domain resource description.
+We provide a script at `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-mii-generate-yaml.sh` to generate a domain resource description.
 
 Run the following command to generate resource files.
 
@@ -453,9 +476,9 @@ If the system does not reach this state, troubleshoot and resolve the problem be
 
 ##### Create Azure load balancer
 
-Create the Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed in the cluster.
+Create an Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed to the cluster.
 
-Use the configuration file in `admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with you domain values.
+Use the file `admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with your domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -478,7 +501,7 @@ spec:
 ```
 {{% /expand %}}
 
-Use the configuration file in `cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
+Use the file `cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -502,17 +525,24 @@ spec:
 ```
 {{% /expand %}}
 
-Create the load balancer services using the following command:
+Create the load balancer services using the following commands:
 
 ```shell
 $ kubectl apply -f admin-lb.yaml
 ```
+
+Successful output will look like:
+
 ```
 service/sample-domain1-admin-server-external-lb created
 ```
+
 ```shell
 $ kubectl  apply -f cluster-lb.yaml
 ```
+
+Successful output will look like:
+
 ```
 service/sample-domain1-cluster-1-external-lb created
 ```
@@ -522,6 +552,9 @@ Get the external IP addresses of the Administration Server and cluster load bala
 ```shell
 $ kubectl get svc -n sample-domain1-ns --watch
 ```
+
+Successful output will look like:
+
 ```
 NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)          AGE
 sample-domain1-admin-server               ClusterIP      None           <none>           7001/TCP         8m33s
@@ -545,7 +578,7 @@ $ kubectl describe domain domain1
 
 Make sure the status of cluster-1 is `ServersReady` and `Available`.
 
-{{%expand "Click here to view the example domain status." %}}
+{{%expand "Click here to view example domain status." %}}
 ```yaml
 Name:         sample-domain1
 Namespace:    sample-domain1-ns
@@ -688,6 +721,8 @@ $ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb 
 ```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
+
+Successful output will look like:
 
 ```
 <html><body><pre>

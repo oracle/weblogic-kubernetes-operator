@@ -9,15 +9,17 @@ description: "Deploy WebLogic Server on Azure Kubernetes Service."
 
 ### Introduction
 
-This document is the reference documentation for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service. The offer makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type.
+This document is the reference for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service. The offer makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, load-balancer, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type.
 
 To deploy the offer from the Azure portal, see [WebLogic Server on Azure](https://aka.ms/wls-aks-portal).
+
+{{< img "WLS AKS Marketplace Solution Screenshot" "images/aks-solution.png" >}}
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
 
 For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
-It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}).
+It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}) sample.
 
 The remaining steps on this page document the user experience for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service.
 
@@ -93,11 +95,11 @@ In this section, you can configure the image that is deployed using the model-in
 
 #### Application
 
-In this section you can deploy a Java EE Application along with the WebLogic Server deployment.
+In this section, you can deploy an application along with WebLogic Server.
 
 | Field | Description |
 |-------|-------------|
-| Deploy an application? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.|
+| Deploy an application? | If set to **Yes**, you must specify a WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.|
 | Application package (.war,.ear,.jar) | With the **Browse** button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/azure/storage/common/storage-account-create?tabs=azure-portal) and [Create a Storage Container and upload application files](https://docs.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal). |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
@@ -106,10 +108,10 @@ In this section you can deploy a Java EE Application along with the WebLogic Ser
 | Field | Description |
 |-------|-------------|
 | Show advanced configuration? | If you want to retain the default values for the optional configuration, such as **Enable Container insights**, **Create Persistent Volume using Azure File share service** and others, set the toggle button to **No**, and click **Next** to configure TLS/SSL. If you want to specify different values for the optional configuration, set the toggle button to **Yes**, and enter the following details. |
-|Enable Container insights| If selected, cause the deployment to create an Azure Monitoring workspace and connect it to the AKS cluster as the Azure Monitoring Agent. Azure Monitoring Agent is a tool that collects data and sends it to Azure Container Insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see [Azure Monitor Agent overview](/azure/azure-monitor/agents/agents-overview) and [Container insights overview](https://aka.ms/wls-aks-container-insights). |
+|Enable Container insights| If selected, causes the deployment to create an Azure Monitoring workspace and connect it to the AKS cluster as the Azure Monitoring Agent. Azure Monitoring Agent is a tool that collects data and sends it to Azure Container Insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see [Azure Monitor Agent overview](/azure/azure-monitor/agents/agents-overview) and [Container insights overview](https://aka.ms/wls-aks-container-insights). |
 |Create Persistent Volume using Azure File share service|If selected, an Azure Storage Account and an Azure Files share will be provisioned. The file system type is NFS. The name of the Azure Files share is **weblogic**. The mount point is `/shared` as a persistent volume in the nodes of the AKS cluster. For more information, see [Oracle WebLogic Server persistent storage]({{< relref "/managing-domains/persistent-storage/_index.md" >}}) and [persistent volume with Azure Files share on AKS](https://docs.microsoft.com/azure/aks/azure-files-volume).|
-| Bring your own WebLogic Server Docker image from Azure Container Registry? | If check the checkbox, the subsequent options are constrained to allow only selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. |
-| Select existing ACR instance | This option is shown only if **Bring your own WebLogic Server Docker image from Azure Container Registry?** is checked. If visible, select an existing Acure Container Registry instance. |
+| Bring your own WebLogic Server Docker image from Azure Container Registry? | If the checkbox is selected, you can use your own WebLogic Server Docker image from a pre-existing Azure Container Registry instance. |
+| Select existing ACR instance | This option is shown only if **Bring your own WebLogic Server Docker image from Azure Container Registry?** is checked. If visible, select an existing Azure Container Registry instance. |
 | Please provide the image path | This option is shown only if **Bring your own WebLogic Server Docker image from Azure Container Registry?** is checked. If visible, the value must be a fully qualified Docker tag of an image within the specified ACR. |
 
 When you are satisfied with your selections, select **Next** and open **TLS/SSL** blade.
@@ -118,7 +120,7 @@ When you are satisfied with your selections, select **Next** and open **TLS/SSL*
 
 With the **TLS/SSL** blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA). See [Oracle WebLogic Server Keystores configuration](https://aka.ms/arm-oraclelinux-wls-ssl-configuration) for more information.
 
-Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next**. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
+Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** If you select **No**, you don't have to provide any details, and can proceed by selecting **Next**. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
 
 If you want to upload existing keystores, select **Upload existing KeyStores** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
@@ -233,7 +235,7 @@ You can fill in any valid value in this column.
 
 **Target** and **Port** column:
 
-For the ports, the recommended values are the usual 7001 for the **admin-server** and 8001 for the **cluster-1**.
+For the ports, the recommended values are the usual 7001 for **admin-server** and 8001 for **cluster-1**.
 
 When you are satisfied with your selections, select **Next** and open **DNS** blade.
 
@@ -280,7 +282,7 @@ Use the Database blade to configure Oracle WebLogic Server to connect to an exis
 | JNDI Name	| Enter the JNDI name for your database JDBC connection. |
 | DataSource Connection String | Enter the JDBC connection string for your database. For information about obtaining the JDBC connection string, see [Obtain the JDBC Connection String for Your Database](https://docs.oracle.com/en/middleware/standalone/weblogic-server/wlazu/obtain-jdbc-connection-string-your-database.html#GUID-6523B742-EB68-4AF4-A85C-8B4561C133F3). |
 | Global transactions protocol | Determines the transaction protocol (global transaction processing behavior) for the data source. For more information, see [JDBC Data Source Transaction Options](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/jdbca/transactions.html#GUID-4C929E67-5FD7-477B-A749-1EA0F4FD25D4). **IMPORTANT: The correct value for this parameter depends on the selected database type. For PostgreSQL, select EmulateTwoPhaseCommit**. |
-| Use passwordless datasource connection | If you select a database type that supports passwordless connection, then this check box will appear. If selected, configure passwordless connections to the data source. For more information, see [Passwordless connections for Azure services](https://learn.microsoft.com/azure/developer/intro/passwordless-overview). |
+| Use passwordless datasource connection | If you select a database type that supports passwordless connection, this check box will appear. If selected, a passwordless connection to the data source will be configured. For more information, see [Passwordless connections for Azure services](https://learn.microsoft.com/azure/developer/intro/passwordless-overview). |
 | Database Username	| Enter the user name of your database. |
 | Database Password	| Enter the password for the database user. |
 | Confirm password | Re-enter the value of the preceding field. |
@@ -298,7 +300,7 @@ When you are satisfied with your selections, select **Next** and open **Autoscal
 
 ### Autoscaling
 
-Use the Autoscaling blade to configure metric that scales the WebLogic cluster. Select **Yes** or **No** for the option **Provision resources for horizontal autoscaling?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by clicking **Review + create**. If you select **Yes**, you must specify the details of your autoscaling option and autoscaling settings.
+Use the Autoscaling blade to configure metrics that scale the WebLogic cluster. Select **Yes** or **No** for the option **Provision resources for horizontal autoscaling?**, based on your preference. If you select **No**, you don't have to provide any details, and can proceed by clicking **Review + create**. If you select **Yes**, you must specify the details of your autoscaling settings.
 
 You must select one of the following two options, each described in turn.
 
@@ -310,19 +312,19 @@ You must select one of the following two options, each described in turn.
 | Field | Description |
 |-------|-------------|
 | Select metric | There are two options:{{< line_break >}}{{< line_break >}} • Average CPU Utilization {{< line_break >}} • Average Memory Utilization |
-| Average CPU Utilization | Pick average CPU utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster members up to maximum of cluster members, and the scale up or down action occur when the average CPU is consistently over the utilization. |
-| Average Memory Utilization | Pick average memory utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster members up to maximum of cluster members, and the scale up or down action occur when the average memory is consistently over the utilization.|
+| Average CPU Utilization | Pick average CPU utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster member up to the maximum of cluster members, and the scale up or down action occurs when the average CPU is consistently over/under the utilization. |
+| Average Memory Utilization | Pick average memory utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster member up to the maximum of cluster members, and the scale up or down action occurs when the average memory is consistently over/under the utilization.|
 
 #### WebLogic Monitoring Exporter (advanced autoscaling)
 
-This option installs all the software necessary to allow you to create Java metric aware KEDA scaling rules. The offer provisions the following deployments. Right-click and select **Open Link in New Tab** to follow links:
+This option installs all the software necessary to allow you to create Java metric aware KEDA scaling rules. The offer provisions the following software. Right-click and select **Open Link in New Tab** to follow links and learn more:
 
 * [Install WebLogic Monitoring Exporter to scrape WebLogic Server metrics](https://aka.ms/wls-exporter).
 * [Install AKS Prometheus metrics addon](https://aka.ms/aks-enable-monitoring).
 * [Feed WebLogic Server metrics to Azure Monitor Managed Service for Prometheus](https://aka.ms/aks-prometheus-metrics-scrape-configuration).
 * [Integrate KEDA with AKS cluster](https://aka.ms/aks-integrate-keda).
 
-After the provisioning is completed, you can create KEDA scaling rules. A sample rule is provided in the deployment outputs. The following steps show how to see the sample rule.
+After the provisioning is complete, you can create KEDA scaling rules. A sample rule is provided in the deployment outputs. The following steps show how to see the sample rule.
 
 * View the resource group for this deployment in the Azure portal.
 * In the **Settings** section, select **Deployments**.
@@ -337,13 +339,13 @@ When you are satisfied with your selections, select **Review + create**.
 
 In the **Review + create blade**, review the details you provided for deploying Oracle WebLogic Server on AKS. If you want to make changes to any of the fields, click **< previous** or click on the respective blade and update the details.
 
-If you want to use this template to automate the deployment, download it by selecting **Download a template for automation**.
+If you want to use the underlying template to further customize it yourself (for example, as part of your CI/CD pipeline), download it by selecting **Download a template for automation**.
 
-Click **Create** to create this offer. This process may take 30 to 60 minutes.
+Click **Create** to start the deployment. This process may take 30 to 60 minutes.
 
 ### Template outputs
 
-After clicking **Create** to create this offer, you will go to the **Deployment is in progress** page. When the deployment is completed, the page shows **Your deployment is complete**. In the left panel, select **Outputs**. These are the outputs from the deployment.  The following table is a reference guide to the deployment outputs.
+After clicking **Create**, you will go to the **Deployment is in progress** page. When the deployment is complete, the page shows **Your deployment is complete**. In the left panel, select **Outputs**. These are the outputs from the deployment. The following table is a reference to the deployment outputs.
 
 | Field | Description |
 |-------|-------------|

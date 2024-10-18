@@ -61,21 +61,21 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 
 3. Assign the AKS cluster **Contributor** role to access the storage account.
 
-    You must configure role assignment allowing access from AKS cluster to the storage account.
+    You must configure role assignment allowing access from the AKS cluster to the storage account.
 
-    Get `objectId` of the AKS cluster with the following command and save it with variable `AKS_OBJECT_ID`:
+    Get the `objectId` of the AKS cluster with the following command and save it with the variable `AKS_OBJECT_ID`:
 
     ```shell
     $ AKS_OBJECT_ID=$(az aks show --name ${AKS_CLUSTER_NAME} --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "identity.principalId" -o tsv)
     ```
 
-    Get Id of the storage account with the following command:
+    Get the Id of the storage account with the following command:
 
     ```shell
     $ STORAGE_ACCOUNT_ID=$(az storage account show --name ${AKS_PERS_STORAGE_ACCOUNT_NAME} --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "id" -o tsv)
     ```
 
-    Now, you are able to create a role assignment to grant the AKS cluster **Contributor** in the scope of the storage account. Then, the AKS cluster is able to access the file share.
+    Now, you are able to create a role assignment to grant the AKS cluster the **Contributor** role in the scope of the storage account. Then, the AKS cluster is able to access the file share.
 
     ```shell
     $ az role assignment create \
@@ -85,7 +85,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
       --scope "${STORAGE_ACCOUNT_ID}"
     ```
 
-    Successful output will be a JSON object with string like:
+    Successful output will be a JSON object like the following:
 
     ```json
     {
@@ -112,7 +112,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 
 4. Configure network security.
 
-    You must configure the network security allowing access from AKS cluster to the file share.
+    You must configure network security allowing access from the AKS cluster to the file share.
 
     First, you must get the virtual network name and the subnet name of the AKS cluster.
 
@@ -149,7 +149,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
         --service-endpoints Microsoft.Storage
     ```
 
-    It takes several minutes to enable the service endpoint; successful output will be a JSON object with string like:
+    It takes several minutes to enable the service endpoint; successful output will be a JSON object like the following:
 
     ```text
     "serviceEndpoints": [
@@ -163,8 +163,8 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     }
     ```
 
-    Now you must create a network rule to allow access from AKS cluster.
-    The following command enables access from AKS subnet to the storage account:
+    Now you must create a network rule to allow access from the AKS cluster.
+    The following command enables access from the AKS subnet to the storage account:
 
     ```shell
     $ az storage account network-rule add \
@@ -173,7 +173,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
       --subnet ${aksSubnetId}
     ```
 
-    Successful output will be a JSON object with virtual network rule like:
+    Successful output will be a JSON object with a virtual network rule like:
 
     ```text
     "virtualNetworkRules": [
@@ -188,7 +188,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 ##### Create SC and PVC
 
 ##### Generated configuration files
-Use the below command to generate configuration files.
+Use the following command to generate configuration files.
 
 ```shell
 cat >azure-csi-nfs-${TIMESTAMP}.yaml <<EOF
@@ -227,7 +227,7 @@ spec:
 EOF
 ```
 
-Use the `kubectl` command to create the Storage Class and persistent volume claim to the `default` namespace.
+Use the `kubectl` command to create the Storage Class and persistent volume claim in the `default` namespace.
 
 ```shell
 $ kubectl apply -f azure-csi-nfs-${TIMESTAMP}.yaml

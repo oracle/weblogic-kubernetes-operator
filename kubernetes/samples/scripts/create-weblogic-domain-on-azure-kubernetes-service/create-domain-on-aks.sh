@@ -29,6 +29,7 @@ scriptDir="$(cd "$(dirname "${script}")" && pwd)"
 #Kubernetes command line interface.
 #Default is 'kubectl' if KUBERNETES_CLI env variable is not set.
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
+azureResourceUID=${TIMESTAMP}
 
 if [ -z "${azureResourceUID}" ]; then
   azureResourceUID=$(date +%s)
@@ -46,30 +47,42 @@ fail() {
 BLUE="\033[34m"
 RED="\033[31m"
 RESET="\033[0m"
+YELLOW="\033[33m"
+GREEN="\033[32m"
 
 # Function: Print colored message
 print_message() {
-    local contenxt="$1"
-    local color="$2"
+  local contenxt="$1"
+  local color="$2"
 
-    echo -e "${color} ${contenxt}${RESET}"
+  echo -e "${color} ${contenxt}${RESET}"
 }
 
 print_blue() {
-    local contenxt="$1"
-    echo -e "${BLUE} ${contenxt}${RESET}"
+  local contenxt="$1"
+  echo -e "${BLUE} ${contenxt}${RESET}"
 }
 
 print_red() {
-    local contenxt="$1"
-    echo -e "${RED} ${contenxt}${RESET}"
+  local contenxt="$1"
+  echo -e "${RED} ${contenxt}${RESET}"
+}
+
+print_yellow() {
+  local contenxt="$1"
+  echo -e "${YELLOW} ${contenxt}${RESET}"
+}
+
+print_green() {
+  local contenxt="$1"
+  echo -e "${GREEN} ${contenxt}${RESET}"
 }
 
 steps=0
-total_steps=11
+total_steps=12
 print_step() {
-    ((steps++))
-    print_blue "Progress $steps/$total_steps.......... $1"
+  ((steps++))
+  print_blue "Progress $steps/$total_steps.......... $1"
 }
 #
 # Function to validate the host environment meets the prerequisites.
@@ -89,101 +102,221 @@ envValidate() {
 
   # "Checking if Java is installed..."
   if type -p java; then
-      print_blue "Java JDK is installed. Version:"
-      java -version
+    print_blue "Java JDK is installed. Version:"
+    java -version
   else
-      print_red "[ERROR]Java JDK is not installed. Please install Java JDK."
-      exit 1
+    print_red "[ERROR]Java JDK is not installed. Please install Java JDK."
+    exit 1
   fi
 
   # Check if Docker is installed
-  if command -v docker &> /dev/null; then
-      echo "Docker is installed."
+  if command -v docker &>/dev/null; then
+    echo "Docker is installed."
   else
-      print_red "[ERROR]Docker is not installed. Please install Docker."
-      exit 1
+    print_red "[ERROR]Docker is not installed. Please install Docker."
+    exit 1
   fi
 
   # Check if Helm is installed
-  if command -v helm &> /dev/null; then
-      print_blue "Helm is installed."
+  if command -v helm &>/dev/null; then
+    print_blue "Helm is installed."
   else
-      print_red "[ERROR]Helm is not installed. Please install Helm."
-      exit 1
+    print_red "[ERROR]Helm is not installed. Please install Helm."
+    exit 1
   fi
 
   # Check if kubectl is installed
-  if command -v ${kubernetesCli} &> /dev/null; then
-      print_blue "${kubernetesCli} is installed."
+  if command -v ${kubernetesCli} &>/dev/null; then
+    print_blue "${kubernetesCli} is installed."
   else
-      print_red "[ERROR]${kubernetesCli} is not installed. Please install ${kubernetesCli}."
-      exit 1
+    print_red "[ERROR]${kubernetesCli} is not installed. Please install ${kubernetesCli}."
+    exit 1
   fi
 
   echo "Checking host environment passed."
 }
 
+#
+# Function to prompt the user for input
+# $1 - parameter name
+# $2 - parameter type
+# $3 - parameter length
+# $4 - default value
+inputParameter() {
+  local paramName="$1"
+  local parmType="$2"
+  local length="$3"
+  local defaultValue="$4"
+
+  print_yellow "Please provide a value for ${paramName}."
+  read -p "Enter ${parmType}: " input_string
+
+  if [ -z "${input_string}" ]; then
+    input_string=${defaultValue}
+  fi
+
+  if [[ "$input_string" =~ ^[A-Za-z0-9]+$ ]] && [[ ${#input_string} -le ${length} ]]; then
+    export inputValue=$input_string
+  else
+    echo "Invalid input. Please enter a valid value for ${paramName}."
+    exit 1
+  fi
+}
+
+#
+# Function to prompt the user for password input
+# $1 - parameter name
+inputPassword() {
+  local paramName="$1"
+
+  print_yellow "Please provide a value for ${paramName}."
+  read -sp "Please enter password: " password
+  echo
+  read -sp "Please confirm your password: " password_confirm
+  echo
+
+  # Check if the passwords match
+  if [ "$password" == "$password_confirm" ]; then
+    echo "Password is set successfully."
+    export inputValue=$password
+  else
+    echo "Passwords do not match. Please try again."
+    exit 1
+  fi
+}
+
+#
+# Function to prompt the user for email input
+# $1 - parameter name
+inputEmail() {
+  local paramName="$1"
+
+  print_yellow "Please provide a value for ${paramName}."
+  read -p "Enter Email: " input_string
+
+  if [ -n "${input_string}" ]; then
+    export inputValue=$input_string
+  else
+    echo "Invalid input. Please enter a valid value for ${paramName}."
+    exit 1
+  fi
+}
+
+#
+# Function to print the parameters
+#
+print_parameters() {
+  print_green "image_build_branch_name=${image_build_branch_name}"
+  print_green "image_build_base_dir=${image_build_base_dir}"
+  print_green "dockerEmail=${dockerEmail}"
+  print_green "weblogicUserName=${weblogicUserName}"
+
+  print_green "namePrefix=${namePrefix}"
+  print_green "azureLocation=${azureLocation}"
+  print_green "azureResourceGroupName=${azureResourceGroupName}"
+  print_green "aksClusterName=${aksClusterName}"
+  print_green "storageAccountName=${storageAccountName}"
+  print_green "acrName=${acrName}"
+  print_green "azureKubernetesNodepoolName=${azureKubernetesNodepoolName}"
+  print_green "azureStorageShareName=${azureStorageShareName}"
+  print_green "oracleSsoK8sSecretName=${oracleSsoK8sSecretName}"
+  print_green "domainUID=${domainUID}"
+  print_green "sampleScriptsDir=${sampleScriptsDir}"
+}
+
 parametersValidate() {
   print_step "validating parameters"
 
-  # Get the values of environment variables
-  email="$dockerEmail"
-  password="$dockerPassword"
+  local stringFormatLength5="string contains both letters and numbers, between 1 and 5 characters"
+  local stringFormatLength12="string contains both letters and numbers, between 1 and 12 characters"
+  local stringFormatLength20="string contains both letters and numbers, between 1 and 20 characters"
 
-  while getopts "u:p:" option; do
-      case "${option}" in
-          u)
-              email=${OPTARG}
-              ;;
-          p)
-              password=${OPTARG}
-              ;;
-      esac
-  done
-
-  # Check for default values and prompt for setting
-  if [ "$email" = "docker-email" ]; then
-    echo -n "Please enter a value for 'dockerEmail'(Oracle Single Sign-On (SSO) account email): "
-    read input_email
-    if [ -z "$input_email" ]; then
-      echo "No value provided for 'dockerEmail'. Please set the value and rerun the script."
-      exit 1
-    fi
-    email="$input_email"
+  if [ -z "${namePrefix}" ]; then
+    inputParameter "a prefix to name resources" "${stringFormatLength5} [default=wls]" 5 "wls"
+    export namePrefix=$inputValue
   fi
 
-  if [ "$password" = "docker-password" ]; then
-    echo -n "Please enter a value for 'dockerPassword'(Oracle Single Sign-On (SSO) account password): "
-    read -s input_password
-    echo
-    if [ -z "$input_password" ]; then
-      echo "No value provided for 'dockerPassword'. Please set the value and rerun the script."
-      exit 1
-    fi
-    password="$input_password"
+  if [ -z "${azureLocation}" ]; then
+    inputParameter "Azure location" "Azure location [default=eastus]" 12 "eastus"
+    export azureLocation=$inputValue
   fi
 
-  # Export the updated values of environment variables
-  export dockerEmail="$email"
-  export dockerPassword="$password"
+  if [ -z "${acrName}" ]; then
+    inputParameter "Azure Container Registry name" "${stringFormatLength20} [default=${namePrefix}acr${azureResourceUID}]" 20 "${namePrefix}acr${azureResourceUID}"
+    export acrName=$inputValue
+  fi
 
+  if [ -z "${oracleSsoK8sSecretName}" ]; then
+    inputParameter "the Kubernetes secret name associated with the Oracle SSO account." "${stringFormatLength12} [default=${namePrefix}regcred]" 12 "${namePrefix}regcred"
+    export oracleSsoK8sSecretName=$inputValue
+  fi
 
+  if [ -z "${azureResourceGroupName}" ]; then
+    inputParameter "resource group name" "${stringFormatLength20} [default=${namePrefix}rg${azureResourceUID}]" 20 "${namePrefix}rg${azureResourceUID}"
+    export azureResourceGroupName=$inputValue
+  fi
+
+  if [ -z "${aksClusterName}" ]; then
+    inputParameter "Azure Kubernetes Service name" "${stringFormatLength20} [default=${namePrefix}aks${azureResourceUID}]" 20 "${namePrefix}aks${azureResourceUID}"
+    export aksClusterName=$inputValue
+  fi
+
+  if [ -z "${storageAccountName}" ]; then
+    inputParameter "Azure Storage Account name" "${stringFormatLength20} [default=${namePrefix}stg${azureResourceUID}]" 20 "${namePrefix}stg${azureResourceUID}"
+    export storageAccountName=$inputValue
+  fi
+
+  if [ -z "${azureStorageShareName}" ]; then
+    inputParameter "Azure Storage File Share name" "${stringFormatLength20} [default=${namePrefix}${azureResourceUID}]" 20 "${namePrefix}${azureResourceUID}"
+    export azureStorageShareName=$inputValue
+  fi
+
+  if [ -z "${domainUID}" ]; then
+    inputParameter "WebLogic Domain UID" "${stringFormatLength12} [default=domain1]" 12 "domain1"
+    export domainUID=$inputValue
+  fi
+
+  if [ -z "${dockerEmail}" ]; then
+    inputEmail "Oracle Single Sign-On (SSO) account email"
+    export dockerEmail=$inputValue
+  fi
+
+  if [ -z "${dockerPassword}" ]; then
+    inputPassword "Oracle Single Sign-On (SSO) account password"
+    export dockerPassword=$inputValue
+  fi
+
+  if [ -z "${weblogicUserName}" ]; then
+    inputParameter "Name of weblogic user account" "${stringFormatLength12} [default=weblogic]" 12 "weblogic"
+    export weblogicUserName=$inputValue
+  fi
+
+  if [ -z "${weblogicAccountPassword}" ]; then
+    inputPassword "Password of weblogic user account"
+    export weblogicAccountPassword=$inputValue
+  fi  
+
+  ssoAccountValidate
+
+  print_parameters
+}
+
+ssoAccountValidate() {
+  print_step "Validate Oracle SSO Account. Make sure docker is running."
   # Attempt to login to Docker
   sudo chmod 666 /var/run/docker.sock
-  docker login container-registry.oracle.com -u "$dockerEmail" -p "$dockerPassword" > /dev/null 2>&1
+  docker login container-registry.oracle.com -u "$dockerEmail" -p "$dockerPassword" >/dev/null 2>&1
 
   # Check the login result
   if [ $? -eq 0 ]; then
     echo "Oracle Single Sign-On (SSO) account Username and password are correct"
     # Logout from Docker
-    docker logout > /dev/null 2>&1
+    docker logout >/dev/null 2>&1
   else
     print_red "[ERROR]Invalid Oracle Single Sign-On (SSO) account username or password."
     exit 1
   fi
-
 }
-
 
 #
 # Function to setup the environment to run the create Azure resource and domain job
@@ -196,35 +329,33 @@ initialize() {
 
   source ./create-domain-on-aks-inputs.sh
   source ~/.bashrc
-  
+
   # Generate Azure resource name
 
-  export image_build_branch_name="v4.2.5"
+  export image_build_branch_name="v4.2.8"
   export image_build_base_dir="/tmp/tmp${azureResourceUID}"
 
-  export acr_account_name=${namePrefix}acr${azureResourceUID}
-  export docker_secret_name="${namePrefix}regcred"
+  export dockerEmail=${ORACLE_SSO_EMAIL}
+  export dockerPassword=${ORACLE_SSO_PASSWORD}
+  export weblogicUserName=${WEBLOGIC_USERNAME}
+  export weblogicAccountPassword=${WEBLOGIC_PASSWORD}
 
-  export azureResourceGroupName="${namePrefix}resourcegroup${azureResourceUID}"
-  export aksClusterName="${namePrefix}akscluster${azureResourceUID}"
-  export storageAccountName="${namePrefix}storage${azureResourceUID}"
+  export namePrefix=${NAME_PREFIX}
+  export azureLocation=${AKS_PERS_LOCATION}
+  export acrName=${ACR_NAME}
+  export oracleSsoK8sSecretName="${SECRET_NAME_DOCKER}"
+
+  export azureResourceGroupName="${AKS_PERS_RESOURCE_GROUP}"
+  export aksClusterName="${AKS_CLUSTER_NAME}"
+  export storageAccountName="${AKS_PERS_STORAGE_ACCOUNT_NAME}"
 
   export azureKubernetesNodepoolName="${azureKubernetesNodepoolNamePrefix}${namePrefix}"
-  export azureStorageShareName="${namePrefix}-${azureStorageShareNameSuffix}-${azureResourceUID}"
-  export domainUID="domain1"
+  export azureStorageShareName="${AKS_PERS_SHARE_NAME}"
+  export domainUID="${domainUID}"
+  export sampleScriptsDir=${BASE_DIR}/sample-scripts
 
-
-  echo "image_build_branch_name=${image_build_branch_name}"
-  echo "aksClusterName=${aksClusterName}"
-  echo "storageAccountName=${storageAccountName}"
-
-  echo "azureResourceGroupName=${azureResourceGroupName}"
-  echo "image_build_base_dir=${image_build_base_dir}"
-  echo "acr_account_name=${acr_account_name}"
-
-  
+  print_parameters  
 }
-
 
 createResourceGroup() {
   print_step "createing resourcegroup"
@@ -271,24 +402,24 @@ createAndConnectToAKSCluster() {
   retry_count=0
 
   while true; do
-      # Execute create AKS command
-      $create_command
+    # Execute create AKS command
+    $create_command
 
-      # Check exit status
-      if [ $? -eq 0 ]; then
-          echo "AKS creation successful"
-          break
+    # Check exit status
+    if [ $? -eq 0 ]; then
+      echo "AKS creation successful"
+      break
+    else
+      retry_count=$((retry_count + 1))
+      if [ $retry_count -le $max_retries ]; then
+        echo "AKS creation failed. Retrying attempt $retry_count..."
+        # Delete previously created AKS
+        az aks delete --resource-group $azureResourceGroupName --name $aksClusterName --yes --no-wait
       else
-          retry_count=$((retry_count+1))
-          if [ $retry_count -le $max_retries ]; then
-              echo "AKS creation failed. Retrying attempt $retry_count..."
-              # Delete previously created AKS
-              az aks delete --resource-group $azureResourceGroupName --name $aksClusterName --yes --no-wait
-          else
-              echo "Maximum retry limit reached. Unable to create AKS"
-              exit 1
-          fi
+        echo "Maximum retry limit reached. Unable to create AKS"
+        exit 1
       fi
+    fi
   done
 
   # Connect to AKS cluster
@@ -310,28 +441,28 @@ createFileShare() {
 
   echo Creating Azure Storage Account ${storageAccountName}.
   az storage account create \
-  -n $storageAccountName \
-  -g $azureResourceGroupName \
-  -l $azureLocation \
-  --sku Premium_LRS \
-  --kind FileStorage \
-  --https-only false \
-  --default-action Deny
+    -n $storageAccountName \
+    -g $azureResourceGroupName \
+    -l $azureLocation \
+    --sku Premium_LRS \
+    --kind FileStorage \
+    --https-only false \
+    --default-action Deny
 
   echo Creating Azure NFS file share.
   az storage share-rm create \
-  --resource-group $azureResourceGroupName \
-  --storage-account $storageAccountName \
-  --name ${azureStorageShareName} \
-  --enabled-protocol NFS \
-  --root-squash NoRootSquash \
-  --quota 100
+    --resource-group $azureResourceGroupName \
+    --storage-account $storageAccountName \
+    --name ${azureStorageShareName} \
+    --enabled-protocol NFS \
+    --root-squash NoRootSquash \
+    --quota 100
 
   configureStorageAccountNetwork
 
   # Echo storage account name and key
   echo Storage account name: $storageAccountName
-  echo NFS file share name: ${azureStorageShareName}  
+  echo NFS file share name: ${azureStorageShareName}
 
 }
 
@@ -340,10 +471,10 @@ configureStorageAccountNetwork() {
   local storageAccountId=$(az storage account show --name ${storageAccountName} --resource-group ${azureResourceGroupName} --query "id" -o tsv)
 
   az role assignment create \
-      --assignee-object-id "${aksObjectId}" \
-      --assignee-principal-type "ServicePrincipal" \
-      --role "Contributor" \
-      --scope "${storageAccountId}"
+    --assignee-object-id "${aksObjectId}" \
+    --assignee-principal-type "ServicePrincipal" \
+    --role "Contributor" \
+    --scope "${storageAccountId}"
 
   if [ $? != 0 ]; then
     fail "Failed to grant the AKS cluster with Contibutor role to access the storage account."
@@ -357,7 +488,7 @@ configureStorageAccountNetwork() {
   local aksNetworkName=$(az graph query -q "Resources \
     | where type =~ 'Microsoft.Network/virtualNetworks' \
     | where resourceGroup  =~ '${aksMCRGName}' \
-    | project name = name" --query "data[0].name"  -o tsv)
+    | project name = name" --query "data[0].name" -o tsv)
 
   echo "aksNetworkName="${aksNetworkName}
 
@@ -402,14 +533,11 @@ createWebLogicDomain() {
   echo Creating WebLogic Server domain ${domainUID}
 
   # create credentials
-  cd ${image_build_base_dir}
-  cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
+  cd ${sampleScriptsDir}/create-weblogic-domain-credentials
   ./create-weblogic-credentials.sh -u ${weblogicUserName} -p ${weblogicAccountPassword} -d ${domainUID}
 
-  cd ${image_build_base_dir}
-  cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-kubernetes-secrets
-
-  ./create-docker-credentials-secret.sh -s ${docker_secret_name} -e ${dockerEmail} -p ${dockerPassword} -u ${dockerEmail}
+  cd ${sampleScriptsDir}/create-kubernetes-secrets
+  ./create-docker-credentials-secret.sh -s ${oracleSsoK8sSecretName} -e ${dockerEmail} -p ${dockerPassword} -u ${dockerEmail}
 
   # generate yaml
   generateYamls
@@ -426,9 +554,9 @@ createWebLogicDomain() {
 }
 
 generateYamls() {
-  
-echo "generating yamls..."
-cat >azure-csi-nfs.yaml <<EOF
+
+  echo "generating yamls..."
+  cat >azure-csi-nfs.yaml <<EOF
 # Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
@@ -448,7 +576,7 @@ allowVolumeExpansion: true
 
 EOF
 
-cat >pvc.yaml <<EOF
+  cat >pvc.yaml <<EOF
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -463,8 +591,7 @@ spec:
 
 EOF
 
-
-cat >domain-resource.yaml <<EOF
+  cat >domain-resource.yaml <<EOF
 # Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
@@ -539,7 +666,7 @@ spec:
         #   "sourceModelHome"      - Model file directory in image, default "/auxiliary/models".
         #   "sourceWDTInstallHome" - WDT install directory in image, default "/auxiliary/weblogic-deploy".
         domainCreationImages:
-        - image: "${acr_account_name}.azurecr.io/wdt-domain-image:WLS-v1"
+        - image: "${acrName}.azurecr.io/wdt-domain-image:WLS-v1"
           imagePullPolicy: IfNotPresent
           #sourceWDTInstallHome: /auxiliary/weblogic-deploy
           #sourceModelHome: /auxiliary/models
@@ -621,7 +748,7 @@ spec:
 
 EOF
 
-cat >admin-lb.yaml <<EOF
+  cat >admin-lb.yaml <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -641,7 +768,7 @@ spec:
 
 EOF
 
-cat >cluster-lb.yaml <<EOF
+  cat >cluster-lb.yaml <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -663,121 +790,120 @@ EOF
 
 }
 
-buildDomainOnPvImage(){
-print_step "build domain image"
+buildDomainOnPvImage() {
+  print_step "build domain image"
 
-echo "build image start----------"
+  echo "build image start----------"
 
-az extension add --name resource-graph
-mkdir ${image_build_base_dir}
+  az extension add --name resource-graph
+  mkdir ${image_build_base_dir}
 
-## Build Azure ACR
-az acr create --resource-group $azureResourceGroupName \
-  --name ${acr_account_name} \
-  --sku Standard
+  ## Build Azure ACR
+  az acr create --resource-group $azureResourceGroupName \
+    --name ${acrName} \
+    --sku Standard
 
-echo "enable admin ......"
-az acr update -n ${acr_account_name} --resource-group $azureResourceGroupName --admin-enabled true
+  echo "enable admin ......"
+  az acr update -n ${acrName} --resource-group $azureResourceGroupName --admin-enabled true
 
-export LOGIN_SERVER=$(az acr show -n $acr_account_name --resource-group $azureResourceGroupName --query 'loginServer' -o tsv)
-export USER_NAME=$(az acr credential show -n $acr_account_name --resource-group $azureResourceGroupName --query 'username' -o tsv)
-export PASSWORD=$(az acr credential show -n $acr_account_name --resource-group $azureResourceGroupName --query 'passwords[0].value' -o tsv)
+  export LOGIN_SERVER=$(az acr show -n $acrName --resource-group $azureResourceGroupName --query 'loginServer' -o tsv)
+  export USER_NAME=$(az acr credential show -n $acrName --resource-group $azureResourceGroupName --query 'username' -o tsv)
+  export PASSWORD=$(az acr credential show -n $acrName --resource-group $azureResourceGroupName --query 'passwords[0].value' -o tsv)
 
-sudo docker login $LOGIN_SERVER -u $USER_NAME -p $PASSWORD
+  sudo docker login $LOGIN_SERVER -u $USER_NAME -p $PASSWORD
 
-## need az acr login in order to push
-az acr login --name $acr_account_name
+  ## need az acr login in order to push
+  az acr login --name $acrName
 
-## Build image
-cd ${image_build_base_dir}
-git clone --branch ${image_build_branch_name} https://github.com/oracle/weblogic-kubernetes-operator.git
-mkdir -p ${image_build_base_dir}/sample
-cp -r ${image_build_base_dir}/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/* ${image_build_base_dir}/sample
+  ## Build image
+  cd ${image_build_base_dir}
 
-mkdir -p ${image_build_base_dir}/sample/wdt-artifacts
-cp -r ${image_build_base_dir}/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* ${image_build_base_dir}/sample/wdt-artifacts
+  mkdir -p ${image_build_base_dir}/sample
+  cp -r ${sampleScriptsDir}/create-weblogic-domain/domain-on-pv/* ${image_build_base_dir}/sample
 
-cd ${image_build_base_dir}/sample/wdt-artifacts
+  mkdir -p ${image_build_base_dir}/sample/wdt-artifacts
+  cp -r ${sampleScriptsDir}/create-weblogic-domain/wdt-artifacts/* ${image_build_base_dir}/sample/wdt-artifacts
 
-curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
-  -o ${image_build_base_dir}/sample/wdt-artifacts/weblogic-deploy.zip
+  cd ${image_build_base_dir}/sample/wdt-artifacts
 
-curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
-  -o ${image_build_base_dir}/sample/wdt-artifacts/imagetool.zip
+  curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
+    -o ${image_build_base_dir}/sample/wdt-artifacts/weblogic-deploy.zip
 
-cd ${image_build_base_dir}/sample/wdt-artifacts
-unzip imagetool.zip
+  curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
+    -o ${image_build_base_dir}/sample/wdt-artifacts/imagetool.zip
 
-./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
-./imagetool/bin/imagetool.sh cache addInstaller \
-  --type wdt \
-  --version latest \
-  --path ${image_build_base_dir}/sample/wdt-artifacts/weblogic-deploy.zip
+  cd ${image_build_base_dir}/sample/wdt-artifacts
+  unzip imagetool.zip
 
-rm -f ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip
-cd ${image_build_base_dir}/sample/wdt-artifacts/archives/archive-v1
-zip -r ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip wlsdeploy
+  ./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
+  ./imagetool/bin/imagetool.sh cache addInstaller \
+    --type wdt \
+    --version latest \
+    --path ${image_build_base_dir}/sample/wdt-artifacts/weblogic-deploy.zip
 
-cd ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1
-${image_build_base_dir}/sample/wdt-artifacts/imagetool/bin/imagetool.sh createAuxImage \
-  --tag ${acr_account_name}.azurecr.io/wdt-domain-image:WLS-v1 \
-  --wdtModel ./model.10.yaml \
-  --wdtVariables ./model.10.properties \
-  --wdtArchive ./archive.zip 
+  rm -f ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip
+  cd ${image_build_base_dir}/sample/wdt-artifacts/archives/archive-v1
+  zip -r ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip wlsdeploy
 
-image_name="${acr_account_name}.azurecr.io/wdt-domain-image"
-tag="WLS-v1"
-output=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^${image_name}:${tag}$")
+  cd ${image_build_base_dir}/sample/wdt-artifacts/wdt-model-files/WLS-v1
+  ${image_build_base_dir}/sample/wdt-artifacts/imagetool/bin/imagetool.sh createAuxImage \
+    --tag ${acrName}.azurecr.io/wdt-domain-image:WLS-v1 \
+    --wdtModel ./model.10.yaml \
+    --wdtVariables ./model.10.properties \
+    --wdtArchive ./archive.zip
 
-if [ -n "$output" ]; then
-  echo "The image '${image_name}' exists locally."
-else
-  echo "The image '${image_name}' does not exist locally."
-  exit 1
-fi
+  image_name="${acrName}.azurecr.io/wdt-domain-image"
+  tag="WLS-v1"
+  output=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^${image_name}:${tag}$")
 
-## Push image
-docker push ${acr_account_name}.azurecr.io/wdt-domain-image:WLS-v1
+  if [ -n "$output" ]; then
+    echo "The image '${image_name}' exists locally."
+  else
+    echo "The image '${image_name}' does not exist locally."
+    exit 1
+  fi
 
-# allow aks to access acr
-echo allow aks to access acr
-acr_id=$(az acr show -n $acr_account_name --resource-group $azureResourceGroupName --query "id" -o tsv)
-az aks update --name $aksClusterName --resource-group $azureResourceGroupName --attach-acr $acr_id
+  ## Push image
+  docker push ${acrName}.azurecr.io/wdt-domain-image:WLS-v1
 
-## build image success
-echo "build image end----------"
+  # allow aks to access acr
+  echo allow aks to access acr
+  acr_id=$(az acr show -n $acrName --resource-group $azureResourceGroupName --query "id" -o tsv)
+  az aks update --name $aksClusterName --resource-group $azureResourceGroupName --attach-acr $acr_id
+
+  ## build image success
+  echo "build image end----------"
 
 }
 
-
 waitForJobComplete() {
 
-print_step "waiting job to complete"
+  print_step "waiting job to complete"
 
-waiting_time=0
-max_wait_time=900
-interval=60
+  waiting_time=0
+  max_wait_time=1800
+  interval=60
 
-echo "Waiting Job to be completed."
-echo "Waiting for $interval seconds..."
-sleep $interval
+  echo "Waiting Job to be completed."
+  echo "Waiting for $interval seconds..."
+  sleep $interval
 
-while [ $waiting_time -lt $max_wait_time ]; do
+  while [ $waiting_time -lt $max_wait_time ]; do
     status=$(${kubernetesCli} get pod/${domainUID}-admin-server -o=jsonpath='{.status.phase}')
     ready=$(${kubernetesCli} get pod/${domainUID}-admin-server --no-headers | awk '{print $2}')
     if [ "$status" == "Running" ]; then
-        if [ "$ready" == "1/1" ]; then
-          echo "${domainUID}-admin-server is running. Exiting..."
-          break
-        else
-          echo "${domainUID}-admin-server is running, but not ready. Waiting for $interval seconds..."
-        fi
+      if [ "$ready" == "1/1" ]; then
+        echo "${domainUID}-admin-server is running. Exiting..."
+        break
+      else
+        echo "${domainUID}-admin-server is running, but not ready. Waiting for $interval seconds..."
+      fi
     fi
-    
+
     echo "${domainUID}-admin-server is not running yet. Waiting for $interval seconds..."
     sleep $interval
     waiting_time=$((waiting_time + interval))
-done
+  done
 
 }
 
@@ -806,11 +932,11 @@ printSummary() {
 
   adminLbIP=$(${kubernetesCli} get svc ${domainUID}-admin-server-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
   echo "Administration console access is available at http://${adminLbIP}:7001/console"
-  
+
   echo ""
   clusterLbIP=$(${kubernetesCli} get svc ${domainUID}-cluster-1-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
   echo "Cluster external ip is ${clusterLbIP}, you can access http://${clusterLbIP}:8001/myapp_war/index.jsp"
-  
+
   echo "Completed"
 }
 
@@ -842,7 +968,7 @@ createFileShare
 installWebLogicOperator
 
 # Build domain image
-buildDomainOnPvImage  
+buildDomainOnPvImage
 
 # Create WebLogic Server Domain
 createWebLogicDomain

@@ -6,7 +6,7 @@ At this point, you have all of the files needed for `image wdt-domain-image:WLS-
 
 Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You’ve already set up this tool during the prerequisite steps.
 
-Run the following commands to create the image and verify that it worked. 
+Run the following command to create the image and verify that it worked. 
 
 ```shell
 $ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh createAuxImage \
@@ -35,6 +35,9 @@ Verify the image is available in the local Docker server with the following comm
 ```shell
 $ docker images | grep WLS-v1
 ```
+
+The output will show something similar to the following:
+
 ```
 wdt-domain-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
 ```

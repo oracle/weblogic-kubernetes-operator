@@ -1,4 +1,4 @@
-The output from the `create-domain-on-aks.sh` script includes a statement about the Azure resources created by the script.  To delete the cluster and free all related resources, simply delete the resource groups.  The output will list the resource groups, such as.
+If you used the automation script, the output from the `create-domain-on-aks.sh` script includes a statement about the Azure resources created by the script. To delete the cluster and free all related resources, simply delete the resource groups. The output will list the resource groups, such as:
 
 ```shell
 The following Azure Resouces have been created:
