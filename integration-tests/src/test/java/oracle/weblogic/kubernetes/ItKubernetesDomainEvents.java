@@ -237,7 +237,6 @@ class ItKubernetesDomainEvents {
    */
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
-  @Tag("gate")
   void testK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");

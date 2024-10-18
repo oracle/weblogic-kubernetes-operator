@@ -422,6 +422,7 @@ class ItCrossDomainTransaction {
    * participants, then the transaction should complete successfully
    */
   @Test
+  @Tag("gate")
   @DisplayName("Check cross domain transaction works")
   void testCrossDomainTransaction() throws IOException, InterruptedException {
     String url = String.format("http://%s/TxForward/TxForward?urls=t3://%s.%s:7001,"

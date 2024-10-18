@@ -110,6 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-gate")
 @Tag("kind-sequential")
 @Tag("okd-wls-mrg")
+@Tag("gate")
 class ItMonitoringExporterWebApp {
 
   // domain constants

@@ -79,6 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
 @Tag("oke-parallelnew")
+@Tag("gate")
 class ItMultiDomainModels {
 
   // domain constants
@@ -146,7 +147,6 @@ class ItMultiDomainModels {
   @DisplayName("scale cluster by patching domain resource with four different type of domains and "
       + "verify admin server is accessible via REST interface.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV", "auxiliaryImageDomain"})
-  @Tag("gate")
   void testScaleClustersAndAdminRESTAccess(String domainType) {
     DomainResource domain = createDomainBasedOnDomainType(domainType);
 

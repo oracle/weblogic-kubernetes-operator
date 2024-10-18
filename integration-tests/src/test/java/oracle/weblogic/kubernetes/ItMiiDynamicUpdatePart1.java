@@ -140,7 +140,6 @@ class ItMiiDynamicUpdatePart1 {
   @Test
   @Order(1)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
-  @Tag("gate")
   @Tag("crio")
   void testMiiAddWorkManager() {
 

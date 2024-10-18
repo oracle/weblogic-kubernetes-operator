@@ -117,7 +117,6 @@ class ItWlsDomainOnPV {
    */
   @Test
   @DisplayName("Create a WLS domain on PV using simplified feature, Operator creates PV/PVC and WLS Domain")
-  @Tag("gate")
   void testOperatorCreatesPvPvcWlsDomain() {
     String domainUid = "wlsonpv-simplified";
     final String pvName = getUniqueName(domainUid + "-pv-");

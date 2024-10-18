@@ -167,7 +167,6 @@ class ItFmwDomainOnPV {
   @Test
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Create a FMW domain on PV using simplified feature, Operator creates PV/PVC/RCU/Domain")
-  @Tag("gate")
   void testOperatorCreatesPvPvcRcuDomain() {
     String domainUid = "jrfonpv-simplified";
     final String pvName = getUniqueName(domainUid + "-pv-");

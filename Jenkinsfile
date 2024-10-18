@@ -2,27 +2,25 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
-    '0.19.0': [
-        '1.27.1':  'kindest/node:v1.27.1@sha256:b7d12ed662b873bd8510879c1846e87c7e676a79fefc93e17b2a52989d3ff42b',
-        '1.27':    'kindest/node:v1.27.1@sha256:b7d12ed662b873bd8510879c1846e87c7e676a79fefc93e17b2a52989d3ff42b',
-        '1.26.4':  'kindest/node:v1.26.4@sha256:f4c0d87be03d6bea69f5e5dc0adb678bb498a190ee5c38422bf751541cebe92e',
-        '1.26':    'kindest/node:v1.26.4@sha256:f4c0d87be03d6bea69f5e5dc0adb678bb498a190ee5c38422bf751541cebe92e',
-        '1.25.9':  'kindest/node:v1.25.9@sha256:c08d6c52820aa42e533b70bce0c2901183326d86dcdcbedecc9343681db45161',
-        '1.25':    'kindest/node:v1.25.9@sha256:c08d6c52820aa42e533b70bce0c2901183326d86dcdcbedecc9343681db45161',
-        '1.24.13': 'kindest/node:v1.24.13@sha256:cea86276e698af043af20143f4bf0509e730ec34ed3b7fa790cc0bea091bc5dd',
-        '1.24':    'kindest/node:v1.24.13@sha256:cea86276e698af043af20143f4bf0509e730ec34ed3b7fa790cc0bea091bc5dd',
-        '1.23.17': 'kindest/node:v1.23.17@sha256:f77f8cf0b30430ca4128cc7cfafece0c274a118cd0cdb251049664ace0dee4ff',
-        '1.23':    'kindest/node:v1.23.17@sha256:f77f8cf0b30430ca4128cc7cfafece0c274a118cd0cdb251049664ace0dee4ff',
-        '1.22.17': 'kindest/node:v1.22.17@sha256:9af784f45a584f6b28bce2af84c494d947a05bd709151466489008f80a9ce9d5',
-        '1.22':    'kindest/node:v1.22.17@sha256:9af784f45a584f6b28bce2af84c494d947a05bd709151466489008f80a9ce9d5',
-        '1.21.14': 'kindest/node:v1.21.14@sha256:220cfafdf6e3915fbce50e13d1655425558cb98872c53f802605aa2fb2d569cf',
-        '1.21':    'kindest/node:v1.21.14@sha256:220cfafdf6e3915fbce50e13d1655425558cb98872c53f802605aa2fb2d569cf'
+    '0.23.0': [
+        '1.30.0':  'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e',
+        '1.30':    'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e',
+        '1.29.4':  'kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8',
+        '1.29':    'kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8',
+        '1.28.9':  'kindest/node:v1.28.9@sha256:dca54bc6a6079dd34699d53d7d4ffa2e853e46a20cd12d619a09207e35300bd0',
+        '1.28':    'kindest/node:v1.28.9@sha256:dca54bc6a6079dd34699d53d7d4ffa2e853e46a20cd12d619a09207e35300bd0',
+        '1.27.13': 'kindest/node:v1.27.13@sha256:17439fa5b32290e3ead39ead1250dca1d822d94a10d26f1981756cd51b24b9d8',
+        '1.27':    'kindest/node:v1.27.13@sha256:17439fa5b32290e3ead39ead1250dca1d822d94a10d26f1981756cd51b24b9d8',
+        '1.26.15': 'kindest/node:v1.26.15@sha256:84333e26cae1d70361bb7339efb568df1871419f2019c80f9a12b7e2d485fe19',
+        '1.26':    'kindest/node:v1.26.15@sha256:84333e26cae1d70361bb7339efb568df1871419f2019c80f9a12b7e2d485fe19',
+        '1.25.16': 'kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b',
+        '1.25':    'kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b'
     ]
 ]
 def _kind_image = null
 
 pipeline {
-    agent { label 'large' }
+    agent { label 'large-ol9u4' }
     options {
         timeout(time: 800, unit: 'MINUTES')
     }
@@ -74,27 +72,25 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                   '0.19.0'
+                   '0.23.0'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.18.0: 1.26, 1.26.3, 1.25, 1.25.8, 1.24, 1.24.12, 1.23, 1.23.17, 1.22, 1.22.17, 1.21, and 1.21.14. Kind 0.17.0: 1.25, 1.25.3, 1.24, 1.24.7, 1.23, 1.23.13, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15 ',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.23.0: 1.30, 1.30.0, 1.29, 1.29.4, 1.28, 1.28.9, 1.27, 1.27.13, 1.26, 1.26.15, 1.25, 1.25.16 ',
                choices: [
                     // The first item in the list is the default value...
-                    '1.27.1',
+                    '1.30.0',
+                    '1.30',
+                    '1.29.4',
+                    '1.29',
+                    '1.28.9',
+                    '1.28',
+                    '1.27.13',
                     '1.27',
-                    '1.26.4',
+                    '1.26.15',
                     '1.26',
-                    '1.25.9',
-                    '1.25',
-                    '1.24.13',
-                    '1.24',
-                    '1.23.17',
-                    '1.23',
-                    '1.22.17',
-                    '1.22',
-                    '1.21.14',
-                    '1.21'
+                    '1.25.16',
+                    '1.25'
                ]
         )
         string(name: 'HELM_VERSION',
@@ -172,11 +168,11 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.7'
+               defaultValue: '2.1.2'
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
-               defaultValue: '15.2.0'
+               defaultValue: '17.0.0'
         )
         string(name: 'GRAFANA_CHART_VERSION',
                description: '',
@@ -216,7 +212,7 @@ pipeline {
                             java -version
                             mvn --version
                             python --version
-                            docker version
+                            podman version
                             ulimit -a
                             ulimit -aH
                         '''
@@ -356,14 +352,22 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
+                            export KIND_EXPERIMENTAL_PROVIDER=podman
+
+                            podman version
+                            cat /etc/systemd/system/user@.service.d/delegate.conf
+                            cat /etc/modules-load.d/iptables.conf
+                            lsmod|grep -E "^ip_tables|^iptable_filter|^iptable_nat|^ip6"
+
                             if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                                 echo "Deleted orphaned kind cluster ${kind_name}"
                             fi
+                            # settings needed by elastic logging tests
+                            echo "running sudo sysctl -w vm.max_map_count=262144"
+                            sudo sysctl -w vm.max_map_count=262144
                             cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-networking:
-  podSubnet: 192.168.0.0/16
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${registry_port}"]
@@ -373,30 +377,105 @@ nodes:
     image: ${kind_image}
   - role: worker
     image: ${kind_image}
+    extraPortMappings:
+      - containerPort: 30511
+        hostPort: 1511    
+      - containerPort: 32480
+        hostPort: 2480
+      - containerPort: 32490
+        hostPort: 2490    
+      - containerPort: 30080
+        hostPort: 2080
+      - containerPort: 30443
+        hostPort: 2043
+      - containerPort: 30180
+        hostPort: 2090
+      - containerPort: 30143
+        hostPort: 2053
+      - containerPort: 31000
+        hostPort: 2100
+      - containerPort: 31004
+        hostPort: 2104
+      - containerPort: 31008
+        hostPort: 2108
+      - containerPort: 31012
+        hostPort: 2112
+      - containerPort: 31016
+        hostPort: 2116
+      - containerPort: 31020
+        hostPort: 2120
+      - containerPort: 31024
+        hostPort: 2124
+      - containerPort: 31028
+        hostPort: 2128
+      - containerPort: 31032
+        hostPort: 2132
+      - containerPort: 31036
+        hostPort: 2136
+      - containerPort: 31040
+        hostPort: 2140
+      - containerPort: 31044
+        hostPort: 2144
+      - containerPort: 31048
+        hostPort: 2148
+      - containerPort: 31052
+        hostPort: 2152
+      - containerPort: 31056
+        hostPort: 2156
+      - containerPort: 31060
+        hostPort: 2160
+      - containerPort: 31064
+        hostPort: 2164
+      - containerPort: 31068
+        hostPort: 2168
+      - containerPort: 31072
+        hostPort: 2172
+      - containerPort: 31076
+        hostPort: 2176
+      - containerPort: 31080
+        hostPort: 2180
+      - containerPort: 31084
+        hostPort: 2184
+      - containerPort: 31088
+        hostPort: 2188
+      - containerPort: 31092
+        hostPort: 2192
+      - containerPort: 31096 
+        hostPort: 2196
+      - containerPort: 31100
+        hostPort: 2200
+      - containerPort: 31104 
+        hostPort: 2204
+      - containerPort: 31108
+        hostPort: 2208
+      - containerPort: 31112
+        hostPort: 2212
+      - containerPort: 31116
+        hostPort: 2216
+      - containerPort: 31120
+        hostPort: 2220
+      - containerPort: 31124
+        hostPort: 2224
+      - containerPort: 31128
+        hostPort: 2228
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
+kubeadmConfigPatches:
+- |
+  kind: KubeletConfiguration
+  localStorageCapacityIsolation: true
 EOF
 
                             export KUBECONFIG=${kubeconfig_file}
                             kubectl cluster-info --context "kind-${kind_name}"
 
+                            podman info
+                            kubectl describe node
+
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
                             done
-
-                            if [ "${kind_network}" != "bridge" ]; then
-                                containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
-                                needs_connect="true"
-                                for c in ${containers}; do
-                                    if [ "$c" = "${registry_name}" ]; then
-                                        needs_connect="false"
-                                    fi
-                                done
-                                if [ "${needs_connect}" = "true" ]; then
-                                    docker network connect "${kind_network}" "${registry_name}" || true
-                                fi
-                            fi
 
                             # Document the local registry
                             # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
@@ -449,6 +528,7 @@ EOF
                                 MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
+                            echo "-Dmaven.wagon.http.retryHandler.count=3"                                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
@@ -474,14 +554,15 @@ EOF
                             echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
-			    echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
-			    echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
-
+                            echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
+                            kubectl describe node kind-worker
                         '''
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             withCredentials([
