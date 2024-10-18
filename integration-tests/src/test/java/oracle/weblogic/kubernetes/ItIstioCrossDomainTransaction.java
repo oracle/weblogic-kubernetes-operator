@@ -88,7 +88,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify cross domain transaction with istio enabled is successful")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-arm")
 @Tag("oke-parallel")
 class ItIstioCrossDomainTransaction {
 
