@@ -60,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-arm")
 @Tag("olcne-mrg")
 @Tag("oke-parallel")
+@Tag("gate")
 class ItIstioProductionSecureMode {
 
   private static String opNamespace = null;
