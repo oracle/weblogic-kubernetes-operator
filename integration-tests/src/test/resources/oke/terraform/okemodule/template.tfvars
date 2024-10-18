@@ -35,7 +35,7 @@ mount_target_ocid="@MOUNTTARGETOCID@"
 # ## For regions, # Use short form e.g. ashburn from location column https://docs.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm
 # ## VCN, Pods and services clusters must not overlap with each other and with those of other clusters.
  clusters = {
-   c1 = { region = "phoenix", vcn = "10.1.0.0/16", pods = "10.201.0.0/16", services = "10.101.0.0/16", enabled = true }
+   c1 = { region = "@REGIONSHORT@", vcn = "10.1.0.0/16", pods = "10.201.0.0/16", services = "10.101.0.0/16", enabled = true }
      }
 #
      kubernetes_version = "@OKEK8SVERSION@"
