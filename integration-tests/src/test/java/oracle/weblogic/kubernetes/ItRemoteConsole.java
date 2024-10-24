@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -386,7 +387,10 @@ class ItRemoteConsole {
     } else if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
         "Getting Nginx loadbalancer service node port failed");
+    } else if (OCNE && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      nginxNodePort = IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT;
     }
+
     logger.info("nginxNodePort is {0}", nginxNodePort);
 
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
@@ -419,7 +423,7 @@ class ItRemoteConsole {
     if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("Installing Ngnix controller using 0 as nodeport");
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    } else if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+    } else if ((KIND_CLUSTER || OCNE) && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("Installing Ngnix controller using http_nodeport {0}, https_nodeport {1}",
           IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT, IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT);
       nginxHelmParams = installAndVerifyNginx(nginxNamespace,
