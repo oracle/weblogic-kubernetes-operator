@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_PORT_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.CRIO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
@@ -64,6 +65,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
@@ -215,7 +217,7 @@ public class CommonLBTestUtils {
       getLogger().info("Getting admin service node port: {0}", serviceNodePort);
 
       getLogger().info("Validating WebLogic admin server access by login to console");
-      if (OKE_CLUSTER_PRIVATEIP) {
+      if (OKE_CLUSTER_PRIVATEIP || OCNE || CRIO) {
         assertTrue(assertDoesNotThrow(
             () -> adminLoginPageAccessible(adminServerPodName, "7001", domainNamespace,
                 ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),

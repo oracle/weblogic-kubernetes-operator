@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
@@ -279,8 +280,12 @@ class ItMiiUpdateDomainConfig {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String hostAndPort =
-        OKE_CLUSTER ? adminServerPodName + ":7001" : getHostAndPort(adminSvcExtHost, adminServiceNodePort);
+    String hostAndPort;
+    if (OKE_CLUSTER || OCNE) {
+      hostAndPort = adminServerPodName + ":7001";
+    } else {
+      hostAndPort = getHostAndPort(adminSvcExtHost, adminServiceNodePort);
+    }
 
     // use traefik LB for kind cluster with ingress host header in url
     String headers = "";
@@ -302,7 +307,7 @@ class ItMiiUpdateDomainConfig {
           .append("?fields=notes&links=none\"")
           .append(" --silent ").toString();
 
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       curlString = KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- " + curlString;
     }
 
@@ -372,7 +377,7 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       String resourcePath = "/management/weblogic/latest/domainConfig/JDBCSystemResources/TestDataSource";
       ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName,7001, resourcePath);
       assertEquals(0, result.exitValue(), "Failed to find the JDBCSystemResource configuration");
@@ -477,7 +482,7 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       String resourcePath = "/management/weblogic/latest/domainConfig/JDBCSystemResources/TestDataSource";
       ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName, 7001, resourcePath);
       assertEquals(0, result.exitValue(), "Failed to delete the JDBCSystemResource configuration");
@@ -557,7 +562,7 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       String resourcePath = "/management/weblogic/latest/domainConfig/JDBCSystemResources/TestDataSource2";
       ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName, 7001, resourcePath);
       assertEquals(0, result.exitValue(), "Failed to find the JDBCSystemResource configuration");
@@ -892,7 +897,7 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       String resourcePath = "/management/weblogic/latest/domainConfig/JDBCSystemResources/TestDataSource";
       ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName, 7001, resourcePath);
       assertEquals(0, result.exitValue(), "Failed to delete the JDBCSystemResource configuration");
@@ -1024,8 +1029,12 @@ class ItMiiUpdateDomainConfig {
   private void verifyManagedServerConfiguration(String managedServer) {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String hostAndPort =
-        OKE_CLUSTER ? adminServerPodName + ":7001" : getHostAndPort(adminSvcExtHost, adminServiceNodePort);
+    String hostAndPort;
+    if (OKE_CLUSTER || OCNE) {
+      hostAndPort = adminServerPodName + ":7001";
+    } else {
+      hostAndPort = getHostAndPort(adminSvcExtHost, adminServiceNodePort);
+    }
 
     // use traefik LB for kind cluster with ingress host header in url
     String headers = "";
@@ -1047,7 +1056,7 @@ class ItMiiUpdateDomainConfig {
 
     StringBuffer checkCluster = new StringBuffer();
 
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       checkCluster = new StringBuffer(KUBERNETES_CLI)
         .append(" exec -n ")
         .append(domainNamespace)

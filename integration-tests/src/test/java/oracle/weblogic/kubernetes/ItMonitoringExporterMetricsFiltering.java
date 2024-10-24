@@ -89,7 +89,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed and filtered as expected by MonitoringExporter")
 @IntegrationTest
-@Tag("olcne-mrg")
 @Tag("oke-sequential")
 @Tag("kind-sequential")
 @Tag("okd-wls-mrg")

@@ -80,7 +80,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
-@Tag("olcne-mrg")
 class ItIstioMonitoringExporter {
 
   private static String opNamespace = null;
@@ -254,8 +253,7 @@ class ItIstioMonitoringExporter {
           "Can't modify Prometheus CM, not possible to monitor " + domainUid);
     }
 
-    checkMetricsViaPrometheus(searchKey, "sessmigr",
-                              hostPortPrometheus);
+    checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
   }
 
   @AfterAll
