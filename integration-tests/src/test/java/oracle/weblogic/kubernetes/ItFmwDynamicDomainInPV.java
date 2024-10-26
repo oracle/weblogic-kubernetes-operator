@@ -78,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
-@Tag("oke-sequential")
+@Tag("oke-weekly-sequential")
 @Tag("kind-sequential")
 @Tag("okd-fmw-cert")
 class ItFmwDynamicDomainInPV {
@@ -86,12 +86,12 @@ class ItFmwDynamicDomainInPV {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String dbNamespace = null;
-
-  private static String nginxNamespace = null;
   private static String oracle_home = null;
   private static String java_home = null;
 
   private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
+  private static final String ORACLEDBURLPREFIX = "oracledb.";
+  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -105,8 +105,8 @@ class ItFmwDynamicDomainInPV {
   private static final String adminServerName = "admin-server";
   private static final String managedServerNameBase = "managed-server";
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final int managedServerPort = 8001;
-  private static List<String> ingressHostList = null;
+  private static final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+  private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
   private static final int replicaCount = 1;
@@ -114,8 +114,13 @@ class ItFmwDynamicDomainInPV {
   private static String hostHeader;
   private static int adminPort = 7001;
   private static String dbName = domainUid + "my-oracle-db";
+  private static String nginxNamespace = null;
+  private static List<String> ingressHostList = null;
   private static String ingressIP = null;
   private static NginxParams nginxHelmParams = null;
+
+
+
 
   /**
    * Assigns unique namespaces for DB, operator and domains.
@@ -175,13 +180,6 @@ class ItFmwDynamicDomainInPV {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
-    if (OKE_CLUSTER_PRIVATEIP) {
-      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-      clusterNameMsPortMap.put(clusterName, managedServerPort);
-      ingressHostList
-          = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
-          false, nginxHelmParams.getIngressClassName(), true, 7001);
-    }
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     if (OKE_CLUSTER_PRIVATEIP) {
@@ -363,12 +361,12 @@ class ItFmwDynamicDomainInPV {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
-        File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
+            File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
         "Failed to create domain properties file");
 
     // create the property file
     assertDoesNotThrow(() ->
-        p.store(new FileOutputStream(domainPropertiesFile), "FMW wlst properties file"),
+            p.store(new FileOutputStream(domainPropertiesFile), "FMW wlst properties file"),
         "Failed to write domain properties file");
 
     return domainPropertiesFile;

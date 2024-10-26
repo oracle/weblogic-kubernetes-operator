@@ -98,7 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test for initializeDomainOnPV when user per-creates RCU")
 @IntegrationTest
 @Tag("kind-sequential")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 public class ItFmwDomainInPvUserCreateRcu {
 
   private static String opNamespace = null;

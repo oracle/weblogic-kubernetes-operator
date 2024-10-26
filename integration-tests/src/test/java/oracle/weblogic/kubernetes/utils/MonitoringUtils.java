@@ -105,6 +105,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusAdapterReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
@@ -121,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -261,6 +263,22 @@ public class MonitoringUtils {
     logger.info("Executing Curl cmd {0}", curlCmd);
     logger.info("Checking searchKey: {0}", searchKey);
     logger.info(" expected Value {0} ", expectedVal);
+    if (OKE_CLUSTER) {
+      try {
+        if (!callWebAppAndWaitTillReady(curlCmd, 5)) {
+          ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
+          logger.info(result.stdout());
+          //restart core-dns service
+          result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
+          logger.info(result.stdout());
+          checkPodReady("coredns", null, "kube-system");
+          result = ExecCommand.exec(curlCmd);
+          logger.info(result.stdout());
+        }
+      } catch (Exception ex) {
+        logger.warning(ex.getLocalizedMessage());
+      }
+    }
     testUntil(
         searchForKey(curlCmd, expectedVal),
         logger,

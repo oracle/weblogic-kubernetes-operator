@@ -1338,13 +1338,11 @@ public class CommonTestUtils {
       }
       host = formatIPv6Host(host);
       String hostAndPort = ((OKD) ? hostName : host + ":" + servicePort);
+
       if (OKE_CLUSTER_PRIVATEIP) {
         hostAndPort = hostName;
       }
       logger.info("hostAndPort = {0} ", hostAndPort);
-      if (OKE_CLUSTER_PRIVATEIP) {
-        hostAndPort = hostName;
-      }
       return hostAndPort;
     } catch (UnknownHostException e) {
       throw new RuntimeException(e);

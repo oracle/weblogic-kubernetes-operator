@@ -9,6 +9,7 @@ import java.util.Objects;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.ARM;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
@@ -187,6 +188,10 @@ public class WebLogicImageTool {
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
+    }
+
+    if (ARM) {
+      command += " --platform linux/arm64";
     }
 
     if (params.wdtModelHome() != null) {
