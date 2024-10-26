@@ -100,6 +100,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.isPodDeleted;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -112,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create MII domain and test autoscaling using HPA and"
     + "custom metrics provided via use of monitoring exporter and prometheus and prometheus adapter")
 @IntegrationTest
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 public class ItHorizontalPodAutoscalerCustomMetrics {
   private static final String MONEXP_MODEL_FILE = "model.monexp.custommetrics.yaml";
@@ -224,6 +225,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, IT_HPACUSTOMNGINX_INGRESS_HTTP_NODEPORT,
         IT_HPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
+
     String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
@@ -317,15 +319,46 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       hostPort = host + ":" + nodeportshttp;
     }
     String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s/" + SESSMIGT_APP_URL,
+        String.format("curl -g --silent --show-error -v --noproxy '*' -H 'host: %s' http://%s:%s@%s/" + SESSMIGT_APP_URL,
             ingressHostList.get(0),
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
             hostPort);
 
     logger.info("Executing curl command " + curlCmd);
+    assertDoesNotThrow(() -> {
+      ExecResult result = ExecCommand.exec(curlCmd, true);
+      String response = result.stdout().trim();
+      getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      if (!response.contains("cluster-1-managed")) {
+        logger.info("Can't invoke application");
+
+        if (OKE_CLUSTER) {
+          LoggingFacade logger = getLogger();
+          try {
+
+            result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
+            logger.info(result.stdout());
+            //restart core-dns service
+            result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
+            logger.info(result.stdout());
+            checkPodReady("coredns", null, "kube-system");
+
+          } catch (Exception ex) {
+            logger.warning(ex.getLocalizedMessage());
+          }
+        }
+      }
+    });
     for (int i = 0; i < 50; i++) {
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd));
+      assertDoesNotThrow(() -> {
+        ExecResult result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        assertTrue(response.contains("cluster-1-managed"), "Can't invoke application");
+      });
     }
     //check hpa scaled up to one more server
     checkPodReadyAndServiceExists(managedServerPrefix + 3, domainUid, domainNamespace);
@@ -452,8 +485,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   }
 
   private void installPrometheus(String promChartVersion,
-                                        String domainNS,
-                                        String domainUid
+                                 String domainNS,
+                                 String domainUid
   ) throws IOException, ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {

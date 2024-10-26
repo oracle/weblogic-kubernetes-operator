@@ -91,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
-@Tag("oke-parallel")
+@Tag("oke-weekly-sequential")
 class ItPodsRestart {
 
   private static String miiImage;

@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_H
 import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
@@ -90,6 +92,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -107,7 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify that client can communicate with webservices with SSO")
 @IntegrationTest
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 class ItWseeSSO {
 
@@ -266,6 +269,20 @@ class ItWseeSSO {
       hostAndPort = ingressIP + ":80";
     }
     String url = "http://" + hostAndPort + appURI;
+    if (OKE_CLUSTER) {
+      try {
+        if (OracleHttpClient.get(url, true).statusCode() != 200) {
+          ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
+          logger.info(result.stdout());
+          //restart core-dns service
+          result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
+          logger.info(result.stdout());
+          checkPodReady("coredns", null, "kube-system");
+        }
+      } catch (Exception ex) {
+        logger.warning(ex.getLocalizedMessage());
+      }
+    }
     assertEquals(200, OracleHttpClient.get(url, true).statusCode());
     return url;
   }

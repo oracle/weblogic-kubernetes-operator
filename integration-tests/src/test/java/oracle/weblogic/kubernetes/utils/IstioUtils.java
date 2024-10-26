@@ -82,25 +82,26 @@ public class IstioUtils {
     // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
     // can be (un)installed manually when SKIP_CLEANUP is set to true
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
-        Paths.get(RESULTS_ROOT, "install-istio.sh"),
-        StandardCopyOption.REPLACE_EXISTING),
+            Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
+            Paths.get(RESULTS_ROOT, "install-istio.sh"),
+            StandardCopyOption.REPLACE_EXISTING),
         String.format("Copy install-istio.sh to %s failed", RESULTS_ROOT));
 
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
-        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"),
-        StandardCopyOption.REPLACE_EXISTING),
+            Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
+            Paths.get(RESULTS_ROOT, "uninstall-istio.sh"),
+            StandardCopyOption.REPLACE_EXISTING),
         String.format("Copy uninstall-istio.sh to %s failed", RESULTS_ROOT));
 
     Path istioInstallPath =
         Paths.get(RESULTS_ROOT, "install-istio.sh");
     String installScript = istioInstallPath.toString();
-    String ocneIstioRepo = BASE_IMAGES_REPO + "/" +  BASE_IMAGES_TENANCY; 
-    // When install istio in OCNE environment, 
+
+    // When install istio in OCNE environment,
     // use BASE_IMAGES_REPO/devweblogic/istio-release instead of gcr.io/istio-release
     if (OCNE) {
-      logger.info("replace istio installation hub in File {0}", ocneIstioRepo);
+      String ocneIstioRepo = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY;
+      logger.info("replace istio installation hub in File {0}", installScript);
       assertDoesNotThrow(() -> replaceStringInFile(installScript, "gcr.io", ocneIstioRepo),
           String.format("Failed to replace string in File %s", installScript));
     }
@@ -113,11 +114,10 @@ public class IstioUtils {
         String.format("%s %s %s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT, TEST_IMAGES_TENANCY, arch);
     logger.info("Istio installation command {0}", command);
     assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command)
-            .redirect(false))
+            defaultCommandParams()
+                .command(command)
+                .redirect(false))
         .execute());
-
     if (OKE_CLUSTER) {
       String loadBalancerIP = getServiceExtIPAddrtOke("istio-ingressgateway", "istio-system");
       testUntil(
@@ -135,16 +135,16 @@ public class IstioUtils {
    */
   public static void uninstallIstio() {
     LoggingFacade logger = getLogger();
-    Path istioInstallPath = 
+    Path istioInstallPath =
         Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
         String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
     logger.info("Istio uninstallation command {0}", command);
     assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command)
-            .redirect(false))
+            defaultCommandParams()
+                .command(command)
+                .redirect(false))
         .execute());
   }
 
@@ -154,11 +154,21 @@ public class IstioUtils {
    * @return ingress port for istio-ingressgateway
    */
   public static int getIstioHttpIngressPort() {
+    return getIstioHttpIngressPort("http2");
+  }
+
+  /**
+   * Get the http ingress port of istio installation.
+   *
+   * @param portName name of port to get
+   * @return ingress port for istio-ingressgateway
+   */
+  public static int getIstioHttpIngressPort(String portName) {
     LoggingFacade logger = getLogger();
     ExecResult result;
     StringBuffer getIngressPort;
     getIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
-    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
+    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"" + portName.trim() + "\")].nodePort}'");
     logger.info("getIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getIngressPort));
     try {
       result = exec(new String(getIngressPort), true);
@@ -448,7 +458,7 @@ public class IstioUtils {
                     .configMap(configmapName)
                     .onlineUpdate(new OnlineUpdate().enabled(true))
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource
     domain = createClusterResourceAndAddReferenceToDomain(domainUid + "-" + clusterName,
@@ -502,7 +512,7 @@ public class IstioUtils {
     return adminServer;
   }
 
-  
+
   /**
    * Check WebLogic access through Istio Ingress Port.
    * @param istioHost Host
@@ -533,8 +543,8 @@ public class IstioUtils {
    * @return istioIngressPort
    */
   public static int createIstioService(
-       String domainUid, String clusterName, 
-       String adminServerPodName, String domainNamespace) {
+      String domainUid, String clusterName,
+      String adminServerPodName, String domainNamespace) {
     LoggingFacade logger = getLogger();
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
@@ -565,7 +575,8 @@ public class IstioUtils {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
     return istioIngressPort;
-    
+
   }
 
 }
+

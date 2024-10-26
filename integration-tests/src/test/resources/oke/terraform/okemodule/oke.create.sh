@@ -30,8 +30,9 @@ generateTFVarFile() {
     sed -i -e "s:@NODEPOOLIMAGENAME@:${nodepool_imagename}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@NODEPOOLSSHPUBKEY@:${nodepool_ssh_pubkeypath}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@NODEPOOLSSHPK@:${nodepool_ssh_pkpath}:g" ${tfVarsFiletfVarsFile}
-    sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@MOUNTTARGETOCID@:${mount_target_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@REGIONSHORT@:${region_short}:g" ${tfVarsFiletfVarsFile}
     echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
 }
 
@@ -80,74 +81,140 @@ createRoleBindings () {
     ${KUBERNETES_CLI:-kubectl} config set-credentials $okeclustername-sa --token=$TOKEN
     ${KUBERNETES_CLI:-kubectl} config set-context --current --user=$okeclustername-sa
 }
+checkKubernetesCliConnection() {
+    echo "Confirming ${KUBERNETES_CLI:-kubectl} can connect to the server..."
 
-checkClusterRunning () {
+    # Get the cluster public IP
+    clusterPublicIP=$(oci ce cluster list --compartment-id="${compartment_ocid}" | jq -r '.data[] | select(."name" == "'"${okeclustername}"'" and (."lifecycle-state" == "ACTIVE")) | ."endpoints" | ."public-endpoint" | split(":")[0]')
 
-    echo "Confirm we have ${KUBERNETES_CLI:-kubectl} working..."
-    privateIP=${vcn_cidr_prefix}
-    myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
-    if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
-        echo "[ERROR] Unable to connect to the server: net/http: TLS handshake timeout"
-
-        echo '- could not talk to cluster, aborting'
-        cd ${terraformVarDir}
-        terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-        terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-        echo "retrying to execute KUBERNETES_CLI"
-        clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
-        echo "clusterIp : $clusterIP"
-        clusterPublicIP=${clusterIP:1:-6}
-        echo " clusterPublicIP : ${clusterPublicIP}"
-        echo "NO_PROXY before : ${NO_PROXY}"
-        export NO_PROXY=${clusterPublicIP}
-        echo "NO_PROXY:" $NO_PROXY
-        myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
-        if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
-                echo "[ERROR] Unable to connect to the server: net/http: TLS handshake timeout"
-                echo '- could not talk to cluster, aborting'
-                cd ${terraformVarDir}
-                terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-                exit 1
-        fi
+    # Check if clusterPublicIP is empty or not
+    if [ -z "$clusterPublicIP" ]; then
+        echo "[ERROR] No active cluster found with name ${okeclustername}."
+        exit 1
     fi
-    declare -a myline
-    myline=(`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`)
-    NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-    status=$myline[0]
-    max=100
-    count=1
+    echo "clusterPublicIP: ###$clusterPublicIP###"
+    echo " NO_PROXY=#$NO_PROXY# "
+    export NO_PROXY=$NO_PROXY,localhost,127.0.0.1,$clusterPublicIP
+    echo "export NO_PROXY=:$NO_PROXY"
 
-    for i in {0..1}
-    do
-    while [ "${myline[i]}" != "Ready" -a $count -le $max ] ; do
-        echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
-        sleep 10
-        myline=(`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`)
-        NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-        echo "myline[i] ${myline[i]}"
-        [[ ${myline[i]} -eq "Ready"  ]]
-        echo "Status is ${myline[i]} Iter [$count/$max]"
-        count=`expr $count + 1`
-      done
+    # Maximum number of retries
+    max_retries=10
+
+    # Initial retry count
+    retry_count=0
+
+    # Command to get cluster info
+    while [[ $retry_count -lt $max_retries ]]; do
+      echo "Attempt $((retry_count+1)) of $max_retries to connect to Kubernetes cluster..."
+
+      # Try to execute kubectl cluster-info
+      ${KUBERNETES_CLI:-kubectl} cluster-info
+      if [[ $? -eq 0 ]]; then
+        echo "Connected to Kubernetes cluster successfully!"
+        break
+      else
+        echo "Connection refused or failed, retrying..."
+        retry_count=$((retry_count + 1))
+        sleep 5  # Wait 5 seconds before retrying
+      fi
     done
 
-    NODES=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | wc -l`
-    if [ "$NODES" == "2" ]; then
-      echo '- looks good'
-    else
-      echo '- could not talk to cluster, aborting'
-      cd ${terraformVarDir}
-      terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-      exit 1
+    # Check if retries were exhausted
+    if [[ $retry_count -eq $max_retries ]]; then
+      echo "Failed to connect to Kubernetes cluster after $max_retries attempts."
+      cd "${terraformVarDir}"
+      terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+      createCluster
     fi
 
-    if [ $count -gt $max ] ; then
-       echo "[ERROR] Unable to start the nodes in oke cluster after 200s ";
-       cd ${terraformVarDir}
-       terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-       exit 1
+    local myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
+
+    if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
+        echo "[ERROR] Unable to connect to the server: net/http: TLS handshake timeout"
+        echo '- could not talk to OKE cluster, aborting'
+        unset http_proxy
+        unset https_proxy
+        myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
+        if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
+          cd "${terraformVarDir}"
+          terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+          exit 1
+        fi
+    fi
+    if echo "$myline_output" | grep -q "couldn't get current server API group"; then
+            echo "[ERROR] Unable to connect to the server: couldn't get current server API group, connection refused"
+            echo '- check errors during OKE cluster creation'
+            echo '- could not talk to OKE cluster, aborting'
+
+            cd "${terraformVarDir}"
+            terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+            exit 1
+    fi
+
+}
+
+checkClusterRunning() {
+    kubeconfig_file=${terraformVarDir}/${okeclustername}_kubeconfig
+    export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
+    echo "Kubeconfig file : $KUBECONFIG"
+    ls -al $KUBECONFIG
+
+    if [ -f "$kubeconfig_file" ] && [ -s "$kubeconfig_file" ]; then
+      echo "Kubeconfig file exists and is not empty."
+    else
+      if [ ! -f "$kubeconfig_file" ]; then
+        echo "Kubeconfig file does not exist."
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        createCluster
+      else
+        echo "Kubeconfig file exists but is empty."
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        createCluster
+      fi
+    fi
+    checkKubernetesCliConnection
+
+    local privateIP=${vcn_cidr_prefix}
+    declare -a myline=($(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'))
+    local NODE_IP=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $7}')
+
+    local status=${myline[0]}
+    local max=100
+    local count=1
+
+    for i in {0..1}; do
+        while [ "${myline[i]}" != "Ready" ] && [ $count -le $max ]; do
+            echo "[ERROR] Some Nodes in the Cluster are not in the Ready Status, sleeping for 10s..."
+            sleep 10
+            myline=($(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'))
+            NODE_IP=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $7}')
+            echo "myline[i]: ${myline[i]}"
+            echo "Status is ${myline[i]} Iter [$count/$max]"
+            count=$((count + 1))
+        done
+    done
+
+    local NODES=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | wc -l)
+
+    if [ "$NODES" -eq 2 ]; then
+        echo '- looks good'
+    else
+        echo '- could not talk to OKE cluster, aborting'
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        exit 1
+    fi
+
+    if [ $count -gt $max ]; then
+        echo "[ERROR] Unable to start the nodes in the OKE cluster after 200s"
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        exit 1
     fi
 }
+
 
 #MAIN
 propsFile=${1:-$PWD/oci.props}
@@ -177,6 +244,7 @@ nodepool_ssh_pkpath=$(prop 'nodepool.ssh.pkpath')
 region=$(prop 'region')
 terraformDir=$(prop 'terraform.installdir')
 mount_target_ocid=$(prop 'mounttarget.ocid')
+region_short=$(echo "$region" | sed 's/.*-\([a-z]*\)-.*/\1/')
 
 # generate terraform configuration file with name $(clusterTFVarsFile).tfvar
 #generateTFVarFile
@@ -192,26 +260,12 @@ setupTerraform
 deleteOlderVersionTerraformOCIProvider
 
 chmod 600 ${ocipk_path}
-
+sudo yum reinstall ca-certificates -y
+sudo iptables -A OUTPUT -p tcp --dport 6443 -j ACCEPT
 # run terraform init,plan,apply to create OKE cluster based on the provided tfvar file ${clusterTFVarsFile).tfvar
 createCluster
 #check status of OKE cluster nodes, destroy if can not access them
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
 
-
-export okeclustername=\"${okeclustername}\"
-
-
- echo " oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"'"
-
-clusterIP=$(oci ce cluster list --compartment-id=${compartment_ocid} | jq '.data[]  | select(."name" == '"${okeclustername}"' and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
-echo "clusterIp : $clusterIP"
-clusterPublicIP=${clusterIP:1:-6}
-echo " clusterPublicIP : ${clusterPublicIP}"
-echo "NO_PROXY before : ${NO_PROXY}"
-export NO_PROXY=${clusterPublicIP}
-echo "NO_PROXY:" $NO_PROXY
-
-
 checkClusterRunning
-echo "$okeclustername is up and running}"
+echo "${okeclustername} is up and running"
