@@ -422,7 +422,7 @@ EOF
 
                             export OCI_CLI_CONFIG_FILE=${jenkins_home_directory}/.oci/config
                             export OCI_CLI_PROFILE=${oci_profile}
-
+                            oci setup repair-file-permissions --file ${jenkins_home_directory}/.oci/config
                             echo 'Create a OKE cluster ${CLUSTER_NAME}'
 
                             cp -rf ${terraform_script_dir_name}/* ${WORKSPACE}/terraform/.
