@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Install a released version of Operator from GitHub chart repository.
  * Create a domain using Model-In-Image model with a dynamic cluster.
- * Configure Itsio on the domain resource with v8 schema
+ * Configure Itsio on the domain resource with v9 schema
  * Make sure the console is accessible thru istio ingress port
  * Upgrade operator with current Operator image build from current branch.
  * Make sure the console is accessible thru istio ingress port
@@ -118,35 +118,35 @@ class ItOperatorUpgradeWithIstio {
   }
 
   /**
-   * Upgrade from Operator 3.4.3 to current with Istio enabled domain.
+   * Upgrade from Operator 4.0.9 to current with Istio enabled domain.
    */
   @Test
-  @DisplayName("Upgrade 3.4.3 Istio Domain(v8) with Istio to current")
-  void testOperatorWlsIstioDomainUpgradeFrom343ToCurrent() {
-    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom343ToCurrent" 
-         + " to upgrade Istio Image Domain with Istio with v8 schema to current");
-    upgradeWlsIstioDomain("3.4.3");
+  @DisplayName("Upgrade 4.0.9 Istio Domain with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom409ToCurrent() {
+    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom409ToCurrent" 
+         + " to upgrade Istio Image Domain with Istio with v9 schema to current");
+    upgradeWlsIstioDomain("4.0.9");
   }
 
   /**
-   * Upgrade from Operator 3.4.4 to current with Istio enabled domain.
+   * Upgrade from Operator 4.1.7 to current with Istio enabled domain.
    */
   @Test
-  @DisplayName("Upgrade 3.4.4 Istio Domain(v8) with Istio to current")
-  void testOperatorWlsIstioDomainUpgradeFrom344ToCurrent() {
-    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom344ToCurrent"
-         + " to upgrade Istio Image Domain with Istio with v8 schema to current");
-    upgradeWlsIstioDomain("3.4.4");
+  @DisplayName("Upgrade 4.1.7 Istio Domain(v9) with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom417ToCurrent() {
+    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom417ToCurrent"
+         + " to upgrade Istio Image Domain with Istio with v9 schema to current");
+    upgradeWlsIstioDomain("4.1.7");
   }
 
   /**
-   * Upgrade from Operator v3.3.8 to current with Istio enabled domain.
+   * Upgrade from Operator v4.2.6 to current with Istio enabled domain.
    */
   @Test
-  @DisplayName("Upgrade 3.3.8 Istio Domain(v8) with Istio to current")
-  void testOperatorWlsIstioDomainUpgradeFrom338ToCurrent() {
-    logger.info("Starting test to upgrade Istio Image Domain with Istio with v8 schema to current");
-    upgradeWlsIstioDomain("3.3.8");
+  @DisplayName("Upgrade 4.2.6 Istio Domain with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom426ToCurrent() {
+    logger.info("Starting test to upgrade Istio Image Domain with Istio with v9 schema to current");
+    upgradeWlsIstioDomain("4.2.6");
   }
 
   /**
@@ -162,8 +162,8 @@ class ItOperatorUpgradeWithIstio {
   }
 
   void upgradeWlsIstioDomain(String oldVersion) {
-    logger.info("Upgrade version/{0} Istio Domain(v8) to current", oldVersion);
-    installOldOperator(oldVersion,opNamespace,domainNamespace);
+    logger.info("Upgrade version/{0} Istio Domain to current", oldVersion);
+    installOldOperator(oldVersion, opNamespace, domainNamespace);
     createSecrets();
 
     // Create the repo secret to pull base WebLogic image
@@ -171,15 +171,15 @@ class ItOperatorUpgradeWithIstio {
     createConfigMapAndVerify("istio-upgrade-configmap", 
           domainUid, domainNamespace, Collections.emptyList());
 
-    // Creating an MII domain with v8 version
-    // Generate a v8 version of domain.yaml file from a template file
+    // Creating an MII domain with v9 version
+    // Generate a v9 version of domain.yaml file from a template file
     // by replacing domain namespace, domain uid, image 
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("MII_IMAGE", 
          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
-    templateMap.put("API_VERSION", "v8");
+    templateMap.put("API_VERSION", "v9");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
         "upgrade", "istio.config.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
@@ -198,7 +198,7 @@ class ItOperatorUpgradeWithIstio {
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
     testUntil(
-        domainExists(domainUid, "v8", domainNamespace),
+        domainExists(domainUid, "v9", domainNamespace),
         logger,
         "domain {0} to be created in namespace {1}",
         domainUid,
@@ -214,8 +214,6 @@ class ItOperatorUpgradeWithIstio {
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
-    istioIngressPort = 
-       createIstioService(domainUid,clusterName,adminServerPodName,domainNamespace);
     istioIngressPort
         = createIstioService(domainUid, clusterName, adminServerPodName, domainNamespace);
     String istioHost = null;
@@ -231,10 +229,10 @@ class ItOperatorUpgradeWithIstio {
     }
     checkIstioService(istioHost, istioIngressPort, domainNamespace);
     upgradeOperatorToCurrent(opNamespace);
-    checkDomainStatus(domainNamespace,domainUid);
+    checkDomainStatus(domainNamespace, domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
     // Re check the istio Service After Upgrade
-    checkIstioService(istioHost, istioIngressPort,domainNamespace);
+    checkIstioService(istioHost, istioIngressPort, domainNamespace);
   }
 
   private void createSecrets() {
