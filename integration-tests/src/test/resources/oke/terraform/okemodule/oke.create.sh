@@ -93,9 +93,39 @@ checkKubernetesCliConnection() {
         exit 1
     fi
     echo "clusterPublicIP: ###$clusterPublicIP###"
-    unset NO_PROXY
-    export NO_PROXY=localhost,127.0.0.1,10.244.0.0/16,10.101.0.0/16,10.196.0.0/16,$clusterPublicIP
+    echo " NO_PROXY=#$NO_PROXY# "
+    export NO_PROXY=$NO_PROXY,localhost,127.0.0.1,$clusterPublicIP
     echo "export NO_PROXY=:$NO_PROXY"
+
+    # Maximum number of retries
+    max_retries=10
+
+    # Initial retry count
+    retry_count=0
+
+    # Command to get cluster info
+    while [[ $retry_count -lt $max_retries ]]; do
+      echo "Attempt $((retry_count+1)) of $max_retries to connect to Kubernetes cluster..."
+
+      # Try to execute kubectl cluster-info
+      ${KUBERNETES_CLI:-kubectl} cluster-info
+      if [[ $? -eq 0 ]]; then
+        echo "Connected to Kubernetes cluster successfully!"
+        break
+      else
+        echo "Connection refused or failed, retrying..."
+        retry_count=$((retry_count + 1))
+        sleep 5  # Wait 5 seconds before retrying
+      fi
+    done
+
+    # Check if retries were exhausted
+    if [[ $retry_count -eq $max_retries ]]; then
+      echo "Failed to connect to Kubernetes cluster after $max_retries attempts."
+      cd "${terraformVarDir}"
+      terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+      createCluster
+    fi
 
     local myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
 
@@ -124,6 +154,26 @@ checkKubernetesCliConnection() {
 }
 
 checkClusterRunning() {
+    kubeconfig_file=${terraformVarDir}/${okeclustername}_kubeconfig
+    export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
+    echo "Kubeconfig file : $KUBECONFIG"
+    ls -al $KUBECONFIG
+
+    if [ -f "$kubeconfig_file" ] && [ -s "$kubeconfig_file" ]; then
+      echo "Kubeconfig file exists and is not empty."
+    else
+      if [ ! -f "$kubeconfig_file" ]; then
+        echo "Kubeconfig file does not exist."
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        createCluster
+      else
+        echo "Kubeconfig file exists but is empty."
+        cd "${terraformVarDir}"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        createCluster
+      fi
+    fi
     checkKubernetesCliConnection
 
     local privateIP=${vcn_cidr_prefix}
@@ -210,7 +260,8 @@ setupTerraform
 deleteOlderVersionTerraformOCIProvider
 
 chmod 600 ${ocipk_path}
-
+sudo yum reinstall ca-certificates -y
+sudo iptables -A OUTPUT -p tcp --dport 6443 -j ACCEPT
 # run terraform init,plan,apply to create OKE cluster based on the provided tfvar file ${clusterTFVarsFile).tfvar
 createCluster
 #check status of OKE cluster nodes, destroy if can not access them
