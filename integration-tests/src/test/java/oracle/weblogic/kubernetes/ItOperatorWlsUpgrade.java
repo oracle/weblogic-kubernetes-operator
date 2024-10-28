@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +16,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -22,12 +26,17 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.CreateIfNotExists;
+import oracle.weblogic.domain.DomainCreationImage;
+import oracle.weblogic.domain.DomainOnPV;
+import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -35,7 +44,6 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
@@ -47,8 +55,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
@@ -61,8 +71,10 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -84,16 +96,22 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvaila
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
@@ -173,40 +191,6 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.8 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.8 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom338ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom338ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.3.8", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 3.4.12 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.12 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom3412ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom3412ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.12", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 3.4.13 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.13 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom3413ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom3413ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.13", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-
-  /**
    * Operator upgrade from 4.0.8 to current.
    */
   @ParameterizedTest
@@ -283,42 +267,47 @@ class ItOperatorWlsUpgrade {
     logger.info("Starting test testOperatorWlsUpgradeFrom423ToCurrent with domain type {0}", domainType);
     installAndUpgradeOperator(domainType, "4.2.3", DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
+ 
+  /**
+   * Operator upgrade from 4.2.9 to current with DPV domain in V9 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.2.9 to current")
+  void testOperatorUpgradeDomainOnPVV9From429ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From429ToCurrent, domain v9 schema");
+    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.2.9");
+  }
+
+  /**
+   * Operator upgrade from 4.2.8 to current with DPV domain in V9 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.2.8 to current")
+  void testOperatorUpgradeDomainOnPVV9From428ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From428ToCurrent, domain v9 schema");
+    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.2.8");
+  }
+
+  /**
+   * Operator upgrade from 4.1.8 to current with DPV domain in V9 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.1.8 to current")
+  void testOperatorUpgradeDomainOnPVV9From418ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From418ToCurrent, domain v9 schema");
+    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.1.8");
+  }
+
+  /**
+   * Operator upgrade from 4.1.7 to current with DPV domain in V9 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.1.7 to current")
+  void testOperatorUpgradeDomainOnPVV9From417ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From417ToCurrent, domain v9 schema");
+    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.1.7");
+  }
   
-  /**
-   * Auxiliary Image Domain upgrade from Operator 3.4.1 to current.
-   */
-  @Test
-  @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom341ToCurrent() {
-    logger.info("Starting testOperatorWlsAuxDomainUpgradeFrom341ToCurrent " 
-         + "to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.4.1");
-  }
-
-  /**
-   * Auxiliary Image Domain upgrade from Operator 3.4.4 to current.
-   */
-  @Test
-  @DisplayName("Upgrade 3.4.4 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom344ToCurrent() {
-    logger.info("Starting testOperatorWlsAuxDomainUpgradeFrom344ToCurrent " 
-        + "to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.4.4");
-  }
-
-  /**
-   * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
-   * Currently we do not support AuxDomain upgrade 3.3.8 to Latest with 
-   * independent webhook only WebLogic Operator in Latest branch.
-   * Temporarily disabled, re-enable after webhook not pre-created in 
-   * InitializationTasks or the test is moved to a different test suite.
-   */
-  @Disabled
-  @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
-    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.3.8");
-  }
 
   /**
    * Cleanup Kubernetes artifacts in the namespaces used by the test and
@@ -398,18 +387,24 @@ class ItOperatorWlsUpgrade {
     scaleClusterUpAndDown();
   }
 
+  
+  
   // After upgrade scale up/down the cluster
   private void scaleClusterUpAndDown() {
-
     String clusterName = domainUid + "-" + "cluster-1";
+    scaleClusterUpAndDown(clusterName);
+  }
+
+  // After upgrade scale up/down the cluster
+  private void scaleClusterUpAndDown(String clusterName) {    
     logger.info("Updating the cluster {0} replica count to 3", clusterName);
-    boolean p1Success = scaleCluster(clusterName, domainNamespace,3);
+    boolean p1Success = scaleCluster(clusterName, domainNamespace, 3);
     assertTrue(p1Success,
         String.format("Patching replica to 3 failed for cluster %s in namespace %s",
             clusterName, domainNamespace));
-
+    
     logger.info("Updating the cluster {0} replica count to 2");
-    p1Success = scaleCluster(clusterName, domainNamespace,2);
+    p1Success = scaleCluster(clusterName, domainNamespace, 2);
     assertTrue(p1Success,
         String.format("Patching replica to 2 failed for cluster %s in namespace %s",
             clusterName, domainNamespace));
@@ -798,4 +793,111 @@ class ItOperatorWlsUpgrade {
     }
   }
 
+  void installOperatorCreatesPvPvcWlsDomainAndUpgrade(String operatorVersion) {
+    final String storageClassName = "weblogic-domain-storage-class";
+    String domainHomePrefix = "/shared/" + domainNamespace + "/domains/";
+    final String clusterName = "cluster-1";
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
+    final String wlsModelFile = "model-wlsdomain-onpv-simplified.yaml";
+
+    logger.info("Upgrade version/{0} Auxiliary Domain(v9) to current", operatorVersion);
+    installOldOperator(operatorVersion, opNamespace, domainNamespace);
+    createSecrets();
+
+    // Create the repo secret to pull base WebLogic image
+    createBaseRepoSecret(domainNamespace);
+
+    // create a model property file
+    File wlsModelPropFile = createWdtPropertyFile("wlsonpv-upgrade");
+
+    // create domainCreationImage
+    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-upgrade";
+    // create image with model and wdt installation files
+    WitParams witParams
+        = new WitParams()
+            .modelImageName(domainCreationImageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
+            .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
+    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
+
+    DomainCreationImage domainCreationImage
+        = new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
+
+    // create a domain resource
+    logger.info("Creating domain custom resource");
+    Map<String, Quantity> pvCapacity = new HashMap<>();
+    pvCapacity.put("storage", new Quantity("2Gi"));
+
+    Map<String, Quantity> pvcRequest = new HashMap<>();
+    pvcRequest.put("storage", new Quantity("2Gi"));
+    Configuration configuration = null;
+    if (OKE_CLUSTER) {
+      configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
+    } else {
+      configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
+          this.getClass().getSimpleName());
+    }
+    configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
+        .createMode(CreateIfNotExists.DOMAIN)
+        .domainCreationImages(Collections.singletonList(domainCreationImage))
+        .domainType(DomainOnPVType.WLS));
+    DomainResource domain = createDomainResourceOnPv(domainUid,
+        domainNamespace,
+        adminSecretName,
+        clusterName,
+        pvName,
+        pvcName,
+        new String[]{BASE_IMAGES_REPO_SECRET_NAME},
+        domainHomePrefix,
+        replicaCount,
+        0,
+        configuration);
+
+    // Set the inter-pod anti-affinity for the domain custom resource
+    setPodAntiAffinity(domain);
+
+    // create a domain custom resource and verify domain is created
+    createDomainAndVerify(domain, domainNamespace);
+
+    // verify that all servers are ready
+    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before upgrading the operator
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
+    }
+    // verify there is no status condition type Completed
+    // before upgrading to Latest
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, DOMAIN_VERSION);
+    upgradeOperatorToCurrent(opNamespace);
+    checkDomainStatus(domainNamespace, domainUid);
+    verifyPodsNotRolled(domainNamespace, pods);
+    scaleClusterUpAndDown(clusterName);
+  }
+
+
+  private File createWdtPropertyFile(String wlsModelFilePrefix) {
+
+    // create property file used with domain model file
+    Properties p = new Properties();
+    p.setProperty("adminUsername", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("adminPassword", ADMIN_PASSWORD_DEFAULT);
+
+    // create a model property file
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+        File.createTempFile(wlsModelFilePrefix, ".properties", new File(RESULTS_TEMPFILE)),
+        "Failed to create WLS model properties file");
+
+    // create the property file
+    assertDoesNotThrow(() ->
+        p.store(new FileOutputStream(domainPropertiesFile), "WLS properties file"),
+        "Failed to write WLS properties file");
+
+    return domainPropertiesFile;
+  }
+  
 }
