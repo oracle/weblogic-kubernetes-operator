@@ -33,6 +33,7 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -225,7 +226,12 @@ class DomainResourcesValidation {
   }
 
   private boolean isNotBeingProcessed(String namespace, String domainUid) {
-    return processor.getMakeRightFiberGateMap().get(namespace).getCurrentFibers().get(domainUid) == null;
+    return Optional.ofNullable(processor)
+            .map(DomainProcessor::getMakeRightFiberGateMap)
+            .map(m -> m.get(namespace))
+            .map(FiberGate::getCurrentFibers)
+            .map(f -> f.get(domainUid))
+            .isEmpty();
   }
 
   private void addDomain(DomainResource domain) {
