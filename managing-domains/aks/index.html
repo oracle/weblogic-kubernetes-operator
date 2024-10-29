@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1730172272" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1730172272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1730241272" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1730241272" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1730172272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1730241272"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1730172272"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1730172272"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1730241272"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1730241272"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1730172272"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1730241272"></script>
 
     
   </div>
@@ -3998,15 +3998,16 @@
   </ul>
 </nav></div>
 <h3 id="introduction">Introduction</h3>
-<p>This document is the reference documentation for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service. The offer makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type.</p>
+<p>This document is the reference for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service. The offer makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, load-balancer, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type.</p>
 <p>To deploy the offer from the Azure portal, see <a href="https://aka.ms/wls-aks-portal">WebLogic Server on Azure</a>.</p>
+<img src="https://oracle.github.io/weblogic-kubernetes-operator/images/aks-solution.png" alt="WLS AKS Marketplace Solution Screenshot">
 
 <p>Azure Kubernetes Service (AKS) makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You manage and maintain only the agent nodes. As a managed Kubernetes service, AKS is free - you pay for only the agent nodes within your clusters, not for the masters.</p>
 <p>To learn more, see <a href="https://docs.microsoft.com/azure/aks/intro-kubernetes">What is Azure Kubernetes Service?</a></p>
 
 
 <p>For complete details on domain home source types, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
-<p>It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/">Azure Kubernetes Service</a>.</p>
+<p>It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/">Azure Kubernetes Service</a> sample.</p>
 <p>The remaining steps on this page document the user experience for the Azure Marketplace offer for WebLogic Server on Azure Kubernetes Service.</p>
 <h3 id="basics">Basics</h3>
 <p>Use the <strong>Basics</strong> blade to provide the basic configuration details for deploying an Oracle WebLogic Server configured cluster. To do this, enter the values for the fields listed in the following tables.</p>
@@ -4182,7 +4183,7 @@
 </tbody>
 </table>
 <h4 id="application">Application</h4>
-<p>In this section you can deploy a Java EE Application along with the WebLogic Server deployment.</p>
+<p>In this section, you can deploy an application along with WebLogic Server.</p>
 <table>
 <thead>
 <tr>
@@ -4193,7 +4194,7 @@
 <tbody>
 <tr>
 <td>Deploy an application?</td>
-<td>If set to <strong>Yes</strong>, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to <strong>No</strong>, no application is deployed.</td>
+<td>If set to <strong>Yes</strong>, you must specify a WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to <strong>No</strong>, no application is deployed.</td>
 </tr>
 <tr>
 <td>Application package (.war,.ear,.jar)</td>
@@ -4220,7 +4221,7 @@
 </tr>
 <tr>
 <td>Enable Container insights</td>
-<td>If selected, cause the deployment to create an Azure Monitoring workspace and connect it to the AKS cluster as the Azure Monitoring Agent. Azure Monitoring Agent is a tool that collects data and sends it to Azure Container Insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/azure/azure-monitor/agents/agents-overview">Azure Monitor Agent overview</a> and <a href="https://aka.ms/wls-aks-container-insights">Container insights overview</a>.</td>
+<td>If selected, causes the deployment to create an Azure Monitoring workspace and connect it to the AKS cluster as the Azure Monitoring Agent. Azure Monitoring Agent is a tool that collects data and sends it to Azure Container Insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/azure/azure-monitor/agents/agents-overview">Azure Monitor Agent overview</a> and <a href="https://aka.ms/wls-aks-container-insights">Container insights overview</a>.</td>
 </tr>
 <tr>
 <td>Create Persistent Volume using Azure File share service</td>
@@ -4228,11 +4229,11 @@
 </tr>
 <tr>
 <td>Bring your own WebLogic Server Docker image from Azure Container Registry?</td>
-<td>If check the checkbox, the subsequent options are constrained to allow only selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry.</td>
+<td>If the checkbox is selected, you can use your own WebLogic Server Docker image from a pre-existing Azure Container Registry instance.</td>
 </tr>
 <tr>
 <td>Select existing ACR instance</td>
-<td>This option is shown only if <strong>Bring your own WebLogic Server Docker image from Azure Container Registry?</strong> is checked. If visible, select an existing Acure Container Registry instance.</td>
+<td>This option is shown only if <strong>Bring your own WebLogic Server Docker image from Azure Container Registry?</strong> is checked. If visible, select an existing Azure Container Registry instance.</td>
 </tr>
 <tr>
 <td>Please provide the image path</td>
@@ -4243,7 +4244,7 @@
 <p>When you are satisfied with your selections, select <strong>Next</strong> and open <strong>TLS/SSL</strong> blade.</p>
 <h3 id="tlsssl">TLS/SSL</h3>
 <p>With the <strong>TLS/SSL</strong> blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA). See <a href="https://aka.ms/arm-oraclelinux-wls-ssl-configuration">Oracle WebLogic Server Keystores configuration</a> for more information.</p>
-<p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.</strong> based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next</strong>. If you select <strong>Yes</strong>, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.</p>
+<p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.</strong> If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next</strong>. If you select <strong>Yes</strong>, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.</p>
 <p>If you want to upload existing keystores, select <strong>Upload existing KeyStores</strong> for the option <strong>How would you like to provide required configuration</strong>, and enter the values for the fields listed in the following table.</p>
 <h4 id="upload-existing-keystores">Upload existing KeyStores</h4>
 <table>
@@ -4492,7 +4493,7 @@
 <p><strong>Service name prefix</strong> column:</p>
 <p>You can fill in any valid value in this column.</p>
 <p><strong>Target</strong> and <strong>Port</strong> column:</p>
-<p>For the ports, the recommended values are the usual 7001 for the <strong>admin-server</strong> and 8001 for the <strong>cluster-1</strong>.</p>
+<p>For the ports, the recommended values are the usual 7001 for <strong>admin-server</strong> and 8001 for <strong>cluster-1</strong>.</p>
 <p>When you are satisfied with your selections, select <strong>Next</strong> and open <strong>DNS</strong> blade.</p>
 <h3 id="dns">DNS</h3>
 <p>With the <strong>DNS</strong> blade, you can provision the Oracle WebLogic Server Administration Console using a custom DNS name.</p>
@@ -4568,7 +4569,7 @@
 </tr>
 <tr>
 <td>Use passwordless datasource connection</td>
-<td>If you select a database type that supports passwordless connection, then this check box will appear. If selected, configure passwordless connections to the data source. For more information, see <a href="https://learn.microsoft.com/azure/developer/intro/passwordless-overview">Passwordless connections for Azure services</a>.</td>
+<td>If you select a database type that supports passwordless connection, this check box will appear. If selected, a passwordless connection to the data source will be configured. For more information, see <a href="https://learn.microsoft.com/azure/developer/intro/passwordless-overview">Passwordless connections for Azure services</a>.</td>
 </tr>
 <tr>
 <td>Database Username</td>
@@ -4613,7 +4614,7 @@
 </table>
 <p>When you are satisfied with your selections, select <strong>Next</strong> and open <strong>Autoscaling</strong> blade.</p>
 <h3 id="autoscaling">Autoscaling</h3>
-<p>Use the Autoscaling blade to configure metric that scales the WebLogic cluster. Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Provision resources for horizontal autoscaling?</strong> based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by clicking <strong>Review + create</strong>. If you select <strong>Yes</strong>, you must specify the details of your autoscaling option and autoscaling settings.</p>
+<p>Use the Autoscaling blade to configure metrics that scale the WebLogic cluster. Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Provision resources for horizontal autoscaling?</strong>, based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by clicking <strong>Review + create</strong>. If you select <strong>Yes</strong>, you must specify the details of your autoscaling settings.</p>
 <p>You must select one of the following two options, each described in turn.</p>
 <ul>
 <li>Kubernetes Metrics Server (simple autoscaling): this option configures and runs Kubernetes Horizontal Pod Autoscaler (HPA) to scale a WebLogic cluster, based on the CPU or memory utilization.</li>
@@ -4634,23 +4635,23 @@
 </tr>
 <tr>
 <td>Average CPU Utilization</td>
-<td>Pick average CPU utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster members up to maximum of cluster members, and the scale up or down action occur when the average CPU is consistently over the utilization.</td>
+<td>Pick average CPU utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster member up to the maximum of cluster members, and the scale up or down action occurs when the average CPU is consistently over/under the utilization.</td>
 </tr>
 <tr>
 <td>Average Memory Utilization</td>
-<td>Pick average memory utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster members up to maximum of cluster members, and the scale up or down action occur when the average memory is consistently over the utilization.</td>
+<td>Pick average memory utilization in percent. The HPA autoscales WebLogic Server instances from a minimum of 1 cluster member up to the maximum of cluster members, and the scale up or down action occurs when the average memory is consistently over/under the utilization.</td>
 </tr>
 </tbody>
 </table>
 <h4 id="weblogic-monitoring-exporter-advanced-autoscaling">WebLogic Monitoring Exporter (advanced autoscaling)</h4>
-<p>This option installs all the software necessary to allow you to create Java metric aware KEDA scaling rules. The offer provisions the following deployments. Right-click and select <strong>Open Link in New Tab</strong> to follow links:</p>
+<p>This option installs all the software necessary to allow you to create Java metric aware KEDA scaling rules. The offer provisions the following software. Right-click and select <strong>Open Link in New Tab</strong> to follow links and learn more:</p>
 <ul>
 <li><a href="https://aka.ms/wls-exporter">Install WebLogic Monitoring Exporter to scrape WebLogic Server metrics</a>.</li>
 <li><a href="https://aka.ms/aks-enable-monitoring">Install AKS Prometheus metrics addon</a>.</li>
 <li><a href="https://aka.ms/aks-prometheus-metrics-scrape-configuration">Feed WebLogic Server metrics to Azure Monitor Managed Service for Prometheus</a>.</li>
 <li><a href="https://aka.ms/aks-integrate-keda">Integrate KEDA with AKS cluster</a>.</li>
 </ul>
-<p>After the provisioning is completed, you can create KEDA scaling rules. A sample rule is provided in the deployment outputs. The following steps show how to see the sample rule.</p>
+<p>After the provisioning is complete, you can create KEDA scaling rules. A sample rule is provided in the deployment outputs. The following steps show how to see the sample rule.</p>
 <ul>
 <li>View the resource group for this deployment in the Azure portal.</li>
 <li>In the <strong>Settings</strong> section, select <strong>Deployments</strong>.</li>
@@ -4662,10 +4663,10 @@
 <p>When you are satisfied with your selections, select <strong>Review + create</strong>.</p>
 <h3 id="review--create">Review + create</h3>
 <p>In the <strong>Review + create blade</strong>, review the details you provided for deploying Oracle WebLogic Server on AKS. If you want to make changes to any of the fields, click <strong>&lt; previous</strong> or click on the respective blade and update the details.</p>
-<p>If you want to use this template to automate the deployment, download it by selecting <strong>Download a template for automation</strong>.</p>
-<p>Click <strong>Create</strong> to create this offer. This process may take 30 to 60 minutes.</p>
+<p>If you want to use the underlying template to further customize it yourself (for example, as part of your CI/CD pipeline), download it by selecting <strong>Download a template for automation</strong>.</p>
+<p>Click <strong>Create</strong> to start the deployment. This process may take 30 to 60 minutes.</p>
 <h3 id="template-outputs">Template outputs</h3>
-<p>After clicking <strong>Create</strong> to create this offer, you will go to the <strong>Deployment is in progress</strong> page. When the deployment is completed, the page shows <strong>Your deployment is complete</strong>. In the left panel, select <strong>Outputs</strong>. These are the outputs from the deployment.  The following table is a reference guide to the deployment outputs.</p>
+<p>After clicking <strong>Create</strong>, you will go to the <strong>Deployment is in progress</strong> page. When the deployment is complete, the page shows <strong>Your deployment is complete</strong>. In the left panel, select <strong>Outputs</strong>. These are the outputs from the deployment. The following table is a reference to the deployment outputs.</p>
 <table>
 <thead>
 <tr>
@@ -7399,19 +7400,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1730172272"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1730172272"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1730172272"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1730172272"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1730172272"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1730172272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1730241272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1730241272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1730241272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1730241272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1730241272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1730241272"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1730172272"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1730172272"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1730172272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1730241272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1730241272"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1730241272"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1730172272"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1730241272"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
