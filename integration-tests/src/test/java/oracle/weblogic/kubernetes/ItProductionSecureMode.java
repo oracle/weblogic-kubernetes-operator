@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -358,9 +359,9 @@ class ItProductionSecureMode {
         + MANAGED_SERVER_NAME_BASE + "1"
         + "/applicationRuntimes/" + MII_BASIC_APP_DEPLOYMENT_NAME
         + "/workManagerRuntimes/newWM";
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       ExecResult result = exeAppInServerPod(domainNamespace, managedServerPrefix + "1",9002, resourcePath);
-      logger.info("result in OKE_CLUSTER is {0}", result.toString());
+      logger.info("result in OKE_CLUSTER or OCNE cluster is {0}", result.toString());
       assertEquals(0, result.exitValue(), "Failed to access WebLogic rest endpoint");
     } else {
       testUntil(

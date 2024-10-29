@@ -410,7 +410,7 @@ class ItMiiAuxiliaryImage {
     String imageTag = getDateAndTimeStamp();
     String imageUpdate = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-        : DOMAIN_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
+        : DOMAIN_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + "-dev:" + imageTag;
     imageTag(imageName, imageUpdate);
     imageRepoLoginAndPushImageToRegistry(imageUpdate);
 
