@@ -1,6 +1,8 @@
 
 #### Create Resource Group
 
+Create the resource group by issuing the following commands.
+
 ```shell
 $ az extension add --name resource-graph
 $ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
