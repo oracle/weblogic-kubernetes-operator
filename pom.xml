@@ -662,7 +662,7 @@
     <jakarta-json-version>2.0.1</jakarta-json-version>
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
-    <networknt-jsonschmema-validator-version>1.5.2</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.5.3</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.4.0</commons-exec-version>
     <commons-codec-version>1.17.1</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -678,7 +678,7 @@
     <kotlin-stdlib-version>2.0.21</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
     <okio-version>3.9.1</okio-version>
-    <bc-jdk18on-version>1.78.1</bc-jdk18on-version>
+    <bc-jdk18on-version>1.79</bc-jdk18on-version>
     <junit.jupiter.version>5.11.3</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
