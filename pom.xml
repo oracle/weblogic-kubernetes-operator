@@ -718,7 +718,7 @@
     <jackson-databind-version>2.18.1</jackson-databind-version>
     <snakeyaml-version>2.3</snakeyaml-version>
     <gson-version>2.11.0</gson-version>
-    <dependency-check-version>11.0.0</dependency-check-version>
+    <dependency-check-version>11.1.0</dependency-check-version>
     <slf4j-version>2.0.16</slf4j-version>
     <logback-classic-version>1.5.12</logback-classic-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
