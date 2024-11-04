@@ -13,7 +13,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/prerequisites/introduction/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/prerequisites/introduction/</guid>
-      <description>For the current production release 3.4.7 :&#xA;Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, 1.23.4+, and 1.24.0+ (check with kubectl version). NOTE: Kubernetes 1.25 and 1.26 will be supported only by 4.0 releases. Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).</description>
+      <description>For the current production release 3.4.13 :&#xA;Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, 1.23.4+, and 1.24.0+ (check with kubectl version). NOTE: Kubernetes 1.25 and 1.26 will be supported only by 4.0 releases. Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).</description>
     </item>
     <item>
       <title>Supported environments</title>
