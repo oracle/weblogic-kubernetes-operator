@@ -30,6 +30,10 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 ***
 #### Current production release
 
+{{% notice warning %}}
+As of November 2024, version 3.4.x of the WebLogic Kubernetes Operator is no longer supported.
+{{% /notice %}}
+
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is {{< latestVersion >}}.
 See the [operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "/userguide/platforms/environments.md" >}}).
 
