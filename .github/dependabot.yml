@@ -14,32 +14,12 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-  - package-ecosystem: "maven"
-    target-branch: release/4.1
-    directory: "/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "maven"
-    target-branch: release/3.4
-    directory: "/"
-    schedule:
-      interval: "daily"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
   - package-ecosystem: "github-actions"
     target-branch: release/4.2
-    directory: "/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "github-actions"
-    target-branch: release/4.1
-    directory: "/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "github-actions"
-    target-branch: release/3.4
     directory: "/"
     schedule:
       interval: "daily"
