@@ -27,20 +27,6 @@ jobs:
           ref: release/4.2
           path: branch-4.2
 
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 32
-          ref: release/4.1
-          path: branch-4.1
-
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 32
-          ref: release/3.4
-          path: branch-3.4
-
       - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
@@ -67,21 +53,8 @@ jobs:
           echo "Copying static files into place..."
           cp -R domains "$GITHUB_WORKSPACE/WORK"
           
-          cd $GITHUB_WORKSPACE/branch-4.1/documentation
-          echo "Building documentation for 4.1 minor version..."
-          latest_41_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.1 | tail -1 | cut -c12-)
-          echo "Latest tag is $latest_41_tag..."
-          echo $latest_41_tag >| $GITHUB_WORKSPACE/branch-4.1/documentation/site/layouts/shortcodes/latestVersion.html
-          cat $GITHUB_WORKSPACE/branch-4.1/documentation/site/layouts/shortcodes/latestVersion.html
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK/4.1" -b https://oracle.github.io/weblogic-kubernetes-operator/4.1
-
-          cd $GITHUB_WORKSPACE/branch-3.4/documentation
-          echo "Building documentation for 3.4 minor version..."
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK/3.4" -b https://oracle.github.io/weblogic-kubernetes-operator/3.4
-
           cd $GITHUB_WORKSPACE/gh-pages
           find . -maxdepth 1 -mindepth 1 -not -name '[0-9]*' -not -name '.git*' -exec rm -Rf {} \;
-          rm -Rf 3.4 4.1
 
           cp -R $GITHUB_WORKSPACE/WORK/* .
           git config --global user.name "github-actions[bot]"
