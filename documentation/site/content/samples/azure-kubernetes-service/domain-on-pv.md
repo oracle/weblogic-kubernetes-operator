@@ -92,7 +92,7 @@ This sample requires [Domain creation images]({{< relref "/managing-domains/doma
 - Copy the sample to a new directory; for example, use the directory `/tmp/dpv-sample`. In the directory name, `dpv` is short for "domain on pv". Domain on PV is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
    ```shell
-   $ rm /tmp/dpv-sample -f -r
+   $ rm -rf /tmp/dpv-sample
    $ mkdir /tmp/dpv-sample
    ```
 
