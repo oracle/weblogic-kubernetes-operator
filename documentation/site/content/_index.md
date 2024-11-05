@@ -43,7 +43,7 @@ See the [Release Notes](https://github.com/oracle/weblogic-kubernetes-operator/r
 
 #### Operator earlier versions
 
-{{% notice notice %}}
+{{% notice note %}}
 As of November 2024, version 3.4.x of the WebLogic Kubernetes Operator is no longer supported.
 {{% /notice %}}
 
