@@ -7,30 +7,13 @@ description: "Sample for creating a WebLogic domain home on an existing PV or PV
 
 This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
 
-#### Contents
+{{< table_of_contents >}}
 
- - [Prerequisites](#prerequisites)
- - [Create Resource Group](#create-resource-group)
- - [Create an AKS cluster](#create-the-aks-cluster)
- - [Create and configure storage](#create-storage)
-   - [Create an Azure Storage account and NFS share](#create-an-azure-storage-account-and-nfs-share)
-   - [Create SC and PVC](#create-sc-and-pvc)
- - [Create a domain creation image](#create-a-domain-creation-image)
- - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator-into-the-aks-cluster)
- - [Create WebLogic domain](#create-weblogic-domain)
-   - [Create secrets](#create-secrets)
-   - [Create WebLogic Domain](#create-weblogic-domain-1)
-   - [Create LoadBalancer](#create-loadbalancer)
- - [Automation](#automation)
- - [Access sample application](#access-sample-application)
- - [Validate NFS volume](#validate-nfs-volume)
- - [Clean up resources](#clean-up-resources)
- - [Troubleshooting](#troubleshooting)
- - [Useful links](#useful-links)
+### Prerequisites
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-01.txt" >}}
 
-##### Prepare parameters
+#### Prepare parameters
 
 Set required parameters by running the following commands.
 
@@ -57,36 +40,40 @@ export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 ```
 
+#### Oracle Container Registry
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
+#### Sign in with Azure CLI
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/sign-in-azure.txt" >}}
+
+#### Download the WebLogic Kubernetes Operator sample
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
 
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
 
+### Create Resource Group
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
+
+### Create the AKS cluster
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
  **NOTE**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
+ ### Create storage
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
 
-#### Create a domain creation image
+### Create a domain creation image
 
 This sample requires [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images" >}}). For more information, see [Domain on Persistent Volume]({{< relref "/managing-domains/domain-on-pv/overview" >}}).
 
-  - [Image creation prerequisites](#image-creation-prerequisites)
-  - [Image creation - Introduction](#image-creation---introduction)
-  - [Understanding your first archive](#understanding-your-first-archive)
-  - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
-  - [Staging model files](#staging-model-files)
-  - [Creating the image with WIT](#creating-the-image-with-wit)
-  - [Pushing the image to Azure Container Registry](#pushing-the-image-to-azure-container-registry)
-
-##### Image creation prerequisites
+#### Image creation prerequisites
 
 - The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 - Copy the sample to a new directory; for example, use the directory `/tmp/dpv-sample`. In the directory name, `dpv` is short for "domain on pv". Domain on PV is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
@@ -113,15 +100,15 @@ This sample requires [Domain creation images]({{< relref "/managing-domains/doma
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" >}}
 
-##### Image creation - Introduction
+#### Image creation - Introduction
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/auxiliary-image-directory.txt" >}}
 
-##### Understanding your first archive
+#### Understanding your first archive
 
 See [Understanding your first archive]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#understand-your-first-archive" >}}).
 
-##### Staging a ZIP file of the archive
+#### Staging a ZIP file of the archive
 
 Delete any possible existing archive.zip in case we have an old leftover version.
 
@@ -136,13 +123,13 @@ $ cd /tmp/dpv-sample/archives/archive-v1
 $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
 
-##### Staging model files
+#### Staging model files
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
 
 An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/domain-on-pv/model-files" >}}) in the user documentation.
 
-##### Creating the image with WIT
+#### Creating the image with WIT
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" >}}
 
@@ -154,7 +141,7 @@ The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troublesho
 You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
 {{% /notice %}}
 
-##### Pushing the image to Azure Container Registry
+#### Pushing the image to Azure Container Registry
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" >}}
 
@@ -169,7 +156,7 @@ $ docker push ${LOGIN_SERVER}/wdt-domain-image:WLS-v1
 
 If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
 
-#### Install WebLogic Kubernetes Operator into the AKS cluster
+### Install WebLogic Kubernetes Operator into the AKS cluster
 
 The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
@@ -207,15 +194,11 @@ weblogic-operator-webhook-868db5875b-55v7r   1/1     Running   0          86s
 {{% notice tip %}} You will have to press Ctrl-C to exit this command due to the `-w` flag.
 {{% /notice %}}
 
-#### Create WebLogic domain
-
-  - [Create secrets](#create-secrets)
-  - [Create WebLogic Domain](#create-weblogic-domain-1)
-  - [Create LoadBalancer](#create-loadbalancer)
+### Create WebLogic domain
 
 Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can ask the operator to create a WLS domain.
 
-##### Create secrets
+#### Create secrets
 
 You will use the `$BASE_DIR/sample-scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run the following commands:
 
@@ -267,7 +250,7 @@ wlsregcred                                kubernetes.io/dockerconfigjson   1    
 
 **NOTE**: If the `NAME` column in your output is missing any of the values shown above, please review your execution of the preceding steps in this sample to ensure that you correctly followed all of them.
 
-##### Enable Weblogic Operator
+#### Enable Weblogic Operator
 
 Run the following command to enable the operator to monitor the namespace.
 
@@ -275,7 +258,7 @@ Run the following command to enable the operator to monitor the namespace.
 kubectl label namespace default weblogic-operator=enabled
 ```
 
-##### Create WebLogic Domain
+#### Create WebLogic Domain
 Now, you deploy a `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.
 
 - Run the following commands to generate resource files.
@@ -391,7 +374,7 @@ The domain resource references the cluster resource, a WebLogic Server installat
 
 To access the sample application on WLS, skip to the section [Access sample application](#access-sample-application). The next section includes a script that automates all of the preceding steps.
 
-#### Automation
+### Automation
 
 If you want to automate the above steps of creating the AKS cluster and WLS domain, you can use the script `${BASE_DIR}/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
 
@@ -418,7 +401,7 @@ To interact with the cluster using `kubectl`, use `az aks get-credentials` as sh
 {{% notice info %}} You now have created an AKS cluster with Azure Files NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
 {{% /notice %}}
 
-#### Access sample application
+### Access sample application
 
 Access the Administration Console using the admin load balancer IP address.
 
@@ -463,7 +446,7 @@ Found 0 local data sources:
 </pre></body></html>
 ```
 
-#### Validate NFS volume
+### Validate NFS volume
 
 There are several approaches to validate the NFS volume:
 
@@ -485,7 +468,7 @@ wlsstorage1612795811.file.core.windows.net:/wlsstorage1612795811/wls-weblogic-16
 ...
 ```
 
-#### Clean up resources
+### Clean up resources
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-01.txt" >}}
 
@@ -493,10 +476,10 @@ If you created the AKS cluster step by step, run the following command to clean 
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
-#### Troubleshooting
+### Troubleshooting
 
 For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
 
-#### Useful links
+### Useful links
 
 - [Domain on a PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}}) sample

@@ -1,5 +1,3 @@
-##### Sign in with Azure CLI
-
 The steps in this section show you how to sign in to the Azure CLI.
 
 1. Open a Bash shell.
