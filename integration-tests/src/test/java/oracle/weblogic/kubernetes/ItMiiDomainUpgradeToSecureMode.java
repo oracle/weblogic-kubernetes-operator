@@ -135,7 +135,7 @@ class ItMiiDomainUpgradeToSecureMode {
   private final String imageTag12214 = "12.2.1.4";
   private final String imageTag1412 = "14.1.2.0.0-jdk17";
   private final String image1412 = BASE_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1412;
-  private final String sampleAppUri = "/sample-war/index.jsp";
+  private final String sampleAppUri = "/sample-war/index.jsp?terminateSession=true";
   private final String adminAppUri = "/management/tenant-monitoring/servers";
   private final String adminAppText = "RUNNING";
   private final String adminAppMoved = "This document you requested has moved";
@@ -1020,7 +1020,7 @@ class ItMiiDomainUpgradeToSecureMode {
         "running in production mode");
 
     //create ingress resources to route traffic to various service endpoints
-    createNginxIngressHostRouting(domainUid, 7001, 7002, 7100, nginxParams.getIngressClassName(), false);
+    createNginxIngressHostRouting(domainUid, 7001, 7002, 11000, nginxParams.getIngressClassName(), false);
 
     //verify the number of channels available in the domain resource match with the count and name
     verifyChannel(domainNamespace, domainUid, List.of(channelName));
