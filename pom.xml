@@ -742,7 +742,7 @@
     <logback-classic-version>1.5.12</logback-classic-version>
     <protobuf-java-version>4.28.3</protobuf-java-version>
     <json-smart-version>2.5.1</json-smart-version>
-    <nimbus-jose-jwt-version>9.44</nimbus-jose-jwt-version>
+    <nimbus-jose-jwt-version>9.46</nimbus-jose-jwt-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
