@@ -277,7 +277,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     // A pod is ready if it is not being deleted and has the ready status.
     @Override
     protected boolean isReady(V1Pod result) {
-      return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
+      return result != null && (!PodHelper.isDeleting(result) && (PodHelper.isReady(result)
+              || PodHelper.isWaitingToRoll(result)));
     }
 
     // Pods should be processed if ready.
