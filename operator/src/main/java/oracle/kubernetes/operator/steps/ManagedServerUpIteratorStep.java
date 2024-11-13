@@ -148,8 +148,9 @@ public class ManagedServerUpIteratorStep extends Step {
       WlsDomainConfig domainTopology =
               (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       V1Pod managedPod = info.getServerPod(serverName);
-
-      if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod))) {
+      boolean isWaitingToRoll = PodHelper.isWaitingToRoll(managedPod);
+      if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)
+              && !isWaitingToRoll)) {
         // requeue to wait for managed pod to be ready
         return doRequeue(packet);
       }

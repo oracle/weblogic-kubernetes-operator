@@ -85,7 +85,7 @@ public class ShutdownManagedServerStep extends Step {
     V1Service service = getDomainPresenceInfo(packet).getServerService(serverName);
 
     String now = OffsetDateTime.now().toString();
-    if (service == null || !PodHelper.isReady(pod) || PodHelper.isFailed(pod)) {
+    if (service == null || !PodHelper.isReady(pod) || PodHelper.isFailed(pod) || PodHelper.isWaitingToRoll(pod)) {
       return doNext(PodHelper.annotatePodAsNeedingToShutdown(pod, now, getNext()), packet);
     }
     return doNext(
