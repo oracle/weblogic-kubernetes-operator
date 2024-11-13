@@ -256,7 +256,8 @@ public class MonitoringUtils {
     LoggingFacade logger = getLogger();
     // url
     String curlCmd =
-        String.format("curl -g --silent --show-error --noproxy '*'  -H 'host: *'"
+        String.format("curl -g --silent --show-error --noproxy '*' -v "
+            + " --max-time 60 -H 'host: *'"
                 + " http://%s/api/v1/query?query=%s",
             hostPortPrometheus, searchKey);
 
@@ -302,7 +303,7 @@ public class MonitoringUtils {
     LoggingFacade logger = getLogger();
     // url
     String curlCmd =
-        String.format("curl -g --silent --show-error --noproxy '*'  -H 'host: " + ingressHost + "'"
+        String.format("curl -g --silent --show-error --noproxy '*' -v  -H 'host: " + ingressHost + "'"
                 + " http://%s/api/v1/query?query=%s",
             hostPortPrometheus, searchKey);
 
@@ -1229,7 +1230,8 @@ public class MonitoringUtils {
       host = InetAddress.getLocalHost().getHostAddress();
     }
     String curlCmd =
-        String.format("curl -g --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
+        String.format("curl -g --silent --show-error --noproxy '*' -v "
+             +   " --max-time 60 -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
             nginxHost,
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
@@ -1258,7 +1260,8 @@ public class MonitoringUtils {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
-        String.format("curl -g --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s/wls-exporter/metrics",
+        String.format("curl -g --silent --show-error --noproxy '*' -v "
+            +   " --max-time 60 -H 'host: %s' http://%s:%s@%s/wls-exporter/metrics",
             nginxHost,
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
@@ -1285,7 +1288,8 @@ public class MonitoringUtils {
 
     // check the access to monitoring exporter apps from all managed servers in the domain
     String curlCmd =
-        String.format("curl -g --silent --show-error --noproxy '*'  http://%s:%s@%s/wls-exporter/metrics",
+        String.format("curl -g --silent --show-error --noproxy '*' -v "
+               + " --max-time 60 http://%s:%s@%s/wls-exporter/metrics",
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
             hostPort);

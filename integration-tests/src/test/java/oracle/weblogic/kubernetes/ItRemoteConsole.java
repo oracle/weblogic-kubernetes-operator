@@ -62,6 +62,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
@@ -96,7 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisabledOnSlimImage
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("oke-parallel")
+@Tag("oke-weekly-sequential")
 class ItRemoteConsole {
 
   private static String domainNamespace = null;
@@ -310,6 +312,19 @@ class ItRemoteConsole {
   public void tearDownAll() {
     if (!SKIP_CLEANUP)  {
       assertTrue(shutdownWlsRemoteConsole(), "Remote Console shutdown failed");
+    }
+    if (traefikHelmParams != null && OKE_CLUSTER) {
+
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstallTraefik returns true")
+          .withFailMessage("uninstallTraefik did not return true")
+          .isTrue();
+    }
+    if (nginxHelmParams != null && OKE_CLUSTER) {
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
     }
   }
 

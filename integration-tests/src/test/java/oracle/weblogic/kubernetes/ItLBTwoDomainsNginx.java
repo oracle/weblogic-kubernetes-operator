@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.checkIngressReady;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
@@ -253,6 +254,12 @@ class ItLBTwoDomainsNginx {
         // delete pv
         deletePersistentVolume(pvPvcNamePair.get(0));
       }
+    }
+    if (nginxHelmParams != null && OKE_CLUSTER) {
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
     }
   }
 
