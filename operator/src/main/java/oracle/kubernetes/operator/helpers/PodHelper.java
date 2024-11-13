@@ -116,6 +116,19 @@ public class PodHelper {
     return ready;
   }
 
+  /**
+   * Is the pod waiting to roll.
+   * @param pod pod
+   * @return true if the pod is waiting to roll
+   */
+  public static boolean isWaitingToRoll(V1Pod pod) {
+    return Optional.ofNullable(pod)
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getAnnotations)
+            .map(labels -> "true".equalsIgnoreCase(labels.get(LabelConstants.TO_BE_ROLLED_LABEL)))
+            .orElse(false);
+  }
+
   static boolean hasReadyServer(V1Pod pod) {
     return Optional.ofNullable(pod).map(PodHelper::hasReadyStatus).orElse(false);
   }
