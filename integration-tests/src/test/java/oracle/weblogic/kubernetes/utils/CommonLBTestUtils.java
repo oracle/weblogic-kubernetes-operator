@@ -784,12 +784,12 @@ public class CommonLBTestUtils {
         + "&password=" + ADMIN_PASSWORD_DEFAULT
         + ((host != null) && host.contains(":") ? "&ipv6=true" : "&ipv6=false") + "\"";
     if (hostRouting) {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
+      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' -v "
           + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, host)
         : String.format("curl -g --show-error -ks --noproxy '*' "
           + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, getHostAndPort(host, lbPort));
     } else {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
+      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' -v "
           + "%s://%s" + locationString + "/" + uri, protocol, host)
         : String.format("curl -g --show-error -ks --noproxy '*' "
           + "%s://%s" + locationString + "/" + uri, protocol, getHostAndPort(host, lbPort));

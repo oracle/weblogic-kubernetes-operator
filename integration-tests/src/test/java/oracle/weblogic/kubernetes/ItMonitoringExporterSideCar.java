@@ -101,7 +101,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     + "MonitoringExporter Side Car via Prometheus and Grafana")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-sequential")
+@Tag("oke-weekly-sequential")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 class ItMonitoringExporterSideCar {
