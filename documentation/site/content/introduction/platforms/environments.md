@@ -105,7 +105,9 @@ Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure wit
 changes, enabling you to preserve your application investment as you adopt modern cloud
 native infrastructure.
 
-WebLogic Kubernetes Operator is certified for use on PCA X9 with Kubernetes 1.24.5+ and Istio 1.14.
+* WebLogic Kubernetes Operator is certified for use on PCA X9 with Kubernetes 1.24.5+ and Istio 1.14.
+
+* WebLogic Kubernetes Operator 4.x is certified for use on PCA v3. For more information, see [Using the OKE Service](https://docs.oracle.com/en/engineered-systems/private-cloud-appliance/3.0-latest/oke/oke-overview.html) in the Oracle Private Cloud Appliance Container Engine for Kubernetes documentation.
 
 #### Microsoft Azure
 
