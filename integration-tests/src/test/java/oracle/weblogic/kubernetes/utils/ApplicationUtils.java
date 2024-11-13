@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -348,6 +349,34 @@ public class ApplicationUtils {
     });
 
     return false;
+  }
+
+  /**
+   * Call a web app and wait for the response code 200.
+   * @param curlCmd curl command to call the web app
+   * @return true if 200 response code is returned, false otherwise
+   */
+  public static Callable<Boolean> callWebAppAndWaitTillReady(String curlCmd)  {
+    LoggingFacade logger = getLogger();
+    String httpStatusCode = "200";
+
+    return () -> {
+      final ExecResult result = ExecCommand.exec(curlCmd);
+      final String responseCode = result.stdout().trim();
+
+      if (result != null) {
+        logger.info("result.stdout: \n{0}", result.stdout());
+        logger.info("result.stderr: \n{0}", result.stderr());
+        logger.info("result.exitValue: \n{0}", result.exitValue());
+      }
+
+      if (result.exitValue() != 0 || !responseCode.equals(httpStatusCode)) {
+        logger.info("callWebApp did not return {0} response code, got {1}", httpStatusCode, responseCode);
+        return false;
+      }
+
+      return true;
+    };
   }
 
   /**
