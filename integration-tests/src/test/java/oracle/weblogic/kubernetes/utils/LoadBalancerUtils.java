@@ -473,8 +473,23 @@ public class LoadBalancerUtils {
       return false;
     }
 
-    return result.stdout().contains("OK");
 
+
+    return (result.stdout().contains("OK") && isBackendHealthy(result.stdout()));
+  }
+
+  private static boolean isBackendHealthy(String jsonResponse) {
+    LoggingFacade logger = getLogger();
+    // Check for any non-empty backend set names indicating a failure
+    if (jsonResponse.contains("\"critical-state-backend-set-names\": []")
+        && jsonResponse.contains("\"unknown-state-backend-set-names\": []")
+        && jsonResponse.contains("\"warning-state-backend-set-names\": []")) {
+      logger.info("All backends are healthy.");
+      return true;  // Healthy
+    } else {
+      logger.severe("Failure: There are issues with the backend(s)." + jsonResponse);
+      return false;  // Unhealthy
+    }
   }
 
   @Nullable
