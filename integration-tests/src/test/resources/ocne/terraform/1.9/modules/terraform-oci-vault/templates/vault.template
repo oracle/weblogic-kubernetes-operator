@@ -1,0 +1,23 @@
+ui = true
+storage "oci" {
+   namespace_name = "${obj_namespace}"
+   bucket_name = "${obj_bucket}"
+   ha_enabled = "true"
+   lock_bucket_name = "${obj_lock_bucket}"
+   auth_type_api_key    = "true"
+}
+seal "ocikms" {
+    key_id               = "${kms_key_id}"
+    crypto_endpoint      = "${kms_crypto_endpoint}"
+    management_endpoint  = "${kms_management_endpoint}"
+    auth_type_api_key    = "true"
+}
+listener "tcp" {
+    address = "[::]:8200"
+    cluster_address = "[::]:8201"
+    tls_cipher_suites = "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA"
+    tls_disable = false
+    tls_prefer_server_cipher_suites = true
+    tls_cert_file = "/etc/vault.d/cert.pem"
+    tls_key_file = "/etc/vault.d/cert.key"
+}

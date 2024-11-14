@@ -23,9 +23,10 @@ validate_script() {
 }
 
 
-EXCLUDE_PATH="*/docker-images/*"
+EXCLUDE_PATH1="*/docker-images/*"
+EXCLUDE_PATH2="*/ocne/terraform/1.9/*"
 
-find "$(pwd -P)" -type f -name '*.sh' -not -path "$EXCLUDE_PATH" -print0 | {
+find "$(pwd -P)" -type f -name '*.sh' -not -path "$EXCLUDE_PATH1" -not -path "$EXCLUDE_PATH2" -print0 | {
 
   return_code=0
 

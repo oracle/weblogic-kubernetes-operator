@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Copyright (c) 2024 Oracle Corporation and/or affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl
+
+parse_input() {
+  eval "$(jq -r '"compute_user=\(.compute_user)
+        vault_host=\(.vault_host)
+        compartment_id=\(.compartment_id)
+        ocne_secret_name=\(.ocne_secret_name)
+        ssh_private_key_path=\(.ssh_private_key_path)
+        region=\(.region)
+        bastion_user=\(.bastion_user)
+        bastion_public_ip=\(.bastion_public_ip)
+        bastion_private_key_path=\(.bastion_private_key_path)
+        enable_bastion=\(.enable_bastion)"')"
+}
+
+fetch_token() {
+  if [[ ${enable_bastion} == true || "${bastion_public_ip}" != "" ]] ; then
+    vault_ocne_client_token=$(ssh -i ${ssh_private_key_path} -o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ${bastion_private_key_path} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $bastion_user@${bastion_public_ip} nc $vault_host 22" $compute_user@$vault_host 'export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True && oci vault secret list --compartment-id '$compartment_id' --name '$ocne_secret_name' | jq -r '"'"'.data[].id'"'"' | xargs -I{} oci secrets secret-bundle get --secret-id {} --stage CURRENT --region '$region' | jq -r '"'"'.data."secret-bundle-content".content'"'"' | base64 -d' | tr -d '')
+  elif [[ ${enable_bastion} == false && "${bastion_public_ip}" == "" ]] ; then
+    vault_ocne_client_token=$(ssh -i ${ssh_private_key_path} -o StrictHostKeyChecking=no $compute_user@$vault_host 'export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True && oci vault secret list --compartment-id '$compartment_id' --name '$ocne_secret_name' | jq -r '"'"'.data[].id'"'"' | xargs -I{} oci secrets secret-bundle get --secret-id {} --stage CURRENT --region '$region' | jq -r '"'"'.data."secret-bundle-content".content'"'"' | base64 -d' | tr -d '')
+  fi
+
+  if [ -z "$vault_ocne_client_token" ] ; then
+        echo "FATAL: problem in fetching ocne vault client token. vault_ocne_client_token=${vault_ocne_client_token}"
+        exit 1
+  fi
+  jq -n --arg vault_ocne_client_token "$vault_ocne_client_token" '{"vault_ocne_client_token":$vault_ocne_client_token}'
+}
+
+parse_input
+fetch_token

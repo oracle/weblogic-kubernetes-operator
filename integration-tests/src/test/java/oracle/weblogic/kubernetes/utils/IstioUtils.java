@@ -104,6 +104,8 @@ public class IstioUtils {
       logger.info("replace istio installation hub in File {0}", installScript);
       assertDoesNotThrow(() -> replaceStringInFile(installScript, "gcr.io", ocneIstioRepo),
           String.format("Failed to replace string in File %s", installScript));
+      assertDoesNotThrow(() -> replaceStringInFile(installScript, "--auth=instance_principal", " "),
+          String.format("Failed to replace string in File %s", installScript));
     }
     String arch = "linux-amd64";
     if (ARM) {

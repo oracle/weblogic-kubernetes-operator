@@ -1,0 +1,128 @@
+#cloud-config
+write_files:
+ - content: |
+     [Unit]
+     Description="HashiCorp Vault - A tool for managing secrets"
+     Documentation=https://www.vaultproject.io/docs/
+     Requires=network-online.target
+     After=network-online.target
+     ConditionFileNotEmpty=/etc/vault.d/vault.hcl
+     
+     [Service]
+     User=vault
+     Group=vault
+     ProtectSystem=full
+     ProtectHome=read-only
+     PrivateTmp=yes
+     PrivateDevices=yes
+     SecureBits=keep-caps
+     AmbientCapabilities=CAP_IPC_LOCK
+     Capabilities=CAP_IPC_LOCK+ep
+     CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK
+     NoNewPrivileges=yes
+     ExecStart=/usr/bin/vault_env /usr/bin/vault server -config=/etc/vault.d/vault.hcl
+     ExecReload=/bin/kill --signal HUP $MAINPID
+     ExecStartPost=/usr/bin/timeout 30 sh -c 'while ! ss -H -t -l -n sport = :8200 | grep -q "^LISTEN.*:8200"; do sleep 1; done'
+     KillMode=process
+     KillSignal=SIGINT
+     Restart=on-failure
+     RestartSec=5
+     TimeoutStopSec=30
+     StartLimitBurst=3
+     LimitNOFILE=65536
+     
+     [Install]
+     WantedBy=multi-user.target
+   path: /usr/lib/systemd/system/vault.service
+ - content: |
+     [Unit]
+     Requires=vault.service
+     After=vault.service
+     
+     [Service]
+     Type=oneshot
+     ExecStart=/usr/bin/vault_setup
+     RemainAfterExit=true
+     
+     [Install]
+     WantedBy=multi-user.target
+   path: /usr/lib/systemd/system/vault-init.service
+ - content: |
+     #! /usr/bin/bash
+     export VAULT_API_ADDR=$(hostname):8200
+     "$@"
+   path: /usr/bin/vault_env
+   permissions: 0755
+ - encoding: "gzip+base64"
+   content: ${ocne-cert-engine-policy}
+   path: /etc/vault.d/ocne-cert-engine-policy.hcl
+ - encoding: "gzip+base64"
+   content: ${vault_setup}
+   path: /usr/bin/vault_setup
+   permissions: 0755
+ - encoding: "gzip+base64"
+   content: ${key_file}
+   path: /root/.oci/oci_api_key.pem
+ - content: |
+     [DEFAULT]
+     user=${user_id}
+     fingerprint=${fingerprint}
+     key_file=/etc/vault.d/.oci/oci_api_key.pem
+     tenancy=${tenancy_id}
+     region=${region}
+     pass_phrase=${password}
+   path: /etc/vault.d/.oci/config
+ - encoding: "gzip+base64"
+   path: /etc/vault.d/.oci/oci_api_key.pem
+   content: ${key_file}
+ - encoding: "gzip+base64"
+   content: ${config}
+   path: /etc/vault.d/vault.hcl
+ - content: |
+     [req]
+     default_bits=2048
+     encrypt_key=no
+     default_md=sha256
+     prompt=no
+     utf8=yes
+     distinguished_name=req_distinguished_name
+     req_extensions=v3_req
+     [req_distinguished_name]
+     C=US
+     ST=California
+     L="Redwood City"
+     O="Oracle America"
+     OU="Private Cloud"
+     CN=HN
+     [v3_req]
+     subjectKeyIdentifier=hash
+     keyUsage=digitalSignature, keyEncipherment
+     extendedKeyUsage=clientAuth, serverAuth
+     subjectAltName=@alt_names
+     [ alt_names ]
+     DNS.1=localhost
+     IP.1=127.0.0.1
+     IP.2=PIP
+     IP.3=LBIP
+   path: /etc/vault.d/cert.csr
+   permissions: 0666
+ - content: |
+     export VAULT_SKIP_VERIFY=true
+     export VAULT_FORMAT=json
+   path: /etc/profile.d/vault.sh
+runcmd:
+  - sed -i "s/HN/$(hostname)/" /etc/vault.d/cert.csr
+  - sed -i "s/LBIP/${lb_ip}/" /etc/vault.d/cert.csr
+  - sed -i "s/PIP/$(curl -Ls http://169.254.169.254/opc/v1/vnics | jq '.[0].privateIp')/" /etc/vault.d/cert.csr
+  - openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -subj "/C=US/ST=California/L=Redwood City/O=Oracle America CA" -keyout /etc/vault.d/cert.key -out /etc/vault.d/cert.pem -extensions v3_req -config /etc/vault.d/cert.csr
+  - [sh, -c, "HTTPS_PROXY=${proxy} curl --silent --remote-name https://releases.hashicorp.com/vault/${vault_version}/vault_${vault_version}_linux_amd64.zip"]
+  - unzip vault_${vault_version}_linux_amd64.zip
+  - cp vault /usr/bin/vault
+  - sudo setcap cap_ipc_lock=+ep /usr/bin/vault
+  - sudo useradd --system --home /etc/vault.d --shell /bin/false vault
+  - sudo chown --recursive vault:vault /etc/vault.d
+  - systemctl daemon-reload
+  - systemctl enable vault.service
+  - systemctl start vault.service
+  - systemctl start vault-init.service
+  - while [ ! -f /tmp/vault_setup_finish ] ; do sleep 15 ; done
