@@ -1,0 +1,98 @@
+# Copyright (c) 2024 Oracle Corporation and/or affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl
+
+#! /usr/bin/bash
+
+firewall-cmd --add-port=8200/tcp
+firewall-cmd --add-port=8200/tcp --permanent
+firewall-cmd --add-port=8201/tcp
+firewall-cmd --add-port=8201/tcp --permanent
+
+export VIF=${VIF}
+export VIF_base64=${VIF_base64}
+export VAULT_ADDR=${VAULT_ADDR}
+export VAULT_SKIP_VERIFY=${VAULT_SKIP_VERIFY}
+export VAULT_FORMAT=json
+export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
+export CT=${CT}
+export CT_base64=${CT_base64}
+
+
+vault operator init -status
+if [ $? -ne 2 ]; then
+	exit 0
+fi
+
+
+## OCI Client configuration
+dnf config-manager --set-enabled ol8_developer
+yum install -y python36-oci-cli
+cp /etc/vault.d/.oci/config ~/.oci/
+oci iam user api-key upload --user-id ${user_id} --key-file ${api_key_file}
+mkdir /home/${compute_user}/.oci/
+cp /etc/vault.d/.oci/config /home/${compute_user}/.oci/
+chown -R ${compute_user}: /home/${compute_user}/.oci
+
+
+## Vault configuration
+vault operator init -format=json > ${VIF}
+base64 ${VIF} > ${VIF_base64}
+secretfile="$(< ${VIF_base64})"
+
+if [[ ! `oci vault secret list --compartment-id ${compartment_id} | grep -w ${secret_name}` ]]
+  then
+    oci vault secret create-base64 --compartment-id ${compartment_id} --secret-name ${secret_name} --vault-id ${vault_ocid} --key-id ${key_ocid} --secret-content-content "$secretfile" --secret-content-name "vault_recovery_keys" --region ${region}
+  else
+    secret_id=$(oci vault secret list --compartment-id ${compartment_id} --name ${secret_name} | grep vaultsecret | awk -F '"' '{print $4}')
+    oci vault secret update-base64 --secret-id $secret_id --secret-content-content "$secretfile"
+fi
+
+RT=$(oci vault secret list --compartment-id ${compartment_id} --name ${secret_name} | jq -r '.data[].id' | xargs -I{} oci secrets secret-bundle get --secret-id {} --stage CURRENT --region ${region} | jq -r '.data."secret-bundle-content".content' | base64 -d | jq -r '.root_token')
+
+
+for i in {1..10}; do
+	S=$(vault status)
+	if [ $? -eq 0 ]; then
+		echo "$S" | grep -q 'HA Mode.*active'
+		if [ $? -eq 0 ]; then
+			break
+		fi
+	fi
+	sleep 5
+done
+
+vault login "$RT"
+vault secrets enable pki
+vault secrets tune -max-lease-ttl=87600h pki
+vault write -field=certificate pki/root/generate/internal common_name="ocne" ttl=87600h
+vault write pki/config/urls issuing_certificates="${VAULT_ADDR}/v1/pki/ca" crl_distribution_points="${VAULT_ADDR}/v1/pki/crl"
+vault secrets enable -path=ocne_pki_intermediary pki
+vault secrets tune -max-lease-ttl=87600h ocne_pki_intermediary
+vault write -format=json ocne_pki_intermediary/intermediate/generate/internal common_name="ocne Intermediate Authority" ttl="87600h" | jq -r '.data.csr' > pki_intermediate.csr
+vault write -format=json pki/root/sign-intermediate csr=@pki_intermediate.csr format=pem_bundle ttl="87600h" | jq -r '.data.certificate' > intermediate.cert.pem
+vault write ocne_pki_intermediary/intermediate/set-signed certificate=@intermediate.cert.pem
+vault write ocne_pki_intermediary/roles/ocne allow_any_name=true use_csr_common_name=false require_cn=false use_csr_san=false max_ttl="87600h"
+
+
+## Create vault token based on the OCNE cert policy.
+vault policy write ocne-cert-engine-policy /etc/vault.d/ocne-cert-engine-policy.hcl
+vault token create -policy=ocne-cert-engine-policy | grep -w client_token | awk -F '"' '{print $4}' > ${CT}
+
+base64 ${CT} > ${CT_base64}
+secretfile="$(< ${CT_base64})"
+
+if [[ ! `oci vault secret list --compartment-id ${compartment_id} | grep -w ${ocne_secret_name}` ]]
+  then
+    oci vault secret create-base64 --compartment-id ${compartment_id} --secret-name ${ocne_secret_name} --vault-id ${vault_ocid} --key-id ${key_ocid} --secret-content-content "$secretfile" --secret-content-name "vault_recovery_keys" --region ${region}
+  else
+    secret_id=$(oci vault secret list --compartment-id ${compartment_id} --name ${ocne_secret_name} | grep vaultsecret | awk -F '"' '{print $4}')
+    oci vault secret update-base64 --secret-id $secret_id --secret-content-content "$secretfile"
+fi
+
+
+# Remove files, which could lead to security breaches.
+rm -f pki_intermediate.csr intermediate.cert.pem ${VIF} ${VIF_base64} ${CT} ${CT_base64}
+
+
+# Touch finish file that can be checked by cloud-init.
+touch /tmp/vault_setup_finish

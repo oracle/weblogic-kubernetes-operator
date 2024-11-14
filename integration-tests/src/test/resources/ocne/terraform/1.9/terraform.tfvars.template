@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Oracle Corporation and/or affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl
+
+// OCI Identity Variables
+tenancy_id = "@OCI_TENANCY_ID@"
+compartment_id = "@OCI_COMPARTMENT_ID@"
+user_id = "@OCI_USER_ID@"
+fingerprint = "@OCI_FINGERPRINT@"
+api_private_key_path = "@OCI_API_PRIVATE_KEY_PATH@"
+
+// Common OCI resource variables
+region = "@OCI_REGION@"
+availability_domain_id = "@OCI_AVAILABILITY_DOMAIN_ID@"
+prefix = "@OCI_INSTANCE_PREFIX@"
+
+// network variables
+deploy_networking = "@OCI_DEPLOY_NETWORKING@"
+subnet_id = "@OCI_SUBNET_ID@"
+vcn_id = "@OCI_VCN_ID@"
+
+// Compute instance specific variables
+ssh_public_key_path = "@OCI_SSH_PUBLIC_KEY_PATH@"
+ssh_private_key_path = "@OCI_SSH_PRIVATE_KEY_PATH@"
+
+// Bastion specific variables
+enable_bastion = "@OCI_ENABLE_BASTION@"
+
+virtual_ip = "@OCI_VIRTUAL_IP@"
+
+// OCNE Overrides
+control_plane_node_count = "@OCNE_CONTROL_PLANE_NODE_COUNT@"
+worker_node_count = "@OCNE_WORKER_NODE_COUNT@"
+environment_name = "@OCNE_ENVIRONMENT_NAME@"
+kubernetes_name = "@OCNE_K8S_CLUSTER_NAME@"
+
+// OCNE version
+ocne_version = "@OCNE_VERSION@"
+
+// proxy
+proxy = "@HTTP_PROXY@"
+no_proxy = "@NO_PROXY@"
