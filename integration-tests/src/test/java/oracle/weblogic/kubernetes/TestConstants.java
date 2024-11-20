@@ -564,4 +564,7 @@ public interface TestConstants {
   public static final int IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT = 31128;
   public static final int IT_REMOTECONSOLENGINX_INGRESS_HTTPS_HOSTPORT = 2228;
   
+  public static final int IT_ONPREMCRDOMAINTX_INGRESS_HTTP_NODEPORT = 31132;
+  public static final int IT_ONPREMCRDOMAINTX_INGRESS_HTTP_HOSTPORT = 8001;
+  
 }
