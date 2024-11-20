@@ -1102,7 +1102,7 @@ wdtUpdateModelDomain() {
 captureBinLibAdded() {
   local BINLIBDIR_NAME="/tmp/binlibdir.txt"
   find $DOMAIN_HOME/bin -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/bin|wlsdeploy/domainBin|g" > $BINLIBDIR_NAME
-  find $DOMAIN_HOME/lib -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/bin|wlsdeploy/domainLibraries|g" >> $BINLIBDIR_NAME
+  find $DOMAIN_HOME/lib -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/lib|wlsdeploy/domainLibraries|g" >> $BINLIBDIR_NAME
 }
 
 wdtHandleOnlineUpdate() {
