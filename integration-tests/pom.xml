@@ -80,6 +80,7 @@
         <wko.it.image.tag.operator>${env.IMAGE_TAG_OPERATOR}</wko.it.image.tag.operator>
         <wko.it.release.image.name.operator>${env.RELEASE_IMAGE_OPERATOR}</wko.it.release.image.name.operator>
         <wko.it.crio.pipeline.image>${env.DOCKER_IMAGE}</wko.it.crio.pipeline.image>
+        <wko.it.shiphome.download.server>${env.SHIPHOME_DOWNLOAD_SERVER}</wko.it.shiphome.download.server>
         <includes-failsafe>**/It*</includes-failsafe>
     </properties>
 
@@ -770,6 +771,42 @@
                 <skipITs>false</skipITs>
                 <groups>v8o</groups>
             </properties>
-        </profile>        
+        </profile>
+               <!-- Profile for integration test environment -->
+        <profile>
+          <id>integration-test-env</id>
+          <!-- This profile is activated only if 'install.weblogic' property is set to 'true' -->
+          <activation>
+            <property>
+              <name>install.weblogic</name>
+              <value>true</value>
+            </property>
+          </activation>
+          <build>
+            <plugins>
+              <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <id>run-silent-install-script</id>
+                    <phase>pre-integration-test</phase>
+                    <goals>
+                      <goal>exec</goal>
+                    </goals>
+                    <configuration>
+                      <executable>bash</executable>
+                      <arguments>
+                        <argument>${project.basedir}/src/test/resources/bash-scripts/install-wls.sh</argument>
+                        <argument>${wko.it.result.root}</argument>
+                        <argument>${wko.it.shiphome.download.server}</argument>
+                      </arguments>
+                    </configuration>
+                  </execution>
+                </executions>
+              </plugin>
+            </plugins>
+          </build>
+        </profile>
     </profiles>
 </project>
