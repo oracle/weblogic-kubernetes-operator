@@ -322,7 +322,7 @@ fingerprint=${FINGERPRINT}
 api_private_key_path=${jenkins_home_directory}/.oci/oci-signing-key.pem
 region=${wko_region}
 availability_domain_id=${availability_domain}
-prefix=ocne-tf-jenkin-${BUILD_ID}
+prefix=ocne-tf-jenkin42-${BUILD_ID}
 
 deploy_networking=false
 subnet_id=${private_subnet_ocid}
@@ -424,7 +424,7 @@ EOF
                 stage('Preparing Integration Test Environment - mount PV root in OCNE cluster control node') {
                     steps {
                         sh '''
-                            prefix=ocne-tf-jenkin-${BUILD_ID}
+                            prefix=ocne-tf-jenkin42-${BUILD_ID}
                             # Get the OCNE cluster control node private IP
                             k8s_master_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=${prefix}-control-plane-001 |jq -r '.data[] | select(."lifecycle-state" == "RUNNING") | ."id"'`
                             k8s_master_node_ip=`oci compute instance list-vnics --compartment-id=${compartment_id} --instance-id=${k8s_master_instance_id} |jq -r '.data[] | select(."hostname-label" != null) | ."private-ip"'`
@@ -440,7 +440,7 @@ EOF
                 stage('Preparing Integration Test Environment - mount PV root in OCNE cluster worker1 node') {
                     steps {
                         sh '''
-                            prefix=ocne-tf-jenkin-${BUILD_ID}
+                            prefix=ocne-tf-jenkin42-${BUILD_ID}
                             # Get the OCNE cluster worker1 node private IP
                             k8s_worker1_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=${prefix}-worker-001 |jq -r '.data[] | select(."lifecycle-state" == "RUNNING") | ."id"'`
                             k8s_worker1_node_ip=`oci compute instance list-vnics --compartment-id=${compartment_id} --instance-id=${k8s_worker1_instance_id} |jq -r '.data[] | select(."hostname-label" != null) | ."private-ip"'`
@@ -456,7 +456,7 @@ EOF
                 stage('Preparing Integration Test Environment - mount PV root in OCNE cluster worker2 node') {
                     steps {
                         sh '''
-                            prefix=ocne-tf-jenkin-${BUILD_ID}
+                            prefix=ocne-tf-jenkin42-${BUILD_ID}
                             # Get the OCNE cluster worker2 node private IP
                             k8s_worker2_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=${prefix}-worker-002 |jq -r '.data[] | select(."lifecycle-state" == "RUNNING") | ."id"'`
                             k8s_worker2_node_ip=`oci compute instance list-vnics --compartment-id=${compartment_id} --instance-id=${k8s_worker2_instance_id} |jq -r '.data[] | select(."hostname-label" != null) | ."private-ip"'`
@@ -508,7 +508,7 @@ EOF
                                 mkdir -m777 -p "${WORKSPACE}/.mvn"
                                 touch ${WORKSPACE}/.mvn/maven.config
                                 export KUBECONFIG=${kubeconfig_file}
-                                prefix=ocne-tf-jenkin-${BUILD_ID}
+                                prefix=ocne-tf-jenkin42-${BUILD_ID}
 
                                 # Get the OCNE cluster control node private IP
                                 k8s_master_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=${prefix}-control-plane-001 |jq -r '.data[] | select(."lifecycle-state" == "RUNNING") | ."id"'`
@@ -567,7 +567,7 @@ EOF
                             ]) {
                                 sh '''
 
-                                    prefix=ocne-tf-jenkin-${BUILD_ID}
+                                    prefix=ocne-tf-jenkin42-${BUILD_ID}
                                     k8s_master_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=${prefix}-control-plane-001 |jq -r '.data[] | select(."lifecycle-state" == "RUNNING") | ."id"'`
                                     k8s_master_instance_private_ip=`oci compute instance list-vnics --compartment-id=${compartment_id} --instance-id=${k8s_master_instance_id} |jq -r '.data[] | select(."hostname-label" == null) | ."private-ip"'`
 
