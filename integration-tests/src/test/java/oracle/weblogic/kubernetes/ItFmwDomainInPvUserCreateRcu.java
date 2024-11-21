@@ -70,7 +70,6 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceSimplifyJrfPv;
-import static oracle.weblogic.kubernetes.utils.FmwUtils.createSimplifyJrfPvDomainAndRCU;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.saveAndRestoreOpssWalletfileSecret;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -78,6 +77,8 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodLogContains;
@@ -588,34 +589,18 @@ public class ItFmwDomainInPvUserCreateRcu {
   /**
    * Export the OPSS wallet file secret of Fmw domain from the previous run
    * CrateIfNotExists set to DomainAndRCU
-   * Use this OPSS wallet file secret to create Fmw domain on PV to connect to the same database
+   * Use this OPSS wallet file secret to restart Fmw domain on PV to connect to the same database
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
   @Test
   @Order(6)
-  @DisplayName("Create a FMW domain on PV with provided OPSS wallet file secret")
-  void testFmwDomainOnPVwithProvidedOpss() {
-
-    final String pvName = getUniqueName(domainUid3 + "-pv-");
-    final String pvcName = getUniqueName(domainUid3 + "-pvc-");
+  @DisplayName("Restart a FMW domain on PV with provided OPSS wallet file secret")
+  void testReuseRCUschemaToRestartFmwDomain() {
 
     saveAndRestoreOpssWalletfileSecret(domainNamespace, domainUid3, opsswalletfileSecretName3);
-    logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid3);
-    deleteDomainResource(domainNamespace, domainUid3);
-    try {
-      deleteDirectory(Paths.get("/shared").toFile());
-    } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /shared", ioe);
-    }
-    logger.info("Creating domain custom resource with pvName: {0}", pvName);
-    DomainResource domain = createSimplifyJrfPvDomainAndRCU(
-        domainUid3, domainNamespace, adminSecretName3,
-        TEST_IMAGES_REPO_SECRET_NAME,
-        rcuaccessSecretName3,
-        opsswalletpassSecretName3, opsswalletfileSecretName3,
-        pvName, pvcName, domainCreationImages3, null);
-
-    createDomainAndVerify(domain, domainNamespace);
+    shutdownDomain(domainUid3);
+    patchDomainWithWalletFileSecret(opsswalletfileSecretName3, domainUid3);
+    startupDomain(domainUid3);
 
     // verify that all servers are ready
     verifyDomainReady(domainNamespace, domainUid3, replicaCount, "nosuffix");
@@ -885,5 +870,55 @@ public class ItFmwDomainInPvUserCreateRcu {
     assertTrue(cmCreated, String.format("createConfigMap failed %s", cfgMapName));
   }
 
-  
+  /**
+   * Shutdown the domain by setting serverStartPolicy as "Never".
+   */
+  private void shutdownDomain(String domainUid) {
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "Never", domainNamespace, domainUid);
+    logger.info("Domain is patched to stop entire WebLogic domain");
+
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
+
+    // make sure all the server pods are removed after patch
+    checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Domain shutdown success");
+
+  }
+
+  /**
+   * Startup the domain by setting serverStartPolicy as "IfNeeded".
+   */
+  private void startupDomain(String domainUid) {
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IfNeeded", domainNamespace,
+        domainUid);
+    logger.info("Domain is patched to start all servers in the domain");
+  }
+
+  /**
+   * Patch the domain with opss wallet file secret.
+   * @param opssWalletFileSecretName the name of opps wallet file secret
+   * @return true if patching succeeds, false otherwise
+   */
+  private boolean patchDomainWithWalletFileSecret(String opssWalletFileSecretName, String domainUid) {
+    // construct the patch string for adding server pod resources
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/configuration/opss/walletFileSecret\", ")
+        .append("\"value\": \"")
+        .append(opssWalletFileSecretName)
+        .append("\"}]");
+
+    logger.info("Adding opssWalletPasswordSecretName for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, domainNamespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
 }
