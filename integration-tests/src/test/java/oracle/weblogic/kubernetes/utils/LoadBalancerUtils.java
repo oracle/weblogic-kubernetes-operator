@@ -386,10 +386,29 @@ public class LoadBalancerUtils {
     return null;
   }
 
-  private static boolean checkLoadBalancerHealthy(String namespace, String lbServiceName) {
+  /**
+   *  Update NO_PROXY var with Load Balancer IP address.
+   *
+   * @param newEntry value to add for NO_PROXY
+   * @throws Exception throws exception if failed to update
+   */
+  public static void addNoProxyEntry(String newEntry) {
+    String currentNoProxy = System.getenv("NO_PROXY");
+    getLogger().info("Current NO_PROXY value is :" + currentNoProxy);
+
+    String updatedNoProxy = (currentNoProxy == null || currentNoProxy.isEmpty())
+        ? newEntry
+        : currentNoProxy + ",10.196.0.0/24,10.196.1.0/24," + newEntry;
+
+    System.setProperty("NO_PROXY", updatedNoProxy);
+    getLogger().info("Updated NO_PROXY: " + System.getProperty("NO_PROXY"));
+  }
+
+  private static synchronized boolean checkLoadBalancerHealthy(String namespace, String lbServiceName) {
 
     String lbPublicIP = assertDoesNotThrow(() -> getLoadBalancerIP(namespace, lbServiceName));
     InitializationTasks.registerLoadBalancerExternalIP(lbPublicIP);
+    assertDoesNotThrow(() -> addNoProxyEntry(lbPublicIP));
     LoggingFacade logger = getLogger();
     String testcompartmentid = System.getProperty("wko.it.oci.compartment.ocid");
     logger.info("wko.it.oci.compartment.ocid property " + testcompartmentid);
@@ -453,9 +472,21 @@ public class LoadBalancerUtils {
     if (result == null || result.exitValue() != 0 || result.stdout() == null) {
       return false;
     }
+    return (result.stdout().contains("OK") && isBackendHealthy(result.stdout()));
+  }
 
-    return result.stdout().contains("OK");
-
+  private static boolean isBackendHealthy(String jsonResponse) {
+    LoggingFacade logger = getLogger();
+    // Check for any non-empty backend set names indicating a failure
+    if (jsonResponse.contains("\"critical-state-backend-set-names\": []")
+        && jsonResponse.contains("\"unknown-state-backend-set-names\": []")
+        && jsonResponse.contains("\"warning-state-backend-set-names\": []")) {
+      logger.info("All backends are healthy.");
+      return true;  // Healthy
+    } else {
+      logger.severe("Failure: There are issues with the backend(s)." + jsonResponse);
+      return false;  // Unhealthy
+    }
   }
 
   @Nullable
@@ -675,7 +706,8 @@ public class LoadBalancerUtils {
         if (host.contains(":")) {
           host = "[" + host + "]";
         }
-        String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+        String curlCmd = "curl -g --silent --show-error --noproxy '*' "
+            + " -v --max-time 60 -H 'host: " + ingressHost
             + "' http://" + getHostAndPort(host, nodeport)
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
@@ -803,7 +835,8 @@ public class LoadBalancerUtils {
         if (host.contains(":")) {
           host = "[" + host + "]";
         }
-        String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+        String curlCmd = "curl -g --silent --show-error --noproxy '*' "
+            + " -v --max-time 60 -H 'host: " + ingressHost
             + "' http://" + host + ":" + nodeport
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 

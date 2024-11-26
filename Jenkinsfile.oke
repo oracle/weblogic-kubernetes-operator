@@ -2,7 +2,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
-CRON_SETTINGS = '''H 3 * * 6 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seqweek;PARALLEL_RUN=false
+CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seqweek;PARALLEL_RUN=false
                    H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seqone;PARALLEL_RUN=false
                    H 12 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 

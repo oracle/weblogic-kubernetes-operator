@@ -44,6 +44,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,6 +68,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsActive;
@@ -221,6 +223,17 @@ class ItCrossDomainTransaction {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(domain1ManagedServerPrefix + i,
             domainUid1, domain1Namespace);
+    }
+  }
+
+  @AfterAll
+  public void tearDownAll() {
+
+    if (nginxHelmParams != null && OKE_CLUSTER) {
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
     }
   }
 
