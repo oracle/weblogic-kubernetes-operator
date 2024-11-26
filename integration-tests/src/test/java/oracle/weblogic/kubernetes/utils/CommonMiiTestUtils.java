@@ -1114,7 +1114,7 @@ public class CommonMiiTestUtils {
         e.printStackTrace();
       }
     } else {
-      if (OKE_CLUSTER_PRIVATEIP) {
+      if (OKE_CLUSTER_PRIVATEIP || OCNE) {
         String protocol = "http";
         String port = "7001";
 
