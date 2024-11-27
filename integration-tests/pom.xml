@@ -765,14 +765,7 @@
                 <groups>toolkits-srg</groups>
             </properties>
         </profile>
-        <profile>
-            <id>v8o</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <groups>v8o</groups>
-            </properties>
-        </profile>
-               <!-- Profile for integration test environment -->
+        <!-- Profile for integration test environment -->
         <profile>
           <id>integration-test-env</id>
           <!-- This profile is activated only if 'install.weblogic' property is set to 'true' -->
