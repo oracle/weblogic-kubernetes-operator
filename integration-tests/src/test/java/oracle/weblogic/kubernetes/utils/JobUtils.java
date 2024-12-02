@@ -33,6 +33,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -156,6 +157,7 @@ public class JobUtils {
     logger.info("Checking if the domain creation job {0} completed in namespace {1}",
         jobName, namespace);
     testUntil(
+        withLongRetryPolicy,
         jobCompleted(jobName, null, namespace),
         logger,
         "job {0} to be completed in namespace {1}",
