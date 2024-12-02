@@ -75,9 +75,10 @@ In this section, you can configure some options about the AKS which will run Web
 | Field | Description |
 |-------|-------------|
 |Create a new AKS cluster| If set to **Yes**, the deployment will create a new AKS cluster resource in the specified resource group. If set to **No**, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments. |
+| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select **Change Size**, select the size from the list (for example, A3) on the Select a VM size page, and select **Select**. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/overview).|
 | Minimum node count | The minimum node count in the AKS cluster. This value can be changed after deployment. For information, see [AKS autoscaler](https://learn.microsoft.com/azure/aks/cluster-autoscaler). |
 | Maximum node count | The maximum node count in the AKS cluster. This value can be changed after deployment. For information, see [AKS autoscaler](https://learn.microsoft.com/azure/aks/cluster-autoscaler). |
-| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select **Change Size**, select the size from the list (for example, A3) on the Select a VM size page, and select **Select**. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/azure/cloud-services/cloud-services-sizes-specs).|
+| Select AKS cluster | This option is shown if **Create a new AKS cluster?** is set to **No**. If visible, select an existing Azure Kubernetes Service instance. |
 
 #### Image selection
 
@@ -86,12 +87,13 @@ In this section, you can configure the image that is deployed using the model-in
 | Field | Description |
 |-------|-------------|
 |Create a new Azure Container Registry to store application images?|If set to **Yes**, the offer will create a new Azure Container Registry (ACR) to hold the images for use in the deployment.  If set to **No**, you must specify an existing ACR. In this case, you must be sure the selected ACR has the admin account enabled. For details, please see [Admin account](https://docs.microsoft.com/azure/container-registry/container-registry-authentication?tabs=azure-cli#admin-account). |
-| Select ACR instance | This option is shown if **Create a new Azure Container Registry to store application images?** is set to **No**. If visible, select an existing Acure Container Registry instance. |
+| Select ACR instance | This option is shown if **Create a new Azure Container Registry to store application images?** is set to **No**. If visible, select an existing Azure Container Registry instance. |
 | Username for Oracle Single Sign-On authentication | The Oracle Single Sign-on account user name for which the Terms and Restrictions for the selected WebLogic Server image have been accepted. |
 | Password for Oracle Single Sign-On authentication | The password for that account. |
 | Confirm password | Re-enter the value of the preceding field. | If 'Yes' is selected; the deployment process will pull from the CPU WebLogic Server image repository in the OCR. If 'No' is selected the deployment process will pull from the WebLogic Server image repository in OCR. |
 | Select the type of WebLogic Server Images. | If set to **Patched WebLogic Server Images**, you must accept the license agreement in the `middleware/weblogic_cpu` repository. If set to **General WebLogic Server Images**, you must accept the license agreement in the `middleware/weblogic`. Steps to accept the license agreement: log in to the [Oracle Container Registry](https://container-registry.oracle.com/); navigate to the `middleware/weblogic_cpu` and `middleware/weblogic` repository; accept license agreement. See this [document](https://aka.ms/wls-aks-ocr-doc) for more information. |
 | Select desired combination of WebLogic Server, JDK and Operating System or fully qualified Docker tag | Select one of the supported images. |
+| WebLogic Docker tag | This option is shown if **Select desired combination of WebLogic Server, JDK and Operating System or fully qualified Docker tag** is set to **Others**. If visible, input a fully qualified Docker tag. You can find the available tags from WebLogic Server Images page of [Oracle Container Registry](https://container-registry.oracle.com/) |
 
 #### Application
 
@@ -332,6 +334,18 @@ After the provisioning is complete, you can create KEDA scaling rules. A sample 
 * Select **Outputs**.
 * The **shellCmdtoOutputKedaScalerSample** value is the base64 string of a scaler sample. Copy the value and run it in your terminal.
 * For guidance on how to complete the configuration, see [Tutorial: Migrate Oracle WebLogic Server to AKS with KEDA scaler based on Prometheus Metrics](https://aka.ms/wls-aks-keda-scaler).
+
+When you are satisfied with your selections, select **Next** and open the **Tags** blade.
+
+### Tags
+
+Use the Tags blade to provide tags for resources and resource groups. Tags are name/value pairs that allow you to categorize resources and consolidate billing by applying the same tag to multiple resources and resource groups. [Learn more about tags](https://go.microsoft.com/fwlink/?linkid=873112).
+
+Enter the desired name/value pairs for resources in the table, filling out each of the following fields.
+
+| Name | Value | Resource |
+|------|-------|----------|
+| Tag name. | Tag value. | Resources available for tagging in this offer. |
 
 When you are satisfied with your selections, select **Review + create**.
 

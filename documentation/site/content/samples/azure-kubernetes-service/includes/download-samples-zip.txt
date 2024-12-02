@@ -1,5 +1,3 @@
-##### Download the WebLogic Kubernetes Operator sample.
-
 Download the WebLogic Kubernetes Operator sample ZIP file. We will use several scripts in this zip file to create a WebLogic domain. This sample was tested with v4.2.8, but should work with the latest release.
 
 ```shell
