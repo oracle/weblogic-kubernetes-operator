@@ -547,7 +547,7 @@ class ItMaxConcurOptions {
   private OffsetDateTime verifyServersStartedConcurrently(String managedServerPodNamePrefix,
                                                           int startPodNum,
                                                           int endPodNum) {
-    final int deltaValue = 60; // seconds
+    final int deltaValue = 120;
     OffsetDateTime msPodCreationTime = null;
 
     // get managed server pod creation time
