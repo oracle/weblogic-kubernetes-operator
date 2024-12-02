@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1733110093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1733110093" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1733144544" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1733144544" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1733110093"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1733144544"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1733110093"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1733110093"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1733144544"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1733144544"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1733110093"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1733144544"></script>
 
     
   </div>
@@ -3916,6 +3916,7 @@
         <li><a href="#weblogic-monitoring-exporter-advanced-autoscaling">WebLogic Monitoring Exporter (advanced autoscaling)</a></li>
       </ul>
     </li>
+    <li><a href="#tags">Tags</a></li>
     <li><a href="#review--create">Review + create</a></li>
     <li><a href="#template-outputs">Template outputs</a></li>
     <li><a href="#useful-resources">Useful resources</a>
@@ -3988,6 +3989,7 @@
         <li><a href="#weblogic-monitoring-exporter-advanced-autoscaling">WebLogic Monitoring Exporter (advanced autoscaling)</a></li>
       </ul>
     </li>
+    <li><a href="#tags">Tags</a></li>
     <li><a href="#review--create">Review + create</a></li>
     <li><a href="#template-outputs">Template outputs</a></li>
     <li><a href="#useful-resources">Useful resources</a>
@@ -4129,6 +4131,10 @@
 <td>If set to <strong>Yes</strong>, the deployment will create a new AKS cluster resource in the specified resource group. If set to <strong>No</strong>, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments.</td>
 </tr>
 <tr>
+<td>Node size</td>
+<td>The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select <strong>Change Size</strong>, select the size from the list (for example, A3) on the Select a VM size page, and select <strong>Select</strong>. For more information about sizing the virtual machine, see the <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/overview">Azure documentation on Sizes</a>.</td>
+</tr>
+<tr>
 <td>Minimum node count</td>
 <td>The minimum node count in the AKS cluster. This value can be changed after deployment. For information, see <a href="https://learn.microsoft.com/azure/aks/cluster-autoscaler">AKS autoscaler</a>.</td>
 </tr>
@@ -4137,8 +4143,8 @@
 <td>The maximum node count in the AKS cluster. This value can be changed after deployment. For information, see <a href="https://learn.microsoft.com/azure/aks/cluster-autoscaler">AKS autoscaler</a>.</td>
 </tr>
 <tr>
-<td>Node size</td>
-<td>The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select <strong>Change Size</strong>, select the size from the list (for example, A3) on the Select a VM size page, and select <strong>Select</strong>. For more information about sizing the virtual machine, see the <a href="https://docs.microsoft.com/azure/cloud-services/cloud-services-sizes-specs">Azure documentation on Sizes</a>.</td>
+<td>Select AKS cluster</td>
+<td>This option is shown if <strong>Create a new AKS cluster?</strong> is set to <strong>No</strong>. If visible, select an existing Azure Kubernetes Service instance.</td>
 </tr>
 </tbody>
 </table>
@@ -4158,7 +4164,7 @@
 </tr>
 <tr>
 <td>Select ACR instance</td>
-<td>This option is shown if <strong>Create a new Azure Container Registry to store application images?</strong> is set to <strong>No</strong>. If visible, select an existing Acure Container Registry instance.</td>
+<td>This option is shown if <strong>Create a new Azure Container Registry to store application images?</strong> is set to <strong>No</strong>. If visible, select an existing Azure Container Registry instance.</td>
 </tr>
 <tr>
 <td>Username for Oracle Single Sign-On authentication</td>
@@ -4179,6 +4185,10 @@
 <tr>
 <td>Select desired combination of WebLogic Server, JDK and Operating System or fully qualified Docker tag</td>
 <td>Select one of the supported images.</td>
+</tr>
+<tr>
+<td>WebLogic Docker tag</td>
+<td>This option is shown if <strong>Select desired combination of WebLogic Server, JDK and Operating System or fully qualified Docker tag</strong> is set to <strong>Others</strong>. If visible, input a fully qualified Docker tag. You can find the available tags from WebLogic Server Images page of <a href="https://container-registry.oracle.com/">Oracle Container Registry</a></td>
 </tr>
 </tbody>
 </table>
@@ -4660,6 +4670,26 @@
 <li>The <strong>shellCmdtoOutputKedaScalerSample</strong> value is the base64 string of a scaler sample. Copy the value and run it in your terminal.</li>
 <li>For guidance on how to complete the configuration, see <a href="https://aka.ms/wls-aks-keda-scaler">Tutorial: Migrate Oracle WebLogic Server to AKS with KEDA scaler based on Prometheus Metrics</a>.</li>
 </ul>
+<p>When you are satisfied with your selections, select <strong>Next</strong> and open the <strong>Tags</strong> blade.</p>
+<h3 id="tags">Tags</h3>
+<p>Use the Tags blade to provide tags for resources and resource groups. Tags are name/value pairs that allow you to categorize resources and consolidate billing by applying the same tag to multiple resources and resource groups. <a href="https://go.microsoft.com/fwlink/?linkid=873112">Learn more about tags</a>.</p>
+<p>Enter the desired name/value pairs for resources in the table, filling out each of the following fields.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Value</th>
+<th>Resource</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tag name.</td>
+<td>Tag value.</td>
+<td>Resources available for tagging in this offer.</td>
+</tr>
+</tbody>
+</table>
 <p>When you are satisfied with your selections, select <strong>Review + create</strong>.</p>
 <h3 id="review--create">Review + create</h3>
 <p>In the <strong>Review + create blade</strong>, review the details you provided for deploying Oracle WebLogic Server on AKS. If you want to make changes to any of the fields, click <strong>&lt; previous</strong> or click on the respective blade and update the details.</p>
@@ -7400,19 +7430,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1733110093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1733110093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1733110093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1733110093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1733110093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1733110093"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1733144544"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1733144544"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1733144544"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1733144544"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1733144544"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1733144544"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1733110093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1733110093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1733110093"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1733144544"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1733144544"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1733144544"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1733110093"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1733144544"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

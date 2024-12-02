@@ -12,20 +12,20 @@
     <title>Model in Image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1733110094" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1733110094" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1733144545" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1733144545" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1733110094"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1733144545"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1733110094"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1733110094"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1733144545"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1733144545"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1733110094"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1733144545"></script>
 
     
   </div>
@@ -3885,46 +3885,47 @@
     <div class="wrapper">
 <nav id="TableOfContents">
   <ul>
-    <li>
+    <li><a href="#prerequisites">Prerequisites</a>
       <ul>
-        <li><a href="#contents">Contents</a>
-          <ul>
-            <li><a href="#prepare-parameters">Prepare parameters</a></li>
-          </ul>
-        </li>
-        <li><a href="#install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</a></li>
-        <li><a href="#create-docker-image">Create Docker image</a>
-          <ul>
-            <li><a href="#image-creation-prerequisites">Image creation prerequisites</a></li>
-            <li><a href="#image-creation---introduction">Image creation - Introduction</a></li>
-            <li><a href="#understanding-your-first-archive">Understanding your first archive</a></li>
-            <li><a href="#staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</a></li>
-            <li><a href="#staging-model-files">Staging model files</a></li>
-            <li><a href="#creating-the-image-with-wit">Creating the image with WIT</a></li>
-            <li><a href="#pushing-the-image-to-azure-container-registry">Pushing the image to Azure Container Registry</a></li>
-          </ul>
-        </li>
-        <li><a href="#create-weblogic-domain">Create WebLogic domain</a>
-          <ul>
-            <li><a href="#namespace">Namespace</a></li>
-            <li><a href="#kubernetes-secrets-for-weblogic-image">Kubernetes Secrets for WebLogic image</a></li>
-            <li><a href="#kubernetes-secrets-for-weblogic">Kubernetes Secrets for WebLogic</a></li>
-            <li><a href="#domain-resource">Domain resource</a></li>
-          </ul>
-        </li>
-        <li><a href="#invoke-the-web-application">Invoke the web application</a>
-          <ul>
-            <li><a href="#create-azure-load-balancer">Create Azure load balancer</a></li>
-            <li><a href="#access-the-application">Access the application</a></li>
-          </ul>
-        </li>
-        <li><a href="#rolling-updates">Rolling updates</a></li>
-        <li><a href="#database-connection">Database connection</a></li>
-        <li><a href="#clean-up-resources">Clean up resources</a></li>
-        <li><a href="#troubleshooting">Troubleshooting</a></li>
-        <li><a href="#useful-links">Useful links</a></li>
+        <li><a href="#prepare-parameters">Prepare parameters</a></li>
+        <li><a href="#oracle-container-registry">Oracle Container Registry</a></li>
+        <li><a href="#sign-in-with-azure-cli">Sign in with Azure CLI</a></li>
+        <li><a href="#download-the-weblogic-kubernetes-operator-sample">Download the WebLogic Kubernetes Operator sample</a></li>
       </ul>
     </li>
+    <li><a href="#create-resource-group">Create Resource Group</a></li>
+    <li><a href="#create-the-aks-cluster">Create the AKS cluster</a></li>
+    <li><a href="#install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</a></li>
+    <li><a href="#create-docker-image">Create Docker image</a>
+      <ul>
+        <li><a href="#image-creation-prerequisites">Image creation prerequisites</a></li>
+        <li><a href="#image-creation---introduction">Image creation - Introduction</a></li>
+        <li><a href="#understanding-your-first-archive">Understanding your first archive</a></li>
+        <li><a href="#staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</a></li>
+        <li><a href="#staging-model-files">Staging model files</a></li>
+        <li><a href="#creating-the-image-with-wit">Creating the image with WIT</a></li>
+        <li><a href="#pushing-the-image-to-azure-container-registry">Pushing the image to Azure Container Registry</a></li>
+      </ul>
+    </li>
+    <li><a href="#create-weblogic-domain">Create WebLogic domain</a>
+      <ul>
+        <li><a href="#namespace">Namespace</a></li>
+        <li><a href="#kubernetes-secrets-for-weblogic-image">Kubernetes Secrets for WebLogic image</a></li>
+        <li><a href="#kubernetes-secrets-for-weblogic">Kubernetes Secrets for WebLogic</a></li>
+        <li><a href="#domain-resource">Domain resource</a></li>
+      </ul>
+    </li>
+    <li><a href="#invoke-the-web-application">Invoke the web application</a>
+      <ul>
+        <li><a href="#create-azure-load-balancer">Create Azure load balancer</a></li>
+        <li><a href="#access-the-application">Access the application</a></li>
+      </ul>
+    </li>
+    <li><a href="#rolling-updates">Rolling updates</a></li>
+    <li><a href="#database-connection">Database connection</a></li>
+    <li><a href="#clean-up-resources">Clean up resources</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#useful-links">Useful links</a></li>
   </ul>
 </nav>
     </div>
@@ -3950,21 +3951,54 @@
 
 
 <p>This sample demonstrates how to use the <a href="https://oracle.github.io/weblogic-kubernetes-operator">WebLogic Kubernetes Operator</a> (hereafter &ldquo;the operator&rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image domain home source type. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.</p>
-<h4 id="contents">Contents</h4>
-<ul>
-<li><a href="#prerequisites">Prerequisites</a></li>
-<li><a href="#create-the-aks-cluster">Create an AKS cluster</a></li>
-<li><a href="#install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</a></li>
-<li><a href="#create-docker-image">Create Docker image</a></li>
-<li><a href="#create-weblogic-domain">Create WebLogic domain</a></li>
-<li><a href="#invoke-the-web-application">Invoke the web application</a></li>
-<li><a href="#rolling-updates">Rolling updates</a></li>
-<li><a href="#clean-up-resources">Clean up resource</a></li>
-<li><a href="#troubleshooting">Troubleshooting</a></li>
-<li><a href="#useful-links">Useful links</a></li>
-</ul>
+<h3 id="contents">Contents</h3>
+<div class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#prerequisites">Prerequisites</a>
+      <ul>
+        <li><a href="#prepare-parameters">Prepare parameters</a></li>
+        <li><a href="#oracle-container-registry">Oracle Container Registry</a></li>
+        <li><a href="#sign-in-with-azure-cli">Sign in with Azure CLI</a></li>
+        <li><a href="#download-the-weblogic-kubernetes-operator-sample">Download the WebLogic Kubernetes Operator sample</a></li>
+      </ul>
+    </li>
+    <li><a href="#create-resource-group">Create Resource Group</a></li>
+    <li><a href="#create-the-aks-cluster">Create the AKS cluster</a></li>
+    <li><a href="#install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</a></li>
+    <li><a href="#create-docker-image">Create Docker image</a>
+      <ul>
+        <li><a href="#image-creation-prerequisites">Image creation prerequisites</a></li>
+        <li><a href="#image-creation---introduction">Image creation - Introduction</a></li>
+        <li><a href="#understanding-your-first-archive">Understanding your first archive</a></li>
+        <li><a href="#staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</a></li>
+        <li><a href="#staging-model-files">Staging model files</a></li>
+        <li><a href="#creating-the-image-with-wit">Creating the image with WIT</a></li>
+        <li><a href="#pushing-the-image-to-azure-container-registry">Pushing the image to Azure Container Registry</a></li>
+      </ul>
+    </li>
+    <li><a href="#create-weblogic-domain">Create WebLogic domain</a>
+      <ul>
+        <li><a href="#namespace">Namespace</a></li>
+        <li><a href="#kubernetes-secrets-for-weblogic-image">Kubernetes Secrets for WebLogic image</a></li>
+        <li><a href="#kubernetes-secrets-for-weblogic">Kubernetes Secrets for WebLogic</a></li>
+        <li><a href="#domain-resource">Domain resource</a></li>
+      </ul>
+    </li>
+    <li><a href="#invoke-the-web-application">Invoke the web application</a>
+      <ul>
+        <li><a href="#create-azure-load-balancer">Create Azure load balancer</a></li>
+        <li><a href="#access-the-application">Access the application</a></li>
+      </ul>
+    </li>
+    <li><a href="#rolling-updates">Rolling updates</a></li>
+    <li><a href="#database-connection">Database connection</a></li>
+    <li><a href="#clean-up-resources">Clean up resources</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#useful-links">Useful links</a></li>
+  </ul>
+</nav></div>
+<h3 id="prerequisites">Prerequisites</h3>
 
-<h4 id="prerequisites">Prerequisites</h4>
 <p>This sample assumes the following prerequisite environment.</p>
 <ul>
 <li>If you don&rsquo;t have an <a href="https://learn.microsoft.com/en-us/azure/guides/developer/azure-developer-guide#understanding-accounts-subscriptions-and-billing">Azure subscription</a>, create a <a href="https://azure.microsoft.com/free/?ref=microsoft.com&amp;utm_source=microsoft.com&amp;utm_medium=docs&amp;utm_campaign=visualstudio">free account</a> before you begin.
@@ -3984,7 +4018,7 @@
 <li>You will need an Oracle account.</li>
 </ul>
 
-<h5 id="prepare-parameters">Prepare parameters</h5>
+<h4 id="prepare-parameters">Prepare parameters</h4>
 <p>Set required parameters by running the following commands.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Change these parameters as needed for your own environment</span>
 </span></span><span style="display:flex;"><span>export ORACLE_SSO_EMAIL<span style="color:#f92672">=</span>&lt;replace with your oracle account email&gt;
@@ -4004,8 +4038,8 @@
 </span></span><span style="display:flex;"><span>export WEBLOGIC_USERNAME<span style="color:#f92672">=</span>weblogic
 </span></span><span style="display:flex;"><span>export WEBLOGIC_PASSWORD<span style="color:#f92672">=</span>Secret123456
 </span></span><span style="display:flex;"><span>export WEBLOGIC_WDT_PASSWORD<span style="color:#f92672">=</span>Secret123456
-</span></span></code></pre></div>
-<h5 id="oracle-container-registry">Oracle Container Registry</h5>
+</span></span></code></pre></div><h4 id="oracle-container-registry">Oracle Container Registry</h4>
+
 <p>The following steps will direct you to accept the license agreement for WebLogic Server. Make note of your Oracle Account password and email. This sample pertains to 12.2.1.4, but other versions may work as well.</p>
 <ul>
 <li>In a web browser, navigate to <a href="https://container-registry.oracle.com">https://container-registry.oracle.com</a> and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the <strong>Sign In</strong> link to create them.</li>
@@ -4030,8 +4064,8 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 <p>If you have problems accessing the Oracle Container Registry, you can build your own images from the <a href="https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles">Oracle GitHub repository</a>.</p>
 
 
+<h4 id="sign-in-with-azure-cli">Sign in with Azure CLI</h4>
 
-<h5 id="sign-in-with-azure-cli">Sign in with Azure CLI</h5>
 <p>The steps in this section show you how to sign in to the Azure CLI.</p>
 <ol>
 <li>
@@ -4055,8 +4089,8 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 </ol>
 
 
+<h4 id="download-the-weblogic-kubernetes-operator-sample">Download the WebLogic Kubernetes Operator sample</h4>
 
-<h5 id="download-the-weblogic-kubernetes-operator-sample">Download the WebLogic Kubernetes Operator sample.</h5>
 <p>Download the WebLogic Kubernetes Operator sample ZIP file. We will use several scripts in this zip file to create a WebLogic domain. This sample was tested with v4.2.8, but should work with the latest release.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd $BASE_DIR
 </span></span><span style="display:flex;"><span>$ mkdir sample-scripts
@@ -4065,15 +4099,15 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 </span></span><span style="display:flex;"><span>$ unzip <span style="color:#e6db74">${</span>BASE_DIR<span style="color:#e6db74">}</span>/sample-scripts/sample-scripts.zip -d <span style="color:#e6db74">${</span>BASE_DIR<span style="color:#e6db74">}</span>/sample-scripts
 </span></span></code></pre></div>
 
+<h3 id="create-resource-group">Create Resource Group</h3>
 
-<h4 id="create-resource-group">Create Resource Group</h4>
 <p>Create the resource group by issuing the following commands.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ az extension add --name resource-graph
 </span></span><span style="display:flex;"><span>$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 </span></span></code></pre></div>
 
+<h3 id="create-the-aks-cluster">Create the AKS cluster</h3>
 
-<h4 id="create-the-aks-cluster">Create the AKS cluster</h4>
 <p>This sample doesn&rsquo;t enable application routing. If you want to enable application routing, follow <a href="https://learn.microsoft.com/azure/aks/app-routing?tabs=default%2Cdeploy-app-default">Managed nginx Ingress with the application routing add-on in AKS</a>.</p>
 <p>Run the following command to create the AKS cluster.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ az aks create <span style="color:#ae81ff">\
@@ -4099,7 +4133,7 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 </span></span></code></pre></div>
 
 <p><strong>NOTE</strong>: If you run into VM size failure, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/#virtual-machine-size-is-not-supported">Troubleshooting - Virtual Machine size is not supported</a>.</p>
-<h4 id="install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</h4>
+<h3 id="install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</h3>
 <p>The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as container infrastructure hosting WLS instances. The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.</p>
 <p>Create a namespace and service account for the operator.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create namespace sample-weblogic-operator-ns
@@ -4152,17 +4186,8 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 <div class="notices info" ><p>If you have an image built with domain models following <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image</a>, you can go to <a href="#create-weblogic-domain">Create WebLogic domain</a> directly.</p>
 </div>
 
-<h4 id="create-docker-image">Create Docker image</h4>
-<ul>
-<li><a href="#image-creation-prerequisites">Image creation prerequisites</a></li>
-<li><a href="#image-creation---introduction">Image creation - Introduction</a></li>
-<li><a href="#understanding-your-first-archive">Understanding your first archive</a></li>
-<li><a href="#staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</a></li>
-<li><a href="#staging-model-files">Staging model files</a></li>
-<li><a href="#creating-the-image-with-wit">Creating the image with WIT</a></li>
-<li><a href="#pushing-the-image-to-azure-container-registry">Pushing the image to Azure Container Registry</a></li>
-</ul>
-<h5 id="image-creation-prerequisites">Image creation prerequisites</h5>
+<h3 id="create-docker-image">Create Docker image</h3>
+<h4 id="image-creation-prerequisites">Image creation prerequisites</h4>
 <ul>
 <li>
 <p>The <code>JAVA_HOME</code> environment variable must be set and must reference a valid JDK 8 or 11 installation.</p>
@@ -4199,7 +4224,7 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 </ul>
 
 
-<h5 id="image-creation---introduction">Image creation - Introduction</h5>
+<h4 id="image-creation---introduction">Image creation - Introduction</h4>
 
 <p>The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image tagged as <code>wdt-domain-image:WLS-v1</code> from files that you will stage to <code>${WDT_MODEL_FILES_PATH}/WLS-v1/</code>.</p>
 <ul>
@@ -4207,9 +4232,9 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 <li>WDT model YAML (model), WDT variable (property), and WDT archive ZIP (archive) files are expected in directory <code>/auxiliary/models</code>.</li>
 </ul>
 
-<h5 id="understanding-your-first-archive">Understanding your first archive</h5>
+<h4 id="understanding-your-first-archive">Understanding your first archive</h4>
 <p>See <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/auxiliary-image-creation/#understand-your-first-archive">Understanding your first archive</a>.</p>
-<h5 id="staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</h5>
+<h4 id="staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</h4>
 <p>When you create the image, you will use the files in the staging directory, <code>${WDT_MODEL_FILES_PATH}/WLS-v1</code>. In preparation, you need it to contain a ZIP file of the WDT application archive.</p>
 <p>Run the following commands to create your application archive ZIP file and put it in the expected directory:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Delete existing archive.zip in case we have an old leftover version</span>
@@ -4217,7 +4242,7 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 </span></span></code></pre></div><p>Create a ZIP file of the archive in the location that we will use when we run the WebLogic Image Tool.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/mii-sample/archives/archive-v1
 </span></span><span style="display:flex;"><span>$ zip -r <span style="color:#e6db74">${</span>WDT_MODEL_FILES_PATH<span style="color:#e6db74">}</span>/WLS-v1/archive.zip wlsdeploy
-</span></span></code></pre></div><h5 id="staging-model-files">Staging model files</h5>
+</span></span></code></pre></div><h4 id="staging-model-files">Staging model files</h4>
 
 <p>In this step, you explore the staged WDT model YAML file and properties in the <code>${WDT_MODEL_FILES_PATH}/WLS-v1</code> directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, <code>model.10.properties</code>, a file with a single property, and, <code>model.10.yaml</code>, a YAML file with your WebLogic configuration.</p>
 <p>Here is the WLS <code>model.10.properties</code>:</p>
@@ -4286,7 +4311,7 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 
 
 <p>A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/model-files/">Model files</a> in the Model in Image user documentation.</p>
-<h5 id="creating-the-image-with-wit">Creating the image with WIT</h5>
+<h4 id="creating-the-image-with-wit">Creating the image with WIT</h4>
 
 <p>At this point, you have all of the files needed for <code>image wdt-domain-image:WLS-v1</code> staged; they include:</p>
 <ul>
@@ -4328,7 +4353,7 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 <div class="notices note" ><p>You may run into a <code>Dockerfile</code> parsing error if your Docker buildkit is enabled, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/#weblogic-image-tool-failure">Troubleshooting - WebLogic Image Tool failure</a>.</p>
 </div>
 
-<h5 id="pushing-the-image-to-azure-container-registry">Pushing the image to Azure Container Registry</h5>
+<h4 id="pushing-the-image-to-azure-container-registry">Pushing the image to Azure Container Registry</h4>
 
 <p>AKS can pull images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In addition to simplicity, using ACR simplifies high availability and disaster recovery with features such as geo-replication. For more information, see <a href="https://learn.microsoft.com/en-us/azure/container-registry/container-registry-geo-replication">Geo-replication in Azure Container Registry</a>. In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the image built in the preceding section to it.  For complete details, see <a href="https://learn.microsoft.com/en-us/azure/container-registry/">Azure Container Registry documentation</a>.</p>
 <p>Let&rsquo;s create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.</p>
@@ -4355,13 +4380,7 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 
 
 <p>If you see an error that seems related to you not being an <strong>Owner on this subscription</strong>, please refer to the troubleshooting section <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/#cannot-attach-acr-due-to-not-being-owner-of-subscription">Cannot attach ACR due to not being Owner of subscription</a>.</p>
-<h4 id="create-weblogic-domain">Create WebLogic domain</h4>
-<ul>
-<li><a href="#namespace">Namespace</a></li>
-<li><a href="#kubernetes-secrets-for-weblogic-image">Kubernetes Secrets for WebLogic image</a></li>
-<li><a href="#kubernetes-secrets-for-weblogic">Kubernetes Secrets for WebLogic</a></li>
-<li><a href="##domain-resource">Domain resource</a></li>
-</ul>
+<h3 id="create-weblogic-domain">Create WebLogic domain</h3>
 <p>In this section, you will deploy the new image to the namespace <code>sample-domain1-ns</code>, including the following steps:</p>
 <ul>
 <li>Create a namespace for the WebLogic domain.</li>
@@ -4377,12 +4396,12 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 <li>Deploy a domain YAML file that references the new image.</li>
 <li>Wait for the domain’s pods to start and reach their ready state.</li>
 </ul>
-<h5 id="namespace">Namespace</h5>
+<h4 id="namespace">Namespace</h4>
 <p>Create a namespace that can host one or more domains:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create namespace sample-domain1-ns
 </span></span></code></pre></div><p>Label the domain namespace so that the operator can autodetect and create WebLogic Server pods. Without this step, the operator cannot see the namespace.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl label namespace sample-domain1-ns weblogic-operator<span style="color:#f92672">=</span>enabled
-</span></span></code></pre></div><h5 id="kubernetes-secrets-for-weblogic-image">Kubernetes Secrets for WebLogic image</h5>
+</span></span></code></pre></div><h4 id="kubernetes-secrets-for-weblogic-image">Kubernetes Secrets for WebLogic image</h4>
 <p>You will use the <code>kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh</code> script to create the Docker credentials as a Kubernetes secret to pull image from OCR. Please run:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ $BASE_DIR/sample-scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n sample-domain1-ns <span style="color:#ae81ff">\
@@ -4393,7 +4412,7 @@ weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 </span></span></code></pre></div><p>The output will show something similar to the following:</p>
 <pre tabindex="0"><code>secret/wlsregcred created
 The secret wlsregcred has been successfully created in the sample-domain1-ns namespace.
-</code></pre><h5 id="kubernetes-secrets-for-weblogic">Kubernetes Secrets for WebLogic</h5>
+</code></pre><h4 id="kubernetes-secrets-for-weblogic">Kubernetes Secrets for WebLogic</h4>
 <p>First, create the secrets needed by the WLS type model domain. For more on secrets in the context of running domains, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/">Prepare to run a domain</a>. In this case, you have two secrets.</p>
 <p>Run the following <code>kubectl</code> commands to deploy the required secrets:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
@@ -4463,7 +4482,7 @@ Remember what you specified. These credentials may be needed again later.</li>
 </span></span><span style="display:flex;"><span>sample-domain1-runtime-encryption-secret   Opaque                           1      19s
 </span></span><span style="display:flex;"><span>sample-domain1-weblogic-credentials        Opaque                           2      28s
 </span></span><span style="display:flex;"><span>wlsregcred                                 kubernetes.io/dockerconfigjson   1      47s
-</span></span></code></pre></div><h5 id="domain-resource">Domain resource</h5>
+</span></span></code></pre></div><h4 id="domain-resource">Domain resource</h4>
 <p>Now, you create a domain YAML file. Think of the domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes &ldquo;custom resource&rdquo; feature to define a Kubernetes resource type called <code>Domain</code>.  For more on the <code>Domain</code> Kubernetes resource, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/">Domain Resource</a>. For more on custom resources see <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">the Kubernetes documentation</a>.</p>
 <p>We provide a script at <code>$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-mii-generate-yaml.sh</code> to generate a domain resource description.</p>
 <p>Run the following command to generate resource files.</p>
@@ -4507,8 +4526,8 @@ sample-domain1-managed-server1   1/1     Running   0          83s
 sample-domain1-managed-server2   1/1     Running   0          83s
 </code></pre><p>It may take you up to 10 minutes to deploy all pods, please wait and make sure everything is ready.</p>
 <p>If the system does not reach this state, troubleshoot and resolve the problem before continuing. See <a href="#troubleshooting">Troubleshooting</a> for hints.</p>
-<h4 id="invoke-the-web-application">Invoke the web application</h4>
-<h5 id="create-azure-load-balancer">Create Azure load balancer</h5>
+<h3 id="invoke-the-web-application">Invoke the web application</h3>
+<h4 id="create-azure-load-balancer">Create Azure load balancer</h4>
 <p>Create an Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed to the cluster.</p>
 <p>Use the file <code>admin-lb.yaml</code> to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with your domain values.</p>
 
@@ -4731,7 +4750,7 @@ The expected username and password must match the values that you chose during t
 </span></span></code></pre></div>
     </div>
 </div>
-<h5 id="access-the-application">Access the application</h5>
+<h4 id="access-the-application">Access the application</h4>
 <p>Access the Administration Console using the admin load balancer IP address.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ADMIN_SERVER_IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].ip}&#39;</span><span style="color:#66d9ef">)</span>
 </span></span><span style="display:flex;"><span>$ echo <span style="color:#e6db74">&#34;Administration Console Address: http://</span><span style="color:#e6db74">${</span>ADMIN_SERVER_IP<span style="color:#e6db74">}</span><span style="color:#e6db74">:7001/console/&#34;</span>
@@ -4761,19 +4780,19 @@ Found 0 local data sources:
 
 *****************************************************************
 &lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;
-</code></pre><h4 id="rolling-updates">Rolling updates</h4>
+</code></pre><h3 id="rolling-updates">Rolling updates</h3>
 <p>Naturally, you will want to deploy newer versions of the EAR application, located in the WDT archive ZIP file at <code>wlsdeploy/applications/myapp-v1</code>. To learn how to do this, follow the steps in <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update3/">Update 3</a>.</p>
-<h4 id="database-connection">Database connection</h4>
+<h3 id="database-connection">Database connection</h3>
 <p>For guidance on how to connect a database to your AKS with WebLogic Server application, see <a href="https://learn.microsoft.com/en-us/azure/aks/howto-deploy-java-wls-app">Deploy a Java application with WebLogic Server on an Azure Kubernetes Service (AKS) cluster</a>.</p>
-<h4 id="clean-up-resources">Clean up resources</h4>
+<h3 id="clean-up-resources">Clean up resources</h3>
 <p>Run the following commands to clean up resources.</p>
 
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ az group delete --yes --no-wait --name $AKS_PERS_RESOURCE_GROUP
 </span></span></code></pre></div>
 
-<h4 id="troubleshooting">Troubleshooting</h4>
+<h3 id="troubleshooting">Troubleshooting</h3>
 <p>For troubleshooting advice, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/">Troubleshooting</a>.</p>
-<h4 id="useful-links">Useful links</h4>
+<h3 id="useful-links">Useful links</h3>
 <ul>
 <li><a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/">Model in Image</a> user documentation</li>
 <li><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image</a> sample</li>
@@ -7388,19 +7407,19 @@ Found 0 local data sources:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1733110094"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1733110094"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1733110094"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1733110094"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1733110094"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1733110094"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1733144545"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1733144545"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1733144545"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1733144545"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1733144545"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1733144545"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1733110094"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1733110094"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1733110094"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1733144545"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1733144545"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1733144545"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1733110094"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1733144545"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

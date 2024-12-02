@@ -1,6 +1,3 @@
-
-#### Create the AKS cluster
-
 This sample doesn't enable application routing. If you want to enable application routing, follow [Managed nginx Ingress with the application routing add-on in AKS](https://learn.microsoft.com/azure/aks/app-routing?tabs=default%2Cdeploy-app-default).
 
 Run the following command to create the AKS cluster.
