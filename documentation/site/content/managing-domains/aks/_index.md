@@ -75,7 +75,7 @@ In this section, you can configure some options about the AKS which will run Web
 | Field | Description |
 |-------|-------------|
 |Create a new AKS cluster| If set to **Yes**, the deployment will create a new AKS cluster resource in the specified resource group. If set to **No**, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments. |
-| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select **Change Size**, select the size from the list (for example, A3) on the Select a VM size page, and select **Select**. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/azure/cloud-services/cloud-services-sizes-specs).|
+| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select **Change Size**, select the size from the list (for example, A3) on the Select a VM size page, and select **Select**. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/overview).|
 | Minimum node count | The minimum node count in the AKS cluster. This value can be changed after deployment. For information, see [AKS autoscaler](https://learn.microsoft.com/azure/aks/cluster-autoscaler). |
 | Maximum node count | The maximum node count in the AKS cluster. This value can be changed after deployment. For information, see [AKS autoscaler](https://learn.microsoft.com/azure/aks/cluster-autoscaler). |
 | Select AKS cluster | This option is shown if **Create a new AKS cluster?** is set to **No**. If visible, select an existing Azure Kubernetes Service instance. |
@@ -93,7 +93,7 @@ In this section, you can configure the image that is deployed using the model-in
 | Confirm password | Re-enter the value of the preceding field. | If 'Yes' is selected; the deployment process will pull from the CPU WebLogic Server image repository in the OCR. If 'No' is selected the deployment process will pull from the WebLogic Server image repository in OCR. |
 | Select the type of WebLogic Server Images. | If set to **Patched WebLogic Server Images**, you must accept the license agreement in the `middleware/weblogic_cpu` repository. If set to **General WebLogic Server Images**, you must accept the license agreement in the `middleware/weblogic`. Steps to accept the license agreement: log in to the [Oracle Container Registry](https://container-registry.oracle.com/); navigate to the `middleware/weblogic_cpu` and `middleware/weblogic` repository; accept license agreement. See this [document](https://aka.ms/wls-aks-ocr-doc) for more information. |
 | Select desired combination of WebLogic Server, JDK and Operating System or fully qualified Docker tag | Select one of the supported images. |
-| WebLogic Docker tag | This option is shown if **Select desired combination of WebLogic Server, JDK and Operating System or fully qualified Docker tag** is set to **Others**. If visible, input a fully qualified Docker tag. You can find the available tags from WebLogic Server Images page of [Oracle Registry Container](https://container-registry.oracle.com/) |
+| WebLogic Docker tag | This option is shown if **Select desired combination of WebLogic Server, JDK and Operating System or fully qualified Docker tag** is set to **Others**. If visible, input a fully qualified Docker tag. You can find the available tags from WebLogic Server Images page of [Oracle Container Registry](https://container-registry.oracle.com/) |
 
 #### Application
 
@@ -335,7 +335,7 @@ After the provisioning is complete, you can create KEDA scaling rules. A sample 
 * The **shellCmdtoOutputKedaScalerSample** value is the base64 string of a scaler sample. Copy the value and run it in your terminal.
 * For guidance on how to complete the configuration, see [Tutorial: Migrate Oracle WebLogic Server to AKS with KEDA scaler based on Prometheus Metrics](https://aka.ms/wls-aks-keda-scaler).
 
-When you are satisfied with your selections, select **Next** and open **Tags** blade.
+When you are satisfied with your selections, select **Next** and open the **Tags** blade.
 
 ### Tags
 
