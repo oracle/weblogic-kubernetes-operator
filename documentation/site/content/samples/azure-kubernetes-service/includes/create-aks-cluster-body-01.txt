@@ -1,5 +1,3 @@
-##### Oracle Container Registry
-
 The following steps will direct you to accept the license agreement for WebLogic Server. Make note of your Oracle Account password and email. This sample pertains to 12.2.1.4, but other versions may work as well.
 
   - In a web browser, navigate to https://container-registry.oracle.com and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the **Sign In** link to create them.

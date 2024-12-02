@@ -7,22 +7,13 @@ description: "Sample for creating a WebLogic cluster on the Azure Kubernetes Ser
 
 This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image domain home source type. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
 
-#### Contents
+{{< table_of_contents >}}
 
- - [Prerequisites](#prerequisites)
- - [Create an AKS cluster](#create-the-aks-cluster)
- - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator)
- - [Create Docker image](#create-docker-image)
- - [Create WebLogic domain](#create-weblogic-domain)
- - [Invoke the web application](#invoke-the-web-application)
- - [Rolling updates](#rolling-updates)
- - [Clean up resource](#clean-up-resources)
- - [Troubleshooting](#troubleshooting)
- - [Useful links](#useful-links)
+### Prerequisites
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-02.txt" >}}
 
-##### Prepare parameters
+#### Prepare parameters
 
 Set required parameters by running the following commands.
 
@@ -47,20 +38,30 @@ export WEBLOGIC_PASSWORD=Secret123456
 export WEBLOGIC_WDT_PASSWORD=Secret123456
 ```
 
+#### Oracle Container Registry
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
+
+#### Sign in with Azure CLI
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/sign-in-azure.txt" >}}
 
+#### Download the WebLogic Kubernetes Operator sample
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
 
+### Create Resource Group
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
+
+### Create the AKS cluster
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
 **NOTE**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 
-#### Install WebLogic Kubernetes Operator
+### Install WebLogic Kubernetes Operator
 
 The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as container infrastructure hosting WLS instances. The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
@@ -166,17 +167,9 @@ You can specify the operator image by changing value of `--set image`. If you ru
 If you have an image built with domain models following [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
 {{% /notice %}}
 
-#### Create Docker image
+### Create Docker image
 
-  - [Image creation prerequisites](#image-creation-prerequisites)
-  - [Image creation - Introduction](#image-creation---introduction)
-  - [Understanding your first archive](#understanding-your-first-archive)
-  - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
-  - [Staging model files](#staging-model-files)
-  - [Creating the image with WIT](#creating-the-image-with-wit)
-  - [Pushing the image to Azure Container Registry](#pushing-the-image-to-azure-container-registry)
-
-##### Image creation prerequisites
+#### Image creation prerequisites
 
 - The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 - Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`. In the directory name, `mii` is short for "model in image". Model in image is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
@@ -201,16 +194,16 @@ If you have an image built with domain models following [Model in Image]({{< rel
 {{< readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" >}}
 
 
-##### Image creation - Introduction
+#### Image creation - Introduction
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/auxiliary-image-directory.txt" >}}
 
-##### Understanding your first archive
+#### Understanding your first archive
 
 See [Understanding your first archive]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation#understand-your-first-archive" >}}).
 
 
-##### Staging a ZIP file of the archive
+#### Staging a ZIP file of the archive
 
 When you create the image, you will use the files in the staging directory, `${WDT_MODEL_FILES_PATH}/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
@@ -228,13 +221,13 @@ $ cd /tmp/mii-sample/archives/archive-v1
 $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
 
-##### Staging model files
+#### Staging model files
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
-##### Creating the image with WIT
+#### Creating the image with WIT
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" >}}
 
@@ -246,7 +239,7 @@ The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troublesho
 You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
 {{% /notice %}}
 
-##### Pushing the image to Azure Container Registry
+#### Pushing the image to Azure Container Registry
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" >}}
 
@@ -270,12 +263,7 @@ The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/mii-a
 
 If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
 
-#### Create WebLogic domain
-
-  - [Namespace](#namespace)
-  - [Kubernetes Secrets for WebLogic image](#kubernetes-secrets-for-weblogic-image)
-  - [Kubernetes Secrets for WebLogic](#kubernetes-secrets-for-weblogic)
-  - [Domain resource](##domain-resource)
+### Create WebLogic domain
 
 In this section, you will deploy the new image to the namespace `sample-domain1-ns`, including the following steps:
 
@@ -289,7 +277,7 @@ In this section, you will deploy the new image to the namespace `sample-domain1-
 - Deploy a domain YAML file that references the new image.
 - Wait for the domain’s pods to start and reach their ready state.
 
-##### Namespace
+#### Namespace
 
 Create a namespace that can host one or more domains:
 
@@ -303,7 +291,7 @@ Label the domain namespace so that the operator can autodetect and create WebLog
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
 
-##### Kubernetes Secrets for WebLogic image
+#### Kubernetes Secrets for WebLogic image
 
 You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret to pull image from OCR. Please run:
 
@@ -323,7 +311,7 @@ secret/wlsregcred created
 The secret wlsregcred has been successfully created in the sample-domain1-ns namespace.
 ```
 
-##### Kubernetes Secrets for WebLogic
+#### Kubernetes Secrets for WebLogic
 
 First, create the secrets needed by the WLS type model domain. For more on secrets in the context of running domains, see [Prepare to run a domain]({{< relref "/managing-domains/prepare" >}}). In this case, you have two secrets.
 
@@ -395,7 +383,7 @@ sample-domain1-weblogic-credentials        Opaque                           2   
 wlsregcred                                 kubernetes.io/dockerconfigjson   1      47s
 ```
 
-##### Domain resource
+#### Domain resource
 
 Now, you create a domain YAML file. Think of the domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
@@ -472,9 +460,9 @@ It may take you up to 10 minutes to deploy all pods, please wait and make sure e
 
 If the system does not reach this state, troubleshoot and resolve the problem before continuing. See [Troubleshooting](#troubleshooting) for hints.
 
-#### Invoke the web application
+### Invoke the web application
 
-##### Create Azure load balancer
+#### Create Azure load balancer
 
 Create an Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed to the cluster.
 
@@ -702,7 +690,7 @@ Events:             <none>
 ```
 {{% /expand %}}
 
-##### Access the application
+#### Access the application
 
 Access the Administration Console using the admin load balancer IP address.
 
@@ -748,25 +736,25 @@ Found 0 local data sources:
 </pre></body></html>
 ```
 
-#### Rolling updates
+### Rolling updates
 
 Naturally, you will want to deploy newer versions of the EAR application, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`. To learn how to do this, follow the steps in [Update 3]({{< relref "/samples/domains/model-in-image/update3" >}}).
 
-#### Database connection
+### Database connection
 
 For guidance on how to connect a database to your AKS with WebLogic Server application, see [Deploy a Java application with WebLogic Server on an Azure Kubernetes Service (AKS) cluster](https://learn.microsoft.com/en-us/azure/aks/howto-deploy-java-wls-app).
 
-#### Clean up resources
+### Clean up resources
 
 Run the following commands to clean up resources.
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
-#### Troubleshooting
+### Troubleshooting
 
 For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
 
-#### Useful links
+### Useful links
 
 - [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation
 - [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample

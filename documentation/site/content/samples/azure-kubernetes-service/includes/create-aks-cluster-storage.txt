@@ -1,12 +1,10 @@
-#### Create storage
-
 Our usage pattern for the operator involves creating Kubernetes "persistent volumes" to allow the WebLogic Server to persist its configuration and data separately from the Kubernetes Pods that run WebLogic Server workloads.
 
 You will create an external data volume to access and persist data. There are several options for data sharing as described in [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/azure/aks/concepts-storage).
 
 You will dynamically create and use a persistent volume with Azure Files NFS share.  For details about this full featured cloud storage solution, see the [Azure Files Documentation](https://docs.microsoft.com/azure/aks/azure-files-dynamic-pv).
 
-##### Create an Azure Storage account and NFS share
+#### Create an Azure Storage account and NFS share
 
 1. Create an Azure Storage Account.
 
@@ -185,9 +183,9 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     ]
     ```
 
-##### Create SC and PVC
+#### Create SC and PVC
 
-##### Generated configuration files
+#### Generated configuration files
 Use the following command to generate configuration files.
 
 ```shell
