@@ -42,6 +42,8 @@ the change requires entirely shutting domain the domain,
 applying the change, and finally restarting the domain. Full domain restarts are described in
 [Full domain restarts]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 
+**NOTE**: If you are using WebLogic Server 14.1.2.0.0 or later, see [Using demo SSL certificates in v14.1.2.0.0 or later]({{< relref "/managing-domains/model-in-image/overview#using-demo-ssl-certificates-in-v141200-or-later" >}}).
+
 **NOTE**: Supported and unsupported changes are described in these sections: [Supported updates](#supported-updates) and [Unsupported updates](#unsupported-updates).
 _It is the administrator's responsibility to make the necessary changes to a domain resource to initiate the correct approach for an update._
 
