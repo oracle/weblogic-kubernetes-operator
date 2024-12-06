@@ -410,6 +410,7 @@ def upgradeServerIfNeeded(model):
     result = fh.read()
     fh.close()
     found = False
+    # if secure mode is not enabled in existing domain
     if result == 'False':
         # check if model has anything set
         # if domainInfo already set to secure or in dev mode then do not set it, prod mode will not be secure
