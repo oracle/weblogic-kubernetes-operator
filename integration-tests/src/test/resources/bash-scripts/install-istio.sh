@@ -33,10 +33,18 @@ ${KUBERNETES_CLI} delete namespace istio-system --ignore-not-found
 # create the namespace 'istio-system' 
 ${KUBERNETES_CLI} create namespace istio-system
 
-( cd $workdir;
-  oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
-                                --name=istio/istio-${version}-${arch}.tar.gz --file=istio.tar.gz \
-                                --auth=instance_principal
+( cd $workdir
+  if [ -z "$JENKINS_HOME" ]; then
+    # Not in Jenkins, download using curl
+    echo "Detected local environment. Downloading Istio using curl."
+    curl -Lo istio.tar.gz https://github.com/istio/istio/releases/download/${version}/istio-${version}-${arch}.tar.gz
+  else
+    # Running in Jenkins, download using OCI CLI
+    echo "Detected Jenkins environment. Downloading Istio using OCI CLI."
+    oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                      --name=istio/istio-${version}-${arch}.tar.gz --file=istio.tar.gz \
+                      --auth=instance_principal
+  fi
   tar zxf istio.tar.gz
 )
 
