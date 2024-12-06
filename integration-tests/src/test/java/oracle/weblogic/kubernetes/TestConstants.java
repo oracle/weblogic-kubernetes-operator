@@ -477,6 +477,11 @@ public interface TestConstants {
   public static final String LARGE_DOMAIN_TESTING_PROPS_FILE =
       "largedomaintesting.props";
   
+  public static final boolean INSTALL_WEBLOGIC = Boolean.valueOf((getNonEmptySystemProperty("wko.it.install.weblogic",
+      "false")));
+  public static final String WEBLOGIC_SHIPHOME = getNonEmptySystemProperty("wko.it.wls.shiphome",
+      "https://home.us.oracle.com/results/release/src141200/fmw_14.1.2.0.0_wls_generic.jar");
+  
   public static final String ORACLE_OPERATOR_NS = "ns-oracle-operator";  
   
   //node ports used by the integration tests
