@@ -651,20 +651,16 @@ abstract class CreateOperatorGeneratedFilesTestBase {
 
   @Test
   void generatesCorrect_domainNamespaces_weblogicOperatorRoleBindings() {
-    for (String domainNamespace : getInputs().getDomainNamespaces().split(",")) {
-      String namespace = domainNamespace.trim();
-      assertThat(
-          getGeneratedFiles().getWeblogicOperatorRoleBinding(namespace),
-          equalTo(getExpectedWeblogicOperatorRoleBinding(namespace)));
-    }
+    assertThat(
+        getGeneratedFiles().getWeblogicOperatorClusterRoleBinding(),
+        equalTo(getExpectedWeblogicOperatorClusterRoleBinding()));
   }
 
-  private V1RoleBinding getExpectedWeblogicOperatorRoleBinding(String namespace) {
-    return newRoleBinding()
+  private V1ClusterRoleBinding getExpectedWeblogicOperatorClusterRoleBinding() {
+    return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
-                .name("weblogic-operator-rolebinding-namespace")
-                .namespace(namespace)
+                .name(getInputs().getNamespace() + "-weblogic-operator-clusterrolebinding-namespace")
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(
             newSubject()

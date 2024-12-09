@@ -60,8 +60,9 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
         .find(inputs.getNamespace() + "-weblogic-operator-clusterrole-namespace");
   }
 
-  public V1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
-    return getRoleBindings().find("weblogic-operator-rolebinding-namespace", namespace);
+  public V1ClusterRoleBinding getWeblogicOperatorClusterRoleBinding() {
+    return getClusterRoleBindings()
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-namespace");
   }
 
   public V1RoleBinding getWeblogicOperatorRoleBinding() {

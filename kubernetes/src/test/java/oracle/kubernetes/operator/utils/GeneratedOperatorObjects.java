@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -86,8 +86,8 @@ public class GeneratedOperatorObjects {
     return securityYaml.getWeblogicOperatorNamespaceRole();
   }
 
-  public V1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
-    return securityYaml.getWeblogicOperatorRoleBinding(namespace);
+  public V1ClusterRoleBinding getWeblogicOperatorClusterRoleBinding() {
+    return securityYaml.getWeblogicOperatorClusterRoleBinding();
   }
 
   public V1RoleBinding getWeblogicOperatorRoleBinding() {
