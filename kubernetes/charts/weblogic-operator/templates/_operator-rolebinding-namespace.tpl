@@ -1,16 +1,17 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorRoleBindingNamespace" }}
 ---
-{{- if and (or .enableClusterRoleBinding (not (hasKey . "enableClusterRoleBinding"))) (ne .domainNamespaceSelectionStrategy "Dedicated") }}
+{{- $useClusterRole := and (or .enableClusterRoleBinding (not (hasKey . "enableClusterRoleBinding"))) (not (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{- if $useClusterRole }}
 kind: "ClusterRoleBinding"
 {{- else }}
 kind: "RoleBinding"
 {{- end }}
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
-  {{- if and (or .enableClusterRoleBinding (not (hasKey . "enableClusterRoleBinding"))) (ne .domainNamespaceSelectionStrategy "Dedicated") }}
+  {{- if $useClusterRole }}
   name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-namespace" | join "-" | quote }}
   {{- else }}
   name: "weblogic-operator-rolebinding-namespace"
