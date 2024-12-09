@@ -48,8 +48,12 @@ domainNamespaceSelectionStrategy: LabelSelector
 
 # enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
-# If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated, in which
+# If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated', in which
 # case this value is ignored as all resources will be created in the namespace where the operator is deployed.
+# If `enableClusterRoleBinding` is false but `domainNamespaceSelectionStrategy` is not `Dedicated` then
+# ClusterRoleBindings will still be created to allow the operator to manage the CRDs and to list namespaces.
+# No ClusterRoles or ClusterRoleBindings will be created when `enableClusterRoleBinding` is false and
+# `domainNamespaceSelectionStrategy` is `Dedicated`.
 #
 enableClusterRoleBinding: true
 
