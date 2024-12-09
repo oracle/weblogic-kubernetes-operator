@@ -705,7 +705,7 @@
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <commons-cli-version>1.9.0</commons-cli-version>
-    <networknt-jsonschmema-validator-version>1.5.3</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.5.4</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.4.0</commons-exec-version>
     <commons-codec-version>1.17.1</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -733,14 +733,14 @@
     <grizzly-version>4.0.2</grizzly-version>
     <jakarta-version>6.1.0</jakarta-version>
     <prometheus-version>0.16.0</prometheus-version>
-    <jackson-version>2.18.1</jackson-version>
+    <jackson-version>2.18.2</jackson-version>
     <jackson-databind-version>2.18.1</jackson-databind-version>
     <snakeyaml-version>2.3</snakeyaml-version>
     <gson-version>2.11.0</gson-version>
     <dependency-check-version>11.1.0</dependency-check-version>
     <slf4j-version>2.0.16</slf4j-version>
     <logback-classic-version>1.5.12</logback-classic-version>
-    <protobuf-java-version>4.28.3</protobuf-java-version>
+    <protobuf-java-version>4.29.1</protobuf-java-version>
     <json-smart-version>2.5.1</json-smart-version>
     <nimbus-jose-jwt-version>9.47</nimbus-jose-jwt-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
