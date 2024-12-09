@@ -968,7 +968,7 @@ public class DomainUtils {
   }
 
   /**
-   *  Utility to create domain resource on pv with confiiguration.
+   *  Utility to create domain resource on pv with configuration.
    * @param domainUid domain uid
    * @param domNamespace  domain namespace
    * @param adminSecretName wls admin secret name
@@ -983,16 +983,58 @@ public class DomainUtils {
    * @return oracle.weblogic.domain.Domain object
    */
   public static DomainResource createDomainResourceOnPv(String domainUid,
-                                                  String domNamespace,
-                                                  String adminSecretName,
-                                                  String clusterName,
-                                                  String pvName,
-                                                  String pvcName,
-                                                  String[] repoSecretName,
-                                                  String domainInHomePrefix,
-                                                  int replicaCount,
-                                                  int t3ChannelPort,
-                                                  Configuration configuration) {
+                                                        String domNamespace,
+                                                        String adminSecretName,
+                                                        String clusterName,
+                                                        String pvName,
+                                                        String pvcName,
+                                                        String[] repoSecretName,
+                                                        String domainInHomePrefix,
+                                                        int replicaCount,
+                                                        int t3ChannelPort,
+                                                        Configuration configuration) {
+    return createDomainResourceOnPv(domainUid,
+        domNamespace,
+        adminSecretName,
+        clusterName,
+        pvName,
+        pvcName,
+        repoSecretName,
+        domainInHomePrefix,
+        replicaCount,
+        t3ChannelPort,
+        configuration,
+        FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+  }
+
+  /**
+   *  Utility to create domain resource on pv with configuration.
+   * @param domainUid domain uid
+   * @param domNamespace  domain namespace
+   * @param adminSecretName wls admin secret name
+   * @param clusterName cluster name
+   * @param pvName PV name
+   * @param pvcName PVC name
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param domainInHomePrefix domain in home prefix
+   * @param replicaCount repica count of the clsuter
+   * @param t3ChannelPort t3 chanel
+   * @param configuration domain configuratioin object
+   * @param imageToUse  base image to use
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static DomainResource createDomainResourceOnPv(String domainUid,
+                                                        String domNamespace,
+                                                        String adminSecretName,
+                                                        String clusterName,
+                                                        String pvName,
+                                                        String pvcName,
+                                                        String[] repoSecretName,
+                                                        String domainInHomePrefix,
+                                                        int replicaCount,
+                                                        int t3ChannelPort,
+                                                        Configuration configuration,
+                                                        String imageToUse) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -1011,7 +1053,7 @@ public class DomainUtils {
             .domainUid(domainUid)
             .domainHome(domainInHomePrefix + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
+            .image(imageToUse)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))

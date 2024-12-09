@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import oracle.weblogic.kubernetes.actions.impl.UniqueName;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -55,13 +54,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.backupReports;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.restoreReports;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SampleUtils.createPVHostPathAndChangePermissionInKindCluster;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test and verify Domain on PV FMW domain sample.
@@ -250,12 +248,7 @@ class ItFmwDomainOnPVSample {
       createPVHostPathAndChangePermissionInKindCluster("/shared", envMap);
     }
 
-    testUntil(
-        withLongRetryPolicy,
-        checkTestScriptAndAssertSuccess("-initial-main", "Failed to run -initial-main"),
-        logger,
-        "create PV HostPath and change Permission in Kind Cluster");
-
+    execTestScriptAndAssertSuccess("-initial-main", "Failed to run -initial-main");
   }
 
   /**
@@ -263,7 +256,7 @@ class ItFmwDomainOnPVSample {
    * @param arg arguments to execute script
    * @param errString a string of detailed error
    */
-  private boolean execTestScriptAndAssertSuccess(String arg,
+  private void execTestScriptAndAssertSuccess(String arg,
                                                  String errString) {
 
     Assumptions.assumeTrue(previousTestSuccessful);
@@ -280,8 +273,7 @@ class ItFmwDomainOnPVSample {
             .redirect(true)
     ).executeAndReturnResult();
 
-    boolean success =
-        result != null
+    boolean success = result != null
             && result.exitValue() == 0
             && result.stdout() != null
             && result.stdout().contains("Finished without errors");
@@ -293,13 +285,8 @@ class ItFmwDomainOnPVSample {
 
     logger.info("output String is: {0}", outStr);
 
-    previousTestSuccessful = true;
-
-    return success;
-  }
-
-  private Callable<Boolean> checkTestScriptAndAssertSuccess(String arg, String errString) {
-    return () -> execTestScriptAndAssertSuccess(arg, errString);
+    previousTestSuccessful = success;
+    assertTrue(success, "running test script " + arg + " failed");
   }
 
   /**

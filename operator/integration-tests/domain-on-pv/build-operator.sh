@@ -57,8 +57,8 @@ if [ "$(old_cksum)" = "$(latest_cksum)" ]; then
   exit 0
 fi
 
-#mvn clean install -DskipTests -Dcheckstyle.skip
-mvn clean install
+mvn clean install -DskipTests -Dcheckstyle.skip
+#mvn clean install
 if [ -n "${http_proxy:-}" ]; then
   HTTP_BUILD_ARG="--build-arg http_proxy=$http_proxy"
 fi

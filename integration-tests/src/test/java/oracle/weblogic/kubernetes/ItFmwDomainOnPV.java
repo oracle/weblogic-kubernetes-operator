@@ -147,7 +147,7 @@ class ItFmwDomainOnPV {
 
     DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
 
-    if (OKD) {
+    if (OKD || OCNE) {
       logger.info("Start DB in namespace: {0}, dbListenerPort: {1}, dbUrl: {2}, dbImage: {3}",
           dbNamespace, dbListenerPort, dbUrl, DB_IMAGE_TO_USE_IN_SPEC);
       assertDoesNotThrow(() -> startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), dbNamespace, dbListenerPort),

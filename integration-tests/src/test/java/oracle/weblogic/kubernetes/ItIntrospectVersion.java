@@ -1194,7 +1194,8 @@ class ItIntrospectVersion {
         uniqueDomainHome,
         cluster1ReplicaCount,
         t3ChannelPort,
-        configuration);
+        configuration,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
 
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created

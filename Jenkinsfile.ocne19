@@ -14,7 +14,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-ocne19-main-nightly' ?
+        parameterizedCron(env.JOB_NAME == 'wko-ocne-main-nightly' ?
         CRON_SETTINGS : '')
     }
 
@@ -60,8 +60,8 @@ pipeline {
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 
         kubeconfig_file = "${WORKSPACE}/terraform/terraform/1.9/kubeconfig"
-        availability_domain = "${env.JOB_NAME == 'wko-ocne19-main-nightly' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
-        PARALLEL_RUN = "${env.JOB_NAME == 'wko-ocne19-main-nightly' ? true : false}"
+        availability_domain = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
+        PARALLEL_RUN = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? true : false}"
     }
 
     parameters {
