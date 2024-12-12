@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -21,8 +22,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.ClusterResource;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import org.apache.commons.collections4.ListUtils;
@@ -128,8 +127,13 @@ public class WlsConfigValidator {
   private void verifyDomainResourceReferences() {
     getManagedServers().stream()
           .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
-    info.getReferencedClusters().stream().map(ClusterResource::getSpec)
-          .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
+
+    info.getReferencedClusters().stream()
+            .map(cluster -> Map.entry(cluster.getSpec().getClusterName(),
+                    Objects.requireNonNull(cluster.getMetadata().getName())))
+            .filter(entry -> isUnknownCluster(entry.getKey()))
+            .forEach(entry -> reportUnknownCluster(entry.getKey(), entry.getValue()));
+
   }
 
   private List<ManagedServer> getManagedServers() {
@@ -155,8 +159,8 @@ public class WlsConfigValidator {
     return !domainConfig.containsCluster(clusterName);
   }
 
-  private void reportUnknownCluster(String clusterName) {
-    reportFailure(NO_CLUSTER_IN_DOMAIN, clusterName);
+  private void reportUnknownCluster(String wlsClusterName, String refClusterName) {
+    reportFailure(NO_CLUSTER_IN_DOMAIN, wlsClusterName, refClusterName);
   }
 
   // Ensure that generated service names are valid.
