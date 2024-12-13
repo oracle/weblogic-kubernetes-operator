@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -263,7 +263,8 @@ public class WebhookHelper {
                                             CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
-        return super.onFailureNoRetry(packet, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+                ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 
@@ -284,7 +285,8 @@ public class WebhookHelper {
                                             CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
-        return super.onFailureNoRetry(packet, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+                ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 
@@ -318,7 +320,8 @@ public class WebhookHelper {
                                             CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
-        return super.onFailureNoRetry(packet, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+                ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 

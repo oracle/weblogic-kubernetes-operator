@@ -1,7 +1,8 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorSecrets" }}
+{{- if not .webhookOnly }}
 ---
 apiVersion: "v1"
 kind: "Secret"
@@ -22,6 +23,8 @@ metadata:
   name: "weblogic-operator-secrets"
   namespace:  {{ .Release.Namespace | quote }}
 type: "Opaque"
+{{- end }}
+{{- if not .operatorOnly }}
 ---
 apiVersion: "v1"
 kind: "Secret"
@@ -43,4 +46,5 @@ metadata:
   name: "weblogic-webhook-secrets"
   namespace:  {{ .Release.Namespace | quote }}
 type: "Opaque"
+{{- end }}
 {{- end }}
