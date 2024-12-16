@@ -259,7 +259,8 @@ public class WebhookHelper {
                                             KubernetesApiResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getStatus());
-        return super.onFailureNoRetry(packet, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+                ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 
@@ -279,7 +280,8 @@ public class WebhookHelper {
                                             KubernetesApiResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getStatus());
-        return super.onFailureNoRetry(packet, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+                ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 
@@ -312,7 +314,8 @@ public class WebhookHelper {
                                             KubernetesApiResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getStatus());
-        return super.onFailureNoRetry(packet, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+                ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 
