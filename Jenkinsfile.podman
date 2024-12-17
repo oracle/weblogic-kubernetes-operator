@@ -469,6 +469,8 @@ nodes:
         hostPort: 2228
       - containerPort: 31132
         hostPort: 8001
+      - containerPort: 31136
+        hostPort: 2232
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}

@@ -571,5 +571,7 @@ public interface TestConstants {
   
   public static final int IT_ONPREMCRDOMAINTX_INGRESS_HTTP_NODEPORT = 31132;
   public static final int IT_ONPREMCRDOMAINTX_INGRESS_HTTP_HOSTPORT = 8001;
+  public static final int IT_ONPREMCRDOMAINTX_CLUSTER_NODEPORT = 31136;
+  public static final int IT_ONPREMCRDOMAINTX_CLUSTER_HOSTPORT = 2232;
   
 }
