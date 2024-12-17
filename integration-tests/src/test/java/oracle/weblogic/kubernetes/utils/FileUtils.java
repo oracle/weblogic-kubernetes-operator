@@ -496,8 +496,8 @@ public class FileUtils {
     Path src = Paths.get(filePath);
     logger.info("Replacing {0} in {1} with {2}", regex, src.toString(), replacement);
     String content = new String(Files.readAllBytes(src), StandardCharsets.UTF_8);
-    if (!content.contains(regex)) {
-      logger.info("search string {0} not found to replace with {1}", regex, replacement);
+    if (!content.matches(regex)) {
+      logger.warning("search string {0} not found to replace with {1}", regex, replacement);
     }
     long oldModified = src.toFile().lastModified();
     Files.write(src, content.replaceAll(regex, replacement).getBytes(StandardCharsets.UTF_8));

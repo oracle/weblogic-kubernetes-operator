@@ -8,16 +8,18 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -29,14 +31,16 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.FileUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -47,17 +51,26 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ONPREMCRDOMAINTX_CLUSTER_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_ONPREMCRDOMAINTX_CLUSTER_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.IT_ONPREMCRDOMAINTX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
@@ -91,26 +104,31 @@ class ItOnPremCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
+  private static final String WDT_MODEL_FILE_DOMAIN3 = "model-crossdomaintransaction-domain3.yaml";
 
-  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
-  private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
   private static final String ONPREM_DOMAIN_ROUTING = "onprem-domain-routing.yaml";
+  private static final String K8S_DOMAIN3_NODEPORT_ROUTING = "onprem-domain2-node-portrouting.yaml";
   private static String onpremIngressClass = null;
   private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
   private static final String WDT_MODEL_FILE_JMS2 = "model2-cdt-jms.yaml";
-
+  
+  private static List<String> applicationsList;
   private static final String WDT_IMAGE_NAME1 = "domain1-onprem-wdt-image";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomainonpremtemp";
 
   private static String opNamespace = null;
   private static String domain1Namespace = null;
+  private static String domain3Namespace = null;
   private static String domainUid1 = "domain1";
+  private static String domainUid3 = "domain3";
   private static String adminServerName = "admin-server";
-  private static String managedServerPrefix = domainUid1 + "-managed-server";
+  private static int adminServerPort = 7001;
+  
   private static LoggingFacade logger = null;
   private static String hostHeader;
   private static Map<String, String> headers = null;
   private static String hostAndPort = null;
+  private static String localAddress;
 
   private static String javaOptions = "-Dweblogic.Debug.DebugNaming=true "
       + "-Dweblogic.Debug.DebugJTANaming=true "
@@ -125,8 +143,11 @@ class ItOnPremCrossDomainTransaction {
       + "-Dweblogic.rjvm.allowUnknownHost=true  "
       + "-Dweblogic.security.remoteAnonymousRMIT3Enabled=true";
   private static Path wlstScript;
+  private static Path createDomainScript;
   private static Path domainHome;
   private static Path mwHome;
+  private static String domainUT;
+  private static String domainNSUT;
 
   /**
    * Install Operator.
@@ -134,7 +155,7 @@ class ItOnPremCrossDomainTransaction {
    * @param namespaces list of namespaces
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces)
+  public static void initAll(@Namespaces(3) List<String> namespaces)
       throws UnknownHostException, IOException, InterruptedException {
     logger = getLogger();
 
@@ -146,34 +167,33 @@ class ItOnPremCrossDomainTransaction {
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domain1Namespace = namespaces.get(1);
+    
+    logger.info("Creating unique namespace for Domain");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    domain3Namespace = namespaces.get(2);
+    
     //install traefil for on prem domain
     onpremIngressClass = installTraefikForPremDomain();
-
-    // Now that we got the namespaces for both the domains, we need to update the model properties
-    // file with the namespaces. For a cross-domain transaction to work, we need to have the externalDNSName
-    // set in the config file. Cannot set this after the domain is up since a server restart is
-    // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
-    // property file
-    updatePropertyFiles();
-    createOnPremDomain();
-    createOnPremDomainRoutingRules();
-    modifyDNS();
     
-
+    //add DNS entries in the local machine
+    localAddress = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
+    modifyDNS();
+    logger.info("installing WebLogic Deploy Tool");
+    downloadAndInstallWDT();
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domain1Namespace);
-    createK8sDomain();
+    installAndVerifyOperator(opNamespace, domain1Namespace, domain3Namespace);    
   }
   
   /**
    * Stop on premise domain.
    */
-  @AfterAll
-  public static void stopOnPremDomain() throws UnknownHostException {
+  @AfterEach
+  public void stopOnPremDomain() throws UnknownHostException, InterruptedException {
     shutdownServers(List.of(wlstScript.toString(),
         Path.of(RESOURCE_DIR, "onpremcrtx").toString() + "/shutdown.py",
-        getExternalDNSName()),
+        localAddress),
         Path.of(domainHome.toString(), "wlst.log"));
+    shutdownDomain(domainUT, domainNSUT);
   }
   
   /**
@@ -188,8 +208,43 @@ class ItOnPremCrossDomainTransaction {
    */
   @Test
   @DisplayName("Check cross domain transcated MDB communication ")
-  void testCrossDomainTranscatedMDB() throws IOException, InterruptedException {
+  void testCrossDomainWithExternalJMSProvider() throws IOException, InterruptedException {
+    createOnPremDomainJMSProvider();
+    //start on prem domain
+    startServers(domainHome);
+    
+    logger.info("creating routing rules for on prem domain to talk to JMS client in K8S cluster");
+    Path srcRoutingFile = Path.of(RESOURCE_DIR, "onpremcrtx", ONPREM_DOMAIN_ROUTING);
+    String content = new String(Files.readAllBytes(srcRoutingFile), StandardCharsets.UTF_8);
+    Path ingressRoutingFile = File.createTempFile("ingressRoutingFile", ".yaml").toPath();
+    Files.write(ingressRoutingFile,
+        content.replaceAll("NAMESPACE", domain1Namespace)
+            .replaceAll("traefik-onprem", onpremIngressClass)
+            .getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+    execK8SCLI(ingressRoutingFile);    
+    
+    String jmsProvider = "t3://" + localAddress + ":8002," + localAddress + ":8003";
+    applicationsList = buildApplications(jmsProvider, null);
 
+    // build the model file list for domain1
+    final List<String> modelFilesListDomain1 = Arrays.asList(
+        RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_DOMAIN1,
+        RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_JMS);
+    //create model property file list
+    Path propFile = File.createTempFile("k8s-jms-client", ".props").toPath();
+    Files.writeString(propFile,
+        """
+        ADMIN_USERNAME=weblogic
+        ADMIN_PASSWORD=welcome1
+        DOMAIN_NAME=domain1
+        CALCULATED_LISTENPORTS=false
+        NAMESPACE=""" + domain1Namespace,
+        StandardOpenOption.TRUNCATE_EXISTING);
+    List<String> modelPropList = Collections.singletonList(propFile.toString());    
+    createK8sDomain(domainUid1, domain1Namespace, modelFilesListDomain1, modelPropList, applicationsList);
+    domainUT = domainUid1;
+    domainNSUT = domain1Namespace;
+    
     // No extra header info
     String curlHostHeader = "";
     if (TestConstants.KIND_CLUSTER
@@ -212,7 +267,7 @@ class ItOnPremCrossDomainTransaction {
           + "cf=jms.ClusterConnectionFactory&"
           + "action=send&"
           + "dest=jms/testCdtUniformTopic",
-          hostAndPort, getExternalDNSName(), port);
+          hostAndPort, localAddress, port);
       logger.info(url);
 
       HttpResponse<String> response;
@@ -222,13 +277,104 @@ class ItOnPremCrossDomainTransaction {
           "Can not send message to remote Distributed Topic");
     }
 
-    assertTrue(checkLocalQueue(),
+    assertTrue(checkLocalQueue(hostAndPort),
         "Expected number of message not found in Accounting Queue");
   }
 
-  private boolean checkLocalQueue() {
+  /**
+   * This test verifies cross-domain MessageDrivenBean communication A transacted MDB on Domain D1 listen on a
+   * replicated Distributed Topic on Domain D2. The MDB is deployed to a on premise domain D1 with
+   * MessagesDistributionMode set to One-Copy-Per-Server. The OnMessage() routine sends a message to local queue on
+   * receiving the message. An application servlet is deployed to Administration Server on D1 which send/receive message
+   * from a JMS destination based on a given URL. (a) app servlet send message to Distributed Topic on D2 (b) mdb puts a
+   * message into local Queue for each received message (c) make sure local Queue gets 2X times messages sent to
+   * Distributed Topic Since the MessagesDistributionMode is set to One-Copy-Per-Server and targeted to a cluster of two
+   * servers, onMessage() will be triggered for both instance of MDB for a message sent to Distributed Topic. Use WLSt
+   * script to get the messages count on the local queue populated by the MDB and verify it matches 20.
+   */
+  @Test
+  @DisplayName("Check cross domain transcated MDB communication ")
+  void testCrossDomainWithK8SJMSProvider() throws IOException, InterruptedException {
+    
+    // build the model file list for k8s domain
+    final List<String> k8sDomainModelFilesList = Arrays.asList(
+        RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_DOMAIN3,
+        RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_JMS2);
+
+    //create model property file list
+    Path propFile = File.createTempFile("k8s-jms-provider", ".props").toPath();
+    Files.writeString(propFile,
+        """
+        ADMIN_USERNAME=weblogic
+        ADMIN_PASSWORD=welcome1
+        DOMAIN_NAME=domain3
+        CALCULATED_LISTENPORTS=false
+        PUBLIC_LB_ADDRESS=""" + localAddress
+        + "\nPUBLIC_LB_PORT=" + IT_ONPREMCRDOMAINTX_CLUSTER_HOSTPORT,
+        StandardOpenOption.TRUNCATE_EXISTING);
+    List<String> modelPropList = Collections.singletonList(propFile.toString());
+    
+    logger.info("creating k8s domain hosting JMS provider in cluster with mode "
+        + "files {0} and property files {1}", k8sDomainModelFilesList, modelPropList);
+    createK8sDomain(domainUid3, domain3Namespace, k8sDomainModelFilesList, modelPropList, null);
+    domainUT = domainUid3;
+    domainNSUT = domain3Namespace;
+    
+    logger.info("creating node port service for K8S domain cluster-1");
+    Path nodePortServiceFile = File.createTempFile(domainUid3, ".yaml").toPath();
+    FileUtils.copy(Path.of(RESOURCE_DIR, "/onpremcrtx/", K8S_DOMAIN3_NODEPORT_ROUTING), nodePortServiceFile);
+    
+    FileUtils.replaceStringInFile(nodePortServiceFile.toString(),
+        "NAMESPACE", domain3Namespace);
+    FileUtils.replaceStringInFile(nodePortServiceFile.toString(),
+        "DOMAIN_NAME", domainUid3);
+    FileUtils.replaceStringInFile(nodePortServiceFile.toString(),
+        "NODE_PORT", String.valueOf(IT_ONPREMCRDOMAINTX_CLUSTER_NODEPORT));
+    //create routing rules for on prem domain to communicate to K8S JMS provider
+    execK8SCLI(nodePortServiceFile);
+    
+    String jmsprovider = "t3://" + localAddress + ":" + IT_ONPREMCRDOMAINTX_CLUSTER_HOSTPORT;    
+    logger.info("creating on prem domain, JMS clients for JMS providers running in K8S domain");
+    createOnPremDomainJMSClient(jmsprovider);
+    
+    logger.info("starting on prem domain");
+    startServers(domainHome);
+
+    String hostAndPort = localAddress + ":" + adminServerPort;
+    assertTrue(checkAppIsActive(hostAndPort, "", "mdbtopic", "cluster-1",
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        "MDB application can not be activated on domain1/cluster");
+
+    logger.info("MDB application is activated on domain1/cluster");
+
     String url = String.format("http://%s/jmsservlet/jmstest?"
-        + "url=t3://localhost:7001&"
+        + "url=t3://%s:%s&"
+        + "cf=jms.ClusterConnectionFactory&"
+        + "action=send&"
+        + "dest=jms/testCdtUniformTopic",
+        hostAndPort, localAddress, IT_ONPREMCRDOMAINTX_CLUSTER_HOSTPORT);
+    logger.info(url);
+    
+    HttpResponse<String> response1;
+    response1 = OracleHttpClient.get(url, null, true);
+    assertEquals(200, response1.statusCode(), "Didn't get the 200 HTTP status");
+    assertTrue(response1.body().contains("Sent (10) message"),
+        "Can not send message to remote Distributed Topic");    
+    
+    testUntil(() -> {
+      executeWlst(List.of(wlstScript.toString(),
+          Path.of(RESOURCE_DIR, "onpremcrtx").toString() + "/getmessages.py", localAddress),
+          Path.of(domainHome.toString(), "accountingQueueMessages.log"), true);
+      String content = Files.readString(Path.of(domainHome.toString(), "accountingQueueMessages.log"));
+      logger.info(content);
+      return content.contains("messagesgot=20");
+    }, logger, "checking for messages in testAccountingQueue to be equal to 20"); 
+  }
+
+  
+  private boolean checkLocalQueue(String hostAndPort) {
+    String url = String.format("http://%s/jmsservlet/jmstest?"
+        + "url=t3://localhost:" + adminServerPort + "&"
         + "action=receive&dest=jms.testAccountingQueue",
         hostAndPort);
 
@@ -250,69 +396,41 @@ class ItOnPremCrossDomainTransaction {
     return true;
   }
 
+  private static void createK8sDomain(String domainUid, String namespace,
+      List<String> modelFilesList, List<String> modelPropsList, List<String> applicationsList)
+      throws UnknownHostException, IOException {
 
-  private static void updatePropertyFiles() {
-    //create a temporary directory to copy and update the properties file
-    Path target = Path.of(PROPS_TEMP_DIR);
-    Path source1 = Path.of(RESOURCE_DIR, "onpremcrtx", WDT_MODEL_DOMAIN1_PROPS);
-    Path source2 = Path.of(RESOURCE_DIR, "onpremcrtx", WDT_MODEL_DOMAIN2_PROPS);
-    Path source3 = Path.of(RESOURCE_DIR, "onpremcrtx", ONPREM_DOMAIN_ROUTING);
-    Path domain1Properties = Path.of(PROPS_TEMP_DIR, WDT_MODEL_DOMAIN1_PROPS);
-    Path domain2Properties = Path.of(PROPS_TEMP_DIR, WDT_MODEL_DOMAIN2_PROPS);
-    Path onPremDomainRouting = Path.of(PROPS_TEMP_DIR, ONPREM_DOMAIN_ROUTING);
-    logger.info("Copy the properties file to the above area so that we can add namespace property");
-    assertDoesNotThrow(() -> {
-      Files.createDirectories(target);
-      Files.copy(source1, domain1Properties, StandardCopyOption.REPLACE_EXISTING);
-      Files.copy(source2, domain2Properties, StandardCopyOption.REPLACE_EXISTING);
-      //Files.copy(source3, onPremDomainRouting, StandardCopyOption.REPLACE_EXISTING);
-      Files.writeString(domain1Properties, "\nNAMESPACE=" + domain1Namespace, StandardOpenOption.APPEND);
-      Files.writeString(domain2Properties, "\nDNS_NAME=" + getExternalDNSName(), StandardOpenOption.APPEND);
-      String content = new String(Files.readAllBytes(source3), StandardCharsets.UTF_8);
-      Files.write(onPremDomainRouting,
-          content.replaceAll("NAMESPACE", domain1Namespace)
-              .replaceAll("traefik-onprem", onpremIngressClass)
-              .getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
-    });
-  }
-
-  private static void createK8sDomain() throws UnknownHostException, IOException {
-
-    List<String> applicationsList = buildApplications();
-    // create admin credential secret for domain1
-    logger.info("Create admin credential secret for domain1");
-    String domain1AdminSecretName = domainUid1 + "-weblogic-credentials";
+    // create admin credential secret for domain
+    logger.info("Create admin credential secret for domain {0}", domainUid);
+    String domain1AdminSecretName = domainUid + "-weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        domain1AdminSecretName, domain1Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid1));
+        domain1AdminSecretName, namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid));
 
-    // build the model file list for domain1
-    final List<String> modelFilesListDomain1 = Arrays.asList(
-        RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_DOMAIN1,
-        RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_JMS);
-
-    logger.info("Creating image with model file and verify");
-    String domain1Image = createImageAndVerify(WDT_IMAGE_NAME1, modelFilesListDomain1,
-        applicationsList, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
-    logger.info("Created {0} image", domain1Image);
+    logger.info("Creating image with model files {0} and property files {1}",
+        modelFilesList, modelPropsList);
+    String domainCreationImage = createImageAndVerify(
+        WDT_IMAGE_NAME1, modelFilesList, applicationsList,
+        modelPropsList, WEBLOGIC_IMAGE_NAME,
+        WEBLOGIC_IMAGE_TAG, WLS, false, domainUid, false);
+    logger.info("Created {0} image", domainCreationImage);
 
     // repo login and push image to registry if necessary
-    imageRepoLoginAndPushImageToRegistry(domain1Image);
+    imageRepoLoginAndPushImageToRegistry(domainCreationImage);
 
     //create domain1
-    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
-    
+    createDomain(domainUid, namespace, domain1AdminSecretName, domainCreationImage);
+
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      hostHeader = createIngressHostRouting(domain1Namespace, domainUid1, adminServerName, 7001);
-      hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress())
-          + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+      hostHeader = createIngressHostRouting(namespace, domainUid, adminServerName, adminServerPort);
+      hostAndPort = localAddress + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
       headers = new HashMap<>();
       headers.put("host", hostHeader);
     }
   }
 
-  private static List<String> buildApplications() {
+  private static List<String> buildApplications(String jmsProvider, String localServerAddress) throws IOException {
     //build jmsservlet client application archive
     Path targetDir;
     Path distDir;
@@ -331,17 +449,23 @@ class ItOnPremCrossDomainTransaction {
     //build the MDB application
     Path mdbSrcDir = Paths.get(APP_DIR, "mdbtopic");
     Path mdbDestDir = Paths.get(PROPS_TEMP_DIR, "mdbtopic");
+    Files.createDirectories(Path.of(PROPS_TEMP_DIR));
     assertDoesNotThrow(() -> copyFolder(
         mdbSrcDir.toString(), mdbDestDir.toString()),
         "Could not copy mdbtopic application directory");
     Path template = Paths.get(PROPS_TEMP_DIR,
         "mdbtopic/src/application/MdbTopic.java");
-    // Add the external ip addresses of the on-premise cluster instances
-    // so that it can communicate with remote destination on domain2
+    // replace the JMS provider address to K8S or on prem domain depending on the use case
     assertDoesNotThrow(() -> replaceStringInFile(
         template.toString(), "t3://domain2-cluster-cluster-1.domain2-namespace:8001",
-        "t3://" + getExternalDNSName() + ":8002," + getExternalDNSName() + ":8003"),
+        jmsProvider),
         "Could not modify the provider url in MDB Template file");
+    // this is needed when JMS provider is in K8S
+    if (null != localServerAddress) {
+      assertDoesNotThrow(() -> replaceStringInFile(template.toString(), "domain1-admin-server",
+          localServerAddress),
+          "Could not modify the local server url in MDB Template file");
+    }
     //build application archive for MDB
     targetDir = Paths.get(WORK_DIR,
         ItOnPremCrossDomainTransaction.class.getName() + "/mdbtopic");
@@ -445,34 +569,96 @@ class ItOnPremCrossDomainTransaction {
         + "for %s in namespace %s", domainUid, domNamespace));
   }
 
-  private static void createOnPremDomain() throws IOException, InterruptedException {
-    logger.info("creating on premise domain");
-    Path createDomainScript = downloadAndInstallWDT();
-    mwHome = Path.of(RESULTS_ROOT, "mwhome");
-    String modelFileList = RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_DOMAIN2 + ","
+  private static void createOnPremDomainJMSProvider() throws IOException, InterruptedException {
+    String onPremDomainName = "onpremJMSProdomain";
+    logger.info("creating on prem domain model list");
+    String modelFileList
+        = RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_DOMAIN2 + ","
         + RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_JMS2;
-    domainHome = Path.of(RESULTS_ROOT, "mwhome", "domains", "domain2");
+
+    //create model property file list
+    Path propFile = File.createTempFile("ext-jms-provider", ".props").toPath();
+    Files.writeString(propFile,
+        """
+        ADMIN_USERNAME=weblogic
+        ADMIN_PASSWORD=welcome1
+        DOMAIN_NAME=domain2
+        DNS_NAME=""" + localAddress,
+        StandardOpenOption.TRUNCATE_EXISTING);   
+    
+    mwHome = Path.of(RESULTS_ROOT, "mwhome");
+    domainHome = Path.of(RESULTS_ROOT, "mwhome", "domains", onPremDomainName);
     logger.info("creating on premise domain home {0}", domainHome);
     Files.createDirectories(domainHome);
-    Path modelProperties = Path.of(PROPS_TEMP_DIR, WDT_MODEL_DOMAIN2_PROPS);
+    
+    logger.info("creating on premise {0}", onPremDomainName);
     List<String> command = List.of(
         createDomainScript.toString(),
         "-oracle_home", mwHome.toString(),
         "-domain_type", "WLS",
         "-domain_home", domainHome.toString(),
         "-model_file", modelFileList,
-        "-variable_file", modelProperties.toString()
+        "-variable_file", propFile.toString()
     );
     runWDTandCreateDomain(command.stream().collect(Collectors.joining(" ")));
     createBootProperties(domainHome.toString());
-    startServers(domainHome);
     wlstScript = Path.of(mwHome.toString(), "oracle_common", "common", "bin", "wlst.sh");
   }
+  
+  private static void createOnPremDomainJMSClient(String jmsprovider) throws IOException, InterruptedException {
+    String onPremDomainName = "onpremJMSClidomain";
+    
+    logger.info("build the applications to be deployed in onprem domain "
+        + "with JMS provider pointing to K8S domain and JMS client as local on prem domain");    
+    applicationsList = buildApplications(jmsprovider, InetAddress.getLocalHost().getHostAddress());
+    Path buildAppArchiveZip = buildAppArchiveZip(applicationsList);
+    
+    logger.info("creating model property file for on prem domain {0}", onPremDomainName);
+    Path propFile = File.createTempFile(onPremDomainName, ".props").toPath();    
+    Files.writeString(propFile,
+        "DOMAIN_NAME=" + onPremDomainName + "\n"
+        + "ADMIN_USERNAME=weblogic\n"
+        + "CALCULATED_LISTENPORTS=true\n"
+        + "ADMIN_PASSWORD=welcome1\n", StandardOpenOption.TRUNCATE_EXISTING);
+    
+    logger.info("creating model file for on prem domain {0}", onPremDomainName);
+    Path modelFile = File.createTempFile(onPremDomainName, ".yaml").toPath();
+    FileUtils.copy(Path.of(RESOURCE_DIR, "/onpremcrtx/", WDT_MODEL_FILE_DOMAIN1), modelFile);
+    //modify the model file to add proper external dns entries
+    FileUtils.replaceStringInFile(modelFile.toString(),
+        "@@PROP:DOMAIN_NAME@@-admin-server\\.@@PROP:NAMESPACE@@", localAddress);
+    FileUtils.replaceStringInFile(modelFile.toString(),
+        "@@PROP:DOMAIN_NAME@@-managed-server\\$\\{id\\}\\.@@PROP:NAMESPACE@@", localAddress);
+    
+    String modelFileList = modelFile.toString() + "," 
+        + RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_JMS;
+    
+    logger.info("creating on premise domain {0} with model files {1} and property file {2}", 
+        onPremDomainName, modelFileList, propFile);
+    mwHome = Path.of(RESULTS_ROOT, "mwhome");    
+    domainHome = Path.of(RESULTS_ROOT, "mwhome", "domains", onPremDomainName);
+    logger.info("creating on premise domain home {0}", domainHome);
+    Files.createDirectories(domainHome);       
+    
+    //call WDT create domain to create actual domain
+    List<String> command = List.of(
+        createDomainScript.toString(),
+        "-oracle_home", mwHome.toString(),
+        "-domain_type", "WLS",
+        "-domain_home", domainHome.toString(),
+        "-archive_file", buildAppArchiveZip.toString(),
+        "-model_file", modelFileList,
+        "-variable_file", propFile.toString()
+    );
+    runWDTandCreateDomain(command.stream().collect(Collectors.joining(" ")));
+    createBootProperties(domainHome.toString());
+    wlstScript = Path.of(mwHome.toString(), "oracle_common", "common", "bin", "wlst.sh");
+  }  
 
-  private static Path downloadAndInstallWDT() throws IOException {
+  private static void downloadAndInstallWDT() throws IOException {
     String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
-    Path createDomainScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "createDomain.sh");
+    createDomainScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "createDomain.sh");
     if (!Files.exists(destLocation) && !Files.exists(createDomainScript)) {
       logger.info("Downloading WDT to {0}", destLocation);
       Files.createDirectories(destLocation.getParent());
@@ -480,9 +666,7 @@ class ItOnPremCrossDomainTransaction {
       String cmd = "cd " + destLocation.getParent() + ";unzip " + destLocation;
       assertTrue(Command.withParams(new CommandParams().command(cmd)).execute(), "unzip command failed");
     }
-
     assertTrue(Files.exists(createDomainScript), "could not find createDomain.sh script");
-    return createDomainScript;
   }
 
   private static void runWDTandCreateDomain(String command) {
@@ -490,14 +674,11 @@ class ItOnPremCrossDomainTransaction {
     assertTrue(Command.withParams(new CommandParams().command(command)).execute(), "create domain failed");
   }
   
-  private static String getExternalDNSName() throws UnknownHostException {
-    return InetAddress.getLocalHost().getHostAddress();
-  }
-  
   private static void createBootProperties(String domainHome) throws IOException {    
     List<String> servers = List.of("admin-server", "managed-server1", "managed-server2");
     for (String server : servers) {
       Path securityDir = Files.createDirectories(Path.of(domainHome, "servers", server, "security"));
+      Files.deleteIfExists(Path.of(securityDir.toString(), "boot.properties"));
       Path bootFile = Files.createFile(Path.of(securityDir.toString(), "boot.properties"));
       logger.info("creating boot.properties {0}", bootFile);
       Files.writeString(bootFile, "username=weblogic\n", StandardOpenOption.TRUNCATE_EXISTING);
@@ -512,11 +693,11 @@ class ItOnPremCrossDomainTransaction {
     TimeUnit.SECONDS.sleep(15);
     startWebLogicServer(List.of(domainHome.toString() + "/bin/startManagedWebLogic.sh",
         "managed-server1",
-        "t3://" + getExternalDNSName() + ":7001"),
+        "t3://" + localAddress + ":" + adminServerPort),
         Path.of(domainHome.toString(), "managed-server1.log"));
     startWebLogicServer(List.of(domainHome.toString() + "/bin/startManagedWebLogic.sh",
         "managed-server2",
-        "t3://" + getExternalDNSName() + ":7001"),
+        "t3://" + localAddress + ":" + adminServerPort),
         Path.of(domainHome.toString(), "managed-server2.log"));
     TimeUnit.SECONDS.sleep(15);
   }
@@ -543,31 +724,18 @@ class ItOnPremCrossDomainTransaction {
     serverThread.start();
   }
 
-  private static void shutdownServers(List<String> command, Path logFile) {
-    Thread serverThread = new Thread(() -> {
-      ProcessBuilder processBuilder = new ProcessBuilder(command);
-      Map<String, String> combinedEnvMap = new HashMap<>();
-      combinedEnvMap.putAll(System.getenv());
-      processBuilder.environment().putAll(combinedEnvMap);
-      processBuilder.redirectError(new File(logFile.toString()));
-      processBuilder.redirectOutput(new File(logFile.toString()));
-      try {
-        logger.info("shutting down servers using wlst " + String.join(" ", command));
-        Process process = processBuilder.start();
-        process.waitFor(); // This will wait for the process to complete in the thread
-        logger.info("Servers are shut down.");
-      } catch (IOException | InterruptedException e) {
-        logger.info(e.getLocalizedMessage());
-      }
-    });
-    serverThread.start();
+  private static void shutdownServers(List<String> command, Path logFile) throws InterruptedException {
+    logger.info("shutting down servers using wlst " + String.join(" ", command));
+    executeWlst(command, logFile, false);
   }
 
   private static void modifyDNS() throws UnknownHostException, IOException, InterruptedException {
-    String dnsEntries = getExternalDNSName()
+    String managedServerPrefix = domainUid1 + "-managed-server";
+    String dnsEntries = localAddress
         + " " + managedServerPrefix + "1." + domain1Namespace
         + " " + managedServerPrefix + "2." + domain1Namespace
-        + " " + domainUid1 + "-" + adminServerName + "." + domain1Namespace;
+        + " " + domainUid1 + "-" + adminServerName + "." + domain1Namespace
+        + " " + domainUid3 + "-managed-server1 " + domainUid3 + "-managed-server2";
     String command = "echo \"" + dnsEntries + "\" | sudo tee -a /etc/hosts > /dev/null";
     logger.info("adding DNS entries with command {0}", command);
     ExecResult result;
@@ -577,8 +745,8 @@ class ItOnPremCrossDomainTransaction {
     assertEquals(0, result.exitValue(), "adding DNS entries for on prem domain failed");
   }
 
-  private static void createOnPremDomainRoutingRules() throws IOException, InterruptedException {
-    String command = KUBERNETES_CLI + " apply -f " + Path.of(PROPS_TEMP_DIR, ONPREM_DOMAIN_ROUTING);
+  private static void execK8SCLI(Path routingFile) throws IOException, InterruptedException {    
+    String command = KUBERNETES_CLI + " apply -f " + routingFile;
     logger.info("creating ingress routing rules for onprem domain \n{0}", command);
     ExecResult result;
     result = exec(command, true);
@@ -593,4 +761,49 @@ class ItOnPremCrossDomainTransaction {
         IT_ONPREMCRDOMAINTX_INGRESS_HTTP_NODEPORT, 0).getIngressClassName();
   }
 
+  private static Path buildAppArchiveZip(List<String> archiveAppsList) {
+    AppParams appParams = defaultAppParams()
+        .appArchiveDir(ARCHIVE_DIR + generateRandomString()).srcDirList(archiveAppsList);
+    assertTrue(archiveApp(appParams));
+    return Path.of(appParams.appArchiveDir(), appParams.appName() + ".zip");
+  }
+
+  public static String generateRandomString() {
+    int length = 10; // Desired length of the random string
+    String characterSet = Charset.forName("US-ASCII").toString();
+    Random random = new Random();
+    StringBuilder sb = new StringBuilder(length);
+
+    for (int i = 0; i < length; i++) {
+      sb.append(characterSet.charAt(random.nextInt(characterSet.length())));
+    }
+    return sb.toString();
+  }
+  
+  private static void executeWlst(List<String> command, Path logFile, boolean wait) throws InterruptedException {
+    Thread serverThread = new Thread(() -> {
+      ProcessBuilder processBuilder = new ProcessBuilder(command);
+      Map<String, String> combinedEnvMap = new HashMap<>();
+      combinedEnvMap.putAll(System.getenv());
+      processBuilder.environment().putAll(combinedEnvMap);
+      processBuilder.redirectError(new File(logFile.toString()));
+      processBuilder.redirectOutput(new File(logFile.toString()));
+      try {
+        logger.info("running wlst script" + String.join(" ", command));
+        Process process = processBuilder.start();
+        process.waitFor(); // This will wait for the process to complete in the thread
+        logger.info("finished running wlst script.");
+      } catch (IOException | InterruptedException e) {
+        logger.info(e.getLocalizedMessage());
+      }
+    });
+    serverThread.start();
+    if (wait) {
+      while (serverThread.isAlive()) {
+        logger.info("waiting for the wlst script to finish executing");
+        TimeUnit.SECONDS.sleep(5);
+      }
+    }
+  }
+  
 }

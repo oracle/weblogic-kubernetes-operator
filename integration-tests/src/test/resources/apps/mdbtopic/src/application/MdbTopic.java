@@ -79,7 +79,9 @@ import weblogic.management.runtime.ServerRuntimeMBean;
     
     ConnectionFactory 
        cf=(ConnectionFactory)cxt.lookup("weblogic.jms.ConnectionFactory");
+    System.out.println("<TMDB> weblogic.jms.ConnectionFactory lookup successful in local domain");
     Destination rq=(Destination)cxt.lookup("jms.testAccountingQueue");
+    System.out.println("<TMDB> jms.testAccountingQueue lookup successful in local domain");
     JMSContext context = cf.createContext();
     tmsg = context.createTextMessage("(On Server) " + serverRuntime.getName());
     context.createProducer().send(rq,tmsg);

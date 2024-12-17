@@ -20,23 +20,19 @@ topology:
   Server:
     "admin-server":
       ListenPort: 7001
-      ExternalDNSName: '@@PROP:DOMAIN_NAME@@-admin-server.@@PROP:NAMESPACE@@'
-
   ServerTemplate:
     "cluster-1-template":
       Cluster: "cluster-1"
-      ListenPort : 8001
-      ExternalDNSName: '@@PROP:DOMAIN_NAME@@-managed-server${id}.@@PROP:NAMESPACE@@'
-      DataSource:
-        RmiJDBCSecurity: Compatibility
-
-appDeployments:
-  Application:
-    jmservlet:
-      SourcePath: "wlsdeploy/applications/jmsservlet.war"
-      ModuleType: war
-      Target: 'admin-server'
-    mdbtopic:
-      SourcePath: "wlsdeploy/applications/mdbtopic.jar"
-      ModuleType: jar
-      Target: 'cluster-1'
+      ListenPort : 9001
+      NetworkAccessPoint:
+        MyT3Channel:
+          Protocol: 't3'
+          ListenPort: 7999
+          PublicPort: '@@PROP:PUBLIC_LB_PORT@@'
+          PublicAddress: '@@PROP:PUBLIC_LB_ADDRESS@@'
+          HttpEnabledForThisProtocol: true
+          TunnelingEnabled: true
+          OutboundEnabled: false
+          Enabled: true
+          TwoWaySSLEnabled: false
+          ClientCertificateEnforced: false
