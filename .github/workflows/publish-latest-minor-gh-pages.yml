@@ -47,7 +47,7 @@ jobs:
           
           cd $GITHUB_WORKSPACE/branch/documentation
           echo "Documentation branch is $GITHUB_REF_NAME..."
-          latest_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | tail -1 | cut -c12-)
+          latest_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | cut -c12- | sort --version-sort | tail -1)
           echo "Latest tag is $latest_tag..."
           echo $latest_tag >| $GITHUB_WORKSPACE/branch/documentation/site/layouts/shortcodes/latestVersion.html
           cat $GITHUB_WORKSPACE/branch/documentation/site/layouts/shortcodes/latestVersion.html
