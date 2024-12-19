@@ -209,14 +209,15 @@ public class ImageUtils {
   }
 
   /**
-   * Create an image with modelfile, application archive and property file. If the property file
-   * is needed to be updated with a property that has been created by the framework, it is copied
-   * onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
+   * Create an image with modelfile, application archive and property file.If the property file
+ is needed to be updated with a property that has been created by the framework, it is copied
+ onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
    * @param imageNameBase - base image name used in local or to construct image name in repository
    * @param wdtModelList - model file used to build the image
    * @param appSrcDirList - application to be added to the image
    * @param modelPropFile - property file to be used with the model file above
    * @param altModelDir - directory where the property file is found if not in the default MODEL_DIR
+   * @param domainUid domain uid
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
@@ -224,13 +225,13 @@ public class ImageUtils {
                                             List<String> appSrcDirList,
                                             String modelPropFile,
                                             String altModelDir,
-                                            String domainHome) {
+                                            String domainUid) {
 
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
         imageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
-        WEBLOGIC_IMAGE_TAG, WLS, false, domainHome, false);
+        WEBLOGIC_IMAGE_TAG, WLS, false, domainUid, false);
   }
 
   /**

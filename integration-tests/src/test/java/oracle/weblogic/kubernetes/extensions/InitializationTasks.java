@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.INSTALL_WEBLOGIC;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
@@ -86,6 +87,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SHIPHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
@@ -107,6 +109,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -328,6 +331,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         if (!OKD && !CRIO) {
           logger.info("Installing istio before any test suites are run");
           installIstio();
+        }
+        if (INSTALL_WEBLOGIC && !OKD && !CRIO && !ARM && !OKE_CLUSTER) {
+          installOnPremWebLogic();
         }
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
@@ -702,5 +708,17 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     }
     assertDoesNotThrow(() -> installDBOperator(), "Failed to install database operator");
   }
+  
+  private void installOnPremWebLogic() {
+    Path installScript = Paths.get(RESOURCE_DIR, "bash-scripts", "install-wls.sh");
+    String command
+        = String.format("%s %s %s %s", "/bin/bash", installScript, RESULTS_ROOT, WEBLOGIC_SHIPHOME);
+    getLogger().info("WebLogic installation command {0}", command);
+    assertTrue(() -> Command.withParams(
+        defaultCommandParams()
+            .command(command)
+            .redirect(false))
+        .execute());
+  }  
 
 }

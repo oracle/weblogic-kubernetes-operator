@@ -1,0 +1,38 @@
+# Copyright (c) 2024, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+  AdminUserName: '@@PROP:ADMIN_USERNAME@@'
+  AdminPassword: '@@PROP:ADMIN_PASSWORD@@'
+  ServerStartMode: 'prod'
+
+topology:
+  Name: '@@PROP:DOMAIN_NAME@@'
+  AdminServerName: "admin-server"
+  Cluster:
+    "cluster-1":
+      DynamicServers:
+        ServerTemplate:  "cluster-1-template"
+        ServerNamePrefix: "managed-server"
+        DynamicClusterSize: 2
+        MaxDynamicClusterSize: 2
+        CalculatedListenPorts: '@@PROP:CALCULATED_LISTENPORTS@@'
+  Server:
+    "admin-server":
+      ListenPort: 7001
+  ServerTemplate:
+    "cluster-1-template":
+      Cluster: "cluster-1"
+      ListenPort : 9001
+      NetworkAccessPoint:
+        MyT3Channel:
+          Protocol: 't3'
+          ListenPort: 7999
+          PublicPort: '@@PROP:PUBLIC_LB_PORT@@'
+          PublicAddress: '@@PROP:PUBLIC_LB_ADDRESS@@'
+          HttpEnabledForThisProtocol: true
+          TunnelingEnabled: true
+          OutboundEnabled: false
+          Enabled: true
+          TwoWaySSLEnabled: false
+          ClientCertificateEnforced: false
