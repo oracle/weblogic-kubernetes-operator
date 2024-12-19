@@ -583,7 +583,9 @@ public class Kubernetes {
       labelSelector = String.format("%s in (%s)", key, value);
       logger.info(labelSelector);
     }
-    V1ServiceList v1ServiceList
+    V1ServiceList v1ServiceList = null;
+    try {
+      v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
         Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
         null, // continue to query when there is more results to return.
@@ -596,7 +598,20 @@ public class Kubernetes {
         SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
-    );
+      );
+    } catch (ApiException aex) {
+      logger.info("Failed to check whether service {0} in namespace {1} exists! Caught ApiException!",
+          serviceName, namespace);
+      logger.info("Printing aex.getCode:");
+      aex.getCode();
+      logger.info("Printing aex.getResponseBody:");
+      aex.getResponseBody();
+      logger.info("Printing aex.printStackTrace:");
+      aex.printStackTrace();
+
+      return null;
+    }
+
     for (V1Service service : v1ServiceList.getItems()) {
       if (service.getMetadata().getName().equals(serviceName.trim())
           && service.getMetadata().getNamespace().equals(namespace.trim())) {
@@ -612,6 +627,7 @@ public class Kubernetes {
         return service;
       }
     }
+
     return null;
   }
 
