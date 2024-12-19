@@ -4,11 +4,15 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -16,6 +20,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
@@ -125,6 +130,64 @@ public class OracleHttpClient {
     return get(url, headers, false);
   }
 
+  /**
+   * Http GET request to download a file and save it in the give destination directory.
+   *
+   * @param url URL of the file to download
+   * @param destLocation detination directory where to save the downloaded file
+   * @param proxyHost optional proxy host, can be null for no proxy
+   * @param proxyPort optional proxy port, can be null for no proxy
+   * @param maxRetries the maximum number of retries before it can return false
+   * @return true if download succeeds otherwide false
+   */
+  public static boolean downloadFile(String url, String destLocation, String proxyHost,
+      String proxyPort, int maxRetries) {
+    LoggingFacade logger = getLogger();
+
+    // Build HttpClient with optional proxy and retry policy
+    HttpClient.Builder clientBuilder = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_2)
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .connectTimeout(Duration.ofSeconds(10));
+
+    // Configure proxy if PROXY_HOST and PROXY_PORT are specified
+    if (proxyHost != null && proxyPort != null) {
+      clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyHost, Integer.valueOf(proxyPort))));
+      logger.info("Proxy configured: {0}:{1}", proxyHost, proxyPort);
+    } else {
+      logger.info("No proxy configuration provided.");
+    }
+
+    HttpClient client = clientBuilder.build();
+
+    // Prepare the HttpRequest
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .timeout(Duration.ofMinutes(2))
+        .GET()
+        .build();
+
+    // Attempt to download the file
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        logger.info("Starting download...");
+        if (client.send(request, HttpResponse.BodyHandlers.ofFile(Paths.get(destLocation))).statusCode() != 200) {
+          logger.info("Failed download retrying...");
+          TimeUnit.SECONDS.sleep(10);
+          continue;
+        } else {
+          logger.info("Download completed successfully.");
+          return true;
+        }
+      } catch (HttpTimeoutException e) {
+        logger.severe("Request timed out: {0}", e.getMessage());
+      } catch (IOException | InterruptedException e) {
+        logger.severe("Download failed: {0}", e.getMessage());
+      }
+    }
+    return false;
+  }
+  
   private static final TrustManager MOCK_TRUST_MANAGER = new X509ExtendedTrustManager() {
     @Override
     public java.security.cert.X509Certificate[] getAcceptedIssuers() {

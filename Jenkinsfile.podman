@@ -475,6 +475,10 @@ nodes:
         hostPort: 2224
       - containerPort: 31128
         hostPort: 2228
+      - containerPort: 31132
+        hostPort: 8001
+      - containerPort: 31136
+        hostPort: 2232	
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
@@ -576,6 +580,7 @@ EOF
                             echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
                             echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
+			    echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"

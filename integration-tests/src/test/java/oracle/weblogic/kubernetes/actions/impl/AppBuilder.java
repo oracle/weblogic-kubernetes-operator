@@ -244,6 +244,7 @@ public class AppBuilder {
     List<String> srcFiles  = params.srcDirList();
     String srcFile = srcFiles.get(0);
     String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
+    params.appName(appName);
     String archiveSrcDir = params.appArchiveDir() + "/wlsdeploy/applications";
 
     try {
