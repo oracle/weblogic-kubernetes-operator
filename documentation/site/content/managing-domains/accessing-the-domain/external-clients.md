@@ -493,7 +493,7 @@ with domain1, such as `t3://domain1-managed-server1:8001`, will be sent to the p
 RMI forwarding will ensure that the message will reach WebLogic Server managed-server1 in domain1.
 
 Patch 32408938 is required in each WebLogic Server instance that participates in cross-domain transactions, or that is the routing
-destination of a proxy. The patch is available for WebLogic versions 12.2.1.4.0 (PS4), and 14.1.1.0.0, and is already included in the PSUs for these releases since July 2022.
+destination of a proxy. The patch is available for WebLogic versions 12.2.1.4.0 (PS4), 14.1.1.0.0 and 14.1.2.0.0, and is already included in the PSUs for these releases since July 2022.
 
 ### Configuring WebLogic Server affinity load balancing algorithms
 
