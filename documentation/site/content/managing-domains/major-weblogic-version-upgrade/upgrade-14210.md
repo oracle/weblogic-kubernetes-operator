@@ -26,13 +26,13 @@ Some important secured production mode changes are:
 * Demo SSL certificates have been changed completely from previous releases; there are special considerations when using them.  For more information, see [Using demo SSL certificates in v14.1.2.0.0 or later]({{< relref "/managing-domains/model-in-image/overview#using-demo-ssl-certificates-in-v141200-or-later" >}}).
 
 
-For more information about secured production mode, see the [secured production mode](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/lockd/secure.html#GUID-ADF914EF-0FB6-446E-B6BF-D230D8B0A5B0) documentation.
+For more information about secured production mode, see the [secured production mode](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/14.1.2/secmg/using-secured-production-mode.html#GUID-9ED2EF38-F763-4999-80ED-27A3FBCB9D7D) documentation.
 
 **NOTE**: If the domain is _not_ in production mode, then none of the security changes apply.
 
 ### General upgrade procedures
 
-In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the [Fusion Middleware Upgrade Guide](https://docs.oracle.com/en/middleware/fusion-middleware/12.2.1.4/asmas/planning-upgrade-oracle-fusion-middleware-12c.html#GUID-D9CEE7E2-5062-4086-81C7-79A33A200080).
+In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the [Fusion Middleware Upgrade Guide](https://docs.oracle.com/en/middleware/fusion-middleware/14.1.2/asmas/planning-upgrade-oracle-fusion-middleware-12c.html).
 
 Before the upgrade, you must do the following:
 
