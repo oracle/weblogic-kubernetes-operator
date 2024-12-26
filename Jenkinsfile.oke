@@ -83,14 +83,14 @@ pipeline {
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.30.1'
+               defaultValue: '1.31.1'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
                        //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
                        //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
                        //1.29.1 'ocid1.image.oc1.phx.aaaaaaaa22u45gr3ikxnc6rius2qil2kz5k3e7p476c4usr6qnvql4l5dxea'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaahgrs3zcwrvutjtni557ttrt62uggseijsmqxacr7dym423uaokcq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaatkz7laillswel25edlbmq67ino2y2pv6xhp2lml2vzha44ao5gtq'
                        
                 )
         string(name: 'KUBECTL_VERSION',
@@ -193,7 +193,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.1.3'
+               defaultValue: '2.2.2'
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
