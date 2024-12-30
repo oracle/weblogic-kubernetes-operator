@@ -688,7 +688,7 @@
     <maven-dependency-plugin-version>3.8.1</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.6.0</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.5.0</exec-maven-plugin-version>
-    <checkstyle-version>10.21.0</checkstyle-version>
+    <checkstyle-version>10.21.1</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.6.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.2.7</maven-gpg-plugin-version>
