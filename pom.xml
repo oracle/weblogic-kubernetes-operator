@@ -709,7 +709,7 @@
     <jose4j-version>0.9.6</jose4j-version>
     <mojo-build-helper-version>3.6.0</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <assertj.core.version>3.27.0</assertj.core.version>
+    <assertj.core.version>3.27.1</assertj.core.version>
     <commons.io.version>2.18.0</commons.io.version>
     <awaitility-version>4.2.2</awaitility-version>
     <client-java-version>21.0.1-legacy</client-java-version>
