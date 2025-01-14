@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -89,7 +89,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create model in image domain with Cluster Resourcees")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("olcne-mrg")
+@Tag("olcne-sequential")
 class ItMaxConcurOptions {
 
   private static String opNamespace = null;
