@@ -14,6 +14,8 @@ Here's the general mechanism for how this works:
 * `fluentd` tails the domain logs files and exports them to Elasticsearch.
 * A ConfigMap contains the filter and format rules for exporting log records.
 
+For information on how to use Fluent Bit as a DaemonSet to scrape WLS logs, see the blog, [WLS For OKE, with Fluent bit and FSS](https://blogs.oracle.com/weblogicserver/post/wls-for-oke-with-fluent-bit-and-fss).
+
 #### Sample code
 
 The samples in this document assume that an existing domain is being edited.  However, you can make all the changes to the domain YAML file before the domain is created.
