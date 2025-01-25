@@ -5,7 +5,7 @@ package saml.sendervouches.filter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class RawXMLOutputStream extends RawXMLOutputStreamBase {
 

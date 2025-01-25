@@ -2,11 +2,11 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import java.util.Hashtable;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSConsumer;
-import javax.jms.JMSContext;
-import javax.jms.Message;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSConsumer;
+import jakarta.jms.JMSContext;
+import jakarta.jms.Message;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
@@ -71,7 +71,7 @@ public class JmsTestClient {
      qcf = (ConnectionFactory) ctx.lookup(testcf);
      System.out.println("Looked up Queue connection factory");
      for ( int i=0; i<10; i++ ) {
-       javax.jms.Connection con = qcf.createConnection();
+       jakarta.jms.Connection con = qcf.createConnection();
        System.out.println("Got connection to the Queue");
        String server = ((WLConnectionImpl) con).getWLSServerName();
        System.out.println("Looked up server " + server);

@@ -4,7 +4,7 @@
 package saml.sendervouches.filter;
 
 import java.io.ByteArrayInputStream;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import weblogic.xml.saaj.SOAPConstants;
 

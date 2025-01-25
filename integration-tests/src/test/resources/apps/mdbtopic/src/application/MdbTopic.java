@@ -6,16 +6,16 @@ package application;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Hashtable;
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSContext;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.TextMessage;
+import jakarta.ejb.ActivationConfigProperty;
+import jakarta.ejb.MessageDriven;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.ejb.TransactionAttributeType;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSContext;
+import jakarta.jms.Message;
+import jakarta.jms.MessageListener;
+import jakarta.jms.TextMessage;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.naming.Context;
@@ -31,7 +31,7 @@ import weblogic.management.runtime.ServerRuntimeMBean;
 @MessageDriven(
   activationConfig = {
    @ActivationConfigProperty(propertyName="destinationType",
-     propertyValue="javax.jms.Topic"),
+     propertyValue="jakarta.jms.Topic"),
    @ActivationConfigProperty(propertyName="topicMessagesDistributionMode",
      propertyValue="One-Copy-Per-Server")
   }, 
