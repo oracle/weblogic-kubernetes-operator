@@ -68,8 +68,10 @@ deleteOlderVersionTerraformOCIProvider() {
 createCluster () {
     cd ${terraformVarDir}
     echo "terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars"
-    terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-    terraform plan -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+    terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars > /dev/null
+    echo "terraform plan -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+    terraform plan -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars > /dev/null
+    echo "terraform apply -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars"
     terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
 }
 
@@ -123,7 +125,7 @@ checkKubernetesCliConnection() {
     if [[ $retry_count -eq $max_retries ]]; then
       echo "Failed to connect to Kubernetes cluster after $max_retries attempts."
       cd "${terraformVarDir}"
-      terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+      terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars" > /dev/null
       createCluster
     fi
 
@@ -137,7 +139,7 @@ checkKubernetesCliConnection() {
         myline_output=$(${KUBERNETES_CLI:-kubectl} get nodes -o wide 2>&1)
         if echo "$myline_output" | grep -q "Unable to connect to the server: net/http: TLS handshake timeout"; then
           cd "${terraformVarDir}"
-          terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+          terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars" > /dev/null
           exit 1
         fi
     fi
@@ -147,7 +149,7 @@ checkKubernetesCliConnection() {
             echo '- could not talk to OKE cluster, aborting'
 
             cd "${terraformVarDir}"
-            terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+            terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars" > /dev/null
             exit 1
     fi
 
@@ -165,12 +167,12 @@ checkClusterRunning() {
       if [ ! -f "$kubeconfig_file" ]; then
         echo "Kubeconfig file does not exist."
         cd "${terraformVarDir}"
-        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars" > /dev/null
         createCluster
       else
         echo "Kubeconfig file exists but is empty."
         cd "${terraformVarDir}"
-        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars" > /dev/null
         createCluster
       fi
     fi
@@ -203,14 +205,14 @@ checkClusterRunning() {
     else
         echo '- could not talk to OKE cluster, aborting'
         cd "${terraformVarDir}"
-        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars" > /dev/null
         exit 1
     fi
 
     if [ $count -gt $max ]; then
         echo "[ERROR] Unable to start the nodes in the OKE cluster after 200s"
         cd "${terraformVarDir}"
-        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+        terraform destroy -auto-approve -var-file="${terraformVarDir}/${clusterTFVarsFile}.tfvars" > /dev/null
         exit 1
     fi
 }
@@ -262,6 +264,8 @@ deleteOlderVersionTerraformOCIProvider
 chmod 600 ${ocipk_path}
 sudo yum reinstall ca-certificates -y
 sudo iptables -A OUTPUT -p tcp --dport 6443 -j ACCEPT
+export TF_LOG=ERROR
+
 # run terraform init,plan,apply to create OKE cluster based on the provided tfvar file ${clusterTFVarsFile).tfvar
 createCluster
 #check status of OKE cluster nodes, destroy if can not access them
