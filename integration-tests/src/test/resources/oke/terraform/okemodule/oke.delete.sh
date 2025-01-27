@@ -58,9 +58,9 @@ cleanupLB() {
 
 deleteOKE() {
   cd ${terraform_script_dir}
-  terraform init -var-file=${terraform_script_dir}/${clusterName}.tfvars
-  terraform plan -var-file=${terraform_script_dir}/${clusterName}.tfvars
-  terraform destroy -auto-approve -var-file=${terraform_script_dir}/${clusterName}.tfvars
+  terraform init -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
+  terraform plan -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
+  terraform destroy -auto-approve -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
 }
 
 
@@ -72,11 +72,8 @@ clusterName=$(prop 'okeclustername')
 compartment_ocid=$(prop 'compartment.ocid')
 vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
 export KUBECONFIG=${terraform_script_dir}/${clusterName}_kubeconfig
+export TF_LOG=ERROR
 export PATH=${terraform_script_dir}/terraforminstall:$PATH
 echo 'Deleting cluster'
-#check and cleanup any left over running Load Balancers
-out=$(cleanupLB Subnet01 && :)
-echo $out
-out=$(cleanupLB Subnet02 && :)
-echo $out
+
 deleteOKE || true
