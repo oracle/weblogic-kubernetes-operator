@@ -117,7 +117,7 @@ spec:
             memory: {{ .memoryLimits }}
             {{- end }}
         securityContext:
-          {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+          {{- if or (hasKey . "runAsUser") (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
           runAsUser: {{ .runAsUser | default 1000 }}
           {{- end }}
           runAsNonRoot: true
@@ -340,7 +340,7 @@ spec:
                 memory: {{ .memoryLimits }}
                 {{- end }}
             securityContext:
-              {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+              {{- if or (hasKey . "runAsUser") (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
               runAsUser: {{ .runAsUser | default 1000 }}
               {{- end }}
               runAsNonRoot: true
