@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
@@ -117,7 +117,7 @@ elasticSearchPort: 9200
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchProtocol: http
 
-# createlogStashConfigMap specifies whether a ConfigMap named
+# createLogStashConfigMap specifies whether a ConfigMap named
 # weblogic-operator-logstash-cm should be created during helm install.
 # The ConfigMap contains the Logstash pipeline configuration for the Logstash
 # container running in the operator pod.
@@ -263,14 +263,14 @@ clusterSizePaddingValidationEnabled: true
 # tokenReviewAuthentication, if set to true, specifies whether the operator's REST API should use
 #   1. Kubernetes token review API for authenticating users, and
 #   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
-#      patch, etc) on a resource.
+#      patch, etc.) on a resource.
 #   3. Update the Domain resource using the operator's privileges.
 # This parameter, if set to false, will use the caller's bearer token for any update
 # to the Domain resource so that it is done using the caller's privileges.
 # The default value is false.
 #tokenReviewAuthentication: false
 
-# runAsuser specifies the UID to run the operator and conversion webhook container processes. 
+# runAsUser specifies the UID to run the operator and conversion webhook container processes.
 # If not specified, it defaults to the user specified in the operator's container image.
 #runAsUser: 1000
 
