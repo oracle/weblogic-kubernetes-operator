@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -61,21 +61,16 @@ public interface KubernetesApiFactory {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public KubernetesApiResponse<A> updateStatus(
         A object, Function<A, Object> status, final UpdateOptions updateOptions) {
       CustomObjectsApi c = new CustomObjectsApi(Client.getInstance());
+
       try {
-        return new KubernetesApiResponse<>(PatchUtils.patch(
-            apiTypeClass,
-            () ->
-                c.patchNamespacedCustomObjectStatusCall(
+        return new KubernetesApiResponse<>((A) c.patchNamespacedCustomObjectStatus(
                     apiGroup, apiVersion, object.getMetadata().getNamespace(), resourcePlural,
                         object.getMetadata().getName(),
-                        Arrays.asList(new StatusPatch(status.apply(object))),
-                        null, null, null, null, null
-                    ),
-            V1Patch.PATCH_FORMAT_JSON_PATCH,
-            c.getApiClient()));
+                        Arrays.asList(new StatusPatch(status.apply(object)))).execute());
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }
@@ -87,8 +82,9 @@ public interface KubernetesApiFactory {
       CoreV1Api c = new CoreV1Api(Client.getInstance());
       try {
         return new KubernetesApiResponse<>(new RequestBuilder.V1StatusObject(
-            c.deleteCollectionNamespacedPod(namespace, null, null, null, listOptions.getFieldSelector(), null,
-                listOptions.getLabelSelector(), null, null, null, null, null, null, null, deleteOptions)));
+            c.deleteCollectionNamespacedPod(namespace)
+                .fieldSelector(listOptions.getFieldSelector())
+                .labelSelector(listOptions.getLabelSelector()).body(deleteOptions).execute()));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }
@@ -99,8 +95,7 @@ public interface KubernetesApiFactory {
       CoreV1Api c = new CoreV1Api(Client.getInstance());
       try {
         return new KubernetesApiResponse<>(new RequestBuilder.StringObject(
-            c.readNamespacedPodLog(name, namespace, container,
-                null, null, null, null, null, null, null, null)));
+            c.readNamespacedPodLog(name, namespace).container(container).execute()));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }
@@ -110,7 +105,7 @@ public interface KubernetesApiFactory {
     public KubernetesApiResponse<RequestBuilder.VersionInfoObject> getVersionCode() {
       VersionApi c = new VersionApi(Client.getInstance());
       try {
-        return new KubernetesApiResponse<>(new RequestBuilder.VersionInfoObject(c.getCode()));
+        return new KubernetesApiResponse<>(new RequestBuilder.VersionInfoObject(c.getCode().execute()));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }
