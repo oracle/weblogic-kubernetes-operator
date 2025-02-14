@@ -1140,7 +1140,7 @@ public class CommonTestUtils {
     }
     if (OKD) {
       logger.info("Build on Openshift");
-      extraArgs.append("--nocache");
+      extraArgs.append("--no-cache");
     }
     if (mvnArgs.length() > 0) {
       extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
