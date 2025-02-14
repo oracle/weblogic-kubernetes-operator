@@ -712,7 +712,7 @@
     <awaitility-version>4.2.2</awaitility-version>
     <client-java-version>19.0.1</client-java-version>
     <findbugs-version>3.0.1u2</findbugs-version>
-    <kotlin-stdlib-version>2.1.0</kotlin-stdlib-version>
+    <kotlin-stdlib-version>2.1.10</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
     <okio-version>3.10.2</okio-version>
     <bc-jdk18on-version>1.80</bc-jdk18on-version>
