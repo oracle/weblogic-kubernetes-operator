@@ -88,12 +88,7 @@ def create_domain():
   readDomain(domain_path + os.path.sep + domain_name)
   cd('/')
   if production_mode_enabled == "true":
-    cmo.setProductionModeEnabled(true)
-    cd('/SecurityConfiguration/'+domain_name)
-    secm=create('mySecureMode','SecureMode')
-    cd('SecureMode/mySecureMode')
-    set('SecureModeEnabled','false')
-    #setOption('ServerStartMode', 'prod')
+    setOption('ServerStartMode', 'prod')
   else: 
     cmo.setProductionModeEnabled(false)
   updateDomain()
