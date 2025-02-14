@@ -1138,9 +1138,14 @@ public class CommonTestUtils {
       logger.info(" noproxy : " + noproxy);
       extraArgs.append(String.format(" --build-arg no_proxy=%s",noproxy));
     }
+    if (OKD) {
+      logger.info("Build on Openshift");
+      extraArgs.append(" --nocache");
+    }
     if (mvnArgs.length() > 0) {
       extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
     }
+
     return extraArgs.toString();
   }
 
