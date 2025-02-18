@@ -500,7 +500,8 @@ public class OperatorUtils {
       logger.info("Created service account: {0}", opServiceAccount);
     }
 
-    operatorImage = getOperatorImageName();
+    //operatorImage = getOperatorImageName();
+    operatorImage = OPERATOR_RELEASE_IMAGE;
     if (ARM) {
       operatorImage = OPERATOR_RELEASE_IMAGE;
     }
