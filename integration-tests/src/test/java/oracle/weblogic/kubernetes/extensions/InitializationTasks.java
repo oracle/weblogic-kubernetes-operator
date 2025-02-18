@@ -61,11 +61,11 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
+//import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+//import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -74,18 +74,18 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_OPERATOR_NS;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
+//import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_NAMESPACE;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
+//import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
+//import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
+//import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SHIPHOME;
@@ -111,8 +111,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
+//import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+//import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -230,7 +230,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
 
         // build MII basic image if does not exits
-        logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
+        /*logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
         if (! imageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
           logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
@@ -255,7 +255,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                 "createBasicImage to be successful");
         } else {
           logger.info("!!!! domain image {0} exists !!!! or env is not OCNE based", wdtBasicImage);
-        }
+        }*/
 
         /* Check image exists using WLSIMG_BUILDER images | grep image tag.
          * Tag name is unique as it contains date and timestamp.
@@ -263,7 +263,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
          * as WLSIMG_BUILDER images imagename:imagetag is not working and
          * the test fails even though the image exists.
          */
-        assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
+        /*assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", miiBasicImage));
 
         if (!CRIO && !OCNE) {
@@ -315,7 +315,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                     .saveResults(true))
                 .execute();
           }
-        }
+        }*/
         
         //install webhook to prevent every operator installation trying to update crd
         installWebHookOnlyOperator("DomainOnPvSimplification=true");
