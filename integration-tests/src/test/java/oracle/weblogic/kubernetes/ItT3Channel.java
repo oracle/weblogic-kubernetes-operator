@@ -244,7 +244,7 @@ class ItT3Channel {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.securemode.SecureModeEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom"))
