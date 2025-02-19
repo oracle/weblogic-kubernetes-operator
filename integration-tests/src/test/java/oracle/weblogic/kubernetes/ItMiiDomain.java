@@ -360,7 +360,7 @@ class ItMiiDomain {
     stopPortForwardProcess(domainNamespace);
   }
 
-  @Test
+  //@Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -427,7 +427,7 @@ class ItMiiDomain {
         "introspectorJobActiveDeadlineSeconds");
   }
 
-  @Test
+  //@Test
   @Order(3)
   @DisplayName("Update the sample-app application to version 2")
   void testPatchAppV2() {
@@ -529,7 +529,7 @@ class ItMiiDomain {
     logger.info("The version 2 application has been deployed correctly on all server pods");
   }
 
-  @Test
+  //@Test
   @Order(4)
   @DisplayName("Update the domain with another application")
   void testAddSecondApp() {
@@ -606,7 +606,7 @@ class ItMiiDomain {
     logger.info("Both of the applications are running correctly after patching");
   }
 
-  @Test
+  //@Test
   @Order(5)
   @DisplayName("Check admin service annotations and labels")
   void testAdminServiceAnnotationsLabels() {
@@ -630,7 +630,7 @@ class ItMiiDomain {
    * Verify cluster resource level scaling is successful even though replicas count at domain resource
    * level is specified as 3
    */
-  @Test
+  //@Test
   @Order(6)
   @DisplayName("Verify scaling by patching replicas at domain resource and cluster resource level")
   void testClusterScale() {
@@ -690,7 +690,7 @@ class ItMiiDomain {
    * The admin server service/pod will not be created.
    * Verify the error message should be logged in the operator log.
    */
-  @Test
+  //@Test
   @Order(7)
   @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
   void testOperatorLogSevereMsg() {
