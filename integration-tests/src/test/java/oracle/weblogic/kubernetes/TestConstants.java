@@ -11,7 +11,7 @@ import java.util.Optional;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getBaseImagesPrefixLength;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDomainImagePrefix;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageRepoFromImageName;
@@ -279,7 +279,8 @@ public interface TestConstants {
   public static final String BUSYBOX_TAG = "1.36";
 
   // Skip the mii/wdt basic image build locally if needed
-  public static final String MII_BASIC_IMAGE_TAG = SKIP_BUILD_IMAGES_IF_EXISTS ? "local" : getDateAndTimeStamp();
+  //public static final String MII_BASIC_IMAGE_TAG = SKIP_BUILD_IMAGES_IF_EXISTS ? "local" : getDateAndTimeStamp();
+  public static final String MII_BASIC_IMAGE_TAG = "latest";
   public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
   public static final String MII_BASIC_APP_DEPLOYMENT_NAME = "myear";
@@ -297,7 +298,8 @@ public interface TestConstants {
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "wdt-basic-image";
   // Skip the mii/wdt basic image build locally if needed
-  public static final String WDT_BASIC_IMAGE_TAG = SKIP_BUILD_IMAGES_IF_EXISTS ? "local" : getDateAndTimeStamp();
+  //public static final String WDT_BASIC_IMAGE_TAG = SKIP_BUILD_IMAGES_IF_EXISTS ? "local" : getDateAndTimeStamp();
+  public static final String WDT_BASIC_IMAGE_TAG = "latest";
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
