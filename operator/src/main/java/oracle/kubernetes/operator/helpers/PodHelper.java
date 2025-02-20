@@ -166,8 +166,20 @@ public class PodHelper {
             .orElse(null);
   }
 
+
   private static String getServerName(@Nonnull Map<String,String> labels) {
     return labels.get(SERVERNAME_LABEL);
+  }
+
+  private static V1SecurityContext getEffectiveSecurityContext(V1PodSecurityContext ctx) {
+    return new V1SecurityContext()
+            .runAsUser(ctx.getRunAsUser())
+            .runAsGroup(ctx.getRunAsGroup())
+            .runAsNonRoot(ctx.getRunAsNonRoot())
+            .seccompProfile(ctx.getSeccompProfile())
+            .seLinuxOptions(ctx.getSeLinuxOptions())
+            .windowsOptions(ctx.getWindowsOptions());
+
   }
 
   /**
@@ -575,7 +587,10 @@ public class PodHelper {
 
     @Override
     V1SecurityContext getInitContainerSecurityContext() {
-      return PodSecurityHelper.getDefaultContainerSecurityContext();
+      if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
+        return PodSecurityHelper.getDefaultContainerSecurityContext();
+      }
+      return getEffectiveSecurityContext(getPodSecurityContext());
     }
 
     @Override
@@ -880,7 +895,10 @@ public class PodHelper {
 
     @Override
     V1SecurityContext getInitContainerSecurityContext() {
-      return PodSecurityHelper.getDefaultContainerSecurityContext();
+      if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
+        return PodSecurityHelper.getDefaultContainerSecurityContext();
+      }
+      return getEffectiveSecurityContext(getPodSecurityContext());
     }
 
     @Override
