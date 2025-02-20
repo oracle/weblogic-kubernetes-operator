@@ -324,9 +324,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
-        if (!OCNE && !OKD && !CRIO && !ARM) {
+        /*if (!OCNE && !OKD && !CRIO && !ARM) {
           installOracleDBOperator();
-        }
+        }*/
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
@@ -603,7 +603,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         env.put("JAVA_HOME", WIT_JAVA_HOME);
       }
 
-      String witTarget = ((OKD) ? "OpenShift" : "Default");
+      //String witTarget = ((OKD) ? "OpenShift" : "Default");
+      String witTarget = "OpenShift";
 
       // build an image using WebLogic Image Tool
       boolean imageCreation = false;

@@ -478,9 +478,11 @@ public class ImageUtils {
         witParams.additionalBuildFiles(additionalBuildFilesBuff.toString().trim());
       }
 
-      if (OKD) {
+      /*if (OKD) {
         witParams.target("OpenShift");
-      }
+      }*/
+      //TODO
+      witParams.target("OpenShift");
 
       testUntil(
           withStandardRetryPolicy,

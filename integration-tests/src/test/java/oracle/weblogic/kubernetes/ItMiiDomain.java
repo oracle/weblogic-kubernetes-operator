@@ -60,7 +60,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
+//import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
@@ -860,7 +860,8 @@ class ItMiiDomain {
       env.put("JAVA_HOME", WIT_JAVA_HOME);
     }
 
-    String witTarget = ((OKD) ? "OpenShift" : "Default");
+    //String witTarget = ((OKD) ? "OpenShift" : "Default");
+    String witTarget = "OpenShift";
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model list {1} and archive list {2}",
