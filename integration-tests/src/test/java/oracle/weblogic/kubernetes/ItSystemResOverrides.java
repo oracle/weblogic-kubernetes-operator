@@ -60,6 +60,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -128,9 +129,18 @@ class ItSystemResOverrides {
   final String adminServerName = "admin-server";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
-  final int managedServerPort = 8001;
+  private static int managedServerPort = 8001;
   int t3ChannelPort;
   private static int adminPort = 7001;
+  
+  static {
+    if (WEBLOGIC_IMAGE_TAG_DEFAULT.startsWith("14")) {
+      adminPort = 7001;
+    } else {
+      adminPort = 7002;
+    }
+  }
+  
   private static String hostHeader;  
   final String pvName = getUniqueName(domainUid + "-pv-");
   final String pvcName = getUniqueName(domainUid + "-pvc-");
@@ -466,6 +476,7 @@ class ItSystemResOverrides {
                         + "-Dweblogic.debug.DebugSituationalConfigDumpXml=true "
                         + "-Dweblogic.kernel.debug=true "
                         + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true "
                         + "-Dweblogic.debug.DebugConnection=true "
                         + "-Dweblogic.ResolveDNSName=true"))
                 .addEnvItem(new V1EnvVar()

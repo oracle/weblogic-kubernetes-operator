@@ -197,7 +197,7 @@ public class CommonTestUtils {
    */
   public static void testUntil(Callable<Boolean> conditionEvaluator,
                                LoggingFacade logger, String msg, Object... params) {
-    testUntil(withStandardRetryPolicy, conditionEvaluator, logger, msg, params);
+    testUntil(withLongRetryPolicy, conditionEvaluator, logger, msg, params);
   }
 
   /**

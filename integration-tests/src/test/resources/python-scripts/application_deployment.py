@@ -18,9 +18,10 @@ print 'admin_username: ' + admin_username
 print 'admin_password: ' + admin_password
 print 'targets: ' + targets
 print 'mounted archive: ' + node_archive_path
+print 'protocol: ' + protocol
 
 
-t3url = "t3://" + admin_host + ":" + admin_port
+t3url = protocol + "://" + admin_host + ":" + admin_port
 print 't3url: ' + t3url
 
 archive_name = os.path.basename(node_archive_path)

@@ -5,6 +5,9 @@ topology:
     Name: mysitconfigdomain
     AdminServerName: admin-server
     ProductionModeEnabled: true
+    SecurityConfiguration:
+      SecureMode:
+        SecureModeEnabled: false
     Cluster:
         mycluster:
             DynamicServers:

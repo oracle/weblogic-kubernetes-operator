@@ -47,9 +47,9 @@ spec:
             prefix: /myear
         - uri:
             prefix: /testwebapp            
-        - port: 8001
+        - port: 7001
       route:
         - destination:
             host: CLUSTER_SERVICE
             port:
-              number: 8001
+              number: 7001
