@@ -329,7 +329,13 @@ class ItT3Channel {
         -> getServicePort(domainNamespace,
               domainUid + "-cluster-" + clusterName, "default"),
               "Getting Cluster Service default port failed");
-    assertEquals(DEFAULT_LISTEN_PORT, servicePort, "Default Service Port is not set to 7100");
+    int managedServerPort;
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      managedServerPort = 7100;
+    } else {
+      managedServerPort = 7001;
+    }
+    assertEquals(managedServerPort, servicePort, "Default Service Port is not set to " + managedServerPort);
     int napPort = assertDoesNotThrow(()
         -> getServicePort(domainNamespace,
               domainUid + "-cluster-" + clusterName, "ms-nap"),
