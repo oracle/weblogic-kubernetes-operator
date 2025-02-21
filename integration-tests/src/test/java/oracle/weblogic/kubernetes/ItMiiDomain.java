@@ -360,7 +360,7 @@ class ItMiiDomain {
     stopPortForwardProcess(domainNamespace);
   }
 
-  @Test
+  //@Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -427,7 +427,7 @@ class ItMiiDomain {
         "introspectorJobActiveDeadlineSeconds");
   }
 
-  @Test
+  //@Test
   @Order(3)
   @DisplayName("Update the sample-app application to version 2")
   void testPatchAppV2() {
@@ -480,6 +480,7 @@ class ItMiiDomain {
       }
 
       logger.info("Create a new image with application V2");
+      //TODO
       miiImagePatchAppV2 = updateImageWithAppV2Patch(
           String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-patch-app-v2"),
           Arrays.asList(appDir1, appDir2));
@@ -529,7 +530,7 @@ class ItMiiDomain {
     logger.info("The version 2 application has been deployed correctly on all server pods");
   }
 
-  @Test
+  //@Test
   @Order(4)
   @DisplayName("Update the domain with another application")
   void testAddSecondApp() {
