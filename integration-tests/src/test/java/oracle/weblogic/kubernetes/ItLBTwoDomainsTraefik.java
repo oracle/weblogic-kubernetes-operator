@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOS
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
@@ -85,7 +86,16 @@ class ItLBTwoDomainsTraefik {
 
   // domain constants
   private static final int replicaCount = 2;
-  private static final int MANAGED_SERVER_PORT = 7100;
+  private static int MANAGED_SERVER_PORT;
+  
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      MANAGED_SERVER_PORT = 7100;
+    } else {
+      MANAGED_SERVER_PORT = 7001;
+    }
+  }
+      
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String clusterName = "cluster-1";
 
@@ -267,9 +277,16 @@ class ItLBTwoDomainsTraefik {
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);
       Files.createDirectories(dstFile.getParent());
+      String msPort;
+      if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+        msPort = "7100";
+      } else {
+        msPort = "7001";
+      }
       Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
           .replaceAll("@domain1uid@", domainUids.get(0))
           .replaceAll("@domain2uid@", domainUids.get(1))
+          .replaceAll("7100", msPort)
           .getBytes(StandardCharsets.UTF_8));
     });
     String command = KUBERNETES_CLI + " create -f " + dstFile;

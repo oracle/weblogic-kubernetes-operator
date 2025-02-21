@@ -1317,7 +1317,7 @@ public class MonitoringUtils {
     String port = "8001";
     if (isHttps) {
       protocol = "https";
-      port = "8100";
+      port = "7002";
     }
     String podName = domainUid + "-" + clusterName + "-managed-server1";
     if (clusterName == null) {

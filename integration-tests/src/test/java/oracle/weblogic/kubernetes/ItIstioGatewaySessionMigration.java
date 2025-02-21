@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
@@ -90,6 +92,12 @@ class ItIstioGatewaySessionMigration {
   private static int istioIngressPort = 0;
   private static String testWebAppWarLoc = null;
   private static int managedServerPort = 7100;
+  
+  static {
+    if (!WEBLOGIC_IMAGE_TAG.startsWith("12")) {
+      managedServerPort = 7001;
+    }
+  }
 
   private static final String istioNamespace = "istio-system";
   private static final String istioIngressServiceName = "istio-ingressgateway";
@@ -171,7 +179,7 @@ class ItIstioGatewaySessionMigration {
   @Test
   @DisplayName("When istio is enabled using Istio gateway, stop the primary server, "
       + "verify that a new primary server is picked and HTTP session state is migrated")
-  void testSessionMigrationIstioGateway() {
+  void testSessionMigrationIstioGateway() throws UnknownHostException {
     final String primaryServerAttr = "primary";
     final String secondaryServerAttr = "secondary";
     final String sessionCreateTimeAttr = "sessioncreatetime";
@@ -183,7 +191,13 @@ class ItIstioGatewaySessionMigration {
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String istioIngressIP = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : formatIPv6Host(K8S_NODEPORT_HOST);
-    
+    int servicePort = istioIngressPort;
+    if (TestConstants.KIND_CLUSTER
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      istioIngressIP = domainUid + "-cluster-cluster-1." + domainNamespace + ".svc.cluster.local";
+      servicePort = 7001;      
+    }
+
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
     // the NodePort services created by the operator are not usable, because they would expose ports
@@ -191,7 +205,7 @@ class ItIstioGatewaySessionMigration {
     Map<String, String> httpDataInfo = OKE_CLUSTER ? getServerAndSessionInfoAndVerify(domainNamespace,
             adminServerPodName, serverName, istioIngressIP, 0, webServiceSetUrl, " -c ")
         : getServerAndSessionInfoAndVerify(domainNamespace,
-            adminServerPodName, serverName, istioIngressIP, istioIngressPort, webServiceSetUrl, " -c ");
+            adminServerPodName, serverName, istioIngressIP, servicePort, webServiceSetUrl, " -c ");
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
     String origSecondaryServerName = httpDataInfo.get(secondaryServerAttr);
@@ -209,7 +223,7 @@ class ItIstioGatewaySessionMigration {
     httpDataInfo = OKE_CLUSTER ? getServerAndSessionInfoAndVerify(domainNamespace,
             adminServerPodName, serverName, istioIngressIP, 0, webServiceGetUrl, " -b ")
         : getServerAndSessionInfoAndVerify(domainNamespace,
-            adminServerPodName, serverName, istioIngressIP, istioIngressPort, webServiceGetUrl, " -b ");
+            adminServerPodName, serverName, istioIngressIP, servicePort, webServiceGetUrl, " -b ");
     // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
@@ -247,11 +261,15 @@ class ItIstioGatewaySessionMigration {
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap  = new HashMap<>();
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
-    templateMap.put("ADMIN_SERVICE",adminServerPodName);
+    templateMap.put("ADMIN_SERVICE", adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    if (!WEBLOGIC_IMAGE_TAG.startsWith("12")) {
+      templateMap.put("7100", String.valueOf(managedServerPort));
+      templateMap.put("8001", String.valueOf(managedServerPort));
+    }
 
     // create Istio gateway
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", istioGatewayConfigFile);

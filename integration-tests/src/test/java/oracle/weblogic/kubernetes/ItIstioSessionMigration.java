@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.configIstioModelInImageDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
@@ -62,7 +63,16 @@ class ItIstioSessionMigration {
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static int managedServerPort = 7100;
+  private static int managedServerPort;
+
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      managedServerPort = 7100;
+    } else {
+      managedServerPort = 7001;
+    }
+  }
+
   private static String finalPrimaryServerName = null;
   private static String configMapName = "istio-configmap";
   private static int replicaCount = 2;

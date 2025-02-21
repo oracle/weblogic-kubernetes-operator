@@ -107,13 +107,13 @@ public interface TestConstants {
   // It depends on the default value of BASE_IMAGES_REPO. 
   // Following defaults are assumining OCIR as default for BASE_IMAGES_REPO.
   public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "test-images/weblogic";
-  public static final String WEBLOGIC_IMAGE_TAG_DEFAULT = "12.2.1.4";
+  public static final String WEBLOGIC_IMAGE_TAG_DEFAULT = "14.1.2.0-generic-jdk17-ol8";
   public static final String FMWINFRA_IMAGE_NAME_DEFAULT = "test-images/fmw-infrastructure";
-  public static final String FMWINFRA_IMAGE_TAG_DEFAULT = "12.2.1.4";
+  public static final String FMWINFRA_IMAGE_TAG_DEFAULT = "14.1.2.0-jdk17-ol8";
   public static final String FMWINFRA_IMAGE_TAG_12213 = "12.2.1.3";
   public static final String DB_IMAGE_NAME_DEFAULT = "test-images/database/enterprise";
   public static final String DB_PREBUILT_IMAGE_NAME_DEFAULT = "test-images/database/express";
-  public static final String DB_IMAGE_TAG_DEFAULT = "12.2.0.1-slim";
+  public static final String DB_IMAGE_TAG_DEFAULT = "19.3.0.0";
 
   // repository to push the domain images created during test execution
   // (a) for kind cluster push to kind repo
@@ -361,7 +361,7 @@ public interface TestConstants {
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
   public static final String ISTIO_VERSION =
-      getNonEmptySystemProperty("wko.it.istio.version", "1.13.2");
+      getNonEmptySystemProperty("wko.it.istio.version", "1.23.0");
   public static final int ISTIO_HTTP_HOSTPORT = 2480;
   public static final int ISTIO_HTTPS_HOSTPORT = 2490;  
 

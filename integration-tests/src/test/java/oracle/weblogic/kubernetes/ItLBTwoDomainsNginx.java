@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
@@ -94,7 +95,16 @@ class ItLBTwoDomainsNginx {
 
   // domain constants
   private static final int replicaCount = 2;
-  private static final int MANAGED_SERVER_PORT = 7100;
+  private static int MANAGED_SERVER_PORT;
+  
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      MANAGED_SERVER_PORT = 7100;
+    } else {
+      MANAGED_SERVER_PORT = 7001;
+    }
+  }
+    
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String clusterName = "cluster-1";
 
@@ -289,6 +299,7 @@ class ItLBTwoDomainsNginx {
     List<V1IngressTLS> tlsList = new ArrayList<>();
     for (String domainUid : domainUids) {
 
+    
       V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path(null)
           .pathType("ImplementationSpecific")

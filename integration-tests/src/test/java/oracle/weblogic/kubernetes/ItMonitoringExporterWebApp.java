@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -153,6 +154,7 @@ class ItMonitoringExporterWebApp {
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
   private static String hostPortPrometheus = null;
+  private static List<String> ns;
 
 
   /**
@@ -167,6 +169,7 @@ class ItMonitoringExporterWebApp {
   public static void initAll(@Namespaces(6) List<String> namespaces) throws UnknownHostException {
 
     logger = getLogger();
+    ns = namespaces;
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterWebApp", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
@@ -390,6 +393,7 @@ class ItMonitoringExporterWebApp {
   @DisplayName("Test Monitoring Exporter access to metrics via https.")
   void testAccessExporterViaHttps() throws Exception {
     String miiImage1 = null;
+    boolean collectLogs = true;
 
     try {
       logger.info("create and verify WebLogic domain image using model in image with model files for norestport");
@@ -427,7 +431,11 @@ class ItMonitoringExporterWebApp {
             true, clusterName),
             "monitoring exporter metrics page can't be accessed via https");
       });
+      collectLogs = false;
     } finally {
+      if (collectLogs) {
+        LoggingUtil.generateLog(this, ns);
+      }
       logger.info("Shutting down domain3");
       shutdownDomain(domain3Uid, domain3Namespace);
       if (miiImage1 != null) {
