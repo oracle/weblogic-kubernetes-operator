@@ -24,7 +24,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.SystemException;
-import jakarta.transaction.xa.Xid;
+import javax.transaction.xa.Xid;
 
 import weblogic.transaction.Transaction;
 import weblogic.transaction.TransactionHelper;
