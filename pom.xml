@@ -709,7 +709,7 @@
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.27.3</assertj.core.version>
     <commons.io.version>2.18.0</commons.io.version>
-    <awaitility-version>4.2.2</awaitility-version>
+    <awaitility-version>4.3.0</awaitility-version>
     <client-java-version>19.0.2</client-java-version>
     <findbugs-version>3.0.1u2</findbugs-version>
     <kotlin-stdlib-version>2.1.10</kotlin-stdlib-version>
