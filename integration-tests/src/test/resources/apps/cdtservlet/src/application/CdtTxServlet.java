@@ -23,8 +23,8 @@ import jakarta.servlet.annotation.*;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.transaction.SystemException;
-import javax.transaction.xa.Xid;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.xa.Xid;
 
 import weblogic.transaction.Transaction;
 import weblogic.transaction.TransactionHelper;
