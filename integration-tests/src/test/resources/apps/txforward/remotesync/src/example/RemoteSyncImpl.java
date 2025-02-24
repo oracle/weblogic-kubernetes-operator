@@ -6,9 +6,9 @@ package example;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import javax.naming.Context;
-import javax.transaction.RollbackException;
-import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
+import jakarta.transaction.RollbackException;
+import jakarta.transaction.Synchronization;
+import jakarta.transaction.SystemException;
 
 import weblogic.jndi.Environment;
 import weblogic.transaction.Transaction;
