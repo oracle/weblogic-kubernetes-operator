@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -358,8 +358,14 @@ class ServerPod extends KubernetesResource {
       if (podSecurityContext.getSeLinuxOptions() == null) {
         podSecurityContext.seLinuxOptions(from.getSeLinuxOptions());
       }
+      if (podSecurityContext.getSeLinuxChangePolicy() == null) {
+        podSecurityContext.seLinuxChangePolicy(from.getSeLinuxChangePolicy());
+      }
       if (podSecurityContext.getSupplementalGroups() == null) {
         podSecurityContext.supplementalGroups(from.getSupplementalGroups());
+      }
+      if (podSecurityContext.getSupplementalGroupsPolicy() == null) {
+        podSecurityContext.supplementalGroupsPolicy(from.getSupplementalGroupsPolicy());
       }
       if (podSecurityContext.getSysctls() == null) {
         podSecurityContext.sysctls(from.getSysctls());
