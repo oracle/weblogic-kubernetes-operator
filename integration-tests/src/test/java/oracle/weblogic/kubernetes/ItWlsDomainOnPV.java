@@ -18,6 +18,7 @@ import oracle.weblogic.domain.DomainCreationImage;
 import oracle.weblogic.domain.DomainOnPV;
 import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.domain.InitializeDomainOnPV;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -52,6 +53,9 @@ import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.changePermissionOnPv;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -194,6 +198,91 @@ class ItWlsDomainOnPV {
       deletePersistentVolume(pvName);
     }
   }
+
+  /**
+   * Create a basic WLS domain on PV.
+   * User creates PV/PVC
+   * Operator creates WLS Domain.
+   * Verify Pod is ready and service exists for both admin server and managed servers.
+   */
+  @Test
+  @DisplayName("Create a WLS domain on PV using simplified feature, Operator creates PV/PVC and WLS Domain")
+  void testUserCreatesPvPvcOperatorWlsDomain() {
+    String domainUid = "wlsonpv-simplified1";
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
+    final int t3ChannelPort = getNextFreePort();
+    final String wlSecretName = domainUid + "-weblogic-credentials";
+    final String wlsModelFile = wlsModelFilePrefix + ".yaml";
+    try {
+      // create WLS domain credential secret
+      createSecretWithUsernamePassword(wlSecretName, domainNamespace,
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+      // create persistent volume and persistent volume claim for domain
+      createPV(pvName, domainUid, this.getClass().getSimpleName());
+      createPVC(pvName, pvcName, domainUid, domainNamespace);
+      String mountPath = "/shared";
+      changePermissionOnPv(domainNamespace, pvName, pvcName, mountPath);
+
+      // create a model property file
+      File wlsModelPropFile = createWdtPropertyFile("wlsonpv-simplified2");
+
+      // create domainCreationImage
+      String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-image2";
+      // create image with model and wdt installation files
+      WitParams witParams =
+          new WitParams()
+              .modelImageName(domainCreationImageName)
+              .modelImageTag(MII_BASIC_IMAGE_TAG)
+              .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
+              .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
+      createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
+
+      DomainCreationImage domainCreationImage =
+          new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
+
+      // create a domain resource
+      logger.info("Creating domain custom resource");
+      Configuration configuration =
+          new Configuration()
+              .initializeDomainOnPV(new InitializeDomainOnPV()
+              .domain(new DomainOnPV()
+                      .createMode(CreateIfNotExists.DOMAIN)
+                      .domainCreationImages(Collections.singletonList(domainCreationImage))
+                      .domainType(DomainOnPVType.WLS)));
+
+      DomainResource domain = createDomainResourceOnPv(
+          domainUid,
+          domainNamespace,
+          wlSecretName,
+          clusterName,
+          pvName,
+          pvcName,
+          new String[]{BASE_IMAGES_REPO_SECRET_NAME},
+          DOMAINHOMEPREFIX,
+          replicaCount,
+          t3ChannelPort,
+          configuration);
+
+      // Set the inter-pod anti-affinity for the domain custom resource
+      setPodAntiAffinity(domain);
+
+      // create a domain custom resource and verify domain is created
+      createDomainAndVerify(domain, domainNamespace);
+
+      // verify that all servers are ready
+      verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+    } finally {
+      // delete the domain
+      deleteDomainResource(domainNamespace, domainUid);
+      // delete the cluster
+      deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
+      deletePersistentVolumeClaim(pvcName, domainNamespace);
+      deletePersistentVolume(pvName);
+    }
+  }
+
 
   private File createWdtPropertyFile(String domainName) {
 
