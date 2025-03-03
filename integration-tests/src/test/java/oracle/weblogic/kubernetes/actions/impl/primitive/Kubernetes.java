@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -415,6 +415,7 @@ public class Kubernetes {
           PRETTY, // String | If 'true', then the output is pretty printed.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -505,6 +506,7 @@ public class Kubernetes {
           PRETTY, // pretty print output
           previous, // Boolean, Return previous terminated container logs
           sinceSeconds, // relative time (seconds) before the current time from which to show logs
+          null,
           null, // number of lines from the end of the logs to show
           null // Boolean, add timestamp at the beginning of every line of log output
       );
@@ -2653,6 +2655,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -2899,6 +2902,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -2988,6 +2992,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -3046,6 +3051,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -3204,6 +3210,7 @@ public class Kubernetes {
           PRETTY, // String | If 'true', then the output is pretty printed.
           null, // String | dry run or permanent change
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           BACKGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.

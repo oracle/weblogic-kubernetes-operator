@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2025, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -675,8 +675,8 @@
     <java.version.range>21</java.version.range>
     <maven.version.range>[3.8.1,)</maven.version.range>
     <maven-enforcer-plugin-version>3.5.0</maven-enforcer-plugin-version>
-    <maven-clean-plugin-version>3.4.0</maven-clean-plugin-version>
-    <maven-compiler-plugin-version>3.13.0</maven-compiler-plugin-version>
+    <maven-clean-plugin-version>3.4.1</maven-clean-plugin-version>
+    <maven-compiler-plugin-version>3.14.0</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.1.3</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.1.3</maven-install-plugin-version>
     <maven-jar-plugin-version>3.4.2</maven-jar-plugin-version>
@@ -690,7 +690,7 @@
     <maven-dependency-plugin-version>3.8.1</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.6.0</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.5.0</exec-maven-plugin-version>
-    <checkstyle-version>10.21.2</checkstyle-version>
+    <checkstyle-version>10.21.3</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.6.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.2.7</maven-gpg-plugin-version>
@@ -700,9 +700,9 @@
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <commons-cli-version>1.9.0</commons-cli-version>
-    <networknt-jsonschmema-validator-version>1.5.5</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.5.6</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.4.0</commons-exec-version>
-    <commons-codec-version>1.17.1</commons-codec-version>
+    <commons-codec-version>1.18.0</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
     <voyager-client-version>0.1.0</voyager-client-version>
     <jsonpath-version>2.9.0</jsonpath-version>
@@ -711,14 +711,14 @@
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.27.3</assertj.core.version>
     <commons.io.version>2.18.0</commons.io.version>
-    <awaitility-version>4.2.2</awaitility-version>
-    <client-java-version>21.0.1-legacy</client-java-version>
+    <awaitility-version>4.3.0</awaitility-version>
+    <client-java-version>23.0.0-legacy</client-java-version>
     <findbugs-version>3.0.1u2</findbugs-version>
     <kotlin-stdlib-version>2.1.10</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
     <okio-version>3.10.2</okio-version>
     <bc-jdk18on-version>1.80</bc-jdk18on-version>
-    <junit.jupiter.version>5.11.4</junit.jupiter.version>
+    <junit.jupiter.version>5.12.0</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
@@ -730,14 +730,14 @@
     <prometheus-version>0.16.0</prometheus-version>
     <jackson-version>2.18.2</jackson-version>
     <jackson-databind-version>2.18.2</jackson-databind-version>
-    <snakeyaml-version>2.3</snakeyaml-version>
+    <snakeyaml-version>2.4</snakeyaml-version>
     <gson-version>2.12.1</gson-version>
-    <dependency-check-version>12.0.2</dependency-check-version>
-    <slf4j-version>2.0.16</slf4j-version>
-    <logback-classic-version>1.5.16</logback-classic-version>
+    <dependency-check-version>12.1.0</dependency-check-version>
+    <slf4j-version>2.0.17</slf4j-version>
+    <logback-classic-version>1.5.17</logback-classic-version>
     <protobuf-java-version>4.29.3</protobuf-java-version>
     <json-smart-version>2.5.2</json-smart-version>
-    <nimbus-jose-jwt-version>10.0.1</nimbus-jose-jwt-version>
+    <nimbus-jose-jwt-version>10.0.2</nimbus-jose-jwt-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>

@@ -1,11 +1,11 @@
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 51834749ee33a25fe0e79d977ca46d1779eb7b129e7a2c9d1bae7fbc399c9da6
+    weblogic.sha256: 3655b015d8b8433e99f974fe3c1a0f58a6522f9ce96297ad99846b92e5bbdb3d
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -120,8 +120,6 @@ spec:
                       field, the operator will use default content for the pod-level
                       `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                     properties:
-                      runAsUser:
-                        type: integer
                       seLinuxOptions:
                         properties:
                           role:
@@ -144,6 +142,28 @@ spec:
                         type: object
                       fsGroup:
                         type: integer
+                      fsGroupChangePolicy:
+                        type: string
+                      seLinuxChangePolicy:
+                        type: string
+                      runAsGroup:
+                        type: integer
+                      runAsNonRoot:
+                        type: boolean
+                      sysctls:
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                          required:
+                          - name
+                          - value
+                        type: array
+                      runAsUser:
+                        type: integer
                       seccompProfile:
                         properties:
                           localhostProfile:
@@ -164,28 +184,12 @@ spec:
                           gmsaCredentialSpecName:
                             type: string
                         type: object
-                      fsGroupChangePolicy:
-                        type: string
                       supplementalGroups:
                         items:
                           type: integer
                         type: array
-                      runAsGroup:
-                        type: integer
-                      runAsNonRoot:
-                        type: boolean
-                      sysctls:
-                        items:
-                          type: object
-                          properties:
-                            name:
-                              type: string
-                            value:
-                              type: string
-                          required:
-                          - name
-                          - value
-                        type: array
+                      supplementalGroupsPolicy:
+                        type: string
                     type: object
                   priorityClassName:
                     description: If specified, indicates the Pod's priority. "system-node-critical"
@@ -214,6 +218,8 @@ spec:
                           type: array
                           items:
                             type: string
+                      required:
+                      - ip
                     type: array
                   startupProbe:
                     description: Settings for the startup probe associated with a
@@ -1106,6 +1112,13 @@ spec:
                               type: string
                           required:
                           - pdName
+                        image:
+                          type: object
+                          properties:
+                            reference:
+                              type: string
+                            pullPolicy:
+                              type: string
                         photonPersistentDisk:
                           type: object
                           properties:
@@ -1420,6 +1433,8 @@ spec:
                         items:
                           type: object
                           properties:
+                            request:
+                              type: string
                             name:
                               type: string
                           required:
@@ -1613,6 +1628,8 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  request:
+                                    type: string
                                   name:
                                     type: string
                                 required:
@@ -2178,6 +2195,8 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  request:
+                                    type: string
                                   name:
                                     type: string
                                 required:

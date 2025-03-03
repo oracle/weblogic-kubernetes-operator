@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -87,7 +87,7 @@ public interface KubernetesApiFactory {
       CoreV1Api c = new CoreV1Api(Client.getInstance());
       try {
         return new KubernetesApiResponse<>(new RequestBuilder.V1StatusObject(
-            c.deleteCollectionNamespacedPod(namespace, null, null, null, listOptions.getFieldSelector(), null,
+            c.deleteCollectionNamespacedPod(namespace, null, null, null, listOptions.getFieldSelector(), null, null,
                 listOptions.getLabelSelector(), null, null, null, null, null, null, null, deleteOptions)));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
@@ -100,7 +100,7 @@ public interface KubernetesApiFactory {
       try {
         return new KubernetesApiResponse<>(new RequestBuilder.StringObject(
             c.readNamespacedPodLog(name, namespace, container,
-                null, null, null, null, null, null, null, null)));
+                null, null, null, null, null, null, null, null, null)));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }
