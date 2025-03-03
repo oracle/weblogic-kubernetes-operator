@@ -1362,7 +1362,7 @@ class ItIntrospectVersion {
         }
 
         String url = "http://" + hostAndPort
-            + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code + "&ipv6=" + ipv6;
+            + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code;
         HttpResponse<String> response;
         response = OracleHttpClient.get(url, headers, true);
 

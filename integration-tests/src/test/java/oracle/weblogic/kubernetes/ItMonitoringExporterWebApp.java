@@ -338,7 +338,7 @@ class ItMonitoringExporterWebApp {
       logger.info("Testing replace with no restPort configuration");
       replaceMetricsNoRestPortConfiguration();
     } finally {
-      shutdownDomain(domain1Uid, domain1Namespace);
+      // shutdownDomain(domain1Uid, domain1Namespace);
     }
   }
 
