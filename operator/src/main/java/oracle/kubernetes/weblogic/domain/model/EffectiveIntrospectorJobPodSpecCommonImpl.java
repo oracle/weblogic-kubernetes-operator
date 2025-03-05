@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -48,4 +49,10 @@ public class EffectiveIntrospectorJobPodSpecCommonImpl implements EffectiveIntro
   public V1PodSecurityContext getPodSecurityContext() {
     return introspector.getPodSecurityContext();
   }
+
+  @Override
+  public List<V1Container> getInitContainers() {
+    return introspector.getInitContainers();
+  }
+
 }
