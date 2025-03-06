@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.processing;
 
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -28,4 +29,6 @@ public interface EffectiveIntrospectorJobPodSpec {
   V1ResourceRequirements getResources();
 
   V1PodSecurityContext getPodSecurityContext();
+
+  List<V1Container> getInitContainers();
 }

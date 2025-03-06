@@ -11,6 +11,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -73,6 +74,16 @@ class IntrospectorJobPod {
       + "content for the pod-level `securityContext`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
   private V1PodSecurityContext podSecurityContext = null;
+
+  /**
+   * InitContainers holds a list of initialization containers that run after the auxiliary image init
+   * container for the introspector job pod.
+   *
+   */
+  @Valid
+  @Description("List of init containers for the introspector Job Pod. These containers run after the auxiliary image "
+         + "init container. See `kubectl explain pods.spec.initContainers`.")
+  private List<V1Container> initContainers = null;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -142,6 +153,12 @@ class IntrospectorJobPod {
       }
       envFrom.addAll(serverPod1.envFrom);
     }
+    if (serverPod1.initContainers != null) {
+      if (initContainers == null) {
+        initContainers = new ArrayList<>();
+      }
+      initContainers.addAll(serverPod1.initContainers);
+    }
     copyValues(resources, serverPod1.resources);
     copyValues(serverPod1.podSecurityContext);
   }
@@ -154,6 +171,14 @@ class IntrospectorJobPod {
 
   private List<V1EnvVar> getV1EnvVars() {
     return Optional.ofNullable(getEnv()).orElse(emptyList());
+  }
+
+  List<V1Container> getInitContainers() {
+    return Optional.ofNullable(initContainers).orElse(emptyList());
+  }
+
+  void setInitContainers(@Nullable List<V1Container> initContainers) {
+    this.initContainers = initContainers;
   }
 
   private boolean hasEnvVar(String name) {
@@ -219,6 +244,7 @@ class IntrospectorJobPod {
         .append("resources", resources)
         .append("envFrom", envFrom)
         .append("podSecurityContext", podSecurityContext)
+        .append("initContainers", initContainers)
         .toString();
   }
 
@@ -241,6 +267,7 @@ class IntrospectorJobPod {
         .append(resources, that.resources)
         .append(envFrom, that.envFrom)
         .append(podSecurityContext, that.podSecurityContext)
+        .append(initContainers, that.initContainers)
         .isEquals();
   }
 
@@ -252,6 +279,7 @@ class IntrospectorJobPod {
         .append(resources)
         .append(envFrom)
         .append(podSecurityContext)
+        .append(initContainers)
         .toHashCode();
   }
 }
