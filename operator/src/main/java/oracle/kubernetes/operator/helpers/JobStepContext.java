@@ -189,6 +189,11 @@ public class JobStepContext extends BasePodStepContext {
         .map(EffectiveIntrospectorJobPodSpec::getEnv).orElse(new ArrayList<>());
   }
 
+  private List<V1Container> getIntrospectorInitContainers() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+            .map(EffectiveIntrospectorJobPodSpec::getInitContainers).orElse(new ArrayList<>());
+  }
+
   private List<V1EnvVar> getAdminServerEnvVariables() {
     return Optional.ofNullable(getDomain().getAdminServerSpec()).map(EffectiveServerSpec::getEnvironmentVariables)
         .orElse(new ArrayList<>());
@@ -470,6 +475,11 @@ public class JobStepContext extends BasePodStepContext {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
         initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx,
                 isInitializeDomainOnPV())));
+    List<V1Container> introspectorInitContainers = getIntrospectorInitContainers();
+    for (V1Container initContainer : introspectorInitContainers) {
+      initContainer.securityContext(getInitContainerSecurityContext());
+      initContainers.add(initContainer);
+    }
   }
 
   private Optional<InitializeDomainOnPV> getInitializeDomainOnPV() {

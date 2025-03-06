@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -46,6 +47,10 @@ public class IntrospectorJobPodConfiguration implements EffectiveIntrospectorJob
 
   public void setEnv(@Nullable List<V1EnvVar> env) {
     serverPod.setEnv(env);
+  }
+
+  public List<V1Container> getInitContainers() {
+    return serverPod.getInitContainers();
   }
 
   void addEnvironmentVariable(String name, String value) {
