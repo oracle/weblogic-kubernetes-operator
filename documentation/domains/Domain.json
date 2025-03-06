@@ -782,6 +782,13 @@
           "items": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
           }
+        },
+        "initContainers": {
+          "description": "List of init containers for the introspector Job Pod. These containers run after the auxiliary image init container. See `kubectl explain pods.spec.initContainers`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
         }
       }
     },
