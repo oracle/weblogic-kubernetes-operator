@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -461,7 +462,8 @@ class ItMultiDomainModelsScale {
     } else if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
       assertDoesNotThrow(()
-          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+          -> verifyAdminServerRESTAccess(InetAddress.getLocalHost().getHostAddress(),
+              TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
     } else {
       verifyReadyAppUsingAdminNodePort(domainUid, domainNamespace);
       // verify admin console login using ingress controller

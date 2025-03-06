@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -51,10 +53,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_PREFIX;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_TENANCY;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -62,9 +67,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
@@ -76,6 +81,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.shutdown;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -103,6 +109,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -133,8 +140,15 @@ class ItFmwDomainOnPVUpgrade {
 
   private final String fmwModelFilePrefix = "model-fmwdomain-upgrade";  
   
-  private final String imageTag1412 = "14.1.2.0.0-jdk17";
-  private final String image1412 = BASE_IMAGES_PREFIX + FMWINFRA_IMAGE_NAME_DEFAULT + ":" + imageTag1412;
+  private static final String imageTag12214 = "12.2.1.4";
+  private static final String image12214 = FMWINFRA_IMAGE_NAME + ":" + imageTag12214;
+  private static final String imageTag1412 = "14.1.2.0-jdk17-ol8";
+  private static final String image1412 = FMWINFRA_IMAGE_NAME + ":" + imageTag1412;
+  
+  private static ConditionFactory withVeryLongRetryPolicy
+      = with().pollDelay(0, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(30, MINUTES).await();
 
   /**
    * Assigns unique namespaces for DB, operator and domain.
@@ -189,6 +203,21 @@ class ItFmwDomainOnPVUpgrade {
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(domainNamespace);
+
+    if (KIND_REPO != null) {
+      Collection<String> images = new ArrayList<>();
+      images.add(image12214);
+      images.add(image1412);
+
+      for (String image : images) {
+        testUntil(
+            withVeryLongRetryPolicy,
+            pullImageFromBaseRepoAndPushToKind(image),
+            logger,
+            "pullImageFromBaseRepoAndPushToKind for image {0} to be successful",
+            image);
+      }
+    }
   }
   
   /**
@@ -342,7 +371,7 @@ class ItFmwDomainOnPVUpgrade {
         DOMAINHOMEPREFIX,
         replicaCount,
         configuration,
-        FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+        image12214);
 
     // Set the inter-pod anti-affinity for the domain custom resource
     setPodAntiAffinity(domain);
@@ -585,6 +614,13 @@ class ItFmwDomainOnPVUpgrade {
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
     return domain;
+  }
+  
+  private static Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
+    return (() -> {
+      String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + BASE_IMAGES_TENANCY.length() + 2);
+      return imagePull(image) && imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
+    });
   }
   
 }
