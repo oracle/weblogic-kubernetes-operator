@@ -131,7 +131,7 @@ class ItFmwDomainOnPV {
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
     final int dbListenerPort = getNextFreePort();
-    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ".svc.cluster.local:" + "\\" + dbListenerPort + "/devpdb.k8s";
+    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
 
     // get a new unique opNamespace
     logger.info("Assign a unique namespace for operator");
@@ -158,6 +158,7 @@ class ItFmwDomainOnPV {
       dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     }
+
     // install operator and verify its running in ready state
     HelmParams opHelmParams =
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
