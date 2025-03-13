@@ -29,6 +29,7 @@ To use this feature, provide the following information:
 - [Domain information](#domain-information) - This describes the domain type and whether the operator should create the RCU schema.
 - [Domain WDT models](#domain-creation-models) - This is where the WDT Home, WDT model, WDT archive, and WDT variables files reside.
 - [Optional WDT models ConfigMap](#optional-wdt-models-configmap) - Optional, WDT model, WDT variables files.
+- [Using WDT model encryption](#using-wdt-model-encryption) - Optional, using WDT model encryption.
 - [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
 
 
@@ -112,6 +113,21 @@ those in `domainCreationImages`.
 | `domainCreationConfigMap`      | Optional WDT models and WDT variables files in ConfigMap. | ConfigMap name. | N        |
 
 The files inside this ConfigMap must have file extensions, `.yaml`, `.properties`, or `.zip`.
+
+#### Using WDT model encryption
+
+Staring in WebLogic Kubernetes Operator version 4.2.18.  If the provided WDT models are encrypted using the WDT `encryptModel`
+command.  You can specify the encryption passphrase as a secret in the domain resource YAML. WDT will use the value in the
+secret to decrypt the models for domain creation.
+
+```yaml
+   initializeDomainOnPV:
+      wdtModelEncryptionPassphraseSecret: model-encryption-secret
+```
+
+The secret must have a key `passphrase` containing the value of the WDT encryption passphrase used to encrypt the models.
+
+`kubectl create secret generic model-encrypion-secret --from-literal=passphrase=<encryption passphrase value>`
 
 #### Volumes and VolumeMounts information
 

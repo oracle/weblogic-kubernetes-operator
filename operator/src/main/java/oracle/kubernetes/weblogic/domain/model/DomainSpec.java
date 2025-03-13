@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -980,6 +980,12 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getOpss)
         .map(Opss::getWalletFileSecret)
         .orElse(null);
+  }
+
+  String getWdtModelEncryptionSecret() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+            .map(InitializeDomainOnPV::getWdtModelEncryptionPassphraseSecret)
+            .orElse(null);
   }
 
   private String getInitializeDomainOnPVOpssWalletFileSecret() {

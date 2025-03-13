@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -447,6 +447,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    */
   public String getModelOpssWalletPasswordSecret() {
     return spec.getModelOpssWalletPasswordSecret();
+  }
+
+  /**
+   * Reference to secret name of the wdt encryption passphrase for domain on pv.
+   * @return wdt model encryption passphrase secret name
+   */
+  public String getWdtModelEncryptionSecret() {
+    return spec.getWdtModelEncryptionSecret();
   }
 
   /**

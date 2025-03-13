@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of creating domain on pv
@@ -12,6 +12,9 @@ source ${SCRIPTPATH}/wdt_common.sh
 # we export the opss password file location because it's also used by introspectDomain.py
 export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
+WDT_MODEL_ENCRYPTION_PASSPHRASE_ROOT="/weblogic-operator/wdt-encryption-passphrase"
+WDT_MODEL_ENCRYPTION_PASSPHRASE="${WDT_MODEL_ENCRYPTION_PASSPHRASE_ROOT}/passphrase"
+
 IMG_MODELS_HOME="/auxiliary/models"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
@@ -208,6 +211,16 @@ createDomainFromWDTModel() {
     export WDT_CUSTOM_CONFIG=/tmp/model_filters
     mkdir -p "${WDT_CUSTOM_CONFIG}" || exitOrLoop
     cp /weblogic-operator/scripts/dopv-filters.json "${WDT_CUSTOM_CONFIG}/model_filters.json" || exitOrLoop
+  fi
+
+  if [ -d "${WDT_MODEL_ENCRYPTION_PASSPHRASE_ROOT}" ]; then
+    if [ ! -f "${WDT_MODEL_ENCRYPTION_PASSPHRASE}" ]; then
+      trace SEVERE "Domain Source Type is 'DomainOnPV' and you have specified " \
+      " 'initializeDomainOnPV.wdtModelEncryptionPassphraseSecret' but this secret does not have the required key " \
+      " 'passphrase', update the secret and rerun the introspector job."
+      exitOrLoop
+    fi
+    wdtArgs+=" -passphrase_file ${WDT_MODEL_ENCRYPTION_PASSPHRASE}"
   fi
 
   if [ -z "${OPSS_FLAGS}" ]; then

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 93876ffc518d2d133a9ece2860ee9e02131ae3341f4d69e2b15e0b7697a00a15
+    weblogic.sha256: d4d20a0a6c4d30fb25539595ecbb553264ab5ac1647009db79c696579f049197
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -276,6 +276,14 @@ spec:
                                 type: object
                             type: object
                         type: object
+                      wdtModelEncryptionPassphraseSecret:
+                        description: Specifies the secret name of the WebLogic Deployment
+                          Tool encryption passphrase if the WDT models provided in
+                          the 'domainCreationImages' or 'domainCreationConfigMap'
+                          are encrypted using the WebLogic Deployment Tool 'encryptModel'
+                          command. The secret must use the key 'passphrase' containing
+                          the actual passphrase for decryption.
+                        type: string
                       domain:
                         description: Describes the configuration for creating an initial
                           WebLogic Domain in persistent volume (`Domain in PV`). The

@@ -735,6 +735,10 @@
           "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
           "$ref": "#/definitions/PersistentVolume"
         },
+        "wdtModelEncryptionPassphraseSecret": {
+          "description": "Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the \u0027domainCreationImages\u0027 or \u0027domainCreationConfigMap\u0027 are encrypted using the WebLogic Deployment Tool \u0027encryptModel\u0027 command. The secret must use the key \u0027passphrase\u0027 containing the actual passphrase for decryption.",
+          "type": "string"
+        },
         "domain": {
           "description": "Describes the configuration for creating an initial WebLogic Domain in persistent volume (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required.",
           "$ref": "#/definitions/DomainOnPV"

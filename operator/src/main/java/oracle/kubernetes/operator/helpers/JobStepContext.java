@@ -239,6 +239,9 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
+  String getWdtModelEncryptionSecretName() {
+    return getDomain().getWdtModelEncryptionSecret();
+  }
 
   // ----------------------- step methods ------------------------------
 
@@ -603,9 +606,16 @@ public class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
           getOpssWalletPasswordSecretVolume()));
     }
+
     if (getOpssWalletFileSecretName() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
               getOpssWalletFileSecretVolume()));
+    }
+
+    if (getWdtModelEncryptionSecretVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME).secret(
+              getWdtModelEncryptionSecretVolume()
+      ));
     }
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
@@ -730,7 +740,12 @@ public class JobStepContext extends BasePodStepContext {
     if (getOpssWalletFileSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
     }
-    
+
+    if (getWdtModelEncryptionSecretVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME,
+              WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH));
+    }
+
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
     }
@@ -879,6 +894,17 @@ public class JobStepContext extends BasePodStepContext {
     if (getOpssWalletFileSecretName() != null) {
       V1SecretVolumeSource result =  new V1SecretVolumeSource()
               .secretName(getOpssWalletFileSecretName())
+              .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
+  }
+
+  private V1SecretVolumeSource getWdtModelEncryptionSecretVolume() {
+    if (getWdtModelEncryptionSecretName() != null) {
+      V1SecretVolumeSource result =  new V1SecretVolumeSource()
+              .secretName(getWdtModelEncryptionSecretName())
               .defaultMode(420);
       result.setOptional(true);
       return result;
