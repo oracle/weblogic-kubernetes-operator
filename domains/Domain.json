@@ -887,8 +887,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.2.3",
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.2.3",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.0",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.0",
           "type": "string"
         },
         "imagePullPolicy": {
