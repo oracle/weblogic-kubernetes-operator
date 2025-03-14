@@ -736,7 +736,7 @@
           "$ref": "#/definitions/PersistentVolume"
         },
         "wdtModelEncryptionPassphraseSecret": {
-          "description": "Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the \u0027domainCreationImages\u0027 or \u0027domainCreationConfigMap\u0027 are encrypted using the WebLogic Deployment Tool \u0027encryptModel\u0027 command. The secret must use the key \u0027passphrase\u0027 containing the actual passphrase for decryption.",
+          "description": "Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the \u0027domainCreationImages\u0027 or \u0027domainCreationConfigMap\u0027 are encrypted using the WebLogic Deployment Tool \u0027encryptModel\u0027 command. The secret must use the key \u0027passphrase\u0027 containing the actual passphrase for encryption.",
           "type": "string"
         },
         "domain": {

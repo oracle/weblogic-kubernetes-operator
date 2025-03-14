@@ -249,7 +249,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `runDomainInitContainerAsRoot` | Boolean | Specifies whether the operator will run the domain initialization init container in the introspector job as root. This may be needed in some environments to create the domain home directory on PV. Defaults to false. |
 | `setDefaultSecurityContextFsGroup` | Boolean | Specifies whether the operator will set the default 'fsGroup' in the introspector job pod security context. This is needed to create the domain home directory on PV in some environments. If the 'fsGroup' is specified as part of 'spec.introspector.serverPod.podSecurityContext', then the operator will use that 'fsGroup' instead of the default 'fsGroup'. Defaults to true. |
 | `waitForPvcToBind` | Boolean | Specifies whether the operator will wait for the PersistentVolumeClaim to be bound before proceeding with the domain creation. Defaults to true. |
-| `wdtModelEncryptionPassphraseSecret` | string | Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the 'domainCreationImages' or 'domainCreationConfigMap' are encrypted using the WebLogic Deployment Tool 'encryptModel' command. The secret must use the key 'passphrase' containing the actual passphrase for decryption. |
+| `wdtModelEncryptionPassphraseSecret` | string | Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the 'domainCreationImages' or 'domainCreationConfigMap' are encrypted using the WebLogic Deployment Tool 'encryptModel' command. The secret must use the key 'passphrase' containing the actual passphrase for encryption. |
 
 ### Model
 

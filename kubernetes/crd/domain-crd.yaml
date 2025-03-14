@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: d4d20a0a6c4d30fb25539595ecbb553264ab5ac1647009db79c696579f049197
+    weblogic.sha256: 0407ffe9beb7d54809e375d10378d614d066299f1533d885c8b97f056c94bf1a
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -282,7 +282,7 @@ spec:
                           the 'domainCreationImages' or 'domainCreationConfigMap'
                           are encrypted using the WebLogic Deployment Tool 'encryptModel'
                           command. The secret must use the key 'passphrase' containing
-                          the actual passphrase for decryption.
+                          the actual passphrase for encryption.
                         type: string
                       domain:
                         description: Describes the configuration for creating an initial

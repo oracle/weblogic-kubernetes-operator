@@ -55,7 +55,7 @@ public class InitializeDomainOnPV {
   @Description("Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models "
       + "provided in the 'domainCreationImages' or 'domainCreationConfigMap' are encrypted using the "
       + "WebLogic Deployment Tool 'encryptModel' command. "
-      + "The secret must use the key 'passphrase' containing the actual passphrase for decryption.")
+      + "The secret must use the key 'passphrase' containing the actual passphrase for encryption.")
   String wdtModelEncryptionPassphraseSecret;
 
   public PersistentVolume getPersistentVolume() {
