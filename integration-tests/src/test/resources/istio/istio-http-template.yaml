@@ -47,9 +47,9 @@ spec:
             prefix: /myear
         - uri:
             prefix: /testwebapp            
-        - port: 7001
+        - port: MANAGED_SERVER_PORT
       route:
         - destination:
             host: CLUSTER_SERVICE
             port:
-              number: 7001
+              number: MANAGED_SERVER_PORT

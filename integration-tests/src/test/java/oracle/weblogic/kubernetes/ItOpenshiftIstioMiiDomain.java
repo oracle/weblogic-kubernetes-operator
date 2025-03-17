@@ -227,6 +227,7 @@ class ItOpenshiftIstioMiiDomain {
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
     templateMap.put("testwebapp", "sample-war");
+    templateMap.put("MANAGED_SERVER_PORT", "7001");
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(

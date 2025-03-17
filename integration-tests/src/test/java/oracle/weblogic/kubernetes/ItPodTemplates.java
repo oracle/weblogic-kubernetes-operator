@@ -293,6 +293,8 @@ class ItPodTemplates {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
+    
+    logger.info(Yaml.dump(domain));
 
     ClusterSpec clusterSpec = new ClusterSpec()
             .withClusterName(clusterName)
@@ -303,6 +305,7 @@ class ItPodTemplates {
     ClusterResource cluster = 
          createClusterResource(clusterName, domainNamespace, clusterSpec);
     logger.info("Creating cluster resource {0} in namespace {1}", clusterName, domainNamespace);
+    logger.info(Yaml.dump(cluster));
     createClusterAndVerify(cluster);
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));

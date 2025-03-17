@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -29,7 +30,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -48,7 +48,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
@@ -84,8 +83,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
-import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodPhaseAndPodReady;
@@ -734,24 +735,21 @@ class ItDiagnosticsFailedCondition {
 
       String rcuaccessSecretName = domainName + "-rcu-access";
       String opsswalletpassSecretName = domainName + "-opss-wallet-password-secret";
+      String rcuSysPassword = "Oradoc_db1";
+      String dbName = domainName + "my-oracle-db";
 
-      logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
-          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", domainNamespace, dbListenerPort, rcuSchemaPrefix, dbUrl,
-          DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
-      assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-          rcuSchemaPrefix, domainNamespace, getNextFreePort(), dbUrl, dbListenerPort),
-          String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-              + "dbUrl %s, dbListenerPost %s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
+      logger.info("Create Oracle DB in namespace: {0} ", domainNamespace);
+      createBaseRepoSecret(domainNamespace);
+      dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, rcuSysPassword, domainNamespace));
+
+      logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
+          + " dbNamespace: {3}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, domainNamespace);
+      createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, domainNamespace);
 
       // create RCU access secret
       logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
           rcuaccessSecretName, rcuSchemaPrefix, rcuSchemaPassword, dbUrl);
-      assertDoesNotThrow(() -> createRcuAccessSecret(rcuaccessSecretName,
-          domainNamespace,
-          rcuSchemaPrefix,
-          rcuSchemaPassword,
-          dbUrl),
-          String.format("createSecret failed for %s", rcuaccessSecretName));
+      createRcuAccessSecret(rcuaccessSecretName, domainNamespace, rcuSchemaPrefix, rcuSchemaPassword, dbUrl);
 
       logger.info("Create OPSS wallet password secret");
       assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
@@ -823,12 +821,7 @@ class ItDiagnosticsFailedCondition {
       }
 
       // delete Oracle database
-      String dbPodName = "oracledb";
-      assertDoesNotThrow(() -> Kubernetes.deleteDeployment(domainNamespace, "oracledb"),
-          "deleting oracle db failed");
-
-      logger.info("Wait for the oracle Db pod: {0} to be deleted in namespace {1}", dbPodName, domainNamespace);
-      PodUtils.checkPodDeleted(dbPodName, null, domainNamespace);
+      deleteOracleDB(domainNamespace, dbName);
 
       patchStr
           = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
@@ -848,6 +841,8 @@ class ItDiagnosticsFailedCondition {
         checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, managedServerName, "Running", "False");
       }
       testPassed = true;
+    } catch (ApiException ex) {
+      logger.severe(ex.getLocalizedMessage());
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
