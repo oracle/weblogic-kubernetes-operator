@@ -233,6 +233,7 @@ class ItIstioTwoDomainsInImage {
     templateMap.put("DUID", domainUid1);
     templateMap.put("ADMIN_SERVICE",adminServerPodName1);
     templateMap.put("CLUSTER_SERVICE", clusterService1);
+    templateMap.put("MANAGED_SERVER_PORT", "8001");
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(

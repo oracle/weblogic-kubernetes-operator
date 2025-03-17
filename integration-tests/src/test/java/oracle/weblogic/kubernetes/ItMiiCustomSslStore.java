@@ -23,6 +23,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
@@ -217,12 +218,18 @@ class ItMiiCustomSslStore {
     StringBuffer extOpts = new StringBuffer("");
     extOpts.append("-Dweblogic.security.SSL.ignoreHostnameVerification=true ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStore=/shared/"
-            + domainNamespace + "/" + domainUid + "/TrustKeyStore.jks ");
+        + domainNamespace + "/" + domainUid + "/TrustKeyStore.jks ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStorePassPhrase=changeit ");
+    String managedServerPort;
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      managedServerPort = "8100";
+    } else {
+      managedServerPort = "7002";
+    }
     testUntil(
         runClientInsidePod(adminServerPodName, domainNamespace,
-          "/u01", extOpts.toString() + " SslTestClient", "t3s://"
-                + domainUid + "-cluster-cluster-1:8100"),
+            "/u01", extOpts.toString() + " SslTestClient", "t3s://"
+            + domainUid + "-cluster-cluster-1:" + managedServerPort),
         logger,
         "Wait for client to get Initial context");
   }
