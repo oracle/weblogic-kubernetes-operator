@@ -51,6 +51,13 @@ public class InitializeDomainOnPV {
       + " If the 'fsGroup' is specified as part of 'spec.introspector.serverPod.podSecurityContext', then the operator"
       + " will use that 'fsGroup' instead of the default 'fsGroup'. Defaults to true.")
   public Boolean setDefaultSecurityContextFsGroup;
+  
+  @ApiModelProperty("Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models "
+      + "provided in the 'domainCreationImages' or 'domainCreationConfigMap' are encrypted using the "
+      + "WebLogic Deployment Tool 'encryptModel' command. "
+      + "The secret must use the key 'passphrase' containing the actual passphrase for encryption.")
+  public String wdtModelEncryptionPassphraseSecret;
+  
 
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
@@ -105,6 +112,15 @@ public class InitializeDomainOnPV {
     this.setDefaultSecurityContextFsGroup = setDefaultFsGroup;
     return this;
   }
+  
+  public String getWdtModelEncryptionPassphraseSecret() {
+    return wdtModelEncryptionPassphraseSecret;
+  }
+
+  public InitializeDomainOnPV  wdtModelEncryptionPassphraseSecret(String wdtModelEncryptionPassphraseSecret) {
+    this.wdtModelEncryptionPassphraseSecret = wdtModelEncryptionPassphraseSecret;
+    return this;
+  }  
 
   @Override
   public String toString() {
@@ -138,12 +154,13 @@ public class InitializeDomainOnPV {
     }
 
     InitializeDomainOnPV rhs = ((InitializeDomainOnPV) other);
-    EqualsBuilder builder =
-        new EqualsBuilder()
+    EqualsBuilder builder
+        = new EqualsBuilder()
             .append(persistentVolume, rhs.persistentVolume)
             .append(persistentVolumeClaim, rhs.persistentVolumeClaim)
             .append(domain, rhs.domain)
-            .append(waitForPvcToBind, rhs.waitForPvcToBind);
+            .append(waitForPvcToBind, rhs.waitForPvcToBind)
+            .append(wdtModelEncryptionPassphraseSecret, rhs.wdtModelEncryptionPassphraseSecret);
 
     return builder.isEquals();
   }
