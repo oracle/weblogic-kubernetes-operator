@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -587,6 +587,9 @@ public class PodHelper {
 
     @Override
     V1SecurityContext getInitContainerSecurityContext() {
+      if (getServerSpec().getContainerSecurityContext() != null) {
+        return getServerSpec().getContainerSecurityContext();
+      }
       if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
         return PodSecurityHelper.getDefaultContainerSecurityContext();
       }
@@ -895,6 +898,9 @@ public class PodHelper {
 
     @Override
     V1SecurityContext getInitContainerSecurityContext() {
+      if (getServerSpec().getContainerSecurityContext() != null) {
+        return getServerSpec().getContainerSecurityContext();
+      }
       if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
         return PodSecurityHelper.getDefaultContainerSecurityContext();
       }
