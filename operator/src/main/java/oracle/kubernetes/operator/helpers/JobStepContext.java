@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -512,6 +512,9 @@ public class JobStepContext extends BasePodStepContext {
   V1SecurityContext getInitContainerSecurityContext() {
     if (isInitDomainOnPVRunAsRoot()) {
       return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
+    }
+    if (getServerSpec().getContainerSecurityContext() != null) {
+      return getServerSpec().getContainerSecurityContext();
     }
     if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
       return PodSecurityHelper.getDefaultContainerSecurityContext();
