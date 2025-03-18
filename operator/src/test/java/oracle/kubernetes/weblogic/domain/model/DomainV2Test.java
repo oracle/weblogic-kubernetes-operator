@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -630,6 +630,26 @@ class DomainV2Test extends DomainTestBase {
                 .seLinuxOptions(new V1SELinuxOptions().level("server").role("slave")));
 
     configureAdminServer().withPodSecurityContext(new V1PodSecurityContext().runAsNonRoot(false));
+  }
+
+  @Test
+  void whenDefaultContainerSecurityContextConfiguredOnManagedServer() {
+    V1SecurityContext ms1ContainerSecSpec =
+            info.getServer(SERVER1, CLUSTER_NAME).getContainerSecurityContext();
+
+    assertThat(ms1ContainerSecSpec.getRunAsNonRoot(), is(true));
+    assertThat(ms1ContainerSecSpec.getPrivileged(), is(false));
+    assertThat(ms1ContainerSecSpec.getAllowPrivilegeEscalation(), is(false));
+    assertThat(ms1ContainerSecSpec.getCapabilities().getDrop(), contains("ALL"));
+  }
+
+  @Test
+  void whenPodSecurityContextConfiguredNoDefaultContainerSecurityContextOnManagedServer() {
+    configureDomainWithPodSecurityContext(domain);
+    V1SecurityContext ms1ContainerSecSpec =
+            info.getServer(SERVER1, CLUSTER_NAME).getContainerSecurityContext();
+
+    assertThat(ms1ContainerSecSpec, nullValue());
   }
 
   @Test

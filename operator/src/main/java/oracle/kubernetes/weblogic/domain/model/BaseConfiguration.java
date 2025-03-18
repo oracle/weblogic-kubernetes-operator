@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -298,7 +298,13 @@ public abstract class BaseConfiguration {
   }
 
   V1SecurityContext getContainerSecurityContext() {
-    return Optional.ofNullable(serverPod.getContainerSecurityContext()).orElse(getDefaultContainerSecurityContext());
+    return Optional.ofNullable(serverPod.getContainerSecurityContext())
+        .orElseGet(() -> {
+          if (serverPod.getPodSecurityContext() == null) {
+            return getDefaultContainerSecurityContext();
+          }
+          return null;
+        });
   }
 
   void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
