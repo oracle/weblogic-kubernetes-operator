@@ -477,6 +477,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withInitializeDomainOnPVModelEncryptionSecret(String secret) {
+    getOrCreateInitializeDomainOnPVModelSecret(secret);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withInitializeDomainOnPVType(String type) {
     getOrCreateInitializeDomainOnPVDomain().domainType(type);
     return this;
@@ -568,6 +574,13 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       domain.opss(new Opss());
     }
     return domain.getOpss();
+  }
+
+  private void getOrCreateInitializeDomainOnPVModelSecret(String secretName) {
+    InitializeDomainOnPV initializeDomainOnPV = getOrCreateInitializeDomainOnPV();
+    if (initializeDomainOnPV.getWdtModelEncryptionPassphraseSecret() == null) {
+      initializeDomainOnPV.wdtModelEncryptionPassphraseSecret(secretName);
+    }
   }
 
   @Override
