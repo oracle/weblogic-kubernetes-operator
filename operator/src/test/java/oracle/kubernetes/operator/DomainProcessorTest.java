@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -911,6 +911,17 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainWithoutPreCreateServerService_removeService() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(false);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    createMakeRight(newInfo).execute();
+    assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
+  }
+
+  @Test
   void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
@@ -926,6 +937,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainScaledDown_withoutPreCreateServerService_removeService() {
     final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3).withPrecreateServerService(false);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 

@@ -363,7 +363,7 @@ public abstract class BaseConfiguration {
     return serverService.isPrecreateService();
   }
 
-  void setPrecreateServerService(boolean value) {
+  public void setPrecreateServerService(boolean value) {
     serverService.setIsPrecreateService(value);
   }
 
