@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -105,7 +105,8 @@ public class ManagedServersUpStep extends Step {
   private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {
     return (info.getServerPod(ssi.getServerName()) != null
             && !info.isServerPodBeingDeleted(ssi.getServerName()))
-            || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
+            || (ssi.isServiceOnly() && (info.getServerService(ssi.getServerName()) == null)
+            || (!ssi.isServiceOnly() && (info.getServerService(ssi.getServerName()) != null)));
   }
 
   private static void insert(List<Step> steps, Step step) {
