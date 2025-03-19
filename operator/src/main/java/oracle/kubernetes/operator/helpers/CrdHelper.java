@@ -772,20 +772,17 @@ public class CrdHelper {
     @Override
     public boolean isOutdatedCrd(SemanticVersion productVersion, String resourceVersionString,
                                  V1CustomResourceDefinition actual, V1CustomResourceDefinition expected) {
-      ResourceVersion current = new ResourceVersion(resourceVersionString);
-      List<ResourceVersion> actualVersions = getVersions(actual);
-
-      for (ResourceVersion v : actualVersions) {
-        if (!isLaterOrEqual(v, current)) {
-          return false;
-        }
-      }
-
       // Check product version label
       if (productVersion != null) {
         SemanticVersion currentCrdVersion = KubernetesUtils.getProductVersionFromMetadata(actual.getMetadata());
-        if (currentCrdVersion == null || productVersion.compareTo(currentCrdVersion) < 0) {
+        if (currentCrdVersion == null) {
           return false;
+        }
+        int compareToResult = productVersion.compareTo(currentCrdVersion);
+        if (compareToResult < 0) {
+          return false;
+        } else if (compareToResult > 0) {
+          return true;
         }
       }
 
