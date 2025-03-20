@@ -63,16 +63,20 @@ try {
   env.put(Context.SECURITY_CREDENTIALS, "welcome1");
   rctx = new InitialContext(env);
   out.println("(Remote) Got JNDI Context successfully ["+rctx+"]");
+  System.out.println("(Remote) Got JNDI Context successfully ["+rctx+"]");
 
   // lookup JMS XAConnectionFactory
   ConnectionFactory qcf2=
        (ConnectionFactory)rctx.lookup("jms/ClusterConnectionFactory");
   out.println("(Remote) JMS ConnectionFactory lookup successful");
+  System.out.println("(Remote) JMS ConnectionFactory lookup successful");
 
   JMSContext context2 = qcf2.createContext();
   out.println("(Remote) JMS Context created successfully");
+  System.out.println("(Remote) JMS Context created successfully");
   Destination queue2 = (Destination)rctx.lookup("jms.testUniformQueue");
   out.println("(Remote) JMS Destination (jms.testUniformQueue) lookup successful ");
+  System.out.println("(Remote) JMS Destination (jms.testUniformQueue) lookup successful ");
 
   for (int i=0; i<10; i++)
     context2.createProducer().send(queue2, "Message to a Remote Destination");
@@ -85,14 +89,18 @@ try {
     out.println(ut);
     ut.commit();
     out.println("#### Message sent in a commit User Transation");
+    System.out.println("#### Message sent in a commit User Transation");
   } else if ( action.equals("rollback")) {
     out.println(ut);
     ut.rollback();
     out.println("#### Message sent in a rolled-back User Transation");
+    System.out.println("#### Message sent in a rolled-back User Transation");
   } else {
     out.println("#### Message sent w/o Transaction");
+    System.out.println("#### Message sent w/o Transaction");
   }
 } catch(Exception e) {
    out.println("#### Got an Exception [" +e+"]");
+   System.out.println("#### Got an Exception [" +e+"]");
 }
 %>
