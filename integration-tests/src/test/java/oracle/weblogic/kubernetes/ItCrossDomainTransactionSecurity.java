@@ -240,7 +240,8 @@ class ItCrossDomainTransactionSecurity {
       curlCmd1.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url1 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=commit\"";
+        + "/sample_war/dtx.jsp?remoteurl=t3://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8001&action=commit\"";
     curlCmd1.append(url1);
     logger.info("Executing curl command: {0}", curlCmd1);
     assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
@@ -253,7 +254,8 @@ class ItCrossDomainTransactionSecurity {
       curlCmd2.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url2 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=recv&dest=jms.testUniformQueue\"";
+        + "/sample_war/get.jsp?remoteurl=t3://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8001&action=recv&dest=jms.testUniformQueue\"";
     curlCmd2.append(url2);
     logger.info("Executing curl command: {0}", curlCmd2);
     for (int i = 0; i < 2; i++) {
@@ -276,7 +278,8 @@ class ItCrossDomainTransactionSecurity {
       curlCmd3.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url3 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=rollback\"";
+        + "/sample_war/dtx.jsp?remoteurl=t3://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8001&action=rollback\"";
     curlCmd3.append(url3);
     logger.info("Executing curl command: {0}", curlCmd3);
     assertTrue(getCurlResult(curlCmd3.toString()).contains("Message sent in a rolled-back User Transation"),
@@ -289,7 +292,8 @@ class ItCrossDomainTransactionSecurity {
       curlCmd4.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url4 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=recv&dest=jms.testUniformQueue\"";
+        + "/sample_war/get.jsp?remoteurl=t3://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8001&action=recv&dest=jms.testUniformQueue\"";
     curlCmd4.append(url4);
     logger.info("Executing curl command: {0}", curlCmd4);
     for (int i = 0; i < 2; i++) {
@@ -339,7 +343,8 @@ class ItCrossDomainTransactionSecurity {
       curlCmd1.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url1 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2:8500&action=commit\"";
+        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8500&action=commit\"";
     curlCmd1.append(url1);
     logger.info("Executing curl command: {0}", curlCmd1);
     assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
@@ -352,8 +357,9 @@ class ItCrossDomainTransactionSecurity {
       curlCmd2.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url2 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain2-cluster-cluster-2:8500&action=recv&dest=jms.testUniformQueue\"";
+        + "/sample_war/get.jsp?remoteurl="
+        + "t3s://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8500&action=recv&dest=jms.testUniformQueue\"";
     curlCmd2.append(url2);
     logger.info("Executing curl command: {0}", curlCmd2);
     for (int i = 0; i < 2; i++) {
@@ -369,8 +375,9 @@ class ItCrossDomainTransactionSecurity {
       curlCmdx.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String urlx = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain1-admin-server:7002&action=recv&dest=jms.admin.adminQueue\"";
+        + "/sample_war/get.jsp?remoteurl="
+        + "t3s://domain1-admin-server."
+        + domainNamespace + ".svc.cluster.local:7002&action=recv&dest=jms.admin.adminQueue\"";
     curlCmdx.append(urlx);
     logger.info("Executing curl command for local queue: {0}", curlCmdx);
     assertTrue(getCurlResult(curlCmdx.toString()).contains("Total Message(s) Received : 1"),
@@ -383,7 +390,8 @@ class ItCrossDomainTransactionSecurity {
       curlCmd3.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url3 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2:8500&action=rollback\"";
+        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8500&action=rollback\"";
     curlCmd3.append(url3);
     logger.info("Executing curl command: {0}", curlCmd3);
     assertTrue(getCurlResult(curlCmd3.toString()).contains("Message sent in a rolled-back User Transation"),
@@ -396,8 +404,9 @@ class ItCrossDomainTransactionSecurity {
       curlCmd4.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String url4 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain2-cluster-cluster-2:8500&action=recv&dest=jms.testUniformQueue\"";
+        + "/sample_war/get.jsp?remoteurl="
+        + "t3s://domain2-cluster-cluster-2."
+        + domainNamespace + ".svc.cluster.local:8500&action=recv&dest=jms.testUniformQueue\"";
     curlCmd4.append(url4);
     logger.info("Executing curl command: {0}", curlCmd4);
     for (int i = 0; i < 2; i++) {
@@ -413,8 +422,9 @@ class ItCrossDomainTransactionSecurity {
       curlCmdy.append(" -H 'host: " + hostHeader1 + "' ");
     }
     String urly = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain1-admin-server:7002&action=recv&dest=jms.admin.adminQueue\"";
+        + "/sample_war/get.jsp?remoteurl="
+        + "t3s://domain1-admin-server."
+        + domainNamespace + ".svc.cluster.local:7002&action=recv&dest=jms.admin.adminQueue\"";
     curlCmdy.append(urly);
     logger.info("Executing curl command for local queue: {0}", curlCmdy);
     assertTrue(getCurlResult(curlCmdx.toString()).contains("Total Message(s) Received : 0"),
