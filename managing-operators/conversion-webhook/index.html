@@ -12,20 +12,20 @@
     <title>Upgrade operator from version 3.x to 4.x :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1742441114" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1742441114" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1742511062" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1742511062" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1742441114"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1742511062"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1742441114"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1742441114"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1742511062"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1742511062"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1742441114"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1742511062"></script>
 
     
   </div>
@@ -3903,6 +3903,7 @@
     <li><a href="#introduction">Introduction</a></li>
     <li><a href="#conversion-webhook-components">Conversion webhook components</a></li>
     <li><a href="#install-the-conversion-webhook">Install the conversion webhook</a></li>
+    <li><a href="#upgrade-the-conversion-webhook">Upgrade the conversion webhook</a></li>
     <li><a href="#uninstall-the-conversion-webhook">Uninstall the conversion webhook</a></li>
     <li><a href="#troubleshooting-the-conversion-webhook">Troubleshooting the conversion webhook</a></li>
   </ul>
@@ -3935,6 +3936,7 @@
     <li><a href="#introduction">Introduction</a></li>
     <li><a href="#conversion-webhook-components">Conversion webhook components</a></li>
     <li><a href="#install-the-conversion-webhook">Install the conversion webhook</a></li>
+    <li><a href="#upgrade-the-conversion-webhook">Upgrade the conversion webhook</a></li>
     <li><a href="#uninstall-the-conversion-webhook">Uninstall the conversion webhook</a></li>
     <li><a href="#troubleshooting-the-conversion-webhook">Troubleshooting the conversion webhook</a></li>
   </ul>
@@ -4062,7 +4064,20 @@ see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-oper
 </table>
 <p><strong>NOTE</strong>:
 A webhook install is skipped if there&rsquo;s already a webhook deployment at the same or newer version. The <code>helm install</code> step requires cluster-level permissions to search for existing conversion webhook deployments in all namespaces.</p>
-<h3 id="uninstall-the-conversion-webhook">Uninstall the conversion webhook</h3>
+<h3 id="upgrade-the-conversion-webhook">Upgrade the conversion webhook</h3>
+<p>We support having exactly one installation of the webhook and having one or more installations of the operator. To have more than one installation of the operator, you would need to install a Helm release with just the webhook and then separately install multiple Helm releases with just the operator. The conversion webhook should be updated to at least match the version of the most recent operator in the cluster.</p>
+<p>To upgrade the conversion webhook only, you must have <em>first</em> installed a Helm release with the webhook only, use the <code>--set webhookOnly=true</code> option, then you can update that release.</p>
+<p>The following example installs the conversion webhook only (at the specified version), and then upgrades it (to a later, specified version).</p>
+<pre tabindex="0"><code>kubectl create namespace &lt;your-namespace&gt;
+
+helm repo add weblogic-helm-repository https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+
+helm install &lt;your-release-name&gt; weblogic-helm-repository/weblogic-operator --namespace &lt;your-namespace&gt; --set webhookOnly=true --version &lt;selected-version&gt;
+</code></pre><p>The first two steps create the namespace and configure Helm with the chart repository.</p>
+<p>The final step installs the webhook specifying that the install should be for the webhook only and at a specific version of the product.</p>
+<p>To upgrade to a later version of the webhook:</p>
+<pre tabindex="0"><code>helm upgrade &lt;your-release-name&gt; weblogic-helm-repository/weblogic-operator --namespace &lt;your-namespace&gt; --version &lt;selected-new-version&gt;
+</code></pre><h3 id="uninstall-the-conversion-webhook">Uninstall the conversion webhook</h3>
 
 <div class="notices warning" ><p>If you are deploying Domains using <code>weblogic.oracle/v8</code> or older schema and either you have multiple operators deployed or you want to create Domains without the operator deployed, then you may not want to uninstall the webhook. If the conversion webhook runtime is not available under these conditions, then you will see a <code>conversion webhook not found</code> error. To avoid this error, reinstall the webhook and, in the future, use the <code>preserveWebhook=true</code> Helm configuration value when installing an operator.</p>
 </div>
@@ -6697,19 +6712,19 @@ and the conversion webhook namespace is <code>sample-weblogic-conversion-webhook
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1742441114"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1742441114"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1742441114"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1742441114"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1742441114"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1742441114"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1742511062"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1742511062"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1742511062"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1742511062"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1742511062"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1742511062"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1742441114"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1742441114"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1742441114"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1742511062"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1742511062"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1742511062"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1742441114"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1742511062"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

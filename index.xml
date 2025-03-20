@@ -433,7 +433,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/conversion-webhook/</link>
       <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/conversion-webhook/</guid>
-      <description>Contents Introduction Conversion webhook components Install the conversion webhook Uninstall the conversion webhook Troubleshooting the conversion webhook Introduction The conversion webhook that is described in this document transparently handles a weblogic.oracle/v8 schema domain resource at runtime, but if you want to use the new fields introduced in the latest weblogic.oracle/v9 schema with a Domain that is currently weblogic.oracle/v8, then you will need to update its Domain resource file and potentially create new Cluster resource files.</description>
+      <description>Contents Introduction Conversion webhook components Install the conversion webhook Upgrade the conversion webhook Uninstall the conversion webhook Troubleshooting the conversion webhook Introduction The conversion webhook that is described in this document transparently handles a weblogic.oracle/v8 schema domain resource at runtime, but if you want to use the new fields introduced in the latest weblogic.oracle/v9 schema with a Domain that is currently weblogic.oracle/v8, then you will need to update its Domain resource file and potentially create new Cluster resource files.</description>
     </item>
     <item>
       <title>Access domain images</title>
