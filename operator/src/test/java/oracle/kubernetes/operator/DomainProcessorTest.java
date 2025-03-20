@@ -911,17 +911,6 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainWithoutPreCreateServerService_removeService() {
-    defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
-    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(false);
-    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
-
-    createMakeRight(newInfo).execute();
-    assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
-  }
-
-  @Test
   void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
@@ -949,6 +938,22 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
     assertThat(getServerService(SERVER3).isPresent(), is(false));
+  }
+
+  @Test
+  void whenDomainWithoutPreCreateServerService_removeService() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    createMakeRight(newInfo).execute();
+    assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
+    newInfo.getReferencedClusters().getFirst().getSpec().setPrecreateServerService(false);
+    newDomain.getSpec().setPrecreateServerService(false);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+    assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
   }
 
   @Test
