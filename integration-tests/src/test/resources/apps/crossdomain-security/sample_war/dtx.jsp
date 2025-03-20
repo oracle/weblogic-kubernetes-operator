@@ -27,26 +27,41 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
 try {
   Context lctx = null;
   Context rctx = null;
+  
+  Hashtable env = new Hashtable();
+  env.put(Context.INITIAL_CONTEXT_FACTORY,
+          "weblogic.jndi.WLInitialContextFactory");
+  // Remote anonymous RMI access via T3 not allowed
+  env.put(Context.SECURITY_PRINCIPAL, "weblogic");
+  env.put(Context.SECURITY_CREDENTIALS, "welcome1");
+  
   String remoteurl = request.getParameter("remoteurl");
   out.println("#### Remote URL is ["+remoteurl+"]");
+  System.out.println("#### Remote URL is ["+remoteurl+"]");
   String action = request.getParameter("action"); 
   out.println("#### Transcation action ["+action+"]");
+  System.out.println("#### Transcation action ["+action+"]");
 
-  lctx = new InitialContext();
+  lctx = new InitialContext(env);
   out.println("(Local) Got JNDI Context successfully ["+lctx+"]");
+  System.out.println("(Local) Got JNDI Context successfully ["+lctx+"]");
   TransactionHelper tranhelp =TransactionHelper.getTransactionHelper();
   UserTransaction ut = tranhelp.getUserTransaction();
 
   ConnectionFactory qcf=
        (ConnectionFactory)lctx.lookup("weblogic.jms.XAConnectionFactory");
   out.println("(Local) JMS ConnectionFactory lookup successful ...");
+  System.out.println("(Local) JMS ConnectionFactory lookup successful ...");
   JMSContext context = qcf.createContext();
   out.println("(Local) JMS Context created successfully ...");
+  System.out.println("(Local) JMS Context created successfully ...");
   Destination queue = (Destination)lctx.lookup("jms.admin.adminQueue");
   out.println("(Local) JMS Destination (jms.admin.adminQueue) lookup successful ...");
+  System.out.println("(Local) JMS Destination (jms.admin.adminQueue) lookup successful ...");
 
   if ( ! action.equals("notx") ) {
     out.println("Started a user transaction");
+    System.out.println("Started a user transaction");
     ut.begin();
   }
 
@@ -54,13 +69,7 @@ try {
   context.createProducer().send(queue, "Message to a Local Destination");
   lctx.close();
 
-  Hashtable env = new Hashtable();
-  env.put(Context.INITIAL_CONTEXT_FACTORY,
-          "weblogic.jndi.WLInitialContextFactory");
   env.put(Context.PROVIDER_URL, remoteurl);
-  // Remote anonymous RMI access via T3 not allowed
-  env.put(Context.SECURITY_PRINCIPAL, "weblogic");
-  env.put(Context.SECURITY_CREDENTIALS, "welcome1");
   rctx = new InitialContext(env);
   out.println("(Remote) Got JNDI Context successfully ["+rctx+"]");
   System.out.println("(Remote) Got JNDI Context successfully ["+rctx+"]");
