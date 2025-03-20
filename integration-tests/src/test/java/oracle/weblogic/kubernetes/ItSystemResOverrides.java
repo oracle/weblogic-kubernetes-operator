@@ -456,7 +456,7 @@ class ItSystemResOverrides {
           ItSystemResOverrides.class.getSimpleName());
     }
     configuration.getInitializeDomainOnPV()
-        .wdtModelEncryptionPassphraseSecret(encryptionSecret)
+        .modelEncryptionPassphraseSecret(encryptionSecret)
         .domain(new DomainOnPV()
             .createMode(CreateIfNotExists.DOMAIN)
             .domainCreationImages(Collections.singletonList(domainCreationImage))

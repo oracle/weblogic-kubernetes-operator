@@ -578,8 +578,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   private void getOrCreateInitializeDomainOnPVModelSecret(String secretName) {
     InitializeDomainOnPV initializeDomainOnPV = getOrCreateInitializeDomainOnPV();
-    if (initializeDomainOnPV.getWdtModelEncryptionPassphraseSecret() == null) {
-      initializeDomainOnPV.wdtModelEncryptionPassphraseSecret(secretName);
+    if (initializeDomainOnPV.getModelEncryptionPassphraseSecret() == null) {
+      initializeDomainOnPV.modelEncryptionPassphraseSecret(secretName);
     }
   }
 

@@ -735,10 +735,6 @@
           "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
           "$ref": "#/definitions/PersistentVolume"
         },
-        "wdtModelEncryptionPassphraseSecret": {
-          "description": "Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the \u0027domainCreationImages\u0027 or \u0027domainCreationConfigMap\u0027 are encrypted using the WebLogic Deployment Tool \u0027encryptModel\u0027 command. The secret must use the key \u0027passphrase\u0027 containing the actual passphrase for encryption.",
-          "type": "string"
-        },
         "domain": {
           "description": "Describes the configuration for creating an initial WebLogic Domain in persistent volume (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required.",
           "$ref": "#/definitions/DomainOnPV"
@@ -746,6 +742,10 @@
         "persistentVolumeClaim": {
           "description": "An optional field that describes the configuration for creating a PersistentVolumeClaim for `Domain on PV`. PersistentVolumeClaim is a user\u0027s request for and claim to a persistent volume. The operator will perform this one-time create operation only if the persistent volume claim does not already exist. Omit this section if you have manually created a persistent volume claim. If specified, the name must match one of the volumes under `serverPod.volumes` and the domain home must reside in the mount path of the volume using this claim. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc",
           "$ref": "#/definitions/PersistentVolumeClaim"
+        },
+        "modelEncryptionPassphraseSecret": {
+          "description": "Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the \u0027domainCreationImages\u0027 or \u0027domainCreationConfigMap\u0027 are encrypted using the WebLogic Deployment Tool \u0027encryptModel\u0027 command. The secret must use the key \u0027passphrase\u0027 containing the actual passphrase for encryption.",
+          "type": "string"
         },
         "setDefaultSecurityContextFsGroup": {
           "description": "Specifies whether the operator will set the default \u0027fsGroup\u0027 in the introspector job pod security context. This is needed to create the domain home directory on PV in some environments. If the \u0027fsGroup\u0027 is specified as part of \u0027spec.introspector.serverPod.podSecurityContext\u0027, then the operator will use that \u0027fsGroup\u0027 instead of the default \u0027fsGroup\u0027. Defaults to true.",

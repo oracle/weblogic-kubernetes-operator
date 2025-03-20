@@ -982,9 +982,9 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-  String getWdtModelEncryptionSecret() {
+  String getModelEncryptionSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
-            .map(InitializeDomainOnPV::getWdtModelEncryptionPassphraseSecret)
+            .map(InitializeDomainOnPV::getModelEncryptionPassphraseSecret)
             .orElse(null);
   }
 

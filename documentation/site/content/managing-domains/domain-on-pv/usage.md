@@ -122,7 +122,7 @@ secret to decrypt the models for domain creation.
 
 ```yaml
    initializeDomainOnPV:
-      wdtModelEncryptionPassphraseSecret: model-encryption-secret
+      modelEncryptionPassphraseSecret: model-encryption-secret
 ```
 
 The secret must have a key `passphrase` containing the value of the WDT encryption passphrase used to encrypt the models.

@@ -239,8 +239,8 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
-  String getWdtModelEncryptionSecretName() {
-    return getDomain().getWdtModelEncryptionSecret();
+  String getModelEncryptionSecretName() {
+    return getDomain().getModelEncryptionSecret();
   }
 
   // ----------------------- step methods ------------------------------
@@ -612,9 +612,9 @@ public class JobStepContext extends BasePodStepContext {
               getOpssWalletFileSecretVolume()));
     }
 
-    if (getWdtModelEncryptionSecretVolume() != null) {
+    if (getModelEncryptionSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME).secret(
-              getWdtModelEncryptionSecretVolume()
+              getModelEncryptionSecretVolume()
       ));
     }
 
@@ -741,7 +741,7 @@ public class JobStepContext extends BasePodStepContext {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
     }
 
-    if (getWdtModelEncryptionSecretVolume() != null) {
+    if (getModelEncryptionSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME,
               WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH));
     }
@@ -901,10 +901,10 @@ public class JobStepContext extends BasePodStepContext {
     return null;
   }
 
-  private V1SecretVolumeSource getWdtModelEncryptionSecretVolume() {
-    if (getWdtModelEncryptionSecretName() != null) {
+  private V1SecretVolumeSource getModelEncryptionSecretVolume() {
+    if (getModelEncryptionSecretName() != null) {
       V1SecretVolumeSource result =  new V1SecretVolumeSource()
-              .secretName(getWdtModelEncryptionSecretName())
+              .secretName(getModelEncryptionSecretName())
               .defaultMode(420);
       result.setOptional(true);
       return result;

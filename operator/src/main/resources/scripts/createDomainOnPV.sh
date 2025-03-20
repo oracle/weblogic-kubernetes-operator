@@ -216,7 +216,7 @@ createDomainFromWDTModel() {
   if [ -d "${WDT_MODEL_ENCRYPTION_PASSPHRASE_ROOT}" ]; then
     if [ ! -f "${WDT_MODEL_ENCRYPTION_PASSPHRASE}" ]; then
       trace SEVERE "Domain Source Type is 'DomainOnPV' and you have specified " \
-      " 'initializeDomainOnPV.wdtModelEncryptionPassphraseSecret' but this secret does not have the required key " \
+      " 'initializeDomainOnPV.modelEncryptionPassphraseSecret' but this secret does not have the required key " \
       " 'passphrase', update the secret and rerun the introspector job."
       exitOrLoop
     fi

@@ -56,7 +56,7 @@ public class InitializeDomainOnPV {
       + "provided in the 'domainCreationImages' or 'domainCreationConfigMap' are encrypted using the "
       + "WebLogic Deployment Tool 'encryptModel' command. "
       + "The secret must use the key 'passphrase' containing the actual passphrase for encryption.")
-  String wdtModelEncryptionPassphraseSecret;
+  String modelEncryptionPassphraseSecret;
 
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
@@ -112,12 +112,12 @@ public class InitializeDomainOnPV {
     return this;
   }
 
-  public String getWdtModelEncryptionPassphraseSecret() {
-    return wdtModelEncryptionPassphraseSecret;
+  public String getModelEncryptionPassphraseSecret() {
+    return modelEncryptionPassphraseSecret;
   }
 
-  public InitializeDomainOnPV  wdtModelEncryptionPassphraseSecret(String wdtModelEncryptionPassphraseSecret) {
-    this.wdtModelEncryptionPassphraseSecret = wdtModelEncryptionPassphraseSecret;
+  public InitializeDomainOnPV modelEncryptionPassphraseSecret(String modelEncryptionPassphraseSecret) {
+    this.modelEncryptionPassphraseSecret = modelEncryptionPassphraseSecret;
     return this;
   }
 
@@ -129,6 +129,7 @@ public class InitializeDomainOnPV {
             .append("persistentVolumeClaim", persistentVolumeClaim)
             .append("domain", domain)
             .append("waitForPvcToBind", waitForPvcToBind)
+            .append("modelEncryptionPassphraseSecret", modelEncryptionPassphraseSecret)
             .append("runDomainInitContainerAsRoot", runDomainInitContainerAsRoot);
 
     return builder.toString();
@@ -141,6 +142,7 @@ public class InitializeDomainOnPV {
         .append(persistentVolumeClaim)
         .append(domain)
         .append(waitForPvcToBind)
+        .append(modelEncryptionPassphraseSecret)
         .append(runDomainInitContainerAsRoot);
 
     return builder.toHashCode();
@@ -161,7 +163,8 @@ public class InitializeDomainOnPV {
             .append(persistentVolumeClaim, rhs.persistentVolumeClaim)
             .append(domain, rhs.domain)
             .append(waitForPvcToBind, rhs.waitForPvcToBind)
-            .append(wdtModelEncryptionPassphraseSecret, rhs.wdtModelEncryptionPassphraseSecret);
+            .append(runDomainInitContainerAsRoot, rhs.runDomainInitContainerAsRoot)
+            .append(modelEncryptionPassphraseSecret, rhs.modelEncryptionPassphraseSecret);
 
     return builder.isEquals();
   }

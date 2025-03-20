@@ -453,8 +453,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Reference to secret name of the wdt encryption passphrase for domain on pv.
    * @return wdt model encryption passphrase secret name
    */
-  public String getWdtModelEncryptionSecret() {
-    return spec.getWdtModelEncryptionSecret();
+  public String getModelEncryptionSecret() {
+    return spec.getModelEncryptionSecret();
   }
 
   /**
