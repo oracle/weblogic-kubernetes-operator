@@ -116,7 +116,7 @@ The files inside this ConfigMap must have file extensions, `.yaml`, `.properties
 
 #### Using WDT model encryption
 
-Staring in WebLogic Kubernetes Operator version 4.2.18.  If the provided WDT models are encrypted using the WDT `encryptModel`
+Starting in WebLogic Kubernetes Operator version 4.2.16.  If the provided WDT models are encrypted using the WDT `encryptModel`
 command.  You can specify the encryption passphrase as a secret in the domain resource YAML. WDT will use the value in the
 secret to decrypt the models for domain creation.
 
