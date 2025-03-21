@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: deb0c93b1b3e11669640a91830463ef0e6c8a5288a2d1c902e6f8a3c42d421b0
+    weblogic.sha256: 3c9cb1077e51677d24c80535ad61c7b524c415e44dda7eda48e9e344f4bb3809
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -501,6 +501,14 @@ spec:
                                 type: object
                             type: object
                         type: object
+                      modelEncryptionPassphraseSecret:
+                        description: Specifies the secret name of the WebLogic Deployment
+                          Tool encryption passphrase if the WDT models provided in
+                          the 'domainCreationImages' or 'domainCreationConfigMap'
+                          are encrypted using the WebLogic Deployment Tool 'encryptModel'
+                          command. The secret must use the key 'passphrase' containing
+                          the actual passphrase for encryption.
+                        type: string
                       setDefaultSecurityContextFsGroup:
                         description: Specifies whether the operator will set the default
                           'fsGroup' in the introspector job pod security context.
