@@ -725,5 +725,14 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withDomainCreationConfigMap(String cm);
 
+  /**
+   * Add model encryption secret for the domain resource's initializeDomainOnPV.
+   *
+   * @param secret the model encryption file secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withInitializeDomainOnPVModelEncryptionSecret(String secret);
+
+
   public abstract DomainConfigurator withModel(Model model);
 }

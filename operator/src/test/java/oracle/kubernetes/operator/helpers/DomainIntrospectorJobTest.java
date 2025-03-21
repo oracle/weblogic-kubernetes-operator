@@ -137,6 +137,8 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLE
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SECRETS_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDTCONFIGMAP_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -504,6 +506,24 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         hasItem(new V1VolumeMount().name(OPSS_KEYPASSPHRASE_VOLUME)
             .mountPath(OPSS_KEY_MOUNT_PATH).readOnly(true)));
   }
+
+  @Test
+  void whenJobCreatedWithInitDomainOnPVWithModelEncryption_hasSecretsVolumeAndMounts() {
+    getConfigurator().withInitializeDomainOnPVModelEncryptionSecret("encryptedSecret");
+    testSupport.defineResources(createSecret("encryptedSecret"));
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+    V1Job job = jobs.get(0);
+
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME).secret(
+                    new V1SecretVolumeSource().secretName("encryptedSecret").optional(true).defaultMode(420))));
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME)
+                    .mountPath(WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH).readOnly(true)));
+
+  }
+
 
   private V1Secret createSecret(String name) {
     return new V1Secret().metadata(new V1ObjectMeta().name(name).namespace(NS));
