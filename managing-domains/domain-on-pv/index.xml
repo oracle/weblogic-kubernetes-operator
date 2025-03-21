@@ -20,7 +20,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/</link>
       <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/</guid>
-      <description>This document describes how to create and deploy a typical Domain home on persistent volume (Domain on PV).&#xA;Contents WebLogic Kubernetes Operator Configuration WebLogic base image Domain creation WDT models Optional WDT models ConfigMap Volumes and VolumeMounts information Persistent Volume and Persistent Volume Claim PV and PVC requirements References Domain information Best practices Back up the JRF domain home directory and database Store the OPSS wallet in a Kubernetes Secret and update opss.</description>
+      <description>This document describes how to create and deploy a typical Domain home on persistent volume (Domain on PV).&#xA;Contents WebLogic Kubernetes Operator Configuration WebLogic base image Domain creation WDT models Optional WDT models ConfigMap Using WDT model encryption Volumes and VolumeMounts information Persistent Volume and Persistent Volume Claim PV and PVC requirements References Domain information Best practices Back up the JRF domain home directory and database Store the OPSS wallet in a Kubernetes Secret and update opss.</description>
     </item>
     <item>
       <title>Domain creation images</title>
