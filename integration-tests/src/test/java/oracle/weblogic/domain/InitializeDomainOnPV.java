@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -57,7 +57,6 @@ public class InitializeDomainOnPV {
       + "WebLogic Deployment Tool 'encryptModel' command. "
       + "The secret must use the key 'passphrase' containing the actual passphrase for encryption.")
   public String wdtModelEncryptionPassphraseSecret;
-  
 
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
@@ -129,7 +128,8 @@ public class InitializeDomainOnPV {
             .append("persistentVolume", persistentVolume)
             .append("persistentVolumeClaim", persistentVolumeClaim)
             .append("domain", domain)
-            .append("waitForPvcToBind", waitForPvcToBind);
+            .append("waitForPvcToBind", waitForPvcToBind)
+            .append("wdtModelEncryptionPassphraseSecret", wdtModelEncryptionPassphraseSecret);
 
     return builder.toString();
   }
@@ -140,7 +140,8 @@ public class InitializeDomainOnPV {
         .append(persistentVolume)
         .append(persistentVolumeClaim)
         .append(domain)
-        .append(waitForPvcToBind);
+        .append(waitForPvcToBind)
+        .append(wdtModelEncryptionPassphraseSecret);
 
     return builder.toHashCode();
   }
