@@ -51,7 +51,7 @@ public class InitializeDomainOnPV {
       + " If the 'fsGroup' is specified as part of 'spec.introspector.serverPod.podSecurityContext', then the operator"
       + " will use that 'fsGroup' instead of the default 'fsGroup'. Defaults to true.")
   public Boolean setDefaultSecurityContextFsGroup;
-  
+
   @ApiModelProperty("Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models "
       + "provided in the 'domainCreationImages' or 'domainCreationConfigMap' are encrypted using the "
       + "WebLogic Deployment Tool 'encryptModel' command. "
@@ -111,7 +111,7 @@ public class InitializeDomainOnPV {
     this.setDefaultSecurityContextFsGroup = setDefaultFsGroup;
     return this;
   }
-  
+
   public String getModelEncryptionPassphraseSecret() {
     return modelEncryptionPassphraseSecret;
   }

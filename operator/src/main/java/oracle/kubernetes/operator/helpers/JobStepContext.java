@@ -606,7 +606,6 @@ public class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
           getOpssWalletPasswordSecretVolume()));
     }
-
     if (getOpssWalletFileSecretName() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
               getOpssWalletFileSecretVolume()));
