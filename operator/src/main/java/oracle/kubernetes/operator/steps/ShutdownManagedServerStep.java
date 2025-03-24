@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.steps;
 
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -67,9 +66,9 @@ public class ShutdownManagedServerStep extends Step {
   /**
    * Creates asynchronous {@link Step}.
    *
-   * @param next       Next processing step
+   * @param next Next processing step
    * @param serverName name of server
-   * @param pod        server pod
+   * @param pod server pod
    * @return asynchronous step
    */
   static Step createShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
@@ -81,15 +80,15 @@ public class ShutdownManagedServerStep extends Step {
     LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
     V1Service service = getDomainPresenceInfo(packet).getServerService(serverName);
 
-    String now = OffsetDateTime.now().toString();
-    if (service == null || !PodHelper.isReady(pod) || PodHelper.isFailed(pod) || PodHelper.isWaitingToRoll(pod)) {
-      return doNext(PodHelper.annotatePodAsNeedingToShutdown(pod, now, getNext()), packet);
-    }
-    return doNext(
+    if (service == null) {
+      return doNext(packet);
+    } else {
+      return doNext(
             Step.chain(
-                    SecretHelper.createAuthorizationSourceStep(),
-                    PodHelper.annotatePodAsNeedingToShutdown(pod, now,
-                            new ShutdownManagedServerWithHttpStep(service, pod, getNext()))),  packet);
+                SecretHelper.createAuthorizationSourceStep(),
+                new ShutdownManagedServerWithHttpStep(service, pod, getNext())),
+            packet);
+    }
   }
 
   static final class ShutdownManagedServerProcessing extends HttpRequestProcessing {

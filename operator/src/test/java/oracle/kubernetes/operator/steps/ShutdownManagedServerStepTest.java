@@ -18,9 +18,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -200,13 +198,7 @@ class ShutdownManagedServerStepTest {
     List<V1EnvVar> env = addShutdownEnvVars();
     List<V1Container> containers = addEnvToWLSContainer(env);
     V1PodSpec podSpec = new V1PodSpec().containers(containers);
-    return new V1Pod().metadata(createManagedPodMetadata(serverName)).spec(podSpec).status(createPodReadyStatus());
-  }
-
-  private V1PodStatus createPodReadyStatus() {
-    return new V1PodStatus()
-        .phase("Running")
-        .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
+    return new V1Pod().metadata(createManagedPodMetadata(serverName)).spec(podSpec);
   }
 
   @Nonnull

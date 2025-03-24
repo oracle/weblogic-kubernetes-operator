@@ -726,7 +726,6 @@ class DomainProcessorTest {
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     DomainStatus status = newInfo.getDomain().getStatus();
     defineServerShutdownWithHttpOkResponse();
-    makePodsReady();
     setAdminServerStatus(status, SUSPENDING_STATE);
     setManagedServerState(status, SUSPENDING_STATE);
 

@@ -601,19 +601,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         // fall through
       case MODIFIED:
         boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
-        boolean isEvicted = PodHelper.isEvicted(pod);
-        if (isEvicted && !podPreviouslyEvicted) {
+        if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
             LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
             createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
           } else {
             LOGGER.info(MessageKeys.POD_EVICTED_NO_RESTART, getPodName(pod), getPodStatusMessage(pod));
           }
-        }
-        boolean isReady = PodHelper.isReady(pod);
-        boolean isLabeledForShutdown = PodHelper.isPodAlreadyAnnotatedForShutdown(pod);
-        if ((isEvicted || isReady != isLabeledForShutdown || PodHelper.isFailed(pod)) && !PodHelper.isDeleting(pod)) {
-          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         boolean isUnschedulable = PodHelper.hasUnSchedulableCondition(pod);
         if (isUnschedulable) {
