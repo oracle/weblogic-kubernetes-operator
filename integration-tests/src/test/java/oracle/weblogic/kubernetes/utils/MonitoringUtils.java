@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -89,6 +91,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IM
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
@@ -146,7 +149,8 @@ public class MonitoringUtils {
   /**
    * Download monitoring exporter webapp wls-exporter.war based on provided version
    * and insert provided configuration.
-   * @param configFile configuration to monitor Weblogic Domain
+   *
+   * @param configFile     configuration to monitor Weblogic Domain
    * @param applicationDir location where application war file will be created
    */
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
@@ -177,11 +181,11 @@ public class MonitoringUtils {
 
     testUntil(
         (() -> Command
-          .withParams(
-              new CommandParams()
-              .verbose(true)
-              .command(command1))
-          .executeAndVerify("adding: config.yml")
+            .withParams(
+                new CommandParams()
+                    .verbose(true)
+                    .command(command1))
+            .executeAndVerify("adding: config.yml")
         ),
         logger,
         "Downloading monitoring exporter webapp");
@@ -192,9 +196,10 @@ public class MonitoringUtils {
 
   /**
    * Build monitoring exporter web applicaiont wls-exporter.war with provided configuration.
+   *
    * @param monitoringExporterSrcDir directory containing github monitoring exporter
-   * @param configFile configuration file for weblogic domain monitoring
-   * @param appDir directory where war file will be created
+   * @param configFile               configuration file for weblogic domain monitoring
+   * @param appDir                   directory where war file will be created
    */
   public static void buildMonitoringExporterApp(String monitoringExporterSrcDir, String configFile, String appDir) {
 
@@ -218,6 +223,7 @@ public class MonitoringUtils {
 
   /**
    * Clone monitoring exporter github src.
+   *
    * @param monitoringExporterSrcDir directory containing github monitoring exporter
    */
   public static void cloneMonitoringExporter(String monitoringExporterSrcDir) {
@@ -244,8 +250,8 @@ public class MonitoringUtils {
   /**
    * Check metrics using Prometheus.
    *
-   * @param searchKey   - metric query expression
-   * @param expectedVal - expected metrics to search
+   * @param searchKey          - metric query expression
+   * @param expectedVal        - expected metrics to search
    * @param hostPortPrometheus host:nodePort for prometheus
    * @throws Exception if command to check metrics fails
    */
@@ -257,7 +263,7 @@ public class MonitoringUtils {
     // url
     String curlCmd =
         String.format("curl -g --silent --show-error --noproxy '*' -v "
-            + " --max-time 60 -H 'host: *'"
+                + " --max-time 60 -H 'host: *'"
                 + " http://%s/api/v1/query?query=%s",
             hostPortPrometheus, searchKey);
 
@@ -291,8 +297,8 @@ public class MonitoringUtils {
   /**
    * Check metrics using Prometheus.
    *
-   * @param searchKey   - metric query expression
-   * @param expectedVal - expected metrics to search
+   * @param searchKey          - metric query expression
+   * @param expectedVal        - expected metrics to search
    * @param hostPortPrometheus host:nodePort for prometheus
    * @throws Exception if command to check metrics fails
    */
@@ -321,7 +327,7 @@ public class MonitoringUtils {
   /**
    * Check output of the command against expected output.
    *
-   * @param cmd command
+   * @param cmd       command
    * @param searchKey expected response from the command
    * @return true if the command succeeds
    */
@@ -338,7 +344,7 @@ public class MonitoringUtils {
   /**
    * Check if executed command contains expected output.
    *
-   * @param cmd   command to execute
+   * @param cmd       command to execute
    * @param searchKey expected output
    * @return true if the output matches searchKey otherwise false
    */
@@ -348,10 +354,11 @@ public class MonitoringUtils {
 
   /**
    * Edit Prometheus Config Map.
-   * @param oldRegex search for existed value to replace
-   * @param newRegex new value
+   *
+   * @param oldRegex     search for existed value to replace
+   * @param newRegex     new value
    * @param prometheusNS namespace for prometheus pod
-   * @param cmName name of Config Map to modify
+   * @param cmName       name of Config Map to modify
    * @throws ApiException when update fails
    */
   public static void editPrometheusCM(String oldRegex, String newRegex,
@@ -362,9 +369,9 @@ public class MonitoringUtils {
         .findAny()
         .orElse(null);
 
-    assertNotNull(promCm,"Can't find cm for " + cmName);
+    assertNotNull(promCm, "Can't find cm for " + cmName);
     Map<String, String> cmData = promCm.getData();
-    String values = cmData.get("prometheus.yml").replace(oldRegex,newRegex);
+    String values = cmData.get("prometheus.yml").replace(oldRegex, newRegex);
     assertNotNull(values, "can't find values for key prometheus.yml");
     cmData.replace("prometheus.yml", values);
 
@@ -378,7 +385,7 @@ public class MonitoringUtils {
         .findAny()
         .orElse(null);
 
-    assertNotNull(promCm,"Can't find cm for " + cmName);
+    assertNotNull(promCm, "Can't find cm for " + cmName);
     assertNotNull(promCm.getData(), "Can't retreive the cm data for " + cmName + " after modification");
 
   }
@@ -386,11 +393,11 @@ public class MonitoringUtils {
   /**
    * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
    *
-   * @param promReleaseSuffix the prometheus release name unique suffix
-   * @param promNamespace the prometheus namespace in which the prometheus will be installed
-   * @param promVersion the version of the prometheus helm chart
+   * @param promReleaseSuffix    the prometheus release name unique suffix
+   * @param promNamespace        the prometheus namespace in which the prometheus will be installed
+   * @param promVersion          the version of the prometheus helm chart
    * @param prometheusRegexValue string (namespace;domainuid) to manage specific domain,
-   *                            default is regex: default;domain1
+   *                             default is regex: default;domain1
    * @return the prometheus Helm installation parameters
    */
   public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
@@ -399,38 +406,38 @@ public class MonitoringUtils {
                                                             String prometheusRegexValue,
                                                             String promHelmValuesFile) {
     return installAndVerifyPrometheus(promReleaseSuffix,
-            promNamespace,
-            promVersion,
-            prometheusRegexValue,
-            promHelmValuesFile,
-            null);
+        promNamespace,
+        promVersion,
+        prometheusRegexValue,
+        promHelmValuesFile,
+        null);
   }
 
   /**
    * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
    *
-   * @param promReleaseSuffix the prometheus release name unigue suffix
-   * @param promNamespace the prometheus namespace in which the operator will be installed
-   * @param promVersion the version of the prometheus helm chart
-   * @param prometheusRegexValue string (namespace;domainuid) to manage specific domain,
-   *                            default is regex: default;domain1
+   * @param promReleaseSuffix     the prometheus release name unigue suffix
+   * @param promNamespace         the prometheus namespace in which the operator will be installed
+   * @param promVersion           the version of the prometheus helm chart
+   * @param prometheusRegexValue  string (namespace;domainuid) to manage specific domain,
+   *                              default is regex: default;domain1
    * @param promHelmValuesFileDir path to prometheus helm values file directory
-   * @param webhookNS namespace for webhook namespace
-   * @param ports optional prometheus and alert manager ports
+   * @param webhookNS             namespace for webhook namespace
+   * @param ports                 optional prometheus and alert manager ports
    * @return the prometheus Helm installation parameters
    */
   public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
-                                                      String promNamespace,
-                                                      String promVersion,
-                                                      String prometheusRegexValue,
-                                                      String promHelmValuesFileDir,
-                                                      String webhookNS,
-                                                      int...ports) {
+                                                            String promNamespace,
+                                                            String promVersion,
+                                                            String prometheusRegexValue,
+                                                            String promHelmValuesFileDir,
+                                                            String webhookNS,
+                                                            int... ports) {
     LoggingFacade logger = getLogger();
     String prometheusReleaseName = "prometheus" + promReleaseSuffix;
     logger.info("create a staging location for prometheus scripts");
     Path fileTemp = Paths.get(promHelmValuesFileDir);
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for prometheus");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()), "Failed to delete temp dir for prometheus");
 
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for prometheus");
     String promValuesFile = OKE_CLUSTER_PRIVATEIP ? "promvaluesoke.yaml" : "promvalues.yaml";
@@ -438,7 +445,7 @@ public class MonitoringUtils {
     Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", promValuesFile);
     Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
-        StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
+        StandardCopyOption.REPLACE_EXISTING), " Failed to copy files");
     String oldValue = "regex: default;domain1";
     assertDoesNotThrow(() -> {
       replaceStringInFile(targetPromFile.toString(),
@@ -484,8 +491,8 @@ public class MonitoringUtils {
     if (webhookNS != null) {
       //replace with webhook ns
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-              "webhook.webhook.svc.cluster.local",
-              String.format("webhook.%s.svc.cluster.local", webhookNS)), "Failed to replace String ");
+          "webhook.webhook.svc.cluster.local",
+          String.format("webhook.%s.svc.cluster.local", webhookNS)), "Failed to replace String ");
     }
     if (OKD) {
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
@@ -548,13 +555,13 @@ public class MonitoringUtils {
     // wait for the promethues pods to be ready
     logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
     testUntil(
-        assertDoesNotThrow(() -> isPrometheusReady(promNamespace,prometheusReleaseName),
-          "prometheusIsReady failed with ApiException"),
+        assertDoesNotThrow(() -> isPrometheusReady(promNamespace, prometheusReleaseName),
+            "prometheusIsReady failed with ApiException"),
         logger,
         "prometheus to be running in namespace {0}",
         promNamespace);
     String command1 = KUBERNETES_CLI + " get svc -n " + promNamespace;
-    assertDoesNotThrow(() -> ExecCommand.exec(command1,true));
+    assertDoesNotThrow(() -> ExecCommand.exec(command1, true));
     String command2 = KUBERNETES_CLI + " describe svc -n " + promNamespace;
     assertDoesNotThrow(() -> ExecCommand.exec(command2, true));
     return prometheusParams;
@@ -564,11 +571,11 @@ public class MonitoringUtils {
    * Install Prometheus adapter and wait up to five minutes until the prometheus adapter pods are ready.
    *
    * @param promAdapterReleaseName the prometheus adapter release name
-   * @param promAdapterNamespace the prometheus adapter namespace
+   * @param promAdapterNamespace   the prometheus adapter namespace
    * @return the prometheus adapter Helm installation parameters
    */
   public static HelmParams installAndVerifyPrometheusAdapter(String promAdapterReleaseName,
-                                                            String promAdapterNamespace,
+                                                             String promAdapterNamespace,
                                                              String prometheusHost,
                                                              int prometheusPort) {
     LoggingFacade logger = getLogger();
@@ -622,8 +629,8 @@ public class MonitoringUtils {
 
     String podName = assertDoesNotThrow(() -> getPodName(promAdapterNamespace, "prometheus-adapterhpatest"),
         "Can't find prometheus-adapter pod");
-    checkPodExists(podName,null, promAdapterNamespace);
-    String command1   = KUBERNETES_CLI + " describe pods " + podName + " -n " + promAdapterNamespace;
+    checkPodExists(podName, null, promAdapterNamespace);
+    String command1 = KUBERNETES_CLI + " describe pods " + podName + " -n " + promAdapterNamespace;
     assertDoesNotThrow(() -> {
       ExecResult result = ExecCommand.exec(command1, true);
       String response = result.stdout().trim();
@@ -645,10 +652,10 @@ public class MonitoringUtils {
   /**
    * Install Grafana and wait up to five minutes until the grafana pod is ready.
    *
-   * @param grafanaReleaseName the grafana release name
-   * @param grafanaNamespace the grafana namespace in which the operator will be installed
+   * @param grafanaReleaseName       the grafana release name
+   * @param grafanaNamespace         the grafana namespace in which the operator will be installed
    * @param grafanaHelmValuesFileDir the grafana helm values.yaml file directory
-   * @param grafanaVersion the version of the grafana helm chart
+   * @param grafanaVersion           the version of the grafana helm chart
    * @return the grafana Helm installation parameters
    */
   public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
@@ -658,7 +665,7 @@ public class MonitoringUtils {
     LoggingFacade logger = getLogger();
     logger.info("create a staging location for grafana scripts");
     Path fileTemp = Paths.get(grafanaHelmValuesFileDir);
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for grafana");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()), "Failed to delete temp dir for grafana");
 
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for grafana");
     String grafanavaluesFile = OKE_CLUSTER_PRIVATEIP ? "grafanavaluesoke.yaml" : "grafanavalues.yaml";
@@ -666,24 +673,24 @@ public class MonitoringUtils {
     Path srcGrafanaFile = Paths.get(RESOURCE_DIR, "exporter", grafanavaluesFile);
     Path targetGrafanaFile = Paths.get(fileTemp.toString(), "grafanavalues.yaml");
     assertDoesNotThrow(() -> Files.copy(srcGrafanaFile, targetGrafanaFile,
-            StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
+        StandardCopyOption.REPLACE_EXISTING), " Failed to copy files");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
-            "pvc-grafana", "pvc-" + grafanaReleaseName));
+        "pvc-grafana", "pvc-" + grafanaReleaseName));
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
         "grafana_image",
-        GRAFANA_IMAGE_NAME),"Failed to replace String ");
+        GRAFANA_IMAGE_NAME), "Failed to replace String ");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
         "grafana_tag",
-        GRAFANA_IMAGE_TAG),"Failed to replace String ");
+        GRAFANA_IMAGE_TAG), "Failed to replace String ");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
         "busybox_image",
         BUSYBOX_IMAGE), "Failed to replace String ");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
         "busybox_tag",
-        BUSYBOX_TAG), "Failed to replace String ");   
+        BUSYBOX_TAG), "Failed to replace String ");
     if (!OKE_CLUSTER) {
       assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
-              "enabled: false", "enabled: true"));
+          "enabled: false", "enabled: true"));
     }
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
@@ -730,10 +737,10 @@ public class MonitoringUtils {
     }
     boolean isGrafanaInstalled = false;
     if (OKD) {
-      addSccToDBSvcAccount(grafanaReleaseName,grafanaNamespace);
+      addSccToDBSvcAccount(grafanaReleaseName, grafanaNamespace);
     }
     assertTrue(installGrafana(grafanaParams),
-        String.format("Failed to install grafana in namespace %s",grafanaNamespace));
+        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
@@ -749,11 +756,10 @@ public class MonitoringUtils {
     logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
     testUntil(
         assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
-          "grafanaIsReady failed with ApiException"),
+            "grafanaIsReady failed with ApiException"),
         logger,
         "grafana to be running in namespace {0}",
         grafanaNamespace);
-
 
 
     //return grafanaHelmParams;
@@ -763,7 +769,7 @@ public class MonitoringUtils {
   /**
    * Extra clean up for Prometheus and  Grafana artifacts.
    *
-   * @param grafanaReleaseName the grafana release name
+   * @param grafanaReleaseName    the grafana release name
    * @param prometheusReleaseName prometheus release name
    */
   public static void cleanupPromGrafanaClusterRoles(String prometheusReleaseName, String grafanaReleaseName) {
@@ -809,7 +815,6 @@ public class MonitoringUtils {
 
   /**
    * Extra clean up for Prometheus Adapter artifacts.
-   *
    */
   public static void cleanupPrometheusAdapterClusterRoles() {
     //extra cleanup
@@ -855,7 +860,7 @@ public class MonitoringUtils {
   /**
    * Download src from monitoring exporter github project and build or install webapp.
    *
-   * @param monitoringExporterDir full path to monitoring exporter install location
+   * @param monitoringExporterDir     full path to monitoring exporter install location
    * @param toBuildMonitoringExporter if true build monitoring exporter webapp or download if false.
    */
   public static void installMonitoringExporter(String monitoringExporterDir, boolean toBuildMonitoringExporter) {
@@ -888,9 +893,9 @@ public class MonitoringUtils {
     } else {
       buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
           + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
-      buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
+      buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
           + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
-      buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
+      buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
           + "/exporter/exporter-config-administrationrestport.yaml", monitoringExporterAppAdministrationRestPortDir);
     }
     logger.info("Finished to build Monitoring Exporter webapp.");
@@ -913,10 +918,11 @@ public class MonitoringUtils {
 
   /**
    * Create mii image with monitoring exporter webapp and one more app.
+   *
    * @param modelFilePath - path to model file
-   * @param monexpAppDir - location for monitoring exporter webapp
-   * @param appName  -extra app name
-   * @param imageName - desired imagename
+   * @param monexpAppDir  - location for monitoring exporter webapp
+   * @param appName       -extra app name
+   * @param imageName     - desired imagename
    */
   public static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath,
                                                String appName, String imageName) {
@@ -940,10 +946,11 @@ public class MonitoringUtils {
 
   /**
    * Create mii image with monitoring exporter webapp and one more app.
-   * @param modelList - list of the paths to model files
+   *
+   * @param modelList    - list of the paths to model files
    * @param monexpAppDir - location for monitoring exporter webapp
-   * @param appName1  -extra app names
-   * @param imageName - desired imagename
+   * @param appName1     -extra app names
+   * @param imageName    - desired imagename
    */
   public static String createAndVerifyMiiImage(String monexpAppDir, List<String> modelList,
                                                String appName1, String appName2,
@@ -970,7 +977,7 @@ public class MonitoringUtils {
   /**
    * Uninstall Prometheus and Grafana helm charts.
    *
-   * @param promHelmParams  -helm chart params for prometheus
+   * @param promHelmParams    -helm chart params for prometheus
    * @param grafanaHelmParams - helm chart params for grafana
    */
   public static void uninstallPrometheusGrafana(HelmParams promHelmParams, GrafanaParams grafanaHelmParams) {
@@ -984,7 +991,7 @@ public class MonitoringUtils {
     if (grafanaHelmParams != null) {
       grafanaReleaseName = grafanaHelmParams.getHelmParams().getReleaseName();
       Grafana.uninstall(grafanaHelmParams.getHelmParams());
-      deleteSecret("grafana-secret",grafanaHelmParams.getHelmParams().getNamespace());
+      deleteSecret("grafana-secret", grafanaHelmParams.getHelmParams().getNamespace());
       logger.info("Grafana is uninstalled");
     }
     cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
@@ -993,17 +1000,17 @@ public class MonitoringUtils {
   /**
    * Create Domain Cr and verity.
    *
-   * @param adminSecretName WebLogic admin credentials
-   * @param repoSecretName image repository secret name
+   * @param adminSecretName      WebLogic admin credentials
+   * @param repoSecretName       image repository secret name
    * @param encryptionSecretName model encryption secret name
-   * @param miiImage model in image name
-   * @param domainUid domain uid
-   * @param namespace namespace
-   * @param domainHomeSource domain home source type
-   * @param replicaCount replica count for the cluster
-   * @param twoClusters boolean indicating if the domain has 2 clusters
-   * @param monexpConfig monitoring exporter config
-   * @param exporterImage exporter image
+   * @param miiImage             model in image name
+   * @param domainUid            domain uid
+   * @param namespace            namespace
+   * @param domainHomeSource     domain home source type
+   * @param replicaCount         replica count for the cluster
+   * @param twoClusters          boolean indicating if the domain has 2 clusters
+   * @param monexpConfig         monitoring exporter config
+   * @param exporterImage        exporter image
    */
   public static void createDomainCrAndVerify(String adminSecretName,
                                              String repoSecretName,
@@ -1075,7 +1082,7 @@ public class MonitoringUtils {
       // set cluster references
       domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     }
-    
+
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using image {2}",
@@ -1100,27 +1107,27 @@ public class MonitoringUtils {
     }
     createDomainAndVerify(domain, namespace);
   }
-  
+
   /**
    * create domain from provided image and monitoring exporter sidecar and verify it's start.
    *
-   * @param miiImage model in image name
-   * @param domainUid domain uid
-   * @param namespace namespace
+   * @param miiImage         model in image name
+   * @param domainUid        domain uid
+   * @param namespace        namespace
    * @param domainHomeSource domain home source type
-   * @param replicaCount replica count for the cluster
-   * @param twoClusters boolean indicating if the domain has 2 clusters
-   * @param monexpConfig monitoring exporter config
-   * @param exporterImage exporter image
+   * @param replicaCount     replica count for the cluster
+   * @param twoClusters      boolean indicating if the domain has 2 clusters
+   * @param monexpConfig     monitoring exporter config
+   * @param exporterImage    exporter image
    */
   public static void createAndVerifyDomain(String miiImage,
-                                            String domainUid,
-                                            String namespace,
-                                            String domainHomeSource,
-                                            int replicaCount,
-                                            boolean twoClusters,
-                                            String monexpConfig,
-                                            String exporterImage) {
+                                           String domainUid,
+                                           String namespace,
+                                           String domainHomeSource,
+                                           int replicaCount,
+                                           boolean twoClusters,
+                                           String monexpConfig,
+                                           String exporterImage) {
     createAndVerifyDomain(miiImage,
         domainUid,
         namespace,
@@ -1134,15 +1141,15 @@ public class MonitoringUtils {
   /**
    * create domain from provided image and monitoring exporter sidecar and verify it's start.
    *
-   * @param miiImage model in image name
-   * @param domainUid domain uid
-   * @param namespace namespace
+   * @param miiImage         model in image name
+   * @param domainUid        domain uid
+   * @param namespace        namespace
    * @param domainHomeSource domain home source type
-   * @param replicaCount replica count for the cluster
-   * @param twoClusters boolean indicating if the domain has 2 clusters
-   * @param monexpConfig monitoring exporter config
-   * @param exporterImage exporter image
-   * @param checkPodsReady  true or false if test need to check pods status
+   * @param replicaCount     replica count for the cluster
+   * @param twoClusters      boolean indicating if the domain has 2 clusters
+   * @param monexpConfig     monitoring exporter config
+   * @param exporterImage    exporter image
+   * @param checkPodsReady   true or false if test need to check pods status
    */
   public static void createAndVerifyDomain(String miiImage,
                                            String domainUid,
@@ -1174,7 +1181,7 @@ public class MonitoringUtils {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, namespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
+    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage, domainUid,
         namespace, domainHomeSource, replicaCount, twoClusters, monexpConfig, exporterImage);
     if (checkPodsReady) {
       String adminServerPodName = domainUid + "-admin-server";
@@ -1212,12 +1219,12 @@ public class MonitoringUtils {
   /**
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    *
-   * @param nginxHost nginx host name
+   * @param nginxHost    nginx host name
    * @param replicaCount number of managed servers
-   * @param nodeport  nginx nodeport
+   * @param nodeport     nginx nodeport
    */
-  public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount, 
-      int nodeport) throws UnknownHostException {
+  public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount,
+                                                       int nodeport) throws UnknownHostException {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -1231,7 +1238,7 @@ public class MonitoringUtils {
     }
     String curlCmd =
         String.format("curl -g --silent --show-error --noproxy '*' -v "
-             +   " --max-time 60 -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
+                + " --max-time 60 -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
             nginxHost,
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
@@ -1247,9 +1254,9 @@ public class MonitoringUtils {
   /**
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    *
-   * @param nginxHost nginx host name
+   * @param nginxHost    nginx host name
    * @param replicaCount number of managed servers
-   * @param hostPort  host:port combo or host string
+   * @param hostPort     host:port combo or host string
    */
   public static void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount, String hostPort) {
 
@@ -1261,7 +1268,7 @@ public class MonitoringUtils {
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
         String.format("curl -g --silent --show-error --noproxy '*' -v "
-            +   " --max-time 60 -H 'host: %s' http://%s:%s@%s/wls-exporter/metrics",
+                + " --max-time 60 -H 'host: %s' http://%s:%s@%s/wls-exporter/metrics",
             nginxHost,
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
@@ -1277,7 +1284,7 @@ public class MonitoringUtils {
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    *
    * @param replicaCount number of managed servers
-   * @param hostPort  host:port combination to access app
+   * @param hostPort     host:port combination to access app
    */
   public static void verifyMonExpAppAccess(int replicaCount, String hostPort) {
 
@@ -1289,7 +1296,7 @@ public class MonitoringUtils {
     // check the access to monitoring exporter apps from all managed servers in the domain
     String curlCmd =
         String.format("curl -g --silent --show-error --noproxy '*' -v "
-               + " --max-time 60 http://%s:%s@%s/wls-exporter/metrics",
+                + " --max-time 60 http://%s:%s@%s/wls-exporter/metrics",
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
             hostPort);
@@ -1304,15 +1311,34 @@ public class MonitoringUtils {
   /**
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain
    * through direct access to managed server dashboard.
+   *
    * @param clusterName - name of cluster
-   * @param domainNS - domain namespace
-   * @param domainUid  - domain uid
-   * @param isHttps  - protocol
-   * @param uri - weburl
-   * @param searchKey  - search key in response
+   * @param domainNS    - domain namespace
+   * @param domainUid   - domain uid
+   * @param isHttps     - protocol
+   * @param uri         - weburl
+   * @param searchKey   - search key in response
    */
   public static boolean verifyMonExpAppAccess(String uri, String searchKey, String domainUid,
-                                        String domainNS, boolean isHttps, String clusterName) {
+                                              String domainNS, boolean isHttps, String clusterName) {
+    return verifyMonExpAppAccess(uri, searchKey, false, domainUid,
+        domainNS, isHttps, clusterName);
+  }
+
+  /**
+   * Verify the monitoring exporter app can be accessed from all managed servers in the domain
+   * through direct access to managed server dashboard.
+   *
+   * @param clusterName - name of cluster
+   * @param domainNS    - domain namespace
+   * @param domainUid   - domain uid
+   * @param isHttps     - protocol
+   * @param uri         - weburl
+   * @param searchKey   - search key in response
+   * @param isRegex     - search key contains regex
+   */
+  public static boolean verifyMonExpAppAccess(String uri, String searchKey, Boolean isRegex, String domainUid,
+                                              String domainNS, boolean isHttps, String clusterName) {
     String protocol = "http";
     String port = "8001";
     if (isHttps) {
@@ -1338,7 +1364,11 @@ public class MonitoringUtils {
       String response = result.stdout().trim();
       logger.info("Response : exitValue {0}, stdout {1}, stderr {2}",
           result.exitValue(), response, result.stderr());
-      isFound = response.contains(searchKey);
+      if (isRegex) {
+        isFound = containsValidServletName(response, searchKey);
+      } else {
+        isFound = response.contains(searchKey);
+      }
       logger.info("isFound value:" + isFound);
     } catch (Exception ex) {
       logger.info("Can't execute command " + command + Arrays.toString(ex.getStackTrace()));
@@ -1347,15 +1377,25 @@ public class MonitoringUtils {
     return isFound;
   }
 
+  // Method to check if the string contains the required pattern
+  // Regular expression pattern to match servletName="ANYTHING.ExporterServlet"
+  // regex = "servletName=\"[^\"]*ExporterServlet\"";
+  private static boolean containsValidServletName(String input, String regex) {
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(input);
+    return matcher.find();
+  }
+
   /**
    * Verify the monitoring exporter sidecar can be accessed from all managed servers in the domain
    * through direct access to managed server dashboard.
-   * @param domainNS - domain namespace
-   * @param podName  - managed server pod name
-   * @param searchKey  - search key in response
+   *
+   * @param domainNS  - domain namespace
+   * @param podName   - managed server pod name
+   * @param searchKey - search key in response
    */
   public static boolean verifyMonExpAppAccessSideCar(String searchKey,
-                                              String domainNS, String podName) {
+                                                     String domainNS, String podName) {
 
     // access metrics
     final String command = String.format(
@@ -1382,16 +1422,17 @@ public class MonitoringUtils {
   /**
    * Build exporter, create image with unique name, create corresponding repo secret and push to registry.
    *
-   * @param srcDir directory where source is located
-   * @param baseImageName base image name
-   * @param namespace image namespace
-   * @param secretName repo secretname for image
+   * @param srcDir                directory where source is located
+   * @param baseImageName         base image name
+   * @param namespace             image namespace
+   * @param secretName            repo secretname for image
    * @param extraImageBuilderArgs user specified extra args
    * @return image name
    */
-  public static String buildMonitoringExporterCreateImageAndPushToRepo(String srcDir, String baseImageName,
-                                                String namespace, String secretName,
-                                                String extraImageBuilderArgs) throws ApiException {
+  public static String buildMonitoringExporterCreateImageAndPushToRepo(
+      String srcDir, String baseImageName,
+      String namespace, String secretName,
+      String extraImageBuilderArgs) throws ApiException {
     String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true", srcDir);
     logger.info("Executing command " + command);
     assertTrue(Command
@@ -1437,7 +1478,7 @@ public class MonitoringUtils {
   /**
    * Delete Traefik Ingress routing rules for prometheus.
    *
-   * @param dstFile            path for ingress rule deployment
+   * @param dstFile path for ingress rule deployment
    */
   public static void deleteTraefikIngressRoutingRules(Path dstFile) {
 
@@ -1456,5 +1497,37 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);
     });
+  }
+
+  /**
+   * Replace Value In File.
+   *
+   * @param tempFileName file name
+   * @param newValue new value to search
+   * @param oldValue old value to replace
+   * @param srcFileName name of source file in exporter dir
+   * @return modified file path
+   */
+  public static String replaceValueInFile(String tempFileName, String srcFileName, String oldValue, String newValue) {
+
+    String tempFileDir = Paths.get(RESULTS_ROOT,
+        tempFileName).toString();
+    Path fileTemp = Paths.get(tempFileDir);
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()), "Failed to delete temp dir ");
+
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir ");
+
+    logger.info("copy the " + srcFileName + "  to staging location");
+    Path srcFile = Paths.get(RESOURCE_DIR, "exporter", srcFileName);
+    Path targetFile = Paths.get(fileTemp.toString(), srcFileName);
+    assertDoesNotThrow(() -> Files.copy(srcFile, targetFile,
+        StandardCopyOption.REPLACE_EXISTING), " Failed to copy files");
+
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(targetFile.toString(),
+          oldValue,
+          newValue);
+    });
+    return targetFile.toString();
   }
 }

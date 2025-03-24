@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -44,12 +44,14 @@ import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_P
 import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -72,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.deleteMonitoringE
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.replaceValueInFile;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -134,6 +137,7 @@ class ItMonitoringExporterMetricsFiltering {
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
   private static String hostPortPrometheus = null;
+  private static String servletPath = "com.oracle.wls.exporter";
 
 
   /**
@@ -223,6 +227,14 @@ class ItMonitoringExporterMetricsFiltering {
     }
     assertDoesNotThrow(() -> setupDomainAndMonitoringTools(domain1Namespace, domain1Uid),
         "failed to setup domain and monitoring tools");
+
+    if (!isVersionAtLeast(MONITORING_EXPORTER_WEBAPP_VERSION, "2.3.0")) {
+      logger.info("Monitoting Exporter Version is less than 2.3.0");
+      servletPath = "com.oracle.wls.exporter.webapp";
+    } else {
+      servletPath = servletPath + ((WEBLOGIC_IMAGE_TAG.contains("14.1")
+          || WEBLOGIC_IMAGE_TAG.contains("12.")) ? ".javax" : ".jakarta");
+    }
   }
 
   /**
@@ -249,12 +261,21 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIIncludedKeysFromSubLevel() throws Exception {
     logger.info("Testing filtering only included specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    // Regular expression pattern to match servletName="ANYTHING.ExporterServlet"
+    String checkKey1 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkIncluded.add(checkKey1);
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    // Regular expression pattern to match servletName="ANYTHING.ExporterServlet"
+    String checkKey2 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkExcluded.add(checkKey2);
 
-    replaceConfigurationWithFilter(RESOURCE_DIR + "/exporter/rest_filter_included_servlet_name.yaml",
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIIncludedKeysFromSubLevel",
+        "rest_filter_included_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
         checkIncluded, checkExcluded);
+
   }
 
   /**
@@ -266,13 +287,20 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIIncludedKeysFromBothLevels() throws Exception {
     logger.info("Testing filtering only included specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    String checkKey1 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkIncluded.add(checkKey1);
     checkIncluded.add("app=\"wls-exporter\"");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    String checkKey2 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkExcluded.add(checkKey2);
     checkExcluded.add("app=\"myear1\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIIncludedKeysFromBothLevels",
+        "rest_filter_included_webapp_and_servlet_names.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
+
   }
 
   /**
@@ -299,11 +327,16 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterExcludedKeysFromSubLevel() throws Exception {
     logger.info("Testing filtering only excluded specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    String checkKey1 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkIncluded.add(checkKey1);
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
-
-    replaceConfigurationWithFilter(RESOURCE_DIR + "/exporter/rest_filter_excluded_servlet_name.yaml",
+    String checkKey2 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkExcluded.add(checkKey2);
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterExcludedKeysFromSubLevel",
+        "rest_filter_excluded_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
         checkIncluded, checkExcluded);
   }
 
@@ -316,13 +349,19 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterExcludedKeysFromBothLevels() throws Exception {
     logger.info("Testing filtering only excluded specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    String checkKey1 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkIncluded.add(checkKey1);
     checkIncluded.add("app=\"myear1\"");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    String checkKey2 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkExcluded.add(checkKey2);
     checkExcluded.add("app=\"myear123\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_excluded_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterExcludedKeysFromBothLevels",
+        "rest_filter_excluded_webapp_and_servlet_names.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
   }
 
   /**
@@ -336,9 +375,13 @@ class ItMonitoringExporterMetricsFiltering {
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("app=\"wls-exporter\"");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_webapp_excluded_servlet_name.yaml",checkIncluded, checkExcluded);
+    checkExcluded.add("servletName=\"" + servletPath + ".ExporterServlet\"");
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIncludedTopExcludedKeysSubLevels",
+        "rest_filter_included_webapp_excluded_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
   }
 
   /**
@@ -368,11 +411,16 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIncludedExcludedKeysComboSubLevel() throws Exception {
     logger.info("Testing filtering included and excluded specific app names in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp");
+    checkIncluded.add("servletName=\"" + servletPath);
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_excluded_servlet_name.yaml",checkIncluded, checkExcluded);
+    checkExcluded.add("servletName=\"" + servletPath + ".ExporterServlet\"");
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIncludedExcludedKeysComboSubLevel",
+        "rest_filter_included_excluded_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
+
   }
 
   /**
@@ -728,17 +776,21 @@ class ItMonitoringExporterMetricsFiltering {
   }
 
   private static void verifyMetrics(List<String> checkIncluded, List<String> checkExcluded) {
+    boolean isRegexInc = false;
+    boolean isRegexExc = false;
     for (String includedString : checkIncluded) {
+
       assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
-              includedString,
+              includedString, isRegexInc,
               domain1Uid,
               domain1Namespace,
               false, cluster1Name),
           "monitoring exporter metrics can't filter to included " + includedString);
     }
     for (String excludedString : checkExcluded) {
+
       assertFalse(verifyMonExpAppAccess("wls-exporter/metrics",
-              excludedString,
+              excludedString, isRegexExc,
               domain1Uid,
               domain1Namespace,
               false, cluster1Name),
@@ -758,7 +810,6 @@ class ItMonitoringExporterMetricsFiltering {
     assertTrue(page.asNormalizedText().contains("Unable to Update Configuration"),
         "Page does not contain expected Unable to Update Configuration");
   }
-
 
   private static void installTraefikIngressController() throws IOException {
     // install and verify Traefik
@@ -780,6 +831,23 @@ class ItMonitoringExporterMetricsFiltering {
     return assertDoesNotThrow(()
         -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
+  }
+
+  private static boolean isVersionAtLeast(String version, String minVersion) {
+    String[] versionParts = version.split("\\.");
+    String[] minVersionParts = minVersion.split("\\.");
+
+    for (int i = 0; i < 3; i++) {
+      int verPart = Integer.parseInt(versionParts[i]); // Convert to integer
+      int minVPart = Integer.parseInt(minVersionParts[i]);
+
+      if (verPart > minVPart) {
+        return true;
+      } else if (verPart < minVPart) {
+        return false;
+      }
+    }
+    return true; // Versions are equal
   }
 }
 
