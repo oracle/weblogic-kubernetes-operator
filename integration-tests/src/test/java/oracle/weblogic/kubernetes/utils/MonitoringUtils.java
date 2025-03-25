@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -1313,7 +1313,7 @@ public class MonitoringUtils {
     String port = "8001";
     if (isHttps) {
       protocol = "https";
-      port = "8100";
+      port = "7002";
     }
     String podName = domainUid + "-" + clusterName + "-managed-server1";
     if (clusterName == null) {

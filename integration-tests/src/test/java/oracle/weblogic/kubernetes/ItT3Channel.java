@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -52,7 +52,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_LISTEN_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
@@ -64,6 +63,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -328,7 +328,13 @@ class ItT3Channel {
         -> getServicePort(domainNamespace,
               domainUid + "-cluster-" + clusterName, "default"),
               "Getting Cluster Service default port failed");
-    assertEquals(DEFAULT_LISTEN_PORT, servicePort, "Default Service Port is not set to 7100");
+    int managedServerPort;
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      managedServerPort = 7100;
+    } else {
+      managedServerPort = 7001;
+    }
+    assertEquals(managedServerPort, servicePort, "Default Service Port is not set to " + managedServerPort);
     int napPort = assertDoesNotThrow(()
         -> getServicePort(domainNamespace,
               domainUid + "-cluster-" + clusterName, "ms-nap"),
@@ -339,7 +345,7 @@ class ItT3Channel {
         -> getServicePort(domainNamespace,
               domainUid + "-managed-server1", "default"),
               "Getting Managed Server Service default port failed");
-    assertEquals(DEFAULT_LISTEN_PORT, servicePort, "Default Managed Service Port is not 7100");
+    assertEquals(managedServerPort, servicePort, "Default Managed Service Port is not " + managedServerPort);
 
   }
 

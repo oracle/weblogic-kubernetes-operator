@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -72,7 +72,25 @@ public class DeployUtil {
    * @param namespace name of the namespace in which WebLogic server pods running
    */
   public static void deployUsingWlst(String host, String port, String userName,
-                                     String password, String targets, Path archivePath, String namespace) {
+      String password, String targets, Path archivePath, String namespace) {
+    deployUsingWlst(host, port, userName, password, targets, archivePath, namespace, false);
+  }
+
+  /**
+   * Deploy application.
+   *
+   * @param host name of the admin server host
+   * @param port default channel node port of admin server
+   * @param userName admin server user name
+   * @param password admin server password
+   * @param targets comma separated list of targets to deploy applications
+   * @param archivePath local path of the application archive
+   * @param namespace name of the namespace in which WebLogic server pods running
+   * @param secure admin server running in secure mode or not
+   */
+  public static void deployUsingWlst(String host, String port, String userName, String password,
+      String targets, Path archivePath, String namespace, boolean secure) {
+
     final LoggingFacade logger = getLogger();
 
     // this secret is used only for non-kind cluster
@@ -89,6 +107,12 @@ public class DeployUtil {
     p.setProperty("admin_username", userName);
     p.setProperty("admin_password", password);
     p.setProperty("targets", targets);
+    if (secure) {
+      p.setProperty("protocol", "t3s");
+    } else {
+      p.setProperty("protocol", "t3");
+    }
+
     assertDoesNotThrow(() -> p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file"),
         "Failed to write the domain properties to file");
 
