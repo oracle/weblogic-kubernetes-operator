@@ -79,6 +79,10 @@ public class ConversionWebhookResource extends BaseResource {
 
       conversionResponse = createConversionResponse(conversionReview.getRequest(), be);
     } catch (Exception e) {
+
+      // TEST
+      e.printStackTrace();
+
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
           .uid(getUid(conversionReview)).result(new Result().status(FAILED_STATUS).message("Exception: " + e));
