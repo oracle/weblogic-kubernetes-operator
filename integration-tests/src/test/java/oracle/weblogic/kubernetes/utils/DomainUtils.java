@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -1067,7 +1067,8 @@ public class DomainUtils {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom"))

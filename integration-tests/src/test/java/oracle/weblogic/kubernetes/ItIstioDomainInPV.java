@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -319,6 +319,7 @@ class ItIstioDomainInPV  {
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("MANAGED_SERVER_PORT", "8001");    
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(

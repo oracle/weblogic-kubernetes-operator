@@ -1,10 +1,10 @@
 domainInfo:
     AdminUserName: '@@PROP:WebLogicAdminUserName@@'
     AdminPassword: '@@PROP:WebLogicAdminPassword@@'
+    ServerStartMode: 'prod'
 topology:
     Name: mydomain
     AdminServerName: admin-server
-    ProductionModeEnabled: true
     Cluster:
         mycluster:
             WeblogicPluginEnabled: true

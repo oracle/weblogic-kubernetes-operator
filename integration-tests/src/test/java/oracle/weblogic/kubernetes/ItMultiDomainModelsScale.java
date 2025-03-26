@@ -1,8 +1,9 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -461,7 +462,8 @@ class ItMultiDomainModelsScale {
     } else if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
       assertDoesNotThrow(()
-          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+          -> verifyAdminServerRESTAccess(InetAddress.getLocalHost().getHostAddress(),
+              TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
     } else {
       verifyReadyAppUsingAdminNodePort(domainUid, domainNamespace);
       // verify admin console login using ingress controller

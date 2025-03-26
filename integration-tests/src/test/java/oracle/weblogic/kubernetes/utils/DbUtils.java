@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -841,7 +841,7 @@ public class DbUtils {
       String namespace) throws ApiException, IOException {
 
     LoggingFacade logger = getLogger();
-    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + DB_19C_IMAGE_TAG;    
+    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + DB_19C_IMAGE_TAG;
     String secretName = "db-password";
     String secretKey = "password";
     Map<String, String> secretMap = new HashMap<>();
@@ -854,6 +854,7 @@ public class DbUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
 
     createTestRepoSecret(namespace);
+    createBaseRepoSecret(namespace);
     
     final String pvName = getUniqueName(dbName + "-pv");
     createPV(pvName);

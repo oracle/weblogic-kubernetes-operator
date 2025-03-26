@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
@@ -96,7 +97,16 @@ class ItLBTwoDomainsNginx {
 
   // domain constants
   private static final int replicaCount = 2;
-  private static final int MANAGED_SERVER_PORT = 7100;
+  private static int MANAGED_SERVER_PORT;
+
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      MANAGED_SERVER_PORT = 7100;
+    } else {
+      MANAGED_SERVER_PORT = 7001;
+    }
+  }
+
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String clusterName = "cluster-1";
 

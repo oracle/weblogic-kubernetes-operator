@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: networking.istio.io/v1alpha3
@@ -47,9 +47,9 @@ spec:
             prefix: /myear
         - uri:
             prefix: /testwebapp            
-        - port: 8001
+        - port: MANAGED_SERVER_PORT
       route:
         - destination:
             host: CLUSTER_SERVICE
             port:
-              number: 8001
+              number: MANAGED_SERVER_PORT
