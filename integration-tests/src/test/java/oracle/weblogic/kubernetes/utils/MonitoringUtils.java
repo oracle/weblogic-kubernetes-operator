@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -89,6 +91,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IM
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
@@ -1309,6 +1312,24 @@ public class MonitoringUtils {
    */
   public static boolean verifyMonExpAppAccess(String uri, String searchKey, String domainUid,
                                         String domainNS, boolean isHttps, String clusterName) {
+    return verifyMonExpAppAccess(uri, searchKey, false, domainUid,
+        domainNS, isHttps, clusterName);
+  }
+
+  /**
+   * Verify the monitoring exporter app can be accessed from all managed servers in the domain
+   * through direct access to managed server dashboard.
+   *
+   * @param clusterName - name of cluster
+   * @param domainNS    - domain namespace
+   * @param domainUid   - domain uid
+   * @param isHttps     - protocol
+   * @param uri         - weburl
+   * @param searchKey   - search key in response
+   * @param isRegex     - search key contains regex
+   */
+  public static boolean verifyMonExpAppAccess(String uri, String searchKey, Boolean isRegex, String domainUid,
+                                              String domainNS, boolean isHttps, String clusterName) {
     String protocol = "http";
     String port = "8001";
     if (isHttps) {
@@ -1334,13 +1355,59 @@ public class MonitoringUtils {
       String response = result.stdout().trim();
       logger.info("Response : exitValue {0}, stdout {1}, stderr {2}",
           result.exitValue(), response, result.stderr());
-      isFound = response.contains(searchKey);
+      if (isRegex) {
+        isFound = containsValidServletName(response, searchKey);
+      } else {
+        isFound = response.contains(searchKey);
+      }
       logger.info("isFound value:" + isFound);
     } catch (Exception ex) {
       logger.info("Can't execute command " + command + Arrays.toString(ex.getStackTrace()));
       return false;
     }
     return isFound;
+  }
+
+  // Method to check if the string contains the required pattern
+  // Regular expression pattern to match servletName="ANYTHING.ExporterServlet"
+  // regex = "servletName=\"[^\"]*ExporterServlet\"";
+  private static boolean containsValidServletName(String input, String regex) {
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(input);
+    return matcher.find();
+  }
+
+
+  /**
+   * Replace Value In File.
+   *
+   * @param tempFileName file name
+   * @param newValue new value to search
+   * @param oldValue old value to replace
+   * @param srcFileName name of source file in exporter dir
+   * @return modified file path
+   */
+  public static String replaceValueInFile(String tempFileName, String srcFileName, String oldValue, String newValue) {
+
+    String tempFileDir = Paths.get(RESULTS_ROOT,
+        tempFileName).toString();
+    Path fileTemp = Paths.get(tempFileDir);
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()), "Failed to delete temp dir ");
+
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir ");
+
+    logger.info("copy the " + srcFileName + "  to staging location");
+    Path srcFile = Paths.get(RESOURCE_DIR, "exporter", srcFileName);
+    Path targetFile = Paths.get(fileTemp.toString(), srcFileName);
+    assertDoesNotThrow(() -> Files.copy(srcFile, targetFile,
+        StandardCopyOption.REPLACE_EXISTING), " Failed to copy files");
+
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(targetFile.toString(),
+          oldValue,
+          newValue);
+    });
+    return targetFile.toString();
   }
 
   /**
@@ -1408,7 +1475,7 @@ public class MonitoringUtils {
                                                                    String ingressRulesFileName) {
     logger.info("Creating ingress rules for prometheus traffic routing");
     Path srcFile = Paths.get(ActionConstants.RESOURCE_DIR, ingressRulesFileName);
-    Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, namespace, serviceName, ingressRulesFileName);
+    Path dstFile = Paths.get(RESULTS_ROOT, namespace, serviceName, ingressRulesFileName);
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);
       Files.createDirectories(dstFile.getParent());
