@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +83,11 @@ public class ConversionWebhookResource extends BaseResource {
     } catch (Exception e) {
 
       // TEST
-      e.printStackTrace();
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      e.printStackTrace(pw);
+      String exceptionString = sw.toString();
+      LOGGER.severe(exceptionString);
 
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
