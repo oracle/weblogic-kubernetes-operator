@@ -1,9 +1,10 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,6 +61,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
+import static oracle.kubernetes.common.logging.MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveFailuresStep;
@@ -206,6 +208,18 @@ public class JobHelper {
       return doNext(new IntrospectorJobStepContext(packet).createStartSteps(getNext()), packet);
     }
 
+  }
+
+  private static boolean isJobPodTimedOut(V1Pod jobPod) {
+    return "DeadlineExceeded".equals(getJobPodStatusReason(jobPod));
+  }
+
+  private static String getJobPodStatusReason(V1Pod jobPod) {
+    return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getReason).orElse(null);
+  }
+
+  private static boolean isJobTimedOut(V1Job job) {
+    return "DeadlineExceeded".equals(JobWatcher.getFailedReason(job));
   }
 
   private static class IntrospectorJobStepContext extends JobStepContext {
@@ -861,14 +875,6 @@ public class JobHelper {
         return new JobWatcher.DeadlineExceededException((V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB));
       }
 
-      private boolean isJobPodTimedOut(V1Pod jobPod) {
-        return "DeadlineExceeded".equals(getJobPodStatusReason(jobPod));
-      }
-
-      private String getJobPodStatusReason(V1Pod jobPod) {
-        return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getReason).orElse(null);
-      }
-
       private Step createIntrospectorConfigMap() {
         return ConfigMapHelper.createIntrospectorConfigMapStep(null);
       }
@@ -955,7 +961,21 @@ public class JobHelper {
           domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getMetadata().getName(),
           domainIntrospectorJob.toString());
+      if (isJobTimedOut(domainIntrospectorJob) || (jobPod != null && isJobPodTimedOut(jobPod))) {
+        LOGGER.info(JOB_DEADLINE_EXCEEDED_MESSAGE,
+            Optional.of(domainIntrospectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getName).orElse(""),
+            Optional.of(domainIntrospectorJob).map(V1Job::getSpec)
+              .map(V1JobSpec::getActiveDeadlineSeconds).map(Object::toString).orElse(""),
+            getJobStartedSeconds(domainIntrospectorJob));
+      }
     }
+  }
+
+  private static long getJobStartedSeconds(V1Job job) {
+    if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
+      return ChronoUnit.SECONDS.between(job.getStatus().getStartTime(), SystemClock.now());
+    }
+    return -1;
   }
 
   private static String getName(V1Pod pod) {
