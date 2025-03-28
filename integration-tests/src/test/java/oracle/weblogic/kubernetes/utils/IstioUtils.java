@@ -555,6 +555,7 @@ public class IstioUtils {
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("MANAGED_SERVER_PORT", "8001");
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
