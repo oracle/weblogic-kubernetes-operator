@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -183,7 +183,7 @@ class FailureRetryTest {
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("in test"));
     final int numTimesRunToAborted = domainInvalidStep.numTimesRun;
 
-    changeDomain(domain -> domain.getSpec().setReplicas(3));
+    changeDomain(d -> d.getSpec().setReplicas(3));
     domainProcessor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
 
     assertThat(domainInvalidStep.numTimesRun, equalTo(numTimesRunToAborted));

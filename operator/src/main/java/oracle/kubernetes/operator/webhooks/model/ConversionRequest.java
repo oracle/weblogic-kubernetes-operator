@@ -20,7 +20,7 @@ public class ConversionRequest {
 
   @Expose
   // The domains to be converted. Note that the field name 'objects' is required by the conversion API.
-  private List<Map<String,Object>> objects = new ArrayList<>();
+  private final List<Map<String,Object>> objects = new ArrayList<>();
 
   public String getUid() {
     return uid;

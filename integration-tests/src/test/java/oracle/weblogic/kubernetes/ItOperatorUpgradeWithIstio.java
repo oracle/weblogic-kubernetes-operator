@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.checkIstioService;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioService;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -89,7 +88,6 @@ class ItOperatorUpgradeWithIstio {
   private String managedServerPodNamePrefix = domainUid + "-managed-server";
   private int replicaCount = 2;
   private List<String> namespaces;
-  private String latestOperatorImageName;
   private String adminSecretName = "weblogic-credentials";
   private String opNamespace;
   private String domainNamespace;
@@ -101,7 +99,7 @@ class ItOperatorUpgradeWithIstio {
    * @param namespaces injected by JUnit
    */
   @BeforeEach
-  public void beforeEach(@Namespaces(2) List<String> namespaces) {
+  void beforeEach(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     this.namespaces = namespaces;
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -154,7 +152,7 @@ class ItOperatorUpgradeWithIstio {
    * delete CRD.
    */
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     if (!SKIP_CLEANUP) {
       cleanup(namespaces);
       cleanUpCRD();
@@ -191,7 +189,7 @@ class ItOperatorUpgradeWithIstio {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+            + Paths.get(WORK_DIR + "/domain.yaml"));
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
@@ -270,17 +268,6 @@ class ItOperatorUpgradeWithIstio {
       logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
-    }
-  }
-
-  private void checkDomainStopped(String domainUid, String domainNamespace) {
-    // verify admin server pod is deleted
-    checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
-    // verify managed server pods are deleted
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed pod {0} to be deleted in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodDeleted(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
   }
 

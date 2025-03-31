@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -23,9 +23,8 @@ public class Pod {
    * @param name      name of the pod
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deletePod(String name, String namespace) throws ApiException {
+  public static boolean deletePod(String name, String namespace) {
     return Kubernetes.deletePod(name, namespace);
   }
 
@@ -193,12 +192,11 @@ public class Pod {
    * @param serverName name of the WebLogic server
    * @param policy     value for serverStartPolicy property
    * @return true if patching domain operation succeeds or false if the operation fails
-   * @throws ApiException if Kubernetes client API call fails
    **/
   public static boolean patchDomainUsingServerStartPolicy(String domainUid,
                                                           String namespace,
                                                           String serverName,
-                                                          String policy) throws ApiException {
+                                                          String policy) {
     final String patchFormat = "application/json-patch+json";
     StringBuffer patchData = new StringBuffer("[{");
     patchData.append("\"op\": \"replace\",")

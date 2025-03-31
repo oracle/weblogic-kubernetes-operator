@@ -87,7 +87,7 @@ class ItFmwDomainOnPVSample {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -293,7 +293,7 @@ class ItFmwDomainOnPVSample {
    * Delete DB deployment for FMW test cases and Uninstall Traefik.
    */
   @AfterAll
-  public static void tearDownAll() {
+  static void tearDownAll() {
     logger = getLogger();
 
     // uninstall Traefik

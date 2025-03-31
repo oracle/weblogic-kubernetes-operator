@@ -138,13 +138,6 @@ public class ManagedServersUpStep extends Step {
         packet);
   }
 
-  private static Collection<String> getServerNames(Collection<? extends DomainPresenceInfo.ServerInfo> serverInfos) {
-    if (serverInfos != null) {
-      return serverInfos.stream().map(DomainPresenceInfo.ServerInfo::getServerName).toList();
-    }
-    return Collections.emptyList();
-  }
-
   private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig,
                                    DomainPresenceInfo info) {
     Set<String> clusteredServers = new HashSet<>();

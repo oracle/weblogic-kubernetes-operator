@@ -1048,7 +1048,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
   }
 
-  public static record ValidationResult(List<String> failures, boolean isDelay) {
+  public record ValidationResult(List<String> failures, boolean isDelay) {
   }
 
   class DomainValidator extends Validator {

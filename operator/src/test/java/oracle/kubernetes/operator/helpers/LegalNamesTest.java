@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -23,12 +23,12 @@ class LegalNamesTest {
   private final List<Memento> mementos = new ArrayList<>();
 
   @BeforeEach
-  public void setup() throws Exception {
+  void setup() throws Exception {
     mementos.add(TuningParametersStub.install());
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
     LegalNames.dns1123Fields = null;
   }

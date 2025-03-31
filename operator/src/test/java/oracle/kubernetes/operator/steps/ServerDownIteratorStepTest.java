@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -9,7 +9,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
@@ -44,8 +43,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
@@ -140,7 +137,7 @@ class ServerDownIteratorStepTest {
   }
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
@@ -151,7 +148,6 @@ class ServerDownIteratorStepTest {
             .addDomainPresenceInfo(domainPresenceInfo);
     testSupport.doOnCreate(KubernetesTestSupport.POD, p -> setPodReadyWithDelay((V1Pod) p));
     testSupport.doOnDelete(POD, this::recordPodDeletion);
-    //testSupport.doOnDelete(KubernetesTestSupport.POD, this::preDeleteWithDelay);
   }
 
   private V1Pod defineManagedPod(String name) {
@@ -190,19 +186,8 @@ class ServerDownIteratorStepTest {
     return deletedPodNames;
   }
 
-  private void preDeleteWithDelay(KubernetesTestSupport.DeletionContext context) {
-    testSupport.schedule(() -> {
-      try {
-        testSupport.deleteResources(
-                new V1Pod().metadata(new V1ObjectMeta().name(context.name()).namespace(context.namespace())));
-      } catch (KubernetesTestSupport.NotFoundException nfe) {
-        // no-op
-      }
-    }, 1, TimeUnit.SECONDS);
-  }
-
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -279,8 +264,6 @@ class ServerDownIteratorStepTest {
 
     assertThat(serverPodsDeleted(), hasSize(2));
     testSupport.setTime(5, TimeUnit.SECONDS);
-    // Disable assertion because there is something wrong with the test system clock support
-    //assertThat(serverPodsNotDeleted(), hasSize(1));
   }
 
   @Test
@@ -336,12 +319,12 @@ class ServerDownIteratorStepTest {
 
   private List<String> serverPodsBeingDeleted() {
     return domainPresenceInfo.getServerNames().stream()
-            .filter(s -> domainPresenceInfo.isServerPodBeingDeleted(s)).collect(Collectors.toList());
+            .filter(s -> domainPresenceInfo.isServerPodBeingDeleted(s)).toList();
   }
 
   private List<String> serverPodsNotDeleted() {
     return domainPresenceInfo.getServerNames().stream()
-            .filter(s -> domainPresenceInfo.getServerPod(s) != null).collect(Collectors.toList());
+            .filter(s -> domainPresenceInfo.getServerPod(s) != null).toList();
   }
 
   private ServerDownIteratorStepTest createShutdownInfos() {

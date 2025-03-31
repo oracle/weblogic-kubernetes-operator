@@ -142,10 +142,9 @@ class ItSystemResOverrides {
   final String adminServerName = "admin-server";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
-  private static int managedServerPort = 8001;
   int t3ChannelPort;
   private static int adminPort = 7001;
-  
+
   static {
     if (WEBLOGIC_IMAGE_TAG_DEFAULT.startsWith("14")) {
       adminPort = 7001;
@@ -154,7 +153,7 @@ class ItSystemResOverrides {
     }
   }
 
-  private static String hostHeader;  
+  private static String hostHeader;
   final String pvName = getUniqueName(domainUid + "-pv-");
   final String pvcName = getUniqueName(domainUid + "-pvc-");
   final String wlSecretName = "weblogic-credentials";
@@ -183,7 +182,7 @@ class ItSystemResOverrides {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(2) List<String> namespaces) throws IOException {
+  void initAll(@Namespaces(2) List<String> namespaces) throws IOException {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -205,7 +204,6 @@ class ItSystemResOverrides {
 
     //create and start WebLogic domain
     createDomain();
-    //restartDomain();
 
     // build the sitconfig application
     Path distDir = buildApplication(Paths.get(APP_DIR, "sitconfig"),

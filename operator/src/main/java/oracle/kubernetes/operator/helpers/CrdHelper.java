@@ -753,18 +753,6 @@ public class CrdHelper {
   }
 
   static class CrdComparatorImpl implements CrdComparator {
-    private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
-      List<ResourceVersion> versions = new ArrayList<>();
-      List<V1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
-      if (vs != null) {
-        for (V1CustomResourceDefinitionVersion vi : vs) {
-          versions.add(new ResourceVersion(vi.getName()));
-        }
-      }
-
-      return versions;
-    }
-
     @Override
     public boolean isOutdatedCrd(SemanticVersion productVersion, String resourceVersionString,
                                  V1CustomResourceDefinition actual, V1CustomResourceDefinition expected) {
@@ -783,31 +771,6 @@ public class CrdHelper {
       }
 
       return !AnnotationHelper.getHash(expected).equals(AnnotationHelper.getHash(actual));
-    }
-
-    // true, if version is later than base
-    private boolean isLaterOrEqual(ResourceVersion base, ResourceVersion version) {
-      if (!version.getVersion().equals(base.getVersion())) {
-        return version.getVersion().compareTo(base.getVersion()) >= 0;
-      }
-
-      if (version.getPrerelease() == null) {
-        if (base.getPrerelease() != null) {
-          return true;
-        }
-      } else if (!version.getPrerelease().equals(base.getPrerelease())) {
-        if (base.getPrerelease() == null) {
-          return false;
-        }
-        return "alpha".equals(base.getPrerelease());
-      }
-
-      if (version.getPrereleaseVersion() == null) {
-        return base.getPrereleaseVersion() == null;
-      } else if (base.getPrereleaseVersion() == null) {
-        return true;
-      }
-      return version.getPrereleaseVersion() >= base.getPrereleaseVersion();
     }
   }
 

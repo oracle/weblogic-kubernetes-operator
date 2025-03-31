@@ -82,7 +82,7 @@ class ItMiiDynamicUpdatePart2 {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
     logger = getLogger();
 
@@ -100,7 +100,7 @@ class ItMiiDynamicUpdatePart2 {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     helper.beforeEach();
   }
 

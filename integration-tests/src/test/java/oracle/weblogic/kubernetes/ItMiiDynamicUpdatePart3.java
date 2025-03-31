@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -100,7 +100,7 @@ class ItMiiDynamicUpdatePart3 {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
     logger = helper.logger;
 
@@ -124,7 +124,7 @@ class ItMiiDynamicUpdatePart3 {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     helper.beforeEach();
   }
 

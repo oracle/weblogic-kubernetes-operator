@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -71,7 +71,7 @@ class ConfigMapHelperTest {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, CM_CREATED, CM_EXISTS, CM_REPLACED)
@@ -81,7 +81,7 @@ class ConfigMapHelperTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();

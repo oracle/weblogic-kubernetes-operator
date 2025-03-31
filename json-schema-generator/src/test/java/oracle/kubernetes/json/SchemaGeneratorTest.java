@@ -96,7 +96,7 @@ class SchemaGeneratorTest {
   private Map<String,SpecializedObject> specializedMap;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     schemaUrl = new URI(K8S_SCHEMA_URL).toURL();
     cacheUrl = getClass().getResource(K8S_CACHE_FILE);
   }

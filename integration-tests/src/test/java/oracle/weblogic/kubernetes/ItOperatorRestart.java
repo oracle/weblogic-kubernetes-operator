@@ -70,7 +70,6 @@ class ItOperatorRestart {
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
   private static LoggingFacade logger = null;
-  private static String ingressHost = null; //only used for OKD
 
   /**
    * Perform initialization for all the tests in this class.
@@ -81,7 +80,7 @@ class ItOperatorRestart {
    *           JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get namespaces
@@ -259,7 +258,7 @@ class ItOperatorRestart {
         },
         "Failed to get creationTimestamp for managed server pods");
 
-    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
 
     logger.info("Check that before patching current credentials are valid and new credentials are not");
     verifyCredentials(7001, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
@@ -302,7 +301,6 @@ class ItOperatorRestart {
 
     for (int i = 1; i <= replicaCount; i++) {
       final String podName = managedServerPrefix + i;
-      final OffsetDateTime lastCreationTime = msLastCreationTime.get(i - 1);
       // check that the managed server pod's label has been updated with the new restartVersion
       checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
     }

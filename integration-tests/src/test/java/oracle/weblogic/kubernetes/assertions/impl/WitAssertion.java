@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -24,7 +24,7 @@ public class WitAssertion {
   public static boolean doesImageExist(String imageName, String imageTag) {
     getLogger().info("Checking if image " + imageName + ":" + imageTag + " exists.");
     // verify the image is created
-    Exception exception = null;;
+    Exception exception = null;
     try {
       ExecResult result = ExecCommand.exec(
           WLSIMG_BUILDER + " images -q " 

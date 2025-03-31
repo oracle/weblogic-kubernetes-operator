@@ -81,7 +81,7 @@ class ItPodTemplates {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Get a unique namespace for operator");
@@ -104,7 +104,7 @@ class ItPodTemplates {
    */
   @Test
   @DisplayName("Test pod templates using all supported variables in serverPod")
-  void testPodTemplateUsingVariablesDomainInImage() throws Exception {
+  void testPodTemplateUsingVariablesDomainInImage() {
     String wdtImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
     logger.info("Add annotations to serverPod in Domain Spec as $(DOMAIN_HOME) and $(LOG_HOME)");
     logger.info("Add labels to serverPod in Domain Spec as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");

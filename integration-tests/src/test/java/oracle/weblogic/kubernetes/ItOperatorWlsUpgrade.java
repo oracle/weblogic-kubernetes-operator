@@ -155,7 +155,6 @@ class ItOperatorWlsUpgrade {
   private String managedServerPodNamePrefix = domainUid + "-managed-server";
   private int replicaCount = 2;
   private List<String> namespaces;
-  private String latestOperatorImageName;
   private String adminSecretName = "weblogic-credentials";
   private String encryptionSecretName = "encryptionsecret";
   private String opNamespace;
@@ -172,7 +171,7 @@ class ItOperatorWlsUpgrade {
    * @param namespaces injected by JUnit
    */
   @BeforeEach
-  public void beforeEach(@Namespaces(2) List<String> namespaces) {
+  void beforeEach(@Namespaces(2) List<String> namespaces) {
     this.namespaces = namespaces;
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
@@ -186,7 +185,7 @@ class ItOperatorWlsUpgrade {
    * to all test methods.
    */
   @BeforeAll
-  public static void init() {
+  static void init() {
     logger = getLogger();
   }
 
@@ -314,7 +313,7 @@ class ItOperatorWlsUpgrade {
    * delete CRD.
    */
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
       cleanUpCRD();
@@ -330,7 +329,6 @@ class ItOperatorWlsUpgrade {
     createBaseRepoSecret(domainNamespace);
 
     // Creating an aux image domain with v8 version
-    final String auxiliaryImagePath = "/auxiliary";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -358,7 +356,7 @@ class ItOperatorWlsUpgrade {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+            + Paths.get(WORK_DIR + "/domain.yaml"));
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
@@ -442,9 +440,6 @@ class ItOperatorWlsUpgrade {
   }
 
   private void upgradeOperatorAndVerify(String opNamespace, String domainNamespace) {
-    String opServiceAccount = opNamespace + "-sa";
-    String appName = "testwebapp.war";
-
     // deploy application and access the application once
     // to make sure the app is accessible
     deployAndAccessApplication(domainNamespace,
@@ -524,32 +519,6 @@ class ItOperatorWlsUpgrade {
     logger.info("Create encryption secret");
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
-  }
-
-  private void createWlsDomainAndVerify(String domainType,
-        String domainNamespace, String domainVersion,
-        String externalServiceNameSuffix) {
-
-    createSecrets();
-
-    String domainImage = "";
-    if (domainType.equalsIgnoreCase("Image")) {
-      domainImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-    } else {
-      domainImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    }
-
-    // create domain
-    createDomainResource(domainNamespace, domainVersion,
-                         domainType, domainImage);
-    checkDomainStarted(domainUid, domainNamespace);
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-    logger.info("Validating WebLogic admin server access by login to console");
-    verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST,
-           String.valueOf(serviceNodePort), false);
   }
 
   private void checkDomainStarted(String domainUid, String domainNamespace) {
@@ -679,7 +648,6 @@ class ItOperatorWlsUpgrade {
   // However in release(s) lower to 3.3.x, the CRD does not contain this attribute
   // so the patch command to remove this attribute fails. So we do not assert
   // the result of patch command
-  // assertTrue(result, "Failed to remove PortForwardingAttribute");
   private void removePortForwardingAttribute(
       String domainNamespace, String  domainUid) {
 
@@ -698,7 +666,7 @@ class ItOperatorWlsUpgrade {
     CommandParams params = new CommandParams().defaults();
 
     params.command(new String(commandStr));
-    boolean result = Command.withParams(params).execute();
+    Command.withParams(params).execute();
   }
 
   /**

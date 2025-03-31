@@ -92,7 +92,7 @@ public class ItHorizontalPodAutoscaler {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -251,7 +251,7 @@ public class ItHorizontalPodAutoscaler {
 
   private void createLoadOnCpuAndVerifyAutoscaling() {
     // execute command to increase cpu usage
-    int duration = (OKE_CLUSTER == true) ? 60 : 30;
+    int duration = OKE_CLUSTER ? 60 : 30;
     String cmd = KUBERNETES_CLI + " exec -t " + managedServerPrefix + "1 -n "
         + domainNamespace + "  -- timeout --foreground -s 2 "
         + duration + " dd if=/dev/zero of=/dev/null";

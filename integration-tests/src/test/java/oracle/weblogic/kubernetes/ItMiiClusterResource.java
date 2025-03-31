@@ -109,7 +109,6 @@ class ItMiiClusterResource {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private String miiImage = null;
   private static LoggingFacade logger = null;
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
@@ -121,7 +120,7 @@ class ItMiiClusterResource {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -300,7 +299,6 @@ class ItMiiClusterResource {
   void testDomainStatusMatchesClusterResourceStatus() {
 
     String domainUid = "domain10";
-    String adminServerPodName = domainUid + "-admin-server";
     String managedServer1Prefix = domainUid +  "-c1-managed-server";
     String managedServer2Prefix = domainUid + "-c2-managed-server";
 
@@ -659,8 +657,7 @@ class ItMiiClusterResource {
     String domainUid = "domain4"; 
     String cluster1Name = "cluster-1"; 
     String cluster1Res = domainUid + "-cluster-1"; 
-    String cluster2Name = "cluster-2"; 
-    String cluster2Res = domainUid + "-cluster-2"; 
+    String cluster2Res = domainUid + "-cluster-2";
 
     String configMapName = domainUid + "-configmap"; 
    
@@ -791,7 +788,6 @@ class ItMiiClusterResource {
     String cluster1Res     = domainUid + "-cluster-1";
     String cluster2Res     = domainUid + "-cluster-2";
     String config1MapName  = domainUid + "-configmap";
-    String config2MapName  = domainUid + "-configmap2";
 
     String adminPodName      = domainUid + "-admin-server";
     String managedPod1Prefix = domainUid + "-c1-managed-server";
@@ -917,7 +913,6 @@ class ItMiiClusterResource {
     String cluster1Res     = domainUid + "-cluster-1";
     String cluster2Res     = domainUid + "-cluster-2";
     String config1MapName  = domainUid + "-configmap";
-    String config2MapName  = domainUid + "-configmap2";
 
     String adminPodName      = domainUid + "-admin-server";
     String managedPod1Prefix = domainUid + "-c1-managed-server";

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1132,24 +1132,12 @@ public abstract class PodStepContext extends BasePodStepContext {
       LOGGER.fine(getPodExistsMessageKey(), getDomainUid(), getServerName());
     }
 
-    private boolean hasLabel(V1Pod pod, String key) {
-      return pod.getMetadata().getLabels().containsKey(key);
-    }
-
     private boolean isPodFromRecentOperator(V1Pod currentPod) {
       return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
           .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isRecentOperator).orElse(false);
     }
 
-    private void setLabel(V1Pod currentPod, String key, String value) {
-      currentPod.getMetadata().putLabelsItem(key, value);
-    }
-
     @SuppressWarnings("SameParameterValue")
-    private void copyLabel(V1Pod fromPod, V1Pod toPod, String key) {
-      setLabel(toPod, key, getLabel(fromPod, key));
-    }
-
     private String adjustedHash(V1Pod currentPod, List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments) {
       V1Pod recipe = createPodRecipe();
       adjustments.forEach(adjustment -> adjustment.right().accept(recipe, currentPod));
@@ -1490,7 +1478,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
       V1Pod pod = callResponse.getObject();
-      if (pod == null || !isPodReady(pod)) {
+      if (!isPodReady(pod)) {
         // requeue to wait for the pod to be ready
         return doRequeue(packet);
       }

@@ -168,7 +168,7 @@ class ItMultiDomainModelsScale {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -350,7 +350,6 @@ class ItMultiDomainModelsScale {
 
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-    //curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, numberOfServers, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,

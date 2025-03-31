@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -110,7 +110,6 @@ public class ItMiiDomainModelInPV {
   // domain constants
   private static List<Parameters> params = new ArrayList<>();
   private static String domainUid1 = "domain1";
-  private static String domainUid2 = "domain2";
   private static String adminServerName = "admin-server";
   private static String clusterName = "cluster-1";
   private static int replicaCount = 2;
@@ -131,9 +130,6 @@ public class ItMiiDomainModelInPV {
 
   private static LoggingFacade logger = null;
 
-  private static String wlsImage;
-  private static boolean isUseSecret;
-
   private static String adminSvcExtHost = null;
   private static String hostHeader;
 
@@ -148,7 +144,7 @@ public class ItMiiDomainModelInPV {
    * @param namespaces list of namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");

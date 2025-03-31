@@ -79,7 +79,7 @@ class ItKubernetesNameSpaceWatchingEvents {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -347,7 +347,7 @@ class ItKubernetesNameSpaceWatchingEvents {
    * @throws ApiException if Kubernetes API calls fail
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       if (Namespace.exists(newNSWithLabels)) {
         deleteNamespace(newNSWithLabels);

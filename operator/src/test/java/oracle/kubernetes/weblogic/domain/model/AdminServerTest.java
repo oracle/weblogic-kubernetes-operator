@@ -1,11 +1,10 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
 
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,6 @@ class AdminServerTest extends BaseConfigurationTestBase {
   private final AdminServer server1;
   private final AdminServer server2;
   private final DomainResource domain = new DomainResource();
-  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   /**
    * Administration server tests.

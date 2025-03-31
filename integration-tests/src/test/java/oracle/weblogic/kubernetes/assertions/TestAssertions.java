@@ -1,9 +1,8 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -300,11 +299,10 @@ public class TestAssertions {
    * @param labels label for pod
    * @param namespace in which to check for the pod existence
    * @return true if pods are exist and running otherwise false
-   * @throws ApiException when there is error in querying the cluster
    */
   public static Callable<Boolean> isPodReady(String namespace,
                                              Map<String, String> labels,
-                                             String podName) throws ApiException {
+                                             String podName) {
     return Pod.podReady(namespace, podName,labels);
   }
 
@@ -400,7 +398,7 @@ public class TestAssertions {
    * @return true if the status matches, false otherwise
    */
   public static Callable<Boolean> clusterStatusMatchesDomain(String domainUid, String namespace,
-                                                   String clusterName) throws ApiException {
+                                                   String clusterName) {
     LoggingFacade logger = getLogger();
     return () -> {
       DomainResource domain =
@@ -484,8 +482,7 @@ public class TestAssertions {
   */
   public static Callable<Boolean> clusterStatusConditionsMatchesDomain(String domainUid, String namespace,
                                                                        String clusterName,
-                                                                       String conditionType, String expectedStatus)
-      throws ApiException {
+                                                                       String conditionType, String expectedStatus) {
     LoggingFacade logger = getLogger();
     return () -> {
       DomainResource domain =
@@ -572,9 +569,8 @@ public class TestAssertions {
       DomainResource domain = getDomainCustomResource(domainUid, namespace);
       if (domain != null && domain.getStatus() != null && domain.getStatus().getConditions() != null
           && !domain.getStatus().getConditions().isEmpty()) {
-        boolean match = domain.getStatus().getConditions().stream()
+        return domain.getStatus().getConditions().stream()
             .anyMatch(condition -> condition.getReason() != null && condition.getReason().contains(statusReason));
-        return match;
       } else {
         if (domain == null) {
           logger.info("domain is null");
@@ -858,11 +854,9 @@ public class TestAssertions {
    * @param userName user name to access WebLogic administration server
    * @param password password to access WebLogic administration server
    * @return true if the WebLogic administration service node port is accessible otherwise false
-   * @throws java.io.IOException when connection to WebLogic administration server fails
    */
   public static Callable<Boolean> adminNodePortAccessible(int nodePort, String userName,
-                                                     String password, String... routeHost)
-      throws IOException {
+                                                     String password, String... routeHost) {
     if (routeHost.length == 0) {
       return () -> Domain.adminNodePortAccessible(nodePort, userName, password, null);
     } else {
@@ -877,11 +871,9 @@ public class TestAssertions {
    * @param userName user name to access WebLogic administration server
    * @param password password to access WebLogic administration server
    * @return true if the WebLogic administration service node port is accessible otherwise false
-   * @throws java.io.IOException when connection to WebLogic administration server fails
    */
   public static Callable<Boolean> adminLoginPageAccessible(int nodePort, String userName,
-                                                          String password, String... routeHost)
-      throws IOException {
+                                                          String password, String... routeHost) {
     if (routeHost.length == 0) {
       return () -> Domain.adminNodePortAccessible(nodePort, userName, password, null);
     } else {

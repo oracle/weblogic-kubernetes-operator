@@ -114,7 +114,7 @@ public class RestBackendImpl implements RestBackend {
       }
       ApiClient client = builder.build();
       gson = client.getJSON().getGson();
-      clientSupplier = (c) -> client;
+      clientSupplier = c -> client;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

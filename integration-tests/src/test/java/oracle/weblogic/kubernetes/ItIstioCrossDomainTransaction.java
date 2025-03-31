@@ -128,7 +128,7 @@ class ItIstioCrossDomainTransaction {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
+  static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -230,7 +230,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "txforward.ear").toFile().exists(),
         "Application archive is not available");
-    String appSource = distDir.toString() + "/txforward.ear";
+    String appSource = distDir + "/txforward.ear";
     logger.info("Application is in {0}", appSource);
 
     //build application archive
@@ -242,7 +242,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "cdttxservlet.war").toFile().exists(),
         "Application archive is not available");
-    String appSource1 = distDir.toString() + "/cdttxservlet.war";
+    String appSource1 = distDir + "/cdttxservlet.war";
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
@@ -254,7 +254,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "jmsservlet.war").toFile().exists(),
         "Application archive is not available");
-    String appSource2 = distDir.toString() + "/jmsservlet.war";
+    String appSource2 = distDir + "/jmsservlet.war";
     logger.info("Application is in {0}", appSource2);
 
     Path mdbSrcDir  = Paths.get(APP_DIR, "mdbtopic");
@@ -282,7 +282,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "mdbtopic.jar").toFile().exists(),
         "Application archive is not available");
-    String appSource3 = distDir.toString() + "/mdbtopic.jar";
+    String appSource3 = distDir + "/mdbtopic.jar";
     logger.info("Application is in {0}", appSource3);
 
     // create admin credential secret for domain1

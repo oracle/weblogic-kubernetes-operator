@@ -86,7 +86,7 @@ class ItMiiDynamicUpdatePart1 {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
     logger = helper.logger;
 
@@ -124,7 +124,7 @@ class ItMiiDynamicUpdatePart1 {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     helper.beforeEach();
   }
 
@@ -302,8 +302,6 @@ class ItMiiDynamicUpdatePart1 {
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(helper.domainNamespace, helper.adminServerPodName);
     pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= helper.replicaCount; i++) {
@@ -454,8 +452,6 @@ class ItMiiDynamicUpdatePart1 {
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(helper.domainNamespace, helper.adminServerPodName);
     pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= helper.replicaCount; i++) {
@@ -527,8 +523,8 @@ class ItMiiDynamicUpdatePart1 {
         helper.domainNamespace, helper.adminServerPodName,
         MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
-      logger.info("readMinThreadsConstraintRuntime read " + result.toString());
-      return (result != null && result.contains("\"count\": " + count));
+      logger.info("readMinThreadsConstraintRuntime read " + result);
+      return result.contains("\"count\": " + count);
     }
     logger.info("readMinThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;
@@ -579,8 +575,8 @@ class ItMiiDynamicUpdatePart1 {
         helper.domainNamespace, helper.adminServerPodName,
         MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
-      logger.info("readMaxThreadsConstraintRuntime read " + result.toString());
-      return (result != null && result.contains("\"count\": " + count));
+      logger.info("readMaxThreadsConstraintRuntime read " + result);
+      return (result.contains("\"count\": " + count));
     }
     logger.info("readMaxThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;

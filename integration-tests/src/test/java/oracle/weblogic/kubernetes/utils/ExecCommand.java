@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -85,7 +85,6 @@ public class ExecCommand {
         out.start();
       }
 
-      // TODO - Make the command wait timeout value configurable
       p.waitFor(COMMAND_WAIT_TIMEOUT, TimeUnit.SECONDS);
 
       // we need to join the thread before we read the stdout so that the saved stdout is complete
@@ -120,7 +119,7 @@ public class ExecCommand {
     return strArray;
   }
 
-  private static String read(InputStream is) throws IOException {
+  private static String read(InputStream is) {
     return new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.joining("\n"));
   }
 

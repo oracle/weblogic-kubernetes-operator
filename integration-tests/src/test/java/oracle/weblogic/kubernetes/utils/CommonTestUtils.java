@@ -169,10 +169,10 @@ public class CommonTestUtils {
         .atMost(minutes, MINUTES).await();
   }
 
-  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
-  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+  public static final ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static final ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
 
-  private static int adminListenPort = 7001;
+  private static final int adminListenPort = 7001;
 
   /**
    * Create a condition factory with custom values for pollDelay, pollInterval and atMost time.
@@ -272,7 +272,7 @@ public class CommonTestUtils {
     };
   }
 
-  public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+  public static final ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(120, SECONDS).await();
 
@@ -1054,7 +1054,7 @@ public class CommonTestUtils {
       ExecResult result = assertDoesNotThrow(() -> exec(javapCmd.toString(), true));
       logger.info("java returned {0}", result.toString());
       logger.info("java returned EXIT value {0}", result.exitValue());
-      return ((result.exitValue() == 0));
+      return (result.exitValue() == 0);
     });
   }
 
@@ -1101,7 +1101,7 @@ public class CommonTestUtils {
       ExecResult result = assertDoesNotThrow(() -> exec(javapCmd.toString(), true));
       logger.info("java returned {0}", result.toString());
       logger.info("java returned EXIT value {0}", result.exitValue());
-      return ((result.exitValue() == 0 && result.stdout().contains(expectedResult)));
+      return (result.exitValue() == 0 && result.stdout().contains(expectedResult));
     });
   }
 
@@ -1138,8 +1138,8 @@ public class CommonTestUtils {
       logger.info(" noproxy : " + noproxy);
       extraArgs.append(String.format(" --build-arg no_proxy=%s",noproxy));
     }
-    if (mvnArgs.length() > 0) {
-      extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
+    if (!mvnArgs.isEmpty()) {
+      extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs + "\"");
     }
     return extraArgs.toString();
   }
@@ -1537,7 +1537,7 @@ public class CommonTestUtils {
         .append(" -n ")
         .append(domainNamespace)
         .append(" :")
-        .append(String.valueOf(port))
+        .append(port)
         .append(" > ")
         .append(pfFileName)
         .append(" 2>&1 &");
@@ -1584,7 +1584,7 @@ public class CommonTestUtils {
         .append(" -n ")
         .append(namespace)
         .append(" :")
-        .append(String.valueOf(port))
+        .append(port)
         .append(" > ")
         .append(pfFileName)
         .append(" 2>&1 &");
@@ -1923,7 +1923,7 @@ public class CommonTestUtils {
 
     // DOMAIN_NAME in model.sessmigr.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
-        destModelYamlFile.toString(), "DOMAIN_NAME", domainUid),
+        destModelYamlFile, "DOMAIN_NAME", domainUid),
         "Could not modify DOMAIN_NAME in " + destModelYamlFile);
 
     return destModelYamlFile;
@@ -2089,12 +2089,12 @@ public class CommonTestUtils {
   public static int getBaseImagesPrefixLength(String baseRepo, String baseTenancy) {
     int result = 0;
 
-    if (baseRepo != null && baseRepo.length() > 0) {
+    if (baseRepo != null && !baseRepo.isEmpty()) {
       // +1 for the trailing slash
       result += baseRepo.length() + 1;
 
       if (!baseRepo.equalsIgnoreCase("container-registry.oracle.com")) {
-        if (baseTenancy != null && baseTenancy.length() > 0) {
+        if (baseTenancy != null && !baseTenancy.isEmpty()) {
           // +1 for the trailing slash
           result += baseTenancy.length() + 1;
         }
@@ -2114,7 +2114,7 @@ public class CommonTestUtils {
    */
   public static String getKindRepoImageForSpec(String kindRepo, String imageName, String imageTag, int prefixLength) {
     String result = imageName + ":" + imageTag;
-    if (kindRepo != null && kindRepo.length() > 0) {
+    if (kindRepo != null && !kindRepo.isEmpty()) {
       String imageNoPrefix = result.substring(prefixLength);
       if (kindRepo.endsWith("/")) {
         kindRepo = kindRepo.substring(0, kindRepo.length() - 1);
@@ -2132,7 +2132,7 @@ public class CommonTestUtils {
    * @return the domain prefix
    */
   public static String getDomainImagePrefix(String repo, String tenancy) {
-    if (repo != null && repo.length() > 0) {
+    if (repo != null && !repo.isEmpty()) {
       if (repo.endsWith("/")) {
         repo = repo.substring(0, repo.length() - 1);
       }

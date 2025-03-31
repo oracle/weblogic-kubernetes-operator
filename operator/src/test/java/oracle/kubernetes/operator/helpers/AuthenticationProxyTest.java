@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -28,7 +28,7 @@ class AuthenticationProxyTest {
    * @throws Exception on failure
    */
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(
@@ -36,7 +36,7 @@ class AuthenticationProxyTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -57,6 +57,7 @@ class AuthenticationProxyTest {
   private static class AuthorizationProxyStub extends AuthorizationProxy {
     Scope scope;
 
+    @Override
     public boolean check(
         String principal,
         Operation operation,

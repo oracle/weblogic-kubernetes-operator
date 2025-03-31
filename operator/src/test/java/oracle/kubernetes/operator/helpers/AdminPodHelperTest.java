@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -959,7 +959,5 @@ class AdminPodHelperTest extends PodHelperTestBase {
   List<String> createStartCommand() {
     return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
   }
-
-  // todo test that changing the cert in tuning parameters does not change the hash
 
 }

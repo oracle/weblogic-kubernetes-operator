@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -370,7 +370,7 @@ public class PersistentVolumeUtils {
    */
   public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath, String command) {
 
-    V1Container container = new V1Container()
+    return new V1Container()
         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
         .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -384,7 +384,6 @@ public class PersistentVolumeUtils {
         .securityContext(new V1SecurityContext()
             .runAsGroup(0L)
             .runAsUser(0L));
-    return container;
   }
 
   /**

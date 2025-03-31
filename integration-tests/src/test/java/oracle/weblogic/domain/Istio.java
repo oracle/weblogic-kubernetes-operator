@@ -21,7 +21,7 @@ public class Istio {
           + "pod is ready for application traffic. Defaults to 8888.")
   private Integer readinessPort = 8888;
 
-  public static Integer DEFAULT_REPLICATION_PORT = 4564;
+  public static final Integer DEFAULT_REPLICATION_PORT = 4564;
 
   @ApiModelProperty(
       "The operator will create a `T3` protocol WebLogic network access point on each WebLogic server "

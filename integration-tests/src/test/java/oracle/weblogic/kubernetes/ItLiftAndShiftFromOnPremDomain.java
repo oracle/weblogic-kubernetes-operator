@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -138,7 +137,7 @@ class ItLiftAndShiftFromOnPremDomain {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -232,20 +231,12 @@ class ItLiftAndShiftFromOnPremDomain {
     assertNotNull(webLogicPod.getMetadata(), "webLogicPod metadata is null");
 
     // copy the onprem domain zip file to /u01 location inside pod
-    try {
-      Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
-          null, zipFile, Paths.get("/u01/", zipFile.getFileName().toString()));
-    } catch (ApiException | IOException ioex) {
-      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
-    }
+    Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
+        null, zipFile, Paths.get("/u01/", zipFile.getFileName().toString()));
 
     //copy the build script discover_domain.sh to /u01 location inside pod
-    try {
-      Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
-          null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
-    } catch (ApiException | IOException  ioex) {
-      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
-    }
+    Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
+        null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
     logger.info(KUBERNETES_CLI + " copied " + BUILD_SCRIPT + " into the pod");
 
     // Check that all the required files have been copied into the pod
@@ -275,7 +266,7 @@ class ItLiftAndShiftFromOnPremDomain {
       // Copy the directory that contains the files to workdir
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get("/u01", DISCOVER_DOMAIN_OUTPUT_DIR).toString(), Paths.get(LIFT_AND_SHIFT_WORK_DIR));
-    } catch (ApiException | IOException | InterruptedException | CopyNotSupportedException ioex) {
+    } catch (ApiException | IOException | InterruptedException ioex) {
       logger.info("Exception while copying file "
           + Paths.get("/u01", DISCOVER_DOMAIN_OUTPUT_DIR) + " from pod", ioex);
     }
@@ -304,7 +295,7 @@ class ItLiftAndShiftFromOnPremDomain {
     // run create_k8s_secrets.sh that discoverDomain created to create necessary secrets
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
-        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR, "/create_k8s_secrets.sh").toString());
+        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR, "/create_k8s_secrets.sh"));
 
     logger.info("Run create_k8s_secrets.sh to create secrets");
     boolean result = Command.withParams(params).execute();
@@ -313,7 +304,7 @@ class ItLiftAndShiftFromOnPremDomain {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML).toString());
+        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML));
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");

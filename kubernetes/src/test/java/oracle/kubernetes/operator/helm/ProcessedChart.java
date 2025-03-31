@@ -102,7 +102,7 @@ public class ProcessedChart implements YamlReader {
       new Yaml()
           .loadAll(getProcess().getInputStream())
           .forEach(
-              (document) -> {
+              document -> {
                 if (document != null) {
                   documents.add(document);
                 }

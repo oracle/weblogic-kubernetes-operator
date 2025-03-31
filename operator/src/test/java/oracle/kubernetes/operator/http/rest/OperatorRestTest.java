@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.http.rest;
 
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -324,7 +325,7 @@ class OperatorRestTest extends RestTestBase {
 
     void addDomain(String domain, String... clusterNames) {
       domainClusters.put(
-          domain, Arrays.stream(clusterNames).map(ClusterState::new).collect(Collectors.toList()));
+          domain, Arrays.stream(clusterNames).map(ClusterState::new).collect(Collectors.toCollection(ArrayList::new)));
     }
 
     Integer getNumManagedServers(String domain, String clusterName) {

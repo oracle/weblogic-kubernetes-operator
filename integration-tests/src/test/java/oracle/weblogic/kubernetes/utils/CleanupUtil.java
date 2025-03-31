@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1IngressList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
@@ -243,7 +244,6 @@ public class CleanupUtil {
           List<V1ReplicaSet> items = listReplicaSets(namespace).getItems();
           if (!items.isEmpty()) {
             logger.info("ReplicaSets still exists!!!");
-            //List<V1ReplicaSet> items = listReplicaSets(namespace).getItems();
             for (var item : items) {
               if (item.getMetadata() != null) {
                 logger.info(item.getMetadata().getName());
@@ -343,7 +343,7 @@ public class CleanupUtil {
           for (var item : persistentVolumeClaimList.getItems()) {
             String label = Optional.ofNullable(item)
                 .map(pvc -> pvc.getMetadata())
-                .map(metadata -> metadata.getLabels())
+                .map(V1ObjectMeta::getLabels)
                 .map(labels -> labels.get("weblogic.domainUid")).get();
 
             if (!listPersistentVolumes(

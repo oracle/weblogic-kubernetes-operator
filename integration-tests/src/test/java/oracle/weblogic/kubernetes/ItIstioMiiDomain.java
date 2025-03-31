@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
@@ -111,7 +110,7 @@ class ItIstioMiiDomain {
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
   */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -154,7 +153,7 @@ class ItIstioMiiDomain {
   @Test
   @DisplayName("Create WebLogic Domain with mii model with istio")
   @Tag("gate")
-  void testIstioModelInImageDomain() throws UnknownHostException, IOException, InterruptedException {
+  void testIstioModelInImageDomain() throws IOException {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -203,7 +202,7 @@ class ItIstioMiiDomain {
 
     // delete the mTLS mode
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
-        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+        + Paths.get(WORK_DIR, "istio-tls-mode.yaml"), true));
     assertEquals(0, result.exitValue(), "Got expected exit value");
     logger.info(result.stdout());
     logger.info(result.stderr());
@@ -342,7 +341,7 @@ class ItIstioMiiDomain {
       copyFile(srcFile.toFile(), dstFile.toFile());
       replaceStringInFile(dstFile.toString(), "NAMESPACE", namespace);
       ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " apply -f "
-          + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true);
+          + Paths.get(WORK_DIR, "istio-tls-mode.yaml"), true);
       assertEquals(0, result.exitValue(), "Failed to enable mTLS strict mode");
       logger.info(result.stdout());
       logger.info(result.stderr());

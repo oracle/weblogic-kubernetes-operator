@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
-import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -93,9 +92,5 @@ class HeaderModifierInterceptorTest {
     public Request request() {
       return request;
     }
-  }
-
-  private static Headers createHeaders() {
-    return Headers.of("");
   }
 }

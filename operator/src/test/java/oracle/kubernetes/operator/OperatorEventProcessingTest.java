@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -74,7 +74,7 @@ class OperatorEventProcessingTest {
    * @throws Exception on failure
    */
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
@@ -89,7 +89,7 @@ class OperatorEventProcessingTest {
    * Tear down test.
    */
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
     }

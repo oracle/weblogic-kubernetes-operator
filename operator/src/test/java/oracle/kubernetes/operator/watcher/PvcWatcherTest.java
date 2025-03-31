@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -18,22 +18,16 @@ import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
-import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.DomainCondition;
-import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.ProcessingConstants.BOUND;
 import static oracle.kubernetes.operator.ProcessingConstants.PENDING;
-import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.PERSISTENT_VOLUME_CLAIM;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -45,28 +39,26 @@ class PvcWatcherTest {
   private static final String LATEST_IMAGE = "image:latest";
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final TerminalStep terminalStep = new TerminalStep();
   private final DomainResource domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   final List<Memento> mementos = new ArrayList<>();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
     testSupport.throwOnCompletionFailure();
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(
       DomainResource domain) {
-    DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
-    return dpi;
+    return new DomainPresenceInfo(domain);
   }
 
   private DomainResource createDomain() {
@@ -116,22 +108,5 @@ class PvcWatcherTest {
     cachedPvc.status(new V1PersistentVolumeClaimStatus().phase(PENDING));
 
     assertThat(PvcWatcher.isBound(cachedPvc), is(false));
-  }
-
-  private V1PersistentVolumeClaim markPvcBound(V1PersistentVolumeClaim pvc) {
-    return pvc.status(new V1PersistentVolumeClaimStatus().phase(BOUND));
-  }
-
-  private V1PersistentVolumeClaim dontChangePvc(V1PersistentVolumeClaim pvc) {
-    return pvc;
-  }
-
-  private V1PersistentVolumeClaim markPvcPending(V1PersistentVolumeClaim pvc) {
-    return pvc.status(new V1PersistentVolumeClaimStatus().phase(PENDING));
-  }
-
-  private DomainResource createFailedDomain() {
-    return createDomain().withStatus(new DomainStatus().addCondition(new DomainCondition(
-        DomainConditionType.FAILED).withReason(PERSISTENT_VOLUME_CLAIM)));
   }
 }

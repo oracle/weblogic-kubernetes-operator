@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -18,6 +18,9 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 
 public class Client {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  private Client() {
+  }
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static ClientFactory factory = new DefaultClientFactory();

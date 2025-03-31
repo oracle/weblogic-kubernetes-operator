@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -261,8 +261,6 @@ public class WlsServerConfig {
         adminProtocolPortSecure = true;
       } else if (sslListenPort != null) {
         adminProtocolPortSecure = true;
-      } else if (listenPort != null) {
-        adminProtocolPortSecure = false;
       }
     }
     return adminProtocolPortSecure;

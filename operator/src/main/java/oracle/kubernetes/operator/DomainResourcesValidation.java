@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -31,8 +31,6 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
@@ -53,8 +51,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CR
  * that any domains which are found have the proper pods and services.
  */
 class DomainResourcesValidation {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final String namespace;
   private final DomainProcessor processor;
   private ClusterList activeClusterResources;

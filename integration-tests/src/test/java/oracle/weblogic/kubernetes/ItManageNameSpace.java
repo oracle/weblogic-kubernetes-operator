@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -23,7 +23,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.TimeoutException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -57,7 +56,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -117,7 +115,7 @@ class ItManageNameSpace {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(8) List<String> namespaces) {
+  static void initAll(@Namespaces(8) List<String> namespaces) {
     logger = getLogger();
     for (int i = 0; i < 4; i++) {
       // get a unique domain namespace
@@ -143,7 +141,7 @@ class ItManageNameSpace {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
     try {
       // Delete domain custom resource
       for (int i = 0; i < 4; i++) {
@@ -396,7 +394,7 @@ class ItManageNameSpace {
     HelmParams opHelmParam = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespace, selector,
         selectorValue, true, domainNamespacesValue).getHelmParams();
-    String operExtSVCRouteName = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     managedDomains.forEach((domainNS, domainUid) -> {
           logger.info("Installing and verifying domain {0} in namespace {1}", domainUid, domainNS);
@@ -419,21 +417,6 @@ class ItManageNameSpace {
     }
     );
     return opHelmParam;
-  }
-
-  private boolean isOperatorFailedToScaleDomain(String domainUid, String domainNamespace) {
-    try {
-      //check operator can't manage domainNamespace by trying to scale domain
-      String managedServerPodNamePrefix = domainUid + "-managed-server";
-      scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-          managedServerPodNamePrefix, 2, 1,
-          false, 0, null, null,
-          false, "", "scaleDown", 1, "", "", null, null);
-      return false;
-    } catch (TimeoutException ex) {
-      logger.info("Received expected error " + ex.getMessage());
-      return true;
-    }
   }
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -134,7 +134,7 @@ class HelmOperatorValues extends OperatorValues {
   private void addDomainNamespaces(HashMap<String, Object> map) {
     map.put("domainNamespaceSelectionStrategy", "List");
     String domainNamespaces = getDomainNamespaces();
-    if (domainNamespaces.length() > 0) {
+    if (!domainNamespaces.isEmpty()) {
       map.put("domainNamespaces", Arrays.asList(domainNamespaces.split(",")));
     }
   }

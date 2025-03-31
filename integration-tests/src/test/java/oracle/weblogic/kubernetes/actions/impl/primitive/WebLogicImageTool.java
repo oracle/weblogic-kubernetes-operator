@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -26,7 +26,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.instal
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-
 
 /**
  * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic image.
@@ -101,28 +100,28 @@ public class WebLogicImageTool {
     // download WIT if it is not in the expected location
     testUntil(
         withStandardRetryPolicy,
-        () -> downloadWit(),
+        this::downloadWit,
         getLogger(),
         "downloading WIT succeeds");
 
     // download WDT if it is not in the expected location
     testUntil(
         withStandardRetryPolicy,
-        () -> downloadWdt(),
+        this::downloadWdt,
         getLogger(),
         "downloading WDT succeeds");
 
     // delete the old cache entry for the WDT installer
     testUntil(
         withStandardRetryPolicy,
-        () -> deleteEntry(),
+        this::deleteEntry,
         getLogger(),
         "deleting cache entry for WDT installer succeeds");
 
     // add the WDT installer that we just downloaded into WIT cache entry
     testUntil(
         withStandardRetryPolicy,
-        () -> addInstaller(),
+        this::addInstaller,
         getLogger(),
         "adding WDT installer to the cache succeeds");
 
@@ -168,13 +167,11 @@ public class WebLogicImageTool {
   private String buildWitCommand() {
     LoggingFacade logger = getLogger();
     String ownership = " --chown oracle:root";
-    if (OKE_CLUSTER) {
-      if (params.baseImageName().equals(FMWINFRA_IMAGE_NAME)) {
-        String output = inspectImage(params.baseImageName(), params.baseImageTag());
-        logger.info("Inspect image result ");
-        if (output != null && !output.contains("root")) {
-          ownership = " --chown oracle:oracle";
-        }
+    if (OKE_CLUSTER && params.baseImageName().equals(FMWINFRA_IMAGE_NAME)) {
+      String output = inspectImage(params.baseImageName(), params.baseImageTag());
+      logger.info("Inspect image result ");
+      if (output != null && !output.contains("root")) {
+        ownership = " --chown oracle:oracle";
       }
     }
     String command =
@@ -258,7 +255,7 @@ public class WebLogicImageTool {
     String strList = sbString.toString();
 
     //remove last comma from String if you want
-    if (strList.length() > 0) {
+    if (!strList.isEmpty()) {
       strList = strList.substring(0, strList.length() - 1);
     }
     return strList;
@@ -358,7 +355,7 @@ public class WebLogicImageTool {
     // download WIT if it is not in the expected location
     testUntil(
         withStandardRetryPolicy,
-        () -> downloadWit(),
+        this::downloadWit,
         getLogger(),
         "downloading WIT succeeds");
 
@@ -373,7 +370,7 @@ public class WebLogicImageTool {
     } else {
       testUntil(
           withStandardRetryPolicy,
-          () -> downloadWdt(),
+          this::downloadWdt,
           getLogger(),
           "downloading latest WDT succeeds");
     }
@@ -381,14 +378,14 @@ public class WebLogicImageTool {
     // delete the old cache entry for the WDT installer
     testUntil(
         withStandardRetryPolicy,
-        () -> deleteEntry(),
+        this::deleteEntry,
         getLogger(),
         "deleting cache entry for WDT installer succeeds");
 
     // add the WDT installer that we just downloaded into WIT cache entry
     testUntil(
         withStandardRetryPolicy,
-        () -> addInstaller(),
+        this::addInstaller,
         getLogger(),
         "adding WDT installer to the cache succeeds");
 

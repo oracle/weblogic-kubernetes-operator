@@ -1,10 +1,11 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.Random;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
@@ -101,6 +102,8 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookPodUI
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  private static final Random random = new Random();
 
   /**
    * Factory for {@link Step} that asynchronously create an event.
@@ -343,7 +346,7 @@ public class EventHelper {
   }
 
   private static long generateRandomLong() {
-    return (long) (Math.random() * Long.MAX_VALUE);
+    return random.nextLong() * Long.MAX_VALUE;
   }
 
   public enum EventItem {

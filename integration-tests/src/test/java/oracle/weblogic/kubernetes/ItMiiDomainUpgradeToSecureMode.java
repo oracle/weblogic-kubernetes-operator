@@ -75,7 +75,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listDomainCustomResources;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
-import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -138,7 +137,6 @@ class ItMiiDomainUpgradeToSecureMode {
   private final String sampleAppUri = "/sample-war/index.jsp?terminateSession=true";
   private final String adminAppUri = "/management/tenant-monitoring/servers";
   private final String adminAppText = "RUNNING";
-  private final String adminAppMoved = "This document you requested has moved";
   private final String applicationRuntimes = "/management/weblogic/latest/domainRuntime"
       + "/serverRuntimes/adminserver/applicationRuntimes";
 
@@ -146,10 +144,10 @@ class ItMiiDomainUpgradeToSecureMode {
 
   /**
    * Install Operator.
-   * @param namespaces list of namespaces.
+   * @param ns list of namespaces.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(8) List<String> ns) {
+  static void initAll(@Namespaces(8) List<String> ns) {
     logger = getLogger();
     namespaces = ns;
 
@@ -1265,8 +1263,6 @@ class ItMiiDomainUpgradeToSecureMode {
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, domainUid);
 
-    OffsetDateTime timestamp = now();
-
     logger.info("patch the domain resource with new image");
     String patchStr
         = "["
@@ -1591,13 +1587,13 @@ class ItMiiDomainUpgradeToSecureMode {
     String curlCmd;
     if (isHostRouting) {
       curlCmd = String.format("curl -g -ks --show-error --noproxy '*' "
-          + credentials + " -H 'host: %s' %s", ingressHostName, url.toString());
+          + credentials + " -H 'host: %s' %s", ingressHostName, url);
     } else {
       if (isTLS) {
         curlCmd = String.format("curl -g -ks --show-error --noproxy '*' "
-            + credentials + " -H 'WL-Proxy-Client-IP: 1.2.3.4' -H 'WL-Proxy-SSL: false' %s", url.toString());
+            + credentials + " -H 'WL-Proxy-Client-IP: 1.2.3.4' -H 'WL-Proxy-SSL: false' %s", url);
       } else {
-        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' " + credentials + " %s", url.toString());
+        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' " + credentials + " %s", url);
       }
     }
 
@@ -1636,7 +1632,7 @@ class ItMiiDomainUpgradeToSecureMode {
           .anyMatch(ch -> ch.channelName().equals(channelName))))
           .as(String.format("Channel %s was found in domain resource %s", channelName, domainUid))
           .withFailMessage(String.format("Channel %s was found not in domain resource %s", channelName, domainUid))
-          .isEqualTo(true);
+          .isTrue();
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -47,7 +47,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -109,17 +108,12 @@ class ItElasticLogging {
   private static final String WLS_ELK_LOGGING_MODEL_FILE = "model.wlslogging.yaml";
   private static final String WLS_ELK_LOGGING_IMAGE_NAME = "wls-logging-image";
 
-  // constants for testing WebLogic Logging Exporter
-  private static final String wlsLoggingExporterYamlFileLoc = RESOURCE_DIR + "/loggingexporter";
-
   // constants for Domain
   private static String domainUid = "elk-domain1";
-  private static String clusterName = "cluster-1";
   private static String adminServerName = "admin-server";
   private static String adminServerPodName = domainUid + "-" + adminServerName;
   private static String managedServerPrefix = "managed-server";
   private static String managedServerPodPrefix = domainUid + "-" + managedServerPrefix;
-  private static String managedServerFilter = managedServerPrefix + "1";
   private static int replicaCount = 2;
 
   private static String opNamespace = null;
@@ -149,7 +143,7 @@ class ItElasticLogging {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(4) List<String> namespaces) {
+  static void init(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -363,7 +357,7 @@ class ItElasticLogging {
   @Test
   @DisplayName("Test that users can config and create their own configMap "
       + "when configMapcreateLogStashConfigMap = false")
-  void testCreateLogStashConfigMapFalse() throws Exception {
+  void testCreateLogStashConfigMapFalse() {
     boolean elkIntegrationEnabled = true;
     boolean createLogStashConfigMap = false;
     String defaultNamespace = "default";
@@ -566,9 +560,6 @@ class ItElasticLogging {
             containerName, sourceConfigFileInPod, Paths.get(newDestConfigFile)));
 
     // verify that the logstash config is modified successfully
-    boolean configFileModified =
-        assertDoesNotThrow(() -> searchStringInFile(newDestConfigFile, replaceStr), "searchStringInFile failed");
-
-    return configFileModified;
+    return assertDoesNotThrow(() -> searchStringInFile(newDestConfigFile, replaceStr), "searchStringInFile failed");
   }
 }

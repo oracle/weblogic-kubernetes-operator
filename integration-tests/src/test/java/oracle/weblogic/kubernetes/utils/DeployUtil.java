@@ -343,7 +343,7 @@ public class DeployUtil {
     StringBuffer curlString = new StringBuffer("status=$(curl -g --noproxy '*' ");
     curlString.append(" --user " + userName + ":" + password);
     curlString.append(" -w %{http_code} --show-error -o /dev/null ")
-        .append(headerString.toString())
+        .append(headerString)
         .append("-H X-Requested-By:MyClient ")
         .append("-H Accept:application/json  ")
         .append("-H Content-Type:multipart/form-data ")

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -70,9 +70,5 @@ public class Traefik {
    */
   public static boolean uninstall(HelmParams params) {
     return Helm.uninstall(params);
-  }
-
-  public static boolean createIngress(String valuesYaml) {
-    return true;
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -186,7 +185,7 @@ class ItConfigDistributionStrategy {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(3) List<String> namespaces) throws ApiException, IOException {
+  void initAll(@Namespaces(3) List<String> namespaces) throws ApiException, IOException {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -264,7 +263,7 @@ class ItConfigDistributionStrategy {
    * Verify the default config before starting any test.
    */
   @BeforeEach
-  public void beforeEach() throws UnknownHostException, IOException, InterruptedException {
+  void beforeEach() {
     getDomainHealth();
     //check configuration values before override
     verifyConfigXMLOverride(false);
@@ -275,7 +274,7 @@ class ItConfigDistributionStrategy {
    * Delete the overrides and restart domain to get clean state.
    */
   @AfterEach
-  public void afterEach() throws IOException, InterruptedException {
+  void afterEach() {
     getDomainHealth();
     deleteConfigMap(overridecm, domainNamespace);
     String patchStr
@@ -933,7 +932,6 @@ class ItConfigDistributionStrategy {
       }
       String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
       String appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
-      String dsConnectionPoolTestUrl = baseUri + appURI;
       testDatasource(appURI);
     }
   }
@@ -1189,21 +1187,19 @@ class ItConfigDistributionStrategy {
         + "CREATE USER 'root'@'" + ip + "' IDENTIFIED BY '" + password + "';\n"
         + "GRANT ALL PRIVILEGES ON *.* TO 'root'@'" + ip + "' WITH GRANT OPTION;\n"
         + "SELECT host, user FROM mysql.user;");
-    StringBuffer mysqlCmd = new StringBuffer("cat " + sourceFile.toString() + " | ");
+    StringBuffer mysqlCmd = new StringBuffer("cat " + sourceFile + " | ");
     mysqlCmd.append(KUBERNETES_CLI + " exec -i -n ");
     mysqlCmd.append(namespace);
     mysqlCmd.append(" ");
     mysqlCmd.append(podName);
     mysqlCmd.append(" -- /bin/bash -c \"");
     mysqlCmd.append("cat > /tmp/grant.sql\"");
-    //logger.info("mysql command {0}", mysqlCmd.toString());
     result = assertDoesNotThrow(() -> exec(new String(mysqlCmd), false));
-    //logger.info("mysql returned {0}", result.toString());
     logger.info("mysql returned EXIT value {0}", result.exitValue());
     assertEquals(0, result.exitValue(), "mysql execution fails");
   }
 
-  private void getDomainHealth() throws IOException, InterruptedException {
+  private void getDomainHealth() {
     testUntil(
         withStandardRetryPolicy,
         () -> {

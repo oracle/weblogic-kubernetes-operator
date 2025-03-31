@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.introspection;
@@ -59,7 +59,7 @@ class IntrospectionLoggingTest {
       = new V1Job().metadata(new V1ObjectMeta().uid(UID)).status(IntrospectionTestUtils.createCompletedStatus());
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectAllLogMessages(logRecords));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
@@ -71,7 +71,7 @@ class IntrospectionLoggingTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 

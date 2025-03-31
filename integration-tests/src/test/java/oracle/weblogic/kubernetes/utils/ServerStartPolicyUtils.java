@@ -156,7 +156,7 @@ public class ServerStartPolicyUtils {
                                String regex, boolean checkPodExist, String samplePathDir) {
     // use scaleCluster.sh to scale a given cluster
     logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterResName);
-    String result =  assertDoesNotThrow(() ->
+    assertDoesNotThrow(() ->
             executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
                 SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterResName, " -r " + replicaNum, false),
         String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
@@ -399,7 +399,7 @@ public class ServerStartPolicyUtils {
     params = new CommandParams().defaults();
     if (scriptType.equals(SERVER_LIFECYCLE)) {
       params.command("sh "
-          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
           + commonParameters + " -s " + entityName + " " + extraParams);
     } else if (scriptType.equals(CLUSTER_LIFECYCLE)) {
       if (extraParams.contains("-r")) {
@@ -407,11 +407,11 @@ public class ServerStartPolicyUtils {
       }
 
       params.command("sh "
-          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
           + commonParameters + " -c " + entityName);
     } else {
       params.command("sh "
-          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
           + commonParameters);
     }
 

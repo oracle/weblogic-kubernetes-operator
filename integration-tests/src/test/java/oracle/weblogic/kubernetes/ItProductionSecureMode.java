@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -130,7 +130,7 @@ class ItProductionSecureMode {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -194,7 +194,7 @@ class ItProductionSecureMode {
   }
 
   @AfterAll
-  public static void cleanup() {
+  static void cleanup() {
     Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules-tcp.yaml");
     assertDoesNotThrow(() -> {
       String command = KUBERNETES_CLI + " delete -f " + dstFile;
@@ -217,7 +217,7 @@ class ItProductionSecureMode {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -672,11 +672,13 @@ public abstract class RequestStep<
       this.updateOptions = updateOptions;
     }
 
+    @Override
     String getName() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getName).orElse(super.getName());
     }
 
+    @Override
     String getNamespace() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getNamespace).orElse(super.getNamespace());
@@ -748,10 +750,12 @@ public abstract class RequestStep<
       this.container = container;
     }
 
+    @Override
     String getName() {
       return name;
     }
 
+    @Override
     String getNamespace() {
       return namespace;
     }
@@ -801,6 +805,7 @@ public abstract class RequestStep<
       this.deleteOptions = deleteOptions;
     }
 
+    @Override
     String getNamespace() {
       return namespace;
     }

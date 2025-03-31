@@ -20,7 +20,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -432,7 +431,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       if (token != null) {
         logger.info("Deleting these images from REPO_REGISTRY");
         logger.info(String.join(", ", pushedImages));
-        for (String image : pushedImages.stream().distinct().collect(Collectors.toList())) {
+        for (String image : pushedImages.stream().distinct().toList()) {
           deleteImageOcir(token, image);
         }
       }
@@ -646,10 +645,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   
   HelmParams opHelmParams;
   String webhookNamespace = "ns-webhook";
-
-  private OperatorParams installWebHookOnlyOperator() {
-    return installWebHookOnlyOperator(null);
-  }
 
   private OperatorParams installWebHookOnlyOperator(String featureGates) {
     // recreate WebHook namespace

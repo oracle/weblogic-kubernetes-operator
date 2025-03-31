@@ -84,7 +84,7 @@ class ItServerStartPolicyConfigCluster {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -104,7 +104,7 @@ class ItServerStartPolicyConfigCluster {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
 
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -302,7 +302,7 @@ class ItServerStartPolicyConfigCluster {
 
     // use rollCluster.sh to rolling-restart a configured cluster
     logger.info("Rolling restart the configured cluster with rollCluster.sh script");
-    String result =  assertDoesNotThrow(() ->
+    assertDoesNotThrow(() ->
         executeLifecycleScript(domainUid, domainNamespace, samplePath,
             ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CONFIG_CLUSTER),
         String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
@@ -353,7 +353,7 @@ class ItServerStartPolicyConfigCluster {
 
     // use rollDomain.sh to rolling-restart a configured cluster
     logger.info("Rolling restart the domain with rollDomain.sh script");
-    String result =  assertDoesNotThrow(() ->
+    assertDoesNotThrow(() ->
         executeLifecycleScript(domainUid, domainNamespace, samplePath,ROLLING_DOMAIN_SCRIPT, DOMAIN, ""),
         String.format("Failed to run %s", ROLLING_DOMAIN_SCRIPT));
 

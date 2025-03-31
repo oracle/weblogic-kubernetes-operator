@@ -129,7 +129,6 @@ class ItMiiAuxiliaryImage {
   private static String errorpathDomainNamespace = null;
   private static LoggingFacade logger = null;
   private static final String domainUid1 = "domain1";
-  private final String domainUid = "";
   private static final String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
   private static final String miiAuxiliaryImage2Tag = "image2" + MII_BASIC_IMAGE_TAG;
@@ -197,7 +196,7 @@ class ItMiiAuxiliaryImage {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -594,9 +593,6 @@ class ItMiiAuxiliaryImage {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
     final String domainUid = "domain4";
-
-    // image1 with model files for domain config, ds, app and wdt install files
-    //createAuxiliaryImageWithDomainConfig(miiAuxiliaryImage6, auxiliaryImagePathCustom);
 
     // admin/managed server name here should match with model yaml
     List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
@@ -1422,7 +1418,7 @@ class ItMiiAuxiliaryImage {
   /**
    * Cleanup images.
    */
-  public void tearDownAll() {
+  void tearDownAll() {
     // delete images
     deleteImage(miiAuxiliaryImage1);
     deleteImage(miiAuxiliaryImage2);

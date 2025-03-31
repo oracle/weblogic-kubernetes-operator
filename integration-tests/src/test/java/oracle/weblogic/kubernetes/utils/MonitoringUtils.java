@@ -959,7 +959,6 @@ public class MonitoringUtils {
     appList.add(appName2);
 
     // build the model file list
-    //final List<String> modelList = Collections.singletonList(modelFilePath);
     String myImage =
         createMiiImageAndVerify(imageName, modelList, appList);
 
@@ -1083,7 +1082,6 @@ public class MonitoringUtils {
     logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, namespace, miiImage);
     if (monexpConfig != null) {
-      //String monexpImage = "${OCIR_HOST}/${WKT_TENANCY}/exporter:beta";
       logger.info("yaml config file path : " + monexpConfig);
       String contents = null;
       try {

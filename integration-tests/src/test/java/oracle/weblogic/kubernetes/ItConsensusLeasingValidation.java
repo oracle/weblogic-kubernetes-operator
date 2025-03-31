@@ -46,7 +46,6 @@ class ItConsensusLeasingValidation {
   private static String domainNamespace = null;
 
   private String domainUid = "domain1";
-  private int replicaCount = 2;
 
   private static LoggingFacade logger = null;
   private static String adminSecretName = "weblogic-credentials";
@@ -58,7 +57,7 @@ class ItConsensusLeasingValidation {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -98,7 +97,7 @@ class ItConsensusLeasingValidation {
   }
 
   @AfterEach
-  public void deleteDomain() {
+  void deleteDomain() {
     deleteDomainResource(domainNamespace, domainUid);
   }
 

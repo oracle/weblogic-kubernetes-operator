@@ -78,7 +78,6 @@ class ItServerStartPolicyDynamicCluster {
   private static final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
   private static LoggingFacade logger = null;
-  private static String ingressHost = null; //only used for OKD
   private static final String samplePath = "sample-testing-dynamic-cluster";
   private static final String dynamicClusterResourceName = DYNAMIC_CLUSTER;
   private static final String configuredClusterResourceName = CONFIG_CLUSTER;
@@ -90,7 +89,7 @@ class ItServerStartPolicyDynamicCluster {
   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -105,7 +104,7 @@ class ItServerStartPolicyDynamicCluster {
     prepare(domainNamespace, domainUid, opNamespace, samplePath);
 
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
-    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
   }
 
   /**
@@ -113,7 +112,7 @@ class ItServerStartPolicyDynamicCluster {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
 
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);

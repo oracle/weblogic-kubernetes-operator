@@ -47,12 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class ItOCILoadBalancer {
   // domain constants
   private static final int replicaCount = 2;
-  private static int managedServersCount = 2;
   private static String domainNamespace = null;
   private static String domainUid = "lboci-domain";
 
   // constants for creating domain image using model in image
-  private static final String SAMPLE_APP_NAME = "sample-app";
   private static String clusterName = "cluster-1";
   private static LoggingFacade logger = null;
   private static String loadBalancerIP = null;
@@ -65,7 +63,7 @@ class ItOCILoadBalancer {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
 
@@ -82,7 +80,7 @@ class ItOCILoadBalancer {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
     if (!SKIP_CLEANUP) {
       Kubernetes.deleteService(OCI_LB_NAME, domainNamespace);
     }

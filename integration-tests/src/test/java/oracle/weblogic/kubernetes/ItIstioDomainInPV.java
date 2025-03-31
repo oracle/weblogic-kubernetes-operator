@@ -137,7 +137,7 @@ class ItIstioDomainInPV  {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
@@ -464,7 +464,7 @@ class ItIstioDomainInPV  {
    * @throws ApiException if Kubernetes API call fails
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       if (assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace).call())) {
         // delete pvc

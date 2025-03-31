@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -18,7 +18,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-public class ServiceHelperTestBase {
+class ServiceHelperTestBase {
   protected static final String TEST_CLUSTER = "cluster-1";
   static final String DOMAIN_NAME = "domain1";
   static final String NS = "namespace";
@@ -28,12 +28,12 @@ public class ServiceHelperTestBase {
   final DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TuningParametersStub.install());
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
   }
 

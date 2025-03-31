@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
@@ -120,8 +119,6 @@ class ItDBOperator {
   private static String traefikNamespace = null;
   private static String fmwMiiImage = null;
 
-  private static String hostAndPort = null;
-
   private static final String RCUSCHEMAPREFIX = "FMWDOMAINMII";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
@@ -152,7 +149,6 @@ class ItDBOperator {
   private static final String wlsAdminServerPodName = wlsDomainUid + "-admin-server";
   private static final String wlsManagedServerPrefix = wlsDomainUid + "-managed-server";
   private static String cpUrl;
-  private static String adminSvcExtRouteHost = null;
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
@@ -160,9 +156,7 @@ class ItDBOperator {
   private final String wlsClusterResName = wlsDomainUid + "-" + clusterName;
   
   private static String hostHeader;
-  private String ingressIP;
   private static TraefikParams traefikParams;
-  private String ingressClassName;
 
   /**
    * Start DB service and create RCU schema.
@@ -172,7 +166,7 @@ class ItDBOperator {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  static void initAll(@Namespaces(5) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for DB and RCU");
@@ -406,7 +400,7 @@ class ItDBOperator {
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         wlsAdminServerPodName, wlsDomainNamespace);
     checkPodReadyAndServiceExists(wlsAdminServerPodName, wlsDomainUid, wlsDomainNamespace);
-    adminSvcExtRouteHost = createRouteForOKD(getExternalServicePodName(wlsAdminServerPodName), wlsDomainNamespace);
+    createRouteForOKD(getExternalServicePodName(wlsAdminServerPodName), wlsDomainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
     createLeasingTable(wlsAdminServerPodName, wlsDomainNamespace, dbUrl);
     // check managed server services and pods are ready
@@ -547,7 +541,7 @@ class ItDBOperator {
    * Deletes Oracle database instance, operator and storageclass.
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() {
     if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
     }
@@ -560,7 +554,7 @@ class ItDBOperator {
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
     params.command("sh "
-        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to execute script " + script);

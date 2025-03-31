@@ -101,7 +101,6 @@ class ItPodsRestart {
 
   // domain constants
   private static final String domainUid = "domain1";
-  private static final String clusterName = "cluster-1";
   private static final int replicaCount = 1;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
@@ -115,7 +114,7 @@ class ItPodsRestart {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");

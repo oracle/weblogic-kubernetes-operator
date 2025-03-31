@@ -10,7 +10,6 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -90,7 +89,6 @@ class ItMiiMultiModel {
 
   private static int replicaCount = 1;
   private String clusterName = "cluster-1";
-  private ClusterResource cluster = null;
 
   // There are four model files in this test case.
   // "multi-model-two-ds.yaml" and "multi-model-delete-one-ds.20.yaml" are in the MII image.
@@ -124,7 +122,7 @@ class ItMiiMultiModel {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace

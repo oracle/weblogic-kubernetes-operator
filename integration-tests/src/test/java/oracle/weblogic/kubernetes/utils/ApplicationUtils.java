@@ -50,7 +50,7 @@ public class ApplicationUtils {
     }
     curlString.append(" -g -sk --noproxy '*' ")
         .append(" --silent --show-error ")
-        .append(headerString.toString())
+        .append(headerString)
         .append(url)
         .append(" -o /dev/null")
         .append(" -w %{http_code});")

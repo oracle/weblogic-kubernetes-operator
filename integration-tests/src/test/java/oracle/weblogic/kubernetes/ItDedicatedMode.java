@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -104,7 +104,7 @@ class ItDedicatedMode {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -178,8 +178,7 @@ class ItDedicatedMode {
     // This test uses the operator restAPI to scale the doamin.
     // To do this in OKD cluster, we need to expose the external service as
     // route and set tls termination to  passthrough
-    String opExternalSvc =
-        createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 

@@ -35,7 +35,7 @@ class DomainUpgraderTest {
   private ByteArrayOutputStream bytes;
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(CommonTestUtils.silenceLogger().collectLogMessages(logRecords, DOMAIN_UPGRADE_SUCCESS));
     mementos.add(StaticStubSupport.install(DomainUpgrader.class, "exitCall", new ExitIntConsumer()));
     bytes   = new ByteArrayOutputStream();
@@ -44,16 +44,14 @@ class DomainUpgraderTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
     System.setOut(console);
   }
 
   @Test
   void whenNoInputFileProvided_domainUpgraderExitsWithErrorStatus() {
-    ExitException thrown = Assertions.assertThrows(ExitException.class, () -> {
-      DomainUpgrader.main();
-    });
+    ExitException thrown = Assertions.assertThrows(ExitException.class, DomainUpgrader::main);
     assertThat(thrown.status, is(1));
   }
 

@@ -202,7 +202,7 @@ class ItKubernetesDomainEvents {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -629,7 +629,7 @@ class ItKubernetesDomainEvents {
     //change includeServerOutInPodLog
     String patchStr = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/includeServerOutInPodLog\", "
-        + "\"value\": " + Boolean.toString(!includeLogInPod) + "}"
+        + "\"value\": " + !includeLogInPod + "}"
         + "]";
     logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr);
 
@@ -689,7 +689,7 @@ class ItKubernetesDomainEvents {
    * Cleanup the persistent volume and persistent volume claim used by the test.
    */
   @AfterAll
-  public static void tearDown() {
+  static void tearDown() {
     if (!SKIP_CLEANUP) {
       deletePersistentVolumeClaim(domainNamespace3, "sample-pvc");
       deletePersistentVolume("sample-pv");

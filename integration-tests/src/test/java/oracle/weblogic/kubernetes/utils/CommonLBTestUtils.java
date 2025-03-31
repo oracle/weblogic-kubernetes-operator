@@ -857,14 +857,14 @@ public class CommonLBTestUtils {
     String curlCmd;
     if (isHostRouting) {
       curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' -H 'host: %s' %s",
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, ingressHostName, readyAppUrl.toString());
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, ingressHostName, readyAppUrl);
     } else {
       if (isTLS) {
         curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
-            + "-H 'WL-Proxy-SSL: false' %s", ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl.toString());
+            + "-H 'WL-Proxy-SSL: false' %s", ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl);
       } else {
         curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' %s",
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl.toString());
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl);
       }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -88,7 +88,7 @@ class KubernetesTestSupportTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
@@ -96,7 +96,7 @@ class KubernetesTestSupportTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();

@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.ClusterResource;
@@ -42,7 +41,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
@@ -56,7 +54,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createCustomConditionFactory;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -66,7 +63,6 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceSimplifyJrfPv;
@@ -116,7 +112,6 @@ public class ItFmwDomainInPvUserCreateRcu {
   private static final String domainUid3 = "jrfdomainonpv-userrcu3";
   private static final String domainUid4 = "jrfdomainonpv-userrcu4";
 
-  private static final String miiAuxiliaryImage1Tag = "jrf1" + MII_BASIC_IMAGE_TAG;
   private final String adminSecretName1 = domainUid1 + "-weblogic-credentials";
   private final String adminSecretName3 = domainUid3 + "-weblogic-credentials";
   private final String adminSecretName4 = domainUid4 + "-weblogic-credentials";
@@ -128,7 +123,6 @@ public class ItFmwDomainInPvUserCreateRcu {
   private final String opsswalletpassSecretName4 = domainUid4 + "-opss-wallet-password-secret";
   private final String opsswalletfileSecretName1 = domainUid1 + "-opss-wallet-file-secret";
   private final String opsswalletfileSecretName3 = domainUid3 + "-opss-wallet-file-secret";
-  private final String opsswalletfileSecretName4 = domainUid4 + "-opss-wallet-file-secret";
   private static final int replicaCount = 1;
 
   private final String fmwModelFilePrefix = "model-fmwdomainonpv-rcu-wdt";
@@ -144,7 +138,7 @@ public class ItFmwDomainInPvUserCreateRcu {
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique dbNamespace
@@ -780,31 +774,6 @@ public class ItFmwDomainInPvUserCreateRcu {
         "Failed to write FMW properties file");
 
     return domainPropertiesFile;
-  }
-
-  /**
-   * Start Oracle DB instance in the specified namespace.
-   *
-   * @param dbImage image name of database
-   * @param dbNamespace namespace where DB and RCU schema are going to start
-   * @param dbPort NodePort of DB
-   * @param dbListenerPort TCP listener port of DB
-   * @throws ApiException if any error occurs when setting up database
-   */
-  private static synchronized void setupDB(String dbImage, String dbNamespace, int dbPort, int dbListenerPort)
-      throws ApiException {
-    LoggingFacade logger = getLogger();
-    // create pull secrets when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
-    createBaseRepoSecret(dbNamespace);
-
-    if (OKD) {
-      addSccToDBSvcAccount("default", dbNamespace);
-    }
-
-    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
-        dbImage, dbPort, dbNamespace, dbListenerPort);
-    startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
   }
 
   /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -95,7 +95,7 @@ public class FmwUtils {
     }
 
     // create the domain CR
-    DomainResource domain = new DomainResource()
+    return new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -138,8 +138,6 @@ public class FmwUtils {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .addSecretsItem(rcuAccessSecretName)
                 .introspectorJobActiveDeadlineSeconds(900L)));
-
-    return domain;
   }
 
   /**
@@ -654,15 +652,12 @@ public class FmwUtils {
     //restore opss wallet password secret
     String command = script + " -d " + domainUid + " -n " + namespace + " -r" + " -ws " + walletfileSecretName;
     logger.info("Restore wallet file command: {0}", command);
-    ExecResult result = Command.withParams(
+    return Command.withParams(
           defaultCommandParams()
             .command(command)
             .saveResults(true)
             .redirect(true))
         .executeAndReturnResult();
-
-    return result;
-
   }
 
   /** Create configuration with provided pv and pvc values.

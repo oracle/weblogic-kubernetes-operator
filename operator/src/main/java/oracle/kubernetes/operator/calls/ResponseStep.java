@@ -56,8 +56,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERN
 public abstract class ResponseStep<T extends KubernetesType> extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final RetryStrategyFactory DEFAULT_RETRY_STRATEGY_FACTORY =
-          (maxRetryCount, retryStep) -> new DefaultRetryStrategy(maxRetryCount, retryStep);
+  private static final RetryStrategyFactory DEFAULT_RETRY_STRATEGY_FACTORY = DefaultRetryStrategy::new;
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static RetryStrategyFactory retryStrategyFactory = DEFAULT_RETRY_STRATEGY_FACTORY;
@@ -333,6 +332,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
       return null;
     }
 
+    @Override
     public void reset() {
       this.retryCount = 0;
     }

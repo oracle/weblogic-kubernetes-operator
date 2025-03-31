@@ -94,7 +94,7 @@ class ItElasticLoggingSample {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace

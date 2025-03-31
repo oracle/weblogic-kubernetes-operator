@@ -197,7 +197,6 @@ public class MonitoringExporterSteps {
       return getExporterConfiguration(packet).equals(getReportedConfiguration(response));
     }
 
-    // todo REG-> refactor for clarity
     private String getReportedConfiguration(HttpResponse<String> response) {
       return MonitoringExporterConfiguration.createFromYaml(withoutHtml(response.body())).asJsonString();
     }

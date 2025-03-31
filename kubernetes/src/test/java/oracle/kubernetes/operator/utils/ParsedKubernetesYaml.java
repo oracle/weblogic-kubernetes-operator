@@ -107,34 +107,6 @@ public class ParsedKubernetesYaml {
     objectCount++;
   }
 
-  /*
-    private void printObject(String indent, Object obj) {
-      if (obj == null) {
-        System.out.println("MOREAUT_DEBUG " + indent + " obj null");
-      } else {
-        System.out.println("MOREAUT_DEBUG " + indent + " obj " + obj.getClass());
-        indent = indent + "  ";
-        if (obj instanceof Map) {
-          Map map = (Map)obj;
-          for (Map.Entry e : (java.util.Set<Map.Entry>)(map.entrySet())) {
-            Object key = e.getKey();
-            Object val = e.getValue();
-            System.out.println("MOREAUT_DEBUG " + indent + " key " + key.getClass() + " " + key);
-            printObject(indent + "  ", val);
-          }
-        } else if (obj instanceof java.util.List) {
-          java.util.List list = (java.util.List)obj;
-          for (int i = 0; i < list.size(); i++) {
-            System.out.println("MOREAUT_DEBUG " + indent + " item " + i);
-            printObject(indent + " ", list.get(i));
-          }
-        } else {
-          System.out.println("MOREAUT_DEBUG " + indent + " random val " + obj);
-        }
-      }
-    }
-  */
-
   TypeHandler<V1APIService> getApiServices() {
     return (TypeHandler<V1APIService>) getHandler(KIND_API_SERVICE);
   }
@@ -252,7 +224,6 @@ public class ParsedKubernetesYaml {
     protected T find(String name, String namespace) {
       T result = null;
       for (T instance : instances) {
-        // V1ObjectMeta md = getMetadata(instance);
         if (name.equals(getName(instance)) && namespace.equals(getNamespace(instance))) {
           if (result == null) {
             result = instance;
@@ -274,7 +245,7 @@ public class ParsedKubernetesYaml {
     private String getInstanceNames() {
       StringBuilder sb = new StringBuilder();
       for (T instance : instances) {
-        sb.append(sb.length() == 0 ? "[" : ", ");
+        sb.append(sb.isEmpty() ? "[" : ", ");
         sb.append(getName(instance));
       }
       sb.append("]");
@@ -499,7 +470,7 @@ public class ParsedKubernetesYaml {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static void convertSecretsFromBase64EncodedStringsToByteArrays(Map objectAsMap) {
       Map origData = (Map) objectAsMap.get("data");
-      if (origData == null || origData.size() == 0) {
+      if (origData == null || origData.isEmpty()) {
         return;
       }
       Map newData = new HashMap();

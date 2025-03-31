@@ -1515,7 +1515,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().sorted(this::compareEventTimes).collect(Collectors.toList()),
+    assertThat(getEvents().stream().sorted(this::compareEventTimes).toList(),
         containsInRelativeOrder(List.of(
               eventWithReason(DOMAIN_AVAILABLE_EVENT),
               eventWithReason(DOMAIN_ROLL_COMPLETED_EVENT),
@@ -2226,7 +2226,7 @@ abstract class DomainStatusUpdateTestBase {
             .filter(c -> !isAdminServer(c))
             .filter(this::isLive)
             .map(config -> new DomainPresenceInfo.ServerStartupInfo(config, "", null))
-            .collect(Collectors.toList());
+            .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private boolean isLive(WlsServerConfig serverConfig) {

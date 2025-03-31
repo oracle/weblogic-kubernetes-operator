@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -18,7 +18,6 @@ public class LoggingExporterParams {
   private String kibanaImage;
   private String kibanaType;
   private int kibanaContainerPort;
-  private LoggingExporterParams loggingExporterParams;
 
   public LoggingExporterParams elasticsearchName(String elasticsearchName) {
     this.elasticsearchName = elasticsearchName;
@@ -62,14 +61,6 @@ public class LoggingExporterParams {
 
   public LoggingExporterParams kibanaContainerPort(int kibanaContainerPort) {
     this.kibanaContainerPort = kibanaContainerPort;
-    return this;
-  }
-
-  public void elkStackParams(LoggingExporterParams loggingExporterParams) {
-    this.loggingExporterParams = loggingExporterParams;
-  }
-
-  public LoggingExporterParams getLoggingExporterParamsParams() {
     return this;
   }
 

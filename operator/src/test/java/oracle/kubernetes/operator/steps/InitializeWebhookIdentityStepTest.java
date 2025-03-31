@@ -1,10 +1,9 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
@@ -58,7 +56,6 @@ class InitializeWebhookIdentityStepTest {
       new WebhookMain.CheckFailureAndCreateEventStep());
 
   private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
-  private static final Function<String, Path> getInMemoryPath = inMemoryFileSystem::getPath;
 
   @BeforeEach
   void setup() throws NoSuchFieldException {

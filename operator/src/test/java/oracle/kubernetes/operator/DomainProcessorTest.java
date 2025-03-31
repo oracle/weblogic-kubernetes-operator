@@ -1716,7 +1716,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void runStatusInitializationStepWithNonKubernetesFailure_dontRemoveFailedCondition() throws JsonProcessingException {
+  void runStatusInitializationStepWithNonKubernetesFailure_dontRemoveFailedCondition() {
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withStatus(true));
     testSupport.addDomainPresenceInfo(newInfo);
     testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false));
@@ -2548,7 +2548,6 @@ class DomainProcessorTest {
               sslListenPort: 8004
         """;
 
-    //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo, "cluster-1").withReplicas(2);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -2641,7 +2640,6 @@ class DomainProcessorTest {
               sslListenPort: 8004
         """;
 
-    //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo,"cluster-1").withReplicas(2);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -2683,8 +2681,6 @@ class DomainProcessorTest {
                     IntrospectionTestUtils.createTopologyYaml(createDomainConfig()),
                     IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash()))));
   }
-
-  // todo after external service created, if adminService deleted, delete service
 
   // problem - ServiceType doesn't know what this is, so does not
   // add it to DomainPresenceInfo, so does not delete it!

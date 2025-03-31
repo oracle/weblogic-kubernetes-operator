@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -42,12 +42,12 @@ class ConfigMapSplitterTest {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(StaticStubSupport.install(ConfigMapSplitter.class, "dataLimit", TEST_DATA_LIMIT));
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 

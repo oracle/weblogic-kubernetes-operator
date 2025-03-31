@@ -353,7 +353,7 @@ public class IstioUtils {
     ExecResult result;
     StringBuffer deployIstioPrometheus;
     deployIstioPrometheus = new StringBuffer(KUBERNETES_CLI + " apply -f ");
-    deployIstioPrometheus.append(targetPromFile.toString());
+    deployIstioPrometheus.append(targetPromFile);
     logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " command {0}", new String(deployIstioPrometheus));
     try {
       result = exec(new String(deployIstioPrometheus), true);

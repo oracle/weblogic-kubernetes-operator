@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.mojo.shunit2;
@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.StaticStubSupport;
@@ -79,7 +78,7 @@ class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     ClassReader classReader = new ClassReader(ShUnit2Mojo.class.getName());
     classReader.accept(new Visitor(ShUnit2Mojo.class), 0);
 
@@ -340,7 +339,7 @@ class ShUnit2MojoTest extends MojoTestBase {
 
     executeMojo();
 
-    assertThat(mojo.getTestSuites().stream().map(TestSuite::numTestsRun).collect(Collectors.toList()), contains(3, 2));
+    assertThat(mojo.getTestSuites().stream().map(TestSuite::numTestsRun).toList(), contains(3, 2));
   }
 
   @Test
@@ -363,7 +362,7 @@ class ShUnit2MojoTest extends MojoTestBase {
 
   @Nonnull
   protected List<Integer> getFailuresByTestSuite() {
-    return mojo.getTestSuites().stream().map(TestSuite::numFailures).collect(Collectors.toList());
+    return mojo.getTestSuites().stream().map(TestSuite::numFailures).toList();
   }
 
   private String createExpectedTestFailure(String explanation) {
@@ -383,9 +382,6 @@ class ShUnit2MojoTest extends MojoTestBase {
 
     assertThrows(MojoFailureException.class, this::executeMojo);
   }
-
-  // todo print tests run, failures at end of each testsuite
-  // todo print total tests run, total failures across multiple tests
 
   static class TestDelegate implements BiFunction<String, Map<String, String>, Process> {
     private final ArrayDeque<ProcessStub> processStubs = new ArrayDeque<>();

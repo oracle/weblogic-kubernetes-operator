@@ -553,7 +553,7 @@ public class PodUtils {
     String podName = null;
     V1PodList pods;
     pods = Kubernetes.listPods(namespace, null);
-    if (pods.getItems().size() != 0) {
+    if (!pods.getItems().isEmpty()) {
       for (V1Pod pod : pods.getItems()) {
         if (pod != null && pod.getMetadata() != null && pod.getMetadata().getName() != null
             && pod.getMetadata().getName().startsWith(podPrefix)) {

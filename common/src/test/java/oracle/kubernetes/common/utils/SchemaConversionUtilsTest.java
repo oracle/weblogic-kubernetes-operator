@@ -57,7 +57,7 @@ class SchemaConversionUtilsTest {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(CommonTestUtils.silenceLogger());
     mementos.add(BaseTestUtils.silenceJsonPathLogger());
     v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
@@ -78,7 +78,7 @@ class SchemaConversionUtilsTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
   }
 

@@ -1,9 +1,8 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.client;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -124,7 +123,7 @@ public class HttpAsyncTestSupport {
     return handlers.stream().filter(h -> h.matches(request)).findFirst().orElse(null);
   }
 
-  public HttpResponse<String> send(HttpRequest request) throws IOException, InterruptedException {
+  public HttpResponse<String> send(HttpRequest request) {
     return getHandler(request).getResponse();
   }
 

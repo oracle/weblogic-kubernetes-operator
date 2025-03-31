@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -249,7 +249,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     return info.getServerPods()
           .map(this::getServerName)
           .filter(name -> !ADMIN.equals(name))
-          .collect(Collectors.toList());
+          .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private String getServerName(V1Pod pod) {

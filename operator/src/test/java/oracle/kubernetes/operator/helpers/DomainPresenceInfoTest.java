@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -49,7 +48,7 @@ class DomainPresenceInfoTest {
   private static final String[] MANAGED_SERVER_NAMES = {"ms1", "ms2", "ms3"};
   private static final List<ServerStartupInfo> STARTUP_INFOS = Arrays.stream(MANAGED_SERVER_NAMES)
         .map(DomainPresenceInfoTest::toServerStartupInfo)
-        .collect(Collectors.toList());
+        .toList();
   private static final String NAMESPACE = "ns";
   private static final String DOMAIN_UID = "domain";
   private final DomainPresenceInfo info = new DomainPresenceInfo(NAMESPACE, DOMAIN_UID);
@@ -233,10 +232,6 @@ class DomainPresenceInfoTest {
     pod.spec(new V1PodSpec().nodeName("aNode"));
   }
 
-  // todo compute availability per cluster: how many servers need to be running, list of servers in
-  // cluster
-  // todo accept list of up-to-date clusters, remove any in info not in the list
-
   @Test
   void whenListClusterResources_removeStrandedClustersFromDomainPresenceInfo() {
     Map<String, ClusterResource> map = new HashMap<>();
@@ -268,7 +263,7 @@ class DomainPresenceInfoTest {
     assertThat(info.getClusterResource(clusterName), notNullValue());
   }
 
-  @Test // todo do we need there?
+  @Test
   void afterRemoveClusterResource_verifyClusterResourceIsNull() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
@@ -279,7 +274,7 @@ class DomainPresenceInfoTest {
     assertThat(info.getClusterResource(clusterName), nullValue());
   }
 
-  @Test // todo do we need there?
+  @Test
   void whenClusterResourceNotDefined_removeReturnsNull() {
     final String clusterName = "cluster-1";
     ClusterResource clusterResource = info.removeClusterResource(clusterName);

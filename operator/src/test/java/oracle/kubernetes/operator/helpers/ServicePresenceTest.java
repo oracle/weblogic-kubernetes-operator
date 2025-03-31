@@ -62,7 +62,7 @@ class ServicePresenceTest {
   private OffsetDateTime clock = SystemClock.now();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", domains));
     mementos.add(UnitTestHash.install());
@@ -92,7 +92,7 @@ class ServicePresenceTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 

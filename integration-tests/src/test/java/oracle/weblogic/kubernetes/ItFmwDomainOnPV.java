@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -124,7 +124,7 @@ class ItFmwDomainOnPV {
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique dbNamespace
