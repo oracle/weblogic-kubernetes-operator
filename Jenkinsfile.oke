@@ -133,11 +133,11 @@ pipeline {
                 )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
-               //defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
+               defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
         )
         string(name: 'WIT_DOWNLOAD_URL',
                description: 'URL to download WIT.',
-               //defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
+               defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
         )
         string(name: 'REPO_REGISTRY',
                description: '',
