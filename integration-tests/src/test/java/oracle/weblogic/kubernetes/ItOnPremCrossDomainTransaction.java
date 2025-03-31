@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.net.http.HttpResponse;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -155,7 +154,7 @@ class ItOnPremCrossDomainTransaction {
    * @param namespaces list of namespaces
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces)
+  static void initAll(@Namespaces(3) List<String> namespaces)
       throws UnknownHostException, IOException, InterruptedException {
     logger = getLogger();
 
@@ -188,9 +187,9 @@ class ItOnPremCrossDomainTransaction {
    * Stop on premise domain.
    */
   @AfterEach
-  public void stopOnPremDomain() throws UnknownHostException, InterruptedException {
+  void stopOnPremDomain() throws InterruptedException {
     shutdownServers(List.of(wlstScript.toString(),
-        Path.of(RESOURCE_DIR, "onpremcrtx").toString() + "/shutdown.py",
+        Path.of(RESOURCE_DIR, "onpremcrtx") + "/shutdown.py",
         localAddress),
         Path.of(domainHome.toString(), "wlst.log"));
     shutdownDomain(domainUT, domainNSUT);
@@ -363,7 +362,7 @@ class ItOnPremCrossDomainTransaction {
     
     testUntil(() -> {
       executeWlst(List.of(wlstScript.toString(),
-          Path.of(RESOURCE_DIR, "onpremcrtx").toString() + "/getmessages.py", localAddress),
+          Path.of(RESOURCE_DIR, "onpremcrtx") + "/getmessages.py", localAddress),
           Path.of(domainHome.toString(), "accountingQueueMessages.log"), true);
       String content = Files.readString(Path.of(domainHome.toString(), "accountingQueueMessages.log"));
       logger.info(content);
@@ -397,8 +396,7 @@ class ItOnPremCrossDomainTransaction {
   }
 
   private static void createK8sDomain(String domainUid, String namespace,
-      List<String> modelFilesList, List<String> modelPropsList, List<String> applicationsList)
-      throws UnknownHostException, IOException {
+      List<String> modelFilesList, List<String> modelPropsList, List<String> applicationsList) {
 
     // create admin credential secret for domain
     logger.info("Create admin credential secret for domain {0}", domainUid);
@@ -443,7 +441,7 @@ class ItOnPremCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "jmsservlet.war").toFile().exists(),
         "Application archive is not available");
-    String appSource1 = distDir.toString() + "/jmsservlet.war";
+    String appSource1 = distDir + "/jmsservlet.war";
     logger.info("Application is in {0}", appSource1);
 
     //build the MDB application
@@ -475,7 +473,7 @@ class ItOnPremCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "mdbtopic.jar").toFile().exists(),
         "Application archive is not available");
-    String appSource2 = distDir.toString() + "/mdbtopic.jar";
+    String appSource2 = distDir + "/mdbtopic.jar";
     logger.info("Application is in {0}", appSource2);
     return List.of(appSource1, appSource2);
   }
@@ -569,7 +567,7 @@ class ItOnPremCrossDomainTransaction {
         + "for %s in namespace %s", domainUid, domNamespace));
   }
 
-  private static void createOnPremDomainJMSProvider() throws IOException, InterruptedException {
+  private static void createOnPremDomainJMSProvider() throws IOException {
     String onPremDomainName = "onpremJMSProdomain";
     logger.info("creating on prem domain model list");
     String modelFileList
@@ -605,7 +603,7 @@ class ItOnPremCrossDomainTransaction {
     wlstScript = Path.of(mwHome.toString(), "oracle_common", "common", "bin", "wlst.sh");
   }
   
-  private static void createOnPremDomainJMSClient(String jmsprovider) throws IOException, InterruptedException {
+  private static void createOnPremDomainJMSClient(String jmsprovider) throws IOException {
     String onPremDomainName = "onpremJMSClidomain";
     
     logger.info("build the applications to be deployed in onprem domain "
@@ -630,7 +628,7 @@ class ItOnPremCrossDomainTransaction {
     FileUtils.replaceStringInFile(modelFile.toString(),
         "@@PROP:DOMAIN_NAME@@-managed-server\\$\\{id\\}\\.@@PROP:NAMESPACE@@", localAddress);
     
-    String modelFileList = modelFile.toString() + "," 
+    String modelFileList = modelFile + ","
         + RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_JMS;
     
     logger.info("creating on premise domain {0} with model files {1} and property file {2}", 
@@ -687,15 +685,15 @@ class ItOnPremCrossDomainTransaction {
     }
   }
   
-  private static void startServers(Path domainHome) throws InterruptedException, UnknownHostException {
+  private static void startServers(Path domainHome) throws InterruptedException {
     startWebLogicServer(List.of(domainHome.toString() + "/bin/startWebLogic.sh"),
         Path.of(domainHome.toString(), "admin-server.log"));
     TimeUnit.SECONDS.sleep(15);
-    startWebLogicServer(List.of(domainHome.toString() + "/bin/startManagedWebLogic.sh",
+    startWebLogicServer(List.of(domainHome + "/bin/startManagedWebLogic.sh",
         "managed-server1",
         "t3://" + localAddress + ":" + adminServerPort),
         Path.of(domainHome.toString(), "managed-server1.log"));
-    startWebLogicServer(List.of(domainHome.toString() + "/bin/startManagedWebLogic.sh",
+    startWebLogicServer(List.of(domainHome + "/bin/startManagedWebLogic.sh",
         "managed-server2",
         "t3://" + localAddress + ":" + adminServerPort),
         Path.of(domainHome.toString(), "managed-server2.log"));
@@ -729,7 +727,7 @@ class ItOnPremCrossDomainTransaction {
     executeWlst(command, logFile, false);
   }
 
-  private static void modifyDNS() throws UnknownHostException, IOException, InterruptedException {
+  private static void modifyDNS() throws IOException, InterruptedException {
     String managedServerPrefix = domainUid1 + "-managed-server";
     String dnsEntries = localAddress
         + " " + managedServerPrefix + "1." + domain1Namespace
@@ -770,7 +768,7 @@ class ItOnPremCrossDomainTransaction {
 
   public static String generateRandomString() {
     int length = 10; // Desired length of the random string
-    String characterSet = Charset.forName("US-ASCII").toString();
+    String characterSet = StandardCharsets.US_ASCII.toString();
     Random random = new Random();
     StringBuilder sb = new StringBuilder(length);
 

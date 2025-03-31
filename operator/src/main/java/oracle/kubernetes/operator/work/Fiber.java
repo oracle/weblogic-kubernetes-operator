@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -97,7 +97,7 @@ public final class Fiber implements Runnable {
   private boolean invokeAndPotentiallyRequeue(Step stepline, Packet packet) {
     Result result = stepline.apply(packet);
 
-    if (result == null || result.isRequeue()) {
+    if (result.isRequeue()) {
       addBreadcrumb("[" + result.getRequeueAfter() + "]");
       fiberExecutor.schedule(this, result.getRequeueAfter());
       return false;

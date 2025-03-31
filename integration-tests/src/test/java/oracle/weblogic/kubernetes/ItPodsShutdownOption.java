@@ -117,7 +117,7 @@ class ItPodsShutdownOption {
    * @param namespaces list of namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -169,7 +169,7 @@ class ItPodsShutdownOption {
    * Delete the domain created by each test for the next test to start over.
    */
   @AfterEach
-  public void afterEach() {
+  void afterEach() {
     logger.info("Deleting the domain resource");
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);

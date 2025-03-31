@@ -232,7 +232,7 @@ class NamespacedResources {
     }
   }
 
-  class PauseWatchersStep<T> extends Step {
+  static class PauseWatchersStep<T> extends Step {
     private final Watcher<T> watcher;
 
     PauseWatchersStep(Watcher<T> watcher) {

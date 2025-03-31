@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1078,24 +1078,6 @@ class TopologyValidationStepTest {
         hasEvent(DOMAIN_FAILED_EVENT)
             .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR), message));
   }
-
-  // todo compute ReplicasTooHigh
-  // todo remove ReplicasTooHigh
-
-  /*
-
-  @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
-    info.setReplicaCount("cluster1", 5);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), hasCondition(FAILED)
-        .withReason(REPLICAS_TOO_HIGH).withMessageContaining("cluster1"));
-    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
-  }
-   */
 
   private String getFormattedMessage(String msgId, Object... params) {
     LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");

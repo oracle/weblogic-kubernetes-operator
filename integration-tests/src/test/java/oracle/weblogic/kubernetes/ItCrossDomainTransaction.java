@@ -147,13 +147,11 @@ class ItCrossDomainTransaction {
   private static String hostHeader;
   private static Map<String, String> headers = null;
   private static String domain1AdminExtSvcRouteHost = null;
-  private static String domain2AdminExtSvcRouteHost = null;
   private static String adminExtSvcRouteHost = null;
   private static String hostAndPort = null;
   
   private static String nginxNamespace = null;
   private static NginxParams nginxHelmParams = null;
-  private static int nginxNodePort;
 
   /**
    * Install Operator.
@@ -161,7 +159,7 @@ class ItCrossDomainTransaction {
    *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) throws UnknownHostException {
+  static void initAll(@Namespaces(4) List<String> namespaces) throws UnknownHostException {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -214,7 +212,7 @@ class ItCrossDomainTransaction {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     int replicaCount = 2;
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i,
@@ -227,7 +225,7 @@ class ItCrossDomainTransaction {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     if (nginxHelmParams != null && OKE_CLUSTER) {
       assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
@@ -283,7 +281,7 @@ class ItCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "txforward.ear").toFile().exists(),
         "Application archive is not available");
-    String appSource = distDir.toString() + "/txforward.ear";
+    String appSource = distDir + "/txforward.ear";
     logger.info("Application is in {0}", appSource);
 
     //build application archive
@@ -295,7 +293,7 @@ class ItCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "cdttxservlet.war").toFile().exists(),
         "Application archive is not available");
-    String appSource1 = distDir.toString() + "/cdttxservlet.war";
+    String appSource1 = distDir + "/cdttxservlet.war";
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
@@ -307,7 +305,7 @@ class ItCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "jmsservlet.war").toFile().exists(),
         "Application archive is not available");
-    String appSource2 = distDir.toString() + "/jmsservlet.war";
+    String appSource2 = distDir + "/jmsservlet.war";
     logger.info("Application is in {0}", appSource2);
 
     Path mdbSrcDir  = Paths.get(APP_DIR, "mdbtopic");
@@ -335,7 +333,7 @@ class ItCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "mdbtopic.jar").toFile().exists(),
         "Application archive is not available");
-    String appSource3 = distDir.toString() + "/mdbtopic.jar";
+    String appSource3 = distDir + "/mdbtopic.jar";
     logger.info("Application is in {0}", appSource3);
 
     // create admin credential secret for domain1
@@ -388,7 +386,6 @@ class ItCrossDomainTransaction {
     domain1AdminExtSvcRouteHost = adminExtSvcRouteHost;
     //create domain2
     createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
-    domain2AdminExtSvcRouteHost = adminExtSvcRouteHost;
 
     logger.info("Getting admin server external service node port(s)");
     domain1AdminServiceNodePort = assertDoesNotThrow(

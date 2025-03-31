@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Class to manage (i.e. create and removeO the user projects directory that the generated yaml
@@ -37,6 +36,6 @@ public class UserProjects {
   }
 
   public List<Path> getContents(Path path) throws Exception {
-    return Files.walk(path).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+    return Files.walk(path).sorted(Comparator.reverseOrder()).toList();
   }
 }

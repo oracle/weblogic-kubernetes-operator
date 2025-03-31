@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
@@ -36,7 +35,6 @@ public class StubWatchFactory implements WatchApiFactory {
   private static final String SYMBOL = "[A-Z_a-z0-9.]+";
   private static final String ENCODED_COMMA = "%2C";
   private static final String PARAMETERS_PATTERN = "(" + SYMBOL + ")=(" + SYMBOL + "(" + ENCODED_COMMA + SYMBOL + ")*)";
-  private static final Pattern URL_PARAMETERS = Pattern.compile(PARAMETERS_PATTERN);
   private static StubWatchFactory factory;
   private static List<Map<String, String>> requestParameters;
   private static RuntimeException exceptionOnNext;
@@ -101,6 +99,7 @@ public class StubWatchFactory implements WatchApiFactory {
    * @param resourcePlural plural
    * @return the watch api
    */
+  @Override
   public <A extends KubernetesObject, L extends KubernetesListObject>
       WatchApi<A> create(Class<A> apiTypeClass, Class<L> apiListTypeClass,
                      String apiGroup, String apiVersion, String resourcePlural) {

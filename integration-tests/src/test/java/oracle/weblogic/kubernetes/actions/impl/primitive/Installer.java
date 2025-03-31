@@ -222,12 +222,11 @@ public class Installer {
   }
 
   private String buildDownloadCommand(String downloadDir) {
-    String command = String.format(
+    return String.format(
         "curl -fL %s -o %s/%s",
         params.location(),
         downloadDir,
         getInstallerFileName(params.type()));
-    return command;
   }
 
 }

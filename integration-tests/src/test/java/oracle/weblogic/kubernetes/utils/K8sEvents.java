@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -407,7 +406,7 @@ public class K8sEvents {
                 .filter(e -> e.getInvolvedObject() != null &&  e.getInvolvedObject().getName() != null
                              && e.getInvolvedObject().getName().equals(serverName))
                 .filter(e -> e.getReason() != null && e.getReason().contains(reason))
-                .filter(e -> isEqualOrAfter(timestamp, e)).collect(Collectors.toList()).size());
+                .filter(e -> isEqualOrAfter(timestamp, e)).toList().size());
       } catch (ApiException ex) {
         Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
       }

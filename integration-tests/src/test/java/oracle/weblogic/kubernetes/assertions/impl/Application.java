@@ -103,7 +103,8 @@ public class Application {
 
     // calling "KUBERNETES_CLI exec" command to access the app inside a pod
     String cmd = String.format(
-        KUBERNETES_CLI + " -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
+        "%s -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
+        KUBERNETES_CLI,
         namespace,
         podName,
         podName,

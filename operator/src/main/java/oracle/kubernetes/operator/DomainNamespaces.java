@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -54,8 +54,6 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
  */
 @SuppressWarnings("SameParameterValue")
 public class DomainNamespaces {
-  private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
-
   private final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
 

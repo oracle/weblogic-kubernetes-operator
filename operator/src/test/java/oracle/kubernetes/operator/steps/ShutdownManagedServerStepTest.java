@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -86,7 +86,6 @@ class ShutdownManagedServerStepTest {
   private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
   private static final String DYNAMIC_MANAGED_SERVER1 = "dyn-managed-server1";
   private static final String DYNAMIC_MANAGED_SERVER2 = "dyn-managed-server2";
-  private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
 
   private final V1Pod configuredManagedServer1 = defineManagedPod(CONFIGURED_MANAGED_SERVER1);
   private final V1Pod standaloneManagedServer1 = defineManagedPod(MANAGED_SERVER1);
@@ -338,9 +337,9 @@ class ShutdownManagedServerStepTest {
     V1Pod serverPod = info.getServerPod(serverName);
     List<V1EnvVar> vars = Objects.requireNonNull(serverPod.getSpec()).getContainers().stream()
         .filter(this::isK8sContainer).findFirst().map(V1Container::getEnv).get();
-    for (V1EnvVar var : vars) {
-      if (var.getName().equals("SHUTDOWN_TYPE")) {
-        var.setValue(ShutdownType.FORCED.toString());
+    for (V1EnvVar v : vars) {
+      if (v.getName().equals("SHUTDOWN_TYPE")) {
+        v.setValue(ShutdownType.FORCED.toString());
       }
     }
   }

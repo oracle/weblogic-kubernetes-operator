@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
@@ -47,7 +46,7 @@ class FiberTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, DUMP_BREADCRUMBS)
           .withLogLevel(Level.INFO));
@@ -174,7 +173,7 @@ class FiberTest {
     private List<Fiber.StepAndPacket> createStepAndPacketList(Packet packet) {
       return Arrays.stream(childSteps)
             .map(s -> new Fiber.StepAndPacket(s, packet.copy()))
-            .collect(Collectors.toList());
+            .toList();
     }
   }
 

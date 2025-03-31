@@ -13,7 +13,6 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -136,7 +135,7 @@ class ItDiagnosticsFailedCondition {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     ns = namespaces;
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
@@ -835,8 +834,6 @@ class ItDiagnosticsFailedCondition {
         checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, managedServerName, "Running", "False");
       }
       testPassed = true;
-    } catch (ApiException ex) {
-      logger.severe(ex.getLocalizedMessage());
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);

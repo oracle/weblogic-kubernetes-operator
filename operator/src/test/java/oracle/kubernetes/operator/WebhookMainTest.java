@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -192,7 +192,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(loggerControl.withLogLevel(Level.INFO)
         .collectLogMessages(logRecords,
             VALIDATING_WEBHOOK_CONFIGURATION_CREATED, VALIDATING_WEBHOOK_CONFIGURATION_REPLACED,
@@ -220,7 +220,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);
@@ -726,7 +726,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
 
   @Nonnull
   private List<V1RuleWithOperations> getMatchRules(V1ValidatingWebhookConfiguration configuration, String resource) {
-    return getRules(configuration).stream().filter(r -> isResourceEquals(resource, r)).collect(Collectors.toList());
+    return getRules(configuration).stream().filter(r -> isResourceEquals(resource, r)).toList();
   }
 
   private boolean areOperationsMatch(List<String> operations, V1RuleWithOperations r) {

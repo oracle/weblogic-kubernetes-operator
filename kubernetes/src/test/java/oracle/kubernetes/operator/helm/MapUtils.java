@@ -40,7 +40,7 @@ class MapUtils {
   }
 
   static Integer integerValue(String integerString) {
-    if (integerString.length() == 0) {
+    if (integerString.isEmpty()) {
       return null;
     } else {
       return Integer.parseInt(integerString);
@@ -48,7 +48,7 @@ class MapUtils {
   }
 
   static void addStringMapEntry(HashMap<String, Object> map, Supplier<String> getter, String key) {
-    if (getter.get().length() > 0) {
+    if (!getter.get().isEmpty()) {
       map.put(key, getter.get());
     }
   }

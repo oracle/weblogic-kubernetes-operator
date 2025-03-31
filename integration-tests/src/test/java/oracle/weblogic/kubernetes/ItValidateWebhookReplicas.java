@@ -131,7 +131,7 @@ class ItValidateWebhookReplicas {
    *           JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a namespace for operator
@@ -178,7 +178,7 @@ class ItValidateWebhookReplicas {
   }
 
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     // check admin server is up and running for domain1
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // check admin server is up and running for domain2

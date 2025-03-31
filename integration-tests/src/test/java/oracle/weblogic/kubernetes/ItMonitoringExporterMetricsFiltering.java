@@ -103,7 +103,6 @@ class ItMonitoringExporterMetricsFiltering {
   private static int nodeportshttp = 0;
   private static String host = null;
   private static String ingressIP = null;
-  private static List<String> ingressHost1List = null;
 
   private static String monitoringNS = null;
   private static String traefikNamespace = null;
@@ -112,7 +111,6 @@ class ItMonitoringExporterMetricsFiltering {
   private static String ingressClassName;
   static PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
-  private static String monitoringExporterEndToEndDir = null;
   private static String monitoringExporterSrcDir = null;
   private static String monitoringExporterAppDir = null;
   // constants for creating domain image using model in image
@@ -128,7 +126,6 @@ class ItMonitoringExporterMetricsFiltering {
   private static int managedServerPort = 8001;
   private static int nodeportPrometheus;
   private static String exporterUrl = null;
-  private static String prometheusDomainRegexValue = null;
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
@@ -148,14 +145,12 @@ class ItMonitoringExporterMetricsFiltering {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
-  public void initAll(@Namespaces(4) List<String> namespaces) throws IOException {
+  void initAll(@Namespaces(4) List<String> namespaces) throws IOException {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterMetricsFiltering", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
-    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
     monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -531,7 +526,6 @@ class ItMonitoringExporterMetricsFiltering {
 
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    String adminServerPodName = domainUid + "-admin-server";
     String clusterService = domainUid + "-cluster-cluster-1";
 
     // Need to expose the admin server external service to access the console in OKD cluster only
@@ -618,7 +612,7 @@ class ItMonitoringExporterMetricsFiltering {
 
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // uninstall Traefik release
 
@@ -722,11 +716,6 @@ class ItMonitoringExporterMetricsFiltering {
         base64Encode(String.format("%s:%s",
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT));
-    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
-  }
-
-  private static void setCredentials(WebClient webClient, String username, String password) {
-    String base64encodedUsernameAndPassword = base64Encode(username + ":" + password);
     webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
   }
 

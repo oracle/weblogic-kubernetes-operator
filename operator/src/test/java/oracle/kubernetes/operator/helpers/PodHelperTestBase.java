@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1714,7 +1714,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
-  // todo set property to indicate dynamic/on_restart copying
   protected abstract void verifyPodReplaced();
 
   protected void verifyPodPatched() {
@@ -2116,7 +2115,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenExistingPodSpecHasK8sVolume_ignoreIt() {
     verifyPodNotReplacedWhen(
-        (pod) -> {
+        pod -> {
           pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
           getSpecContainer(pod)
               .addVolumeMountsItem(
@@ -2129,7 +2128,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenExistingPodSpecHasK8sVolumeMount_ignoreIt() {
     verifyPodNotReplacedWhen(
-        (pod) ->
+        pod ->
             getSpecContainer(pod)
                 .addVolumeMountsItem(
                     new V1VolumeMount()
@@ -2836,10 +2835,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
     List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
-    //System.out.println(events);
     return Optional.ofNullable(events)
-        .filter(list -> list.size() != 0)
-        .map(n -> n.get(0))
+        .filter(list -> !list.isEmpty())
+        .map(n -> n.getFirst())
         .map(CoreV1Event::getMessage)
         .orElse("Event not found");
   }

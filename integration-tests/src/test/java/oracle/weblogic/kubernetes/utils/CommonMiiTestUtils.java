@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -926,7 +926,7 @@ public class CommonMiiTestUtils {
     testUntil(
         retryPolicy,
         () -> listConfigMaps(domainNamespace).getItems().stream()
-          .noneMatch((cm) -> (cm.getMetadata().getName().equals(configMapName))),
+          .noneMatch(cm -> (cm.getMetadata().getName().equals(configMapName))),
         logger,
         "configmap {0} to be deleted",
         configMapName);
@@ -1789,24 +1789,6 @@ public class CommonMiiTestUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
         domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
-    /*
-    assertNotNull(domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages(),
-        domain1 + "/spec/serverPod/auxiliaryImages is null");
-
-    //verify that the domain is patched with new image
-    List<AuxiliaryImage> auxiliaryImageListAf =
-        domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages();
-    boolean doMainPatched = false;
-    for (AuxiliaryImage auxImage : auxiliaryImageListAf) {
-      if (auxImage.getImage().equals(auxiliaryImageName)) {
-        logger.info("Domain patched and cluster config {0} found", auxImage);
-        doMainPatched = true;
-        break;
-      }
-    }
-    assertTrue(doMainPatched, String.format("Image name %s should be patched", auxiliaryImageName));
-    */
-
     // verify the server pods in cluster are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -1834,9 +1816,7 @@ public class CommonMiiTestUtils {
         .append("\"");
     logger.info("command to read file in pod {0} is: {1}", serverPodName, readFileCmd.toString());
 
-    ExecResult result = assertDoesNotThrow(() -> exec(readFileCmd.toString(), true));
-
-    return result;
+    return assertDoesNotThrow(() -> exec(readFileCmd.toString(), true));
   }
 
   /**

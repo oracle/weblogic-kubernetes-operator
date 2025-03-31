@@ -335,7 +335,7 @@ public class ImageUtils {
     }
 
     List<String> archiveList = new ArrayList<>();
-    if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
+    if (appSrcDirList != null && !appSrcDirList.isEmpty() && appSrcDirList.get(0) != null) {
       List<String> archiveAppsList = new ArrayList<>();
       List<String> buildAppDirList = new ArrayList<>(appSrcDirList);
       boolean buildCoherence = false;
@@ -354,9 +354,9 @@ public class ImageUtils {
 
       AppParams appParams = defaultAppParams().appArchiveDir(ARCHIVE_DIR + cacheSfx);
 
-      if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
+      if (!archiveAppsList.isEmpty() && archiveAppsList.getFirst() != null) {
         assertTrue(archiveApp(appParams.srcDirList(archiveAppsList)));
-        String appPath = archiveAppsList.get(0);
+        String appPath = archiveAppsList.getFirst();
 
         //archive provided ear or war file
         String appName = appPath.substring(appPath.lastIndexOf("/") + 1,
@@ -367,7 +367,7 @@ public class ImageUtils {
         archiveList.add(zipAppFile);
       }
 
-      if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
+      if (!buildAppDirList.isEmpty() && buildAppDirList.getFirst() != null) {
         // build an application archive using what is in resources/apps/APP_NAME
         String zipFile;
         if (oneArchiveContainsMultiApps) {

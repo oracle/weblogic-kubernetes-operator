@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -205,14 +204,12 @@ public class FileUtils {
    * @param container name of the container
    * @param srcPath source file location on the pod
    * @param destPath destination file location on local filesystem
-   * @throws IOException when copy fails
-   * @throws InterruptedException if the process was interrupted
    */
   public static void copyFileFromPodUsingK8sExec(String namespace,
                                                  String pod,
                                                  String container,
                                                  String srcPath,
-                                                 Path destPath) throws IOException, InterruptedException {
+                                                 Path destPath) {
     LoggingFacade logger = getLogger();
     StringBuffer copyFileCmd = new StringBuffer(KUBERNETES_CLI + " exec ");
     copyFileCmd.append(" -n ");
@@ -240,19 +237,18 @@ public class FileUtils {
    * @param container name of the container inside of the pod
    * @param srcPath source location of the directory
    * @param destPath destination location of the directory
-   * @throws ApiException if Kubernetes API client call fails
    * @throws IOException if copy fails
    */
   public static void copyFolderToPod(String namespace,
                                      String pod,
                                      String container,
                                      Path srcPath,
-                                     Path destPath) throws ApiException, IOException {
+                                     Path destPath) throws IOException {
 
     Stream<Path> walk = Files.walk(srcPath);
     // find only regular files
     List<String> result = walk.filter(Files::isRegularFile)
-        .map(x -> x.toString()).collect(Collectors.toList());
+        .map(Path::toString).toList();
 
     result.forEach(fileOnHost -> {
       // resolve the given path against this path.

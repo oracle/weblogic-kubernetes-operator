@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -62,7 +62,6 @@ class ItEvictedPodsCycling {
   private static String domainUid = "domain1";
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPodPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
-  private static String clusterName = "cluster-1";
   private static int replicaCount = 2;
 
   private static String opNamespace = null;
@@ -83,7 +82,7 @@ class ItEvictedPodsCycling {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -200,7 +199,7 @@ class ItEvictedPodsCycling {
   }
   
   private Callable<Boolean> checkEvictionEvent(String adminServerpodName,
-      String reason, String message, String type) throws ApiException {
+      String reason, String message, String type) {
     return (() -> {
       boolean gotEvent = false;
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);

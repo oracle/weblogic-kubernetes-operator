@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -115,7 +115,7 @@ class ItManagedCoherence {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(3) List<String> namespaces) {
+  static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique Traefik namespace
@@ -155,8 +155,8 @@ class ItManagedCoherence {
     Path coherenceAppEarPath = Paths.get(distDir.toString(), COHERENCE_APP_NAME + ".ear");
     assertTrue(coherenceAppGarPath.toFile().exists(), "Application archive is not available");
     assertTrue(coherenceAppEarPath.toFile().exists(), "Application archive is not available");
-    logger.info("Path of CoherenceApp EAR " + coherenceAppEarPath.toString());
-    logger.info("Path of CoherenceApp GAR " + coherenceAppGarPath.toString());
+    logger.info("Path of CoherenceApp EAR " + coherenceAppEarPath);
+    logger.info("Path of CoherenceApp GAR " + coherenceAppGarPath);
   }
 
   /**
@@ -448,7 +448,7 @@ class ItManagedCoherence {
         .append(COHERENCE_APP_NAME)
         .append("/")
         .append(COHERENCE_APP_NAME);
-    logger.info("Command to get the number of records in cache " + curlCmd.toString());
+    logger.info("Command to get the number of records in cache " + curlCmd);
 
     ExecResult result = assertDoesNotThrow(() -> exec(curlCmd.toString(), true),
         String.format("Failed to get the number of records in cache by running command %s", curlCmd));
@@ -472,7 +472,7 @@ class ItManagedCoherence {
         .append(COHERENCE_APP_NAME)
         .append("/")
         .append(COHERENCE_APP_NAME);
-    logger.info("Command to get the records from cache " + curlCmd.toString());
+    logger.info("Command to get the records from cache " + curlCmd);
 
     ExecResult result = assertDoesNotThrow(() -> exec(curlCmd.toString(), true),
         String.format("Failed to get the records from cache by running command %s", curlCmd));
@@ -496,7 +496,7 @@ class ItManagedCoherence {
         .append(COHERENCE_APP_NAME)
         .append("/")
         .append(COHERENCE_APP_NAME);
-    logger.info("Command to clean the cache " + curlCmd.toString());
+    logger.info("Command to clean the cache " + curlCmd);
 
     ExecResult result = assertDoesNotThrow(() -> exec(curlCmd.toString(), true),
         String.format("Failed to clean the cache by running command %s", curlCmd));

@@ -126,7 +126,7 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace

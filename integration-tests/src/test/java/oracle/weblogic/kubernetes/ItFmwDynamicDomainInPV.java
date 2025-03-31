@@ -128,7 +128,7 @@ class ItFmwDynamicDomainInPV {
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for DB and RCU");

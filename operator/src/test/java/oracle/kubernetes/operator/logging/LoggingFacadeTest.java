@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -21,7 +21,7 @@ class LoggingFacadeTest {
   LoggingFacade loggingFacade;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockLogger = new MockLogger();
     loggingFacade = new LoggingFacade(mockLogger);
   }
@@ -155,6 +155,7 @@ class LoggingFacadeTest {
       messageLevel = level;
     }
 
+    @Override
     public void logp(
         Level level, String sourceClass, String sourceMethod, String msg, Throwable thrown) {
       logpCalled = true;

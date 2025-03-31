@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
@@ -84,17 +83,15 @@ class ClusterCrdTest {
 
     final List<String> versions = crd.getSpec().getVersions().stream()
         .map(V1CustomResourceDefinitionVersion::getName)
-        .collect(Collectors.toList());
+        .toList();
     assertThat(versions, contains("v1", "v0"));
   }
 
   @SuppressWarnings("ConstantConditions")
   private void createCrdFile(String fileName) {
-    final URL SCHEMA_ROOT = ClusterCrdTest.class.getResource("/schema");
-    fileSystem.defineFile(SCHEMA_ROOT.getPath() + fileName, EMPTY_YAML);
+    final URL schemaRoot = ClusterCrdTest.class.getResource("/schema");
+    fileSystem.defineFile(schemaRoot.getPath() + fileName, EMPTY_YAML);
   }
-
-  // todo Ryan, what if we have already generated a file for current version? Current code generates a duplicate...
 
   @Test
   void whenNoCurrentCrd_createIt() {

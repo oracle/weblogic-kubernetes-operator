@@ -152,7 +152,6 @@ class ItMonitoringExporterSamples {
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
-  private static List<String> ingressHost1List = null;
   private static List<String> ingressHost2List = null;
   private static String dbService = null;
 
@@ -177,7 +176,6 @@ class ItMonitoringExporterSamples {
   private static String miiImage = null;
   private static String wdtImage = null;
   private static String webhookImage = null;
-  private static String exporterImage = null;
   private static String  coordinatorImage = null;
   private static int managedServerPort = 8001;
   private static int nodeportPrometheus;
@@ -204,8 +202,7 @@ class ItMonitoringExporterSamples {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  static void initAll(@Namespaces(6) List<String> namespaces) {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
@@ -473,13 +470,6 @@ class ItMonitoringExporterSamples {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = formatIPv6Host(K8S_NODEPORT_HOST);
-
-      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
-      if (OKD) {
-        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
-      }
-      // installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
@@ -533,7 +523,7 @@ class ItMonitoringExporterSamples {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // delete mii domain images created for parameterized test
     if (miiImage != null) {
@@ -622,7 +612,7 @@ class ItMonitoringExporterSamples {
   private static void createWebHook(String image,
                                     String imagePullPolicy,
                                     String namespace,
-                                    String secretName) throws ApiException {
+                                    String secretName) {
     Map<String, String> labels = new HashMap<>();
     labels.put("app", "webhook");
 
@@ -743,7 +733,7 @@ class ItMonitoringExporterSamples {
   private static void createCoordinator(String image,
                                         String imagePullPolicy,
                                         String namespace,
-                                        String secretName) throws ApiException {
+                                        String secretName) {
     if (coordinatorDepl == null) {
       Map<String, String> labels = new HashMap<>();
       labels.put("app", "coordinator");

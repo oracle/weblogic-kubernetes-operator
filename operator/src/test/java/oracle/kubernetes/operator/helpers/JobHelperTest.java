@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -1421,7 +1420,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .findFirst()
             .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
             .map(V1EnvVar::getName)
-            .collect(Collectors.toList()),
+            .toList(),
         hasItems("INIT_DOMAIN_ON_PV", "DOMAIN_HOME", "OPSS_KEY_SECRET_NAME", "OPSS_WALLETFILE_SECRET_NAME"));
 
   }
@@ -1446,7 +1445,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1473,7 +1472,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1501,7 +1500,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1530,7 +1529,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1584,7 +1583,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .findFirst()
             .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
             .map(V1VolumeMount::getMountPath)
-            .collect(Collectors.toList()),
+            .toList(),
           hasItems(SCRIPTS_MOUNTS_PATH, "/share"));
 
   }
@@ -2052,7 +2051,7 @@ class JobHelperTest extends DomainValidationTestBase {
           .map(this::getFirst)
           .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
           .map(V1EnvVar::getName)
-          .collect(Collectors.toList());
+          .toList();
   }
 
   @Nullable
@@ -2257,7 +2256,4 @@ class JobHelperTest extends DomainValidationTestBase {
     // OEVN env var contains a comma separated list of env var names
     return hasEnvVarRegEx(OEVN, "(^|.*,)" + val + "($|,.*)");
   }
-
-  // todo add domain uid and created by operator labels to pod template so that they can be watched
-  // todo have pod processor able to recognize job-created pods to update domain status
 }

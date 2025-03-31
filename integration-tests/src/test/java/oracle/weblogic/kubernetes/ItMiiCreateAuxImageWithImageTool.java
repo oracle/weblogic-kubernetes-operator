@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -99,7 +99,7 @@ class ItMiiCreateAuxImageWithImageTool {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -500,7 +500,7 @@ class ItMiiCreateAuxImageWithImageTool {
   /**
    * Cleanup images.
    */
-  public void tearDownAll() {
+  void tearDownAll() {
     if (!SKIP_CLEANUP) {
       // delete images
       for (int i = 1; i < 4; i++) {

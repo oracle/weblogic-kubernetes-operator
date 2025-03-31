@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -538,13 +538,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return Step.chain(steps.toArray(new Step[0]));
   }
 
-  private String getDomainUid(Fiber fiber) {
-    return Optional.ofNullable(fiber)
-          .map(Fiber::getPacket)
-          .map(p -> (DomainPresenceInfo) p.get(ProcessingConstants.DOMAIN_PRESENCE_INFO))
-          .map(DomainPresenceInfo::getDomainUid).orElse("");
-  }
-
   /**
    * Dispatch job watch event.
    * @param item watch event
@@ -999,8 +992,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void logThrowable(Throwable throwable) {
-    if (throwable instanceof Fiber.MultiThrowable) {
-      for (Throwable t : ((Fiber.MultiThrowable) throwable).getThrowables()) {
+    if (throwable instanceof Fiber.MultiThrowable multiThrowable) {
+      for (Throwable t : multiThrowable.getThrowables()) {
         logThrowable(t);
       }
     } else {
@@ -1095,7 +1088,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         gate.startFiber(
             ((DomainPresenceInfo)presenceInfo).getDomainUid(),
             () -> getFailureSteps(throwable),
-            () -> operation.createPacket(),
+                operation::createPacket,
             new FailureReportCompletionCallback());
       }
 
@@ -1205,7 +1198,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     void execute() {
-      gate.startFiber(presenceInfo.getResourceName(), () -> operation.createSteps(), () -> operation.createPacket(),
+      gate.startFiber(presenceInfo.getResourceName(), operation::createSteps, operation::createPacket,
           createCompletionCallback());
     }
 
@@ -1234,7 +1227,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       try {
         Step strategy = Step.chain(new DomainPresenceInfoStep(), ServerStatusReader.createStatusStep(timeoutSeconds));
         getStatusFiberGate(getNamespace())
-            .startFiber(getDomainUid(), () -> strategy, () -> createPacket(), new CompletionCallbackImpl());
+            .startFiber(getDomainUid(), () -> strategy, this::createPacket, new CompletionCallbackImpl());
       } catch (Exception t) {
         try (ThreadLoggingContext ignored
                  = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {

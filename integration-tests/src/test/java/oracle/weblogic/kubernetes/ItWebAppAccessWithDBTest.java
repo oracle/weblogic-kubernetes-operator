@@ -85,7 +85,6 @@ class ItWebAppAccessWithDBTest {
   private static String domainUid = "dbtestdomain";
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
-  private static int nodeportshttps = 0;
   private static List<String> ingressHostList = null;
   private static String ingressIP = null;
   private static final String TEST_WDT_FILE = "/sample-topology.yaml";
@@ -110,8 +109,7 @@ class ItWebAppAccessWithDBTest {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger = getLogger();
 
@@ -186,7 +184,7 @@ class ItWebAppAccessWithDBTest {
    */
   @Test
   @DisplayName("Test that if db is  started, access to app successful.")
-  void testAccesToWebApp() throws Exception {
+  void testAccesToWebApp() {
 
     wdtImage = createAndVerifyDomainInImage();
     logger.info("Create wdt domain and verify that it's running");
@@ -252,7 +250,7 @@ class ItWebAppAccessWithDBTest {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // delete mii domain images created for parameterized test
     if (wdtImage != null) {

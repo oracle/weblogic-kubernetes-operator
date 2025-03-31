@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -33,7 +33,6 @@ public class OperatorParams {
   private static final String DOMAIN_NS_LABEL_SELECTOR = "domainNamespaceLabelSelector";
   private static final String DOMAIN_NS_REG_EXP = "domainNamespaceRegExp";
   private static final String ENABLE_CLUSTER_ROLE_BINDING = "enableClusterRoleBinding";
-  private static final String DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT = "domainPresenceFailureRetryMaxCount";
   private static final String FEATURE_GATES = "featureGates";
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";

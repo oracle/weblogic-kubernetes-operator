@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -803,9 +803,7 @@ public class Domain {
    */
   public static String getCurrentIntrospectVersion(String domainUid, String namespace) throws ApiException {
     DomainResource domain = getDomainCustomResource(domainUid, namespace);
-    String introspectVersion = domain.getSpec().getIntrospectVersion();
-
-    return introspectVersion;
+    return domain.getSpec().getIntrospectVersion();
   }
 
   /**
@@ -1097,7 +1095,7 @@ public class Domain {
                                      String domainUid, String scalingAction, String clusterName,
                                      String opServiceAccount, int scalingSize,
                                      String domainHomeLocation,
-                                     V1Pod adminPod) throws ApiException, InterruptedException {
+                                     V1Pod adminPod) {
     LoggingFacade logger = getLogger();
     StringBuffer scalingCommand = new StringBuffer()
         //.append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))

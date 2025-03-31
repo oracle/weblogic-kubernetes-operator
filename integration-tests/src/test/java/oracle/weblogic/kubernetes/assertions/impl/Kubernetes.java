@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentCondition;
@@ -49,14 +48,11 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Kubernetes {
 
-  private static final String OPERATOR_NAME = "weblogic-operator-";
-
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
 
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
-  private static CustomObjectsApi customObjectsApi = null;
   private static final String RUNNING = "Running";
 
   static {
@@ -64,7 +60,6 @@ public class Kubernetes {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
       apiClient = Configuration.getDefaultApiClient();
       coreV1Api = new CoreV1Api();
-      customObjectsApi = new CustomObjectsApi();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
@@ -546,7 +541,7 @@ public class Kubernetes {
         logger.info("LoadBalancer Status " + service.getStatus().getLoadBalancer().toString());
         List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
         if (ingress != null) {
-          logger.info("LoadBalancer Ingress " + ingress.toString());
+          logger.info("LoadBalancer Ingress " + ingress);
           V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
               !c.getIp().equals("pending")
           ).findAny().orElse(null);
@@ -818,8 +813,7 @@ public class Kubernetes {
    * @return V1Job object if found otherwise null
    * @throws ApiException when there is error in querying the cluster
    */
-  public static V1Job getJob(String namespace, String labelSelectors, String jobName)
-      throws ApiException {
+  public static V1Job getJob(String namespace, String labelSelectors, String jobName) {
     V1JobList jobList = listJobs(namespace, labelSelectors);
     if (jobList != null) {
       for (V1Job job : jobList.getItems()) {

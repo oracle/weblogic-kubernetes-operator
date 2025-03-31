@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -38,14 +38,6 @@ public class AppBuilder {
   }
 
   /**
-   * Create an AppParams instance with the custom values.
-   * @return an AppParams instance
-   */
-  public static AppParams customAppParams(List<String> srcDirList) {
-    return new AppParams().srcDirList(srcDirList);
-  }
-
-  /**
    * Set up the AppBuilder with given parameters.
    * 
    * @param params instance of {@link AppParams} that contains parameters to build an application archive
@@ -82,7 +74,7 @@ public class AppBuilder {
 
     // make sure that we always have an app name
     if (params.appName() == null) {
-      params.appName(params.srcDirList().get(0));
+      params.appName(params.srcDirList().getFirst());
     }
 
     // build the app archive
@@ -116,7 +108,7 @@ public class AppBuilder {
 
     // make sure that we always have an app name
     if (params.appName() == null) {
-      params.appName(params.srcDirList().get(0));
+      params.appName(params.srcDirList().getFirst());
     }
 
     // build the app archive
@@ -184,7 +176,7 @@ public class AppBuilder {
 
     // make sure that we always have an app name
     if (params.appName() == null) {
-      params.appName(params.srcDirList().get(0));
+      params.appName(params.srcDirList().getFirst());
     }
 
     String cmd = String.format(
@@ -210,7 +202,7 @@ public class AppBuilder {
 
     // make sure that we always have an app name
     if (params.appName() == null) {
-      params.appName(params.srcDirList().get(0));
+      params.appName(params.srcDirList().getFirst());
     }
 
     String cmd = String.format(
@@ -242,7 +234,7 @@ public class AppBuilder {
    */
   public boolean archiveApp() {
     List<String> srcFiles  = params.srcDirList();
-    String srcFile = srcFiles.get(0);
+    String srcFile = srcFiles.getFirst();
     String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
     params.appName(appName);
     String archiveSrcDir = params.appArchiveDir() + "/wlsdeploy/applications";
@@ -251,7 +243,7 @@ public class AppBuilder {
       cleanupDirectory(archiveSrcDir);
       checkDirectory(archiveSrcDir);
       for (String appSrcFile : srcFiles) {
-        if (appSrcFile.length() > 0) {
+        if (!appSrcFile.isEmpty()) {
           getLogger().info("copy {0} to {1} ", appSrcFile, archiveSrcDir);
           String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
           Files.copy(Paths.get(appSrcFile), Paths.get(archiveSrcDir + "/" + fileName),

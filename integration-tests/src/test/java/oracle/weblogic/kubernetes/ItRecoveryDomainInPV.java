@@ -100,7 +100,7 @@ class ItRecoveryDomainInPV  {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
@@ -360,7 +360,7 @@ class ItRecoveryDomainInPV  {
             .redirect(true);
     if (Command.withParams(params).execute()
         && params.stdout() != null
-        && params.stdout().length() != 0) {
+        && !params.stdout().isEmpty()) {
       String uid = params.stdout();
       logger.info("{0}, got uid {1} for pod {2} in the namespace {3}", verbose, uid, podName, nameSpace);
       return true;

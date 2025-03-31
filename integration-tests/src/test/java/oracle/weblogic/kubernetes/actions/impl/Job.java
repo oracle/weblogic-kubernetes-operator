@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -39,9 +39,8 @@ public class Job {
    * @param jobName name of the job
    * @param namespace name of the namespace
    * @return true if delete was successful
-   * @throws ApiException when deletion of job fails
    */
-  public static boolean deleteJob(String jobName, String namespace) throws ApiException {
+  public static boolean deleteJob(String jobName, String namespace) {
     return Kubernetes.deleteJob(namespace, jobName);
   }
 

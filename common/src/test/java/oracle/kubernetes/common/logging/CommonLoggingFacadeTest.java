@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -19,7 +19,7 @@ class CommonLoggingFacadeTest {
   CommonLoggingFacade loggingFacade;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockLogger = new MockLogger();
     loggingFacade = new CommonLoggingFacade(mockLogger);
   }
@@ -415,10 +415,12 @@ class CommonLoggingFacadeTest {
       super("MockLogger", "Operator");
     }
 
+    @Override
     public void setLevel(Level level) {
       this.level = level;
     }
 
+    @Override
     public boolean isLoggable(Level level) {
       int levelValue = this.level.intValue();
       return level.intValue() >= levelValue && levelValue != Level.OFF.intValue();
@@ -433,6 +435,7 @@ class CommonLoggingFacadeTest {
       messageParams = params;
     }
 
+    @Override
     public void logp(
         Level level, String sourceClass, String sourceMethod, String msg, Throwable thrown) {
       logpCalled = true;
@@ -441,12 +444,14 @@ class CommonLoggingFacadeTest {
       messageLevel = level;
     }
 
+    @Override
     public void logp(Level level, String sourceClass, String sourceMethod, String msg) {
       logpCalled = true;
       message = msg;
       messageLevel = level;
     }
 
+    @Override
     public void logp(Level level, String sourceClass, String sourceMethod,
                      String msg, Object param1) {
       logpCalled = true;

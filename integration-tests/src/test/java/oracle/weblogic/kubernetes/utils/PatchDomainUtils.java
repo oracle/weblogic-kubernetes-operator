@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -200,7 +200,7 @@ public class PatchDomainUtils {
       String patchPath, String policy) {
     LoggingFacade logger = getLogger();
     logger.info("Updating the for domain {0} in namespace {1} using patch string: {2}",
-        domainUid, domainNamespace, patchPath.toString());
+        domainUid, domainNamespace, patchPath);
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")

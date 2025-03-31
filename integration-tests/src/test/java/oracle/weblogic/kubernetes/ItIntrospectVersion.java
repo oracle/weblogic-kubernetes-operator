@@ -247,7 +247,7 @@ class ItIntrospectVersion {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -1478,7 +1478,7 @@ class ItIntrospectVersion {
     CommandParams params = new CommandParams().defaults();
 
     params.command("sh "
-        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
         + commonParameters);
 
     ExecResult execResult = Command.withParams(params).executeAndReturnResult();

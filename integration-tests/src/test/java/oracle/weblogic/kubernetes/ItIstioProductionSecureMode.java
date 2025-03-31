@@ -79,7 +79,7 @@ class ItIstioProductionSecureMode {
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
   */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace

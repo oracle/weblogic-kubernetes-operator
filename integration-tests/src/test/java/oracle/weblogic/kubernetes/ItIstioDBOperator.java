@@ -151,7 +151,7 @@ class ItIstioDBOperator {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for DB and RCU");
@@ -382,7 +382,7 @@ class ItIstioDBOperator {
    * Deletes Oracle database instance, operator and storageclass.
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
     }
@@ -396,7 +396,7 @@ class ItIstioDBOperator {
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
     params.command("sh "
-        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to execute script " + script);

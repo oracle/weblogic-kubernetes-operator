@@ -83,7 +83,6 @@ class ItMiiCustomSslStore {
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-managed-server";
   private static LoggingFacade logger = null;
-  private static String cpUrl;
 
   /**
    * Install Operator.
@@ -92,7 +91,7 @@ class ItMiiCustomSslStore {
    *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -228,7 +227,7 @@ class ItMiiCustomSslStore {
     }
     testUntil(
         runClientInsidePod(adminServerPodName, domainNamespace,
-            "/u01", extOpts.toString() + " SslTestClient", "t3s://"
+            "/u01", extOpts + " SslTestClient", "t3s://"
             + domainUid + "-cluster-cluster-1:" + managedServerPort),
         logger,
         "Wait for client to get Initial context");

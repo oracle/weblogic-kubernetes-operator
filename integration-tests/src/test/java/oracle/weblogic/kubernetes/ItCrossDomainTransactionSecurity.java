@@ -110,8 +110,6 @@ class ItCrossDomainTransactionSecurity {
 
   private static final String auxImageName1 = DOMAIN_IMAGES_PREFIX + "domain1-cdxaction-aux";
   private static final String auxImageName2 = DOMAIN_IMAGES_PREFIX + "domain2-cdxaction-aux";
-  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomsecurity";
-
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -124,7 +122,6 @@ class ItCrossDomainTransactionSecurity {
   private static String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static LoggingFacade logger = null;
   private static int replicaCount = 2;
-  private static String clusterName = "cluster-2";
   private static int t3ChannelPort1 = getNextFreePort();
   private static int t3ChannelPort2 = getNextFreePort();
   private static String domain1AdminExtSvcRouteHost = null;
@@ -139,20 +136,18 @@ class ItCrossDomainTransactionSecurity {
   private static String tlsSecretName = domainUid2 + "-test-tls-secret";
   private static String hostAddress = K8S_NODEPORT_HOST;
 
-
-
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
+  static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
     logger = getLogger();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
+    assertNotNull(namespaces.getFirst(), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
@@ -223,7 +218,7 @@ class ItCrossDomainTransactionSecurity {
    */
   @Test
   @DisplayName("Check cross domain transaction works")
-  void testCrossDomainTxWithCrossDomainSecurityEnabled() throws UnknownHostException {
+  void testCrossDomainTxWithCrossDomainSecurityEnabled() {
     
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
@@ -322,7 +317,7 @@ class ItCrossDomainTransactionSecurity {
   @Test
   @DisplayName("Check cross domain transaction works when SSL enabled")
   @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
-  void testCrossDomainTxWithCrossDomainSecurityAndSSLEnabled() throws UnknownHostException {
+  void testCrossDomainTxWithCrossDomainSecurityAndSSLEnabled() {
 
     // Create SSL certificate and key using openSSL with SAN extension
     createCertKeyFiles(hostAddress);

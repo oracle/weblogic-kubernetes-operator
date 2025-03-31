@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -101,7 +101,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
     mementos.add(testSupport.install());
     mementos.add(StubWatchFactory.install());
@@ -111,7 +111,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     shutDownThreads();
     mementos.forEach(Memento::revert);
     testSupport.throwOnCompletionFailure();
@@ -280,16 +280,6 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
     MatcherAssert.assertThat(getDomainPresenceInfo(dp, UID2).getClusterResource(CLUSTER_2), notNullValue());
   }
-
-  // todo examine the recheck logic to see if we need to handle events
-  // todo when cluster added, add to info
-  // todo when cluster removed, remove from info
-  // todo when cluster modified, update info
-
-  // todo domain validation should use cluster resources, not cluster from domain spec
-  // todo unit tests should create cluster resources, not cluster in domain spec
-  // todo when upgrading from v8 domain, create cluster resource (WebHook) and tag as operator-created
-  // todo when deleting domain, also delete any operator-created clusters
 
   // tell dp - here are the actual clusters that exist.
   // dp goes through its active domains, remove clusters no longer present?
@@ -727,6 +717,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
        * Access map of current fibers.
        * @return Map of fibers in this gate
        */
+      @Override
       public Map<String, Fiber> getCurrentFibers() {
         return myGateMap;
       }

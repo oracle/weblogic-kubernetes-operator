@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Objects;
 
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import org.hamcrest.Description;
@@ -51,7 +49,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DomainStatusTest {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int RETRY_SECONDS = 100;
 
   private DomainStatus domainStatus;

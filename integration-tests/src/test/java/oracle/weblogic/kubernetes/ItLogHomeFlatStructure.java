@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -94,13 +92,9 @@ class ItLogHomeFlatStructure {
   private static final String domainUid = "loghomeflat";
   private static final String pvName = getUniqueName(domainUid + "-pv-");
   private static final String pvcName = getUniqueName(domainUid + "-pvc-");
-  private StringBuffer curlString = null;
-  private StringBuffer checkCluster = null;
-  private V1Patch patch = null;
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final String adminServerName = "admin-server";
-  private final String clusterName = "cluster-1";
   private String adminSvcExtHost = null;
   private static String logsDir = null;
 
@@ -113,7 +107,7 @@ class ItLogHomeFlatStructure {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -184,7 +178,7 @@ class ItLogHomeFlatStructure {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
 
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -252,7 +246,7 @@ class ItLogHomeFlatStructure {
 
   private static void createDatabaseSecret(
         String secretName, String username, String password,
-        String dburl, String domNamespace) throws ApiException {
+        String dburl, String domNamespace) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
@@ -266,8 +260,7 @@ class ItLogHomeFlatStructure {
 
   }
 
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
-          throws ApiException {
+  private static void createDomainSecret(String secretName, String username, String password, String domNamespace) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);

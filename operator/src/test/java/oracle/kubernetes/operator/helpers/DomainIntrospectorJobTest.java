@@ -164,7 +164,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest extends DomainTestUtils {
 
-  private static final int MAX_RETRY_COUNT = 2;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String NODEMGR_HOME = "/u01/nodemanager";
@@ -213,7 +212,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
@@ -248,7 +247,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
     }
@@ -560,12 +559,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .mountPath(WDTCONFIGMAP_MOUNT_PATH).readOnly(true)));
   }
 
-  private DomainOnPV getInitDomain() {
-    DomainOnPV initDomain = new DomainOnPV();
-    initDomain.opss(getOpss());
-    return initDomain;
-  }
-
   private Opss getOpss() {
     Opss opss = new Opss();
     opss.withWalletFileSecret("wfSecret");
@@ -864,7 +857,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithFluentdAndSuccessIntrospection_containerShouldMatchUserSpecifiedArgsCommand() {
     List<String> args = new ArrayList<>(List.of("line1", "line2"));
     List<String> command = new ArrayList<>(List.of("line1", "line2"));
-    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain)
+    DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, null, null, args, command);
 
     List<V1Job> jobs = runStepsAndGetJobs();
@@ -1374,13 +1367,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     return job;
   }
 
-  private V1Job asFailedJobWithDeadlineExceeded(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(
-        new V1JobCondition().status("True").type("Failed")
-            .reason("DeadlineExceeded")));
-    return job;
-  }
-
   @Test
   void whenPreviousFailedJobWithImagePullBackoffErrorExistsAndMakeRightContinued_createNewJob() {
     ignoreIntrospectorFailureLogs();
@@ -1633,7 +1619,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(null));
 
-    assertThat(getUpdatedDomain(), hasCondition(FAILED).withReason(ABORTED));  // todo check updated status message
+    assertThat(getUpdatedDomain(), hasCondition(FAILED).withReason(ABORTED));
   }
 
   private DomainCondition createFailedCondition(String message) {

@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +21,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
-import com.google.gson.Gson;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
@@ -40,7 +38,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.yaml.snakeyaml.Yaml;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -131,7 +128,6 @@ class ItMonitoringExporterWebApp {
   private static String monitoringNS = null;
   PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
-  private static String monitoringExporterEndToEndDir = null;
   private static String monitoringExporterSrcDir = null;
   private static String monitoringExporterAppDir = null;
   // constants for creating domain image using model in image
@@ -166,14 +162,13 @@ class ItMonitoringExporterWebApp {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(6) List<String> namespaces) throws UnknownHostException {
+  static void initAll(@Namespaces(6) List<String> namespaces) throws UnknownHostException {
 
     logger = getLogger();
     ns = namespaces;
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterWebApp", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
-    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
     monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -278,7 +273,6 @@ class ItMonitoringExporterWebApp {
 
       // create ingress for the domain
       logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-      String adminServerPodName = domain1Uid + "-admin-server";
       String clusterService = domain1Uid + "-cluster-cluster-1";
       if (!OKD) {
         String ingressClassName = nginxHelmParams.getIngressClassName();
@@ -353,7 +347,7 @@ class ItMonitoringExporterWebApp {
    */
   @Test
   @DisplayName("Test Accessibility of Monitoring Exporter dashboard and metrics if admin port is enabled.")
-  void testAdminPortEnabled() throws Exception {
+  void testAdminPortEnabled() {
     try {
       // create and verify one cluster mii domain with admin port enabled
       logger.info("Create domain and verify that it's running");
@@ -408,7 +402,7 @@ class ItMonitoringExporterWebApp {
       //verify access to Monitoring Exporter
       logger.info("checking access to wls metrics via http connection");
 
-      clusterNames.stream().forEach((clusterName) -> {
+      clusterNames.stream().forEach(clusterName -> {
         assertFalse(verifyMonExpAppAccess("wls-exporter",
             "restPort",
             domain3Uid,
@@ -423,7 +417,7 @@ class ItMonitoringExporterWebApp {
       logger.info("checking access to wl metrics via https connection");
       //set to listen only ssl
       changeListenPort(domain3Uid, domain3Namespace, "False");
-      clusterNames.stream().forEach((clusterName) -> {
+      clusterNames.stream().forEach(clusterName -> {
         assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
             "wls_servlet_invocation_total_count",
             domain3Uid,
@@ -505,19 +499,13 @@ class ItMonitoringExporterWebApp {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = formatIPv6Host(K8S_NODEPORT_HOST);
-
-      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
-      if (OKD) {
-        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
-      }
     }
     logger.info("Grafana is running");
   }
 
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");
@@ -548,7 +536,6 @@ class ItMonitoringExporterWebApp {
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
           throws Exception {
     final WebClient webClient = new WebClient();
-    //webClient.addRequestHeader("Host", ingressHost1List.get(0));
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
@@ -562,7 +549,7 @@ class ItMonitoringExporterWebApp {
     try {
       final WebClient webClient = new WebClient();
       setCredentials(webClient, username, password);
-      HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, webClient);
+      submitConfigureForm(exporterUrl, effect, configFile, webClient);
       throw new RuntimeException("Expected exception was not thrown ");
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
@@ -726,17 +713,6 @@ class ItMonitoringExporterWebApp {
   }
 
   /**
-   * Replace monitoring exporter configuration with empty configuration.
-   *
-   * @throws Exception if test fails
-   */
-  private void replaceWithEmptyConfiguration() throws Exception {
-    submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertFalse(verifyMonExpAppAccess("wls-exporter","values", domain1Uid, domain1Namespace,false, cluster1Name));
-    assertTrue(verifyMonExpAppAccess("wls-exporter","queries", domain1Uid, domain1Namespace,false, cluster1Name));
-  }
-
-  /**
    * Try to append monitoring exporter configuration with empty configuration.
    *
    * @throws Exception if failed to apply configuration or check the expected values.
@@ -893,9 +869,8 @@ class ItMonitoringExporterWebApp {
     WebClient webClient = new WebClient();
     String expectedErrorMsg = "401 Unauthorized for " + exporterUrl;
     try {
-      HtmlPage page =
-              submitConfigureForm(
-                      exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_snakecasetrue.yaml", webClient);
+      submitConfigureForm(
+          exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_snakecasetrue.yaml", webClient);
       throw new RuntimeException("Form was submitted successfully with no credentials");
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
@@ -968,21 +943,13 @@ class ItMonitoringExporterWebApp {
     }
 
     logger.info("Copying changeListenPort.py and callpyscript.sh to admin server pod");
-    try {
-      copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
-          Paths.get("/u01/changeListenPort.py"));
+    copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
+        Paths.get("/u01/changeListenPort.py"));
 
-      copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/callpyscript.sh"));
-    } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file to admin pod {0}", (Object) ioex.getStackTrace());
-      return false;
-    }
+    copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+        Paths.get("/u01/callpyscript.sh"));
 
     logger.info("Adding execute mode for callpyscript.sh");
     ExecResult result = exec(adminPod, null, true,
@@ -1009,10 +976,4 @@ class ItMonitoringExporterWebApp {
     }
     return true;
   }
-
-  private static String convertToJson(String yaml) {
-    final Object loadedYaml = new Yaml().load(yaml);
-    return new Gson().toJson(loadedYaml, LinkedHashMap.class);
-  }
-
 }

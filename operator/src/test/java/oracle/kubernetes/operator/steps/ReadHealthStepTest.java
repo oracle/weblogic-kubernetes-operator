@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -87,7 +87,7 @@ class ReadHealthStepTest {
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach
-  public void setup() throws NoSuchFieldException {
+  void setup() throws NoSuchFieldException {
     WlsDomainConfigSupport configSupport =
         new WlsDomainConfigSupport(DOMAIN_NAME)
             .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
@@ -130,7 +130,7 @@ class ReadHealthStepTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -161,9 +161,6 @@ class ReadHealthStepTest {
 
     assertThat(getRemainingServersToRead(packet), equalTo(0));
   }
-
-  // todo test that correct IP address used for each server
-  // todo test failure to read credentials
 
   @Test
   void whenReadDynamicManagedServerHealth_decrementRemainingServers() {

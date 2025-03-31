@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.introspection;
@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
@@ -95,7 +94,7 @@ class IntrospectorConfigMapTest {
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
@@ -106,7 +105,7 @@ class IntrospectorConfigMapTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
     mementos.forEach(Memento::revert);
   }
@@ -497,7 +496,7 @@ class IntrospectorConfigMapTest {
           .stream()
           .filter(this::isOperatorResource)
           .filter(IntrospectorConfigMapTest::isIntrospectorConfigMap)
-          .collect(Collectors.toList());
+          .toList();
   }
 
 }

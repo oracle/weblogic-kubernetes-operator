@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -68,8 +68,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private DomainPresenceInfo createDomainPresenceInfo(
       DomainResource domain) {
-    DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
-    return dpi;
+    return new DomainPresenceInfo(domain);
   }
 
   private DomainResource createDomain() {
@@ -195,10 +194,6 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private V1Job markJobConditionFailed(V1Job job) {
     return setFailedConditionWithReason(job, null);
-  }
-
-  private V1Job markJobTimedOut(V1Job job) {
-    return markJobTimedOut(job, "DeadlineExceeded");
   }
 
   @SuppressWarnings("SameParameterValue")

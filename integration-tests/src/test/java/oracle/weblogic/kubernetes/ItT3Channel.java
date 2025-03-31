@@ -124,7 +124,7 @@ class ItT3Channel {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");

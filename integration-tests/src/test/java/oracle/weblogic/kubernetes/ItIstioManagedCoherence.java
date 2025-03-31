@@ -122,7 +122,7 @@ class ItIstioManagedCoherence {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(4) List<String> namespaces) {
+  static void init(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -163,8 +163,8 @@ class ItIstioManagedCoherence {
     Path coherenceAppEarPath = Paths.get(distDir.toString(), COHERENCE_APP_NAME + ".ear");
     assertTrue(coherenceAppGarPath.toFile().exists(), "Application archive is not available");
     assertTrue(coherenceAppEarPath.toFile().exists(), "Application archive is not available");
-    logger.info("Path of CoherenceApp EAR " + coherenceAppEarPath.toString());
-    logger.info("Path of CoherenceApp GAR " + coherenceAppGarPath.toString());
+    logger.info("Path of CoherenceApp EAR " + coherenceAppEarPath);
+    logger.info("Path of CoherenceApp GAR " + coherenceAppGarPath);
 
     // used in internal OKE
     int istioIngressPort = getIstioHttpIngressPort();
@@ -565,7 +565,7 @@ class ItIstioManagedCoherence {
         .append(COHERENCE_APP_NAME)
         .append("/")
         .append(COHERENCE_APP_NAME);
-    logger.info("Command to get the number of records in cache " + curlCmd.toString());
+    logger.info("Command to get the number of records in cache " + curlCmd);
 
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(curlCmd.toString(), true),
         String.format("Failed to get the number of records in cache by running command %s", curlCmd));
@@ -587,7 +587,7 @@ class ItIstioManagedCoherence {
         .append(COHERENCE_APP_NAME)
         .append("/")
         .append(COHERENCE_APP_NAME);
-    logger.info("Command to get the records from cache " + curlCmd.toString());
+    logger.info("Command to get the records from cache " + curlCmd);
 
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(curlCmd.toString(), true),
         String.format("Failed to get the records from cache by running command %s", curlCmd));
@@ -609,7 +609,7 @@ class ItIstioManagedCoherence {
         .append(COHERENCE_APP_NAME)
         .append("/")
         .append(COHERENCE_APP_NAME);
-    logger.info("Command to clean the cache " + curlCmd.toString());
+    logger.info("Command to clean the cache " + curlCmd);
 
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(curlCmd.toString(), true),
         String.format("Failed to clean the cache by running command %s", curlCmd));

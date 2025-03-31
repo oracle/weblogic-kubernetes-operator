@@ -105,7 +105,7 @@ class ItRetryImprovements {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -131,7 +131,7 @@ class ItRetryImprovements {
 
   // This method is needed in this test class to delete uncompleted domain to restore the env
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     try {
       deleteSecret(wlSecretName, domainNamespace);
       deleteClusterCustomResource(clusterName, domainNamespace);
@@ -290,7 +290,7 @@ class ItRetryImprovements {
 
     // create a domain with replicas = 6 that exceeds the maximum cluster size of 5
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}", domainUid, domainNamespace);
-    DomainResource domain = createDomainResourceForRetryTest(FAILURE_RETRY_LIMIT_MINUTES, replicaCount, true);;
+    DomainResource domain = createDomainResourceForRetryTest(FAILURE_RETRY_LIMIT_MINUTES, replicaCount, true);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));

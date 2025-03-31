@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -389,7 +389,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public void deleteNamespace(String namespaceName) {
     repositories.get(NAMESPACE).data.remove(namespaceName);
     repositories.values().stream()
-          .filter(r -> r instanceof NamespacedDataRepository)
+          .filter(NamespacedDataRepository.class::isInstance)
           .forEach(r -> ((NamespacedDataRepository<?>) r).deleteNamespace(namespaceName));
   }
 
@@ -1031,7 +1031,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return data.values().stream()
           .filter(withFields(fieldSelector))
           .filter(withLabels(labelSelectors))
-          .collect(Collectors.toList());
+          .collect(Collectors.toCollection(ArrayList::new));
     }
 
     List<T> getResources() {
@@ -1278,6 +1278,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       super(resourceType);
     }
 
+    @Override
     T createResource(String namespace, T resource) {
       T existing = data.putIfAbsent(NAME, resource);
       if (existing != null) {
@@ -1416,17 +1417,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return null;
     }
 
-    private boolean isDeleteCollection() {
-      return resourceType.endsWith("Collection");
-    }
-
     private VersionInfo getVersionInfo() {
       return versionInfo;
-    }
-
-    private void selectDeleteCollectionOperation() {
-      resourceType = resourceType.substring(0, resourceType.indexOf("Collection"));
-      operation = Operation.deleteCollection;
     }
 
     private KubernetesApiResponse<D> execute() {

@@ -156,7 +156,7 @@ class ItFmwDomainOnPVUpgrade {
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique dbNamespace
@@ -443,7 +443,7 @@ class ItFmwDomainOnPVUpgrade {
         -> File.createTempFile("jrfresponse", ".txt", new File(RESULTS_TEMPFILE)),
         "Failed to create JRF upgrade assistant response file");
     assertDoesNotThrow(() -> Files.copy(jrfResponseTemplateFile, jrfResponseFile.toPath(), REPLACE_EXISTING),
-        "Failed to copy " + jrfResponseTemplateFile.toString());
+        "Failed to copy " + jrfResponseTemplateFile);
     // replace domainHome, dbUrl and rcuSchemaPrefix in JRF response text file
     assertDoesNotThrow(() -> replaceStringInFile(
         jrfResponseFile.toString(), "DOMAIN_HOME", domainHome),

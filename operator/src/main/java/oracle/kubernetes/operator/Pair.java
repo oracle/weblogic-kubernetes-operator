@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -18,7 +18,7 @@ public record Pair<L, R>(L left, R right) {
    * @return pair
    */
   public static <A, B> Pair<A, B> of(A left, B right) {
-    return new Pair<A, B>(left, right);
+    return new Pair<>(left, right);
   }
 
   @Override

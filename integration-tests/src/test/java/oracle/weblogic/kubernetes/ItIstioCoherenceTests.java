@@ -101,7 +101,7 @@ class ItIstioCoherenceTests {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -196,7 +196,7 @@ class ItIstioCoherenceTests {
           () -> FileUtils.makeDirectories(domainNamespace, serverName,
               null, true, dirsToMake),
           String.format("Failed to create dir %s in pod %s in namespace %s ",
-              dirsToMake.toString(), serverName, domainNamespace));
+              dirsToMake, serverName, domainNamespace));
       logger.info("Failed to create dir {0} in Pod {1} in namespace {2} ",
           dirsToMake.toString(), serverName, domainNamespace);
 

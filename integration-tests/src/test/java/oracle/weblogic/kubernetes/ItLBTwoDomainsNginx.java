@@ -120,7 +120,7 @@ class ItLBTwoDomainsNginx {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -268,7 +268,7 @@ class ItLBTwoDomainsNginx {
    * @throws ApiException if Kubernetes API call fails
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       if (pvPvcNamePair != null) {
         // delete pvc

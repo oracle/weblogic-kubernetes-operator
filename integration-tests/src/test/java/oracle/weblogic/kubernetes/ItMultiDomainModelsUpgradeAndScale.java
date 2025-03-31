@@ -93,7 +93,6 @@ class ItMultiDomainModelsUpgradeAndScale {
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int replicaCount = 1;
-  private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String wlSecretName = "weblogic-credentials";
   private static final String miiImageName = "mdup-mii-image";
@@ -117,7 +116,7 @@ class ItMultiDomainModelsUpgradeAndScale {
    * Create MII image.
    */
   @BeforeAll
-  public static void initAll() {
+  static void initAll() {
     logger = getLogger();
     domains = new HashMap<>();
     // create mii image
@@ -130,7 +129,7 @@ class ItMultiDomainModelsUpgradeAndScale {
    * @param namespaces injected by JUnit
    */
   @BeforeEach
-  public void beforeEach(@Namespaces(4) List<String> namespaces) {    
+  void beforeEach(@Namespaces(4) List<String> namespaces) {
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -36,7 +36,7 @@ class DeploymentLivenessTest {
   private final CoreDelegateStub coreDelegate = createStrictStub(CoreDelegateStub.class);
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectAllLogMessages(logRecords)
@@ -44,7 +44,7 @@ class DeploymentLivenessTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     // delete probesHome dir (java requires a dir be empty before deletion)

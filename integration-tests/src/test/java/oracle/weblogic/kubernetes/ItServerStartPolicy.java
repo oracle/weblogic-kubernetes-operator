@@ -78,7 +78,6 @@ class ItServerStartPolicy {
   private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
   private static LoggingFacade logger = null;
   private static String samplePath = "sample-testing";
-  private static String ingressHost = null; //only used for OKD
 
   /**
    * Install Operator.
@@ -87,7 +86,7 @@ class ItServerStartPolicy {
   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -101,7 +100,7 @@ class ItServerStartPolicy {
 
     prepare(domainNamespace, domainUid, opNamespace, samplePath);
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
-    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
   }
 
   /**
@@ -109,7 +108,7 @@ class ItServerStartPolicy {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, adminServerPodName))) {
       executeLifecycleScript(domainUid, domainNamespace, samplePath,
               START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);

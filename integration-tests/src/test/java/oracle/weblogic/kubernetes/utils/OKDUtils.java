@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -231,13 +231,10 @@ public class OKDUtils {
       getLogger().info("stderr = {0}", result.stderr());
     }
 
-    boolean exists =
-        result != null 
+    return result != null
          && result.exitValue() == 0 
          && result.stdout() != null 
          && result.stdout().contains(routeName);
-
-    return exists;
   }
 
   /**
@@ -251,7 +248,6 @@ public class OKDUtils {
     String asExtSvcName = getExternalServicePodName(podName);
     getLogger().info("admin server external svc = {0}", asExtSvcName);
 
-    //String host = asExtSvcName + "-" + namespace;
     String host = asExtSvcName;
 
     int adminServicePort
@@ -302,7 +298,6 @@ public class OKDUtils {
    */
   public static String createClusterIngressForOKD(String svcName, String namespace) {
 
-    //String host = svcName + "-" + namespace;
     String host = svcName;
 
     String ingressName = host + "-ingress-path-routing";

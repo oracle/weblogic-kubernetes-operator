@@ -110,11 +110,11 @@ class ItInitContainers {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
+    assertNotNull(namespaces.getFirst(), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
     // get a unique domain1 namespace

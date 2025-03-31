@@ -5,14 +5,12 @@ package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -22,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -153,7 +150,7 @@ class ItWseeSSO {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(4) List<String> namespaces) {
+  void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -247,7 +244,7 @@ class ItWseeSSO {
 
   private String checkWSDLAccess(String domainNamespace, String domainUid,
       String adminSvcExtHost,
-      String appURI) throws UnknownHostException, IOException, InterruptedException {
+      String appURI) throws IOException, InterruptedException {
 
     String adminServerPodName = domainUid + "-" + adminServerName;
     String hostAndPort;
@@ -379,7 +376,7 @@ class ItWseeSSO {
             + "      -Dweblogic.wsee.verbose=*,weblogic.wsee.security.wssp.handlers.*=FINER"
             + "      -Dweblogic.debug.DebugSecuritySAML2Lib=true",
         false, false);
-    DomainSpec spec = domain.getSpec().replicas(replicaCount);
+    domain.getSpec().replicas(replicaCount);
 
     // wait for the domain to exist
     createDomainAndVerify(domain, domainNamespace);
@@ -414,27 +411,27 @@ class ItWseeSSO {
     //copy the jks files to PV using the temp pod - we don't have access to PVROOT in Jenkins env
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "Identity1KeyStore.jks"),
+            Paths.get(keyStoresPath, "Identity1KeyStore.jks"),
             Paths.get(jksMountPath, "/Identity1KeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "Identity2KeyStore.jks"),
+            Paths.get(keyStoresPath, "Identity2KeyStore.jks"),
             Paths.get(jksMountPath, "/Identity2KeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "TrustKeyStore.jks"),
+            Paths.get(keyStoresPath, "TrustKeyStore.jks"),
             Paths.get(jksMountPath, "/TrustKeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "PkiKeyStore.jks"),
+            Paths.get(keyStoresPath, "PkiKeyStore.jks"),
             Paths.get(jksMountPath, "/PkiKeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "certrec.pem"),
+            Paths.get(keyStoresPath, "certrec.pem"),
             Paths.get(jksMountPath, "/certrec.pem")),
         "Copying file to pod failed");
 
@@ -561,21 +558,13 @@ class ItWseeSSO {
     }
 
     logger.info("Copying " + scriptName + " and callpyscript.sh to admin server pod");
-    try {
-      Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "python-scripts", scriptName),
-          Paths.get("/u01/" + scriptName));
+    Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "python-scripts", scriptName),
+        Paths.get("/u01/" + scriptName));
 
-      Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/callpyscript.sh"));
-    } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file to admin pod {0}", (Object) ioex.getStackTrace());
-      return false;
-    }
+    Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+        Paths.get("/u01/callpyscript.sh"));
 
     logger.info("Adding execute mode for callpyscript.sh");
     ExecResult result = exec(adminPod, null, true,
@@ -673,11 +662,11 @@ class ItWseeSSO {
 
     // DOMAIN_NAME in model.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
-            destModelYamlFile.toString(), "DOMAIN_NAME", domainUid),
+            destModelYamlFile, "DOMAIN_NAME", domainUid),
         "Could not modify DOMAIN_NAME in " + destModelYamlFile);
     // NAMESPACE in model.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
-            destModelYamlFile.toString(), "NAMESPACE", namespace),
+            destModelYamlFile, "NAMESPACE", namespace),
         "Could not modify NAMESPACE in " + destModelYamlFile);
 
     return destModelYamlFile;

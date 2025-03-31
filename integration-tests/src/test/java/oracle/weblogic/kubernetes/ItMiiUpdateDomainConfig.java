@@ -148,7 +148,7 @@ class ItMiiUpdateDomainConfig {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -226,13 +226,12 @@ class ItMiiUpdateDomainConfig {
     }
   }
 
-
   /**
    * Verify all server pods are running.
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
 
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -806,7 +805,7 @@ class ItMiiUpdateDomainConfig {
     // Bring back the cluster to originally configured replica count
     logger.info("[Before Patching] updating the replica count to 2");
     boolean p2Success = scaleCluster(domainUid + "-cluster-1", domainNamespace, replicaCount);
-    assertTrue(p1Success,
+    assertTrue(p2Success,
         String.format("replica patching to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
 
@@ -900,7 +899,7 @@ class ItMiiUpdateDomainConfig {
       ExecResult result = assertDoesNotThrow(() -> exec(javaCmd, true));
       logger.info("java returned {0}", result.toString());
       logger.info("java returned EXIT value {0}", result.exitValue());
-      return ((result.exitValue() == 0));
+      return result.exitValue() == 0;
     });
   }
 

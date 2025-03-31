@@ -83,7 +83,7 @@ class PodPresenceTest {
   private int numPodsDeleted;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", domains));
@@ -145,7 +145,7 @@ class PodPresenceTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -473,10 +473,6 @@ class PodPresenceTest {
 
   private V1Pod createServerPod() {
     return withTimeAndVersion(PodHelper.createManagedServerPodModel(packet));
-  }
-
-  private V1Pod createAdminServerPod() {
-    return withTimeAndVersion(PodHelper.createAdminServerPodModel(packet));
   }
 
   @SuppressWarnings("ConstantConditions")

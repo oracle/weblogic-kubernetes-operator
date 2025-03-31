@@ -479,11 +479,13 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private List<String> getStartingNamespaces() {
-    return Arrays.stream(NAMESPACES).filter(domainNamespaces::isStarting).collect(Collectors.toList());
+    return Arrays.stream(NAMESPACES).filter(domainNamespaces::isStarting)
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private List<String> getStartingNamespaces(String...namespaces) {
-    return Arrays.stream(namespaces).filter(domainNamespaces::isStarting).collect(Collectors.toList());
+    return Arrays.stream(namespaces).filter(domainNamespaces::isStarting)
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @Nonnull
@@ -1317,7 +1319,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private boolean isDomainEventMapEmpty(String ns) {
-    return domainEventObjects.get(ns) == null || domainEventObjects.get(ns).size() == 0;
+    return domainEventObjects.get(ns) == null || domainEventObjects.get(ns).isEmpty();
   }
 
   @Test
@@ -1461,6 +1463,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
       return new File("/probes");
     }
 
+    @Override
     public boolean createNewFile(File file) throws IOException {
       // skip creating ready probe file
       if ("/probes/.ready".equals(file.getPath())) {

@@ -119,7 +119,7 @@ class ItMaxConcurOptions {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -721,7 +721,7 @@ class ItMaxConcurOptions {
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // verify the patch results, server are scaled up or down correctly
-    for (int i = startPodNum, j = 0; i <= endPodNum; i++, j++) {
+    for (int i = startPodNum; i <= endPodNum; i++) {
       if (scaleup) {
         for (String managedServerPodNamePrefix : managedServerPodNamePrefixList) {
           logger.info("Wait for managed pod {0} to be ready in namespace {1}",
@@ -741,13 +741,13 @@ class ItMaxConcurOptions {
   private void restoreTestEnv(ArrayList<String>  clusterResources) {
     // delete CR referenced in domain resource
     clusterResources.forEach(
-        (clusterResource) -> deleteClusterCustomResourceAndVerify(clusterResource,domainNamespace));
+        clusterResource -> deleteClusterCustomResourceAndVerify(clusterResource,domainNamespace));
 
     // remove the cluster resource from domain resource
     logger.info("Patch the domain resource to remove cluster resource");
     StringBuffer patchStr = new StringBuffer("[{\"op\": \"remove\",\"path\": \"/spec/clusters/0\"}]");
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    clusterResources.forEach((clusterResource) -> patchDomainResource(domainUid, domainNamespace, patchStr));
+    clusterResources.forEach(clusterResource -> patchDomainResource(domainUid, domainNamespace, patchStr));
 
     // restore replicas at domain level bask to 4
     ArrayList<String> managedServerPodNamePrefixList =

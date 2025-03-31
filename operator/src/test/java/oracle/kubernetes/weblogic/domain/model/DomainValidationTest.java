@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -72,7 +72,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   private final List<Memento> mementos = new ArrayList<>();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
@@ -83,7 +83,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 

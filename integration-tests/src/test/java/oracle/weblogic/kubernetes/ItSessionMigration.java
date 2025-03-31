@@ -94,7 +94,6 @@ class ItSessionMigration {
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static String finalPrimaryServerName = null;
   // Since the ServerTemplate section of the model file model.sessmigr.yaml
   // does not explicitly specify ListenPort, the introspector/wdt generated
   // default ListenPort for each dynamic server is set to 7100
@@ -126,7 +125,7 @@ class ItSessionMigration {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -225,8 +224,6 @@ class ItSessionMigration {
         () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
-
-    finalPrimaryServerName = primaryServerName;
 
     logger.info("Done testSessionMigration \nThe new primary server is {0}, it was {1}. "
             + "\nThe session state was set to {2}, it is migrated to the new primary server.",

@@ -160,7 +160,7 @@ class ItMiiDomain {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -711,7 +711,7 @@ class ItMiiDomain {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
     // delete the domain images created in the test class
     if (miiImagePatchAppV2 != null) {
       deleteImage(miiImagePatchAppV2);

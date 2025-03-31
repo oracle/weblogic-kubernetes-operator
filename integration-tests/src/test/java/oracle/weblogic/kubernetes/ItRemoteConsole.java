@@ -117,7 +117,6 @@ class ItRemoteConsole {
   private static LoggingFacade logger = null;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final int adminServerSecurePort = 7008;
-  private static String adminSvcExtHost = null;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -126,7 +125,7 @@ class ItRemoteConsole {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) throws Exception {
+  static void initAll(@Namespaces(4) List<String> namespaces) throws Exception {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -309,7 +308,7 @@ class ItRemoteConsole {
    * Shutdown WLS Remote Console.
    */
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
     if (!SKIP_CLEANUP)  {
       assertTrue(shutdownWlsRemoteConsole(), "Remote Console shutdown failed");
     }

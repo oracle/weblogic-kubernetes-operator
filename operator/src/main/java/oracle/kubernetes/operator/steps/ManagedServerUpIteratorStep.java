@@ -145,8 +145,6 @@ public class ManagedServerUpIteratorStep extends Step {
     @Override
     public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-      WlsDomainConfig domainTopology =
-              (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       V1Pod managedPod = info.getServerPod(serverName);
       boolean isWaitingToRoll = PodHelper.isWaitingToRoll(managedPod);
       if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)

@@ -81,7 +81,7 @@ class ItWlsDomainOnPV {
    * Assigns unique namespaces for operator and domain.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace

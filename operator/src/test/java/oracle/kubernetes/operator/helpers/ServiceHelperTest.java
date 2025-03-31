@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -47,7 +47,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -130,7 +129,6 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   private final TerminalStep terminalStep = new TerminalStep();
   public TestFacade testFacade;
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final List<LogRecord> logRecords = new ArrayList<>();
   private WlsServerConfig serverConfig;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
@@ -371,7 +369,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   private List<V1ServicePort> getExternalPorts(V1Service model) {
     return model.getSpec().getPorts().stream()
         .filter(p -> p.getNodePort() != null)
-        .collect(Collectors.toList());
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private List<Matcher<? super V1ServicePort>> toMatchers(Map<String, Integer> nodePorts) {
@@ -985,7 +983,3 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     }
   }
 }
-
-// todo: external with no admin server (avoid NPE)
-// todo: external with empty naps   (avoid NPE)
-// todo: external with no channels  (don't create service)

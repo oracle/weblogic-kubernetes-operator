@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -77,7 +77,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   private static final WatchApiFactory DEFAULT_WATCH_API_FACTORY = new WatchApiFactory() {
   };
 
-  protected static final UnaryOperator<ApiClient> CLIENT_SELECTOR = (client) -> client;
+  protected static final UnaryOperator<ApiClient> CLIENT_SELECTOR = client -> client;
 
   public static <X extends KubernetesObject, Y extends KubernetesListObject>
       WatchApi<X> createWatchApi(Class<X> apiTypeClass, Class<Y> apiListTypeClass,
@@ -1090,11 +1090,13 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   private static class DirectResponseStep<R extends KubernetesType> extends ResponseStep<R> {
     private KubernetesApiResponse<R> callResponse;
 
+    @Override
     public Result onFailure(Packet packet, KubernetesApiResponse<R> callResponse) {
       this.callResponse = callResponse;
       return doEnd(packet);
     }
 
+    @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<R> callResponse) {
       this.callResponse = callResponse;
       return doEnd(packet);

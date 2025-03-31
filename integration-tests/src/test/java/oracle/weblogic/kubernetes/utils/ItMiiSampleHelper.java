@@ -37,7 +37,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_UR
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.inspectImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -56,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ItMiiSampleHelper {
 
   private final String miiSampleScript = "../operator/integration-tests/model-in-image/run-test.sh";
-  private final String currentDateTime = getDateAndTimeStamp();
   private final String successSearchString = "Finished without errors";
 
   private String opNamespace = null;
@@ -92,7 +90,7 @@ public class ItMiiSampleHelper {
    * @param domainTypeParam domain type names
    * @param imageTypeParam image type names
    */
-  public void initAll(List<String> namespaces, DomainType domainTypeParam, ImageType imageTypeParam) {
+  void initAll(List<String> namespaces, DomainType domainTypeParam, ImageType imageTypeParam) {
     logger = getLogger();
     domainType = domainTypeParam;
     imageType = imageTypeParam;
@@ -362,7 +360,7 @@ public class ItMiiSampleHelper {
   /**
    * Delete DB deployment for FMW test cases and Uninstall traefik.
    */
-  public void tearDownAll() {
+  void tearDownAll() {
     logger = getLogger();
     // uninstall traefik
     if (traefikNamespace != null) {

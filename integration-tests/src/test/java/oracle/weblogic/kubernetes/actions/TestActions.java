@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -1561,9 +1561,8 @@ public class TestActions {
    *
    * @param podName name of the pod to be deleted
    * @param namespace Kubernetes namespace that the pod is running in
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static void deletePod(String podName, String namespace) throws ApiException {
+  public static void deletePod(String podName, String namespace) {
     Kubernetes.deletePod(podName, namespace);
   }
 

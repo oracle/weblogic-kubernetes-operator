@@ -77,7 +77,7 @@ class DomainV2Test extends DomainTestBase {
   public static final String LIVENESS_PROBE_CUSTOM_SCRIPT = "/u01/customLiveness.sh";
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     configureDomain(domain);
   }
 
@@ -1411,8 +1411,6 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
-    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
-    DomainResource domain = (DomainResource) resources.get(0);
     final EffectiveServerSpec clusteredServer = info.getServer("anyServer", "anyCluster");
     final EffectiveServerSpec nonClusteredServer = info.getServer("anyServer", null);
     assertThat(clusteredServer.getDomainRestartVersion(), nullValue());

@@ -395,23 +395,6 @@ public class PodHelper {
         .orElse(null);
   }
 
-  private static boolean hasLabel(V1Pod pod, String label) {
-    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getLabels)
-        .map(l -> l.containsKey(label)).orElse(false);
-  }
-
-  private static Step patchPodLabel(V1Pod pod, String label, Step next) {
-    if (!hasLabel(pod, label)) {
-      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-      patchBuilder.add("/metadata/labels/" + label, "true");
-      V1ObjectMeta meta = pod.getMetadata();
-      return RequestBuilder.POD.patch(meta.getNamespace(), meta.getName(),
-              V1Patch.PATCH_FORMAT_JSON_PATCH,
-              new V1Patch(patchBuilder.build().toString()), patchResponse(next));
-    }
-    return next;
-  }
-
   /**
    * get pod's annotation value for a annotation name.
    * @param pod pod
@@ -1016,6 +999,7 @@ public class PodHelper {
       DeleteOptions deleteOptions = (DeleteOptions) new DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       return RequestBuilder.POD.delete(namespace, name, deleteOptions,
               new DefaultResponseStep<V1Pod>(conflictStep, next) {
+          @Override
           public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
             DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
             if (callResponse.getHttpStatusCode() == HTTP_NOT_FOUND) {

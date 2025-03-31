@@ -27,7 +27,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -41,8 +40,6 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallSnakeParams;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWleParams;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -93,7 +90,7 @@ public class LoggingExporter {
     } catch (Exception ex) {
       ex.printStackTrace();
       if (ex.getMessage().contains("AlreadyExists")) {
-        getLogger().log(Level.WARNING, ex.getMessage());;
+        getLogger().log(Level.WARNING, ex.getMessage());
       } else {
         getLogger().log(Level.SEVERE, ex.getMessage());
         fail("Elastic search deployment failed with unknown reason, see above");
@@ -314,20 +311,6 @@ public class LoggingExporter {
     logger.info("logging exporter {0} is up and running and ready to use!", indexName);
 
     return testVarMap;
-  }
-
-  private static boolean downloadWle() {
-    // install WDT if needed
-    return Installer.withParams(
-        defaultInstallWleParams())
-        .download();
-  }
-
-  private static boolean downloadSnake() {
-    // install SnakeYAML if needed
-    return Installer.withParams(
-        defaultInstallSnakeParams())
-        .download();
   }
 
   private static V1Deployment createElasticsearchDeploymentCr(LoggingExporterParams params) {

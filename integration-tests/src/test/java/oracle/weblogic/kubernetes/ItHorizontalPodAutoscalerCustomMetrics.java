@@ -152,7 +152,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     int replicaCount = 2;
     String className = ItHorizontalPodAutoscalerCustomMetrics.class.getSimpleName();
@@ -518,7 +518,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    * Delete created resources.
    */
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -96,7 +96,7 @@ public class LoadBalancerUtils {
       int portshttp,
       String clusterName,
       String domainUID,
-      String loadBalancerName) throws ApiException {
+      String loadBalancerName) {
     Map<String, String> annotations = new HashMap<>();
     annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
     Map<String, String> selectors = new HashMap<>();
@@ -375,7 +375,7 @@ public class LoadBalancerUtils {
     assertNotNull(service.getStatus().getLoadBalancer(), "service loadbalancer is null");
     List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
     if (ingress != null) {
-      logger.info("LoadBalancer Ingress " + ingress.toString());
+      logger.info("LoadBalancer Ingress " + ingress);
       V1LoadBalancerIngress lbIng =
           ingress.stream().filter(c -> c.getIp() != null && !c.getIp().equals("pending")).findAny().orElse(null);
       if (lbIng != null) {

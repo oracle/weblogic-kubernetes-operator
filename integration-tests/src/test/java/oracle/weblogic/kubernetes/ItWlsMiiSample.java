@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -85,7 +85,7 @@ class ItWlsMiiSample {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -173,7 +173,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(1)
-  public void testInstallOperator() {
+  void testInstallOperator() {
     execTestScriptAndAssertSuccess("-oper", "Failed to run -oper");
   }
 
@@ -182,7 +182,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(2)
-  public void testInstallTraefik() {
+  void testInstallTraefik() {
     if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("skip installing  Traefik in KIND and podman environment");
       logger.info("Traefik is already installed in InitialTask in namespace %s", TRAEFIK_NAMESPACE);
@@ -196,7 +196,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(3)
-  public void testInitialImage() {
+  void testInitialImage() {
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
     execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image");
@@ -214,7 +214,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(4)
-  public void testInitialMain() {
+  void testInitialMain() {
     // load the base image to kind if using kind cluster
     if (KIND_REPO != null) {
       logger.info("loading image {0} to kind", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
@@ -229,7 +229,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(5)
-  public void testUpate1() {
+  void testUpate1() {
     execTestScriptAndAssertSuccess("-update1", "Failed to run -update1");
   }
 
@@ -238,7 +238,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(6)
-  public void testUpate2() {
+  void testUpate2() {
     execTestScriptAndAssertSuccess("-update2", "Failed to run -update2");
   }
 
@@ -247,7 +247,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(7)
-  public void testUpate3() {
+  void testUpate3() {
     execTestScriptAndAssertSuccess("-update3-image", "Failed to run -update3-image");
 
     // load the image to kind if using kind cluster
@@ -265,7 +265,7 @@ class ItWlsMiiSample {
    */
   @Test
   @Order(8)
-  public void testUpate4() {
+  void testUpate4() {
     execTestScriptAndAssertSuccess("-update4", "Failed to run -update4");
   }
 
@@ -311,7 +311,7 @@ class ItWlsMiiSample {
    * Uninstall Traefik.
    */
   @AfterAll
-  public static void tearDownAll() {
+  static void tearDownAll() {
     logger = getLogger();
     // uninstall traefik
     if (traefikNamespace != null) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -37,7 +37,7 @@ public class DomainValidationTestBase extends DomainTestUtils {
 
     @SuppressWarnings("unchecked")
     <T extends KubernetesObject> List<T> getResourceList(Class<T> type) {
-      return (List<T>) definedResources.computeIfAbsent(type, (key) -> new ArrayList<>());
+      return (List<T>) definedResources.computeIfAbsent(type, key -> new ArrayList<>());
     }
 
     void undefineResource(String name, Class<? extends KubernetesObject> type, String namespace) {

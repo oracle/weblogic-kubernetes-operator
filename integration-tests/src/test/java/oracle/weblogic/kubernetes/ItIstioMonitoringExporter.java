@@ -115,7 +115,7 @@ class ItIstioMonitoringExporter {
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -256,7 +256,7 @@ class ItIstioMonitoringExporter {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // delete mii domain images created for parameterized test
     if (miiImageWebApp != null) {
