@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3c9cb1077e51677d24c80535ad61c7b524c415e44dda7eda48e9e344f4bb3809
+    weblogic.sha256: d5781dca31795f836ae89e7139d88fce344b88395f61659d8c7c912467c70a98
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1433,6 +1433,11 @@ spec:
                             operator:
                               type: string
                         type: array
+                      automountServiceAccountToken:
+                        description: Indicates whether a service account token should
+                          be automatically mounted on the pod. Defaults to true if
+                          not set. See `kubectl explain pods.spec.automountServiceAccountToken`.
+                        type: boolean
                       readinessProbe:
                         description: Settings for the readiness probe associated with
                           a WebLogic Server instance. If not specified, the operator
@@ -5216,6 +5221,11 @@ spec:
                         operator:
                           type: string
                     type: array
+                  automountServiceAccountToken:
+                    description: Indicates whether a service account token should
+                      be automatically mounted on the pod. Defaults to true if not
+                      set. See `kubectl explain pods.spec.automountServiceAccountToken`.
+                    type: boolean
                   readinessProbe:
                     description: Settings for the readiness probe associated with
                       a WebLogic Server instance. If not specified, the operator will
@@ -8107,6 +8117,11 @@ spec:
                                 type: string
                               operator:
                                 type: string
+                        automountServiceAccountToken:
+                          description: Indicates whether a service account token should
+                            be automatically mounted on the pod. Defaults to true
+                            if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.
+                          type: boolean
                         readinessProbe:
                           description: Settings for the readiness probe associated
                             with a WebLogic Server instance. If not specified, the

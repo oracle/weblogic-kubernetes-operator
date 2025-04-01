@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 34ed6e0ff57580da665db440dce607569f175d0d93934c0e31b2ab26e7ede28d
+    weblogic.sha256: 251af6bc71a6c64c9f40bf8b60f5eee1a82dbf32a3439f7fe035c0baa89280bd
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -329,6 +329,11 @@ spec:
                         operator:
                           type: string
                     type: array
+                  automountServiceAccountToken:
+                    description: Indicates whether a service account token should
+                      be automatically mounted on the pod. Defaults to true if not
+                      set. See `kubectl explain pods.spec.automountServiceAccountToken`.
+                    type: boolean
                   readinessProbe:
                     description: Settings for the readiness probe associated with
                       a WebLogic Server instance. If not specified, the operator will

@@ -180,6 +180,10 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.serviceAccountName`.")
   private String serviceAccountName = null;
 
+  @Description("Indicates whether a service account token should be automatically mounted on the pod. "
+      + "Defaults to true if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.")
+  private Boolean automountServiceAccountToken = null;
+
   @Description("HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file "
       + "if specified. This is only valid for non-hostNetwork pods.")
   private List<V1HostAlias> hostAliases = new ArrayList<>();
@@ -576,6 +580,9 @@ class ServerPod extends KubernetesResource {
     if (serviceAccountName == null) {
       serviceAccountName = serverPod1.serviceAccountName;
     }
+    if (automountServiceAccountToken == null) {
+      automountServiceAccountToken = serverPod1.automountServiceAccountToken;
+    }
     if (schedulerName == null) {
       schedulerName = serverPod1.schedulerName;
     }
@@ -869,6 +876,14 @@ class ServerPod extends KubernetesResource {
     this.serviceAccountName = serviceAccountName;
   }
 
+  Boolean getAutomountServiceAccountToken() {
+    return automountServiceAccountToken;
+  }
+
+  void setAutomountServiceAccountToken(Boolean automountServiceAccountToken) {
+    this.automountServiceAccountToken = automountServiceAccountToken;
+  }
+
   List<V1Toleration> getTolerations() {
     return tolerations;
   }
@@ -922,6 +937,7 @@ class ServerPod extends KubernetesResource {
         .append("tolerations", tolerations)
         .append("hostAliases", hostAliases)
         .append("serviceAccountName", serviceAccountName)
+        .append("automountServiceAccountToken", automountServiceAccountToken)
         .toString();
   }
 
@@ -970,6 +986,7 @@ class ServerPod extends KubernetesResource {
         .append(tolerations, that.tolerations)
         .append(hostAliases, that.hostAliases)
         .append(serviceAccountName, that.serviceAccountName)
+        .append(automountServiceAccountToken, that.automountServiceAccountToken)
         .isEquals();
   }
 
@@ -1002,6 +1019,7 @@ class ServerPod extends KubernetesResource {
         .append(tolerations)
         .append(hostAliases)
         .append(serviceAccountName)
+        .append(automountServiceAccountToken)
         .toHashCode();
   }
 }
