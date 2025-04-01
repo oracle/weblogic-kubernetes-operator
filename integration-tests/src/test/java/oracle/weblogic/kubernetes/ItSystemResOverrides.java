@@ -107,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
@@ -690,10 +691,15 @@ class ItSystemResOverrides {
     encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
     if (!Files.exists(destLocation) && !Files.exists(encryptModelScript)) {
       logger.info("Downloading WDT to {0}", destLocation);
+
       Files.createDirectories(destLocation.getParent());
+      unzipWDTInstallationFile(destLocation.toString(), wdtUrl,DOWNLOAD_DIR + "/wdt");
+      /*
       OracleHttpClient.downloadFile(wdtUrl, destLocation.toString(), null, null, 3);
       String cmd = "cd " + destLocation.getParent() + ";unzip " + destLocation;
       assertTrue(Command.withParams(new CommandParams().command(cmd)).execute(), "unzip command failed");
+
+       */
     }
     assertTrue(Files.exists(encryptModelScript), "could not find createDomain.sh script");
   }

@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.Socket;
@@ -12,6 +14,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -142,18 +146,30 @@ public class OracleHttpClient {
    * @return true if download succeeds otherwide false
    */
   public static boolean downloadFile(String url, String destLocation, String proxyHost,
-      String proxyPort, int maxRetries) {
+                                     String proxyPort, int maxRetries) {
     LoggingFacade logger = getLogger();
 
-    // Build HttpClient with optional proxy and retry policy
+    Path destPath = Paths.get(destLocation);
+
+    // Delete existing file if it exists
+    if (Files.exists(destPath)) {
+      try {
+        Files.delete(destPath);
+        logger.info("Deleted existing file at destination: {0}", destLocation);
+      } catch (IOException e) {
+        logger.severe("Failed to delete existing file: {0}", e.getMessage());
+        return false;
+      }
+    }
+
+    // Build HttpClient with optional proxy
     HttpClient.Builder clientBuilder = HttpClient.newBuilder()
         .version(HttpClient.Version.HTTP_2)
         .followRedirects(HttpClient.Redirect.NORMAL)
         .connectTimeout(Duration.ofSeconds(10));
 
-    // Configure proxy if PROXY_HOST and PROXY_PORT are specified
     if (proxyHost != null && proxyPort != null) {
-      clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyHost, Integer.valueOf(proxyPort))));
+      clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort))));
       logger.info("Proxy configured: {0}:{1}", proxyHost, proxyPort);
     } else {
       logger.info("No proxy configuration provided.");
@@ -161,34 +177,54 @@ public class OracleHttpClient {
 
     HttpClient client = clientBuilder.build();
 
-    // Prepare the HttpRequest
+    // Prepare the HTTP request
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(url))
         .timeout(Duration.ofMinutes(2))
         .GET()
         .build();
 
-    // Attempt to download the file
+    // Retry logic
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        logger.info("Starting download...");
-        if (client.send(request, HttpResponse.BodyHandlers.ofFile(Paths.get(destLocation))).statusCode() != 200) {
-          logger.info("Failed download retrying...");
-          TimeUnit.SECONDS.sleep(10);
-          continue;
-        } else {
-          logger.info("Download completed successfully.");
+        logger.info("Starting download attempt {0}...", attempt);
+
+        HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+        if (response.statusCode() == 200) {
+          try (InputStream in = response.body();
+               OutputStream out = Files.newOutputStream(destPath)) {
+            in.transferTo(out);
+          }
+
           return true;
+
+        } else {
+          logger.info("Failed download (status code: {0}) retrying...", response.statusCode());
         }
+
       } catch (HttpTimeoutException e) {
         logger.severe("Request timed out: {0}", e.getMessage());
       } catch (IOException | InterruptedException e) {
         logger.severe("Download failed: {0}", e.getMessage());
+      } catch (Exception e) {
+        logger.severe("Unexpected error during download: {0}", e.getMessage());
+      }
+
+      // Wait before retrying
+      try {
+        TimeUnit.SECONDS.sleep(10);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        logger.severe("Retry sleep interrupted: {0}", e.getMessage());
       }
     }
+
+    logger.severe("All download attempts failed.");
     return false;
   }
-  
+
+
   private static final TrustManager MOCK_TRUST_MANAGER = new X509ExtendedTrustManager() {
     @Override
     public java.security.cert.X509Certificate[] getAcceptedIssuers() {
