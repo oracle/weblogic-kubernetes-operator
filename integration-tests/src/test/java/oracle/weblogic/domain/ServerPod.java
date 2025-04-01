@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -95,6 +95,11 @@ public class ServerPod {
       "Name of the ServiceAccount to be used to run this pod. If it is not set, default "
           + "ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.")
   private String serviceAccountName;
+
+  @ApiModelProperty(
+      "Indicates whether a service account token should be automatically mounted on the pod. "
+          + "Defaults to true if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.")
+  private Boolean automountServiceAccountToken = null;
 
   @ApiModelProperty("Memory and CPU minimum requirements and limits for the server.")
   private V1ResourceRequirements resources;
@@ -460,6 +465,23 @@ public class ServerPod {
 
   public void setServiceAccountName(String serviceAccountName) {
     this.serviceAccountName = serviceAccountName;
+  }
+
+  public ServerPod automountServiceAccountToken(Boolean automountServiceAccountToken) {
+    this.automountServiceAccountToken = automountServiceAccountToken;
+    return this;
+  }
+
+  public Boolean automountServiceAccountToken() {
+    return automountServiceAccountToken;
+  }
+
+  public Boolean getAutomountServiceAccountToken() {
+    return automountServiceAccountToken;
+  }
+
+  public void setAutomountServiceAccountToken(Boolean automountServiceAccountToken) {
+    this.automountServiceAccountToken = automountServiceAccountToken;
   }
 
   public ServerPod resources(V1ResourceRequirements resources) {
