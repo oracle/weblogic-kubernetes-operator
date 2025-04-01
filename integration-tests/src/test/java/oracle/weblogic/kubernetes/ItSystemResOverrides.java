@@ -690,9 +690,9 @@ class ItSystemResOverrides {
         : WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
 
      */
-    String wdtUrl = WDT_DOWNLOAD_URL;
-    String wdtUrl1 = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
-    logger.info("getActualLocationIfNeeded WDT  {0} ", wdtUrl1);
+    //String wdtUrl = WDT_DOWNLOAD_URL;
+    String wdtUrl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
+    //logger.info("getActualLocationIfNeeded WDT  {0} ", wdtUrl1);
 
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
     encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
