@@ -682,7 +682,7 @@ class ItSystemResOverrides {
   }
   
   private static void downloadAndInstallWDT() throws IOException {
-    String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
+    String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy-main.zip";
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
     encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
     if (!Files.exists(destLocation) && !Files.exists(encryptModelScript)) {
