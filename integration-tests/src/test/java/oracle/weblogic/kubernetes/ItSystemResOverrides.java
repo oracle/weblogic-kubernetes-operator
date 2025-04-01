@@ -72,6 +72,7 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SHIPHOME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -85,6 +86,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
@@ -204,6 +206,9 @@ class ItSystemResOverrides {
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(domainNamespace);
+    if (OKE_CLUSTER) {
+      installOnPremWebLogic();
+    }
 
     //create and start WebLogic domain
     createDomain();
@@ -747,5 +752,17 @@ class ItSystemResOverrides {
 
       assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
     }
+  }
+
+  private void installOnPremWebLogic() {
+    Path installScript = Paths.get(RESOURCE_DIR, "bash-scripts", "install-wls.sh");
+    String command
+        = String.format("%s %s %s %s", "/bin/bash", installScript, RESULTS_ROOT, WEBLOGIC_SHIPHOME);
+    getLogger().info("WebLogic installation command {0}", command);
+    assertTrue(() -> Command.withParams(
+            defaultCommandParams()
+                .command(command)
+                .redirect(false))
+        .execute());
   }
 }
