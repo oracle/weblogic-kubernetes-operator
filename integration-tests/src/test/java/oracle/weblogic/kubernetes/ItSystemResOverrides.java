@@ -76,6 +76,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
@@ -95,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.exeAppInServerPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -682,11 +684,20 @@ class ItSystemResOverrides {
   }
   
   private static void downloadAndInstallWDT() throws IOException {
-    String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy-main.zip";
+    /*
+    String wdtUrl = WDT_DOWNLOAD_URL.contains("wko-system-test-files")
+        ? WDT_DOWNLOAD_URL + "/download/weblogic-deploy-main.zip"
+        : WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
+
+     */
+    String wdtUrl = WDT_DOWNLOAD_URL;
+    String wdtUrl1 = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
+    logger.info("getActualLocationIfNeeded WDT  {0} ", wdtUrl1);
+
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
     encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
     if (!Files.exists(destLocation) && !Files.exists(encryptModelScript)) {
-      logger.info("Downloading WDT to {0}", destLocation);
+      logger.info("Downloading WDT from {0} to {1}", wdtUrl, destLocation);
       Files.createDirectories(destLocation.getParent());
       OracleHttpClient.downloadFile(wdtUrl, destLocation.toString(), null, null, 3);
       String cmd = "cd " + destLocation.getParent() + ";unzip " + destLocation;
