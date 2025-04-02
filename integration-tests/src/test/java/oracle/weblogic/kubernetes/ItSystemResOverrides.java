@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -72,10 +72,12 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SHIPHOME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
@@ -84,6 +86,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
@@ -95,6 +98,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.exeAppInServerPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -202,6 +206,9 @@ class ItSystemResOverrides {
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(domainNamespace);
+    if (OKE_CLUSTER) {
+      installOnPremWebLogic();
+    }
 
     //create and start WebLogic domain
     createDomain();
@@ -682,11 +689,13 @@ class ItSystemResOverrides {
   }
   
   private static void downloadAndInstallWDT() throws IOException {
-    String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
+
+    String wdtUrl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
+
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
     encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
     if (!Files.exists(destLocation) && !Files.exists(encryptModelScript)) {
-      logger.info("Downloading WDT to {0}", destLocation);
+      logger.info("Downloading WDT from {0} to {1}", wdtUrl, destLocation);
       Files.createDirectories(destLocation.getParent());
       OracleHttpClient.downloadFile(wdtUrl, destLocation.toString(), null, null, 3);
       String cmd = "cd " + destLocation.getParent() + ";unzip " + destLocation;
@@ -736,5 +745,17 @@ class ItSystemResOverrides {
 
       assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
     }
+  }
+
+  private void installOnPremWebLogic() {
+    Path installScript = Paths.get(RESOURCE_DIR, "bash-scripts", "install-wls.sh");
+    String command
+        = String.format("%s %s %s %s", "/bin/bash", installScript, RESULTS_ROOT, WEBLOGIC_SHIPHOME);
+    getLogger().info("WebLogic installation command {0}", command);
+    assertTrue(() -> Command.withParams(
+            defaultCommandParams()
+                .command(command)
+                .redirect(false))
+        .execute());
   }
 }
