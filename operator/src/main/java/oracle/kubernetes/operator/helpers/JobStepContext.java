@@ -585,6 +585,7 @@ public class JobStepContext extends BasePodStepContext {
             .activeDeadlineSeconds(getActiveDeadlineSeconds())
             .restartPolicy("Never")
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
+            .automountServiceAccountToken(info.getDomain().getSpec().getAutomountServiceAccountToken())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
