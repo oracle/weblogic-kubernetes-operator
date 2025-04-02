@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -689,15 +689,8 @@ class ItSystemResOverrides {
   }
   
   private static void downloadAndInstallWDT() throws IOException {
-    /*
-    String wdtUrl = WDT_DOWNLOAD_URL.contains("wko-system-test-files")
-        ? WDT_DOWNLOAD_URL + "/download/weblogic-deploy-main.zip"
-        : WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
 
-     */
-    //String wdtUrl = WDT_DOWNLOAD_URL;
     String wdtUrl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
-    //logger.info("getActualLocationIfNeeded WDT  {0} ", wdtUrl1);
 
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
     encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
