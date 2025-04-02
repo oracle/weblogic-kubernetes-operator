@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2025, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.7.1</version>
+            <version>9.8</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
