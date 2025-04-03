@@ -9,7 +9,7 @@ data "oci_core_images" "OLImageOCID" {
   #sort_by                  = "TIMECREATED"
   #sort_order               = "DESC"
 
-  display_name             = "Oracle-Linux-8.10-2024.08.29-0"
+  display_name             = "Oracle-Autonomous-Linux-8.10-2024.07.31-0"
   #display_name             = "Oracle-Linux-8.10-2024.09.30-0"
   # filter to avoid Oracle Linux images for GPU
   #filter {
