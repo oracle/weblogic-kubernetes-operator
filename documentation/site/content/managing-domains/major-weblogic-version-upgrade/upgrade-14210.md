@@ -225,7 +225,7 @@ STB.cleartextSchemaPassword = <TODO: provides the clear text password>
 STB.dbaUserName = <TODO: provide dba user name, e.g. sys as sysdba>
 STB.cleartextDbaPassword = <TODO: provides clear text dba password>
 
-# This secion is not needed for pure JRF domain.
+# This section is not needed for pure JRF domain.
 
 # The next section contains the information for performing a schema
 # upgrade on Oracle WebLogicServer, as described in the Upgrade

@@ -919,7 +919,7 @@ printSummary() {
   region=${tokens[2]}
   echo ""
   echo ""
-  echo "The following Azure Resouces have been created: "
+  echo "The following Azure Resources have been created: "
   echo "  Resource groups: ${azureResourceGroupName}, MC_${azureResourceGroupName}_${aksClusterName}_${region}"
   echo "  Kubernetes service cluster name: ${aksClusterName}"
   echo "  Storage account: ${storageAccountName}"
