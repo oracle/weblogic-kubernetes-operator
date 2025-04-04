@@ -36,7 +36,7 @@ The error occurs while rolling pods have containers based on a new container ima
 
 The problem is that WebLogic cannot support server instances being part of the same WebLogic domain if the server instances do
 not all share the same domain-specific encryption key. Additionally, operator introspection
-currently happens only when starting servers following a total shutdown. Therefore, the `boot.properites` files generated from
+currently happens only when starting servers following a total shutdown. Therefore, the `boot.properties` files generated from
 introspecting the image containing the original domain directory will be invalid when used with a container started with
 the updated container image containing the new or unrelated domain directory.
 
