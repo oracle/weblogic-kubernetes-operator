@@ -33,7 +33,7 @@ You can use overrides to customize domains as they are moved from QA to producti
   * Set your domain `configuration.secrets` to reference the aforementioned Secrets.
 * If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
   * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances or if the change required a full domain shutdown.
-  * If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
+  * If a full domain shut down is required, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
   * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
 * Verify your overrides are taking effect.  (See [Debugging](#debugging)).
 
@@ -331,7 +331,7 @@ Best practices for data source modules and their overrides:
 * Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take effect until the operator runs or repeats its [introspection]({{< relref "/managing-domains/domain-lifecycle/introspection.md" >}}) of the WebLogic domain configuration.
 * If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
   * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances, or if the change requires a full domain shutdown. (See [Overrides distribution](#overrides-distribution))
-  * If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
+  * If a full domain shut down is required, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
   * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
 * See [Debugging](#debugging) for ways to check if the configuration overrides are taking effect or if there are errors.
 
