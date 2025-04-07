@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Oracle Corporation and/or affiliates.  All rights reserved.
+# Copyright (c) 2024, 2025, Oracle Corporation and/or affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl
 
 # Gets the OCID of the OS image to use
@@ -9,7 +9,7 @@ data "oci_core_images" "OLImageOCID" {
   #sort_by                  = "TIMECREATED"
   #sort_order               = "DESC"
 
-  display_name             = "Oracle-Linux-8.10-2024.08.29-0"
+  display_name             = "Oracle-Autonomous-Linux-8.10-2024.07.31-0"
   #display_name             = "Oracle-Linux-8.10-2024.09.30-0"
   # filter to avoid Oracle Linux images for GPU
   #filter {

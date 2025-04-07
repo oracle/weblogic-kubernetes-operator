@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 echo "Launching Oracle WebLogic Server Kubernetes Operator..."
@@ -9,9 +9,26 @@ relay_SIGTERM() {
   pid=`grep java /proc/[0-9]*/comm | awk -F / '{ print $3; }'`
   echo "Sending SIGTERM to java process " $pid
   kill -SIGTERM $pid
+  exit 0
 }
 
 trap relay_SIGTERM SIGTERM
+
+# Relays SIGKILL to all java processes
+relay_SIGKILL() {
+  pid=`grep java /proc/[0-9]*/comm | awk -F / '{ print $3; }'`
+  echo "Sending SIGKILL to java process " $pid
+  kill -SIGKILL $pid
+  exit 0
+}
+
+trap relay_SIGKILL SIGKILL
+
+exitMessage() {
+  echo "Exiting container for the Oracle WebLogic Server Kubernetes Operator..."
+}
+
+trap exitMessage EXIT
 
 DEPLOYMENT_DIR="/deployment"
 ${DEPLOYMENT_DIR}/initialize-external-operator-identity.sh
