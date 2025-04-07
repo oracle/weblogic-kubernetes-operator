@@ -89,6 +89,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_OLD_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
@@ -729,7 +730,13 @@ public abstract class PodStepContext extends BasePodStepContext {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
+    boolean readOnlyFileSystem = Optional.ofNullable(getDomain())
+            .map(DomainResource::isReadOnlyRootFileSystem)
+            .orElse(false);
 
+    if (readOnlyFileSystem) {
+      volumes.add(new V1Volume().name(TMPDIR_VOLUME));
+    }
     return volumes;
   }
 

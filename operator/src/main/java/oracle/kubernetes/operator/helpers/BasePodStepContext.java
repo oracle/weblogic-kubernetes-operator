@@ -36,6 +36,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.collections4.MapUtils;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
@@ -44,6 +45,8 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -72,6 +75,12 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   String getSizeLimit() {
     return info.getDomain().getAuxiliaryImageVolumeSizeLimit();
+  }
+
+  boolean isReadOnlyRootFileSystem() {
+    return Optional.of(info.getDomain())
+            .map(DomainResource::isReadOnlyRootFileSystem)
+            .orElse(false);
   }
 
   String getMedium() {
@@ -162,11 +171,15 @@ public abstract class BasePodStepContext extends StepContextBase {
             .env(createEnv(auxiliaryImage, getName(index)))
             .resources(createResources())
             .volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name("tmp-dir")
-                            .mountPath("/tmp"),
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
+
+    if (isReadOnlyRootFileSystem()) {
+      List<V1VolumeMount> mounts = container.getVolumeMounts();
+      mounts.add(0, new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH) );
+      container.volumeMounts(mounts);
+    }
 
     if (isInitializeDomainOnPV) {
       container.securityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
@@ -230,6 +243,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .topologySpreadConstraints(getTopologySpreadConstraints())
         .nodeSelector(getServerSpec().getNodeSelectors())
         .serviceAccountName(getServerSpec().getServiceAccountName())
+        .automountServiceAccountToken(getServerSpec().getAutomountServiceAccountToken())
         .nodeName(getServerSpec().getNodeName())
         .schedulerName(getServerSpec().getSchedulerName())
         .priorityClassName(getServerSpec().getPriorityClassName())

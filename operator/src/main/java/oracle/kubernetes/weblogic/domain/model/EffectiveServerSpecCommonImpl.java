@@ -221,6 +221,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   @Override
+  public Boolean getAutomountServiceAccountToken() {
+    return server.getAutomountServiceAccountToken();
+  }
+
+  @Override
   public String getSchedulerName() {
     return server.getSchedulerName();
   }

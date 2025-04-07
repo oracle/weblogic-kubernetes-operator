@@ -168,6 +168,10 @@ public class DomainSpec extends BaseConfiguration {
   @Default(boolDefault = false)
   private Boolean replaceVariablesInJavaOptions;
 
+  @Description("Set up the pod and containers to use read only root file system. Defaults to false.")
+  @Default(boolDefault = false)
+  private Boolean readOnlyRootFileSystem;
+
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
    *  if {@link #logHomeEnabled} is true. Default is true. */
   @Description("Specifies whether the server HTTP access log files will be written to the same "
@@ -1142,6 +1146,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("maxClusterConcurrentStartup", maxClusterConcurrentStartup)
             .append("maxClusterUnavailable", maxClusterUnavailable)
             .append("monitoringExporter", monitoringExporter)
+            .append("readOnlyRootFileSystem", readOnlyRootFileSystem)
             .append("replicas", replicas)
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
@@ -1176,6 +1181,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(maxClusterConcurrentStartup)
             .append(maxClusterUnavailable)
             .append(monitoringExporter)
+            .append(readOnlyRootFileSystem)
             .append(replicas)
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
@@ -1221,7 +1227,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
             .append(getMaxClusterUnavailable(), rhs.getMaxClusterUnavailable())
             .append(fluentdSpecification, rhs.getFluentdSpecification())
-                .append(fluentbitSpecification, rhs.getFluentbitSpecification())
+            .append(fluentbitSpecification, rhs.getFluentbitSpecification())
+            .append(readOnlyRootFileSystem, rhs.readOnlyRootFileSystem)
             .append(replaceVariablesInJavaOptions, rhs.replaceVariablesInJavaOptions);
     return builder.isEquals();
   }
@@ -1301,6 +1308,10 @@ public class DomainSpec extends BaseConfiguration {
   
   public boolean isModelConfigured() {
     return Optional.ofNullable(configuration).map(Configuration::getModel).orElse(null) != null;
+  }
+
+  public Boolean isReadOnlyRootFileSystem() {
+    return readOnlyRootFileSystem;
   }
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {

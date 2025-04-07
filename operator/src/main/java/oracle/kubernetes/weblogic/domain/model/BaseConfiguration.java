@@ -239,6 +239,10 @@ public abstract class BaseConfiguration {
     return serverPod.getServiceAccountName();
   }
 
+  public Boolean getAutomountServiceAccountToken() {
+    return serverPod.getAutomountServiceAccountToken();
+  }
+
   public void setNodeName(String nodeName) {
     serverPod.setNodeName(nodeName);
   }

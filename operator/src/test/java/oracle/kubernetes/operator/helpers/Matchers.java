@@ -169,10 +169,10 @@ public class Matchers {
                                                                String imagePullPolicy,
                                                                String sourceWDTInstallHome, String sourceModelHome,
                                                                V1ResourceRequirements resources) {
+
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
         .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
         .volumeMounts(Arrays.asList(
-            new V1VolumeMount().name("tmp-dir").mountPath("/tmp"),
             new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                 .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
