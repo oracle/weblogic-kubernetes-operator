@@ -970,7 +970,13 @@ public class JobStepContext extends BasePodStepContext {
 
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
-    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
+
+    boolean hasNMHSet = vars.stream().anyMatch(env ->
+            ServerEnvVars.NODEMGR_HOME.equals(env.getName()));
+    if (!hasNMHSet) {
+      addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
+    }
+
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
     if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
       addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());

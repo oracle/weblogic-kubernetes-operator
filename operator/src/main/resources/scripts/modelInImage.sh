@@ -172,7 +172,7 @@ buildWDTParams_MD5() {
 
   model_list=""
   archive_list=""
-  variable_list="/u01/_k8s_generated_props.properties"
+  variable_list="/tmp/_k8s_generated_props.properties"
 
   #
   # First build the command line parameters for WDT
@@ -396,7 +396,7 @@ createWLDomain() {
   # create domain again
 
   DISABLE_SM_FOR_12214_NONSM_UPG=0
-  if [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] &&  [ -z "${MII_USE_ONLINE_UPDATE}" ] || [ "${MII_USE_ONLINE_UPDATE}" != "true" ] ]; then
+  if [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] && { [ -z "${MII_USE_ONLINE_UPDATE}" ] || [ "${MII_USE_ONLINE_UPDATE}" != "true" ]; }; then
     checkSecureModeForUpgrade
   fi
   if  [ ${WDT_ARTIFACTS_CHANGED} -ne 0 ] || [ ${jdk_changed} -eq 1 ] \

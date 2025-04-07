@@ -831,7 +831,13 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVarIfTrue(isAdminServerProtocolChannelSecure(), vars, ServerEnvVars.ADMIN_SERVER_PORT_SECURE);
     addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
-    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
+
+    boolean hasNMHSet = vars.stream().anyMatch(env ->
+            ServerEnvVars.NODEMGR_HOME.equals(env.getName()));
+    if (!hasNMHSet) {
+      addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
+    }
+
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
     if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
       addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());

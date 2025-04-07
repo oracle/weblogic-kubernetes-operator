@@ -162,6 +162,8 @@ public abstract class BasePodStepContext extends StepContextBase {
             .env(createEnv(auxiliaryImage, getName(index)))
             .resources(createResources())
             .volumeMounts(Arrays.asList(
+                    new V1VolumeMount().name("tmp-dir")
+                            .mountPath("/tmp"),
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
