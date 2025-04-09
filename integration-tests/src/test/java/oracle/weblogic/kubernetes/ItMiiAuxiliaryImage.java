@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -303,6 +304,7 @@ class ItMiiAuxiliaryImage {
    * Verify domain is rolling restarted.
    */
   @Test
+  @Order(1)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
@@ -388,6 +390,7 @@ class ItMiiAuxiliaryImage {
    * Verify configured JMS and JDBC resources.
    */
   @Test
+  @Order(2)
   @DisplayName("Test to update Base Weblogic Image Name")
   void testUpdateBaseImageName() {
     // get the original domain resource before update
