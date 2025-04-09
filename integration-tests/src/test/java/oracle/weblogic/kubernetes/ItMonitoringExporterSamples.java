@@ -375,7 +375,7 @@ class ItMonitoringExporterSamples {
       }
     } finally {
       shutdownDomain(domain1Uid, domain1Namespace);
-      shutdownDomain(domain2Uid, domain2Namespace);
+      //shutdownDomain(domain2Uid, domain2Namespace);
     }
   }
 
@@ -554,7 +554,7 @@ class ItMonitoringExporterSamples {
     deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
     deletePersistentVolume("pv-test" + grafanaReleaseName);
     deleteNamespace(monitoringNS);
-    uninstallDeploymentService(webhookDepl, webhookService);
+    //uninstallDeploymentService(webhookDepl, webhookService);
     uninstallDeploymentService(coordinatorDepl, coordinatorService);
     if (nginxHelmParams != null) {
       assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
