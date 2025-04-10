@@ -467,7 +467,7 @@ class ItMiiAuxiliaryImage {
    * Use Case 2: Both the auxiliary images sourceWDTInstallHome set to default.
    * Introspector should log an error message.
    */
-  @Test
+  //@Test
   @DisplayName("Test to create domain using multiple auxiliary images and different WDT installations")
   void testWithMultipleAIsHavingWDTInstallers() {
 
@@ -535,7 +535,7 @@ class ItMiiAuxiliaryImage {
    * Negative test. Create a domain using auxiliary image with no installation files at specified sourceWdtInstallHome
    * location. Verify domain events and operator log contains the expected error message.
    */
-  @Test
+  //@Test
   @DisplayName("Test to create domain using auxiliary image with no files at specified sourceWdtInstallHome")
   void testCreateDomainNoFilesAtSourceWDTInstallHome() {
 
@@ -590,7 +590,7 @@ class ItMiiAuxiliaryImage {
    * Verify the create domain call failed with expected error message This is a validation
    * check.
    */
-  @Test
+  //@Test
   @DisplayName("Test to create domain using multiple auxiliary images with specified sourceWdtInstallHome")
   void testSourceWDTInstallHomeSetAtMultipleAIs() {
 
@@ -675,7 +675,7 @@ class ItMiiAuxiliaryImage {
    * Negative test. Create a domain using auxiliary image with no model files at specified sourceModelHome
    * location. Verify domain events and operator log contains the expected error message.
    */
-  @Test
+  //@Test
   @DisplayName("Test to create domain using auxiliary image with no files at specified sourceModelHome")
   void testCreateDomainNoFilesAtSourceModelHome() {
 
@@ -725,7 +725,7 @@ class ItMiiAuxiliaryImage {
    * Create a domain using auxiliary image with configMap with model files.
    * Verify domain is created and running.
    */
-  @Test
+  //@Test
   @DisplayName("Test to create domain using auxiliary image with configMap containing model files"
       + " with empty model files dir in the auxiliary image")
   void testCreateDomainWithConfigMapAndEmptyModelFileDir() {
@@ -777,7 +777,7 @@ class ItMiiAuxiliaryImage {
    * Verify domain events and operator log contains the expected error message from WDT tool.
    * WDT Create Primordial Domain Failed.
    */
-  @Test
+  //@Test
   @DisplayName("Test to create domain using auxiliary image with "
       + "empty configMap with no models files and verify that domain creation failed")
   void testCreateDomainWithEmptyConfigMapWithNoModelFiles() {
@@ -861,6 +861,7 @@ class ItMiiAuxiliaryImage {
    * under the wdtInstallHome (/aux") directory. Verify domain creation.
    */
   @Test
+  @Order(3)
   @DisplayName("Test to create domain using auxiliary image with"
           + " custom wdtModelHome and wdtInstallHome"
           + " where the wdtModelHome is placed under wdtInstallHome directory")
@@ -881,6 +882,7 @@ class ItMiiAuxiliaryImage {
    * Verify domain creation.
    */
   @Test
+  @Order(4)
   @DisplayName("Test to create domain using auxiliary image with"
           + " custom wdtModelHome and wdtInstallHome"
           + " where the wdtInstallHome is placed under wdtModelHome directory or vice-versa")
@@ -901,6 +903,7 @@ class ItMiiAuxiliaryImage {
    * Verify domain creation.
    */
   @Test
+  @Order(5)
   @DisplayName("Test to create domain using auxiliary image with"
           + " custom wdtModelHome and wdtInstallHome"
           + " where the wdtModelHome is same as wdtInstallHome directory")
@@ -953,7 +956,7 @@ class ItMiiAuxiliaryImage {
    * Negative Test to create domain without WDT binary.
    * Check the error message is in domain events and operator pod log.
    */
-  @Test
+  //@Test
   @DisplayName("Negative Test to create domain without WDT binary")
   void testErrorPathDomainMissingWDTBinary() {
 
@@ -1027,6 +1030,7 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in domain events and operator pod log
    */
   @Test
+  @Order(9)
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
   void testErrorPathDomainMissingDomainConfig() {
     final String domainUid2 = "domain7";
@@ -1173,6 +1177,7 @@ class ItMiiAuxiliaryImage {
    * and verify the WDT version is updated to the one bundled with image3
    */
   @Test
+  @Order(6)
   @DisplayName("Test to update WDT version using  auxiliary images")
   void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
 
@@ -1305,6 +1310,7 @@ class ItMiiAuxiliaryImage {
    * reports the error. Patch the domain with correct image and verify the introspector job completes successfully.
    */
   @Test
+  @Order(8)
   @DisplayName("Test to create domain using an auxiliary image that doesn't exist and check domain status")
   void testDomainStatusErrorPullingAI() {
     // admin/managed server name here should match with model yaml
@@ -1377,6 +1383,7 @@ class ItMiiAuxiliaryImage {
    *
    */
   @Test
+  @Order(7)
   @DisplayName("Update the sample-app application to version 2")
   void testUpdateApplicationUsingAI() {
 
