@@ -354,7 +354,7 @@ class ItMonitoringExporterSamples {
             prometheusReleaseName
                 + "." + monitoringNS);
         logger.info("fire alert by scaling down");
-        //fireAlert();
+        fireAlert();
 
         logger.info("switch to monitor another domain");
         logger.info("create and verify WebLogic domain image using model in image with model files");
