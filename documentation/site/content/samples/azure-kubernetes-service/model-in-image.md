@@ -353,7 +353,7 @@ $ kubectl -n sample-domain1-ns label  secret \
       - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain resource YAML file.  For complete details about the `Domain` resource, see the [Domain resource reference](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#domain-spec).
       - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your `model.10.yaml` file.
 
-   - The Model WDT runtime encrytion secret:
+   - The Model WDT runtime encryption secret:
       - This is a special secret required by Model in Image.
       - It must contain a `password` field.
       - It must be referenced using the `spec.model.runtimeEncryptionSecret` field in your Domain resource YAML file.

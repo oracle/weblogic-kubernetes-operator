@@ -227,7 +227,7 @@ class WebhookRestTest extends RestTestBase {
 
   // test cases for conversion webhook
 
-  //@Test
+  @Test
   void whenConversionWebhookRequestSent_hasExpectedResponse() {
     String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
     String responseString = sendConversionWebhookRequestAsString(conversionReview);
@@ -290,7 +290,7 @@ class WebhookRestTest extends RestTestBase {
     return readConversionReview(sendConversionWebhookRequestAsString(writeConversionReview(conversionReview)));
   }
 
-  //@Test
+  @Test
   void whenConversionWebhookRequestSent_hasExpectedResponseInJava() {
     ConversionReviewModel expectedReview = readConversionReview(getAsString(CONVERSION_REVIEW_RESPONSE));
     ConversionReviewModel conversionReview = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST));

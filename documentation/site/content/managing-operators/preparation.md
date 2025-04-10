@@ -321,7 +321,7 @@ helm install weblogic-operator weblogic-operator/weblogic-operator --namespace w
 ```
 
 {{% notice note %}}
-Since this combination of options omits installing the webhook deployment, customers must use the `v9` schema version for Domain resources and manually uprade any `v8` resources from the 3.x version of the operator.
+Since this combination of options omits installing the webhook deployment, customers must use the `v9` schema version for Domain resources and manually upgrade any `v8` resources from the 3.x version of the operator.
 {{% /notice %}}
 
 #### Choose a domain namespace selection strategy

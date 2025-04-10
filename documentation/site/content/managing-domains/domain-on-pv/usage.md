@@ -17,7 +17,7 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 ### Configuration
 
-Beginning with operator version 4.1.0, you can provide a section, `domain.spec.configuraiton.initializeDomainOnPV`, to initialize a WebLogic domain on a persistent volume when it is first deployed.
+Beginning with operator version 4.1.0, you can provide a section, `domain.spec.configuration.initializeDomainOnPV`, to initialize a WebLogic domain on a persistent volume when it is first deployed.
 This is a _one time only_ initialization. After the domain is created, subsequent updates to this section in the domain resource YAML file will not recreate or update the
 WebLogic domain.
 

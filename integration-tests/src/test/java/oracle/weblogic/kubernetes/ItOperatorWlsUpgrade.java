@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -19,21 +19,12 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.CreateIfNotExists;
 import oracle.weblogic.domain.DomainCreationImage;
 import oracle.weblogic.domain.DomainOnPV;
 import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -66,49 +57,36 @@ import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAUL
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
-import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
@@ -161,8 +139,6 @@ class ItOperatorWlsUpgrade {
   private String domainNamespace;
   private Path srcDomainYaml = null;
   private Path destDomainYaml = null;
-  private static String miiAuxiliaryImageTag = "aux-explict-upgrade";
-  private static final String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
   private static String hostHeader;
 
   /**
@@ -181,7 +157,7 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Does some initialization of logger, conditionfactory, etc common
+   * Does some initialization of logger, conditionfactory, etc. common
    * to all test methods.
    */
   @BeforeAll
@@ -320,73 +296,6 @@ class ItOperatorWlsUpgrade {
     }
   }
 
-  void upgradeWlsAuxDomain(String oldVersion) {
-    logger.info("Upgrade version/{0} Auxiliary Domain(v8) to current", oldVersion);
-    installOldOperator(oldVersion,opNamespace,domainNamespace);
-    createSecrets();
-
-    // Create the repo secret to pull base WebLogic image
-    createBaseRepoSecret(domainNamespace);
-
-    // Creating an aux image domain with v8 version
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
-    List<String> modelList = new ArrayList<>();
-    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    modelList.add(MODEL_DIR + "/model.jms2.yaml");
-    logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, archiveList, modelList);
-
-    // Generate a v8 version of domain.yaml file from a template file
-    // by replacing domain namespace, domain uid, base image and aux image
-    String auxImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
-    Map<String, String> templateMap  = new HashMap<>();
-    templateMap.put("DOMAIN_NS", domainNamespace);
-    templateMap.put("DOMAIN_UID", domainUid);
-    templateMap.put("AUX_IMAGE", auxImage);
-    templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
-    templateMap.put("API_VERSION", "v8");
-    Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "auxilary.single.image.template.yaml");
-    Path targetDomainFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcDomainFile.toString(),
-        "domain.yaml", templateMap));
-    logger.info("Generated Domain Resource file {0}", targetDomainFile);
-
-    // run KUBERNETES_CLI to create the domain
-    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
-    CommandParams params = new CommandParams().defaults();
-    params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml"));
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain custom resource");
-
-    // wait for the domain to exist
-    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, "v8", domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
-    checkDomainStarted(domainUid, domainNamespace);
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before upgrading the operator
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
-    }
-    // verify there is no status condition type Completed
-    // before upgrading to Latest
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
-    upgradeOperatorToCurrent(opNamespace);
-    checkDomainStatus(domainNamespace,domainUid);
-    verifyPodsNotRolled(domainNamespace, pods);
-    scaleClusterUpAndDown();
-  }
-
-  
-  
   // After upgrade scale up/down the cluster
   private void scaleClusterUpAndDown() {
     String clusterName = domainUid + "-" + "cluster-1";
@@ -464,12 +373,10 @@ class ItOperatorWlsUpgrade {
     logger.info("Start a thread to keep track of application availability");
     Thread accountingThread =
           new Thread(
-              () -> {
-                collectAppAvailability(
-                    domainNamespace, opNamespace, appAvailability,
-                    adminServerPodName, managedServerPodNamePrefix,
-                    replicaCount, "7001", "8001", "testwebapp/index.jsp");
-              });
+              () -> collectAppAvailability(
+                  domainNamespace, opNamespace, appAvailability,
+                  adminServerPodName, managedServerPodNamePrefix,
+                  replicaCount, "7001", "8001", "testwebapp/index.jsp"));
     accountingThread.start();
     try {
       // upgrade to current operator
@@ -579,94 +486,6 @@ class ItOperatorWlsUpgrade {
          "Failed to patch Domain's serverStartPolicy to IfNeeded");
     logger.info("Domain is patched to re start");
     checkDomainStarted(domainUid, domainNamespace);
-  }
-
-  private void createDomainResource(
-      String domainNamespace,
-      String domVersion,
-      String domainHomeSourceType,
-      String domainImage) {
-
-    String domApiVersion = "weblogic.oracle/" + domVersion;
-    logger.info("Default Domain API version {0}", DOMAIN_API_VERSION);
-    logger.info("Domain API version selected {0}", domApiVersion);
-    logger.info("Domain Image name selected {0}", domainImage);
-    logger.info("Create domain resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-                      "weblogicenc", "weblogicenc");
-    DomainResource domain = new DomainResource()
-            .apiVersion(domApiVersion)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domainNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHomeSourceType(domainHomeSourceType)
-                    .image(domainImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(TEST_IMAGES_REPO_SECRET_NAME))
-                    .webLogicCredentialsSecret(new V1LocalObjectReference()
-                            .name(adminSecretName))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("weblogic.oracle/v8".equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value(SSL_PROPERTIES))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                        .adminService(new AdminService()
-                        .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
-                    .configuration(new Configuration()
-                            .model(new Model()
-                                .runtimeEncryptionSecret(encryptionSecretName)
-                                .domainType("WLS"))
-                            .introspectorJobActiveDeadlineSeconds(300L)));
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain, domVersion),
-          String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-          domainUid, domainNamespace));
-    assertTrue(domCreated,
-         String.format("Create domain custom resource failed with ApiException "
-             + "for %s in namespace %s", domainUid, domainNamespace));
-    setPodAntiAffinity(domain);
-    removePortForwardingAttribute(domainNamespace,domainUid);
-  }
-
-  // Remove the artifact adminChannelPortForwardingEnabled from domain resource
-  // if exist, so that the Operator release default will be effective.
-  // e.g. in Release 3.3.x the default is false, but 4.x.x onward it is true
-  // However in release(s) lower to 3.3.x, the CRD does not contain this attribute
-  // so the patch command to remove this attribute fails. So we do not assert
-  // the result of patch command
-  private void removePortForwardingAttribute(
-      String domainNamespace, String  domainUid) {
-
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"remove\",")
-        .append(" \"path\": \"/spec/adminServer/adminChannelPortForwardingEnabled\"")
-        .append("}]");
-    logger.info("The patch String {0}", patchStr);
-    StringBuffer commandStr = new StringBuffer(KUBERNETES_CLI + " patch domain ");
-    commandStr.append(domainUid)
-              .append(" -n " + domainNamespace)
-              .append(" --type 'json' -p='")
-              .append(patchStr)
-              .append("'");
-    logger.info("The Command String: {0}", commandStr);
-    CommandParams params = new CommandParams().defaults();
-
-    params.command(new String(commandStr));
-    Command.withParams(params).execute();
   }
 
   /**
@@ -844,7 +663,7 @@ class ItOperatorWlsUpgrade {
     upgradeOperatorToCurrent(opNamespace);
     checkDomainStatus(domainNamespace, domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
-    scaleClusterUpAndDown(clusterName);
+    scaleClusterUpAndDown(domainUid + "-" + clusterName);
   }
 
 

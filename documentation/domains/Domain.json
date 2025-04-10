@@ -380,6 +380,11 @@
           "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
           "type": "string"
         },
+        "readOnlyRootFileSystem": {
+          "default": false,
+          "description": "Set up the pod and containers to use read only root file system. Defaults to false.",
+          "type": "boolean"
+        },
         "replaceVariablesInJavaOptions": {
           "default": false,
           "description": "Specifies whether the operator will replace the environment variables in the Java options in certain situations, such as when the JAVA_OPTIONS are specified using a config map. Defaults to false.",
@@ -1106,6 +1111,10 @@
           "items": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
           }
+        },
+        "automountServiceAccountToken": {
+          "description": "Indicates whether a service account token should be automatically mounted on the pod. Defaults to true if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.",
+          "type": "boolean"
         },
         "readinessProbe": {
           "description": "Settings for the readiness probe associated with a WebLogic Server instance. If not specified, the operator will create an HTTP probe accessing the /weblogic/ready path. If an HTTP probe is specified then the operator will fill in `path`, `port`, and `scheme`, if they are missing. The operator will also fill in any missing tuning-related fields if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different HTTP path to access.",

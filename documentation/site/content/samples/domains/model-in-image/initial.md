@@ -28,7 +28,7 @@ The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` tha
 
 ### Deploy resources - Introduction
 
-In this section, you will deploy the domain resource with the new auxliliary image to namespace `sample-domain1-ns`, including the following steps:
+In this section, you will deploy the domain resource with the new auxiliary image to namespace `sample-domain1-ns`, including the following steps:
 
   - Create a Secret containing your WebLogic administrator user name and password.
   - Create a Secret containing your Model in Image runtime encryption password:

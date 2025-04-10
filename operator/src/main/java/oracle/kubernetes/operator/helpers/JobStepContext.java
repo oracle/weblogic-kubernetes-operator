@@ -70,6 +70,8 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
 import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
@@ -493,23 +495,29 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addInitDomainOnPVInitContainer(List<V1Container> initContainers) {
-    initContainers.add(new V1Container()
-        .name(INIT_DOMAIN_ON_PV_CONTAINER)
-        .image(getDomain().getSpec().getImage())
-        .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
-        .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
-        .addVolumeMountsItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
-            .mountPath(AUXILIARY_IMAGE_TARGET_PATH))
-        .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
-        .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
-        .addEnvItem(new V1EnvVar().name(ServerEnvVars.LOG_HOME).value(getEffectiveLogHome()))
-        .addEnvItem(new V1EnvVar().name(ServerEnvVars.DOMAIN_HOME_ON_PV_DEFAULT_UGID)
-                .value(getDomainHomeOnPVHomeOwnership()))
-        .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
-            .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
-        .securityContext(getInitContainerSecurityContext())
-        .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
-    );
+    V1Container container = new V1Container()
+            .name(INIT_DOMAIN_ON_PV_CONTAINER)
+            .image(getDomain().getSpec().getImage())
+            .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
+            .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
+            .addVolumeMountsItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+                    .mountPath(AUXILIARY_IMAGE_TARGET_PATH))
+            .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
+            .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
+            .addEnvItem(new V1EnvVar().name(ServerEnvVars.LOG_HOME).value(getEffectiveLogHome()))
+            .addEnvItem(new V1EnvVar().name(ServerEnvVars.DOMAIN_HOME_ON_PV_DEFAULT_UGID)
+                    .value(getDomainHomeOnPVHomeOwnership()))
+            .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
+                    .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
+            .securityContext(getInitContainerSecurityContext())
+            .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT));
+
+    if (isReadOnlyRootFileSystem()) {
+      container.addVolumeMountsItem(volumeMount(TMPDIR_VOLUME, TMPDIR_MOUNTS_PATH));
+    }
+
+    initContainers.add(container);
+
   }
 
   @Override
@@ -631,6 +639,14 @@ public class JobStepContext extends BasePodStepContext {
           volumes.add(additionalVolume);
         }
       }
+    }
+
+    if (isReadOnlyRootFileSystem()) {
+      List<V1Volume> volumes = podSpec.getVolumes();
+      if (volumes == null) {
+        volumes = new ArrayList<>();
+      }
+      volumes.add(new V1Volume().name(TMPDIR_VOLUME));
     }
 
     getConfigOverrideSecrets().forEach(secretName -> addConfigOverrideSecretVolume(podSpec, secretName));

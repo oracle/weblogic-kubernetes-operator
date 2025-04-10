@@ -1314,6 +1314,10 @@ public class DomainSpec extends BaseConfiguration {
     return readOnlyRootFileSystem;
   }
 
+  public void setReadOnlyRootFileSystem(Boolean readOnlyRootFileSystem) {
+    this.readOnlyRootFileSystem = readOnlyRootFileSystem;
+  }
+
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public EffectiveIntrospectorJobPodSpec getIntrospectorJobPodSpec() {

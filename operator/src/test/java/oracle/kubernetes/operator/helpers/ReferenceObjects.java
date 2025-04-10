@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -112,7 +112,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -123,7 +123,7 @@ class ReferenceObjects {
               imagePullPolicy: IfNotPresent
               name: operator-aux-container1
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: aux-image-volume-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume
@@ -249,7 +249,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -260,7 +260,7 @@ class ReferenceObjects {
               imagePullPolicy: IfNotPresent
               name: operator-aux-container1
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: aux-image-volume-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume
@@ -393,7 +393,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -404,7 +404,7 @@ class ReferenceObjects {
               imagePullPolicy: IfNotPresent
               name: compat-operator-aux-container1
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: compat-ai-vol-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume
@@ -536,7 +536,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -547,7 +547,7 @@ class ReferenceObjects {
               imagePullPolicy: IfNotPresent
               name: compat-operator-aux-container1
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: aux-image-volume-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume
@@ -1011,7 +1011,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -1027,7 +1027,7 @@ class ReferenceObjects {
                   memory: 768Mi
                   cpu: 250m
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: compat-ai-vol-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume
@@ -1159,7 +1159,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -1175,7 +1175,7 @@ class ReferenceObjects {
                   memory: 768Mi
                   cpu: 250m
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: aux-image-volume-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume
@@ -1302,7 +1302,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -1313,7 +1313,7 @@ class ReferenceObjects {
               imagePullPolicy: IfNotPresent
               name: operator-aux-container1
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: aux-image-volume-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume
@@ -1439,7 +1439,7 @@ class ReferenceObjects {
               - name: AUXILIARY_IMAGE_PATH
                 value: /auxiliary
               - name: AUXILIARY_IMAGE_TARGET_PATH
-                value: /tmp/AuxiliaryImage
+                value: /tmpAuxiliaryImage
               - name: AUXILIARY_IMAGE_COMMAND
                 value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
               - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -1450,7 +1450,7 @@ class ReferenceObjects {
               imagePullPolicy: IfNotPresent
               name: operator-aux-container1
               volumeMounts:
-              - mountPath: /tmp/AuxiliaryImage
+              - mountPath: /tmpAuxiliaryImage
                 name: aux-image-volume-auxiliaryimagevolume1
               - mountPath: /weblogic-operator/scripts
                 name: weblogic-scripts-cm-volume

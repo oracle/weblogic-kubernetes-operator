@@ -42,7 +42,7 @@ spec:
         - name: AUXILIARY_IMAGE_PATH
           value: /auxiliary
         - name: AUXILIARY_IMAGE_TARGET_PATH
-          value: /tmp/AuxiliaryImage
+          value: /tmpAuxiliaryImage
         - name: AUXILIARY_IMAGE_COMMAND
           value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
         - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
@@ -51,7 +51,7 @@ spec:
           value: compat-operator-aux-container1
         volumeMounts:
         - name: compat-ai-vol-auxiliaryimagevolume1
-          mountPath: /tmp/AuxiliaryImage
+          mountPath: /tmpAuxiliaryImage
         - name: weblogic-scripts-cm-volume
           mountPath: /weblogic-operator/scripts
       volumeMounts:
