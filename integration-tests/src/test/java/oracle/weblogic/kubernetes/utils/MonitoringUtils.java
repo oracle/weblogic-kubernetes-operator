@@ -325,6 +325,36 @@ public class MonitoringUtils {
   }
 
   /**
+   * Check metrics using Prometheus.
+   *
+   * @param searchKey          - metric query expression
+   * @param expectedVal        - expected metrics to search
+   * @param hostPortPrometheus host:nodePort for prometheus
+   * @throws Exception if command to check metrics fails
+   */
+  public static void checkPrometheusAlert(String searchKey, String expectedVal,
+                                               String hostPortPrometheus, String ingressHost)
+      throws Exception {
+
+    LoggingFacade logger = getLogger();
+    // url
+    String curlCmd =
+        String.format("curl -g --silent --show-error --noproxy '*' -v  -H 'host: " + ingressHost + "'"
+                + " http://%s/api/v1/alerts",
+            hostPortPrometheus);
+
+    logger.info("Executing Curl cmd {0}", curlCmd);
+    logger.info("Checking searchKey: {0}", searchKey);
+    logger.info(" expected Value {0} ", expectedVal);
+    testUntil(
+        searchForKey(curlCmd, expectedVal),
+        logger,
+        "Check prometheus alert {0} against expected {1}",
+        searchKey,
+        expectedVal);
+  }
+
+  /**
    * Check output of the command against expected output.
    *
    * @param cmd       command
