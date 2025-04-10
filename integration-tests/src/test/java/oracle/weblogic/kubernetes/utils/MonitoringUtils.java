@@ -327,12 +327,11 @@ public class MonitoringUtils {
   /**
    * Check metrics using Prometheus.
    *
-   * @param searchKey          - metric query expression
-   * @param expectedVal        - expected metrics to search
+   * @param expectedVal        - expected alert data to search
    * @param hostPortPrometheus host:nodePort for prometheus
    * @throws Exception if command to check metrics fails
    */
-  public static void checkPrometheusAlert(String searchKey, String expectedVal,
+  public static void checkPrometheusAlert(String expectedVal,
                                                String hostPortPrometheus, String ingressHost)
       throws Exception {
 
@@ -344,14 +343,12 @@ public class MonitoringUtils {
             hostPortPrometheus);
 
     logger.info("Executing Curl cmd {0}", curlCmd);
-    logger.info("Checking searchKey: {0}", searchKey);
     logger.info(" expected Value {0} ", expectedVal);
     testUntil(
         searchForKey(curlCmd, expectedVal),
         logger,
-        "Check prometheus alert {0} against expected {1}",
-        searchKey,
-        expectedVal);
+        "Check prometheus alert against expected {0}",
+         expectedVal);
   }
 
   /**
