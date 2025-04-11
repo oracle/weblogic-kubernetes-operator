@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -21,6 +22,8 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.FluentbitSpecification;
 
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIG_DATA_NAME;
@@ -66,6 +69,15 @@ public class FluentbitHelper {
     fluentbitSpecification.getVolumeMounts().forEach(fluentbitContainer::addVolumeMountsItem);
 
     fluentbitContainer.addVolumeMountsItem(createFluentbitConfigmapVolumeMount());
+
+    boolean isReadOnlyFileSystem = Optional.of(domain)
+            .map(DomainResource::isReadOnlyRootFileSystem)
+            .orElse(false);
+
+    if (isReadOnlyFileSystem) {
+      fluentbitContainer.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+    }
+
     containers.add(fluentbitContainer);
   }
 
