@@ -1260,7 +1260,7 @@ class JobHelperTest extends DomainValidationTestBase {
   void whenDomainHasReadOnlyRootFileSystem_verifyVolumesAndMounts() throws NoSuchFieldException {
 
     configureDomain()
-            .setReadOnlyRootFileSystem(true)
+            .withContainerSecurityContext(new V1SecurityContext().readOnlyRootFilesystem(true))
             .configureCluster(domainPresenceInfo, CLUSTER_NAME);
 
     runCreateJob();

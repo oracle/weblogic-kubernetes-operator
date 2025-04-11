@@ -1172,7 +1172,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenDomainSetReadOnlyRootFileSystem_verifyVolumesAndMounts() {
     getConfigurator()
-            .setReadOnlyRootFileSystem(true)
+            .withContainerSecurityContext(new V1SecurityContext().readOnlyRootFilesystem(true))
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"))
             .configureCluster(domainPresenceInfo, CLUSTER_NAME);
 

@@ -588,12 +588,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     configureAdminServer().withServerStartPolicy(shuttingDown ? ServerStartPolicy.NEVER : ServerStartPolicy.ALWAYS);
   }
 
-  @Override
-  public DomainConfigurator setReadOnlyRootFileSystem(boolean readOnlyRootFileSystem) {
-    this.getDomainSpec().setReadOnlyRootFileSystem(readOnlyRootFileSystem);
-    return this;
-  }
-
   static class IntrospectorConfiguratorImpl implements IntrospectorConfigurator {
     private final Introspector introspector;
 

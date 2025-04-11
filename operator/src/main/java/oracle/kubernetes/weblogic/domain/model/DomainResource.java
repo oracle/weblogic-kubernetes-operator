@@ -860,10 +860,6 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return getNextRetryTime() != null;
   }
 
-  public Boolean isReadOnlyRootFileSystem() {
-    return spec.isReadOnlyRootFileSystem();
-  }
-
   /**
    * Returns the next time a retry should be done. If the domain resource has no status, or there is no
    * retry needed, returns null.

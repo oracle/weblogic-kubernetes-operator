@@ -449,8 +449,6 @@ public abstract class DomainConfigurator {
    */
   public abstract ClusterConfigurator configureCluster(DomainPresenceInfo info, @Nonnull String clusterName);
 
-  public abstract DomainConfigurator setReadOnlyRootFileSystem(boolean readOnlyRootFileSystem);
-
   public abstract void setShuttingDown(boolean start);
 
   /**

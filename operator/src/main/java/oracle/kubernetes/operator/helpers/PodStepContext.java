@@ -775,10 +775,13 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
+    boolean isReadOnlyRootFileSystem = isReadOnlyRootFileSystem();
     Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false));
+        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false,
+                isReadOnlyRootFileSystem));
     Optional.ofNullable(getDomain().getFluentbitSpecification())
-            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(), false));
+            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(),
+                    false, isReadOnlyRootFileSystem));
     return containers;
   }
 

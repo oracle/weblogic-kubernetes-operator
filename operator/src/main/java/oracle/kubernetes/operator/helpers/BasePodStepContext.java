@@ -35,7 +35,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.collections4.MapUtils;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
@@ -77,9 +76,10 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   boolean isReadOnlyRootFileSystem() {
-    return Optional.of(info.getDomain())
-            .map(DomainResource::isReadOnlyRootFileSystem)
-            .orElse(false);
+    return Optional.ofNullable(getServerSpec())
+            .map(EffectiveServerSpec::getContainerSecurityContext)
+            .map(V1SecurityContext::getReadOnlyRootFilesystem)
+                 .orElse(false);
   }
 
   String getMedium() {

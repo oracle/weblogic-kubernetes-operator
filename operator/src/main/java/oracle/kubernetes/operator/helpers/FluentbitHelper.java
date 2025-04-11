@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -42,7 +41,7 @@ public class FluentbitHelper {
    * @param domain  Domain.
    */
   public static void addFluentbitContainer(FluentbitSpecification fluentbitSpecification, List<V1Container> containers,
-                                           DomainResource domain, boolean isJobPod) {
+                                           DomainResource domain, boolean isJobPod, boolean isReadOnlyRootFileSystem) {
     V1Container fluentbitContainer = new V1Container();
 
     fluentbitContainer.name(FLUENTBIT_CONTAINER_NAME);
@@ -70,11 +69,7 @@ public class FluentbitHelper {
 
     fluentbitContainer.addVolumeMountsItem(createFluentbitConfigmapVolumeMount());
 
-    boolean isReadOnlyFileSystem = Optional.of(domain)
-            .map(DomainResource::isReadOnlyRootFileSystem)
-            .orElse(false);
-
-    if (isReadOnlyFileSystem) {
+    if (isReadOnlyRootFileSystem) {
       fluentbitContainer.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
     }
 
