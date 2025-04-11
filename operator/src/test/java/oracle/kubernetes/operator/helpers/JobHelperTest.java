@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -1267,7 +1268,7 @@ class JobHelperTest extends DomainValidationTestBase {
             hasItem(new V1VolumeMount().name(TMPDIR_VOLUME)
                     .mountPath(TMPDIR_MOUNTS_PATH)));
     assertThat(getJobVolumes(),
-            hasItem(new V1Volume().name(TMPDIR_VOLUME)));
+            hasItem(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory"))));
 
   }
 

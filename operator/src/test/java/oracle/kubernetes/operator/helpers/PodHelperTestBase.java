@@ -1187,7 +1187,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     }
 
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(TMPDIR_VOLUME)));
+            hasItem(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory"))));
 
   }
 

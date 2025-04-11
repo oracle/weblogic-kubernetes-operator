@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -89,6 +90,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_OLD_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
@@ -730,12 +732,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
-    boolean readOnlyFileSystem = Optional.ofNullable(getDomain())
-            .map(DomainResource::isReadOnlyRootFileSystem)
-            .orElse(false);
 
-    if (readOnlyFileSystem) {
-      volumes.add(new V1Volume().name(TMPDIR_VOLUME));
+    if (isReadOnlyRootFileSystem()) {
+      volumes.add(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
     }
     return volumes;
   }
@@ -1603,7 +1602,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private V1Container createMonitoringExporterContainer() {
-      return new V1Container()
+      V1Container container = new V1Container()
             .name(EXPORTER_CONTAINER_NAME)
             .image(getDomain().getMonitoringExporterImage())
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
@@ -1612,6 +1611,12 @@ public abstract class PodStepContext extends BasePodStepContext {
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
                 .name("metrics").protocol("TCP").containerPort(getPort()));
+
+      if (isReadOnlyRootFileSystem()) {
+        container.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+      }
+
+      return container;
     }
 
     private String createJavaOptions() {

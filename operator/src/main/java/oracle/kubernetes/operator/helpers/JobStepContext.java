@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -649,7 +650,7 @@ public class JobStepContext extends BasePodStepContext {
       if (volumes == null) {
         volumes = new ArrayList<>();
       }
-      volumes.add(new V1Volume().name(TMPDIR_VOLUME));
+      volumes.add(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
     }
 
     getConfigOverrideSecrets().forEach(secretName -> addConfigOverrideSecretVolume(podSpec, secretName));
