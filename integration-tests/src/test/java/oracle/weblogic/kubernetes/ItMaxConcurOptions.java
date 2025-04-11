@@ -443,6 +443,11 @@ class ItMaxConcurOptions {
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                // huizhao added below to fix intermittent issue to have
+               // pod maxconcuroptionsdomain-c1-managed-server3 ready caused by shutDownStatus=137
+                .addEnvItem(new V1EnvVar()
+                    .name("MEM_ARGS")
+                    .value("-Xms1024m -Xmx1024m"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
