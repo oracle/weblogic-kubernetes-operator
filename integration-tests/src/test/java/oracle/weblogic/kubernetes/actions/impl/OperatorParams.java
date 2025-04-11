@@ -37,6 +37,8 @@ public class OperatorParams {
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
   private static final String WEBHOOK_ONLY = "webhookOnly";
+
+  private static final String OPERATOR_ONLY = "operatorOnly";
   private static final String CPU_REQUESTS = "cpuRequests";
   private static final String CPU_LIMITS = "cpuLimits";
   private static final String MEMORY_REQUESTS = "memoryRequests";
@@ -69,6 +71,7 @@ public class OperatorParams {
   private String kubernetesPlatform;
   private boolean createLogStashConfigMap = true;
   private boolean webhookOnly;
+  private boolean operatorOnly;
   private boolean openshiftIstioInjection;
   private String cpuRequests;
   private String memoryRequests;
@@ -143,6 +146,11 @@ public class OperatorParams {
 
   public OperatorParams elasticSearchPort(int elasticSearchPort) {
     this.elasticSearchPort = elasticSearchPort;
+    return this;
+  }
+
+  public OperatorParams operatorOnly(boolean operatorOnly) {
+    this.operatorOnly = operatorOnly;
     return this;
   }
 
@@ -301,6 +309,9 @@ public class OperatorParams {
       values.put(WEBHOOK_ONLY, webhookOnly);
     }    
 
+    if (operatorOnly) {
+      values.put(OPERATOR_ONLY, operatorOnly);
+    }
     values.put(CREATE_LOGSTASH_CONFIGMAP, createLogStashConfigMap);
 
     if (cpuRequests != null) {
