@@ -116,19 +116,23 @@ class ItServerStartPolicyConfigCluster {
                 domainUid, domainNamespace);
     }
 
-    // Check configured cluster configuration is available 
+    // Check standalone server configuration is available
+    boolean isStandaloneServerConfigured =
+         checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
+    assertTrue(isStandaloneServerConfigured,
+        "Could not find standalone managed server from configured cluster");
+    logger.info("Found standalone managed server configuration");
+
+    // Check configured cluster configuration is available
+    String configServerPodName = domainUid + "-config-cluster-server1";
+    checkPodReadyAndServiceExists(configServerPodName,
+              domainUid, domainNamespace);
     boolean isServerConfigured = 
          checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
     assertTrue(isServerConfigured, 
         "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
-    // Check standalone server configuration is available 
-    boolean isStandaloneServerConfigured = 
-         checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
-    assertTrue(isStandaloneServerConfigured, 
-        "Could not find standalone managed server from configured cluster");
-    logger.info("Found standalone managed server configuration");
   }
 
   /**

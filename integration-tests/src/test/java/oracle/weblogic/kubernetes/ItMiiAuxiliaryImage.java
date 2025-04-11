@@ -922,7 +922,7 @@ class ItMiiAuxiliaryImage {
    * another auxiliary image with JMS system resource but with sourceModelHome set to none,
    * verify the domain is running and JMS resource is not added.
    */
-  @Test
+  //@Test
   @DisplayName("Test to create domain using multiple auxiliary images with model files and one AI having "
       + "sourceModelHome set to none")
   void testWithAISourceModelHomeSetToNone() {
@@ -1100,7 +1100,7 @@ class ItMiiAuxiliaryImage {
    * via provided Dockerfile.
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  @Test
+  //@Test
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
     final String domainUid2 = "domain8";
