@@ -15,7 +15,7 @@ source ${SCRIPTPATH}/utils.sh
 
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
-if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
+if [ -z ${LOG_HOME_LAYOUT} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
   serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
 fi
 STOP_OUT_FILE="${serverLogHome}/${SERVER_NAME}.stop.out"

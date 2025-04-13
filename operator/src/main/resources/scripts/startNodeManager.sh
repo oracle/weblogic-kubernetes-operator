@@ -133,7 +133,7 @@ if [ "${SERVER_NAME}" = "introspector" ]; then
 else
   # setup ".out" location for a WL server
   serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
-  if [ -z ${LOG_HOME} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
+  if [ -z ${LOG_HOME_LAYOUT} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
     serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
   fi
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
@@ -170,7 +170,7 @@ nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
 nodemgr_lck_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log.lck
 
-if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
+if [ -z ${LOG_HOME_LAYOUT} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
   nodemgr_log_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs/${SERVER_NAME}_nodemanager.log
   nodemgr_out_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.out
   nodemgr_lck_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.log.lck
