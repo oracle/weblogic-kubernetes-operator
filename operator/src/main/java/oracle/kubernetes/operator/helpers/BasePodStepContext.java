@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +43,8 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -72,6 +73,13 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   String getSizeLimit() {
     return info.getDomain().getAuxiliaryImageVolumeSizeLimit();
+  }
+
+  boolean isReadOnlyRootFileSystem() {
+    return Optional.ofNullable(getServerSpec())
+            .map(EffectiveServerSpec::getContainerSecurityContext)
+            .map(V1SecurityContext::getReadOnlyRootFilesystem)
+                 .orElse(false);
   }
 
   String getMedium() {
@@ -106,7 +114,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   abstract List<V1Volume> getFluentbitVolumes();
 
   protected V1Container createPrimaryContainer() {
-    return new V1Container()
+    V1Container container = new V1Container()
         .name(getContainerName())
         .image(getServerSpec().getImage())
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
@@ -115,6 +123,17 @@ public abstract class BasePodStepContext extends StepContextBase {
         .envFrom(getEnvFrom())
         .resources(getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
+
+    if (isReadOnlyRootFileSystem()) {
+      List<V1VolumeMount> mounts = container.getVolumeMounts();
+      if (mounts == null) {
+        mounts = new ArrayList<>();
+      }
+      mounts.add(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+      container.volumeMounts(mounts);
+    }
+
+    return container;
   }
 
   protected abstract List<V1EnvFromSource> getEnvFrom();
@@ -160,11 +179,19 @@ public abstract class BasePodStepContext extends StepContextBase {
             .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
-            .resources(createResources())
-            .volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
-                            .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
-                    new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
+            .resources(createResources());
+
+    List<V1VolumeMount> mounts = new ArrayList<>();
+
+    if (isReadOnlyRootFileSystem()) {
+      mounts.add(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+    }
+
+    mounts.add(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+                    .mountPath(AUXILIARY_IMAGE_TARGET_PATH));
+    mounts.add(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH));
+
+    container.volumeMounts(mounts);
 
     if (isInitializeDomainOnPV) {
       container.securityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
@@ -246,6 +273,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     for (V1Volume additionalVolume : getFluentbitVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
     }
+
 
     return podSpec;
   }
@@ -423,3 +451,4 @@ public abstract class BasePodStepContext extends StepContextBase {
     return kubernetesPlatform;
   }
 }
+

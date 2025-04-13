@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common;
@@ -18,7 +18,8 @@ public class CommonConstants {
 
   public static final String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
   public static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
-
+  public static final String TMPDIR_VOLUME = "weblogic-tmpdir-volume";
+  public static final String TMPDIR_MOUNTS_PATH = "/tmp";
   public static final String SECRETS_WEBHOOK_CERT = "/secrets/webhookCert";
   public static final String SECRETS_WEBHOOK_KEY = "/secrets/webhookKey";
 
