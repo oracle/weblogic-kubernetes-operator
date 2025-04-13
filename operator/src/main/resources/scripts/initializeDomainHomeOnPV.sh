@@ -1,5 +1,18 @@
 #!/bin/sh
-# Copyright (c) 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates.
+
+cleanup() {
+  trace "Suppressing signal to allow container to exit cleanly."
+  exit 0
+}
+
+trap cleanup SIGTERM SIGKILL
+
+exitMessage() {
+  trace "Exiting container for initializing domain home on PV of '${DOMAIN_UID}'."
+}
+
+trap exitMessage EXIT
 
 scriptDir="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 if [ "${debug}" == "true" ]; then set -x; fi;
