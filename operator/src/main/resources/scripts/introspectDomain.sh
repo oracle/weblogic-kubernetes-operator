@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -44,6 +44,18 @@
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
+cleanup() {
+  trace "Suppressing signal to allow container to exit cleanly."
+  exit 0
+}
+
+trap cleanup SIGTERM SIGKILL
+
+exitMessage() {
+  trace "Exiting container for introspection of '${DOMAIN_UID}'."
+}
+
+trap exitMessage EXIT
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
