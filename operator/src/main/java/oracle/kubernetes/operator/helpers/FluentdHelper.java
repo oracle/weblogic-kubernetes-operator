@@ -21,6 +21,8 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
@@ -39,7 +41,7 @@ public class FluentdHelper {
    * @param domain  Domain.
    */
   public static void addFluentdContainer(FluentdSpecification fluentdSpecification, List<V1Container> containers,
-                                         DomainResource domain, boolean isJobPod) {
+                                         DomainResource domain, boolean isJobPod, boolean isReadOnlyRootFileSystem) {
 
     V1Container fluentdContainer = new V1Container();
 
@@ -69,6 +71,11 @@ public class FluentdHelper {
         .forEach(fluentdContainer::addVolumeMountsItem);
 
     fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolumeMount());
+
+    if (isReadOnlyRootFileSystem) {
+      fluentdContainer.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+    }
+
     containers.add(fluentdContainer);
   }
 

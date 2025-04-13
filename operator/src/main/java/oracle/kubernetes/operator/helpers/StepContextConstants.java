@@ -32,6 +32,7 @@ public interface StepContextConstants {
   String OPSS_WALLETFILE_MOUNT_PATH = "/weblogic-operator/opss-walletfile-secret";
   String DEBUG_CM_MOUNTS_PATH = "/weblogic-operator/debug";
   String NODEMGR_HOME = "/u01/nodemanager";
+  String NODEMGR_HOME_READONLY_ROOT = "/tmp/nodemanager";
 
   String INIT_DOMAIN_ON_PV_CONTAINER = "create-dh-dir";
   String INIT_DOMAIN_ON_PV_SCRIPT = "/weblogic-operator/scripts/initializeDomainHomeOnPV.sh";

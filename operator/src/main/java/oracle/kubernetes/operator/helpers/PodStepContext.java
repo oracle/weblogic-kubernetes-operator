@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -89,6 +90,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_OLD_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
@@ -730,6 +733,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
 
+    if (isReadOnlyRootFileSystem()) {
+      volumes.add(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
+    }
     return volumes;
   }
 
@@ -769,10 +775,13 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
+    boolean isReadOnlyRootFileSystem = isReadOnlyRootFileSystem();
     Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false));
+        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false,
+                isReadOnlyRootFileSystem));
     Optional.ofNullable(getDomain().getFluentbitSpecification())
-            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(), false));
+            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(),
+                    false, isReadOnlyRootFileSystem));
     return containers;
   }
 
@@ -831,7 +840,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVarIfTrue(isAdminServerProtocolChannelSecure(), vars, ServerEnvVars.ADMIN_SERVER_PORT_SECURE);
     addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
-    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
+    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
     if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
       addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());
@@ -862,6 +871,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     });
   }
 
+  String getNodeManagerHome() {
+    if (isReadOnlyRootFileSystem()) {
+      return NODEMGR_HOME_READONLY_ROOT;
+    }
+    return NODEMGR_HOME;
+  }
 
   private String getDomainHome() {
     return getDomain().getDomainHome();
@@ -1590,7 +1605,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private V1Container createMonitoringExporterContainer() {
-      return new V1Container()
+      V1Container container = new V1Container()
             .name(EXPORTER_CONTAINER_NAME)
             .image(getDomain().getMonitoringExporterImage())
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
@@ -1599,6 +1614,12 @@ public abstract class PodStepContext extends BasePodStepContext {
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
                 .name("metrics").protocol("TCP").containerPort(getPort()));
+
+      if (isReadOnlyRootFileSystem()) {
+        container.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+      }
+
+      return container;
     }
 
     private String createJavaOptions() {
