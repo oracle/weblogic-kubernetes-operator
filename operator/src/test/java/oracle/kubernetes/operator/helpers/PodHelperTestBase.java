@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -109,6 +109,8 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME;
@@ -137,6 +139,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_N
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.ENVVARS;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -1147,6 +1150,29 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   protected String getLegacyAuxiliaryImageVolumeName(String testVolumeName) {
     return COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
   }
+
+  @Test
+  void whenDomainSetReadOnlyRootFileSystem_verifyVolumesAndMounts() {
+    getConfigurator()
+            .withContainerSecurityContext(new V1SecurityContext().readOnlyRootFilesystem(true))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"))
+            .configureCluster(domainPresenceInfo, CLUSTER_NAME);
+
+    testSupport.addToPacket(CLUSTER_NAME, CLUSTER_NAME);
+
+    List<V1Container> containers = getCreatedPodSpecContainers();
+    for (V1Container container : containers) {
+      assertThat(container.getVolumeMounts(),
+              hasItem(new V1VolumeMount().name(TMPDIR_VOLUME)
+                      .mountPath(TMPDIR_MOUNTS_PATH)));
+
+    }
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory"))));
+
+  }
+
 
   @Test
   void whenDomainHasLegacyAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
