@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,6 +21,8 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.FluentbitSpecification;
 
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIG_DATA_NAME;
@@ -39,7 +41,7 @@ public class FluentbitHelper {
    * @param domain  Domain.
    */
   public static void addFluentbitContainer(FluentbitSpecification fluentbitSpecification, List<V1Container> containers,
-                                           DomainResource domain, boolean isJobPod) {
+                                           DomainResource domain, boolean isJobPod, boolean isReadOnlyRootFileSystem) {
     V1Container fluentbitContainer = new V1Container();
 
     fluentbitContainer.name(FLUENTBIT_CONTAINER_NAME);
@@ -66,6 +68,11 @@ public class FluentbitHelper {
     fluentbitSpecification.getVolumeMounts().forEach(fluentbitContainer::addVolumeMountsItem);
 
     fluentbitContainer.addVolumeMountsItem(createFluentbitConfigmapVolumeMount());
+
+    if (isReadOnlyRootFileSystem) {
+      fluentbitContainer.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+    }
+
     containers.add(fluentbitContainer);
   }
 
