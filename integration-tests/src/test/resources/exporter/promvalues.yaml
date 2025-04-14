@@ -143,11 +143,11 @@ serverFiles:
         rules:
           - alert: ClusterWarning
             for: 15s
-            expr: sum by(weblogic_domainUID, weblogic_clusterName) (up{weblogic_domainUID=~'.+'}) == 1
+            expr: sum by(weblogic_domainUID, weblogic_clusterName) (up{weblogic_domainUID=~'.+', job="wls-domain1"}) == 1
             labels:
               severity: page
             annotations:
-              description: 'Some WLS cluster has only one running server for more than 1 minutes.'
+              description: 'Some WLS cluster has only one running server for more than 15 secs.'
               summary: 'Some wls cluster is in warning state.'
 
 extraScrapeConfigs: |
