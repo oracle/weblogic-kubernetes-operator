@@ -107,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushI
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkPrometheusAlert;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyDomain;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyMiiImage;
@@ -376,7 +377,7 @@ class ItMonitoringExporterSamples {
     }
   }
 
-  private void fireAlert() throws ApiException {
+  private void fireAlert() throws Exception {
     // scale domain2
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         cluster1Name, domain2Uid, domain2Namespace, 1);
@@ -384,6 +385,16 @@ class ItMonitoringExporterSamples {
     scaleAndVerifyCluster(domain2Uid + "-" + cluster1Name, domain2Uid, domain2Namespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, managedServersCount,
         null, null);
+
+    logger.info("Wait for the prometheus  to create alert ");
+    checkPrometheusAlert("ClusterWarning", hostPortPrometheus,
+        prometheusReleaseName
+            + "." + monitoringNS);
+
+    logger.info("Wait for the prometheus  to fire alert ");
+    checkPrometheusAlert("firing", hostPortPrometheus,
+        prometheusReleaseName
+            + "." + monitoringNS);
 
     //check webhook log for firing alert
     List<V1Pod> pods = listPods(webhookNS, "app=webhook").getItems();
@@ -399,7 +410,7 @@ class ItMonitoringExporterSamples {
 
     testUntil(withLongRetryPolicy,
         assertDoesNotThrow(() -> searchPodLogForKey(pod,
-            "Some WLS cluster has only one running server for more than 1 minutes"),
+            "Some WLS cluster has only one running server for more than 15 secs"),
             "webhook failed to fire alert"),
         logger,
         "webhook to fire alert");

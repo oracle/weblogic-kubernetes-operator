@@ -151,7 +151,7 @@ serverFiles:
             labels:
               severity: page
             annotations:
-              description: 'Some WLS cluster has only one running server for more than 1 minutes.'
+              description: 'Some WLS cluster has only one running server for more than 15 secs.'
               summary: 'Some wls cluster is in warning state.'
 
 extraScrapeConfigs: |
