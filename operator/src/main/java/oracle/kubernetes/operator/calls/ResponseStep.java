@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -94,6 +94,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
   }
 
   private final Step conflictStep;
+  @SuppressWarnings("rawtypes")
   private RequestStep previousStep = null;
 
   /** Constructor specifying no next step. */
@@ -136,7 +137,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
     }
   }
 
-  public final void setPrevious(RequestStep previousStep) {
+  public final void setPrevious(@SuppressWarnings("rawtypes") RequestStep previousStep) {
     this.previousStep = previousStep;
   }
 

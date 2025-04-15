@@ -65,6 +65,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -357,7 +358,8 @@ public class CrdHelper {
     private static org.yaml.snakeyaml.Yaml getSnakeYaml() {
       LoaderOptions loaderOptions = new LoaderOptions();
       loaderOptions.setEnumCaseSensitive(false);
-      return new org.yaml.snakeyaml.Yaml(new SafeConstructor(new LoaderOptions()), new Yaml.CustomRepresenter());
+      return new org.yaml.snakeyaml.Yaml(
+          new SafeConstructor(new LoaderOptions()), new Yaml.CustomRepresenter(), new DumperOptions());
     }
 
     static V1CustomResourceSubresources createSubresources() {

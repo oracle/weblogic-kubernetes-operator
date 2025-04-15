@@ -90,6 +90,7 @@ public class HttpRequestStep extends Step {
   }
 
   @Override
+  @SuppressWarnings("try")
   public @Nonnull Result apply(Packet packet) {
     HttpResponseStep.removeResponse(packet);
     DomainPresenceInfo info = getDomainPresenceInfo(packet);

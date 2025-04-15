@@ -110,6 +110,7 @@ public class StubWatchFactory implements WatchApiFactory {
       }
 
       @Override
+      @SuppressWarnings("unchecked")
       public Watchable<A> watch(String namespace, ListOptions listOptions) throws ApiException {
         try {
           addRecordedParameters(getParameters(namespace, listOptions));

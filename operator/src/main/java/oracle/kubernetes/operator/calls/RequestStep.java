@@ -64,6 +64,7 @@ public abstract class RequestStep<
    * @param resourceSingular Resource singular
    * @param clientSelector Client selector
    */
+  @SuppressWarnings("this-escape")
   protected RequestStep(
           ResponseStep<R> next,
           Class<A> apiTypeClass,
