@@ -89,9 +89,9 @@ pipeline {
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.27.0: 1.32.2, 1.32, 1.31.6, 1.31, 1.30.10, 1.30, 1.29.14, 1.29 ',
                choices: [
                     // The first item in the list is the default value...
+                    '1.31.6',
                     '1.32.2',
                     '1.32',
-                    '1.31.6',
                     '1.31',
                     '1.30.10',
                     '1.30',
