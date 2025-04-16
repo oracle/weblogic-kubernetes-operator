@@ -573,15 +573,11 @@ class ItExternalLbTunneling {
 
   @AfterAll
   void tearDownAll() {
-    if (!SKIP_CLEANUP) {
-
-      // uninstall Traefik loadbalancer
-      if (traefikHelmParams != null) {
-        assertThat(uninstallTraefik(traefikHelmParams))
-            .as("Test uninstallTraefik returns true")
-            .withFailMessage("uninstallTraefik() did not return true")
-            .isTrue();
-      }     
+    if (!SKIP_CLEANUP && traefikHelmParams != null) {
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstallTraefik returns true")
+          .withFailMessage("uninstallTraefik() did not return true")
+          .isTrue();
     }
   }
 

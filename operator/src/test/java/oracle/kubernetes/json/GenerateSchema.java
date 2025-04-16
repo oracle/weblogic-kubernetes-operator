@@ -19,14 +19,6 @@ public class GenerateSchema {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator(objectMapper);
 
-    // If using JsonSchema to generate HTML5 GUI:
-    // JsonSchemaGenerator html5 = new JsonSchemaGenerator(objectMapper,
-    // JsonSchemaConfig.html5EnabledSchema() );
-
-    // If you want to configure it manually:
-    // JsonSchemaConfig config = JsonSchemaConfig.create(...);
-    // JsonSchemaGenerator generator = new JsonSchemaGenerator(objectMapper, config);
-
     JsonNode jsonSchema = jsonSchemaGenerator.generateJsonSchema(DomainResource.class);
 
     String jsonSchemaAsString =

@@ -37,11 +37,12 @@ public class AdminServer {
   private String restartVersion;
 
   @ApiModelProperty(
-      "When this flag is enabled, the operator updates the domain's WebLogic\n"
-          + " configuration for its Administration Server to have an admin protocol\n"
-          + " NetworkAccessPoint with a 'localhost' address for each existing admin\n"
-          + " protocol capable port. This allows external Administration Console and WLST\n"
-          + " 'T3' access when using the 'kubectl port-forward' pattern. Defaults to true.")
+          """
+                  When this flag is enabled, the operator updates the domain's WebLogic
+                   configuration for its Administration Server to have an admin protocol
+                   NetworkAccessPoint with a 'localhost' address for each existing admin
+                   protocol capable port. This allows external Administration Console and WLST
+                   'T3' access when using the 'kubectl port-forward' pattern. Defaults to true.""")
   private boolean adminChannelPortForwardingEnabled = true;
 
   public AdminServer adminService(AdminService adminService) {

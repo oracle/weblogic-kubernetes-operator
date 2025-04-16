@@ -173,7 +173,7 @@ class ItIstioCrossDomainTransaction {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     int replicaCount = 2;
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i,
@@ -390,9 +390,7 @@ class ItIstioCrossDomainTransaction {
    */
   @Test
   @DisplayName("Check cross domain transaction with istio works")
-  void testIstioCrossDomainTransaction() throws UnknownHostException, IOException, InterruptedException {
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+  void testIstioCrossDomainTransaction() throws IOException, InterruptedException {
     String istioIngressIP = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : K8S_NODEPORT_HOST;
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
@@ -433,7 +431,7 @@ class ItIstioCrossDomainTransaction {
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
   @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
   void testIstioCrossDomainTransactionWithFailInjection()
-      throws UnknownHostException, IOException, InterruptedException {
+      throws IOException, InterruptedException {
     String host = K8S_NODEPORT_HOST;
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
@@ -467,11 +465,9 @@ class ItIstioCrossDomainTransaction {
    */
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
-  void testIstioCrossDomainTranscatedMDB() throws UnknownHostException, IOException, InterruptedException {
+  void testIstioCrossDomainTranscatedMDB() throws IOException, InterruptedException {
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
 
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
@@ -509,8 +505,6 @@ class ItIstioCrossDomainTransaction {
 
   private boolean checkLocalQueue() throws UnknownHostException {
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
         : host + ":" + istioIngressPort;

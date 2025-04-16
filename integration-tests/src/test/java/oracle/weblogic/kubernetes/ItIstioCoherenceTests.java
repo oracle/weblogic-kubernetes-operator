@@ -83,7 +83,6 @@ class ItIstioCoherenceTests {
   private static final String COHERENCE_IMAGE_NAME = "coherence-image";
 
   private static String domainUid = "coherence-istio-domain";
-  private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
   private static String containerName = "weblogic-server";
@@ -91,7 +90,6 @@ class ItIstioCoherenceTests {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
 
   /**

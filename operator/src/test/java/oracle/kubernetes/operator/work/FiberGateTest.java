@@ -87,7 +87,7 @@ class FiberGateTest {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-
+      // no-op
     }
   }
 
@@ -106,7 +106,7 @@ class FiberGateTest {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-
+      // no-op
     }
   }
 }

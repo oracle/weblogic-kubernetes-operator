@@ -20,7 +20,7 @@ public class Image {
    */
   public static boolean doesImageExist(String searchString) {
     CommandParams cmdParams = Command.defaultCommandParams()
-        .command(String.format(WLSIMG_BUILDER + " images | grep %s", searchString))
+        .command(String.format("%s images | grep %s", WLSIMG_BUILDER, searchString))
         .saveResults(true)
         .redirect(false);
 

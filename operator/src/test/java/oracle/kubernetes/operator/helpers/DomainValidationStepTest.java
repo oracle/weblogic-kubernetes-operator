@@ -417,11 +417,11 @@ class DomainValidationStepTest {
     String wlsClusterName2 = "c2";
     String wlsClusterName3 = "c3";
     DomainResource domain2 = createTestDomain(UID2);
-    DomainPresenceInfo info = new DomainPresenceInfo(domain2);
+    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain2);
     if (withNoDomain) {
-      info.setDomain(null);
+      domainPresenceInfo.setDomain(null);
     }
-    domains.get(NS).put(UID2, info);
+    domains.get(NS).put(UID2, domainPresenceInfo);
     ClusterResource cluster1 = createTestCluster(CLUSTER_1);
     cluster1.getSpec().setClusterName(wlsClusterName1);
     ClusterResource cluster2 = createTestCluster(CLUSTER_2);

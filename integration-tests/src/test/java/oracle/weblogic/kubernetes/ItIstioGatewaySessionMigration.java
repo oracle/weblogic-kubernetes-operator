@@ -26,7 +26,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -83,8 +82,6 @@ class ItIstioGatewaySessionMigration {
   private static String domainUid = "istiogateway-sessmigr-domain";
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static String finalPrimaryServerName = null;
   private static String configMapName = "istio-configmap";
   private static String istioGatewayConfigFile = "istio-sessmigr-template.yaml";
   private static int replicaCount = 2;
@@ -240,8 +237,6 @@ class ItIstioGatewaySessionMigration {
         () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
-
-    finalPrimaryServerName = primaryServerName;
 
     logger.info("Done testSessionMigration \nThe new primary server is {0}, it was {1}. "
         + "\nThe session state was set to {2}, it is migrated to the new primary server.",

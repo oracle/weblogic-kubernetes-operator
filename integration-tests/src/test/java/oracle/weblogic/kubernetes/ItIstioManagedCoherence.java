@@ -227,8 +227,8 @@ class ItIstioManagedCoherence {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 
     // test adding data to the cache and retrieving them from the cache
-    boolean testCompletedSuccessfully = assertDoesNotThrow(()
-          -> coherenceCacheTest(), "Test Coherence cache failed");
+    boolean testCompletedSuccessfully = assertDoesNotThrow(this::coherenceCacheTest,
+        "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 
@@ -272,8 +272,8 @@ class ItIstioManagedCoherence {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 
     // test adding data to the cache and retrieving them from the cache
-    boolean testCompletedSuccessfully = assertDoesNotThrow(()
-        -> coherenceCacheTest(), "Test Coherence cache failed");
+    boolean testCompletedSuccessfully = assertDoesNotThrow(this::coherenceCacheTest,
+        "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 
@@ -376,8 +376,8 @@ class ItIstioManagedCoherence {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 
     // test adding data to the cache and retrieving them from the cache
-    boolean testCompletedSuccessfully = assertDoesNotThrow(()
-        -> coherenceCacheTest(), "Test Coherence cache failed");
+    boolean testCompletedSuccessfully = assertDoesNotThrow(this::coherenceCacheTest,
+        "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 

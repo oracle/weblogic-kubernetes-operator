@@ -132,11 +132,10 @@ public class DbUtils {
    * @param dbNamespace namespace where DB and RCU schema are going to start
    * @param dbPort NodePort of DB
    * @param dbUrl URL of DB
-   * @throws ApiException if any error occurs when setting up RCU database
    */
 
   public static synchronized void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix,
-       String dbNamespace, int dbPort, String dbUrl, int dbListenerPort) throws ApiException {
+       String dbNamespace, int dbPort, String dbUrl, int dbListenerPort) {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -480,16 +479,6 @@ public class DbUtils {
     logger.info("Running the createRepository command: {0},  dbUrl: {1}, rcuSchemaPrefix: {2}, RCU type: {3} ",
         createRepository, dbUrl, rcuSchemaPrefix, RCUTYPE);
 
-    /* TODO The original code without encountering SSLProtocolException. Rollback to this oneWhen the bug is fixed.
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(dbNamespace, RCUPODNAME,
-            null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
-            RCUTYPE));
-    logger.info("Inside RCU pod command createRepository return value: {0}", execResult.exitValue());
-    if (execResult.exitValue() != 0) {
-      logger.info("Inside RCU pod command createRepository return error {0}", execResult.stderr());
-      return false;
-    */
     try {
       execCommand(dbNamespace, RCUPODNAME,
           null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,

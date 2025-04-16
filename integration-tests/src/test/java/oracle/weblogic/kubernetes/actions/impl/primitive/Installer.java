@@ -185,12 +185,9 @@ public class Installer {
               .redirect(params.redirect()))
           .execute();
     }
-    if (params.unzip()) {
-      // only unzip WIT once
-      if ((params.type().equalsIgnoreCase(WIT) && !(doesFileExist(IMAGE_TOOL)))
-          || (params.type().equalsIgnoreCase(REMOTECONSOLE) && !(doesFileExist(REMOTECONSOLE_FILE)))) {
-        unzipSucceeded = unzip(downloadDir);
-      }
+    if (params.unzip() && (params.type().equalsIgnoreCase(WIT) && !(doesFileExist(IMAGE_TOOL)))
+        || (params.type().equalsIgnoreCase(REMOTECONSOLE) && !(doesFileExist(REMOTECONSOLE_FILE)))) {
+      unzipSucceeded = unzip(downloadDir);
     }
     return downloadSucceeded && unzipSucceeded;
   }

@@ -28,16 +28,17 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
  */
 public class HttpAsyncTestSupport {
   public static final String OK_RESPONSE =
-      "{\n"
-          + "    \"overallHealthState\": {\n"
-          + "        \"state\": \"ok\",\n"
-          + "        \"subsystemName\": null,\n"
-          + "        \"partitionName\": null,\n"
-          + "        \"symptoms\": []\n"
-          + "    },\n"
-          + "    \"state\": \"RUNNING\",\n"
-          + "    \"activationTime\": 1556759105378\n"
-          + "}";
+          """
+                  {
+                      "overallHealthState": {
+                          "state": "ok",
+                          "subsystemName": null,
+                          "partitionName": null,
+                          "symptoms": []
+                      },
+                      "state": "RUNNING",
+                      "activationTime": 1556759105378
+                  }""";
   private static final HttpResponseStub NOT_FOUND = createStub(HttpResponseStub.class, HTTP_NOT_FOUND);
   private static final RequestHandler NO_SUCH_HANDLER = new RequestHandler(null, NOT_FOUND);
 
@@ -183,12 +184,12 @@ public class HttpAsyncTestSupport {
 
     @Override
     public void onError(Throwable throwable) {
-
+      // no-op
     }
 
     @Override
     public void onComplete() {
-
+      // no-op
     }
   }
 }

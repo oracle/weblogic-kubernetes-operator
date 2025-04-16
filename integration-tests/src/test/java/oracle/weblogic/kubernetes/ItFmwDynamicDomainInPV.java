@@ -90,8 +90,6 @@ class ItFmwDynamicDomainInPV {
   private static String java_home = null;
 
   private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -105,7 +103,6 @@ class ItFmwDynamicDomainInPV {
   private static final String adminServerName = "admin-server";
   private static final String managedServerNameBase = "managed-server";
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";

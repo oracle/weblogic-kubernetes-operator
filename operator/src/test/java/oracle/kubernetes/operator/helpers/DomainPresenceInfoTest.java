@@ -258,20 +258,20 @@ class DomainPresenceInfoTest {
   void afterAddingClusterResource_verifyClusterResourceIsNotNull() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    createAndAddClusterResourceToDomainPresenceInfo(info, clusterName);
-    assertThat(info.getClusterResource(clusterName), notNullValue());
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainPresenceInfo(domainPresenceInfo, clusterName);
+    assertThat(domainPresenceInfo.getClusterResource(clusterName), notNullValue());
   }
 
   @Test
   void afterRemoveClusterResource_verifyClusterResourceIsNull() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    createAndAddClusterResourceToDomainPresenceInfo(info, clusterName);
-    ClusterResource clusterResource = info.removeClusterResource(clusterName);
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainPresenceInfo(domainPresenceInfo, clusterName);
+    ClusterResource clusterResource = domainPresenceInfo.removeClusterResource(clusterName);
     assertThat(clusterResource, notNullValue());
-    assertThat(info.getClusterResource(clusterName), nullValue());
+    assertThat(domainPresenceInfo.getClusterResource(clusterName), nullValue());
   }
 
   @Test
@@ -285,9 +285,9 @@ class DomainPresenceInfoTest {
   void whenClusterResourceDefined_butServerNotDefined_getEffectiveServerSpec() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    createAndAddClusterResourceToDomainPresenceInfo(info, clusterName);
-    EffectiveServerSpec spec = info.getServer("aServer", clusterName);
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainPresenceInfo(domainPresenceInfo, clusterName);
+    EffectiveServerSpec spec = domainPresenceInfo.getServer("aServer", clusterName);
 
     verifyStandardFields(spec);
   }
@@ -306,11 +306,11 @@ class DomainPresenceInfoTest {
     final String MY_RESTART_VERSION = "MyRestartVersion";
 
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    createAndAddClusterResourceToDomainPresenceInfo(info, clusterName);
-    info.getClusterResource(clusterName).getSpec().setRestartVersion(MY_RESTART_VERSION);
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainPresenceInfo(domainPresenceInfo, clusterName);
+    domainPresenceInfo.getClusterResource(clusterName).getSpec().setRestartVersion(MY_RESTART_VERSION);
 
-    EffectiveServerSpec spec = info.getServer(serverName, clusterName);
+    EffectiveServerSpec spec = domainPresenceInfo.getServer(serverName, clusterName);
 
     verifyStandardFields(spec);
     assertThat(spec.getClusterRestartVersion(), equalTo(MY_RESTART_VERSION));
@@ -319,25 +319,25 @@ class DomainPresenceInfoTest {
   @Test
   void whenNonClusteredServerStartPolicyUndefined_startServer() {
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    assertThat(info.getServer("server1", null).shouldStart(0), Is.is(true));
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+    assertThat(domainPresenceInfo.getServer("server1", null).shouldStart(0), Is.is(true));
   }
 
   @Test
   void whenUnconfiguredClusterHasDefaultNumberOfReplicasAndDomainReplicasIs0_dontStartServer() {
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
     domain.getSpec().setReplicas(0);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    assertThat(info.getServer("server1", "cls1").shouldStart(0), Is.is(false));
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+    assertThat(domainPresenceInfo.getServer("server1", "cls1").shouldStart(0), Is.is(false));
   }
 
   @Test
   void whenClusterResourceNotDefined_getDefaultEffectiveClusterSpec() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
 
-    EffectiveClusterSpec clusterSpec = info.getCluster(clusterName);
+    EffectiveClusterSpec clusterSpec = domainPresenceInfo.getCluster(clusterName);
     assertThat(clusterSpec.getClusterLabels(), anEmptyMap());
   }
 
@@ -348,11 +348,11 @@ class DomainPresenceInfoTest {
     final String labelValue = "World";
 
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    createAndAddClusterResourceToDomainPresenceInfo(info, clusterName);
-    info.getClusterResource(clusterName).getSpec().getClusterLabels().put(labelKey, labelValue);
+    final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainPresenceInfo(domainPresenceInfo, clusterName);
+    domainPresenceInfo.getClusterResource(clusterName).getSpec().getClusterLabels().put(labelKey, labelValue);
 
-    EffectiveClusterSpec clusterSpec = info.getCluster(clusterName);
+    EffectiveClusterSpec clusterSpec = domainPresenceInfo.getCluster(clusterName);
     Map<String,String> labels = clusterSpec.getClusterLabels();
     assertThat(labels, aMapWithSize(1));
     assertThat(labels.get(labelKey), equalTo(labelValue));

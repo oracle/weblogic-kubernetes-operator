@@ -212,7 +212,6 @@ class ItInitContainers {
     String adminServerPodName = domain1Uid + adminServerPrefix;
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
-    String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domain1Uid + "-managed-server";
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPodNamePrefix + i,

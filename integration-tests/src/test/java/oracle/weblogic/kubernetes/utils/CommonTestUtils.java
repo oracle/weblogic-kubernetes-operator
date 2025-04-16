@@ -2093,11 +2093,10 @@ public class CommonTestUtils {
       // +1 for the trailing slash
       result += baseRepo.length() + 1;
 
-      if (!baseRepo.equalsIgnoreCase("container-registry.oracle.com")) {
-        if (baseTenancy != null && !baseTenancy.isEmpty()) {
-          // +1 for the trailing slash
-          result += baseTenancy.length() + 1;
-        }
+      if (!baseRepo.equalsIgnoreCase("container-registry.oracle.com")
+          && baseTenancy != null && !baseTenancy.isEmpty()) {
+        // +1 for the trailing slash
+        result += baseTenancy.length() + 1;
       }
     }
     return result;

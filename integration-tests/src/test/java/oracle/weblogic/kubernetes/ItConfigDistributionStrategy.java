@@ -244,9 +244,9 @@ class ItConfigDistributionStrategy {
       String ingressClassName = nginxHelmParams.getIngressClassName();
       String serviceName = domainUid + "-admin-server";
       final int ADMIN_SERVER_PORT = 7001;
-      String hostAndPort = getHostAndPortOKE();
+      String hostAndPortOKE = getHostAndPortOKE();
       createNginxIngressPathRoutingRules(domainNamespace, ingressClassName,
-          serviceName, ADMIN_SERVER_PORT, hostAndPort);
+          serviceName, ADMIN_SERVER_PORT, hostAndPortOKE);
     }
 
     // Expose the admin service external node port as  a route for OKD
@@ -500,7 +500,6 @@ class ItConfigDistributionStrategy {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //TODO: - does changing overrideDistributionStrategy needs restart of server pods?
     restartDomain(); // if above is a bug, remove this after the above bug is fixed
 
     //store the pod creation timestamps
@@ -574,7 +573,6 @@ class ItConfigDistributionStrategy {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //TODO: - does changing overrideDistributionStrategy needs restart of server pods?
     restartDomain(); // if above is a bug, remove this after the above bug is fixed
 
     //store the pod creation timestamps
@@ -694,8 +692,8 @@ class ItConfigDistributionStrategy {
 
     return (()
         -> {
-      String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
-      logger.info("hostAndPort = {0} ", hostAndPort);
+      String hostAndPortLocal = getHostAndPort(adminSvcExtHost, serviceNodePort);
+      logger.info("hostAndPort = {0} ", hostAndPortLocal);
 
       //verify server attribute MaxMessageSize
       String appURI = "/clusterview/ConfigServlet?"
@@ -705,14 +703,14 @@ class ItConfigDistributionStrategy {
       Map<String, String> headers = null;
       if (TestConstants.KIND_CLUSTER
           && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+        hostAndPortLocal = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
         headers = new HashMap<>();
         headers.put("host", hostHeader);
       }
       if (OKE_CLUSTER_PRIVATEIP) {
-        hostAndPort = ingressIP;
+        hostAndPortLocal = ingressIP;
       }
-      String url = "http://" + hostAndPort + appURI;
+      String url = "http://" + hostAndPortLocal + appURI;
       HttpResponse<String> response = OracleHttpClient.get(url, headers, true);
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       return response.body().contains("MaxMessageSize=".concat(maxMessageSize));
@@ -860,20 +858,20 @@ class ItConfigDistributionStrategy {
 
     testUntil(
         () -> {
-          String hostAndPort = getHostAndPort(adminSvcExtHost, port);
-          logger.info("hostAndPort = {0} ", hostAndPort);
+          String hostAndPortLocal = getHostAndPort(adminSvcExtHost, port);
+          logger.info("hostAndPort = {0} ", hostAndPortLocal);
 
           Map<String, String> headers = null;
           if (TestConstants.KIND_CLUSTER
               && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-            hostAndPort = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
+            hostAndPortLocal = "localhost:" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
             headers = new HashMap<>();
             headers.put("host", hostHeader);
           }
           if (OKE_CLUSTER_PRIVATEIP) {
-            hostAndPort = getHostAndPortOKE();
+            hostAndPortLocal = getHostAndPortOKE();
           }
-          String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
+          String baseUri = "http://" + hostAndPortLocal + "/clusterview/ConfigServlet?";
 
           //verify datasource attributes of JdbcTestDataSource-0
           String appURI = "resTest=true&resName=" + dsName1;
@@ -930,7 +928,6 @@ class ItConfigDistributionStrategy {
       if (OKE_CLUSTER_PRIVATEIP) {
         hostAndPort = getHostAndPortOKE();
       }
-      String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
       String appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
       testDatasource(appURI);
     }
@@ -1215,20 +1212,20 @@ class ItConfigDistributionStrategy {
           int serviceNodePort = assertDoesNotThrow(()
               -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
               "Getting admin server node port failed");
-          String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+          String hostAndPortLocal = getHostAndPort(adminSvcExtHost, serviceNodePort);
           boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
           Map<String, String> headers = null;
           if (TestConstants.KIND_CLUSTER
               && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-            hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress())
+            hostAndPortLocal = formatIPv6Host(InetAddress.getLocalHost().getHostAddress())
                 + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
             headers = new HashMap<>();
             headers.put("host", hostHeader);
           }
           if (OKE_CLUSTER_PRIVATEIP) {
-            hostAndPort = getHostAndPortOKE();
+            hostAndPortLocal = getHostAndPortOKE();
           }
-          String url = "http://" + hostAndPort
+          String url = "http://" + hostAndPortLocal
               + "/clusterview/ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT
               + "&password=" + ADMIN_PASSWORD_DEFAULT + "&ipv6=" + ipv6;
 

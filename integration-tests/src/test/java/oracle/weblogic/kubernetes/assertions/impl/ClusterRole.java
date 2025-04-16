@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -25,10 +25,9 @@ public class ClusterRole {
     V1ClusterRoleList clusterRoleList = listClusterRoles("");
     List<V1ClusterRole> clusterRoles = clusterRoleList.getItems();
     for (V1ClusterRole clusterRole : clusterRoles) {
-      if (clusterRole.getMetadata() != null && clusterRole.getMetadata().getName() != null) {
-        if (clusterRole.getMetadata().getName().equals(name)) {
-          return true;
-        }
+      if (clusterRole.getMetadata() != null && clusterRole.getMetadata().getName() != null
+          && clusterRole.getMetadata().getName().equals(name)) {
+        return true;
       }
     }
 
