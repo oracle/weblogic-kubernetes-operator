@@ -60,6 +60,7 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -294,6 +295,7 @@ class ItIntrospectVersion {
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
+  @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   @Tag("gate")
@@ -426,6 +428,7 @@ class ItIntrospectVersion {
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
+  @Order(2)
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
   void testDomainIntrospectVersionRolling() throws ApiException {
@@ -550,6 +553,7 @@ class ItIntrospectVersion {
    * e. Make a REST api call to access management console using new password.
    * f. Make a REST api call to access management console using old password.
    */
+  @Order(3)
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
   void testCredentialChange() {
@@ -685,6 +689,7 @@ class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
+  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   void testCreateNewCluster() {
@@ -767,6 +772,7 @@ class ItIntrospectVersion {
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
+  @Order(5)
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   void testUpdateImageName() {
@@ -872,6 +878,7 @@ class ItIntrospectVersion {
    * Test that when a domain resource has spec.introspectVersion configured,
    * after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
    */
+  @Order(6)
   @Test
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify label weblogic.introspectVersion set")
   void testDedicatedModeSameNamespaceScale() {
@@ -933,6 +940,7 @@ class ItIntrospectVersion {
    * It also verifies the intospector job is started/stoped and none of the
    * server pod is rolled since there is no change to resource configuration.
    */
+  @Order(7)
   @Test
   @DisplayName("Test to use sample scripts to explicitly initiate introspection")
   void testIntrospectDomainScript() {
@@ -1073,6 +1081,7 @@ class ItIntrospectVersion {
    * type: Completed, status: false
    * Verify the introspector reruns to make it right when model file is fixed.
    */
+  @Order(8)
   @Test
   @DisplayName("Test domain status condition with bad model file")
   void testIntrospectorMakeright() {
