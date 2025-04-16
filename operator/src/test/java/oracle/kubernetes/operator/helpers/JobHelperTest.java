@@ -2150,8 +2150,8 @@ class JobHelperTest extends DomainValidationTestBase {
     final String INTROSPECT_VERSION = "v123";
     configureDomain().withIntrospectVersion(INTROSPECT_VERSION);
 
-    V1Job iJob = createJob();
-    assertThat(iJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
+    V1Job introJob = createJob();
+    assertThat(introJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
         is(INTROSPECT_VERSION));
   }
 
@@ -2159,8 +2159,8 @@ class JobHelperTest extends DomainValidationTestBase {
   void whenDomainHasNoIntrospectVersion_jobMetatadataCreatedWithoutNoLabel() {
     configureDomain().withIntrospectVersion(null);
 
-    V1Job iJob = createJob();
-    assertThat(iJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
+    V1Job introJob = createJob();
+    assertThat(introJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
   }
 
   private V1Job job;

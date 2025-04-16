@@ -105,7 +105,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
-    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
