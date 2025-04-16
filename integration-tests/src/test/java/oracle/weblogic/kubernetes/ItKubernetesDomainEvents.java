@@ -186,7 +186,6 @@ class ItKubernetesDomainEvents {
   private static final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
-  private  static String className = new Object(){}.getClass().getEnclosingClass().getSimpleName();
 
   public enum ScaleAction {
     scaleUp,
@@ -420,7 +419,6 @@ class ItKubernetesDomainEvents {
    */
   @Test
   void testDomainK8sEventsScalePastMaxWithoutChangingIntrospectVersion() {
-    OffsetDateTime timestamp = now();
     logger.info("Scaling cluster using patching");
     assertFalse(scaleCluster(cluster1Name, domainNamespace3, 3),
             "Patching cluster with a replica count that exceeds the cluster size did not fail as expected");
