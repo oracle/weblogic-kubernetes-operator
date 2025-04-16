@@ -110,7 +110,7 @@ public abstract class MojoTestBase {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 

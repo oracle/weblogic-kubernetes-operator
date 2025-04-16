@@ -1495,7 +1495,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       V1Pod pod = callResponse.getObject();
       if (!isPodReady(pod)) {
         // requeue to wait for the pod to be ready
-        return doRequeue(packet);
+        return doRequeue();
       }
       processResponse(callResponse);
       return doNext(packet);

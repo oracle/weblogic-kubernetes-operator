@@ -181,7 +181,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   }
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger()
             .ignoringLoggedExceptions(ApiException.class, InterruptedException.class));
     mementos.add(TuningParametersStub.install());
@@ -220,7 +220,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     shutDownThreads();
     mementos.forEach(Memento::revert);
 
@@ -438,6 +438,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
   @Override
   public void receivedResponse(Watch.Response<V1Pod> response) {
+    // no-op
   }
 
   @Override

@@ -178,7 +178,7 @@ class PersistentVolumeHelperTest {
     runPersistentVolumeHelper();
 
     assertThat(
-            getPersistentVolumeResource(domainPresenceInfo),
+            getPersistentVolumeResource(),
             is(persistentVolumeWithName("Test")));
   }
 
@@ -193,7 +193,7 @@ class PersistentVolumeHelperTest {
     runPersistentVolumeHelper();
 
     assertThat(
-            getPersistentVolumeResource(domainPresenceInfo),
+            getPersistentVolumeResource(),
             is(persistentVolumeWithName("Test")));
   }
 
@@ -209,7 +209,7 @@ class PersistentVolumeHelperTest {
     runPersistentVolumeHelper();
 
     assertThat(
-            getPersistentVolumeResource(domainPresenceInfo),
+            getPersistentVolumeResource(),
             is(persistentVolumeWithName("Test")));
   }
 
@@ -271,7 +271,7 @@ class PersistentVolumeHelperTest {
     return PersistentVolumeHelper.createPersistentVolumeStep(next);
   }
 
-  public V1PersistentVolume getPersistentVolumeResource(DomainPresenceInfo info) {
+  public V1PersistentVolume getPersistentVolumeResource() {
     return testSupport.getResourceWithName(PV, "Test");
   }
 
@@ -280,7 +280,7 @@ class PersistentVolumeHelperTest {
   }
 
   private DomainResource getDomain() {
-    return (DomainResource) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
+    return (DomainResource) testSupport.getResources(KubernetesTestSupport.DOMAIN).getFirst();
   }
 
   @Test

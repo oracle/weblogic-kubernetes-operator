@@ -142,7 +142,7 @@ public class DomainValidationSteps {
       DomainResource.ValidationResult validationResult
           = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
       if (validationResult.isDelay()) {
-        return doRequeue(packet);
+        return doRequeue();
       } else if (validationResult.failures().isEmpty()) {
         return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet);
       } else {

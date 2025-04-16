@@ -1413,9 +1413,8 @@ public class TestActions {
    * @param jobName name of the job
    * @param namespace name of the namespace
    * @return true if delete was successful
-   * @throws ApiException when deletion of job fails
    */
-  public static boolean deleteJob(String jobName, String namespace) throws ApiException {
+  public static boolean deleteJob(String jobName, String namespace) {
     return Job.deleteJob(jobName, namespace);
   }
 
@@ -1645,24 +1644,6 @@ public class TestActions {
     return Kubernetes.getContainerRestartCount(namespace, labelSelector, podName, containerName);
   }
 
-  // ------------------------ where does this go  -------------------------
-
-  /**
-   * Deploy the application to the given target.
-   *
-   * @param appName     the name of the application
-   * @param appLocation location of the war/ear file
-   * @param t3Url       the t3 url to connect
-   * @param username    username
-   * @param password    password
-   * @param target      the name of the target
-   * @return true on success, false otherwise
-   */
-  public static boolean deployApplication(String appName, String appLocation, String t3Url,
-                                          String username, String password, String target) {
-    return true;
-  }
-
   // --------------------------- Prometheus ---------------------------------
 
   /**
@@ -1721,13 +1702,10 @@ public class TestActions {
 
   /**
    * Install WebLogic Remote Console.
-   * @param domainNamespace namespace in which the domain will be created
-   * @param adminServerPodName the name of the admin server pod
-   *
    * @return true if WebLogic Remote Console is successfully installed, false otherwise.
    */
-  public static boolean installWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
-    return WebLogicRemoteConsole.installWlsRemoteConsole(domainNamespace, adminServerPodName);
+  public static boolean installWlsRemoteConsole() {
+    return WebLogicRemoteConsole.installWlsRemoteConsole();
   }
 
   /**

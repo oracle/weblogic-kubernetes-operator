@@ -155,7 +155,7 @@ class ItOnPremCrossDomainTransaction {
    */
   @BeforeAll
   static void initAll(@Namespaces(3) List<String> namespaces)
-      throws UnknownHostException, IOException, InterruptedException {
+      throws IOException, InterruptedException {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -372,10 +372,9 @@ class ItOnPremCrossDomainTransaction {
 
   
   private boolean checkLocalQueue(String hostAndPort) {
-    String url = String.format("http://%s/jmsservlet/jmstest?"
-        + "url=t3://localhost:" + adminServerPort + "&"
-        + "action=receive&dest=jms.testAccountingQueue",
-        hostAndPort);
+    String url = String.format(
+        "http://%s/jmsservlet/jmstest?url=t3://localhost:%s&action=receive&dest=jms.testAccountingQueue",
+        hostAndPort, adminServerPort);
 
     logger.info("Queue check url {0}", url);
     testUntil(() -> {

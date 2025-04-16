@@ -1023,7 +1023,7 @@ class ItMiiUpdateDomainConfig {
         .append(managedServer)
         .append(" --silent --show-error -o /dev/null -w %{http_code}");
 
-    StringBuffer checkCluster = new StringBuffer();
+    StringBuffer checkCluster;
 
     if (OKE_CLUSTER || OCNE) {
       checkCluster = new StringBuffer(KUBERNETES_CLI)

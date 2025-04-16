@@ -330,7 +330,6 @@ class ItServerStartPolicyDynamicCluster {
   @DisplayName("Manage dynamic cluster server in absence of Administration Server")
   void testDynamicServerLifeCycleWithoutAdmin() {
     String serverName = "managed-server1";
-    // domainUid + "-" + serverName;
     String serverPodName = managedServerPrefix + "1";
     // Here managed server can be stopped without admin server
     // but can not be started to RUNNING state.

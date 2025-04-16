@@ -185,8 +185,9 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     return SIP_SECURE_NAP_PORT;
   }
 
+  @Override
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     configureAdminServer()
         .configureAdminService()
         .withChannel("default", TEST_NODE_PORT)
@@ -230,8 +231,9 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceAnnotation(OLD_ANNOTATION, "value");
   }
 
+  @Override
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     super.tearDown();
 
     testSupport.throwOnCompletionFailure();

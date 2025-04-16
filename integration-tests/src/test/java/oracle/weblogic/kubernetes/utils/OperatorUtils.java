@@ -770,16 +770,12 @@ public class OperatorUtils {
       V1Pod pod = getPod(opNamespace, labelSelector, "weblogic-operator-");
       logger.info(getPodLog(pod.getMetadata().getName(), opNamespace));
     });
-    String cmdToExecute = String.format(
-        KUBERNETES_CLI
-            + " describe pods " + "  -n " + opNamespace);
+    String cmdToExecute = String.format("%s describe pods -n %s", KUBERNETES_CLI, opNamespace);
     Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute();
-    cmdToExecute = String.format(
-        KUBERNETES_CLI
-            + " get events  " +   "  -n " + opNamespace);
+    cmdToExecute = String.format("%s get events -n %s", KUBERNETES_CLI, opNamespace);
     Command
         .withParams(new CommandParams()
             .command(cmdToExecute))

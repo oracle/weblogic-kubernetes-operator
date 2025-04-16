@@ -74,7 +74,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(configureOperatorLogger());
     mementos.add(StubWatchFactory.install());
     mementos.add(TuningParametersStub.install());
@@ -92,7 +92,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     shutDownThreads();
     mementos.forEach(Memento::revert);
   }

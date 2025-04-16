@@ -341,12 +341,12 @@ class PodPresenceTest {
 
   @Test
   void onModifyEventWithNoRecordedServerPod_addIt() {
-    V1Pod pod = createServerPod();
-    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(pod).toWatchResponse();
+    V1Pod serverPod = createServerPod();
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(serverPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
-    assertThat(info.getServerPod(SERVER), sameInstance(pod));
+    assertThat(info.getServerPod(SERVER), sameInstance(serverPod));
   }
 
   @Test

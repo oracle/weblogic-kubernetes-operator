@@ -370,7 +370,6 @@ class RestBackendImplTest {
     }
     testSupport.defineResources(clusterResources);
 
-    ClusterResource clusterToReturn = clusterResources[1]; // return the middle one
     configureDomain().withClusterReference(DOMAIN1 + '-' + CLUSTER_1);
   }
 
@@ -455,15 +454,15 @@ class RestBackendImplTest {
 
   @Test
   void whenUsingAccessToken_userInfoIsNull() {
-    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
-    assertThat(restBackend.getUserInfo(), nullValue());
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces);
+    assertThat(restBackendImpl.getUserInfo(), nullValue());
   }
 
   @Test
   void whenUsingTokenReview_userInfoNotNull() {
     TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
-    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
-    assertThat(restBackend.getUserInfo(), notNullValue());
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces);
+    assertThat(restBackendImpl.getUserInfo(), notNullValue());
   }
 
   @Test
@@ -479,9 +478,9 @@ class RestBackendImplTest {
   void whenUsingTokenReview_authorizationCheckCalled() {
     TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
     AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
-    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces)
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces)
         .withAuthorizationProxy(authorizationProxyStub);
-    restBackend.getClusters(DOMAIN1);
+    restBackendImpl.getClusters(DOMAIN1);
     assertThat(authorizationProxyStub.atzCheck, is(true));
   }
 

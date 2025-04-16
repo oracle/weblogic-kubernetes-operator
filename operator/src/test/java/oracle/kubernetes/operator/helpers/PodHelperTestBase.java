@@ -356,7 +356,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
     mementos.add(TuningParametersStub.install());
@@ -438,7 +438,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();

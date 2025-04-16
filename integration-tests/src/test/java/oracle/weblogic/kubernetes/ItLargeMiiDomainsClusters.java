@@ -135,7 +135,6 @@ class ItLargeMiiDomainsClusters {
   private static final String baseDomainUid = "domain";
   private static final String baseClusterName = "cluster-";
   private static String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String adminServerName = "admin-server";
   private static int numOfDomains;
   private static int numOfClusters;
   private static int numOfServersToStart;

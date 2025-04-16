@@ -39,7 +39,7 @@ public class PatchDomainUtils {
   ) {
     LoggingFacade logger = getLogger();
     String patch = String.format(
-        "[\n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}\n]\n",
+        "[%n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}%n]%n",
         "webLogicCredentialsSecret/name", secretName);
     logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
         domainResourceName, namespace, patch);
@@ -59,7 +59,7 @@ public class PatchDomainUtils {
     logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
         domainResourceName, namespace, oldVersion, newVersion);
     patch =
-        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}\n]\n",
+        String.format("[%n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}%n]%n",
             newVersion);
 
     logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",

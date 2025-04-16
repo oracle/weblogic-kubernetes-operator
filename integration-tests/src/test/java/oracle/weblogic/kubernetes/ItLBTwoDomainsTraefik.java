@@ -224,13 +224,11 @@ class ItLBTwoDomainsTraefik {
    */
   @AfterAll
   void tearDownAll() throws ApiException {
-    if (!SKIP_CLEANUP) {
-      if (pvPvcNamePair != null) {
-        // delete pvc
-        deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
-        // delete pv
-        deletePersistentVolume(pvPvcNamePair.get(0));
-      }
+    if (!SKIP_CLEANUP && pvPvcNamePair != null) {
+      // delete pvc
+      deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
+      // delete pv
+      deletePersistentVolume(pvPvcNamePair.get(0));
     }
     if (traefikHelmParams != null && OKE_CLUSTER) {
 

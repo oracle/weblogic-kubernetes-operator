@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -124,18 +123,8 @@ class WlsDomainConfigTest {
     assertThat(
           support.createDomainConfig().getAllServers().stream()
                 .map(WlsServerConfig::getName)
-                .collect(Collectors.toList()),
+                .toList(),
           containsInAnyOrder("standalone", "st1", "st2", "ds1", "ds2", "ds3"));
-  }
-
-  private boolean containsServer(WlsClusterConfig wlsClusterConfig, String serverName) {
-    List<WlsServerConfig> serverConfigs = wlsClusterConfig.getServerConfigs();
-    for (WlsServerConfig serverConfig : serverConfigs) {
-      if (serverName.equals(serverConfig.getName())) {
-        return true;
-      }
-    }
-    return false;
   }
 
   @Test

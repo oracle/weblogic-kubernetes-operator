@@ -26,10 +26,9 @@ public class RoleBinding {
     List<V1RoleBinding> roleBindings = roleBindingList.getItems();
 
     for (V1RoleBinding roleBinding : roleBindings) {
-      if (roleBinding.getMetadata() != null && roleBinding.getMetadata().getName() != null) {
-        if (roleBinding.getMetadata().getName().equals(name)) {
-          return true;
-        }
+      if (roleBinding.getMetadata() != null && roleBinding.getMetadata().getName() != null
+          && roleBinding.getMetadata().getName().equals(name)) {
+        return true;
       }
     }
 

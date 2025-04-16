@@ -1586,14 +1586,15 @@ class ItMiiDomainUpgradeToSecureMode {
     }
     String curlCmd;
     if (isHostRouting) {
-      curlCmd = String.format("curl -g -ks --show-error --noproxy '*' "
-          + credentials + " -H 'host: %s' %s", ingressHostName, url);
+      curlCmd = String.format("curl -g -ks --show-error --noproxy '*' %s -H 'host: %s' %s",
+          credentials, ingressHostName, url);
     } else {
       if (isTLS) {
-        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' "
-            + credentials + " -H 'WL-Proxy-Client-IP: 1.2.3.4' -H 'WL-Proxy-SSL: false' %s", url);
+        curlCmd = String.format(
+            "curl -g -ks --show-error --noproxy '*' %s -H 'WL-Proxy-Client-IP: 1.2.3.4' -H 'WL-Proxy-SSL: false' %s",
+            credentials, url);
       } else {
-        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' " + credentials + " %s", url);
+        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' %s %s", credentials, url);
       }
     }
 

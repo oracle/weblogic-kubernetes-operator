@@ -573,8 +573,8 @@ public class Kubernetes {
     LoggingFacade logger = getLogger();
     String labelSelector = null;
     if (label != null) {
-      String key = label.keySet().iterator().next().toString();
-      String value = label.get(key).toString();
+      String key = label.keySet().iterator().next();
+      String value = label.get(key);
       labelSelector = String.format("%s in (%s)", key, value);
       logger.info(labelSelector);
     }
@@ -640,8 +640,8 @@ public class Kubernetes {
     String labelSelector = null;
     LoggingFacade logger = getLogger();
     if (label != null) {
-      String key = label.keySet().iterator().next().toString();
-      String value = label.get(key).toString();
+      String key = label.keySet().iterator().next();
+      String value = label.get(key);
       labelSelector = String.format("%s in (%s)", key, value);
       logger.info(labelSelector);
     }
@@ -710,8 +710,7 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
-    V1PodList v1PodList
-        = coreV1Api.listNamespacedPod(
+    return coreV1Api.listNamespacedPod(
         namespace, // namespace in which to look for the pods.
         Boolean.FALSE.toString(), // pretty print output.
         Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -725,7 +724,6 @@ public class Kubernetes {
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
     );
-    return v1PodList;
   }
 
   /**
@@ -833,10 +831,8 @@ public class Kubernetes {
    * @param labelSelectors labels to narrow the job list
    * @param jobName name of the job to check for its completion status
    * @return true if completed false otherwise
-   * @throws ApiException when querying pod condition fails
    */
-  public static boolean isJobComplete(String namespace, String labelSelectors, String jobName)
-      throws ApiException {
+  public static boolean isJobComplete(String namespace, String labelSelectors, String jobName) {
     boolean completionStatus = false;
     LoggingFacade logger = getLogger();
 

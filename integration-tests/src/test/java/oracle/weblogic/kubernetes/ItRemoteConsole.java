@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -139,7 +139,7 @@ class ItRemoteConsole {
 
     logger.info("REMOTECONSOLE_DOWNLOAD_URL [{0}]", REMOTECONSOLE_DOWNLOAD_URL);
     logger.info("REMOTECONSOLE_FILE [{0}]", REMOTECONSOLE_FILE);
-    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+    assertTrue(installAndVerifyWlsRemoteConsole(),
         "Remote Console installation failed");
     logger.info("Assign a unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
@@ -173,7 +173,7 @@ class ItRemoteConsole {
     }
 
     // install WebLogic remote console
-    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+    assertTrue(installAndVerifyWlsRemoteConsole(),
         "Remote Console installation failed");
   }
 
@@ -493,14 +493,12 @@ class ItRemoteConsole {
 
   /**
    * Install WebLogic Remote Console.
-   * @param domainNamespace namespace in which the domain will be created
-   * @param adminServerPodName the name of the admin server pod
    *
    * @return true if WebLogic Remote Console is successfully installed, false otherwise.
    */
-  public static boolean installAndVerifyWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
+  public static boolean installAndVerifyWlsRemoteConsole() {
 
-    assertThat(installWlsRemoteConsole(domainNamespace, adminServerPodName))
+    assertThat(installWlsRemoteConsole())
         .as("WebLogic Remote Console installation succeeds")
         .withFailMessage("WebLogic Remote Console installation failed")
         .isTrue();

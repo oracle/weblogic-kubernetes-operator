@@ -729,7 +729,7 @@ class ItMiiDomain {
     // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info(WLSIMG_BUILDER + " push image {0} to registry", image);
-      assertTrue(imagePush(image), String.format(WLSIMG_BUILDER + " push failed for image %s", image));
+      assertTrue(imagePush(image), String.format("%s push failed for image %s", WLSIMG_BUILDER, image));
     }
   }
 
@@ -828,8 +828,7 @@ class ItMiiDomain {
       String image
   ) {
     String patch =
-        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n",
-            image);
+        String.format("[%n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}%n]%n", image);
     logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
         domainResourceName, namespace, patch);
 

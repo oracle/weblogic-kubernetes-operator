@@ -373,7 +373,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
         .map(V1CustomResourceDefinition::getMetadata)
         .filter(Objects::nonNull)
         .map(V1ObjectMeta::getName)
-        .collect(Collectors.toList());
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @Test

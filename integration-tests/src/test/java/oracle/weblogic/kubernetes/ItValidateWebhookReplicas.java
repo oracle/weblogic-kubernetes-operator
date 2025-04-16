@@ -706,11 +706,11 @@ class ItValidateWebhookReplicas {
         String.format("patching domain should succeed but failed with response msg: %s", response));
 
     // check only managed server1 pod exists, all other managed server pods are deleted
-    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String msPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     for (int i = DEFAULT_MAX_CLUSTER_SIZE; i > 1; i--) {
-      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodDeleted(msPrefix + i, domainUid, domainNamespace);
     }
-    checkPodReadyAndServiceExists(managedServerPrefix + "1", domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(msPrefix + "1", domainUid, domainNamespace);
   }
 
   private Callable<Boolean> tagImageAndPushIfNeeded(String originalImage, String taggedImage) {

@@ -98,17 +98,17 @@ public class ProcessedChart implements YamlReader {
    */
   public Iterable<Object> getYamlDocuments() throws Exception {
     if (documents == null) {
-      List<Object> documents = new ArrayList<>();
+      List<Object> docs = new ArrayList<>();
       new Yaml()
           .loadAll(getProcess().getInputStream())
           .forEach(
               document -> {
                 if (document != null) {
-                  documents.add(document);
+                  docs.add(document);
                 }
               });
 
-      this.documents = documents;
+      this.documents = docs;
     }
 
     return documents;

@@ -703,7 +703,7 @@ public class PodHelper {
 
       if (adminPod == null || !isPodReady(adminPod)) {
         // requeue to wait for admin pod to be ready
-        return doRequeue(packet);
+        return doRequeue();
       }
 
       return doNext(packet);
@@ -780,7 +780,7 @@ public class PodHelper {
       @Override
       public Result apply(Packet packet) {
         deferProcessing(createCyclePodStep(pod, getNext()));
-        return doEnd(packet);
+        return doEnd();
       }
     }
 
@@ -1007,7 +1007,7 @@ public class PodHelper {
             } else if (isMustWait) {
               info.setServerPod(serverName, callResponse.getObject());
               // requeue to wait for pod to be deleted and gone
-              return doRequeue(packet);
+              return doRequeue();
             }
             return doNext(packet);
           }

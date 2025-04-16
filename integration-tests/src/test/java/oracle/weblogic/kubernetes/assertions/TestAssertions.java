@@ -510,25 +510,23 @@ public class TestAssertions {
             OffsetDateTime lastTransitionTimeClusterRes = null;
             OffsetDateTime lastTransitionTimeDomainCluster = null;
             for (ClusterCondition clusterResCondition : clusterResConditionList) {
-              if (clusterResCondition.getType().equalsIgnoreCase(conditionType)) {
-                if (expectedStatus.equals(clusterResCondition.getStatus())) {
-                  lastTransitionTimeClusterRes = clusterResCondition.getLastTransitionTime();
-                  foundConditionTypeInClusterResource = true;
-                  logger.info("Found matching condition type {0} and status {1} for cluster resource {2}",
-                      clusterResCondition.getType(), clusterResCondition.getStatus(),
-                      clusterResourceStatus.getClusterName());
-                }
+              if (clusterResCondition.getType().equalsIgnoreCase(conditionType)
+                  && expectedStatus.equals(clusterResCondition.getStatus())) {
+                lastTransitionTimeClusterRes = clusterResCondition.getLastTransitionTime();
+                foundConditionTypeInClusterResource = true;
+                logger.info("Found matching condition type {0} and status {1} for cluster resource {2}",
+                    clusterResCondition.getType(), clusterResCondition.getStatus(),
+                    clusterResourceStatus.getClusterName());
               }
             }
             for (ClusterCondition domainClusterCondition : domainClusterConditionList) {
-              if (domainClusterCondition.getType().equalsIgnoreCase(conditionType)) {
-                if (expectedStatus.equals(domainClusterCondition.getStatus())) {
-                  foundConditionTypeInDomainStatusCluster = true;
-                  lastTransitionTimeDomainCluster = domainClusterCondition.getLastTransitionTime();
-                  logger.info("Found matching condition type {0} and status {1} for domain status cluster {2} ",
-                      domainClusterCondition.getType(), domainClusterCondition.getStatus(),
-                      domainClusterStatus.getClusterName());
-                }
+              if (domainClusterCondition.getType().equalsIgnoreCase(conditionType)
+                  && expectedStatus.equals(domainClusterCondition.getStatus())) {
+                foundConditionTypeInDomainStatusCluster = true;
+                lastTransitionTimeDomainCluster = domainClusterCondition.getLastTransitionTime();
+                logger.info("Found matching condition type {0} and status {1} for domain status cluster {2} ",
+                    domainClusterCondition.getType(), domainClusterCondition.getStatus(),
+                    domainClusterStatus.getClusterName());
               }
             }
             boolean isTransitionTimeSame = (lastTransitionTimeDomainCluster != null
@@ -772,18 +770,16 @@ public class TestAssertions {
   }
 
   /**
-   * Check the staus of the given server in domain status.
+   * Check the status of the given server in domain status.
    *
    * @param domainUid uid of the domain
    * @param domainNamespace namespace of the domain
-   * @param serverName name of the server
    * @param podPhase phase of the server pod
    * @param podReadyStatus status of the pod Ready condition
    * @return true if the condition type has the expected status, false otherwise
    */
   public static Callable<Boolean> domainStatusServerStatusHasExpectedPodStatus(String domainUid,
                                                                              String domainNamespace,
-                                                                             String serverName,
                                                                              String podPhase,
                                                                              String podReadyStatus) {
     LoggingFacade logger = getLogger();

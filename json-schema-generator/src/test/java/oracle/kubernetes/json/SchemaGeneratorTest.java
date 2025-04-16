@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -412,8 +412,8 @@ class SchemaGeneratorTest {
 
   @Test
   void whenObjectDefinedInExternalSchema_useFullReference() throws IOException {
-    URL schemaUrl = getClass().getResource("k8smini.json");
-    generator.addExternalSchema(schemaUrl, cacheUrl);
+    URL schemaUrlK8sMini = getClass().getResource("k8smini.json");
+    generator.addExternalSchema(schemaUrlK8sMini, cacheUrl);
     Object schema = generator.generate(ExternalReferenceObject.class);
 
     assertThat(schema, hasJsonPath("$.properties.env.type", equalTo("array")));
@@ -421,7 +421,7 @@ class SchemaGeneratorTest {
         schema,
         hasJsonPath(
             "$.properties.env.items.$ref",
-            equalTo(schemaUrl + "#/definitions/io.k8s.api.core.v1.EnvVar")));
+            equalTo(schemaUrlK8sMini + "#/definitions/io.k8s.api.core.v1.EnvVar")));
     assertThat(
         schema, hasJsonPath("$.properties.simple.$ref", equalTo("#/definitions/SimpleObject")));
   }

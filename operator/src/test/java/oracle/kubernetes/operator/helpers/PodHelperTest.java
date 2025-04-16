@@ -109,42 +109,42 @@ class PodHelperTest {
 
   @Test
   void whenPodPhaseNotRunning_isNotReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Pending")
                 .addConditionsItem(new V1PodCondition()));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(false));
   }
 
   @Test
   void whenPodRunningWithOnlyNonReadyConditions_isNotReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Initialized")));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(false));
   }
 
   @Test
   void whenPodRunningWithOnlyReadyConditionNotTrue_isNotReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Ready")));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(false));
   }
 
   @Test
   void whenPodRunningWithOnlyReadyConditionTrue_isReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(true));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(true));
   }
 
 }

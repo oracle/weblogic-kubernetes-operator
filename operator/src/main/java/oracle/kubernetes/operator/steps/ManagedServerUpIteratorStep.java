@@ -150,7 +150,7 @@ public class ManagedServerUpIteratorStep extends Step {
       if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)
               && !isWaitingToRoll)) {
         // requeue to wait for managed pod to be ready
-        return doRequeue(packet);
+        return doRequeue();
       }
 
       return doNext(packet);

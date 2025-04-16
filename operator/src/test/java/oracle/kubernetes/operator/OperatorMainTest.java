@@ -213,7 +213,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(loggerControl);
     mementos.add(testSupport.install());
     mementos.add(TestStepFactory.install());
@@ -232,7 +232,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);

@@ -90,15 +90,13 @@ public class Pod {
             throw new Exception("more than maxUnavailable pods are restarting");
           }
         }
-        if (podName.equals(entry.getKey())) {
-          if (pod != null && pod.getMetadata().getCreationTimestamp() != null) {
-            OffsetDateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
-            getLogger().info("Comparing creation timestamps old: {0} new {1}",
-                entry.getValue(), newCreationTimeStamp);
-            if (newCreationTimeStamp.isAfter(entry.getValue())) {
-              getLogger().info("Pod {0} is restarted", entry.getKey());
-              podRestartStatus = true;
-            }
+        if (podName.equals(entry.getKey()) && pod != null && pod.getMetadata().getCreationTimestamp() != null) {
+          OffsetDateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
+          getLogger().info("Comparing creation timestamps old: {0} new {1}",
+              entry.getValue(), newCreationTimeStamp);
+          if (newCreationTimeStamp.isAfter(entry.getValue())) {
+            getLogger().info("Pod {0} is restarted", entry.getKey());
+            podRestartStatus = true;
           }
         }
       }

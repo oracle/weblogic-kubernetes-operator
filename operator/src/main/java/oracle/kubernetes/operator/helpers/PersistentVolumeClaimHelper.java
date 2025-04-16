@@ -278,7 +278,7 @@ public class PersistentVolumeClaimHelper {
       V1PersistentVolumeClaim domainPvc = info.getPersistentVolumeClaim(pvcName);
 
       if (!isBound(domainPvc)) {
-        return doRequeue(packet);
+        return doRequeue();
       }
 
       return doNext(packet);

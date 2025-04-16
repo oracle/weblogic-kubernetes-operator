@@ -345,7 +345,7 @@ class ItOperatorFmwUpgrade {
       // check operator image name after upgrade
       logger.info("Checking image name in operator container ");
       testUntil(
-            assertDoesNotThrow(() -> getOpContainerImageName(),
+            assertDoesNotThrow(this::getOpContainerImageName,
               "Exception while getting the operator image name"),
             logger,
             "Checking operator image name in namespace {0} after upgrade",

@@ -151,9 +151,9 @@ public class ServerDownIteratorStep extends Step {
       public Result apply(Packet packet) {
         if (info.getServerPod(ssi.getServerName()) != null) {
           // requeue to wait for pod to be deleted
-          return doRequeue(packet);
+          return doRequeue();
         }
-        return doEnd(packet);
+        return doEnd();
       }
     }
   }

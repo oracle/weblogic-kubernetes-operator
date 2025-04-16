@@ -241,7 +241,7 @@ class DomainRecheck {
       if (fullRecheck) {
         return doNext(packet);
       } else {
-        return doEnd(packet);
+        return doEnd();
       }
     }
 

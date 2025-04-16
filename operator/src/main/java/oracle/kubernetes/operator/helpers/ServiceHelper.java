@@ -336,7 +336,7 @@ public class ServiceHelper {
 
     protected List<V1ServicePort> createServicePorts() {
       if (scan == null) {
-        return null;
+        return Collections.emptyList();
       }
 
       List<V1ServicePort> ports = new ArrayList<>();
@@ -979,7 +979,7 @@ public class ServiceHelper {
       List<V1ServicePort> ports = new ArrayList<>();
       WlsServerConfig scan = domainTopology.getServerConfig(domainTopology.getAdminServerName());
       if (scan == null) {
-        return null;
+        return Collections.emptyList();
       }
 
       addServicePorts(ports, scan);

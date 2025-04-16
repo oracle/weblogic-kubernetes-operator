@@ -1093,13 +1093,13 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
     @Override
     public Result onFailure(Packet packet, KubernetesApiResponse<R> callResponse) {
       this.callResponse = callResponse;
-      return doEnd(packet);
+      return doEnd();
     }
 
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<R> callResponse) {
       this.callResponse = callResponse;
-      return doEnd(packet);
+      return doEnd();
     }
 
     public R get() throws ApiException {

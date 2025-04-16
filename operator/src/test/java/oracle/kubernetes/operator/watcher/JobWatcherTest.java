@@ -51,7 +51,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Override
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     super.setUp();
     addMemento(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
@@ -60,7 +60,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Override
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     super.tearDown();
 
     testSupport.throwOnCompletionFailure();
@@ -258,10 +258,12 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     return markJobCompleted(createJob());
   }
 
+  @Override
   public void receivedEvents_areSentToListeners() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }
 
+  @Override
   public void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }

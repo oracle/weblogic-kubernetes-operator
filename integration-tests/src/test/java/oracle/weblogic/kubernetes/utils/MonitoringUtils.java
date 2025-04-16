@@ -299,15 +299,13 @@ public class MonitoringUtils {
    * @throws Exception if command to check metrics fails
    */
   public static void checkMetricsViaPrometheus(String searchKey, String expectedVal,
-                                               String hostPortPrometheus, String ingressHost)
-      throws Exception {
+                                               String hostPortPrometheus, String ingressHost) {
 
     LoggingFacade logger = getLogger();
     // url
     String curlCmd =
-        String.format("curl -g --silent --show-error --noproxy '*'  -H 'host: " + ingressHost + "'"
-                + " http://%s/api/v1/query?query=%s",
-            hostPortPrometheus, searchKey);
+        String.format("curl -g --silent --show-error --noproxy '*' -H 'host: %s' http://%s/api/v1/query?query=%s",
+            ingressHost, hostPortPrometheus, searchKey);
 
     logger.info("Executing Curl cmd {0}", curlCmd);
     logger.info("Checking searchKey: {0}", searchKey);
@@ -730,7 +728,6 @@ public class MonitoringUtils {
       grafanaParams = new GrafanaParams()
           .helmParams(grafanaHelmParams);
     }
-    boolean isGrafanaInstalled = false;
     if (OKD) {
       addSccToDBSvcAccount(grafanaReleaseName,grafanaNamespace);
     }
@@ -756,9 +753,6 @@ public class MonitoringUtils {
         "grafana to be running in namespace {0}",
         grafanaNamespace);
 
-
-
-    //return grafanaHelmParams;
     return grafanaParams;
   }
 
@@ -1339,12 +1333,9 @@ public class MonitoringUtils {
       podName = domainUid + "-managed-server1";
     }
     // access metrics
-    final String command = String.format(
-        KUBERNETES_CLI + " exec -n " + domainNS + "  " + podName + " -- curl -k %s://"
-            + ADMIN_USERNAME_DEFAULT
-            + ":"
-            + ADMIN_PASSWORD_DEFAULT
-            + "@" + podName + ":%s/%s", protocol, port, uri);
+    final String command = String.format("%s exec -n %s %s -- curl -k %s://%s:%s@%s:%s/%s",
+        KUBERNETES_CLI, domainNS, podName, protocol, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        podName, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
@@ -1417,11 +1408,9 @@ public class MonitoringUtils {
    */
   public static boolean verifyMonExpAppAccessSideCar(String searchKey,
                                               String domainNS, String podName) {
-
     // access metrics
-    final String command = String.format(
-        KUBERNETES_CLI + " exec -n " + domainNS + "  " + podName + " -- curl -X GET -u %s:%s http://localhost:8080/metrics", ADMIN_USERNAME_DEFAULT,
-        ADMIN_PASSWORD_DEFAULT);
+    final String command = String.format("%s exec -n %s %s -- curl -X GET -u %s:%s http://localhost:8080/metrics",
+        KUBERNETES_CLI, domainNS, podName, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     logger.info("accessing managed server exporter via " + command);
 
