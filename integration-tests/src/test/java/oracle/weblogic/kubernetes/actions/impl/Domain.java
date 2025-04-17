@@ -352,7 +352,6 @@ public class Domain {
       }
     }
 
-    // TODO: Below needs to be modified for v9
     // construct the patch string for scaling the cluster in the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
@@ -819,7 +818,6 @@ public class Domain {
    * @param opServiceAccount service account of operator
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithScalingActionScript(String clusterName,
                                              String domainUid,
@@ -829,7 +827,7 @@ public class Domain {
                                              int scalingSize,
                                              String opNamespace,
                                              String opServiceAccount)
-      throws ApiException, InterruptedException {
+      throws ApiException {
     LoggingFacade logger = getLogger();
     // create RBAC API objects for WLDF script
     logger.info("Creating RBAC API objects for scaling script");
@@ -1007,18 +1005,7 @@ public class Domain {
    */
   private static boolean copyFileToPod(String namespace, String pod, String container, Path srcPath, Path destPath) {
 
-    try {
-      FileUtils.copyFileToPod(namespace, pod, container, srcPath, destPath);
-    } catch (ApiException apex) {
-      getLogger().severe("Got ApiException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      getLogger().severe("Got IOException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, ioex.getStackTrace());
-      return false;
-    }
-
+    FileUtils.copyFileToPod(namespace, pod, container, srcPath, destPath);
     return true;
   }
 
@@ -1076,18 +1063,8 @@ public class Domain {
                                          String container,
                                          String srcPath,
                                          Path destPath) {
-    try {
-      getLogger().info("Copy file {0} from pod {1} in namespace {2} to {3}", srcPath, pod, namespace, destPath);
-      FileUtils.copyFileFromPod(namespace, pod, container, srcPath, destPath);
-    } catch (IOException ioex) {
-      getLogger().severe("Got IOException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, ioex.getStackTrace());
-      return false;
-    } catch (ApiException apiex) {
-      getLogger().severe("Got ApiException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, apiex.getResponseBody());
-      return false;
-    }
+    getLogger().info("Copy file {0} from pod {1} in namespace {2} to {3}", srcPath, pod, namespace, destPath);
+    FileUtils.copyFileFromPod(namespace, pod, container, srcPath, destPath);
     return true;
   }
 

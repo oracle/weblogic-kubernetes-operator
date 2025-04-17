@@ -123,7 +123,7 @@ class TopologyValidationStepTest {
   private String createdName;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords,
         ILLEGAL_SERVER_SERVICE_NAME_LENGTH, ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH, ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH,
         NO_AVAILABLE_PORT_TO_USE_FOR_REST, NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN,
@@ -142,10 +142,9 @@ class TopologyValidationStepTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
-
 
   enum ServerPort {
     PLAIN_PORT {

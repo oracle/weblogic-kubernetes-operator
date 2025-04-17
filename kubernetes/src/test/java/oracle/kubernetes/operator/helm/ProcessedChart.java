@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -98,17 +98,17 @@ public class ProcessedChart implements YamlReader {
    */
   public Iterable<Object> getYamlDocuments() throws Exception {
     if (documents == null) {
-      List<Object> documents = new ArrayList<>();
+      List<Object> docs = new ArrayList<>();
       new Yaml()
           .loadAll(getProcess().getInputStream())
           .forEach(
               document -> {
                 if (document != null) {
-                  documents.add(document);
+                  docs.add(document);
                 }
               });
 
-      this.documents = documents;
+      this.documents = docs;
     }
 
     return documents;

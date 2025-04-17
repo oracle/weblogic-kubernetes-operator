@@ -45,7 +45,7 @@ abstract class AdmissionCheckerTestBase {
   abstract void setupCheckers();
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(testSupport.install());
     setupCheckers();
   }

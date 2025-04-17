@@ -831,7 +831,7 @@ class ItDiagnosticsFailedCondition {
         String managedServerName = managedServerPrefix + i + "-c1";
         logger.info("Checking managed server {0} has been shutdown in namespace {1}",
             managedServerName, domainNamespace);
-        checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, managedServerName, "Running", "False");
+        checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, "Running", "False");
       }
       testPassed = true;
     } finally {

@@ -424,7 +424,7 @@ public class LoadBalancerUtils {
     logger.info("The command returned exit value: " + result.exitValue()
         + " command output: " + result.stderr() + "\n" + result.stdout());
 
-    if (result == null || result.exitValue() != 0 || result.stdout() == null) {
+    if (result.exitValue() != 0 || result.stdout() == null) {
       return false;
     }
 
@@ -444,9 +444,8 @@ public class LoadBalancerUtils {
       logger.info("Command: {}, Exit value: {}, Stdout: {}, Stderr: {}",
           command2, result.exitValue(), result.stdout(), result.stderr());
 
-      if (result == null || result.stdout() == null) {
-        return false;
-      } else if (result.exitValue() != 0 && !result.stdout().contains("is currently being modified")) {
+      if (result.stdout() == null
+          || (result.exitValue() != 0 && !result.stdout().contains("is currently being modified"))) {
         return false;
       }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -341,12 +341,12 @@ class PodPresenceTest {
 
   @Test
   void onModifyEventWithNoRecordedServerPod_addIt() {
-    V1Pod pod = createServerPod();
-    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(pod).toWatchResponse();
+    V1Pod serverPod = createServerPod();
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(serverPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
-    assertThat(info.getServerPod(SERVER), sameInstance(pod));
+    assertThat(info.getServerPod(SERVER), sameInstance(serverPod));
   }
 
   @Test

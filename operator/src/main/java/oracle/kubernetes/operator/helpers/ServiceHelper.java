@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -336,7 +336,7 @@ public class ServiceHelper {
 
     protected List<V1ServicePort> createServicePorts() {
       if (scan == null) {
-        return null;
+        return Collections.emptyList();
       }
 
       List<V1ServicePort> ports = new ArrayList<>();
@@ -979,7 +979,7 @@ public class ServiceHelper {
       List<V1ServicePort> ports = new ArrayList<>();
       WlsServerConfig scan = domainTopology.getServerConfig(domainTopology.getAdminServerName());
       if (scan == null) {
-        return null;
+        return Collections.emptyList();
       }
 
       addServicePorts(ports, scan);

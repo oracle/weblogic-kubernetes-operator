@@ -589,18 +589,6 @@ class KubernetesTestSupportTest {
     assertThat(getResourcesInNamespace("ns2"), hasSize(3));
   }
 
-  private void definePodResource() {
-    V1Pod pod = createPod("ns", "pod");
-    testSupport.defineResources(pod);
-  }
-
-  private OffsetDateTime getPodCreationTime() {
-    return Optional.ofNullable(testSupport.<V1Pod>getResources(POD).get(0))
-          .map(V1Pod::getMetadata)
-          .map(V1ObjectMeta::getCreationTimestamp)
-          .orElse(OffsetDateTime.MIN);
-  }
-
   private List<KubernetesObject> getResourcesInNamespace(String name) {
     List<KubernetesObject> result = new ArrayList<>();
     result.addAll(getResourcesInNamespace(DOMAIN, name));
@@ -612,7 +600,7 @@ class KubernetesTestSupportTest {
   private List<KubernetesObject> getResourcesInNamespace(String resourceType, String name) {
     return testSupport.<KubernetesObject>getResources(resourceType).stream()
           .filter(n -> name.equals(getNamespace(n)))
-          .collect(Collectors.toList());
+          .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private String getNamespace(KubernetesObject object) {

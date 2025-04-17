@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -212,7 +212,6 @@ class ItInitContainers {
     String adminServerPodName = domain1Uid + adminServerPrefix;
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
-    String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domain1Uid + "-managed-server";
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPodNamePrefix + i,

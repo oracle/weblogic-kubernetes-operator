@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -330,7 +330,6 @@ class ItServerStartPolicyDynamicCluster {
   @DisplayName("Manage dynamic cluster server in absence of Administration Server")
   void testDynamicServerLifeCycleWithoutAdmin() {
     String serverName = "managed-server1";
-    // domainUid + "-" + serverName;
     String serverPodName = managedServerPrefix + "1";
     // Here managed server can be stopped without admin server
     // but can not be started to RUNNING state.

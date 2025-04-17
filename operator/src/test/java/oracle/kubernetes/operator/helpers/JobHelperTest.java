@@ -213,7 +213,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @BeforeEach
-  public void setup() throws Exception {
+  void setup() throws Exception {
     consoleHandlerMemento = TestUtils.silenceOperatorLogger()
         .collectLogMessages(logRecords, FLUENTD_CONFIGMAP_CREATED, FLUENTD_CONFIGMAP_REPLACED)
         .withLogLevel(Level.FINE);
@@ -228,7 +228,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -1257,7 +1257,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenDomainHasReadOnlyRootFileSystem_verifyVolumesAndMounts() throws NoSuchFieldException {
+  void whenDomainHasReadOnlyRootFileSystem_verifyVolumesAndMounts() {
 
     configureDomain()
             .withContainerSecurityContext(new V1SecurityContext().readOnlyRootFilesystem(true))
@@ -2150,8 +2150,8 @@ class JobHelperTest extends DomainValidationTestBase {
     final String INTROSPECT_VERSION = "v123";
     configureDomain().withIntrospectVersion(INTROSPECT_VERSION);
 
-    V1Job job = createJob();
-    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
+    V1Job introJob = createJob();
+    assertThat(introJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
         is(INTROSPECT_VERSION));
   }
 
@@ -2159,8 +2159,8 @@ class JobHelperTest extends DomainValidationTestBase {
   void whenDomainHasNoIntrospectVersion_jobMetatadataCreatedWithoutNoLabel() {
     configureDomain().withIntrospectVersion(null);
 
-    V1Job job = createJob();
-    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
+    V1Job introJob = createJob();
+    assertThat(introJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
   }
 
   private V1Job job;

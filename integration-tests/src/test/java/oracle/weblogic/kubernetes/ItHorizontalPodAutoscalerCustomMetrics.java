@@ -1,9 +1,8 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -140,7 +139,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String prometheusAdapterReleaseName = "prometheus-adapter" + releaseSuffix;
   private static String prometheusDomainRegexValue = null;
-  private static int nodeportPrometheus;
   private Path targetHPAFile;
   private HelmParams prometheusAdapterHelmParams = null;
 
@@ -335,18 +333,18 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         logger.info("Can't invoke application");
 
         if (OKE_CLUSTER) {
-          LoggingFacade logger = getLogger();
+          LoggingFacade loggingFacade = getLogger();
           try {
 
             result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
-            logger.info(result.stdout());
+            loggingFacade.info(result.stdout());
             //restart core-dns service
             result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
-            logger.info(result.stdout());
+            loggingFacade.info(result.stdout());
             checkPodReady("coredns", null, "kube-system");
 
           } catch (Exception ex) {
-            logger.warning(ex.getLocalizedMessage());
+            loggingFacade.warning(ex.getLocalizedMessage());
           }
         }
       }
@@ -487,7 +485,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private void installPrometheus(String promChartVersion,
                                  String domainNS,
                                  String domainUid
-  ) throws IOException, ApiException {
+  ) throws ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, null);
@@ -499,7 +497,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
           prometheusRegexValue, promHelmValuesFileDir);
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
-      nodeportPrometheus = promHelmParams.getNodePortServer();
       String ingressClassName = nginxHelmParams.getIngressClassName();
       createIngressPathRouting(monitoringNS, "/",
           prometheusReleaseName + "-server", 80, ingressClassName);

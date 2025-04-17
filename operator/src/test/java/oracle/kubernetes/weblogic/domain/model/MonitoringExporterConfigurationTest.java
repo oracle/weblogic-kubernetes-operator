@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -41,20 +41,22 @@ class MonitoringExporterConfigurationTest {
           hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type", equalTo("WebAppComponentRuntime")));
   }
 
-  private static final String CONFIG = "---\n"
-        + "metricsNameSnakeCase: true\n"
-        + "queries:\n"
-        + "- applicationRuntimes:\n"
-        + "    key: name\n"
-        + "    componentRuntimes:\n"
-        + "      type: WebAppComponentRuntime\n"
-        + "      prefix: webapp_config_\n"
-        + "      key: name\n"
-        + "      values: [deploymentState, type, contextRoot, sourceInfo, openSessionsHighCount]\n"
-        + "      servlets:\n"
-        + "        prefix: weblogic_servlet_\n"
-        + "        key: servletName\n"
-        + "        values: [invocationTotalCount, executionTimeTotal]\n";
+  private static final String CONFIG = """
+          ---
+          metricsNameSnakeCase: true
+          queries:
+          - applicationRuntimes:
+              key: name
+              componentRuntimes:
+                type: WebAppComponentRuntime
+                prefix: webapp_config_
+                key: name
+                values: [deploymentState, type, contextRoot, sourceInfo, openSessionsHighCount]
+                servlets:
+                  prefix: weblogic_servlet_
+                  key: servletName
+                  values: [invocationTotalCount, executionTimeTotal]
+          """;
 
   @Test
   void matchVisuallyDifferentYaml() {
@@ -63,21 +65,23 @@ class MonitoringExporterConfigurationTest {
     assertThat(configuration.matchesYaml(VERSION_2), is(true));
   }
 
-  private static final String VERSION_1 = "---\n"
-        + "domainQualifier:  true\n"
-        + "queries:\n"
-        + "- group1:\n"
-        + "  key: name\n"
-        + "  keyName: groupName\n"
-        + "  values: [left, middle, right]";
+  private static final String VERSION_1 = """
+          ---
+          domainQualifier:  true
+          queries:
+          - group1:
+            key: name
+            keyName: groupName
+            values: [left, middle, right]""";
 
-  private static final String VERSION_2 = "---\n"
-        + "host: localhost\n"
-        + "domainQualifier:  true\n"
-        + "queries:\n"
-        + "- group1:\n"
-        + "  keyName: groupName\n"
-        + "  key: name\n"
-        + "  values: [left, middle, right]";
+  private static final String VERSION_2 = """
+          ---
+          host: localhost
+          domainQualifier:  true
+          queries:
+          - group1:
+            keyName: groupName
+            key: name
+            values: [left, middle, right]""";
 
 }

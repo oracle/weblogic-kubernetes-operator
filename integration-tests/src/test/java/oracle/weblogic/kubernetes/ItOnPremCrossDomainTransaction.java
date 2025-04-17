@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -155,7 +154,7 @@ class ItOnPremCrossDomainTransaction {
    */
   @BeforeAll
   static void initAll(@Namespaces(3) List<String> namespaces)
-      throws UnknownHostException, IOException, InterruptedException {
+      throws IOException, InterruptedException {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -372,10 +371,9 @@ class ItOnPremCrossDomainTransaction {
 
   
   private boolean checkLocalQueue(String hostAndPort) {
-    String url = String.format("http://%s/jmsservlet/jmstest?"
-        + "url=t3://localhost:" + adminServerPort + "&"
-        + "action=receive&dest=jms.testAccountingQueue",
-        hostAndPort);
+    String url = String.format(
+        "http://%s/jmsservlet/jmstest?url=t3://localhost:%s&action=receive&dest=jms.testAccountingQueue",
+        hostAndPort, adminServerPort);
 
     logger.info("Queue check url {0}", url);
     testUntil(() -> {

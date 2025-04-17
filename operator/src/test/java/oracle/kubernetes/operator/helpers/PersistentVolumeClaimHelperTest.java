@@ -179,7 +179,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-            getPersistentVolumeClaimResource(domainPresenceInfo),
+            getPersistentVolumeClaimResource(),
             is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -194,7 +194,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-            getPersistentVolumeClaimResource(domainPresenceInfo),
+            getPersistentVolumeClaimResource(),
             is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -211,7 +211,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-        getPersistentVolumeClaimResource(domainPresenceInfo),
+        getPersistentVolumeClaimResource(),
         is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -228,7 +228,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-            getPersistentVolumeClaimResource(domainPresenceInfo),
+            getPersistentVolumeClaimResource(),
             is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -290,7 +290,7 @@ class PersistentVolumeClaimHelperTest {
     return PersistentVolumeClaimHelper.createPersistentVolumeClaimStep(next);
   }
 
-  public V1PersistentVolumeClaim getPersistentVolumeClaimResource(DomainPresenceInfo info) {
+  public V1PersistentVolumeClaim getPersistentVolumeClaimResource() {
     return testSupport.getResourceWithName(PVC, "Test");
   }
 
