@@ -319,6 +319,33 @@ public class MonitoringUtils {
   }
 
   /**
+   * Check metrics using Prometheus.
+   *
+   * @param expectedVal        - expected alert data to search
+   * @param hostPortPrometheus host:nodePort for prometheus
+   * @throws Exception if command to check metrics fails
+   */
+  public static void checkPrometheusAlert(String expectedVal,
+                                          String hostPortPrometheus, String ingressHost)
+      throws Exception {
+
+    LoggingFacade logger = getLogger();
+    // url
+    String curlCmd =
+        String.format("curl -g --silent --show-error --noproxy '*' -v  -H 'host: %s'"
+                + " http://%s/api/v1/alerts",
+            ingressHost, hostPortPrometheus);
+
+    logger.info("Executing Curl cmd {0}", curlCmd);
+    logger.info(" expected Value {0} ", expectedVal);
+    testUntil(
+        searchForKey(curlCmd, expectedVal),
+        logger,
+        "Check prometheus alert against expected {0}",
+        expectedVal);
+  }
+
+  /**
    * Check output of the command against expected output.
    *
    * @param cmd command
@@ -1333,9 +1360,19 @@ public class MonitoringUtils {
       podName = domainUid + "-managed-server1";
     }
     // access metrics
-    final String command = String.format("%s exec -n %s %s -- curl -k %s://%s:%s@%s:%s/%s",
-        KUBERNETES_CLI, domainNS, podName, protocol, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        podName, port, uri);
+    final String command = String.format(
+        "%s exec -n %s %s -- curl -k %s://%s:%s@%s:%s/%s",
+        KUBERNETES_CLI,
+        domainNS,
+        podName,
+        protocol,
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT,
+        podName,
+        port,
+        uri
+    );
+
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
