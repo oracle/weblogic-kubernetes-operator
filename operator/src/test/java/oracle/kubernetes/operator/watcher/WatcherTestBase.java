@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -74,7 +74,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(configureOperatorLogger());
     mementos.add(StubWatchFactory.install());
     mementos.add(TuningParametersStub.install());
@@ -92,7 +92,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     shutDownThreads();
     mementos.forEach(Memento::revert);
   }

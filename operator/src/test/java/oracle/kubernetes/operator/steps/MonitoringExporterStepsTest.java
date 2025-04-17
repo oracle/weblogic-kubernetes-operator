@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
@@ -272,7 +271,7 @@ class MonitoringExporterStepsTest {
           .filter(this::isPutRequest)
           .map(HttpRequest::uri)
           .map(URI::getHost)
-          .collect(Collectors.toList());
+          .toList();
   }
 
   private boolean isPutRequest(HttpRequest request) {

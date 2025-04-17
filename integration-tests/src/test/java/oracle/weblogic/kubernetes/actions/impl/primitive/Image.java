@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -21,15 +21,15 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
  */
 public class Image {
   /**
-   * Log in to a image registry.
+   * Log in to an image registry.
    * @param registryName registry name
    * @param username user
    * @param password password
    * @return true if successful
    */
   public static boolean login(String registryName, String username, String password) {
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " login %s -u %s -p '%s'",
-        registryName, username, password);
+    String cmdToExecute = String.format("%s login %s -u %s -p '%s'",
+        WLSIMG_BUILDER, registryName, username, password);
     return Command
         .withParams(new CommandParams()
             .verbose(false)
@@ -43,7 +43,7 @@ public class Image {
    * @return true if successful
    */
   public static boolean pull(String image) {
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " pull %s", image);
+    String cmdToExecute = String.format("%s pull %s", WLSIMG_BUILDER, image);
     return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
@@ -56,7 +56,7 @@ public class Image {
    * @return true if successful
    */
   public static boolean push(String image) {
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " push %s", image);
+    String cmdToExecute = String.format("%s push %s", WLSIMG_BUILDER, image);
     if (KIND_REPO != null) {
       cmdToExecute = String.format("kind load docker-image %s --name %s", image, KIND_NODE_NAME);
     }
@@ -73,7 +73,7 @@ public class Image {
    * @return true if successful
    */
   public static boolean tag(String originalImage, String taggedImage) {
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " tag %s %s", originalImage, taggedImage);
+    String cmdToExecute = String.format("%s tag %s %s", WLSIMG_BUILDER, originalImage, taggedImage);
     return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
@@ -86,7 +86,7 @@ public class Image {
    * @return true if delete image is successful
    */
   public static boolean deleteImage(String image) {
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " rmi -f %s", image);
+    String cmdToExecute = String.format("%s rmi -f %s", WLSIMG_BUILDER, image);
     return Command
         .withParams(new CommandParams()
                   .command(cmdToExecute))
@@ -112,32 +112,26 @@ public class Image {
    */
   public static boolean createImage(String imageBuildDir, String image, String extraArgs) {
     if (ARM) {
-      String cmdToExecute = String.format(
-          WLSIMG_BUILDER
-              + " buildx create --use --name buildx_instance");
+      String cmdToExecute = String.format("%s buildx create --use --name buildx_instance", WLSIMG_BUILDER);
       Command
           .withParams(new CommandParams()
               .command(cmdToExecute))
           .execute();
-      cmdToExecute = String.format(
-          WLSIMG_BUILDER
-              + " buildx build --pull  --platform linux/amd64,linux/arm64 %s -t %s  %s",
-          imageBuildDir, image, extraArgs);
+      cmdToExecute = String.format("%s buildx build --pull  --platform linux/amd64,linux/arm64 %s -t %s  %s",
+          WLSIMG_BUILDER, imageBuildDir, image, extraArgs);
       boolean result = Command
           .withParams(new CommandParams()
               .command(cmdToExecute))
           .execute();
-      cmdToExecute = String.format(
-          WLSIMG_BUILDER
-              + " buildx build --load  %s -t %s  %s ",
-          imageBuildDir, image, extraArgs);
+      cmdToExecute = String.format("%s buildx build --load  %s -t %s  %s ",
+          WLSIMG_BUILDER, imageBuildDir, image, extraArgs);
       Command
           .withParams(new CommandParams()
               .command(cmdToExecute))
           .execute();
       return result;
     } else {
-      String cmdToExecute = String.format(WLSIMG_BUILDER + " build %s -t %s  %s", imageBuildDir, image, extraArgs);
+      String cmdToExecute = String.format("%s build %s -t %s  %s", WLSIMG_BUILDER, imageBuildDir, image, extraArgs);
       return Command.withParams(new CommandParams()
               .command(cmdToExecute))
           .execute();
@@ -183,7 +177,7 @@ public class Image {
    */
   public static String getImageEnvVar(String imageName, String envVarName) {
     LoggingFacade logger = getLogger();
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " run %s /bin/bash -c 'echo \"$%s\"'", imageName, envVarName);
+    String cmdToExecute = String.format("%s run %s /bin/bash -c 'echo \"$%s\"'", WLSIMG_BUILDER, imageName, envVarName);
     logger.info("getImageEnvVar with imageName: {0}, envVarName: {1}", imageName, envVarName);
     ExecResult result = Command.withParams(
                               new CommandParams()

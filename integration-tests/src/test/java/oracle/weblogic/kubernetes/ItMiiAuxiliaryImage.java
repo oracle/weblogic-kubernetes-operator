@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -958,7 +958,7 @@ class ItMiiAuxiliaryImage {
     final String domainUid2 = "domain7";
     final String adminServerPodName = domainUid2 + "-admin-server";
     final String managedServerPrefix = domainUid2 + "-managed-server";
-    int replicaCount = 1;
+    int count = 1;
 
     //In case the previous test failed, ensure the created domain in the same namespace is deleted.
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
@@ -1007,7 +1007,7 @@ class ItMiiAuxiliaryImage {
     // check there are no admin server and managed server pods and services created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= count; i++) {
       checkPodDoesNotExist(managedServerPrefix + i, domainUid2, domainNamespace);
       checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
     }
@@ -1029,7 +1029,7 @@ class ItMiiAuxiliaryImage {
     final String domainUid2 = "domain7";
     final String adminServerPodName = domainUid2 + "-admin-server";
     final String managedServerPrefix = domainUid2 + "-managed-server";
-    int replicaCount = 1;
+    int count = 1;
 
     //In case the previous test failed, ensure the created domain in the same namespace is deleted.
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
@@ -1078,7 +1078,7 @@ class ItMiiAuxiliaryImage {
     // check there are no admin server and managed server pods and services created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= count; i++) {
       checkPodDoesNotExist(managedServerPrefix + i, domainUid2, errorpathDomainNamespace);
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
@@ -1100,7 +1100,7 @@ class ItMiiAuxiliaryImage {
     final String adminServerPodName = domainUid2 + "-admin-server";
     final String managedServerPrefix = domainUid2 + "-managed-server";
     final String auxiliaryImagePath = "/auxiliary";
-    int replicaCount = 1;
+    int count = 1;
 
     //In case the previous test failed, ensure the created domain in the same namespace is deleted.
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
@@ -1153,7 +1153,7 @@ class ItMiiAuxiliaryImage {
     // check there are no admin server and managed server pods and services not created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= count; i++) {
       checkPodDoesNotExist(managedServerPrefix + i, domainUid2, errorpathDomainNamespace);
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
@@ -1178,7 +1178,7 @@ class ItMiiAuxiliaryImage {
     final String domainUid = "domain7";
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
-    int replicaCount = 1;
+    int count = 1;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -1186,14 +1186,14 @@ class ItMiiAuxiliaryImage {
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, wdtDomainNamespace,
+    String secretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(secretName, wdtDomainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, wdtDomainNamespace,
+    String esName = "encryptionsecret";
+    createSecretWithUsernamePassword(esName, wdtDomainNamespace,
         "weblogicenc", "weblogicenc");
 
     List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
@@ -1233,8 +1233,8 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage9, miiAuxiliaryImage10);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid, wdtDomainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(wdtDomainNamespace),
-        encryptionSecretName, auxiliaryImagePath,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, secretName, createSecretsForImageRepos(wdtDomainNamespace),
+        esName, auxiliaryImagePath,
         miiAuxiliaryImage9,
         miiAuxiliaryImage10);
 
@@ -1242,7 +1242,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
         domainUid, miiAuxiliaryImage9, miiAuxiliaryImage10, wdtDomainNamespace);
     createDomainAndVerify(domainUid, domainCR, wdtDomainNamespace,
-        adminServerPodName, managedServerPrefix, replicaCount);
+        adminServerPodName, managedServerPrefix, count);
 
     //create router for admin service on OKD in wdtDomainNamespace
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), wdtDomainNamespace);
@@ -1271,7 +1271,7 @@ class ItMiiAuxiliaryImage {
 
     //updating wdt to latest version by patching the domain with image3
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10,
-        miiAuxiliaryImage11, domainUid, wdtDomainNamespace, replicaCount);
+        miiAuxiliaryImage11, domainUid, wdtDomainNamespace, count);
 
     //check that WDT version is updated to latest 
     assertDoesNotThrow(() -> {

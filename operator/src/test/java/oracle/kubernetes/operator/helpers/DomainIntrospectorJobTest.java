@@ -204,9 +204,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   private boolean jobDeleted;
 
-  public DomainIntrospectorJobTest() {
-  }
-
   private static String getJobName() {
     return LegalNames.toJobIntrospectorName(UID);
   }

@@ -158,13 +158,12 @@ public class Pod {
    *
    * @param domainUid  unique domain identifier
    * @param namespace  name of the namespace
-   * @param serverName name of the WebLogic server to shutdown
+   * @param serverName name of the WebLogic server to shut down
    * @return true if patching domain operation succeeds or false if the operation fails
-   * @throws ApiException if Kubernetes client API call fails
    **/
   public static boolean shutdownManagedServerUsingServerStartPolicy(String domainUid,
                                                                     String namespace,
-                                                                    String serverName) throws ApiException {
+                                                                    String serverName) {
     return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "Never");
   }
 
@@ -176,11 +175,10 @@ public class Pod {
    * @param namespace  name of the namespace
    * @param serverName name of the WebLogic server to start
    * @return true if patching domain operation succeeds or false if the operation fails
-   * @throws ApiException if Kubernetes client API call fails
    **/
   public static boolean startManagedServerUsingServerStartPolicy(String domainUid,
                                                                  String namespace,
-                                                                 String serverName) throws ApiException {
+                                                                 String serverName) {
     return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "IfNeeded");
   }
 

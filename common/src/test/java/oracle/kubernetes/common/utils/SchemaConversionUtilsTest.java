@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -57,7 +57,7 @@ class SchemaConversionUtilsTest {
   }
 
   @BeforeEach
-  void setUp() throws Exception {
+  void setUp() {
     mementos.add(CommonTestUtils.silenceLogger());
     mementos.add(BaseTestUtils.silenceJsonPathLogger());
     v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
@@ -78,7 +78,7 @@ class SchemaConversionUtilsTest {
   }
 
   @AfterEach
-  void tearDown() throws Exception {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -156,9 +156,9 @@ class SchemaConversionUtilsTest {
 
     converterv8.convert(domain, clusters);
 
-    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    Map<String, Object> v8DomainAux = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
     List<Object> convertedClusters = (List<Object>) getDomainSpec(converterv8.getDomain()).get("clusters");
-    List<Object> origClusters = (List<Object>) getDomainSpec(v8Domain).get("clusters");
+    List<Object> origClusters = (List<Object>) getDomainSpec(v8DomainAux).get("clusters");
     assertThat(convertedClusters, notNullValue());
     assertThat(convertedClusters, equalTo(origClusters));
   }
@@ -171,8 +171,7 @@ class SchemaConversionUtilsTest {
     List<Map<String, Object>> clusters = new ArrayList<>();
     yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
 
-    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
-    converter.convert(v8Domain);
+    converter.convert(readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML));
 
     assertThat(converter.getDomain(), equalTo(expectedDomain));
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -278,7 +278,7 @@ public class PersistentVolumeClaimHelper {
       V1PersistentVolumeClaim domainPvc = info.getPersistentVolumeClaim(pvcName);
 
       if (!isBound(domainPvc)) {
-        return doRequeue(packet);
+        return doRequeue();
       }
 
       return doNext(packet);

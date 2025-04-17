@@ -1118,13 +1118,9 @@ public class CommonMiiTestUtils {
         String protocol = "http";
         String port = "7001";
 
-        curlString = String.format(
-          KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- curl -g -k %s://"
-              + ADMIN_USERNAME_DEFAULT
-              + ":"
-              + ADMIN_PASSWORD_DEFAULT
-              + "@" + adminServerPodName + ":%s/%s", protocol, port, resourcePath);
-        curlString = curlString + " --silent --show-error ";
+        curlString = String.format("%s exec -n %s %s -- curl -g -k %s://%s:%s@%s:%s/%s --silent --show-error ",
+          KUBERNETES_CLI, domainNamespace, adminServerPodName, protocol,
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerPodName, port, resourcePath);
       } else {
         int adminServiceNodePort
             = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -1132,11 +1128,8 @@ public class CommonMiiTestUtils {
         String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
         logger.info("hostAndPort = {0} ", hostAndPort);
 
-        curlString = String.format("curl -g --user "
-            + ADMIN_USERNAME_DEFAULT
-            + ":"
-            + ADMIN_PASSWORD_DEFAULT
-            + " http://%s%s/ --silent --show-error ", hostAndPort, resourcePath);
+        curlString = String.format("curl -g --user %s:%s http://%s%s/ --silent --show-error ",
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, hostAndPort, resourcePath);
 
         logger.info(callerName + ": curl command {0}", curlString);
       }
@@ -1321,12 +1314,9 @@ public class CommonMiiTestUtils {
       port = "7002";
     }
     LoggingFacade logger = getLogger();
-    String curlString = String.format(
-        KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- curl -k %s://"
-            + ADMIN_USERNAME_DEFAULT
-            + ":"
-            + ADMIN_PASSWORD_DEFAULT
-            + "@" + adminServerPodName + ":%s/%s", protocol, port, resourcePath);
+    String curlString = String.format("%s exec -n %s %s -- curl -k %s://%s:%s@%s:%s/%s",
+        KUBERNETES_CLI, domainNamespace, adminServerPodName, protocol, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        adminServerPodName, port, resourcePath);
     curlString = curlString + " -g --silent --show-error -o /dev/null -w %{http_code}";
     logger.info("checkSystemResource: curl command {0}", curlString);
     return Command
@@ -2139,12 +2129,14 @@ public class CommonMiiTestUtils {
             "weblogicenc", "weblogicenc");
 
     String configMapName = "default-secure-configmap";
-    String yamlString = "topology:\n"
-        + "  Server:\n"
-        + "    'admin-server':\n"
-        + "       SSL: \n"
-        + "         Enabled: true \n"
-        + "         ListenPort: '7008' \n";
+    String yamlString = """
+            topology:
+              Server:
+                'admin-server':
+                   SSL:\s
+                     Enabled: true\s
+                     ListenPort: '7008'\s
+            """;
     createModelConfigMapSSLenable(configMapName, yamlString, domainUid, domainNamespace);
 
     // create the domain object

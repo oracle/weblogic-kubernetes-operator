@@ -392,11 +392,9 @@ public class PersistentVolumeUtils {
    * @param labels pv and pvc labels
    * @param namespace pv and pvc namespace
    * @param className - class name
-   * @throws IOException when creating pv path fails
    */
   public static void createPvAndPvc(String nameSuffix, String namespace,
-                                    HashMap<String,String> labels, String className)
-      throws IOException {
+                                    HashMap<String,String> labels, String className) {
     LoggingFacade logger = getLogger();
     V1PersistentVolume v1pv;
     logger.info("creating persistent volume and persistent volume claim");

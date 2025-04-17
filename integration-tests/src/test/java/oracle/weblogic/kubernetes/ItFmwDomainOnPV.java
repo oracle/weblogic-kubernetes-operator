@@ -104,7 +104,6 @@ class ItFmwDomainOnPV {
   private static String dbNamespace = null;
 
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";

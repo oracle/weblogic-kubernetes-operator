@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.util.Yaml;
@@ -109,7 +108,7 @@ class ItEvictedPodsCycling {
    */
   @Test
   @DisplayName("Use Operator log to verify that WLS server pods were evicted and replaced")
-  void testEvictedPodReplaced() throws ApiException {
+  void testEvictedPodReplaced() {
     resourceLimit.put("ephemeral-storage", ephemeralStorage);
     resourceRequest.put("cpu", "250m");
     resourceRequest.put("memory", "768Mi");

@@ -155,14 +155,12 @@ public class FileUtils {
    * @param srcPath source location of the file
    * @param destPath destination location of the file
    * @return true if copy succeeds, false otherwise
-   * @throws IOException when copy fails
-   * @throws ApiException when pod interaction fails
    */
   public static boolean copyFileToPod(String namespace,
                                    String pod,
                                    String container,
                                    Path srcPath,
-                                   Path destPath) throws IOException, ApiException {
+                                   Path destPath) {
     return Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
@@ -189,11 +187,8 @@ public class FileUtils {
    * @param container name of the container
    * @param srcPath source file location on the pod
    * @param destPath destination file location on local filesystem
-   * @throws IOException when copy fails
-   * @throws ApiException when pod interaction fails
    */
-  public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath)
-      throws IOException, ApiException {
+  public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath) {
     Kubernetes.copyFileFromPod(namespace, pod, container, srcPath, destPath);
   }
 

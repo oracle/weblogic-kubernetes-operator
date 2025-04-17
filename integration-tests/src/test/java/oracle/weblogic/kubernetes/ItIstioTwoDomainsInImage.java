@@ -89,7 +89,6 @@ class ItIstioTwoDomainsInImage {
   private static final String istioNamespace = "istio-system";
   private static final String istioIngressServiceName = "istio-ingressgateway";
 
-  private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
 
   /**

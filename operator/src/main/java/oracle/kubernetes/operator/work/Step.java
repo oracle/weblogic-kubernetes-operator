@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -208,31 +208,27 @@ public abstract class Step {
    * @param step The step
    * @param packet Packet to provide when invoking the next step
    */
-  protected static final Result doNext(Step step, Packet packet) {
+  protected static Result doNext(Step step, Packet packet) {
     if (step != null) {
       Step s = adapt(step, packet);
       if (s != null) {
         return s.apply(packet);
       }
     }
-    return doEnd(packet);
+    return doEnd();
   }
 
   /**
    * End the fiber processing.
-   *
-   * @param packet Packet
    */
-  protected static final Result doEnd(Packet packet) {
+  protected static Result doEnd() {
     return new Result(false);
   }
 
   /**
    * End the fiber processing and requeue after the standard delay.
-   *
-   * @param packet Packet
    */
-  protected static final Result doRequeue(Packet packet) {
+  protected static Result doRequeue() {
     return new Result(true,
             Duration.ofSeconds(TuningParameters.getInstance().getWatchTuning().getWatchBackstopRecheckDelay()));
   }
@@ -244,13 +240,13 @@ public abstract class Step {
    * @param packet Packet
    * @return Next action that will end processing with a throwable
    */
-  protected static final Result doTerminate(Throwable throwable, Packet packet) {
+  protected static Result doTerminate(Throwable throwable, Packet packet) {
     Fiber fiber = Fiber.getCurrentIfSet();
     if (fiber != null) {
       fiber.addBreadcrumb("[throw= " + throwable.getMessage() + "]");
     }
     packet.put(THROWABLE, throwable);
-    return doEnd(packet);
+    return doEnd();
   }
 
   /**
@@ -273,7 +269,7 @@ public abstract class Step {
    * @param delay Delay time
    * @param unit Delay time unit
    */
-  protected static final Result doDelay(Step step, Packet packet, long delay, TimeUnit unit) {
+  protected static Result doDelay(Step step, Packet packet, long delay, TimeUnit unit) {
     try {
       Fiber fiber = Fiber.getCurrentIfSet();
       if (fiber != null) {
@@ -338,7 +334,7 @@ public abstract class Step {
       if (LOGGER.isFinerEnabled() && fiber != null) {
         fiber.addBreadcrumb("[forkJoin-end]");
       }
-      return doEnd(packet);
+      return doEnd();
     }
     if (LOGGER.isFinerEnabled() && fiber != null) {
       fiber.addBreadcrumb("[forkJoin-cont]");

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -112,7 +112,6 @@ class ItMonitoringExporterSideCar {
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
   private static String domain3Uid = "monexp-domain-3";
-  private static String domain4Uid = "monexp-domain-4";
   private static HelmParams traefikHelmParams = null;
 
   private static String monitoringNS = null;

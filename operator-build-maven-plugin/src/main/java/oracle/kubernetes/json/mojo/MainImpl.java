@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -75,24 +75,24 @@ public class MainImpl implements Main {
       throws MojoExecutionException {
     outputFile.getParentFile().mkdirs();
 
-    YamlDocGenerator generator = new YamlDocGenerator(schema);
+    YamlDocGenerator yamlDocGenerator = new YamlDocGenerator(schema);
     try (FileWriter writer = new FileWriter(outputFile)) {
       if (kubernetesVersion != null) {
-        generator.useKubernetesVersion(kubernetesVersion);
+        yamlDocGenerator.useKubernetesVersion(kubernetesVersion);
       }
-      writer.write(generator.generate(rootName));
+      writer.write(yamlDocGenerator.generate(rootName));
     } catch (IOException e) {
       throw new MojoExecutionException("Error generating markdown", e);
     }
 
-    String kubernetesSchemaMarkdownFile = generator.getKubernetesSchemaMarkdownFile();
+    String kubernetesSchemaMarkdownFile = yamlDocGenerator.getKubernetesSchemaMarkdownFile();
     if (kubernetesSchemaMarkdownFile == null) {
       return;
     }
 
     File kubernetesFile = new File(outputFile.getParent(), kubernetesSchemaMarkdownFile);
     try (FileWriter writer = new FileWriter(kubernetesFile)) {
-      writer.write(generator.getKubernetesSchemaMarkdown());
+      writer.write(yamlDocGenerator.getKubernetesSchemaMarkdown());
     } catch (IOException e) {
       throw new MojoExecutionException("Error generating markdown", e);
     }

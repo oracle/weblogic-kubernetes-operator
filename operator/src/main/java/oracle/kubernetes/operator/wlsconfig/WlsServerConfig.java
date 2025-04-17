@@ -257,9 +257,7 @@ public class WlsServerConfig {
       }
     }
     if (!adminProtocolPortFound) {
-      if (adminPort != null) {
-        adminProtocolPortSecure = true;
-      } else if (sslListenPort != null) {
+      if (adminPort != null || sslListenPort != null) {
         adminProtocolPortSecure = true;
       }
     }

@@ -269,8 +269,8 @@ class ItSystemResOverrides {
           logger,
           "jms server configuration to be updated");
     }
-    assertDoesNotThrow(() -> verifyJMSResourceOverride());
-    assertDoesNotThrow(() -> verifyWLDFResourceOverride());
+    assertDoesNotThrow(this::verifyJMSResourceOverride);
+    assertDoesNotThrow(this::verifyWLDFResourceOverride);
   }
 
   private Callable<Boolean> configUpdated() {

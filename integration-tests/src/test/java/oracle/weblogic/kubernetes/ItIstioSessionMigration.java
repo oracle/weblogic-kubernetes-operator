@@ -73,7 +73,6 @@ class ItIstioSessionMigration {
     }
   }
 
-  private static String finalPrimaryServerName = null;
   private static String configMapName = "istio-configmap";
   private static int replicaCount = 2;
 
@@ -84,7 +83,7 @@ class ItIstioSessionMigration {
 
   /**
    * Install operator, create a custom image using model in image with model files
-   * and create a WebLlogic domain with a dynamic cluster.
+   * and create a WebLogic domain with a dynamic cluster.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -119,7 +118,6 @@ class ItIstioSessionMigration {
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
-    //final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + SESSMIGR_MODEL_FILE);
     final List<String> modelList = Collections.singletonList(destSessionMigrYamlFile);
 
     // create image with model files
@@ -167,12 +165,11 @@ class ItIstioSessionMigration {
     final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + SESSION_STATE;
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
     final String clusterAddress = domainUid + "-cluster-" + clusterName;
-    String serverName = managedServerPrefix + "1";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
     Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace,
-        adminServerPodName, serverName, clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
+        adminServerPodName, clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
 
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
@@ -187,9 +184,8 @@ class ItIstioSessionMigration {
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
     // send a HTTP request to get server and session info after shutting down the primary server
-    serverName = domainUid + "-" + origSecondaryServerName;
     httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
-        serverName, clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
+        clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
 
     // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
@@ -214,8 +210,6 @@ class ItIstioSessionMigration {
         () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
-
-    finalPrimaryServerName = primaryServerName;
 
     logger.info("Done testSessionMigration \nThe new primary server is {0}, it was {1}. "
         + "\nThe session state was set to {2}, it is migrated to the new primary server.",

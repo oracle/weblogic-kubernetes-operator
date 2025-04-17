@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -12,14 +12,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @ApiModel(description = "Describes a single channel used by the Administration Server.")
 public class Channel {
   @ApiModelProperty(
-      "Name of channel.\n'default' refers to the Administration Server's default channel (configured "
-          + "via the ServerMBean's ListenPort) "
-          + "\n'default-secure' refers to the Administration Server's default secure channel "
-          + "(configured via the ServerMBean's SSLMBean's ListenPort) "
-          + "\n'default-admin' refers to the Administration Server's default administrative channel "
-          + "(configured via the DomainMBean's AdministrationPort) "
-          + "\nOtherwise, the name is the name of one of the Administration Server's network access points "
-          + "(configured via the ServerMBean's NetworkAccessMBeans).")
+          """
+                  Name of channel.
+                  'default' refers to the Administration Server's default channel (configured \
+                  via the ServerMBean's ListenPort) \
+                  
+                  'default-secure' refers to the Administration Server's default secure channel \
+                  (configured via the ServerMBean's SSLMBean's ListenPort) \
+                  
+                  'default-admin' refers to the Administration Server's default administrative channel \
+                  (configured via the DomainMBean's AdministrationPort) \
+                  
+                  Otherwise, the name is the name of one of the Administration Server's network access points \
+                  (configured via the ServerMBean's NetworkAccessMBeans).""")
   private String channelName;
 
   @ApiModelProperty(

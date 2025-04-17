@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -380,8 +380,8 @@ class ItWseeSSO {
 
     // wait for the domain to exist
     createDomainAndVerify(domain, domainNamespace);
-    String adminServerName = "admin-server";
-    String adminServerPodName = domainUid + "-" + adminServerName;
+    String adminName = "admin-server";
+    String adminServerPodName = domainUid + "-" + adminName;
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -495,8 +495,8 @@ class ItWseeSSO {
   //deploy application wsee.war to domain
   private void deployApplication(String targets, String domainNamespace, String domainUid, Path appPath) {
     logger.info("Getting port for default channel");
-    String adminServerName = "admin-server";
-    String adminServerPodName = domainUid + "-" + adminServerName;
+    String adminName = "admin-server";
+    String adminServerPodName = domainUid + "-" + adminName;
     int defaultChannelPort = assertDoesNotThrow(()
             -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server default port failed");

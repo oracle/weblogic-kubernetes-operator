@@ -1410,7 +1410,7 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
+  void whenDomain3ReadFromYaml_NoRestartVersion() {
     final EffectiveServerSpec clusteredServer = info.getServer("anyServer", "anyCluster");
     final EffectiveServerSpec nonClusteredServer = info.getServer("anyServer", null);
     assertThat(clusteredServer.getDomainRestartVersion(), nullValue());

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -18,14 +18,6 @@ public class GenerateSchema {
   public static void main(String... args) throws Exception {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator(objectMapper);
-
-    // If using JsonSchema to generate HTML5 GUI:
-    // JsonSchemaGenerator html5 = new JsonSchemaGenerator(objectMapper,
-    // JsonSchemaConfig.html5EnabledSchema() );
-
-    // If you want to configure it manually:
-    // JsonSchemaConfig config = JsonSchemaConfig.create(...);
-    // JsonSchemaGenerator generator = new JsonSchemaGenerator(objectMapper, config);
 
     JsonNode jsonSchema = jsonSchemaGenerator.generateJsonSchema(DomainResource.class);
 
