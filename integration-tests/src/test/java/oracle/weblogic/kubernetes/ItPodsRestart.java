@@ -662,7 +662,7 @@ class ItPodsRestart {
 
     if (!OKD) {
       V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-                 .runAsUser(0L);
+                 .runAsUser(10001L);
       srvrPod.podSecurityContext(podSecCtxt);
     }
 
