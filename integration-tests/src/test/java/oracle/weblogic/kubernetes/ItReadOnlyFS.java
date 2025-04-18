@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -80,6 +81,12 @@ class ItReadOnlyFS {
   private final String wlSecretName = "weblogic-credentials";
   private static LoggingFacade logger;
   private String lastTestedDomain;
+  final String managedServerNameBase = "managed-";
+  private final String domainUid = null;
+  private final String clusterName = "cluster-1";
+  private final String adminServerName = "admin-server";
+  final int replicaCount = 2;
+
 
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -149,36 +156,48 @@ class ItReadOnlyFS {
       throws IOException, ApiException, InterruptedException {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
     String testSuffix = logType + (exporterEnabled ? "-exp" : "-noexp");
-    String domainName = "readonly-dpv-" + testSuffix;
-    lastTestedDomain = domainName;
+    String domainUid = "readonlyfs-dpv-" + testSuffix;
+    lastTestedDomain = domainUid;
+    String adminServerPodName = domainUid + "-" + adminServerName;
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 
-    String pvName = getUniqueName(domainName + "-pv");
-    String pvcName = getUniqueName(domainName + "-pvc");
+    String pvName = getUniqueName(domainUid + "-pv");
+    String pvcName = getUniqueName(domainUid + "-pvc");
 
     createBaseRepoSecret(domainNamespace);
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    createPV(pvName, domainName, this.getClass().getSimpleName());
-    createPVC(pvName, pvcName, domainName, domainNamespace);
+    createPV(pvName, domainUid, this.getClass().getSimpleName());
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
 
-    File domainPropsFile = createDomainProperties(domainName, pvName);
+    File domainPropsFile = createDomainProperties(domainUid);
     Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "sit-config-create-domain.py");
     createDomainOnPVUsingWlst(wlstScript, domainPropsFile.toPath(), pvName, pvcName, domainNamespace);
 
-    DomainResource domain = buildDomainResource(domainName, pvName, pvcName, logType, exporterEnabled);
+    DomainResource domain = buildDomainResource(domainUid, pvName, pvcName, logType, exporterEnabled);
     setPodAntiAffinity(domain);
     createDomainAndVerify(domain, domainNamespace);
+    // verify the admin server service created
+    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
 
-    logger.info("Domain {0} deployed and verified successfully", domainName);
-    verifyAllPodsTmpfs(domainName);
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+
+    }
+
+    logger.info("Domain {0} deployed and verified successfully", domainUid);
+    verifyAllPodsTmpfs(domainUid);
   }
 
-  private File createDomainProperties(String domainName, String pvName) {
+  private File createDomainProperties(String domainUid) {
     try {
       File props = File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE));
       Properties p = new Properties();
       p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
-      p.setProperty("domain_name", domainName);
-      p.setProperty("domain_uid", domainName);
+      p.setProperty("domain_name", domainUid);
+      p.setProperty("domain_uid", domainUid);
       p.setProperty("cluster_name", "cluster-1");
       p.setProperty("admin_server_name", "admin-server");
       p.setProperty("managed_server_port", "8001");
@@ -189,7 +208,7 @@ class ItReadOnlyFS {
       p.setProperty("admin_t3_channel_port", Integer.toString(getNextFreePort()));
       p.setProperty("number_of_ms", "2");
       p.setProperty("managed_server_name_base", "managed-");
-      p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainName);
+      p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid);
       p.setProperty("production_mode_enabled", "true");
       p.store(new FileOutputStream(props), "domain props");
       return props;
@@ -198,7 +217,7 @@ class ItReadOnlyFS {
     }
   }
 
-  private DomainResource buildDomainResource(String domainName, String pvName, String pvcName,
+  private DomainResource buildDomainResource(String domainUid, String pvName, String pvcName,
                                              String logType, boolean exporterEnabled) {
     V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
     V1Volume tmpfsVol = new V1Volume().name("tmp-tmpfs")
@@ -222,10 +241,10 @@ class ItReadOnlyFS {
     return new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
-        .metadata(new V1ObjectMeta().name(domainName).namespace(domainNamespace))
+        .metadata(new V1ObjectMeta().name(domainUid).namespace(domainNamespace))
         .spec(new DomainSpec()
-            .domainUid(domainName)
-            .domainHome("/shared/" + domainNamespace + "/domains/" + domainName)
+            .domainUid(domainUid)
+            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -234,7 +253,7 @@ class ItReadOnlyFS {
             .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(true)
-            .logHome("/shared/" + domainNamespace + "/logs/" + domainName)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
