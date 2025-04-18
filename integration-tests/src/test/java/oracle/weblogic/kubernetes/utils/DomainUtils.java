@@ -1046,7 +1046,7 @@ public class DomainUtils {
     //TODO
     getLogger().info("DEBUG!!!! domain on pv is going to create CR");
     V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-                 .runAsUser(1000L);
+                 .runAsUser(10001L);
     getLogger().info("DEBUG!!!! runAsUser: " + podSecCtxt.getRunAsUser());
     
     // create a domain custom resource configuration object
