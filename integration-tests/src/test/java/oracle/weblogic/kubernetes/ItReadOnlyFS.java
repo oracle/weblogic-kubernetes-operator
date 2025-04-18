@@ -193,7 +193,8 @@ class ItReadOnlyFS {
 
   private File createDomainProperties(String domainUid) {
     try {
-      File props = File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE));
+      File props = File.createTempFile("domain", ".properties",
+          new File(RESULTS_TEMPFILE + "/" + domainUid));
       Properties p = new Properties();
       p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
       p.setProperty("domain_name", domainUid);
