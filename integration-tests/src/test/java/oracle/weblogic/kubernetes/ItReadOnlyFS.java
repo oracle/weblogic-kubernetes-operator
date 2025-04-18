@@ -193,12 +193,9 @@ class ItReadOnlyFS {
 
   private File createDomainProperties(String domainUid) {
     try {
-      File outputDir = new File(RESULTS_TEMPFILE, domainUid);
-      if (!outputDir.exists() && !outputDir.mkdirs()) {
-        throw new IOException("Failed to create directory: " + outputDir.getAbsolutePath());
-      }
-
-      File props = File.createTempFile("domain", ".properties", outputDir);
+      File props = assertDoesNotThrow(() ->
+              File.createTempFile("domain-" + domainUid, ".properties", new File(RESULTS_TEMPFILE)),
+          "Failed to create domain properties file");
       Properties p = new Properties();
 
       // Base domain properties
