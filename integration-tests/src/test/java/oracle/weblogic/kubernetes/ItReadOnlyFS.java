@@ -193,9 +193,15 @@ class ItReadOnlyFS {
 
   private File createDomainProperties(String domainUid) {
     try {
-      File props = File.createTempFile("domain", ".properties",
-          new File(RESULTS_TEMPFILE + "/" + domainUid));
+      File outputDir = new File(RESULTS_TEMPFILE, domainUid);
+      if (!outputDir.exists() && !outputDir.mkdirs()) {
+        throw new IOException("Failed to create directory: " + outputDir.getAbsolutePath());
+      }
+
+      File props = File.createTempFile("domain", ".properties", outputDir);
       Properties p = new Properties();
+
+      // Base domain properties
       p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
       p.setProperty("domain_name", domainUid);
       p.setProperty("domain_uid", domainUid);
@@ -211,32 +217,51 @@ class ItReadOnlyFS {
       p.setProperty("managed_server_name_base", "managed-");
       p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid);
       p.setProperty("production_mode_enabled", "true");
-      p.store(new FileOutputStream(props), "domain props");
+
+      try (FileOutputStream fos = new FileOutputStream(props)) {
+        p.store(fos, "WLST domain creation properties");
+      }
+
       return props;
+
     } catch (Exception e) {
-      throw new RuntimeException("Failed to create domain properties", e);
+      throw new RuntimeException("Failed to create domain properties file for " + domainUid, e);
     }
   }
+
 
   private DomainResource buildDomainResource(String domainUid, String pvName, String pvcName,
                                              String logType, boolean exporterEnabled) {
     V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
-    V1Volume tmpfsVol = new V1Volume().name("tmp-tmpfs")
+
+    // Fix: use /memory-tmp instead of /tmp to avoid mount path conflict
+    V1Volume tmpfsVol = new V1Volume()
+        .name("memory-tmp")
         .emptyDir(new V1EmptyDirVolumeSource().medium("Memory"));
-    V1VolumeMount tmpfsMount = new V1VolumeMount().mountPath("/tmp").name("tmp-tmpfs");
+    V1VolumeMount tmpfsMount = new V1VolumeMount()
+        .mountPath("/memory-tmp")
+        .name("memory-tmp");
 
     List<V1Container> sidecars = new ArrayList<>();
     if ("fluentd".equals(logType)) {
-      sidecars.add(new V1Container().name("fluentd").image("fluent/fluentd:latest")
-          .securityContext(roContext).volumeMounts(List.of(tmpfsMount)));
+      sidecars.add(new V1Container()
+          .name("fluentd")
+          .image("fluent/fluentd:latest")
+          .securityContext(roContext)
+          .volumeMounts(List.of(tmpfsMount)));
     } else if ("fluentbit".equals(logType)) {
-      sidecars.add(new V1Container().name("fluentbit").image("fluent/fluent-bit:latest")
-          .securityContext(roContext).volumeMounts(List.of(tmpfsMount)));
+      sidecars.add(new V1Container()
+          .name("fluentbit")
+          .image("fluent/fluent-bit:latest")
+          .securityContext(roContext)
+          .volumeMounts(List.of(tmpfsMount)));
     }
     if (exporterEnabled) {
-      sidecars.add(new V1Container().name("monitoring-exporter")
+      sidecars.add(new V1Container()
+          .name("monitoring-exporter")
           .image("oracle/weblogic-monitoring-exporter:latest")
-          .securityContext(roContext).volumeMounts(List.of(tmpfsMount)));
+          .securityContext(roContext)
+          .volumeMounts(List.of(tmpfsMount)));
     }
 
     return new DomainResource()
@@ -277,7 +302,8 @@ class ItReadOnlyFS {
       List<String> containerNames = listContainerNames(podName, domainNamespace, domainUid);
       for (String container : containerNames) {
         logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, container);
-        ExecResult result = execCommand(domainNamespace, podName, container, true, "df", "-h", "/tmp");
+        ExecResult result = execCommand(domainNamespace, podName, container, true, "df", "-h", "/memory-tmp");
+
         if (!result.stdout().contains("tmpfs")) {
           Path logDir = Paths.get(RESULTS_TEMPFILE, domainUid, podName);
           Files.createDirectories(logDir);
