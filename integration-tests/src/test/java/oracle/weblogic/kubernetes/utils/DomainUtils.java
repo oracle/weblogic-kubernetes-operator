@@ -1042,12 +1042,12 @@ public class DomainUtils {
     for (String secret : repoSecretName) {
       secrets.add(new V1LocalObjectReference().name(secret));
     }
-    
+
     //TODO
     getLogger().info("DEBUG!!!! domain on pv is going to create CR");
-    getLogger().info("DEBUG!!!! runAsUser: 1000");
     V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
                  .runAsUser(1000L);
+    getLogger().info("DEBUG!!!! runAsUser: " + podSecCtxt.getRunAsUser());
     
     // create a domain custom resource configuration object
     DomainResource domain = new DomainResource()

@@ -160,10 +160,14 @@ class ItWlsDomainOnPV {
         configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
             this.getClass().getSimpleName());
       }
+
+      //TODO configuration.getInitializeDomainOnPV().runInitContainerAsRoot(true);
       configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
           .createMode(CreateIfNotExists.DOMAIN)
           .domainCreationImages(Collections.singletonList(domainCreationImage))
           .domainType(DomainOnPVType.WLS));
+      logger.info("!!!!DEBUG, runInitContainerAsRoot is: "
+          + configuration.getInitializeDomainOnPV().getRunDomainInitContainerAsRoot());
       DomainResource domain = createDomainResourceOnPv(
           domainUid,
           domainNamespace,
