@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -18,7 +17,6 @@ import java.util.Properties;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
@@ -26,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -148,7 +145,8 @@ class ItReadOnlyFS {
     logger.info("Finished test: no logging without exporter");
   }
 
-  private void runDomainWithOptions(String logType, boolean exporterEnabled) throws IOException, ApiException, InterruptedException {
+  private void runDomainWithOptions(String logType, boolean exporterEnabled)
+      throws IOException, ApiException, InterruptedException {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
     String testSuffix = logType + (exporterEnabled ? "-exp" : "-noexp");
     String domainName = "readonly-dpv-" + testSuffix;
@@ -275,7 +273,8 @@ class ItReadOnlyFS {
 
 
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-                                         String pvName, String pvcName, String namespace) throws IOException, ApiException {
+                                         String pvName, String pvcName,
+                                         String namespace) throws IOException, ApiException {
     List<Path> files = List.of(wlstScriptFile, domainPropertiesFile);
     String cmName = "create-domain-scripts-cm";
     createConfigMapForDomainCreation(cmName, files, namespace, this.getClass().getSimpleName());
