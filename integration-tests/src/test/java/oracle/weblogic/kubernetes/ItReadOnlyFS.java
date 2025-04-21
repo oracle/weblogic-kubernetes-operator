@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.FluentdSpecification;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -42,12 +43,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
@@ -62,6 +65,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterCreateImageAndPushToRepo;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
@@ -91,6 +95,7 @@ class ItReadOnlyFS {
   private final String adminServerName = "admin-server";
   private static String exporterImage = null;
   final int replicaCount = 2;
+  private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
 
 
 
@@ -102,6 +107,8 @@ class ItReadOnlyFS {
     installAndVerifyOperator(opNamespace, domainNamespace);
     String monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItReadOnly", "monitoringexp").toString();
+    logger.info("install monitoring exporter");
+    installMonitoringExporter(monitoringExporterDir);
     String monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
     exporterImage = assertDoesNotThrow(() ->
             buildMonitoringExporterCreateImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
@@ -243,6 +250,7 @@ class ItReadOnlyFS {
   private DomainResource buildDomainResource(String domainUid, String pvName, String pvcName,
                                              String logType, boolean exporterEnabled) {
     V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
+    FluentdSpecification fluentdSpec = null;
 
     // Fix: use /memory-tmp instead of /tmp to avoid mount path conflict
     V1Volume tmpfsVol = new V1Volume()
@@ -252,13 +260,24 @@ class ItReadOnlyFS {
         .mountPath("/memory-tmp")
         .name("memory-tmp");
 
+
     List<V1Container> sidecars = new ArrayList<>();
     if ("fluentd".equals(logType)) {
-      sidecars.add(new V1Container()
-          .name("fluentd")
-          .image("fluent/fluentd:latest")
-          .securityContext(roContext)
-          .volumeMounts(List.of(tmpfsMount)));
+      logger.info("Choosen FLUENTD_IMAGE {0}", FLUENTD_IMAGE);
+      String imagePullPolicy = "IfNotPresent";
+      FluentdSpecification fluentdSpecification = new FluentdSpecification();
+      fluentdSpecification.setImage(FLUENTD_IMAGE);
+      fluentdSpecification.setWatchIntrospectorLogs(true);
+      fluentdSpecification.setImagePullPolicy(imagePullPolicy);
+      fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
+      fluentdSpecification.setVolumeMounts(List.of(tmpfsMount));
+
+      assertDoesNotThrow(() -> {
+        Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
+        fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
+      });
+      fluentdSpec = fluentdSpecification;
+
     } else if ("fluentbit".equals(logType)) {
       sidecars.add(new V1Container()
           .name("fluentbit")
@@ -273,7 +292,38 @@ class ItReadOnlyFS {
           .securityContext(roContext)
           .volumeMounts(List.of(tmpfsMount)));
     }
-
+    DomainSpec spec = new DomainSpec()
+        .domainUid(domainUid)
+        .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)
+        .domainHomeSourceType("PersistentVolume")
+        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
+        .replicas(2)
+        .imagePullSecrets(List.of(new V1LocalObjectReference().name(BASE_IMAGES_REPO_SECRET_NAME)))
+        .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName))
+        .includeServerOutInPodLog(true)
+        .logHomeEnabled(true)
+        .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
+        .dataHome("")
+        .serverStartPolicy("IfNeeded")
+        .serverPod(new ServerPod()
+            .containerSecurityContext(roContext)
+            .addVolumesItem(new V1Volume().name(pvName)
+                .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource().claimName(pvcName)))
+            .addVolumeMountsItem(new V1VolumeMount().mountPath("/shared").name(pvName))
+            .addVolumesItem(tmpfsVol)
+            .addVolumeMountsItem(tmpfsMount))
+        .adminServer(createAdminServer())
+        .configuration(new Configuration());
+    if (fluentdSpec != null) {
+      spec.withFluentdConfiguration(fluentdSpec);
+    }
+    return new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta().name(domainUid).namespace(domainNamespace))
+        .spec(spec);
+    /*
     return new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -302,6 +352,8 @@ class ItReadOnlyFS {
                 .containers(sidecars))
             .adminServer(createAdminServer())
             .configuration(new Configuration()));
+
+ */
   }
 
   private void verifyAllPodsTmpfs(String domainUid) throws IOException, InterruptedException, ApiException {
