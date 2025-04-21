@@ -90,14 +90,13 @@ class ItReadOnlyFS {
   private static String domainNamespace;
   private final String wlSecretName = "weblogic-credentials";
   private static LoggingFacade logger;
-  private String lastTestedDomain;
   final String managedServerNameBase = "managed-";
-  private final String domainUid = null;
-  private final String clusterName = "cluster-1";
+
   private final String adminServerName = "admin-server";
   private static String exporterImage = null;
   final int replicaCount = 2;
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
+  private final List<String> domainsToClean = new ArrayList<>();
 
 
 
@@ -119,11 +118,12 @@ class ItReadOnlyFS {
   }
 
   @AfterEach
-  public void cleanup() {
-    if (lastTestedDomain != null) {
-      logger.info("Cleaning up domain: {0}", lastTestedDomain);
-      deleteDomainCustomResource(lastTestedDomain, domainNamespace);
+  public void cleanupDomains() {
+    for (String domainUid : domainsToClean) {
+      logger.info("Cleaning up domain {0} in namespace {1}", domainUid, domainNamespace);
+      deleteDomainCustomResource(domainUid, domainNamespace);
     }
+    domainsToClean.clear(); // Reset for next test
   }
 
   @Test
@@ -210,7 +210,8 @@ class ItReadOnlyFS {
 
     DomainResource domain = buildDomainResource(domainUid, pvName, pvcName, logType, exporterEnabled);
     setPodAntiAffinity(domain);
-    createDomainAndVerify(domain, domainNamespace);
+
+    createDomainAndTrackForCleanup(domain, domainNamespace);
     // verify the admin server service created
     checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
 
@@ -268,12 +269,20 @@ class ItReadOnlyFS {
     FluentdSpecification fluentdSpec = null;
 
     // Fix: use /memory-tmp instead of /tmp to avoid mount path conflict
-    V1Volume tmpfsVol = new V1Volume()
+    /*V1Volume tmpfsVol = new V1Volume()
         .name("memory-tmp")
         .emptyDir(new V1EmptyDirVolumeSource().medium("Memory"));
     V1VolumeMount tmpfsMount = new V1VolumeMount()
         .mountPath("/memory-tmp")
-        .name("memory-tmp");
+        .name("memory-tmp");*/
+
+    V1Volume tmpfsVol = new V1Volume()
+        .name("tmp-tmpfs")
+        .emptyDir(new V1EmptyDirVolumeSource().medium("Memory"));
+
+    V1VolumeMount tmpfsMount = new V1VolumeMount()
+        .mountPath("/tmp")   // <-- REQUIRED
+        .name("tmp-tmpfs");
 
 
     List<V1Container> sidecars = new ArrayList<>();
@@ -285,7 +294,10 @@ class ItReadOnlyFS {
       fluentdSpecification.setWatchIntrospectorLogs(true);
       fluentdSpecification.setImagePullPolicy(imagePullPolicy);
       fluentdSpecification.setElasticSearchCredentials("weblogic-credentials" + domainUid);
-      fluentdSpecification.setVolumeMounts(List.of(tmpfsMount));
+      V1VolumeMount fluentdLogMount = new V1VolumeMount()
+          .mountPath("/tmp/logs") // or wherever Fluentd writes logs
+          .name("tmp-tmpfs");
+      fluentdSpecification.setVolumeMounts(List.of(tmpfsMount,fluentdLogMount));
 
       assertDoesNotThrow(() -> {
         Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
@@ -379,7 +391,7 @@ class ItReadOnlyFS {
       List<String> containerNames = listContainerNames(podName, domainNamespace, domainUid);
       for (String container : containerNames) {
         logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, container);
-        ExecResult result = execCommand(domainNamespace, podName, container, true, "df", "-h", "/memory-tmp");
+        ExecResult result = execCommand(domainNamespace, podName, container, true, "df", "-h", "/tmp");
 
         if (!result.stdout().contains("tmpfs")) {
           Path logDir = Paths.get(RESULTS_TEMPFILE, domainUid, podName);
@@ -393,7 +405,6 @@ class ItReadOnlyFS {
       }
     }
   }
-
 
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
                                          String pvName, String pvcName,
@@ -440,4 +451,8 @@ class ItReadOnlyFS {
     }
   }
 
+  private void createDomainAndTrackForCleanup(DomainResource domain, String namespace) {
+    createDomainAndVerify(domain, namespace);
+    domainsToClean.add(domain.getMetadata().getName());
+  }
 }
