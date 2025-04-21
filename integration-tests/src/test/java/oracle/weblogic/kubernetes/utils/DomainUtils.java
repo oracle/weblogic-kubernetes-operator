@@ -1045,10 +1045,13 @@ public class DomainUtils {
 
     //TODO
     getLogger().info("DEBUG!!!! domain on pv is going to create CR");
-    V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-                 .runAsUser(10001L);
-    getLogger().info("DEBUG!!!! runAsUser: " + podSecCtxt.getRunAsUser());
-    getLogger().info("DEBUG!!!! FsGroup: " + podSecCtxt.getFsGroup());
+    V1PodSecurityContext podSecCtxt = new V1PodSecurityContext();
+    getLogger().info("DEBUG!!!! before setting runAsUser: " + podSecCtxt.getRunAsUser());
+    getLogger().info("DEBUG!!!! before settimg FsGroup: " + podSecCtxt.getFsGroup());
+    podSecCtxt.runAsUser(10001L);
+    podSecCtxt.fsGroup(10001L);
+    getLogger().info("DEBUG!!!! after setting runAsUser: " + podSecCtxt.getRunAsUser());
+    getLogger().info("DEBUG!!!! after setting FsGroup: " + podSecCtxt.getFsGroup());
     
     // create a domain custom resource configuration object
     DomainResource domain = new DomainResource()
