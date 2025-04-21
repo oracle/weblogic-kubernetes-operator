@@ -179,7 +179,7 @@ class ItReadOnlyFS {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
     String testSuffix = logType + (exporterEnabled ? "-exp" : "-noexp");
     String domainUid = "readonlyfs-dpv-" + testSuffix;
-    lastTestedDomain = domainUid;
+
     String adminServerPodName = domainUid + "-" + adminServerName;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 
@@ -339,7 +339,10 @@ class ItReadOnlyFS {
                 .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource().claimName(pvcName)))
             .addVolumeMountsItem(new V1VolumeMount().mountPath("/shared").name(pvName))
             .addVolumesItem(tmpfsVol)
-            .addVolumeMountsItem(tmpfsMount))
+            .addVolumeMountsItem(tmpfsMount)
+            .addVolumeMountsItem(new V1VolumeMount()
+            .name("tmp-tmpfs")
+            .mountPath("/tmp/logs")))
         .adminServer(createAdminServer())
         .configuration(new Configuration());
     if (fluentdSpec != null) {
