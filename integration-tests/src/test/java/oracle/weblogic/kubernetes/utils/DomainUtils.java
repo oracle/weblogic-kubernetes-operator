@@ -1048,6 +1048,7 @@ public class DomainUtils {
     V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
                  .runAsUser(10001L);
     getLogger().info("DEBUG!!!! runAsUser: " + podSecCtxt.getRunAsUser());
+    getLogger().info("DEBUG!!!! FsGroup: " + podSecCtxt.getFsGroup());
     
     // create a domain custom resource configuration object
     DomainResource domain = new DomainResource()
