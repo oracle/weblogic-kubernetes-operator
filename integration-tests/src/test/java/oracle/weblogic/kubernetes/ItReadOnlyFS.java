@@ -44,13 +44,16 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -58,6 +61,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterCreateImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
@@ -85,7 +89,9 @@ class ItReadOnlyFS {
   private final String domainUid = null;
   private final String clusterName = "cluster-1";
   private final String adminServerName = "admin-server";
+  private static String exporterImage = null;
   final int replicaCount = 2;
+
 
 
   @BeforeAll
@@ -94,6 +100,13 @@ class ItReadOnlyFS {
     opNamespace = namespaces.get(0);
     domainNamespace = namespaces.get(1);
     installAndVerifyOperator(opNamespace, domainNamespace);
+    String monitoringExporterDir = Paths.get(RESULTS_ROOT,
+        "ItReadOnly", "monitoringexp").toString();
+    String monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
+    exporterImage = assertDoesNotThrow(() ->
+            buildMonitoringExporterCreateImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
+                domainNamespace, TEST_IMAGES_REPO_SECRET_NAME, getImageBuilderExtraArgs()),
+        "Failed to create image for exporter");
   }
 
   @AfterEach
@@ -171,7 +184,7 @@ class ItReadOnlyFS {
 
     File domainPropsFile = createDomainProperties(domainUid);
     Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "sit-config-create-domain.py");
-    createDomainOnPVUsingWlst(wlstScript, domainPropsFile.toPath(), pvName, pvcName, domainNamespace);
+    createDomainOnPVUsingWlst(wlstScript, domainPropsFile.toPath(), pvName, pvcName, domainNamespace, domainUid);
 
     DomainResource domain = buildDomainResource(domainUid, pvName, pvcName, logType, exporterEnabled);
     setPodAntiAffinity(domain);
@@ -256,7 +269,7 @@ class ItReadOnlyFS {
     if (exporterEnabled) {
       sidecars.add(new V1Container()
           .name("monitoring-exporter")
-          .image("oracle/weblogic-monitoring-exporter:latest")
+          .image(exporterImage)
           .securityContext(roContext)
           .volumeMounts(List.of(tmpfsMount)));
     }
@@ -317,10 +330,10 @@ class ItReadOnlyFS {
 
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
                                          String pvName, String pvcName,
-                                         String namespace) throws IOException, ApiException {
+                                         String namespace, String domainUid) throws IOException, ApiException {
     List<Path> files = List.of(wlstScriptFile, domainPropertiesFile);
     String cmName = "create-domain-scripts-cm";
-    createConfigMapForDomainCreation(cmName, files, namespace, this.getClass().getSimpleName());
+    createConfigMapForDomainCreation(cmName, files, namespace, domainUid, this.getClass().getSimpleName());
     V1Container jobContainer = new V1Container()
         .addCommandItem("/bin/sh")
         .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
