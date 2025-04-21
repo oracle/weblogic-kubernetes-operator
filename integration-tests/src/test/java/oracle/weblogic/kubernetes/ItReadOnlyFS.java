@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -72,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePasswordElk;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -185,7 +187,19 @@ class ItReadOnlyFS {
     String pvcName = getUniqueName(domainUid + "-pvc");
 
     createBaseRepoSecret(domainNamespace);
-    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    if ("fluentd".equals(logType)) {
+      logger.info("Create secret for admin credentials");
+      final String adminSecretName = "weblogic-credentials";
+      String elasticSearchHost = "elasticsearch." + domainNamespace + ".svc";
+      assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
+              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+              elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
+          String.format("create secret for admin credentials failed for %s", adminSecretName));
+    } else {
+      createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }
+
     createPV(pvName, domainUid, this.getClass().getSimpleName());
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
