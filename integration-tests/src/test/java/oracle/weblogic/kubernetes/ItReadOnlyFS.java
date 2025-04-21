@@ -190,14 +190,15 @@ class ItReadOnlyFS {
 
     if ("fluentd".equals(logType)) {
       logger.info("Create secret for admin credentials");
-      final String adminSecretName = "weblogic-credentials";
+
       String elasticSearchHost = "elasticsearch." + domainNamespace + ".svc";
-      assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
+      assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(wlSecretName + domainUid, domainNamespace,
               ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
               elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
-          String.format("create secret for admin credentials failed for %s", adminSecretName));
+          String.format("create secret for admin credentials failed for %s", wlSecretName + domainUid));
     } else {
-      createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+      createSecretWithUsernamePassword(wlSecretName + domainUid,
+          domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }
 
     createPV(pvName, domainUid, this.getClass().getSimpleName());
@@ -283,7 +284,7 @@ class ItReadOnlyFS {
       fluentdSpecification.setImage(FLUENTD_IMAGE);
       fluentdSpecification.setWatchIntrospectorLogs(true);
       fluentdSpecification.setImagePullPolicy(imagePullPolicy);
-      fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
+      fluentdSpecification.setElasticSearchCredentials("weblogic-credentials" + domainUid);
       fluentdSpecification.setVolumeMounts(List.of(tmpfsMount));
 
       assertDoesNotThrow(() -> {
@@ -314,7 +315,7 @@ class ItReadOnlyFS {
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .replicas(2)
         .imagePullSecrets(List.of(new V1LocalObjectReference().name(BASE_IMAGES_REPO_SECRET_NAME)))
-        .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName))
+        .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName + domainUid))
         .includeServerOutInPodLog(true)
         .logHomeEnabled(true)
         .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
