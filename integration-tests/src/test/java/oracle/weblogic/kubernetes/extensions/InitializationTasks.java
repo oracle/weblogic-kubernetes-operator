@@ -50,8 +50,8 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_TENANCY;
 import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.CRIO;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+//import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
@@ -213,7 +213,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
           images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG);
           images.add(FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG);
-          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
+          //images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
           images.add(LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG);
 
           for (String image : images) {
@@ -327,6 +327,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         /*if (!OCNE && !OKD && !CRIO && !ARM) {
           installOracleDBOperator();
         }*/
+        installOracleDBOperator();
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
