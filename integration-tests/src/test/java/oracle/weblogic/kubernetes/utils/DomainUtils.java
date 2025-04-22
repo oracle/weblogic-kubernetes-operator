@@ -1048,8 +1048,8 @@ public class DomainUtils {
     V1PodSecurityContext podSecCtxt = new V1PodSecurityContext();
     getLogger().info("DEBUG!!!! before setting runAsUser: " + podSecCtxt.getRunAsUser());
     getLogger().info("DEBUG!!!! before settimg FsGroup: " + podSecCtxt.getFsGroup());
-    podSecCtxt.runAsUser(10001L);
-    podSecCtxt.fsGroup(10001L);
+    podSecCtxt.runAsUser(0L);
+    //podSecCtxt.fsGroup(10001L);
     getLogger().info("DEBUG!!!! after setting runAsUser: " + podSecCtxt.getRunAsUser());
     getLogger().info("DEBUG!!!! after setting FsGroup: " + podSecCtxt.getFsGroup());
     
