@@ -269,13 +269,13 @@ class ItReadOnlyFS {
     FluentdSpecification fluentdSpec = null;
 
     // Fix: use /memory-tmp instead of /tmp to avoid mount path conflict
-    /*V1Volume tmpfsVol = new V1Volume()
+    V1Volume tmpfsVol = new V1Volume()
         .name("memory-tmp")
         .emptyDir(new V1EmptyDirVolumeSource().medium("Memory"));
     V1VolumeMount tmpfsMount = new V1VolumeMount()
         .mountPath("/memory-tmp")
-        .name("memory-tmp");*/
-
+        .name("memory-tmp");
+    /*
     V1Volume tmpfsVol = new V1Volume()
         .name("tmp-tmpfs")
         .emptyDir(new V1EmptyDirVolumeSource().medium("Memory"));
@@ -283,7 +283,7 @@ class ItReadOnlyFS {
     V1VolumeMount tmpfsMount = new V1VolumeMount()
         .mountPath("/tmp")   // <-- REQUIRED
         .name("tmp-tmpfs");
-
+    */
 
     List<V1Container> sidecars = new ArrayList<>();
     if ("fluentd".equals(logType)) {
@@ -295,8 +295,8 @@ class ItReadOnlyFS {
       fluentdSpecification.setImagePullPolicy(imagePullPolicy);
       fluentdSpecification.setElasticSearchCredentials("weblogic-credentials" + domainUid);
       V1VolumeMount fluentdLogMount = new V1VolumeMount()
-          .mountPath("/tmp/logs") // or wherever Fluentd writes logs
-          .name("tmp-tmpfs");
+          .mountPath("/memory-tmp/logs") // or wherever Fluentd writes logs
+          .name("memory-tmp");
       fluentdSpecification.setVolumeMounts(List.of(tmpfsMount,fluentdLogMount));
 
       assertDoesNotThrow(() -> {
@@ -342,7 +342,7 @@ class ItReadOnlyFS {
             .addVolumeMountsItem(tmpfsMount)
             .addVolumeMountsItem(new V1VolumeMount()
             .name("tmp-tmpfs")
-            .mountPath("/tmp/logs")))
+            .mountPath("/memory-tmp/logs")))
         .adminServer(createAdminServer())
         .configuration(new Configuration());
     if (fluentdSpec != null) {
