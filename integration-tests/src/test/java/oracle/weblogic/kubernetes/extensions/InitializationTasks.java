@@ -327,7 +327,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         /*if (!OCNE && !OKD && !CRIO && !ARM) {
           installOracleDBOperator();
         }*/
-        installOracleDBOperator();
+        
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
