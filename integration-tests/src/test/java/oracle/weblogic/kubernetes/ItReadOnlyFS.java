@@ -341,7 +341,7 @@ class ItReadOnlyFS {
             .addVolumesItem(tmpfsVol)
             .addVolumeMountsItem(tmpfsMount)
             .addVolumeMountsItem(new V1VolumeMount()
-            .name("tmp-tmpfs")
+            .name("memory-tmp")
             .mountPath("/memory-tmp/logs")))
         .adminServer(createAdminServer())
         .configuration(new Configuration());
