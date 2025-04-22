@@ -388,23 +388,27 @@ class ItReadOnlyFS {
 
   private void verifyAllPodsTmpfs(String domainUid) throws IOException, InterruptedException, ApiException {
     List<String> podNames = listPodNames(domainNamespace, domainUid);
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
 
     for (String podName : podNames) {
-      List<String> containerNames = listContainerNames(podName, domainNamespace, domainUid);
-      for (String container : containerNames) {
-        logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, container);
-        ExecResult result = execCommand(domainNamespace, podName, container, true, "df", "-h", "/tmp");
+      V1Pod pod = getPod(domainNamespace, String.format("weblogic.domainUID in (%s)", domainUid), podName);
+
+      List<V1Container> containers = pod.getSpec().getContainers();
+      for (V1Container container : containers) {
+        String containerName = container.getName();
+        logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, containerName);
+
+        ExecResult result = execCommand(domainNamespace, podName, containerName, true, "df", "-h", "/tmp");
 
         if (!result.stdout().contains("tmpfs")) {
           Path logDir = Paths.get(RESULTS_TEMPFILE, domainUid, podName);
           Files.createDirectories(logDir);
-          Path logFile = logDir.resolve(container + "-tmp-check.log");
+          Path logFile = logDir.resolve(containerName + "-tmp-check.log");
           Files.writeString(logFile, result.stdout());
-          logger.severe("/tmp not mounted as tmpfs in container {0}. Log saved to: {1}", container, logFile);
+          logger.severe("/tmp not mounted as tmpfs in container {0}. Log saved to: {1}", containerName, logFile);
         }
+
         assertTrue(result.stdout().contains("tmpfs"),
-            "/tmp is not tmpfs in container " + container + " of pod " + podName + ": " + result.stdout());
+            "/tmp is not tmpfs in container " + containerName + " of pod " + podName + ": " + result.stdout());
       }
     }
   }
