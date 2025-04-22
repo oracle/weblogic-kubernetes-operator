@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -1041,6 +1042,11 @@ public class DomainUtils {
     for (String secret : repoSecretName) {
       secrets.add(new V1LocalObjectReference().name(secret));
     }
+
+    getLogger().info("DEBUG!!!! domain on pv is going to create CR");
+    V1PodSecurityContext podSecCtxt = new V1PodSecurityContext();
+    getLogger().info("DEBUG!!!! before setting runAsUser: " + podSecCtxt.getRunAsUser());
+    getLogger().info("DEBUG!!!! before settimg FsGroup: " + podSecCtxt.getFsGroup());
     
     // create a domain custom resource configuration object
     DomainResource domain = new DomainResource()

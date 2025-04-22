@@ -168,6 +168,8 @@ class ItWlsDomainOnPV {
           .createMode(CreateIfNotExists.DOMAIN)
           .domainCreationImages(Collections.singletonList(domainCreationImage))
           .domainType(DomainOnPVType.WLS));
+      logger.info("!!!!DEBUG, runInitContainerAsRoot is: "
+          + configuration.getInitializeDomainOnPV().getRunDomainInitContainerAsRoot());
       DomainResource domain = createDomainResourceOnPv(
           domainUid,
           domainNamespace,
@@ -208,7 +210,7 @@ class ItWlsDomainOnPV {
   @Test
   @DisplayName("Create a WLS domain on PV using simplified feature, Operator creates PV/PVC and WLS Domain")
   void testUserCreatesPvPvcOperatorWlsDomain() {
-    String domainUid = "wlsonpv-simplified1";
+    String domainUid = "wlsonpv-simplified2";
     final String pvName = getUniqueName(domainUid + "-pv-");
     final String pvcName = getUniqueName(domainUid + "-pvc-");
     final int t3ChannelPort = getNextFreePort();
