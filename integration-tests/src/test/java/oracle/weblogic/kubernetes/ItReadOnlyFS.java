@@ -398,7 +398,8 @@ class ItReadOnlyFS {
         logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, containerName);
 
         ExecResult result = execCommand(domainNamespace, podName, containerName, true, "df", "-h", "/tmp");
-
+        logger.info("Output for pod: {0}, container: {1} for dg -h /tmp : {2}",
+            podName, containerName, result.stdout());
         if (!result.stdout().contains("tmpfs")) {
           Path logDir = Paths.get(RESULTS_TEMPFILE, domainUid, podName);
           Files.createDirectories(logDir);
