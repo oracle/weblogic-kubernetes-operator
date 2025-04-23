@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -79,7 +79,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Verify /tmp is mounted as tmpfs across containers in domain-on-pv")
+@DisplayName("Verify /tmp is mounted as tmpfs across containers in PV and MII domains")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -174,6 +174,55 @@ class ItReadOnlyFS {
     logger.info("Finished test: no logging without exporter");
   }
 
+  @Test
+  @DisplayName("MII: fluentd with exporter")
+  void testMiiFluentdWithExporter() {
+    logger.info("Starting MII test: fluentd with exporter");
+    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentd", true));
+    logger.info("Finished MII test: fluentd with exporter");
+  }
+
+  @Test
+  @DisplayName("MII: fluentd without exporter")
+  void testMiiFluentdWithoutExporter() {
+    logger.info("Starting MII test: fluentd without exporter");
+    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentd", false));
+    logger.info("Finished MII test: fluentd without exporter");
+  }
+
+  @Test
+  @DisplayName("MII: fluentbit with exporter")
+  void testMiiFluentbitWithExporter() {
+    logger.info("Starting MII test: fluentbit with exporter");
+    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentbit", true));
+    logger.info("Finished MII test: fluentbit with exporter");
+  }
+
+  @Test
+  @DisplayName("MII: fluentbit without exporter")
+  void testMiiFluentbitWithoutExporter() {
+    logger.info("Starting MII test: fluentbit without exporter");
+    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentbit", false));
+    logger.info("Finished MII test: fluentbit without exporter");
+  }
+
+  @Test
+  @DisplayName("MII: no logging with exporter")
+  void testMiiNoLoggingWithExporter() {
+    logger.info("Starting MII test: no logging with exporter");
+    assertDoesNotThrow(() -> runMiiDomainWithOptions("none", true));
+    logger.info("Finished MII test: no logging with exporter");
+  }
+
+  @Test
+  @DisplayName("MII: no logging without exporter")
+  void testMiiNoLoggingWithoutExporter() {
+    logger.info("Starting MII test: no logging without exporter");
+    assertDoesNotThrow(() -> runMiiDomainWithOptions("none", false));
+    logger.info("Finished MII test: no logging without exporter");
+  }
+
+
   private void runDomainWithOptions(String logType, boolean exporterEnabled)
       throws IOException, ApiException, InterruptedException {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
@@ -226,6 +275,137 @@ class ItReadOnlyFS {
     logger.info("Domain {0} deployed and verified successfully", domainUid);
     verifyAllPodsTmpfs(domainUid);
   }
+
+  private void runMiiDomainWithOptions(String logType, boolean exporterEnabled)
+      throws IOException, ApiException, InterruptedException {
+
+    logger.info("Running MII domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
+
+    String testSuffix = logType + (exporterEnabled ? "-exp" : "-noexp");
+    String domainUid = "readonlyfs-mii-" + testSuffix;
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPodNamePrefix = domainUid + "-managed-";
+    String volumeName = getUniqueName(domainUid + "-vol");
+    String mountPath = "/u02";
+
+    FluentdSpecification fluentdSpec = null;
+    MonitoringExporterSpecification monitoringExporterSpec = null;
+
+    createBaseRepoSecret(domainNamespace);
+
+    if ("fluentd".equals(logType)) {
+      String elasticSearchHost = "elasticsearch." + domainNamespace + ".svc";
+      assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(wlSecretName + domainUid, domainNamespace,
+              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+              elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
+          String.format("create secret for admin credentials failed for %s", wlSecretName + domainUid));
+    } else {
+      createSecretWithUsernamePassword(wlSecretName + domainUid,
+          domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }
+
+    V1Volume emptyDirVol = new V1Volume()
+        .name(volumeName)
+        .emptyDir(new V1EmptyDirVolumeSource());
+
+    V1VolumeMount emptyDirMount = new V1VolumeMount()
+        .mountPath(mountPath)
+        .name(volumeName);
+
+    V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
+
+    List<V1Container> sidecars = new ArrayList<>();
+    if ("fluentd".equals(logType)) {
+      logger.info("Choosen FLUENTD_IMAGE {0}", FLUENTD_IMAGE);
+      String imagePullPolicy = "IfNotPresent";
+      FluentdSpecification fluentdSpecification = new FluentdSpecification();
+      fluentdSpecification.setImage(FLUENTD_IMAGE);
+      fluentdSpecification.setWatchIntrospectorLogs(true);
+      fluentdSpecification.setImagePullPolicy(imagePullPolicy);
+      fluentdSpecification.setElasticSearchCredentials("weblogic-credentials" + domainUid);
+      V1VolumeMount fluentdLogMount = new V1VolumeMount()
+          .mountPath("/memory-tmp/logs") // or wherever Fluentd writes logs
+          .name("memory-tmp");
+      fluentdSpecification.setVolumeMounts(List.of(emptyDirMount, fluentdLogMount));
+
+      assertDoesNotThrow(() -> {
+        Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
+        fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
+      });
+      fluentdSpec = fluentdSpecification;
+
+    }
+    if ("fluentbit".equals(logType)) {
+      sidecars.add(new V1Container()
+          .name("fluentbit")
+          .image("fluent/fluent-bit:latest")
+          .securityContext(roContext)
+          .volumeMounts(List.of(emptyDirMount)));
+    }
+    if (exporterEnabled) {
+      String monexpConfigFile = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
+
+      logger.info("yaml config file path : " + monexpConfigFile);
+      String contents = null;
+      try {
+        contents = new String(Files.readAllBytes(Paths.get(monexpConfigFile)));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      monitoringExporterSpec = new MonitoringExporterSpecification()
+          .image(exporterImage)
+          .imagePullPolicy(IMAGE_PULL_POLICY)
+          .configuration(contents);
+    }
+    Configuration configuration = new Configuration()
+        .model(new oracle.weblogic.domain.Model()
+            .domainType("WLS")
+            .runtimeEncryptionSecret(wlSecretName + domainUid))
+        .introspectorJobActiveDeadlineSeconds(3000L);
+
+    DomainSpec spec = new DomainSpec()
+        .domainUid(domainUid)
+        .domainHomeSourceType("FromModel")
+        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
+        .replicas(2)
+        .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName + domainUid))
+        .includeServerOutInPodLog(true)
+        .logHomeEnabled(true)
+        .logHome("/scratch/logs/" + domainUid)
+        .imagePullSecrets(List.of(new V1LocalObjectReference().name(BASE_IMAGES_REPO_SECRET_NAME)))
+        .serverStartPolicy("IfNeeded")
+        .serverPod(new ServerPod()
+            .containerSecurityContext(roContext)
+            .addVolumesItem(emptyDirVol)
+            .addVolumeMountsItem(emptyDirMount)
+            .containers(sidecars))
+        .adminServer(createAdminServer())
+        .configuration(configuration);
+
+    if (fluentdSpec != null) {
+      spec.withFluentdConfiguration(fluentdSpec);
+    }
+    if (monitoringExporterSpec != null) {
+      spec.monitoringExporter(monitoringExporterSpec);
+    }
+
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta().name(domainUid).namespace(domainNamespace))
+        .spec(spec);
+
+    createDomainAndTrackForCleanup(domain, domainNamespace);
+
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+
+    verifyAllPodsTmpfs(domainUid);
+  }
+
 
   private File createDomainProperties(String domainUid) {
     try {
@@ -315,30 +495,19 @@ class ItReadOnlyFS {
     }
     if (exporterEnabled) {
       String monexpConfigFile = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
+      logger.info("YAML config file path: {}", monexpConfigFile);
 
-      if (monexpConfigFile != null) {
-
-        logger.info("yaml config file path : " + monexpConfigFile);
-        String contents = null;
-        try {
-          contents = new String(Files.readAllBytes(Paths.get(monexpConfigFile)));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-
+      String contents;
+      try {
+        contents = Files.readString(Paths.get(monexpConfigFile));
         monitoringExporterSpec = new MonitoringExporterSpecification()
             .image(exporterImage)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .configuration(contents);
+      } catch (IOException e) {
+        logger.severe("Failed to read monitoring exporter config file: {0}", e.getMessage());
+        throw new RuntimeException("Unable to read monitoring exporter config", e);
 
-        /*
-          sidecars.add(new V1Container()
-          .name("monitoring-exporter")
-          .image(exporterImage)
-          .securityContext(roContext)
-          .volumeMounts(List.of(tmpfsMount)));
-
-        */
       }
     }
     DomainSpec spec = new DomainSpec()
