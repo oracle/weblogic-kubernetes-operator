@@ -28,6 +28,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.FluentdSpecification;
+import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -97,7 +98,6 @@ class ItReadOnlyFS {
   final int replicaCount = 2;
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
   private final List<String> domainsToClean = new ArrayList<>();
-
 
 
   @BeforeAll
@@ -213,7 +213,7 @@ class ItReadOnlyFS {
 
     createDomainAndTrackForCleanup(domain, domainNamespace);
     // verify the admin server service created
-    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
@@ -267,6 +267,7 @@ class ItReadOnlyFS {
                                              String logType, boolean exporterEnabled) {
     V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
     FluentdSpecification fluentdSpec = null;
+    MonitoringExporterSpecification monitoringExporterSpec = null;
 
     // Fix: use /memory-tmp instead of /tmp to avoid mount path conflict
     V1Volume tmpfsVol = new V1Volume()
@@ -297,7 +298,7 @@ class ItReadOnlyFS {
       V1VolumeMount fluentdLogMount = new V1VolumeMount()
           .mountPath("/memory-tmp/logs") // or wherever Fluentd writes logs
           .name("memory-tmp");
-      fluentdSpecification.setVolumeMounts(List.of(tmpfsMount,fluentdLogMount));
+      fluentdSpecification.setVolumeMounts(List.of(tmpfsMount, fluentdLogMount));
 
       assertDoesNotThrow(() -> {
         Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
@@ -313,11 +314,32 @@ class ItReadOnlyFS {
           .volumeMounts(List.of(tmpfsMount)));
     }
     if (exporterEnabled) {
-      sidecars.add(new V1Container()
+      String monexpConfigFile = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
+
+      if (monexpConfigFile != null) {
+
+        logger.info("yaml config file path : " + monexpConfigFile);
+        String contents = null;
+        try {
+          contents = new String(Files.readAllBytes(Paths.get(monexpConfigFile)));
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+        monitoringExporterSpec = new MonitoringExporterSpecification()
+            .image(exporterImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .configuration(contents);
+
+        /*
+          sidecars.add(new V1Container()
           .name("monitoring-exporter")
           .image(exporterImage)
           .securityContext(roContext)
           .volumeMounts(List.of(tmpfsMount)));
+
+        */
+      }
     }
     DomainSpec spec = new DomainSpec()
         .domainUid(domainUid)
@@ -341,12 +363,15 @@ class ItReadOnlyFS {
             .addVolumesItem(tmpfsVol)
             .addVolumeMountsItem(tmpfsMount)
             .addVolumeMountsItem(new V1VolumeMount()
-            .name("memory-tmp")
-            .mountPath("/memory-tmp/logs")))
+                .name("memory-tmp")
+                .mountPath("/memory-tmp/logs")))
         .adminServer(createAdminServer())
         .configuration(new Configuration());
     if (fluentdSpec != null) {
       spec.withFluentdConfiguration(fluentdSpec);
+    }
+    if (monitoringExporterSpec != null) {
+      spec.monitoringExporter(monitoringExporterSpec);
     }
     return new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
@@ -444,19 +469,6 @@ class ItReadOnlyFS {
       throw new RuntimeException("Failed to get pod names for domain: " + domainUid, e);
     }
     return podNames;
-  }
-
-  private List<String> listContainerNames(String podName, String namespace, String domainUid) {
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    try {
-      V1Pod pod = getPod(namespace, labelSelector, podName);
-      return pod.getSpec().getContainers()
-          .stream()
-          .map(V1Container::getName)
-          .toList();
-    } catch (ApiException e) {
-      throw new RuntimeException("Failed to get containers from pod: " + podName, e);
-    }
   }
 
   private void createDomainAndTrackForCleanup(DomainResource domain, String namespace) {
