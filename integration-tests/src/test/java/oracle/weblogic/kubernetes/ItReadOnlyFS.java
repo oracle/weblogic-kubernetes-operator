@@ -377,6 +377,7 @@ class ItReadOnlyFS {
     DomainSpec spec = new DomainSpec()
         .domainUid(domainUid)
         .domainHomeSourceType("FromModel")
+        .domainHome("/u02/domains/" + domainUid)
         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .replicas(2)
