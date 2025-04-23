@@ -276,6 +276,7 @@ class ItReadOnlyFS {
     verifyAllPodsTmpfs(domainUid);
   }
 
+
   private void runMiiDomainWithOptions(String logType, boolean exporterEnabled)
       throws IOException, ApiException, InterruptedException {
 
@@ -287,6 +288,7 @@ class ItReadOnlyFS {
     String managedServerPodNamePrefix = domainUid + "-managed-";
     String volumeName = getUniqueName(domainUid + "-vol");
     String mountPath = "/u02";
+    String modelMountPath = "/u02";
 
     FluentdSpecification fluentdSpec = null;
     MonitoringExporterSpecification monitoringExporterSpec = null;
@@ -319,7 +321,6 @@ class ItReadOnlyFS {
     V1VolumeMount logMount = new V1VolumeMount()
         .mountPath("/scratch/logs")
         .name("log-volume");
-
 
     V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
 
@@ -371,13 +372,14 @@ class ItReadOnlyFS {
     Configuration configuration = new Configuration()
         .model(new oracle.weblogic.domain.Model()
             .domainType("WLS")
+            .withModelHome(modelMountPath + "/model")
             .runtimeEncryptionSecret(wlSecretName + domainUid))
         .introspectorJobActiveDeadlineSeconds(3000L);
 
     DomainSpec spec = new DomainSpec()
         .domainUid(domainUid)
         .domainHomeSourceType("FromModel")
-        .domainHome("/u02/domains/" + domainUid)
+        .domainHome(modelMountPath + "/domains/" + domainUid)
         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .replicas(2)
@@ -419,6 +421,7 @@ class ItReadOnlyFS {
 
     verifyAllPodsTmpfs(domainUid);
   }
+
 
 
   private File createDomainProperties(String domainUid) {
