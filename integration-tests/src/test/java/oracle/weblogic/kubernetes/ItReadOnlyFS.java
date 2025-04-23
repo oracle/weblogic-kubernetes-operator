@@ -312,6 +312,14 @@ class ItReadOnlyFS {
         .mountPath(mountPath)
         .name(volumeName);
 
+    V1Volume logVolume = new V1Volume()
+        .name("log-volume")
+        .emptyDir(new V1EmptyDirVolumeSource());
+
+    V1VolumeMount logMount = new V1VolumeMount()
+        .mountPath("/scratch/logs")
+        .name("log-volume");
+
     V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
 
     List<V1Container> sidecars = new ArrayList<>();
@@ -324,7 +332,7 @@ class ItReadOnlyFS {
       fluentdSpecification.setImagePullPolicy(imagePullPolicy);
       fluentdSpecification.setElasticSearchCredentials("weblogic-credentials" + domainUid);
       V1VolumeMount fluentdLogMount = new V1VolumeMount()
-          .mountPath("/memory-tmp/logs") // or wherever Fluentd writes logs
+          .mountPath("/memory-tmp/logs")
           .name("memory-tmp");
       fluentdSpecification.setVolumeMounts(List.of(emptyDirMount, fluentdLogMount));
 
@@ -333,8 +341,8 @@ class ItReadOnlyFS {
         fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
       });
       fluentdSpec = fluentdSpecification;
-
     }
+
     if ("fluentbit".equals(logType)) {
       sidecars.add(new V1Container()
           .name("fluentbit")
@@ -342,6 +350,7 @@ class ItReadOnlyFS {
           .securityContext(roContext)
           .volumeMounts(List.of(emptyDirMount)));
     }
+
     if (exporterEnabled) {
       String monexpConfigFile = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
 
@@ -357,6 +366,7 @@ class ItReadOnlyFS {
           .imagePullPolicy(IMAGE_PULL_POLICY)
           .configuration(contents);
     }
+
     Configuration configuration = new Configuration()
         .model(new oracle.weblogic.domain.Model()
             .domainType("WLS")
@@ -379,6 +389,8 @@ class ItReadOnlyFS {
             .containerSecurityContext(roContext)
             .addVolumesItem(emptyDirVol)
             .addVolumeMountsItem(emptyDirMount)
+            .addVolumesItem(logVolume)
+            .addVolumeMountsItem(logMount)
             .containers(sidecars))
         .adminServer(createAdminServer())
         .configuration(configuration);
