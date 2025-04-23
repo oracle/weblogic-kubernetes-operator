@@ -320,6 +320,7 @@ class ItReadOnlyFS {
         .mountPath("/scratch/logs")
         .name("log-volume");
 
+
     V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
 
     List<V1Container> sidecars = new ArrayList<>();
@@ -332,8 +333,8 @@ class ItReadOnlyFS {
       fluentdSpecification.setImagePullPolicy(imagePullPolicy);
       fluentdSpecification.setElasticSearchCredentials("weblogic-credentials" + domainUid);
       V1VolumeMount fluentdLogMount = new V1VolumeMount()
-          .mountPath("/memory-tmp/logs")
-          .name("memory-tmp");
+          .mountPath("/scratch/logs")
+          .name("log-volume");
       fluentdSpecification.setVolumeMounts(List.of(emptyDirMount, fluentdLogMount));
 
       assertDoesNotThrow(() -> {
