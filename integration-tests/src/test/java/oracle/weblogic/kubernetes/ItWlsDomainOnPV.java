@@ -166,7 +166,7 @@ class ItWlsDomainOnPV {
           .createMode(CreateIfNotExists.DOMAIN)
           .domainCreationImages(Collections.singletonList(domainCreationImage))
           .domainType(DomainOnPVType.WLS));
-      logger.info("!!!!DEBUG, runInitContainerAsRoot is: "
+      logger.info("DEBUG!!!!, runInitContainerAsRoot is: "
           + configuration.getInitializeDomainOnPV().getRunDomainInitContainerAsRoot());
       DomainResource domain = createDomainResourceOnPv(
           domainUid,
