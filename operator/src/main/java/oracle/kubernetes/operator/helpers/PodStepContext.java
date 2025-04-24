@@ -784,10 +784,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     exporterContext.addContainer(containers);
     boolean isReadOnlyRootFileSystem = isReadOnlyRootFileSystem();
     Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false,
+        .ifPresent(fluentd -> addFluentdContainer(getServerSpec(), fluentd, containers, getDomain(), false,
                 isReadOnlyRootFileSystem));
     Optional.ofNullable(getDomain().getFluentbitSpecification())
-            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(),
+            .ifPresent(fluentbit -> addFluentbitContainer(getServerSpec(), fluentbit, containers, getDomain(),
                     false, isReadOnlyRootFileSystem));
     return containers;
   }
