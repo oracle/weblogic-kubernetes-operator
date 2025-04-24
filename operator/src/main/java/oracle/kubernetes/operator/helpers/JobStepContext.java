@@ -841,7 +841,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getFluentdSpecification())
         .ifPresent(fluentd -> {
           if (Boolean.TRUE.equals(fluentd.getWatchIntrospectorLogs())) {
-            FluentdHelper.addFluentdContainer(fluentd,
+            FluentdHelper.addFluentdContainer(getServerSpec(), fluentd,
                     containers, getDomain(), true, isReadOnlyRootFileSystem());
           }
         });
@@ -849,7 +849,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getFluentbitSpecification())
             .ifPresent(fluentbit -> {
               if (Boolean.TRUE.equals(fluentbit.getWatchIntrospectorLogs())) {
-                FluentbitHelper.addFluentbitContainer(fluentbit,
+                FluentbitHelper.addFluentbitContainer(getServerSpec(), fluentbit,
                         containers, getDomain(), true, isReadOnlyRootFileSystem());
               }
             });
