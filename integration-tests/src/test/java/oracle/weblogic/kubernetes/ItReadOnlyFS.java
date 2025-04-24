@@ -40,6 +40,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToRepo;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
@@ -48,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -58,6 +60,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -98,6 +101,11 @@ class ItReadOnlyFS {
   final int replicaCount = 2;
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
   private final List<String> domainsToClean = new ArrayList<>();
+  private static String miiImagePV;
+  private static String miiImageTagPV;
+  private static String miiImageCustom;
+  private static String miiImageTagCustom;
+  private static String modelMountPath = "/u02";
 
 
   @BeforeAll
@@ -115,6 +123,14 @@ class ItReadOnlyFS {
             buildMonitoringExporterCreateImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
                 domainNamespace, TEST_IMAGES_REPO_SECRET_NAME, getImageBuilderExtraArgs()),
         "Failed to create image for exporter");
+
+
+    logger.info("Building image with custom wdt model home location");
+    miiImageTagCustom = getDateAndTimeStamp();
+    miiImageCustom = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
+
+    // build a new MII image with custom wdtHome
+    buildMIIandPushToRepo(MII_BASIC_IMAGE_NAME, miiImageTagCustom, modelMountPath + "/model");
   }
 
   @AfterEach
@@ -288,7 +304,7 @@ class ItReadOnlyFS {
     String managedServerPodNamePrefix = domainUid + "-managed-";
     String volumeName = getUniqueName(domainUid + "-vol");
     String mountPath = "/u02";
-    String modelMountPath = "/u02";
+
 
     FluentdSpecification fluentdSpec = null;
     MonitoringExporterSpecification monitoringExporterSpec = null;
@@ -376,11 +392,13 @@ class ItReadOnlyFS {
             .runtimeEncryptionSecret(wlSecretName + domainUid))
         .introspectorJobActiveDeadlineSeconds(3000L);
 
+
+
     DomainSpec spec = new DomainSpec()
         .domainUid(domainUid)
         .domainHomeSourceType("FromModel")
         .domainHome(modelMountPath + "/domains/" + domainUid)
-        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+        .image(miiImageCustom)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .replicas(2)
         .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName + domainUid))
