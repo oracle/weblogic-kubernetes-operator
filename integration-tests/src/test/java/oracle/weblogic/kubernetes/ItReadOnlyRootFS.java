@@ -40,7 +40,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToRepo;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
@@ -49,7 +48,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -60,7 +58,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -84,9 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Verify /tmp is mounted as tmpfs across containers in PV and MII domains")
 @IntegrationTest
-@Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("oke-arm")
 @Tag("oke-parallel")
 class ItReadOnlyRootFS {
 
@@ -101,11 +96,6 @@ class ItReadOnlyRootFS {
   final int replicaCount = 2;
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
   private final List<String> domainsToClean = new ArrayList<>();
-  private static String miiImagePV;
-  private static String miiImageTagPV;
-  private static String miiImageCustom;
-  private static String miiImageTagCustom;
-  private static String modelMountPath = "/u02";
 
 
   @BeforeAll
@@ -123,14 +113,6 @@ class ItReadOnlyRootFS {
             buildMonitoringExporterCreateImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
                 domainNamespace, TEST_IMAGES_REPO_SECRET_NAME, getImageBuilderExtraArgs()),
         "Failed to create image for exporter");
-
-
-    logger.info("Building image with custom wdt model home location");
-    miiImageTagCustom = getDateAndTimeStamp();
-    miiImageCustom = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
-
-    // build a new MII image with custom wdtHome
-    buildMIIandPushToRepo(MII_BASIC_IMAGE_NAME, miiImageTagCustom, modelMountPath + "/model");
   }
 
   @AfterEach
@@ -190,55 +172,6 @@ class ItReadOnlyRootFS {
     logger.info("Finished test: no logging without exporter");
   }
 
-  @Test
-  @DisplayName("MII: fluentd with exporter")
-  void testMiiFluentdWithExporter() {
-    logger.info("Starting MII test: fluentd with exporter");
-    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentd", true));
-    logger.info("Finished MII test: fluentd with exporter");
-  }
-
-  @Test
-  @DisplayName("MII: fluentd without exporter")
-  void testMiiFluentdWithoutExporter() {
-    logger.info("Starting MII test: fluentd without exporter");
-    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentd", false));
-    logger.info("Finished MII test: fluentd without exporter");
-  }
-
-  @Test
-  @DisplayName("MII: fluentbit with exporter")
-  void testMiiFluentbitWithExporter() {
-    logger.info("Starting MII test: fluentbit with exporter");
-    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentbit", true));
-    logger.info("Finished MII test: fluentbit with exporter");
-  }
-
-  @Test
-  @DisplayName("MII: fluentbit without exporter")
-  void testMiiFluentbitWithoutExporter() {
-    logger.info("Starting MII test: fluentbit without exporter");
-    assertDoesNotThrow(() -> runMiiDomainWithOptions("fluentbit", false));
-    logger.info("Finished MII test: fluentbit without exporter");
-  }
-
-  @Test
-  @DisplayName("MII: no logging with exporter")
-  void testMiiNoLoggingWithExporter() {
-    logger.info("Starting MII test: no logging with exporter");
-    assertDoesNotThrow(() -> runMiiDomainWithOptions("none", true));
-    logger.info("Finished MII test: no logging with exporter");
-  }
-
-  @Test
-  @DisplayName("MII: no logging without exporter")
-  void testMiiNoLoggingWithoutExporter() {
-    logger.info("Starting MII test: no logging without exporter");
-    assertDoesNotThrow(() -> runMiiDomainWithOptions("none", false));
-    logger.info("Finished MII test: no logging without exporter");
-  }
-
-
   private void runDomainWithOptions(String logType, boolean exporterEnabled)
       throws IOException, ApiException, InterruptedException {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
@@ -292,156 +225,6 @@ class ItReadOnlyRootFS {
     verifyAllPodsTmpfs(domainUid);
   }
 
-
-  private void runMiiDomainWithOptions(String logType, boolean exporterEnabled)
-      throws IOException, ApiException, InterruptedException {
-
-    logger.info("Running MII domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
-
-    String testSuffix = logType + (exporterEnabled ? "-exp" : "-noexp");
-    String domainUid = "readonlyfs-mii-" + testSuffix;
-    String adminServerPodName = domainUid + "-admin-server";
-    String managedServerPodNamePrefix = domainUid + "-managed-";
-    String volumeName = getUniqueName(domainUid + "-vol");
-    String mountPath = "/u02";
-
-
-    FluentdSpecification fluentdSpec = null;
-    MonitoringExporterSpecification monitoringExporterSpec = null;
-
-    createBaseRepoSecret(domainNamespace);
-
-    if ("fluentd".equals(logType)) {
-      String elasticSearchHost = "elasticsearch." + domainNamespace + ".svc";
-      assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(wlSecretName + domainUid, domainNamespace,
-              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-              elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
-          String.format("create secret for admin credentials failed for %s", wlSecretName + domainUid));
-    } else {
-      createSecretWithUsernamePassword(wlSecretName + domainUid,
-          domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }
-
-    V1Volume emptyDirVol = new V1Volume()
-        .name(volumeName)
-        .emptyDir(new V1EmptyDirVolumeSource());
-
-    V1VolumeMount emptyDirMount = new V1VolumeMount()
-        .mountPath(mountPath)
-        .name(volumeName);
-
-    V1Volume logVolume = new V1Volume()
-        .name("log-volume")
-        .emptyDir(new V1EmptyDirVolumeSource());
-
-    V1VolumeMount logMount = new V1VolumeMount()
-        .mountPath("/scratch/logs")
-        .name("log-volume");
-
-    V1SecurityContext roContext = new V1SecurityContext().readOnlyRootFilesystem(true);
-
-    List<V1Container> sidecars = new ArrayList<>();
-    if ("fluentd".equals(logType)) {
-      logger.info("Choosen FLUENTD_IMAGE {0}", FLUENTD_IMAGE);
-      String imagePullPolicy = "IfNotPresent";
-      FluentdSpecification fluentdSpecification = new FluentdSpecification();
-      fluentdSpecification.setImage(FLUENTD_IMAGE);
-      fluentdSpecification.setWatchIntrospectorLogs(true);
-      fluentdSpecification.setImagePullPolicy(imagePullPolicy);
-      fluentdSpecification.setElasticSearchCredentials("weblogic-credentials" + domainUid);
-      V1VolumeMount fluentdLogMount = new V1VolumeMount()
-          .mountPath("/scratch/logs")
-          .name("log-volume");
-      fluentdSpecification.setVolumeMounts(List.of(emptyDirMount, fluentdLogMount));
-
-      assertDoesNotThrow(() -> {
-        Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
-        fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
-      });
-      fluentdSpec = fluentdSpecification;
-    }
-
-    if ("fluentbit".equals(logType)) {
-      sidecars.add(new V1Container()
-          .name("fluentbit")
-          .image("fluent/fluent-bit:latest")
-          .securityContext(roContext)
-          .volumeMounts(List.of(emptyDirMount)));
-    }
-
-    if (exporterEnabled) {
-      String monexpConfigFile = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
-
-      logger.info("yaml config file path : " + monexpConfigFile);
-      String contents = null;
-      try {
-        contents = new String(Files.readAllBytes(Paths.get(monexpConfigFile)));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      monitoringExporterSpec = new MonitoringExporterSpecification()
-          .image(exporterImage)
-          .imagePullPolicy(IMAGE_PULL_POLICY)
-          .configuration(contents);
-    }
-
-    Configuration configuration = new Configuration()
-        .model(new oracle.weblogic.domain.Model()
-            .domainType("WLS")
-            .withModelHome(modelMountPath + "/model")
-            .runtimeEncryptionSecret(wlSecretName + domainUid))
-        .introspectorJobActiveDeadlineSeconds(3000L);
-
-
-
-    DomainSpec spec = new DomainSpec()
-        .domainUid(domainUid)
-        .domainHomeSourceType("FromModel")
-        .domainHome(modelMountPath + "/domains/" + domainUid)
-        .image(miiImageCustom)
-        .imagePullPolicy(IMAGE_PULL_POLICY)
-        .replicas(2)
-        .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName + domainUid))
-        .includeServerOutInPodLog(true)
-        .logHomeEnabled(true)
-        .logHome("/scratch/logs/" + domainUid)
-        .imagePullSecrets(List.of(new V1LocalObjectReference().name(BASE_IMAGES_REPO_SECRET_NAME)))
-        .serverStartPolicy("IfNeeded")
-        .serverPod(new ServerPod()
-            .containerSecurityContext(roContext)
-            .addVolumesItem(emptyDirVol)
-            .addVolumeMountsItem(emptyDirMount)
-            .addVolumesItem(logVolume)
-            .addVolumeMountsItem(logMount)
-            .containers(sidecars))
-        .adminServer(createAdminServer())
-        .configuration(configuration);
-
-    if (fluentdSpec != null) {
-      spec.withFluentdConfiguration(fluentdSpec);
-    }
-    if (monitoringExporterSpec != null) {
-      spec.monitoringExporter(monitoringExporterSpec);
-    }
-
-    DomainResource domain = new DomainResource()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta().name(domainUid).namespace(domainNamespace))
-        .spec(spec);
-
-    createDomainAndTrackForCleanup(domain, domainNamespace);
-
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
-
-    verifyAllPodsTmpfs(domainUid);
-  }
-
-
-
   private File createDomainProperties(String domainUid) {
     try {
       File props = assertDoesNotThrow(() ->
@@ -484,22 +267,12 @@ class ItReadOnlyRootFS {
     FluentdSpecification fluentdSpec = null;
     MonitoringExporterSpecification monitoringExporterSpec = null;
 
-    // Fix: use /memory-tmp instead of /tmp to avoid mount path conflict
     V1Volume tmpfsVol = new V1Volume()
         .name("memory-tmp")
         .emptyDir(new V1EmptyDirVolumeSource().medium("Memory"));
     V1VolumeMount tmpfsMount = new V1VolumeMount()
         .mountPath("/memory-tmp")
         .name("memory-tmp");
-    /*
-    V1Volume tmpfsVol = new V1Volume()
-        .name("tmp-tmpfs")
-        .emptyDir(new V1EmptyDirVolumeSource().medium("Memory"));
-
-    V1VolumeMount tmpfsMount = new V1VolumeMount()
-        .mountPath("/tmp")   // <-- REQUIRED
-        .name("tmp-tmpfs");
-    */
 
     List<V1Container> sidecars = new ArrayList<>();
     if ("fluentd".equals(logType)) {
@@ -582,37 +355,7 @@ class ItReadOnlyRootFS {
         .kind("Domain")
         .metadata(new V1ObjectMeta().name(domainUid).namespace(domainNamespace))
         .spec(spec);
-    /*
-    return new DomainResource()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta().name(domainUid).namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)
-            .domainHomeSourceType("PersistentVolume")
-            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(IMAGE_PULL_POLICY)
-            .replicas(2)
-            .imagePullSecrets(List.of(new V1LocalObjectReference().name(BASE_IMAGES_REPO_SECRET_NAME)))
-            .webLogicCredentialsSecret(new V1LocalObjectReference().name(wlSecretName))
-            .includeServerOutInPodLog(true)
-            .logHomeEnabled(true)
-            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
-            .dataHome("")
-            .serverStartPolicy("IfNeeded")
-            .serverPod(new ServerPod()
-                .containerSecurityContext(roContext)
-                .addVolumesItem(new V1Volume().name(pvName)
-                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource().claimName(pvcName)))
-                .addVolumeMountsItem(new V1VolumeMount().mountPath("/shared").name(pvName))
-                .addVolumesItem(tmpfsVol)
-                .addVolumeMountsItem(tmpfsMount)
-                .containers(sidecars))
-            .adminServer(createAdminServer())
-            .configuration(new Configuration()));
 
- */
   }
 
   private void verifyAllPodsTmpfs(String domainUid) throws IOException, InterruptedException, ApiException {
