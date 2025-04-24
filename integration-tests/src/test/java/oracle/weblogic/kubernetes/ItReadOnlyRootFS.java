@@ -79,7 +79,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Verify /tmp is mounted as tmpfs across containers in PV and MII domains")
+@DisplayName("Verify /tmp is mounted as tmpfs across containers in PV domains")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")
@@ -176,7 +176,7 @@ class ItReadOnlyRootFS {
       throws IOException, ApiException, InterruptedException {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
     String testSuffix = logType + (exporterEnabled ? "-exp" : "-noexp");
-    String domainUid = "readonlyfs-dpv-" + testSuffix;
+    String domainUid = "readonlyrootfs-dpv-" + testSuffix;
 
     String adminServerPodName = domainUid + "-" + adminServerName;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
