@@ -442,7 +442,7 @@ class ItMaxConcurOptions {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true -Xms1024m -Xmx1024m"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
