@@ -88,7 +88,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("oke-arm")
 @Tag("oke-parallel")
-class ItReadOnlyFS {
+class ItReadOnlyRootFS {
 
   private static String opNamespace;
   private static String domainNamespace;
