@@ -385,6 +385,7 @@ class ItReadOnlyRootFS {
       }
     }
   }
+
   private void verifyAllPodsTmpfs(String domainUid) throws IOException, InterruptedException, ApiException {
     List<String> podNames = listPodNames(domainNamespace, domainUid);
 
@@ -406,7 +407,8 @@ class ItReadOnlyRootFS {
     }
   }
 
-  private void verifyTmpfsAndSecurityContext(String podName, V1Container container) throws IOException, ApiException, InterruptedException {
+  private void verifyTmpfsAndSecurityContext(String podName, V1Container container)
+      throws IOException, ApiException, InterruptedException {
     String containerName = container.getName();
     logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, containerName);
 
