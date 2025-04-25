@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
-=======
+
 // Copyright (c) 2021, 2025, Oracle and/or its affiliates.
->>>>>>> d764e81404dcd82c6d28084283a63b3dcc165925
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -127,7 +124,7 @@ public class ConfigMapUtils {
    */
   public static void createConfigMapForDomainCreation(String configMapName, List<Path> files,
                                                       String namespace, String className)
-      throws IOException {
+      throws IOException, ApiException {
 
     createConfigMapForDomainCreation(configMapName, files,
         namespace, "", className);
@@ -264,11 +261,8 @@ public class ConfigMapUtils {
     assertNotNull(configMapToModify,"Can't find cm for " + cmName);
     Map<String, String> cmData = configMapToModify.getData();
     String values = null;
-<<<<<<< HEAD
-    if (cmData != null) {
-=======
+
     if (cmData != null && cmData.get("logstash.conf") != null) {
->>>>>>> d764e81404dcd82c6d28084283a63b3dcc165925
       values = cmData.get("logstash.conf").replace(oldRegex, newRegex);
     }
     assertNotNull(values, "can't find values for key prometheus.yml");
