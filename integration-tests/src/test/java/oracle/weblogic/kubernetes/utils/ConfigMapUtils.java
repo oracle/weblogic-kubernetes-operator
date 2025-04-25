@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+=======
 // Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+>>>>>>> d764e81404dcd82c6d28084283a63b3dcc165925
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -125,11 +129,37 @@ public class ConfigMapUtils {
                                                       String namespace, String className)
       throws IOException {
 
-    LoggingFacade logger = getLogger();
-    logger.info("Creating configmap {0}, namespace {1}, className {2}", configMapName, namespace, className);
+    createConfigMapForDomainCreation(configMapName, files,
+        namespace, "", className);
+  }
 
-    Path domainScriptsDir = Files.createDirectories(
-        Paths.get(TestConstants.LOGS_DIR, className, namespace));
+  /**
+   * Create configmap containing domain creation scripts.
+   *
+   * @param configMapName name of the configmap to create
+   * @param files files to add in configmap
+   * @param namespace name of the namespace in which to create configmap
+   * @param className name of the class to call this method
+   * @throws IOException when reading the domain script files fail
+   * @throws ApiException if create configmap fails
+   */
+  public static void createConfigMapForDomainCreation(String configMapName, List<Path> files,
+                                                      String namespace, String domainUid, String className)
+      throws ApiException, IOException {
+
+    LoggingFacade logger = getLogger();
+    logger.info("Creating configmap {0}, namespace {1}, domainUid {2}, className {3}",
+        configMapName, namespace, domainUid, className);
+
+    Path domainScriptsDir;
+
+    if (domainUid == null || domainUid.isEmpty()) {
+      domainScriptsDir = Files.createDirectories(
+          Paths.get(TestConstants.LOGS_DIR, className, namespace));
+    } else {
+      domainScriptsDir = Files.createDirectories(
+          Paths.get(TestConstants.LOGS_DIR, className, namespace, domainUid));
+    }
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
@@ -234,7 +264,11 @@ public class ConfigMapUtils {
     assertNotNull(configMapToModify,"Can't find cm for " + cmName);
     Map<String, String> cmData = configMapToModify.getData();
     String values = null;
+<<<<<<< HEAD
+    if (cmData != null) {
+=======
     if (cmData != null && cmData.get("logstash.conf") != null) {
+>>>>>>> d764e81404dcd82c6d28084283a63b3dcc165925
       values = cmData.get("logstash.conf").replace(oldRegex, newRegex);
     }
     assertNotNull(values, "can't find values for key prometheus.yml");
