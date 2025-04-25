@@ -175,8 +175,8 @@ class ItReadOnlyRootFS {
   private void runDomainWithOptions(String logType, boolean exporterEnabled)
       throws IOException, ApiException, InterruptedException {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
-    String testSuffix = logType + (exporterEnabled ? "-exp" : "-noexp");
-    String domainUid = "readonlyrootfs-dpv-" + testSuffix;
+    String testSuffix = logType + (exporterEnabled ? "exp" : "noexp");
+    String domainUid = "dpv" + testSuffix;
 
     String adminServerPodName = domainUid + "-" + adminServerName;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
