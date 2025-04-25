@@ -358,7 +358,7 @@ class ItReadOnlyRootFS {
 
   }
 
-  private void verifyAllPodsTmpfs(String domainUid) throws IOException, InterruptedException, ApiException {
+  private void verifyAllPodsTmpfsOld(String domainUid) throws IOException, InterruptedException, ApiException {
     List<String> podNames = listPodNames(domainNamespace, domainUid);
 
     for (String podName : podNames) {
@@ -384,6 +384,48 @@ class ItReadOnlyRootFS {
             "/tmp is not tmpfs in container " + containerName + " of pod " + podName + ": " + result.stdout());
       }
     }
+  }
+  private void verifyAllPodsTmpfs(String domainUid) throws IOException, InterruptedException, ApiException {
+    List<String> podNames = listPodNames(domainNamespace, domainUid);
+
+    for (String podName : podNames) {
+      V1Pod pod = getPod(domainNamespace, String.format("weblogic.domainUID in (%s)", domainUid), podName);
+
+      logger.info("Checking /tmp mount and readOnlyRootFilesystem for pod: {0}", podName);
+
+      List<V1Container> containers = pod.getSpec().getContainers();
+      for (V1Container container : containers) {
+        verifyTmpfsAndSecurityContext(podName, container);
+      }
+
+      if (pod.getSpec().getInitContainers() != null) {
+        for (V1Container initContainer : pod.getSpec().getInitContainers()) {
+          verifyTmpfsAndSecurityContext(podName, initContainer);
+        }
+      }
+    }
+  }
+
+  private void verifyTmpfsAndSecurityContext(String podName, V1Container container) throws IOException, ApiException, InterruptedException {
+    String containerName = container.getName();
+    logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, containerName);
+
+    ExecResult result = execCommand(domainNamespace, podName, containerName, true, "df", "-h", "/tmp");
+    logger.info("Output for pod: {0}, container: {1} for df -h /tmp : {2}",
+        podName, containerName, result.stdout());
+    if (!result.stdout().contains("tmpfs")) {
+      Path logDir = Paths.get(RESULTS_TEMPFILE, podName);
+      Files.createDirectories(logDir);
+      Path logFile = logDir.resolve(containerName + "-tmp-check.log");
+      Files.writeString(logFile, result.stdout());
+      logger.severe("/tmp not mounted as tmpfs in container {0}. Log saved to: {1}", containerName, logFile);
+    }
+    assertTrue(result.stdout().contains("tmpfs"),
+        "/tmp is not tmpfs in container " + containerName + " of pod " + podName);
+
+    V1SecurityContext context = container.getSecurityContext();
+    assertTrue(context != null && Boolean.TRUE.equals(context.getReadOnlyRootFilesystem()),
+        "readOnlyRootFilesystem not set to true for container " + containerName + " in pod " + podName);
   }
 
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
