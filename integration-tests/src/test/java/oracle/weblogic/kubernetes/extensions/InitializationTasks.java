@@ -321,7 +321,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
-        if (!OCNE && !OKD && !CRIO && !ARM) {
+        if (!OCNE && !CRIO && !ARM) {
           installOracleDBOperator();
         }
 
@@ -331,7 +331,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           logger.info("Installing istio before any test suites are run");
           installIstio();
         }
-        if (INSTALL_WEBLOGIC && !OKD && !CRIO && !ARM && !OKE_CLUSTER) {
+        if (INSTALL_WEBLOGIC && !CRIO && !ARM && !OKE_CLUSTER) {
           installOnPremWebLogic();
         }
       } finally {
