@@ -247,6 +247,7 @@ class ItCrossDomainTransactionSecurity {
           "Didn't send expected msg ");
     // Discard the first result. Sometime It fails with Error
     if (!getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation")) {
+      logger.info("SKIPPING the first invoccation");
       assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
            "Didn't send expected msg ");
     }
