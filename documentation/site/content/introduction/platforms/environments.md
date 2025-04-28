@@ -179,6 +179,8 @@ OpenShift can be a cloud platform or can be deployed on premises.
 - Operator v4.0.5 is certified for use on:
   - OpenShift Container Platform 4.11.30 with Kubernetes 1.24+, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
   - OpenShift Container Platform 4.12.2 with Kubernetes 1.25+, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
+- Operator v4.2.16 is certified for use on:
+  - OpenShift Container Platform 4.17.2 with Kubernetes v1.30.5+, RedHat OpenShift Mesh v3.0.1, and Istio 1.24.4.
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
