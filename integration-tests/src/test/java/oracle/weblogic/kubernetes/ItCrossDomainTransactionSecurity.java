@@ -245,6 +245,11 @@ class ItCrossDomainTransactionSecurity {
     logger.info("Executing curl command: {0}", curlCmd1);
     assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
           "Didn't send expected msg ");
+    // Discard the first result. Sometime It fails with Error
+    if (!getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation")) {
+      assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
+           "Didn't send expected msg ");
+    }
 
     //receive msg from the udq that has 2 memebers
     StringBuffer curlCmd2 = new StringBuffer("curl -j --show-error --noproxy '*' ");
