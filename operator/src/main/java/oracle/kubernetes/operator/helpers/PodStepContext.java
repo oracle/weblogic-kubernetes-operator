@@ -784,10 +784,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     exporterContext.addContainer(containers);
     boolean isReadOnlyRootFileSystem = isReadOnlyRootFileSystem();
     Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false,
+        .ifPresent(fluentd -> addFluentdContainer(getServerSpec(), fluentd, containers, getDomain(), false,
                 isReadOnlyRootFileSystem));
     Optional.ofNullable(getDomain().getFluentbitSpecification())
-            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(),
+            .ifPresent(fluentbit -> addFluentbitContainer(getServerSpec(), fluentbit, containers, getDomain(),
                     false, isReadOnlyRootFileSystem));
     return containers;
   }
@@ -1668,7 +1668,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .image(getDomain().getMonitoringExporterImage())
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
             .resources(getDomain().getMonitoringExporterResources())
-            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
+            .securityContext(getServerSpec().getContainerSecurityContext())
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
                 .name("metrics").protocol("TCP").containerPort(getPort()));

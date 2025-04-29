@@ -194,7 +194,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     container.volumeMounts(mounts);
 
     if (isInitializeDomainOnPV) {
-      container.securityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
+      container.securityContext(getServerSpec().getContainerSecurityContext());
     } else {
       container.securityContext(getInitContainerSecurityContext());
     }
