@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -17,10 +18,12 @@ import java.util.Properties;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -30,6 +33,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.FluentdSpecification;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -48,15 +52,23 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -78,8 +90,10 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@DisplayName("Verify /tmp is mounted as tmpfs across containers in PV domains")
+@DisplayName("Verify /tmp is mounted as tmpfs across containers in PV domains and "
+    + "readOnlyRootFilesystem flag enabled in its security context in each container")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")
@@ -105,7 +119,7 @@ class ItReadOnlyRootFS {
     domainNamespace = namespaces.get(1);
     installAndVerifyOperator(opNamespace, domainNamespace);
     String monitoringExporterDir = Paths.get(RESULTS_ROOT,
-        "ItReadOnly", "monitoringexp").toString();
+        "ItReadOnlyRootFS", "monitoringexp").toString();
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
     String monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
@@ -172,8 +186,132 @@ class ItReadOnlyRootFS {
     logger.info("Finished test: no logging without exporter");
   }
 
+  @Test
+  @DisplayName("auxiliary init container with readOnlyRootFilesystem and emptyDir domainHome")
+  void testAuxiliaryInitContainerWithReadOnlyFSOnEmptyDir() throws Exception {
+    logger.info("Starting test: auxiliary init container with readOnlyRootFilesystem and emptyDir domainHome");
+
+    String domainUid = "auxemptyreadonly";
+    String domainHomeBase = "/u02";
+    String domainHome = domainHomeBase + "/domains/" + domainUid;
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPodPrefix = domainUid + "-managed-server";
+
+    // Prepare secrets
+    createBaseRepoSecret(domainNamespace);
+    createSecretWithUsernamePassword(wlSecretName + domainUid, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // Build and push auxiliary image
+    String auxImageName = buildAndPushAuxiliaryImage();
+
+    // Create domain resource with auxiliary image and readonly FS
+    DomainResource domain = createDomainResourceWithAuxiliaryImageAndReadOnlyFS(
+        domainUid, domainHomeBase, domainHome, auxImageName);
+
+    setPodAntiAffinity(domain);
+    createDomainAndTrackForCleanup(domain, domainNamespace);
+
+    // Check pod readiness
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPodPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Verifying /tmp mounted as tmpfs and readOnly filesystem for all containers including auxiliary");
+    verifyAllPodsTmpfsAndReadOnlyFS(domainNamespace, domainUid);
+  }
+
+  private String buildAndPushAuxiliaryImage() throws IOException {
+    logger.info("Building auxiliary image for test");
+
+    List<String> modelFiles = List.of(
+        MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE,
+        MODEL_DIR + "/multi-model-one-ds.20.yaml"
+    );
+
+    String appDir = "sample-app";
+    AppParams appParams = defaultAppParams()
+        .appArchiveDir(ARCHIVE_DIR + ItReadOnlyRootFS.class.getSimpleName());
+
+    assertTrue(
+        buildAppArchive(appParams.srcDirList(List.of(appDir))),
+        String.format("Failed to create application archive for %s", MII_BASIC_APP_NAME)
+    );
+
+    String archiveFile = String.format("%s/%s.zip", appParams.appArchiveDir(), MII_BASIC_APP_NAME);
+    List<String> archiveFiles = Collections.singletonList(archiveFile);
+
+    String auxImageTag = MII_BASIC_IMAGE_TAG;
+    String auxImageName = MII_AUXILIARY_IMAGE_NAME + ":" + auxImageTag;
+
+    assertDoesNotThrow(() ->
+            createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, auxImageTag, archiveFiles, modelFiles),
+        "Failed to create auxiliary image");
+
+    return auxImageName;
+  }
+
+  private DomainResource createDomainResourceWithAuxiliaryImageAndReadOnlyFS(
+      String domainUid, String domainHomeBase, String domainHome, String auxImageName) {
+
+    return new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome(domainHome)
+            .domainHomeSourceType("FromModel")
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .replicas(replicaCount)
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName + domainUid))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(true)
+            .logHome(domainHomeBase + "/logs/" + domainUid)
+            .serverStartPolicy("IfNeeded")
+            .serverPod(buildServerPod(domainHomeBase))
+            .configuration(buildConfiguration(auxImageName, wlSecretName + domainUid)));
+  }
+
+  private ServerPod buildServerPod(String domainHomeBase) {
+    return new ServerPod()
+        .addEnvItem(new V1EnvVar()
+            .name("JAVA_OPTIONS")
+            .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true "
+                + "-Dweblogic.StdoutDebugEnabled=false"))
+        .addEnvItem(new V1EnvVar()
+            .name("USER_MEM_ARGS")
+            .value("-Djava.security.egd=file:/dev/./urandom"))
+        .containerSecurityContext(new V1SecurityContext()
+            .readOnlyRootFilesystem(true))
+        .addVolumesItem(new V1Volume()
+            .name("domain-dir")
+            .emptyDir(new V1EmptyDirVolumeSource()))
+        .addVolumeMountsItem(new V1VolumeMount()
+            .mountPath(domainHomeBase)
+            .name("domain-dir"));
+  }
+
+  private Configuration buildConfiguration(String auxImageName, String runtimeEncryptionSecretName) {
+    return new Configuration()
+        .model(new oracle.weblogic.domain.Model()
+            .domainType("WLS")
+            .runtimeEncryptionSecret(runtimeEncryptionSecretName)
+            .withAuxiliaryImage(new oracle.weblogic.domain.AuxiliaryImage()
+                .image(auxImageName)
+                .imagePullPolicy(IMAGE_PULL_POLICY)
+                .sourceWDTInstallHome("/auxiliary/weblogic-deploy")
+                .sourceModelHome("/auxiliary/models")));
+  }
+
+
   private void runDomainWithOptions(String logType, boolean exporterEnabled)
-      throws IOException, ApiException, InterruptedException {
+      throws IOException, ApiException {
     logger.info("Running domain test with logType: {0}, exporterEnabled: {1}", logType, exporterEnabled);
     String testSuffix = logType + (exporterEnabled ? "exp" : "noexp");
     String domainUid = "dpv" + testSuffix;
@@ -222,7 +360,7 @@ class ItReadOnlyRootFS {
     }
 
     logger.info("Domain {0} deployed and verified successfully", domainUid);
-    verifyAllPodsTmpfs(domainUid);
+    verifyAllPodsTmpfsAndReadOnlyFS(domainNamespace, domainUid);
   }
 
   private File createDomainProperties(String domainUid) {
@@ -333,6 +471,15 @@ class ItReadOnlyRootFS {
         .dataHome("")
         .serverStartPolicy("IfNeeded")
         .serverPod(new ServerPod()
+            .addEnvItem(new V1EnvVar()
+                .name("JAVA_OPTIONS")
+                .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
+                .name("JAVA_OPTIONS")
+                .value("-Dweblogic.StdoutDebugEnabled=false"))
+            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
+                .name("USER_MEM_ARGS")
+                .value("-Djava.security.egd=file:/dev/./urandom "))
             .containerSecurityContext(roContext)
             .addVolumesItem(new V1Volume().name(pvName)
                 .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource().claimName(pvcName)))
@@ -358,51 +505,86 @@ class ItReadOnlyRootFS {
 
   }
 
-  private void verifyAllPodsTmpfsOld(String domainUid) throws IOException, InterruptedException, ApiException {
-    List<String> podNames = listPodNames(domainNamespace, domainUid);
+  public static void verifyAllPodsTmpfsAndReadOnlyFS(String domainNamespace, String domainUid) throws ApiException {
+    List<String> failures = new ArrayList<>();
 
-    for (String podName : podNames) {
-      V1Pod pod = getPod(domainNamespace, String.format("weblogic.domainUID in (%s)", domainUid), podName);
+    V1PodList podList = listPods(domainNamespace, String.format("weblogic.domainUID in (%s)", domainUid));
+    List<V1Pod> pods = podList.getItems();
 
+    for (V1Pod pod : pods) {
+      String podName = pod.getMetadata().getName();
+      logger.info("Checking pod: {0}", podName);
+
+      // Check init containers
+      List<V1Container> initContainers = pod.getSpec().getInitContainers();
+      if (initContainers != null) {
+        for (V1Container initContainer : initContainers) {
+          logger.info("Checking init container: {0}", initContainer.getName());
+          validateContainerSpec(initContainer, podName, domainNamespace, true, failures);
+        }
+      }
+
+      // Check normal containers
       List<V1Container> containers = pod.getSpec().getContainers();
       for (V1Container container : containers) {
-        String containerName = container.getName();
-        logger.info("Verifying /tmp mount in pod: {0}, container: {1}", podName, containerName);
-
-        ExecResult result = execCommand(domainNamespace, podName, containerName, true, "df", "-h", "/tmp");
-        logger.info("Output for pod: {0}, container: {1} for dg -h /tmp : {2}",
-            podName, containerName, result.stdout());
-        if (!result.stdout().contains("tmpfs")) {
-          Path logDir = Paths.get(RESULTS_TEMPFILE, domainUid, podName);
-          Files.createDirectories(logDir);
-          Path logFile = logDir.resolve(containerName + "-tmp-check.log");
-          Files.writeString(logFile, result.stdout());
-          logger.severe("/tmp not mounted as tmpfs in container {0}. Log saved to: {1}", containerName, logFile);
-        }
-
-        assertTrue(result.stdout().contains("tmpfs"),
-            "/tmp is not tmpfs in container " + containerName + " of pod " + podName + ": " + result.stdout());
+        logger.info("Checking container: {0}", container.getName());
+        validateContainerSpec(container, podName, domainNamespace, false, failures);
       }
+    }
+
+    if (!failures.isEmpty()) {
+      failures.forEach(logger::severe);
+      fail("Some containers failed /tmp mount or readOnlyRootFilesystem checks: " + failures.size() + " failures");
+    } else {
+      logger.info("All containers passed /tmp mount and readOnlyRootFilesystem checks");
     }
   }
 
-  private void verifyAllPodsTmpfs(String domainUid) throws IOException, InterruptedException, ApiException {
-    List<String> podNames = listPodNames(domainNamespace, domainUid);
 
-    for (String podName : podNames) {
-      V1Pod pod = getPod(domainNamespace, String.format("weblogic.domainUID in (%s)", domainUid), podName);
+  private static void validateContainerSpec(V1Container container, String podName, String namespace,
+                                            boolean isInitContainer, List<String> failures) {
+    String containerName = container.getName();
 
-      logger.info("Checking /tmp mount and readOnlyRootFilesystem for pod: {0}", podName);
+    // 1. Check securityContext.readOnlyRootFilesystem
+    V1SecurityContext securityContext = container.getSecurityContext();
+    if (securityContext == null || !Boolean.TRUE.equals(securityContext.getReadOnlyRootFilesystem())) {
+      String msg = "FAIL: Container " + containerName
+          + " in pod " + podName + " does not have readOnlyRootFilesystem=true";
+      logger.severe(msg);
+      failures.add(msg);
+    } else {
+      logger.info("PASS: Container " + containerName + " in pod " + podName + " has readOnlyRootFilesystem=true");
+    }
 
-      List<V1Container> containers = pod.getSpec().getContainers();
-      for (V1Container container : containers) {
-        verifyTmpfsAndSecurityContext(podName, container);
-      }
+    if (!isInitContainer) {
+      // 2. For regular containers, exec to check /tmp mount
+      try {
 
-      if (pod.getSpec().getInitContainers() != null) {
-        for (V1Container initContainer : pod.getSpec().getInitContainers()) {
-          verifyTmpfsAndSecurityContext(podName, initContainer);
+        ExecResult result = execCommand(namespace, podName, containerName, true, "df", "-h", "/tmp");
+        String stdout = result.stdout();
+        if (stdout == null || !stdout.contains("tmpfs")) {
+          String msg = "FAIL: /tmp is not mounted as tmpfs in container " + containerName + " in pod " + podName;
+          logger.severe(msg);
+          failures.add(msg);
+        } else {
+          logger.info("PASS: /tmp is mounted as tmpfs in container " + containerName + " in pod " + podName);
         }
+      } catch (Exception e) {
+        String msg = "FAIL: Exec failed for container " + containerName + " in pod " + podName + ": " + e.getMessage();
+        logger.severe(msg);
+        failures.add(msg);
+      }
+    } else {
+      // 3. For init container, check volumeMounts
+      List<V1VolumeMount> volumeMounts = container.getVolumeMounts();
+      boolean hasTmpMount = volumeMounts != null && volumeMounts.stream()
+          .anyMatch(mount -> mount.getMountPath() != null && mount.getMountPath().startsWith("/tmp"));
+      if (!hasTmpMount) {
+        String msg = "FAIL: Init container " + containerName + " in pod " + podName + " does not have /tmp mounted";
+        logger.severe(msg);
+        failures.add(msg);
+      } else {
+        logger.info("PASS: Init container " + containerName + " in pod " + podName + " has /tmp mounted");
       }
     }
   }
@@ -447,7 +629,7 @@ class ItReadOnlyRootFS {
     createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, cmName, namespace, jobContainer, annotations);
   }
 
-  private List<String> listPodNames(String ns, String domainUid) {
+  private static List<String> listPodNames(String ns, String domainUid) {
     List<String> podNames = new ArrayList<>();
     try {
       // Add admin server pod
