@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -219,10 +219,20 @@ class ItFmwDomainOnPVSample {
   }
 
   /**
-   * Test Domain on PV sample building image for FMW domain use case.
+   * Test Domain on PV sample - Initialize schemas in the DB.
    */
   @Test
   @Order(5)
+  public void testCreateRCU() {
+    logger.info("test case for initializing schemas in the DB");
+    execTestScriptAndAssertSuccess("-rcu", "Failed to run -rcu");
+  }
+  
+  /**
+   * Test Domain on PV sample building image for FMW domain use case.
+   */
+  @Test
+  @Order(6)
   public void testInitialImage() {
     logger.info("test case for building image");
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
@@ -247,7 +257,7 @@ class ItFmwDomainOnPVSample {
    * Test Domain on PV sample create FMW domain use case.
    */
   @Test
-  @Order(6)
+  @Order(7)
   public void testInitialMain() {
     logger.info("test case for creating a FMW domain");
 
@@ -262,7 +272,7 @@ class ItFmwDomainOnPVSample {
         withLongRetryPolicy,
         checkTestScriptAndAssertSuccess("-initial-main", "Failed to run -initial-main"),
         logger,
-        "create PV HostPath and change Permission in Kind Cluster");
+        "creating FMW domain");
   }
 
   /**
@@ -293,8 +303,8 @@ class ItFmwDomainOnPVSample {
             && result.stdout() != null
             && result.stdout().contains("Finished without errors");
 
-    String outStr = errString;
-    outStr += ", command=\n{\n" + command + "\n}\n";
+    String outStr = success ? "Running test script succeeds: " : errString + ":";
+    outStr += " command=\n{\n" + command + "\n}\n";
     outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
     outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
 
