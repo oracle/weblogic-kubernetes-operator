@@ -119,7 +119,7 @@ class ItReadOnlyRootFS {
     domainNamespace = namespaces.get(1);
     installAndVerifyOperator(opNamespace, domainNamespace);
     String monitoringExporterDir = Paths.get(RESULTS_ROOT,
-        "ItReadOnlyRootFS", "monitoringexp").toString();
+        "ItReadOnlyRootFS", "monitoringexp",domainNamespace).toString();
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
     String monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
