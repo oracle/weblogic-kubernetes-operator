@@ -351,7 +351,6 @@ class OfflineWlstEnv(object):
   def toDNS1123Legal(self, address):
     return address.lower().replace('_','-')
 
-
 class SecretManager(object):
 
   def __init__(self, env):
@@ -1411,8 +1410,8 @@ class SitConfigGenerator(Generator):
     self.customizeLog(server_name_prefix + "${id}", template, false)
     self.customizeAccessLog(server_name_prefix + "${id}")
     self.customizeDefaultFileStore(template)
-    self.writeListenAddress(template.getListenAddress(),listen_address)
-    self.customizeNetworkAccessPoints(template,listen_address)
+    self.writeListenAddress(template.getListenAddress(), listen_address)
+    self.customizeNetworkAccessPoints(template, listen_address)
     if self.getCoherenceClusterSystemResourceOrNone(template) is not None:
       self.customizeCoherenceMemberConfig(template.getCoherenceMemberConfig(), listen_address)
     self.undent()
@@ -1432,13 +1431,16 @@ class SitConfigGenerator(Generator):
     nap_name=nap.getName()
 
     # replace listen address to bind to server pod IP
-    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
-        self.writeln("<d:network-access-point>")
-        self.indent()
-        self.writeln("<d:name>" + nap_name + "</d:name>")
-        self.writeListenAddress("force a replace",listen_address)
-        self.undent()
-        self.writeln("</d:network-access-point>")
+    orig_listen_address = nap.getListenAddress()
+    if (orig_listen_address is not None and (orig_listen_address == 'localhost' or orig_listen_address == '127.0.0.1')):
+      pass
+    else:
+      self.writeln("<d:network-access-point>")
+      self.indent()
+      self.writeln("<d:name>" + nap_name + "</d:name>")
+      self.writeListenAddress("force a replace",listen_address)
+      self.undent()
+      self.writeln("</d:network-access-point>")
 
   def writeSecureNetworkAccessPointConfiguration(self, nap):
     protocol = nap.getProtocol()

@@ -382,7 +382,7 @@ def customizeServer(model, server, name):
   customizeAccessLog(name, server)
   customizeDefaultFileStore(server)
   setServerListenAddress(server, listen_address)
-  customizeNetworkAccessPoints(server,listen_address)
+  customizeNetworkAccessPoints(server, listen_address)
   # If the admin server name is not provided in the WDT model,
   # use the default name 'AdminServer'.
   if (name == adminServer or  name == 'AdminServer'):
@@ -689,12 +689,13 @@ def customizeNetworkAccessPoint(nap_name, nap, listen_address):
   # fix NAP listen address
   if 'ListenAddress' in nap:
     original_listen_address = nap['ListenAddress']
-    if len(original_listen_address) > 0:
+    if (original_listen_address == 'localhost' or original_listen_address == '127.0.0.1'):
+      pass
+    else:
       nap['ListenAddress'] = listen_address
 
 def setServerListenAddress(serverOrTemplate, listen_address):
-  serverOrTemplate['ListenAddress'] = listen_address
-
+    serverOrTemplate['ListenAddress'] = listen_address
 
 def customizeDefaultFileStore(server):
   data_dir = env.getDataHome()
