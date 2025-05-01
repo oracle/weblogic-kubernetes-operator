@@ -112,7 +112,7 @@ ${KUBERNETES_CLI:-kubectl} get po -n ${namespace}
 ${KUBERNETES_CLI:-kubectl} get service -n ${namespace}
 
 logfile="/tmp/setupDB.log"
-max=80
+max=120
 counter=0
 while [ $counter -le ${max} ]
 do
@@ -121,6 +121,7 @@ do
  [[ $? == 0 ]] && break;
  ((counter++))
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
+ tail $logfile
  sleep 20
 done
 
