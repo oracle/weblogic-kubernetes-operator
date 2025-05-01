@@ -15,7 +15,7 @@
 # Optional environment variables (see README for details):
 #
 #   WORKDIR, DOMAIN_UID, DOMAIN_NAMESPACE, WDT_DOMAIN_TYPE,
-#   DB_NAMESPACE, INCLUDE_DOMAIN_CREATION_CONFIGMAP, CORRECTED_DATASOURCE_SECRET,
+#   DB_NAMESPACE, DB_PDB_ID, INCLUDE_DOMAIN_CREATION_CONFIGMAP, CORRECTED_DATASOURCE_SECRET,
 #   KUBERNETES_CLI
 
 set -eu
@@ -51,7 +51,7 @@ if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
     -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
     -l rcu_prefix=FMW${CUSTOM_DOMAIN_NAME} \
     -l rcu_schema_password=Oradoc_db1 \
-    -l rcu_db_conn_string=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/orclpdb1
+    -l rcu_db_conn_string=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/${DB_PDB_ID}
   echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
   $WORKDIR/domain-on-pv/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-opss-wallet-password-secret \
     -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
@@ -84,5 +84,5 @@ if [ "${INCLUDE_DOMAIN_CREATION_CONFIGMAP}" = "true" ]; then
     -l "user=sys as sysdba" \
     -l password=$dspw \
     -l max-capacity=$dscap \
-    -l url=jdbc:oracle:thin:@oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/orclpdb1
+    -l url=jdbc:oracle:thin:@oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/${DB_PDB_ID}
 fi

@@ -15,7 +15,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-//import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DB_PDB_ID_DEFAULT_19C;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
@@ -63,6 +64,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SampleUtils.createPVHostPathAndChangePermissionInKindCluster;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test and verify Domain on PV FMW domain sample.
@@ -78,7 +80,6 @@ class ItFmwDomainOnPVSample {
   private static final String domainOnPvSampleScript = "../operator/integration-tests/domain-on-pv/run-test.sh";
   private static final String DOMAIN_CREATION_IMAGE_NAME = "wdt-domain-image";
   private static final String DOMAIN_CREATION_IMAGE_JRF_TAG = "JRF-v1";
-  //private static final String DB_IMAGE_TAG = "12.2.0.1-slim";
   private static String traefikNamespace = null;
   private static Map<String, String> envMap = null;
   private static LoggingFacade logger = null;
@@ -142,6 +143,7 @@ class ItFmwDomainOnPVSample {
     envMap.put("OPER_IMAGE_NAME", TEST_IMAGES_PREFIX + IMAGE_NAME_OPERATOR);
     envMap.put("DOMAIN_CREATION_IMAGE_NAME", TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME);
     envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET_NAME);
+    envMap.put("DB_PDB_ID", DB_PDB_ID_DEFAULT_19C);
 
     // kind cluster uses openjdk which is not supported by image tool
     if (WIT_JAVA_HOME != null) {
@@ -182,7 +184,7 @@ class ItFmwDomainOnPVSample {
   @Order(1)
   public void testInstallOperator() {
     String backupReports = backupReports(UniqueName.uniqueName(this.getClass().getSimpleName()));
-    execTestScriptAndAssertSuccess("-oper", "Failed to run -oper");
+    assertTrue(execTestScriptAndAssertSuccess("-oper", "Failed to run -oper"));
     restoreReports(backupReports);
   }
 
@@ -192,7 +194,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(2)
   public void testInstallTraefik() {
-    execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik");
+    assertTrue(execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik"));
   }
 
   /**
@@ -201,7 +203,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(3)
   public void testPrecleandb() {
-    execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb");
+    assertTrue(execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb"));
   }
 
   /**
@@ -216,7 +218,7 @@ class ItFmwDomainOnPVSample {
       logger.info("loading image {0} to kind", dbimage);
       imagePush(dbimage);
     }
-    execTestScriptAndAssertSuccess("-db", "Failed to run -db");
+    assertTrue(execTestScriptAndAssertSuccess("-db", "Failed to run -db"));
   }
 
   /**
@@ -226,7 +228,7 @@ class ItFmwDomainOnPVSample {
   @Order(5)
   public void testCreateRCU() {
     logger.info("test case for initializing schemas in the DB");
-    execTestScriptAndAssertSuccess("-rcu", "Failed to run -rcu");
+    assertTrue(execTestScriptAndAssertSuccess("-rcu", "Failed to run -rcu"));
   }
   
   /**
@@ -238,7 +240,7 @@ class ItFmwDomainOnPVSample {
     logger.info("test case for building image");
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
-    execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image");
+    assertTrue(execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image"));
     ExecResult result = Command.withParams(
         new CommandParams()
             .command(WLSIMG_BUILDER + " images")
@@ -311,7 +313,7 @@ class ItFmwDomainOnPVSample {
 
     logger.info("output String is: {0}", outStr);
 
-    previousTestSuccessful = true;
+    previousTestSuccessful = success;
 
     return success;
   }
@@ -323,7 +325,7 @@ class ItFmwDomainOnPVSample {
   /**
    * Delete DB deployment for FMW test cases and Uninstall Traefik.
    */
-  //@AfterAll
+  @AfterAll
   public static void tearDownAll() {
     logger = getLogger();
 

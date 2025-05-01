@@ -114,6 +114,7 @@ public interface TestConstants {
   public static final String DB_IMAGE_NAME_DEFAULT = "test-images/database/enterprise";
   public static final String DB_PREBUILT_IMAGE_NAME_DEFAULT = "test-images/database/express";
   public static final String DB_IMAGE_TAG_DEFAULT = "19.3.0.0";
+  public static final String DB_PDB_ID_DEFAULT_19C = "orclpdb1";
 
   // repository to push the domain images created during test execution
   // (a) for kind cluster push to kind repo

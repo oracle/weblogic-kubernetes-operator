@@ -9,7 +9,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
 usage() {
-  echo "usage: ${script} [-a <dbasecret>] [-p <nodeport>] [-i <image>] [-s <pullsecret>] [-n <namespace>] [-h]"
+  echo "usage: ${script} [-a <dbasecret>] [-p <nodeport>] [-i <image>] [-s <pullsecret>] [-n <namespace>] [-l <pdb_id>] [-h]"
   echo "  -a DB Sys Account Password Secret Name (optional)"
   echo "      (default: oracle-db-secret, secret must include a key named 'password')"
   echo "      If this secret is not deployed, then the database will not successfully deploy."
@@ -22,6 +22,7 @@ usage() {
   echo "      If this secret is not deployed, then Kubernetes will try pull anonymously."
   echo "  -n Configurable Kubernetes NameSpace for Oracle DB Service (optional)"
   echo "      (default: default) "
+  echo "  -l db pdb id for Oracle DB service (optional, default: devpdb.k8s)"
   echo "  -h Help"
   exit $1
 }
@@ -31,8 +32,9 @@ nodeport=30011
 dbimage="container-registry.oracle.com/database/enterprise:12.2.0.1-slim"
 pullsecret="docker-store"
 namespace="default"
+pdbid="devpdb.k8s"
 
-while getopts ":a:p:i:s:n:h:" opt; do
+while getopts ":a:p:i:s:n:h:l:" opt; do
   case $opt in
     a) syssecret="${OPTARG}"
     ;;
@@ -43,6 +45,8 @@ while getopts ":a:p:i:s:n:h:" opt; do
     s) pullsecret="${OPTARG}"
     ;;
     n) namespace="${OPTARG}"
+    ;;
+    l) pdbid="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -107,9 +111,23 @@ checkService oracle-db ${namespace}
 ${KUBERNETES_CLI:-kubectl} get po -n ${namespace}
 ${KUBERNETES_CLI:-kubectl} get service -n ${namespace}
 
-${KUBERNETES_CLI:-kubectl} cp ${scriptDir}/common/checkDbState.sh -n ${namespace} ${dbpod}:/home/oracle/
+logfile="/tmp/setupDB.log"
+max=80
+counter=0
+while [ $counter -le ${max} ]
+do
+ ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace} > $logfile
+ grep "DATABASE IS READY TO USE!" $logfile
+ [[ $? == 0 ]] && break;
+ ((counter++))
+ echo "[$counter/${max}] Retrying for Oracle Database Availability..."
+ sleep 20
+done
 
-${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash /home/oracle/checkDbState.sh
+if [ $counter -gt ${max} ]; then
+ echo "[ERRORR] Oracle DB Service is not ready after [${max}] iterations ..."
+ exit -1
+fi
 
 echo " changing sys password"
 ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash setPassword.sh Oradoc_db1
@@ -126,4 +144,4 @@ if [ ! "${nodeport}" = "none" ]; then
 else
   echo "Oracle DB Service is RUNNING and does not specify a public NodePort"
 fi
-echo "Oracle DB Service URL [oracle-db.${namespace}.svc.cluster.local:1521/devpdb.k8s]"
+echo "Oracle DB Service URL [oracle-db.${namespace}.svc.cluster.local:1521/${pdbid}]"
