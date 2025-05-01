@@ -110,6 +110,10 @@ ${KUBERNETES_CLI:-kubectl} get service -n ${namespace}
 ${KUBERNETES_CLI:-kubectl} cp ${scriptDir}/common/checkDbState.sh -n ${namespace} ${dbpod}:/home/oracle/
 
 ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash /home/oracle/checkDbState.sh
+
+echo " changing sys password"
+${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash setPassword.sh Oradoc_db1
+
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not create Oracle DB Service, check the pod log for pod ${dbpod} in namespace ${namespace}";

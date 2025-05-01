@@ -307,7 +307,7 @@ if [ "$DO_RCU" = "true" ]; then
   doCommand -c "cd \$SRCDIR/kubernetes/samples/scripts/create-rcu-schema"
 
   rcuCommand="./create-rcu-schema.sh"
-  rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/devpdb.k8s" # DB url
+  rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/orclpdb1" # DB url
   rcuCommand+=" -s FMW$_custom_domain_name_"    # RCU schema prefix
   if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
     rcuCommand+=" -p \$DB_IMAGE_PULL_SECRET"   # FMW infra image pull secret for rcu pod

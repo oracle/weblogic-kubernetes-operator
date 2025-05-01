@@ -15,7 +15,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -78,6 +78,7 @@ class ItFmwDomainOnPVSample {
   private static final String domainOnPvSampleScript = "../operator/integration-tests/domain-on-pv/run-test.sh";
   private static final String DOMAIN_CREATION_IMAGE_NAME = "wdt-domain-image";
   private static final String DOMAIN_CREATION_IMAGE_JRF_TAG = "JRF-v1";
+  //private static final String DB_IMAGE_TAG = "12.2.0.1-slim";
   private static String traefikNamespace = null;
   private static Map<String, String> envMap = null;
   private static LoggingFacade logger = null;
@@ -322,7 +323,7 @@ class ItFmwDomainOnPVSample {
   /**
    * Delete DB deployment for FMW test cases and Uninstall Traefik.
    */
-  @AfterAll
+  //@AfterAll
   public static void tearDownAll() {
     logger = getLogger();
 
