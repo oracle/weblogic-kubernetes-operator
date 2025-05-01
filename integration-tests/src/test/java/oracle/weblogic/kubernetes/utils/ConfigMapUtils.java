@@ -123,13 +123,39 @@ public class ConfigMapUtils {
    */
   public static void createConfigMapForDomainCreation(String configMapName, List<Path> files,
                                                       String namespace, String className)
-      throws IOException {
+      throws IOException, ApiException {
+
+    createConfigMapForDomainCreation(configMapName, files,
+        namespace, "", className);
+  }
+
+  /**
+   * Create configmap containing domain creation scripts.
+   *
+   * @param configMapName name of the configmap to create
+   * @param files files to add in configmap
+   * @param namespace name of the namespace in which to create configmap
+   * @param className name of the class to call this method
+   * @throws IOException when reading the domain script files fail
+   * @throws ApiException if create configmap fails
+   */
+  public static void createConfigMapForDomainCreation(String configMapName, List<Path> files,
+                                                      String namespace, String domainUid, String className)
+      throws ApiException, IOException {
 
     LoggingFacade logger = getLogger();
-    logger.info("Creating configmap {0}, namespace {1}, className {2}", configMapName, namespace, className);
+    logger.info("Creating configmap {0}, namespace {1}, domainUid {2}, className {3}",
+        configMapName, namespace, domainUid, className);
 
-    Path domainScriptsDir = Files.createDirectories(
-        Paths.get(TestConstants.LOGS_DIR, className, namespace));
+    Path domainScriptsDir;
+
+    if (domainUid == null || domainUid.isEmpty()) {
+      domainScriptsDir = Files.createDirectories(
+          Paths.get(TestConstants.LOGS_DIR, className, namespace));
+    } else {
+      domainScriptsDir = Files.createDirectories(
+          Paths.get(TestConstants.LOGS_DIR, className, namespace, domainUid));
+    }
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
@@ -234,6 +260,7 @@ public class ConfigMapUtils {
     assertNotNull(configMapToModify,"Can't find cm for " + cmName);
     Map<String, String> cmData = configMapToModify.getData();
     String values = null;
+
     if (cmData != null && cmData.get("logstash.conf") != null) {
       values = cmData.get("logstash.conf").replace(oldRegex, newRegex);
     }
