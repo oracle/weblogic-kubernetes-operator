@@ -751,6 +751,22 @@ public class TestActions {
   }
 
   /**
+   * Add labels to a namespace.
+   *
+   * @param name name of the namespace
+   * @param labels map of labels to add to the namespace
+   * @param result to return result
+   * @return if replaced
+   * @throws ApiException when adding labels to namespace fails
+   */
+  public static Callable<Boolean> addLabelsToNamespace(String name, Map<String, String> labels, boolean result)
+      throws ApiException {
+    return (() -> {
+      return Namespace.addLabelsToNamespace(name, labels, result);
+    });
+  }
+
+  /**
    * Create a namespace with unique name.
    *
    * @return true on success, false otherwise

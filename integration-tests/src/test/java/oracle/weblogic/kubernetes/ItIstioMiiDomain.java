@@ -129,6 +129,13 @@ class ItIstioMiiDomain {
     Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     labelMap.put("istio-discovery", "enabled");
+    testUntil(
+        withStandardRetryPolicy,
+        assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace, labelMap, true),
+            "operatorWebhookIsReady failed with ApiException"),
+        logger,
+        "operator webhook to be running in namespace {0}",
+        domainNamespace);
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
     

@@ -94,4 +94,32 @@ public class Namespace extends UniqueName {
       getLogger().severe("Namespace {0} not found or failed to add labels", name);
     }
   }
+  
+  /**
+   * Add labels to a namespace.
+   *
+   * @param name name of the namespace
+   * @param labels map of labels to add to the namespace
+   * @param result to return the result
+   * @return if replaced
+   * @throws ApiException when adding labels to namespace fails
+   */
+  public static boolean addLabelsToNamespace(String name, Map<String, String> labels, boolean result)
+      throws ApiException {
+    boolean found = false;
+    V1NamespaceList namespaces = Kubernetes.listNamespacesAsObjects();
+    if (!namespaces.getItems().isEmpty()) {
+      for (var ns : namespaces.getItems()) {
+        if (name.equals(ns.getMetadata().getName())) {
+          ns.metadata(ns.getMetadata().labels(labels));
+          Kubernetes.replaceNamespace(ns);
+          found = true;
+        }
+      }
+    }
+    if (!found) {
+      getLogger().severe("Namespace {0} not found or failed to add labels", name);
+    }
+    return found;
+  }
 }
