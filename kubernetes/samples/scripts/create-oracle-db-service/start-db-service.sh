@@ -112,7 +112,7 @@ ${KUBERNETES_CLI:-kubectl} get po -n ${namespace}
 ${KUBERNETES_CLI:-kubectl} get service -n ${namespace}
 
 logfile="/tmp/setupDB.log"
-max=120
+max=1200
 counter=0
 while [ $counter -le ${max} ]
 do
