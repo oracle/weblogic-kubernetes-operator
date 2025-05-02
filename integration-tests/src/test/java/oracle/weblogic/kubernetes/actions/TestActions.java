@@ -757,10 +757,8 @@ public class TestActions {
    * @param labels map of labels to add to the namespace
    * @param result to return result
    * @return if replaced
-   * @throws ApiException when adding labels to namespace fails
    */
-  public static Callable<Boolean> addLabelsToNamespace(String name, Map<String, String> labels, boolean result)
-       {
+  public static Callable<Boolean> addLabelsToNamespace(String name, Map<String, String> labels, boolean result) {
     return (() -> {
       return Namespace.addLabelsToNamespace(name, labels, result);
     });
