@@ -117,12 +117,12 @@ counter=0
 while [ $counter -le ${max} ]
 do
  ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace} > $logfile
- grep "DATABASE IS READY TO USE!" $logfile
+ grep -i "DATABASE IS READY" $logfile
  [[ $? == 0 ]] && break;
  ((counter++))
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  tail $logfile
- sleep 20
+ sleep 30
 done
 
 if [ $counter -gt ${max} ]; then
@@ -130,7 +130,8 @@ if [ $counter -gt ${max} ]; then
  exit -1
 fi
 
-echo " changing sys password"
+# for db 19c only
+echo " set sys password "
 ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash setPassword.sh Oradoc_db1
 
 if [ $? != 0  ]; then

@@ -194,6 +194,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(2)
   public void testInstallTraefik() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     assertTrue(execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik"));
   }
 
@@ -203,6 +204,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(3)
   public void testPrecleandb() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     assertTrue(execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb"));
   }
 
@@ -212,6 +214,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(4)
   public void testCreatedb() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for creating a db");
     if (KIND_REPO != null) {
       String dbimage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
@@ -227,6 +230,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(5)
   public void testCreateRCU() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for initializing schemas in the DB");
     assertTrue(execTestScriptAndAssertSuccess("-rcu", "Failed to run -rcu"));
   }
@@ -237,6 +241,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(6)
   public void testInitialImage() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for building image");
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
@@ -262,6 +267,7 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(7)
   public void testInitialMain() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for creating a FMW domain");
 
     // load the base image to kind if using kind cluster
@@ -286,7 +292,6 @@ class ItFmwDomainOnPVSample {
   private boolean execTestScriptAndAssertSuccess(String arg,
                                                  String errString) {
 
-    Assumptions.assumeTrue(previousTestSuccessful);
     previousTestSuccessful = false;
 
     String command = domainOnPvSampleScript
