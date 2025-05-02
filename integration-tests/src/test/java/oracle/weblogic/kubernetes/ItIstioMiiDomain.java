@@ -133,10 +133,14 @@ class ItIstioMiiDomain {
         withStandardRetryPolicy,
         addLabelsToNamespace(domainNamespace, labelMap, true),
         logger,
-        "operator webhook to be running in namespace {0}",
+        "adding istio labels to domain namespace {0}",
         domainNamespace);
-    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    testUntil(
+        withStandardRetryPolicy,
+        addLabelsToNamespace(opNamespace, labelMap, true),
+        logger,
+        "adding istio labels to operator namespace {0}",
+        opNamespace);
     
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
