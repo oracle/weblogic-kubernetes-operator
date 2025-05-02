@@ -131,8 +131,7 @@ class ItIstioMiiDomain {
     labelMap.put("istio-discovery", "enabled");
     testUntil(
         withStandardRetryPolicy,
-        assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace, labelMap, true),
-            "operatorWebhookIsReady failed with ApiException"),
+        addLabelsToNamespace(domainNamespace, labelMap, true),
         logger,
         "operator webhook to be running in namespace {0}",
         domainNamespace);

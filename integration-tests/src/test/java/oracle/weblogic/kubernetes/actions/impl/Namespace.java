@@ -104,22 +104,23 @@ public class Namespace extends UniqueName {
    * @return if replaced
    * @throws ApiException when adding labels to namespace fails
    */
-  public static boolean addLabelsToNamespace(String name, Map<String, String> labels, boolean result)
-      throws ApiException {
-    boolean found = false;
-    V1NamespaceList namespaces = Kubernetes.listNamespacesAsObjects();
-    if (!namespaces.getItems().isEmpty()) {
-      for (var ns : namespaces.getItems()) {
-        if (name.equals(ns.getMetadata().getName())) {
-          ns.metadata(ns.getMetadata().labels(labels));
-          Kubernetes.replaceNamespace(ns);
-          found = true;
+  public static boolean addLabelsToNamespace(String name, Map<String, String> labels, boolean result) {
+    boolean success = false;
+    try {
+      V1NamespaceList namespaces = Kubernetes.listNamespacesAsObjects();
+      if (!namespaces.getItems().isEmpty()) {
+        for (var ns : namespaces.getItems()) {
+          if (name.equals(ns.getMetadata().getName())) {
+            ns.metadata(ns.getMetadata().labels(labels));
+            Kubernetes.replaceNamespace(ns);
+            return true;
+          }
         }
+        getLogger().severe("Namespace {0} not found or failed to add labels", name);
       }
+    } catch (ApiException ex) {
+      return success;
     }
-    if (!found) {
-      getLogger().severe("Namespace {0} not found or failed to add labels", name);
-    }
-    return found;
+    return success;
   }
 }

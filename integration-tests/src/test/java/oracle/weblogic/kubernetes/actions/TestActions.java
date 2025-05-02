@@ -760,7 +760,7 @@ public class TestActions {
    * @throws ApiException when adding labels to namespace fails
    */
   public static Callable<Boolean> addLabelsToNamespace(String name, Map<String, String> labels, boolean result)
-      throws ApiException {
+       {
     return (() -> {
       return Namespace.addLabelsToNamespace(name, labels, result);
     });
