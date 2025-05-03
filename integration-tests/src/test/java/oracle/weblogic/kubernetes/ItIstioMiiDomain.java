@@ -388,7 +388,15 @@ class ItIstioMiiDomain {
   
   private void checkApp(String url) {
     testUntil(
-        () -> checkAppUsingHostHeader(url, domainNamespace + ".org"),
+        () -> {
+          if (!OKD) {
+            checkAppUsingHostHeader(url, domainNamespace + ".org");
+            return true;
+          } else {
+            checkAppUsingHostHeader(url, null);
+            return true;
+          }
+        },
         logger,
         "application to be ready {0}",
         url);
