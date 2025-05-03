@@ -263,22 +263,25 @@ class ItIstioMiiDomain {
       assertEquals(0, result.exitValue(), "Failed to expose istio-ingressgateway service");
     }
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    String host = formatIPv6Host(K8S_NODEPORT_HOST);
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-    logger.info("host {0}", host);
-
-    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
-    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
-
+    String hostAndPort = "";
     String workManagers = "/management/weblogic/latest/domainConfig/selfTuning/workManagers/";
     String newWM = workManagers + "newWM/";
-    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !OCNE) {
-      istioIngressPort = ISTIO_HTTP_HOSTPORT;
-      hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
-    }
-    if (OKD) {
+    
+    if (!OKD) {
+      int istioIngressPort = getIstioHttpIngressPort();
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
+      logger.info("Istio Ingress Port is {0}", istioIngressPort);
+      logger.info("host {0}", host);
+
+      // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+      hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+          ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+
+      if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !OCNE) {
+        istioIngressPort = ISTIO_HTTP_HOSTPORT;
+        hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
+      }
+    } else {
       result = exec("oc get route istio-ingressgateway -n " + domainNamespace + " -o jsonpath='{.spec.host}'", true);
       assertEquals(0, result.exitValue(), "Failed to get route");
       hostAndPort = result.stdout();
