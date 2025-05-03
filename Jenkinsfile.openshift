@@ -15,7 +15,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-release42-nightly-okd' ?
+        parameterizedCron(env.JOB_NAME == 'openshift-dev' ?
         CRON_SETTINGS : '')
     }
 
