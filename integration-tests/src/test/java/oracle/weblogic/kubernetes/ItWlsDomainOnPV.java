@@ -137,6 +137,7 @@ class ItWlsDomainOnPV {
       // create image with model and wdt installation files
       WitParams witParams =
           new WitParams()
+              //.useridGroupid("wlsadm:root") //TODO
               .modelImageName(domainCreationImageName)
               .modelImageTag(MII_BASIC_IMAGE_TAG)
               .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))

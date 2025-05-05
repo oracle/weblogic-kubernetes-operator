@@ -662,9 +662,12 @@ class ItPodsRestart {
             .requests(new HashMap<>()));
 
     if (!OKD) {
+      //V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
+      //           .runAsUser(0L);
       V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-                 .runAsUser(0L);
+                 .runAsUser(12345L);
       srvrPod.podSecurityContext(podSecCtxt);
+
     }
 
     // create the domain CR
