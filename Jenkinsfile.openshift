@@ -15,7 +15,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'openshift-nightly' ?
+        parameterizedCron(env.JOB_NAME == 'openshift-release42-nightly' ?
         CRON_SETTINGS : '')
     }
 
