@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.restoreReports;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SampleUtils.createPVHostPathAndChangePermissionInKindCluster;
@@ -220,13 +222,21 @@ class ItFmwDomainOnPVSample {
       String dbimage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
       logger.info("loading image {0} to kind", dbimage);
       imagePush(dbimage);
+      String ocrImage = "container-registry.oracle.com/database/enterprise:" + DB_IMAGE_TAG;
+      String command = WLSIMG_BUILDER + " tag " + dbimage + " " + ocrImage;
+      try {
+        exec(command, true);
+        imagePush(ocrImage);
+      } catch (IOException | InterruptedException ex) {
+        logger.severe("tag and push failed");
+      }
     }
     logger.info("Execute ../operator/integration-tests/domain-on-pv/run-test.sh -jrf -db");
-    try {
+    /*try {
       Thread.sleep(1000 * 60 * 1200);
     } catch (InterruptedException ex) {
       logger.info("Interrupted");
-    }
+    }*/
     assertTrue(execTestScriptAndAssertSuccess("-db", "Failed to run -db"));
   }
 
