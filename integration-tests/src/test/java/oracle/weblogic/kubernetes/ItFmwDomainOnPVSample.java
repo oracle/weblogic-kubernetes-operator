@@ -221,6 +221,12 @@ class ItFmwDomainOnPVSample {
       logger.info("loading image {0} to kind", dbimage);
       imagePush(dbimage);
     }
+    logger.info("Execute ../operator/integration-tests/domain-on-pv/run-test.sh -jrf -db");
+    try {
+      Thread.sleep(1000 * 60 * 1200);
+    } catch (InterruptedException ex) {
+      logger.info("Interrupted");
+    }
     assertTrue(execTestScriptAndAssertSuccess("-db", "Failed to run -db"));
   }
 
