@@ -4,7 +4,7 @@
 //
 
 CRON_SETTINGS = '''H 2 * * 3 % MAVEN_PROFILE_NAME=wko-okd-wls-mrg
-                   H 3 * * 3 % MAVEN_PROFILE_NAME=wko-okd-fmw-cert'''
+                   H 4 * * 3 % MAVEN_PROFILE_NAME=wko-okd-fmw-cert'''
 
 pipeline {
     agent { label 'large' }
