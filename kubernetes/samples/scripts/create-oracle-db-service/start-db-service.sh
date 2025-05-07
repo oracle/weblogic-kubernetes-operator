@@ -69,10 +69,21 @@ echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}] NameSpa
 
 #create unique db yaml file if does not exists
 dbYaml=${scriptDir}/common/oracle.db.${namespace}.yaml
+
 if [ ! -f "$dbYaml" ]; then
     echo "$dbYaml does not exist."
-    cp ${scriptDir}/common/oracle.db.yaml ${dbYaml}
+
+    # Choose template based on dbimage version
+    if echo "$dbimage" | grep -q "12\."; then
+        templateYaml="${scriptDir}/common/oracle.db.yaml"
+    else
+        templateYaml="${scriptDir}/common/oracle.db.19plus.yaml"
+    fi
+
+    echo "Using template: $templateYaml"
+    cp "$templateYaml" "$dbYaml"
 fi
+
 
 # Modify ImagePullSecret and DatabaseImage based on input
 sed -i -e '$d' ${dbYaml}
