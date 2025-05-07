@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -65,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -126,8 +128,19 @@ class ItIstioMiiDomain {
     // Label the domain/operator namespace with istio-injection=enabled
     Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
-    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    labelMap.put("istio-discovery", "enabled");
+    testUntil(
+        withStandardRetryPolicy,
+        addLabelsToNamespace(domainNamespace, labelMap, true),
+        logger,
+        "adding istio labels to domain namespace {0}",
+        domainNamespace);
+    testUntil(
+        withStandardRetryPolicy,
+        addLabelsToNamespace(opNamespace, labelMap, true),
+        logger,
+        "adding istio labels to operator namespace {0}",
+        opNamespace);
     
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -221,33 +234,59 @@ class ItIstioMiiDomain {
     Path targetHttpFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
+    if (OKD) {
+      replaceStringInFile(targetHttpFile.toString(), domainNamespace + ".org", "*");
+    }
 
     boolean deployRes = assertDoesNotThrow(
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
-    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
-    Path targetDrFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
-    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
+    Path targetDrFile;
+    if (!OKD) {
+      Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
+      targetDrFile = assertDoesNotThrow(
+          () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
+      logger.info("Generated DestinationRule file path is {0}", targetDrFile);
 
-    deployRes = assertDoesNotThrow(() -> deployIstioDestinationRule(targetDrFile));
-    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+      deployRes = assertDoesNotThrow(() -> deployIstioDestinationRule(targetDrFile));
+      assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+    } else {
+      Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "openshift-istio-roles-template.yaml");
+      targetDrFile = assertDoesNotThrow(
+          () -> generateFileFromTemplate(srcDrFile.toString(), "openshift-istio-roles.yaml", templateMap));
+      logger.info("Generated Gateway roles and service file path is {0}", targetDrFile);
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    String host = formatIPv6Host(K8S_NODEPORT_HOST);
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-    logger.info("host {0}", host);
+      deployRes = assertDoesNotThrow(() -> deployIstioDestinationRule(targetDrFile));
+      //assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
 
-    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
-    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+      String command = "oc expose service istio-ingressgateway -n " + domainNamespace;
+      result = exec(command, true);
+      assertEquals(0, result.exitValue(), "Failed to expose istio-ingressgateway service");
+    }
 
+    String hostAndPort = "";
     String workManagers = "/management/weblogic/latest/domainConfig/selfTuning/workManagers/";
     String newWM = workManagers + "newWM/";
-    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !OCNE) {
-      istioIngressPort = ISTIO_HTTP_HOSTPORT;
-      hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
+    
+    if (!OKD) {
+      int istioIngressPort = getIstioHttpIngressPort();
+      String host = formatIPv6Host(K8S_NODEPORT_HOST);
+      logger.info("Istio Ingress Port is {0}", istioIngressPort);
+      logger.info("host {0}", host);
+
+      // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+      hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+          ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+
+      if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !OCNE) {
+        istioIngressPort = ISTIO_HTTP_HOSTPORT;
+        hostAndPort = InetAddress.getLocalHost().getHostAddress() + ":" + istioIngressPort;
+      }
+    } else {
+      result = exec("oc get route istio-ingressgateway -n " + domainNamespace + " -o jsonpath='{.spec.host}'", true);
+      assertEquals(0, result.exitValue(), "Failed to get route");
+      hostAndPort = result.stdout();
     }
 
     String url = "http://" + hostAndPort + "/management/tenant-monitoring/servers/";
@@ -351,7 +390,15 @@ class ItIstioMiiDomain {
   
   private void checkApp(String url) {
     testUntil(
-        () -> checkAppUsingHostHeader(url, domainNamespace + ".org"),
+        () -> {
+          if (!OKD) {
+            checkAppUsingHostHeader(url, domainNamespace + ".org");
+            return true;
+          } else {
+            checkAppUsingHostHeader(url, null);
+            return true;
+          }
+        },
         logger,
         "application to be ready {0}",
         url);

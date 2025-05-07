@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -748,6 +748,20 @@ public class TestActions {
   public static void addLabelsToNamespace(String name, Map<String, String> labels)
       throws ApiException {
     Namespace.addLabelsToNamespace(name, labels);
+  }
+
+  /**
+   * Add labels to a namespace.
+   *
+   * @param name name of the namespace
+   * @param labels map of labels to add to the namespace
+   * @param result to return result
+   * @return if replaced
+   */
+  public static Callable<Boolean> addLabelsToNamespace(String name, Map<String, String> labels, boolean result) {
+    return (() -> {
+      return Namespace.addLabelsToNamespace(name, labels, result);
+    });
   }
 
   /**
