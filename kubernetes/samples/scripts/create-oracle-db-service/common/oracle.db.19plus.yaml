@@ -41,9 +41,9 @@ spec:
       containers:
       - env:
         - name: ORACLE_SID
-          value: devcdb
+          value: ORCLCDB
         - name: ORACLE_PDB
-          value: devpdb
+          value: ORCLPDB1
         - name: DB_DOMAIN
           value: k8s
         - name: DB_BUNDLE
