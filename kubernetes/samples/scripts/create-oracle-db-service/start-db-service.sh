@@ -131,6 +131,7 @@ do
  grep -i "DATABASE IS READY" $logfile
  [[ $? == 0 ]] && break;
  ((counter++))
+ ${KUBERNETES_CLI:-kubectl} describe node kind-worker
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  tail $logfile
  sleep 60
