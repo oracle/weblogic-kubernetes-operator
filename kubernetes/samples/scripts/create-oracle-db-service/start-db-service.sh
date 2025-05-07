@@ -134,8 +134,10 @@ do
  echo "++++++++++++DESCRIBING NODE+++++++++++"
  ${KUBERNETES_CLI:-kubectl} describe node kind-worker
  echo "+++++++++++++CHECKING SPACE+++++++++++"
+ echo "${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}'"
  pod_name=$(${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}')
- ${KUBERNETES_CLI:-kubectl} exec -it ${podname} -n ${namespace} -- df -h
+ echo "${KUBERNETES_CLI:-kubectl} exec -it ${pod_name} -n ${namespace} -- df -h"
+ ${KUBERNETES_CLI:-kubectl} exec -it ${pod_name} -n ${namespace} -- df -h
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  tail $logfile
  sleep 60
