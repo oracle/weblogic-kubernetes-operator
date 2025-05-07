@@ -67,8 +67,6 @@ spec:
           limits:
             cpu: "4"
             memory: "32Gi"
-          requests:
-            cpu: 500m
          securityContext:
           runAsUser: 0        # (Optional) Run as root for debugging
           allowPrivilegeEscalation: true
