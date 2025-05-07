@@ -131,7 +131,10 @@ do
  grep -i "DATABASE IS READY" $logfile
  [[ $? == 0 ]] && break;
  ((counter++))
+ echo "++++++++++++DESCRIBING NODE+++++++++++"
  ${KUBERNETES_CLI:-kubectl} describe node kind-worker
+ echo "+++++++++++++CHECKING SPACE+++++++++++"
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- df -h
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  tail $logfile
  sleep 60
