@@ -219,10 +219,11 @@ class ItFmwDomainOnPVSample {
     Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for creating a db");
     if (KIND_REPO != null) {
-      String dbimage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
+      //String dbimage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
+      String dbimage = DB_IMAGE_NAME + ":12.2.0.1-slim";
       logger.info("loading image {0} to kind", dbimage);
       imagePush(dbimage);
-      String ocrImage = "container-registry.oracle.com/database/enterprise:" + DB_IMAGE_TAG;
+      String ocrImage = "container-registry.oracle.com/database/enterprise:12.2.0.1-slim";
       String command = WLSIMG_BUILDER + " tag " + dbimage + " " + ocrImage;
       try {
         exec(command, true);
