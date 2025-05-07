@@ -67,7 +67,7 @@ spec:
           limits:
             cpu: "4"
             memory: "32Gi"
-         securityContext:
+        securityContext:
           runAsUser: 0        # (Optional) Run as root for debugging
           allowPrivilegeEscalation: true
         terminationMessagePath: /dev/termination-log
