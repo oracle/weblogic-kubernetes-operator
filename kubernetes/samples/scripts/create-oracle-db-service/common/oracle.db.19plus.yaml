@@ -61,11 +61,17 @@ spec:
           name: tns
           protocol: TCP
         resources:
+          requests:
+            cpu: "2" 
+            memory: "24Gi"
           limits:
-            cpu: "2"
-            memory: "6Gi"
+            cpu: "4"
+            memory: "32Gi"
           requests:
             cpu: 500m
+         securityContext:
+          runAsUser: 0        # (Optional) Run as root for debugging
+          allowPrivilegeEscalation: true
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
