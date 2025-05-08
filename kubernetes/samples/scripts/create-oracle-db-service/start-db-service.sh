@@ -127,7 +127,7 @@ max=600
 counter=0
 while [ $counter -le ${max} ]
 do
- echo "DB pod name ${dbpod}
+ echo "DB pod name ${dbpod}"
  ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace} > $logfile
  grep -i "DATABASE IS READY" $logfile
  [[ $? == 0 ]] && break;
