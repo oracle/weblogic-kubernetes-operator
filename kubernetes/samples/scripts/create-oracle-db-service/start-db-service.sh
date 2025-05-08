@@ -142,7 +142,7 @@ do
  ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}
  echo "++++++++++++++++++++++++++LISTING DBCA LOGS++++++++++++++++"
  echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c ls -l /opt/oracle/cfgtoollogs/dbca/ORCLCDB/"
- ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'ls -lrt opt/oracle/cfgtoollogs/dbca/ORCLCDB/'
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'ls -lrt /opt/oracle/cfgtoollogs/dbca/ORCLCDB/'
  echo "+++++++++++++++++++++++++VIEWING TRACE LOGS+++++++++++++++++++++++++++++"
  echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c cat /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*"
  ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'cat /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*'
