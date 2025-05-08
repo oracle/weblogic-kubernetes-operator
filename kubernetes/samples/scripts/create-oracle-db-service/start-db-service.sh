@@ -163,6 +163,8 @@ do
  ${KUBERNETES_CLI:-kubectl} get all -A
  echo "++++++++++++++++k get events+++++++++++"
  ${KUBERNETES_CLI:-kubectl} get events -n ${namespace} --sort-by=.lastTimestamp
+ echo "++++++++++++++++k describe pod ${dbpod}  -n ${namespace}+++++++++++++"
+ ${KUBERNETES_CLI:-kubectl} describe pod ${dbpod}  -n ${namespace}
  echo "++++++++++++++++++++++++++++++++END LOGS++++++++++++++++++++++++++++++++++"
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  sleep 60
