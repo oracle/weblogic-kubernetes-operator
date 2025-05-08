@@ -146,6 +146,11 @@ do
  echo "+++++++++++++++++++++++++VIEWING TRACE LOGS+++++++++++++++++++++++++++++"
  echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c cat /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*"
  ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'cat /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*'
+
+ mkdir -p /tmp/workspace/wko-kind-dev-podman/staging/wl_k8s_test_results/diagnostics/ItFmwDomainOnPVSample/testCreatedb/
+ trace_file=$(${KUBERNETES_CLI:-kubectl} exec -n ${namespace} ${dbpod} -- /bin/sh -c 'ls /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*' | head -n 1)
+ ${KUBERNETES_CLI:-kubectl} cp ${namespace}/${dbpod}:${trace_file} /tmp/workspace/wko-kind-dev-podman/staging/wl_k8s_test_results/diagnostics/ItFmwDomainOnPVSample/testCreatedb/trace.log
+
  echo "++++++++++++++++++++++++++++++++END LOGS++++++++++++++++++++++++++++++++++"
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  sleep 60
