@@ -135,12 +135,18 @@ do
  echo "++++++++++++DESCRIBING NODE+++++++++++"
  ${KUBERNETES_CLI:-kubectl} describe node kind-worker
  echo "+++++++++++++CHECKING SPACE+++++++++++"
- #echo "${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}'"
- #pod_name=$(${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}')
  echo "${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- df -h"
  ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- df -h
+ echo "+++++++++++++++++++GETTINGS pod logs++++++++++++++"
+ echo " ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}"
  ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}
- ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --  /bin/ls -l /opt/oracle/cfgtoollogs/dbca/ORCLPDB
+ echo "++++++++++++++++++++++++++LISTING DBCA LOGS++++++++++++++++"
+ echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c ls -l /opt/oracle/cfgtoollogs/dbca/DEVCDB/"
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'ls -lrt opt/oracle/cfgtoollogs/dbca/DEVCDB/'
+ echo "+++++++++++++++++++++++++VIEWING TRACE LOGS+++++++++++++++++++++++++++++"
+ echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c cat /opt/oracle/cfgtoollogs/dbca/DEVCDB/trace*"
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'cat /opt/oracle/cfgtoollogs/dbca/DEVCDB/trace*'
+ echo "++++++++++++++++++++++++++++++++END LOGS++++++++++++++++++++++++++++++++++"
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  sleep 60
 done
