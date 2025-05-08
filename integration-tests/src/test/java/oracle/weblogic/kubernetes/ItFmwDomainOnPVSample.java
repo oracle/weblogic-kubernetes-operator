@@ -234,11 +234,6 @@ class ItFmwDomainOnPVSample {
     }
     logger.info("Execute ../operator/integration-tests/domain-on-pv/run-test.sh -jrf -db");
     execTestScriptAndAssertSuccess("-db", "Failed to run -db");
-    try {
-      Thread.sleep(1000 * 60 * 12000);
-    } catch (InterruptedException ex) {
-      logger.info("Interrupted");
-    }
   }
 
   /**
