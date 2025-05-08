@@ -127,6 +127,7 @@ max=600
 counter=0
 while [ $counter -le ${max} ]
 do
+ echo "DB pod name ${dbpod}
  ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace} > $logfile
  grep -i "DATABASE IS READY" $logfile
  [[ $? == 0 ]] && break;
@@ -134,12 +135,13 @@ do
  echo "++++++++++++DESCRIBING NODE+++++++++++"
  ${KUBERNETES_CLI:-kubectl} describe node kind-worker
  echo "+++++++++++++CHECKING SPACE+++++++++++"
- echo "${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}'"
- pod_name=$(${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}')
- echo "${KUBERNETES_CLI:-kubectl} exec -it ${pod_name} -n ${namespace} -- df -h"
- ${KUBERNETES_CLI:-kubectl} exec -it ${pod_name} -n ${namespace} -- df -h
+ #echo "${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}'"
+ #pod_name=$(${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} -l app.kubernetes.io/name=oracle-db -o jsonpath='{.items[0].metadata.name}')
+ echo "${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- df -h"
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- df -h
+ ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --  /bin/ls -l /opt/oracle/cfgtoollogs/dbca/ORCLPDB
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
- tail $logfile
  sleep 60
 done
 
