@@ -107,6 +107,14 @@ fi
 ${KUBERNETES_CLI:-kubectl} delete service oracle-db -n ${namespace} --ignore-not-found
 
 echo "Applying Kubernetes YAML file '${dbYaml}' to start database."
+
+cat ${dbYaml}
+echo "Get all pods in all namespaces"
+${KUBERNETES_CLI:-kubectl} get all -A
+echo "Get all objects in DB namespace"
+${KUBERNETES_CLI:-kubectl} get all -n ${namespace}
+echo "Get secrets in DB namespace"
+${KUBERNETES_CLI:-kubectl} get secrets -n ${namespace} -o yaml
 ${KUBERNETES_CLI:-kubectl} apply -f ${dbYaml}
 
 detectPod ${namespace}
