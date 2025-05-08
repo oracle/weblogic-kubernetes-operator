@@ -72,14 +72,12 @@ dbYaml=${scriptDir}/common/oracle.db.${namespace}.yaml
 
 if [ ! -f "$dbYaml" ]; then
     echo "$dbYaml does not exist."
-
     # Choose template based on dbimage version
     if echo "$dbimage" | grep -q "12\."; then
         templateYaml="${scriptDir}/common/oracle.db.yaml"
     else
         templateYaml="${scriptDir}/common/oracle.db.19plus.yaml"
     fi
-
     echo "Using template: $templateYaml"
     cp "$templateYaml" "$dbYaml"
 fi
@@ -107,14 +105,7 @@ fi
 ${KUBERNETES_CLI:-kubectl} delete service oracle-db -n ${namespace} --ignore-not-found
 
 echo "Applying Kubernetes YAML file '${dbYaml}' to start database."
-
 cat ${dbYaml}
-echo "Get all pods in all namespaces"
-${KUBERNETES_CLI:-kubectl} get all -A
-echo "Get all objects in DB namespace"
-${KUBERNETES_CLI:-kubectl} get all -n ${namespace}
-echo "Get secrets in DB namespace"
-${KUBERNETES_CLI:-kubectl} get secrets -n ${namespace} -o yaml
 ${KUBERNETES_CLI:-kubectl} apply -f ${dbYaml}
 
 detectPod ${namespace}
@@ -131,41 +122,16 @@ ${KUBERNETES_CLI:-kubectl} get po -n ${namespace}
 ${KUBERNETES_CLI:-kubectl} get service -n ${namespace}
 
 logfile="/tmp/setupDB.log"
-max=600
+max=60
 counter=0
 while [ $counter -le ${max} ]
 do
- echo "DB pod name ${dbpod}"
  ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace} > $logfile
  grep -i "DATABASE IS READY" $logfile
  [[ $? == 0 ]] && break;
  ((counter++))
- echo "++++++++++++DESCRIBING NODE+++++++++++"
- ${KUBERNETES_CLI:-kubectl} describe node kind-worker
- echo "+++++++++++++CHECKING SPACE+++++++++++"
- echo "${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- df -h"
- ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- df -h
- echo "+++++++++++++++++++GETTINGS pod logs++++++++++++++"
- echo " ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}"
- ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}
- echo "++++++++++++++++++++++++++LISTING DBCA LOGS++++++++++++++++"
- echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c ls -l /opt/oracle/cfgtoollogs/dbca/ORCLCDB/"
- ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'ls -lrt /opt/oracle/cfgtoollogs/dbca/ORCLCDB/'
- echo "+++++++++++++++++++++++++VIEWING TRACE LOGS+++++++++++++++++++++++++++++"
- #echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c cat /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*"
- #${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'cat /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*'
-
- mkdir -p /tmp/workspace/wko-kind-dev-podman/staging/wl_k8s_test_results/diagnostics/ItFmwDomainOnPVSample/testCreatedb/
- trace_file=$(${KUBERNETES_CLI:-kubectl} exec -n ${namespace} ${dbpod} -- /bin/sh -c 'ls /opt/oracle/cfgtoollogs/dbca/ORCLCDB/trace*' | head -n 1)
- ${KUBERNETES_CLI:-kubectl} cp ${namespace}/${dbpod}:${trace_file} /tmp/workspace/wko-kind-dev-podman/staging/wl_k8s_test_results/diagnostics/ItFmwDomainOnPVSample/testCreatedb/trace.log
- echo "+++++++++++++++++++BEGIN k get all++++++++++++++++++++++"
- echo "${KUBERNETES_CLI:-kubectl} get all -A"
- ${KUBERNETES_CLI:-kubectl} get all -A
- echo "++++++++++++++++k get events+++++++++++"
- ${KUBERNETES_CLI:-kubectl} get events -n ${namespace} --sort-by=.lastTimestamp
- echo "++++++++++++++++k describe pod ${dbpod}  -n ${namespace}+++++++++++++"
+ echo "${KUBERNETES_CLI:-kubectl} describe pod ${dbpod}  -n ${namespace}"
  ${KUBERNETES_CLI:-kubectl} describe pod ${dbpod}  -n ${namespace}
- echo "++++++++++++++++++++++++++++++++END LOGS++++++++++++++++++++++++++++++++++"
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  sleep 60
 done
