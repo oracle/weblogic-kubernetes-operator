@@ -141,11 +141,11 @@ do
  echo " ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}"
  ${KUBERNETES_CLI:-kubectl} logs ${dbpod} -n ${namespace}
  echo "++++++++++++++++++++++++++LISTING DBCA LOGS++++++++++++++++"
- echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c ls -l /opt/oracle/cfgtoollogs/dbca/DEVCDB/"
- ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'ls -lrt opt/oracle/cfgtoollogs/dbca/DEVCDB/'
+ echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c ls -l /opt/oracle/cfgtoollogs/dbca/ORCLPDB/"
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'ls -lrt opt/oracle/cfgtoollogs/dbca/ORCLPDB/'
  echo "+++++++++++++++++++++++++VIEWING TRACE LOGS+++++++++++++++++++++++++++++"
- echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c cat /opt/oracle/cfgtoollogs/dbca/DEVCDB/trace*"
- ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'cat /opt/oracle/cfgtoollogs/dbca/DEVCDB/trace*'
+ echo " ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c cat /opt/oracle/cfgtoollogs/dbca/ORCLPDB/trace*"
+ ${KUBERNETES_CLI:-kubectl} exec -it ${dbpod}  -n ${namespace} --   /bin/sh -c 'cat /opt/oracle/cfgtoollogs/dbca/ORCLPDB/trace*'
  echo "++++++++++++++++++++++++++++++++END LOGS++++++++++++++++++++++++++++++++++"
  echo "[$counter/${max}] Retrying for Oracle Database Availability..."
  sleep 60
