@@ -63,10 +63,10 @@ spec:
         resources:
           requests:
             cpu: "2" 
-            memory: "12Gi"
+            memory: "24Gi"
           limits:
             cpu: "4"
-            memory: "32Gi"
+            memory: "40Gi"
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
