@@ -159,6 +159,7 @@ class DomainRecheck {
     // a strategy that specifies them explicitly.
     @Override
     protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      LOGGER.info("DEBUG: failed to list namespaces: backup strategy " + useBackupStrategy(callResponse));
       return useBackupStrategy(callResponse)
             ? doNext(createStartNamespacesStep(Namespaces.getConfiguredDomainNamespaces()), packet)
             : super.onFailureNoRetry(packet, callResponse);
@@ -173,7 +174,7 @@ class DomainRecheck {
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       final Set<String> namespacesToStart = getNamespacesToStart(callResponse.getResult());
       Namespaces.getFoundDomainNamespaces(packet).addAll(namespacesToStart);
-
+      LOGGER.info("DEBUG: DomainRecheck namespaces found: " + namespacesToStart);
       return doContinueListOrNext(callResponse, packet, createNextSteps(namespacesToStart));
     }
 

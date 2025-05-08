@@ -131,6 +131,7 @@ abstract class Watcher<T> {
         watchForEvents();
       }
     }
+    LOGGER.info("DEBUG: doWatch loop ended " + this.getClass().getName());
   }
 
   // Are we draining?
@@ -194,7 +195,9 @@ abstract class Watcher<T> {
           }
         }
       }
+      // individual watcher may end but doWatch loop will create it again
     } catch (Throwable ex) {
+      LOGGER.info("DEBUG: Watcher.watchForEvents exception" +  ex);
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
     }
   }

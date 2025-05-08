@@ -152,6 +152,9 @@ public class Namespaces {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         try {
+          if (getRegExp() != null) {
+            LOGGER.info("DEBUG: Namespaces.isDomainNamespace regex " + getRegExp() + " ns " + namespace);
+          }
           return getCompiledPattern(getRegExp()).matcher(getNSName(namespace)).find();
         } catch (PatternSyntaxException e) {
           LOGGER.severe(MessageKeys.EXCEPTION, e);
@@ -346,6 +349,21 @@ public class Namespaces {
     }
 
     private boolean isNotManaged(String ns) {
+
+      LOGGER.info("DEBUG: Checking validateNS isNotManaged() "
+              + ns + " in " + allDomainNamespaces + " is stopping ? " + domainNamespaces.isStopping(ns).get());
+      LOGGER.info("DEBUG: list of domain namespaces " + domainNamespaces.getNamespaces());
+      LOGGER.info("DEBUG: domain watcher " + domainNamespaces.getDomainWatcher(ns));
+      if (domainNamespaces.getDomainWatcher(ns) != null) {
+        LOGGER.info("DEBUG: domain watcher isStopping? " + domainNamespaces.getDomainWatcher(ns).isStopping());
+      }
+      LOGGER.info("DEBUG: pod watcher " + domainNamespaces.getPodWatcher(ns));
+      LOGGER.info("DEBUG: cluster watcher " + domainNamespaces.getClusterWatcher(ns));
+      if (domainNamespaces.getDomainWatcher(ns) != null) {
+        LOGGER.info("DEBUG: cluster watcher isStopping? " + domainNamespaces.getClusterWatcher(ns).isStopping());
+      }
+
+
       return isNoLongerActiveDomainNamespace(ns) || domainNamespaces.isStopping(ns).get();
     }
 

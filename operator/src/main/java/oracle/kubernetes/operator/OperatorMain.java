@@ -467,9 +467,11 @@ public class OperatorMain extends BaseMain {
     if (ns == null) {
       return;
     }
+    LOGGER.info("DEBUG: dispatchNamespaceWatch " + ns);
 
     switch (item.type) {
       case "ADDED":
+        LOGGER.info("DEBUG: dispatchNamespaceWatch  ADDED event");
         if (!Namespaces.isDomainNamespace(item.object)) {
           return;
         }
@@ -480,6 +482,7 @@ public class OperatorMain extends BaseMain {
         break;
 
       case "DELETED":
+        LOGGER.info("DEBUG: dispatchNamespaceWatch  DELETED event");
         // Mark the namespace as isStopping, which will cause the namespace be stopped
         // the next time when recheckDomains is triggered
         Optional.ofNullable(mainDelegate.getDomainNamespaces().getStopping(ns)).ifPresent(n -> n.set(true));
@@ -487,6 +490,8 @@ public class OperatorMain extends BaseMain {
         break;
 
       case "MODIFIED", "ERROR":
+        LOGGER.info("DEBUG: dispatchNamespaceWatch  OTHER event");
+        break;
       default:
     }
   }

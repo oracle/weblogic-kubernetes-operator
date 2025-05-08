@@ -11,6 +11,8 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
@@ -18,6 +20,7 @@ import oracle.kubernetes.operator.watcher.WatchListener;
  * the operator for processing.
  */
 public class NamespaceWatcher extends Watcher<V1Namespace> {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private NamespaceWatcher(
       String initialResourceVersion,
@@ -42,7 +45,6 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
-
     NamespaceWatcher watcher = new NamespaceWatcher(initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
@@ -50,6 +52,7 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
 
   @Override
   public Watchable<V1Namespace> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    LOGGER.info("DEBUG: initialize namespace watcher");
     return watchBuilder
         .createNamespacesWatch();
   }
