@@ -742,11 +742,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   @Override
   protected V1Container createPrimaryContainer() {
     final PodTuning podTuning = TuningParameters.getInstance().getPodTuning();
+    Pair<V1Probe, V1Probe> probes = createLivenessAndStartupProbe(podTuning);
     V1Container v1Container = super.createPrimaryContainer()
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
-            .livenessProbe(createLivenessProbe(podTuning))
-            .startupProbe(getStartupProbe());
+            .livenessProbe(probes.left())
+            .startupProbe(probes.right());
 
     if (!mockWls()) {
       v1Container.readinessProbe(createReadinessProbe(podTuning));
@@ -961,6 +962,11 @@ public abstract class PodStepContext extends BasePodStepContext {
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
+  private Pair<V1Probe, V1Probe> createLivenessAndStartupProbe(PodTuning tuning) {
+    V1Probe livenessProbe = createLivenessProbe(tuning);
+    return new Pair<>(livenessProbe, createStartupProbe(livenessProbe, tuning));
+  }
+
   private V1Probe createLivenessProbe(PodTuning tuning) {
     V1Probe livenessProbe = getLivenessProbe();
 
@@ -981,21 +987,12 @@ public abstract class PodStepContext extends BasePodStepContext {
       livenessProbe.setSuccessThreshold(tuning.getLivenessProbeSuccessThreshold());
     }
 
-    try {
-      V1HTTPGetAction httpGetAction = livenessProbe.getHttpGet();
-      if (httpGetAction != null) {
-        if (httpGetAction.getPort() == null) {
-          httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
-        }
-        if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
-          httpGetAction.setScheme("HTTPS");
-        }
-      } else if (livenessProbe.getExec() == null
-              && livenessProbe.getTcpSocket() == null && livenessProbe.getGrpc() == null) {
-        livenessProbe.setExec(execAction(LIVENESS_PROBE));
-      }
-    } catch (Exception e) {
-      // do nothing
+    V1HTTPGetAction httpGetAction = livenessProbe.getHttpGet();
+    if (httpGetAction != null) {
+      initializeHttpGetAction(httpGetAction);
+    } else if (livenessProbe.getExec() == null
+            && livenessProbe.getTcpSocket() == null && livenessProbe.getGrpc() == null) {
+      livenessProbe.setExec(execAction(LIVENESS_PROBE));
     }
 
     return livenessProbe;
@@ -1006,8 +1003,60 @@ public abstract class PodStepContext extends BasePodStepContext {
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
+  /*
+   * Goal: create default startup probe
+   * 1. Create a default startup probe only if there is no liveness probe configured
+   * 2. Is it okay if the only liveness probe configuration is tuning?
+   * 3. What values for startup probe tuning?
+   * 4. Pod change detection needs function that removes startup probe
+   */
+
+  private V1Probe createStartupProbe(V1Probe livenessProbe, PodTuning tuning) {
+    V1Probe startupProbe = getStartupProbe();
+
+    if (startupProbe.getInitialDelaySeconds() == null) {
+      startupProbe.setInitialDelaySeconds(tuning.getStartupProbeInitialDelaySeconds());
+    }
+    if (startupProbe.getTimeoutSeconds() == null) {
+      startupProbe.setTimeoutSeconds(tuning.getStartupProbeTimeoutSeconds());
+    }
+    if (startupProbe.getPeriodSeconds() == null) {
+      startupProbe.setPeriodSeconds(tuning.getStartupProbePeriodSeconds());
+    }
+    if (startupProbe.getFailureThreshold() == null) {
+      startupProbe.setFailureThreshold(tuning.getStartupProbeFailureThreshold());
+    }
+    if (startupProbe.getSuccessThreshold() == null
+            && tuning.getStartupProbeSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+      startupProbe.setSuccessThreshold(tuning.getStartupProbeSuccessThreshold());
+    }
+
+    V1HTTPGetAction httpGetAction = startupProbe.getHttpGet();
+    if (httpGetAction != null) {
+      initializeHttpGetAction(httpGetAction);
+    } else if (startupProbe.getExec() == null
+            && startupProbe.getTcpSocket() == null && startupProbe.getGrpc() == null) {
+      startupProbe.setHttpGet(livenessProbe.getHttpGet());
+      startupProbe.setExec(livenessProbe.getExec());
+      startupProbe.setTcpSocket(livenessProbe.getTcpSocket());
+      startupProbe.setGrpc(livenessProbe.getGrpc());
+    }
+
+    return startupProbe;
+  }
+
   private V1Probe getStartupProbe() {
-    return getServerSpec().getStartupProbe();
+    return Optional.ofNullable(getServerSpec().getStartupProbe())
+        .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
+  }
+
+  private void initializeHttpGetAction(@Nonnull V1HTTPGetAction httpGetAction) {
+    if (httpGetAction.getPort() == null) {
+      httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
+    }
+    if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
+      httpGetAction.setScheme("HTTPS");
+    }
   }
 
   private boolean mockWls() {

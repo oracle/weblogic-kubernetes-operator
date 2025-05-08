@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.tuning;
@@ -56,6 +56,11 @@ public class TuningParameters {
   public static final String LIVENESS_PERIOD_SECONDS = "livenessProbePeriodSeconds";
   public static final String LIVENESS_SUCCESS_COUNT_THRESHOLD = "livenessProbeSuccessThreshold";
   public static final String LIVENESS_FAILURE_COUNT_THRESHOLD = "livenessProbeFailureThreshold";
+  public static final String STARTUP_INITIAL_DELAY_SECONDS = "startupProbeInitialDelaySeconds";
+  public static final String STARTUP_TIMEOUT_SECONDS = "startupProbeTimeoutSeconds";
+  public static final String STARTUP_PERIOD_SECONDS = "startupProbePeriodSeconds";
+  public static final String STARTUP_SUCCESS_COUNT_THRESHOLD = "startupProbeSuccessThreshold";
+  public static final String STARTUP_FAILURE_COUNT_THRESHOLD = "startupProbeFailureThreshold";
 
   public static final String INITIALIZATION_RETRY_DELAY_SECONDS = "initializationRetryDelaySeconds";
   public static final String UNCHANGED_COUNT_TO_DELAY_STATUS_RECHECK = "statusUpdateUnchangedCountToDelayStatusRecheck";
@@ -423,6 +428,31 @@ public class TuningParameters {
     @Override
     public int getLivenessProbeFailureThreshold() {
       return getParameter(LIVENESS_FAILURE_COUNT_THRESHOLD, 1);
+    }
+
+    @Override
+    public int getStartupProbeInitialDelaySeconds() {
+      return getParameter(STARTUP_INITIAL_DELAY_SECONDS, 0);
+    }
+
+    @Override
+    public int getStartupProbeTimeoutSeconds() {
+      return getParameter(STARTUP_TIMEOUT_SECONDS, 5);
+    }
+
+    @Override
+    public int getStartupProbePeriodSeconds() {
+      return getParameter(STARTUP_PERIOD_SECONDS, 5);
+    }
+
+    @Override
+    public int getStartupProbeSuccessThreshold() {
+      return getParameter(STARTUP_SUCCESS_COUNT_THRESHOLD, 1);
+    }
+
+    @Override
+    public int getStartupProbeFailureThreshold() {
+      return getParameter(STARTUP_FAILURE_COUNT_THRESHOLD, 20);
     }
   }
 
