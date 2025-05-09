@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -192,6 +193,7 @@ class ItSystemResOverrides {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
     
+
     logger.info("installing WebLogic Deploy Tool");
     downloadAndInstallWDT();
 
@@ -549,6 +551,15 @@ class ItSystemResOverrides {
 
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    
+    ExecResult result = Command.withParams(
+        new CommandParams()
+            .command(KUBERNETES_CLI + " exec -it -n " + domainNamespace + " " + adminServerName + " -- crictl version")
+            .env(null)
+            .redirect(true)
+    ).executeAndReturnResult();
+    logger.info(result.stdout());
+    logger.info(result.stderr());
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
