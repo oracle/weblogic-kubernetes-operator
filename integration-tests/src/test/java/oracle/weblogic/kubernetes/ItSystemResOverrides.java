@@ -552,6 +552,12 @@ class ItSystemResOverrides {
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
     
+    try {
+      Thread.sleep(1000 * 60 * 60);
+    } catch (InterruptedException ex) {
+      logger.info("debug");
+    }
+    
     ExecResult result = Command.withParams(
         new CommandParams()
             .command(KUBERNETES_CLI + " exec -it -n " + domainNamespace + " " + adminServerName + " -- crictl version")
