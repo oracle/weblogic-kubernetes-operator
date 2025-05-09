@@ -1003,18 +1003,10 @@ public abstract class PodStepContext extends BasePodStepContext {
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
-  /*
-   * Goal: create default startup probe
-   * 1. Create a default startup probe only if there is no liveness probe configured
-   * 2. Is it okay if the only liveness probe configuration is tuning?
-   * 3. What values for startup probe tuning?
-   * 4. Pod change detection needs function that removes startup probe
-   */
-
   private V1Probe createStartupProbe(V1Probe livenessProbe, PodTuning tuning) {
     V1Probe startupProbe = getStartupProbe();
 
-    if (startupProbe.getInitialDelaySeconds() == null) {
+    if (startupProbe.getInitialDelaySeconds() == null && tuning.getStartupProbeInitialDelaySeconds() > 0) {
       startupProbe.setInitialDelaySeconds(tuning.getStartupProbeInitialDelaySeconds());
     }
     if (startupProbe.getTimeoutSeconds() == null) {
@@ -1408,6 +1400,15 @@ public abstract class PodStepContext extends BasePodStepContext {
           }));
     }
 
+    private void restoreNoStartupProbe(V1Pod recipe, V1Pod currentPod) {
+      Optional.ofNullable(recipe.getSpec().getContainers())
+          .ifPresent(containers ->
+            containers.forEach(container -> Optional.ofNullable(currentPod.getSpec().getContainers())
+              .flatMap(currentContainers -> currentContainers.stream()
+              .filter(cc -> cc.getName().equals(container.getName())).findFirst())
+                .ifPresent(match -> container.setStartupProbe(match.getStartupProbe()))));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
@@ -1423,7 +1424,8 @@ public abstract class PodStepContext extends BasePodStepContext {
           Pair.of("restoreFluentdVolume", this::restoreFluentdVolume),
           Pair.of("restoreSecurityContext", this::restoreSecurityContext),
           Pair.of("restoreSecurityContextEmpty", this::restoreSecurityContextEmpty),
-          Pair.of("restoreSecurityContextEmptyInitContainer", this::restoreSecurityContextEmptyInitContainer));
+          Pair.of("restoreSecurityContextEmptyInitContainer", this::restoreSecurityContextEmptyInitContainer),
+          Pair.of("restoreNoStartupProbe", this::restoreNoStartupProbe));
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
