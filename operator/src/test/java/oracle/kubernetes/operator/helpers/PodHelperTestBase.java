@@ -1551,6 +1551,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenPodCreated_startupProbeHasLivenessCommand() {
+    assertThat(
+        getCreatedPodSpecContainer().getStartupProbe().getExec().getCommand(),
+        contains("/weblogic-operator/scripts/livenessProbe.sh"));
+  }
+
+  @Test
   void whenPodCreated_livenessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
