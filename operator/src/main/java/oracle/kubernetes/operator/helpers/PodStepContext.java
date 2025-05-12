@@ -742,11 +742,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   @Override
   protected V1Container createPrimaryContainer() {
     final PodTuning podTuning = TuningParameters.getInstance().getPodTuning();
+    Pair<V1Probe, V1Probe> probes = createLivenessAndStartupProbe(podTuning);
     V1Container v1Container = super.createPrimaryContainer()
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
-            .livenessProbe(createLivenessProbe(podTuning))
-            .startupProbe(getStartupProbe());
+            .livenessProbe(probes.left())
+            .startupProbe(probes.right());
 
     if (!mockWls()) {
       v1Container.readinessProbe(createReadinessProbe(podTuning));
@@ -961,6 +962,11 @@ public abstract class PodStepContext extends BasePodStepContext {
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
+  private Pair<V1Probe, V1Probe> createLivenessAndStartupProbe(PodTuning tuning) {
+    V1Probe livenessProbe = createLivenessProbe(tuning);
+    return new Pair<>(livenessProbe, createStartupProbe(livenessProbe, tuning));
+  }
+
   private V1Probe createLivenessProbe(PodTuning tuning) {
     V1Probe livenessProbe = getLivenessProbe();
 
@@ -981,21 +987,12 @@ public abstract class PodStepContext extends BasePodStepContext {
       livenessProbe.setSuccessThreshold(tuning.getLivenessProbeSuccessThreshold());
     }
 
-    try {
-      V1HTTPGetAction httpGetAction = livenessProbe.getHttpGet();
-      if (httpGetAction != null) {
-        if (httpGetAction.getPort() == null) {
-          httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
-        }
-        if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
-          httpGetAction.setScheme("HTTPS");
-        }
-      } else if (livenessProbe.getExec() == null
-              && livenessProbe.getTcpSocket() == null && livenessProbe.getGrpc() == null) {
-        livenessProbe.setExec(execAction(LIVENESS_PROBE));
-      }
-    } catch (Exception e) {
-      // do nothing
+    V1HTTPGetAction httpGetAction = livenessProbe.getHttpGet();
+    if (httpGetAction != null) {
+      initializeHttpGetAction(httpGetAction);
+    } else if (livenessProbe.getExec() == null
+            && livenessProbe.getTcpSocket() == null && livenessProbe.getGrpc() == null) {
+      livenessProbe.setExec(execAction(LIVENESS_PROBE));
     }
 
     return livenessProbe;
@@ -1006,8 +1003,52 @@ public abstract class PodStepContext extends BasePodStepContext {
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
+  private V1Probe createStartupProbe(V1Probe livenessProbe, PodTuning tuning) {
+    V1Probe startupProbe = getStartupProbe();
+
+    if (startupProbe.getInitialDelaySeconds() == null && tuning.getStartupProbeInitialDelaySeconds() > 0) {
+      startupProbe.setInitialDelaySeconds(tuning.getStartupProbeInitialDelaySeconds());
+    }
+    if (startupProbe.getTimeoutSeconds() == null) {
+      startupProbe.setTimeoutSeconds(tuning.getStartupProbeTimeoutSeconds());
+    }
+    if (startupProbe.getPeriodSeconds() == null) {
+      startupProbe.setPeriodSeconds(tuning.getStartupProbePeriodSeconds());
+    }
+    if (startupProbe.getFailureThreshold() == null) {
+      startupProbe.setFailureThreshold(tuning.getStartupProbeFailureThreshold());
+    }
+    if (startupProbe.getSuccessThreshold() == null
+            && tuning.getStartupProbeSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+      startupProbe.setSuccessThreshold(tuning.getStartupProbeSuccessThreshold());
+    }
+
+    V1HTTPGetAction httpGetAction = startupProbe.getHttpGet();
+    if (httpGetAction != null) {
+      initializeHttpGetAction(httpGetAction);
+    } else if (startupProbe.getExec() == null
+            && startupProbe.getTcpSocket() == null && startupProbe.getGrpc() == null) {
+      startupProbe.setHttpGet(livenessProbe.getHttpGet());
+      startupProbe.setExec(livenessProbe.getExec());
+      startupProbe.setTcpSocket(livenessProbe.getTcpSocket());
+      startupProbe.setGrpc(livenessProbe.getGrpc());
+    }
+
+    return startupProbe;
+  }
+
   private V1Probe getStartupProbe() {
-    return getServerSpec().getStartupProbe();
+    return Optional.ofNullable(getServerSpec().getStartupProbe())
+        .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
+  }
+
+  private void initializeHttpGetAction(@Nonnull V1HTTPGetAction httpGetAction) {
+    if (httpGetAction.getPort() == null) {
+      httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
+    }
+    if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
+      httpGetAction.setScheme("HTTPS");
+    }
   }
 
   private boolean mockWls() {
@@ -1359,6 +1400,15 @@ public abstract class PodStepContext extends BasePodStepContext {
           }));
     }
 
+    private void restoreNoStartupProbe(V1Pod recipe, V1Pod currentPod) {
+      Optional.ofNullable(recipe.getSpec().getContainers())
+          .ifPresent(containers ->
+            containers.forEach(container -> Optional.ofNullable(currentPod.getSpec().getContainers())
+              .flatMap(currentContainers -> currentContainers.stream()
+              .filter(cc -> cc.getName().equals(container.getName())).findFirst())
+                .ifPresent(match -> container.setStartupProbe(match.getStartupProbe()))));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
@@ -1374,7 +1424,8 @@ public abstract class PodStepContext extends BasePodStepContext {
           Pair.of("restoreFluentdVolume", this::restoreFluentdVolume),
           Pair.of("restoreSecurityContext", this::restoreSecurityContext),
           Pair.of("restoreSecurityContextEmpty", this::restoreSecurityContextEmpty),
-          Pair.of("restoreSecurityContextEmptyInitContainer", this::restoreSecurityContextEmptyInitContainer));
+          Pair.of("restoreSecurityContextEmptyInitContainer", this::restoreSecurityContextEmptyInitContainer),
+          Pair.of("restoreNoStartupProbe", this::restoreNoStartupProbe));
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
