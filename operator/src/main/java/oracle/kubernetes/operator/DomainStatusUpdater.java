@@ -87,6 +87,7 @@ import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDAT
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -429,10 +430,12 @@ public class DomainStatusUpdater {
     private DomainStatus newStatus;
     private final List<EventData> newEvents = new ArrayList<>();
     final boolean endOfProcessing;
+    private Packet packet;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
+      this.packet = packet;
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
       endOfProcessing = (Boolean) packet.getOrDefault(ProcessingConstants.END_OF_PROCESSING, Boolean.FALSE);
     }
@@ -546,7 +549,10 @@ public class DomainStatusUpdater {
       if (!isStatusUnchanged()) {
         result.add(createDomainStatusReplaceStep());
       } else {
-        if (endOfProcessing && isMakeRight) {
+        boolean successFullDynamicUpdate = MII_DYNAMIC_UPDATE_SUCCESS.equals(packet.get(MII_DYNAMIC_UPDATE))
+                || MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(packet.get(MII_DYNAMIC_UPDATE));
+                
+        if ((endOfProcessing && isMakeRight) || successFullDynamicUpdate) {
           Optional.ofNullable(createDomainStatusObservedGenerationReplaceStep()).ifPresent(result::add);
         }
       }
