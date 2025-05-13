@@ -5,9 +5,14 @@
 
 # 'build-wl-operator.sh'
 #
-# Build and Helm install an operator that monitors DOMAIN_NAMESPACE.
+# Build and helm install an operator that monitors DOMAIN_NAMESPACE.
+#
+# This script is not necessary if the operator is already running
+# and monitoring DOMAIN_NAMESPACE.
+#
 # This script skips the build if it finds no changes since the last build.
-# It always rebuilds the image and re-installs the Helm release.
+#
+# This script always does a helm uninstall/install.
 
 set -eu
 set -o pipefail
@@ -29,7 +34,10 @@ echo "OPER_JAR_VERSION=${OPER_JAR_VERSION}"
 
 # Generate checksum based on content
 latest_cksum() {
+  # force a rebuild even if only image name/tag/ver changes...
   echo "$OPER_IMAGE_NAME $OPER_IMAGE_TAG $OPER_JAR_VERSION"
+
+  # force a rebuild if the image isn't cached anymore
   ${WLSIMG_BUILDER:-docker} images "$OPER_IMAGE_NAME:$OPER_IMAGE_TAG" -q || true
   find "$SRCDIR/operator/src/main" "$SRCDIR/operator/src/test" -type f \( -name "*.java" -o -name "*.sh" -o -name "*.py" \) -exec cat {} + | cksum
 }
