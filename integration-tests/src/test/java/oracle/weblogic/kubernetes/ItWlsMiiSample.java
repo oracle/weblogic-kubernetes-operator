@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -290,7 +291,7 @@ class ItWlsMiiSample {
 
   private Map<String, String> getPodTimestamps(String namespace) {
     ExecResult result = Command.withParams(new CommandParams()
-        .command("kubectl get pods -n " + namespace
+        .command(KUBERNETES_CLI + " get pods -n " + namespace
             + " -o=jsonpath='{range .items[*]}{.metadata.name}:{.metadata.creationTimestamp}\\n{end}'")
         .redirect(true)).executeAndReturnResult();
 
