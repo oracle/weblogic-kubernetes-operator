@@ -109,7 +109,8 @@ class ItWlsMiiSample {
     envMap.put("TRAEFIK_IMAGE_REPOSITORY", TRAEFIK_INGRESS_IMAGE_NAME);
     envMap.put("TRAEFIK_IMAGE_TAG", TRAEFIK_INGRESS_IMAGE_TAG);
     envMap.put("WORKDIR", miiSampleWorkDir);
-    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC.substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
+    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC.substring(0,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
     envMap.put("IMAGE_PULL_SECRET_NAME", BASE_IMAGES_REPO_SECRET_NAME);
     envMap.put("DOMAIN_IMAGE_PULL_SECRET_NAME", TEST_IMAGES_REPO_SECRET_NAME);
@@ -118,9 +119,15 @@ class ItWlsMiiSample {
     envMap.put("OKD", String.valueOf(OKD));
     envMap.put("KIND_CLUSTER", String.valueOf(KIND_CLUSTER));
 
-    if (WIT_JAVA_HOME != null) envMap.put("JAVA_HOME", WIT_JAVA_HOME);
-    if (WIT_DOWNLOAD_URL != null) envMap.put("WIT_INSTALLER_URL", WIT_DOWNLOAD_URL);
-    if (WDT_DOWNLOAD_URL != null) envMap.put("WDT_INSTALLER_URL", WDT_DOWNLOAD_URL);
+    if (WIT_JAVA_HOME != null) {
+      envMap.put("JAVA_HOME", WIT_JAVA_HOME);
+    }
+    if (WIT_DOWNLOAD_URL != null) {
+      envMap.put("WIT_INSTALLER_URL", WIT_DOWNLOAD_URL);
+    }
+    if (WDT_DOWNLOAD_URL != null) {
+      envMap.put("WDT_INSTALLER_URL", WDT_DOWNLOAD_URL);
+    }
 
     if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       DOMAIN_CREATION_IMAGE_NAME = "localhost/wdt-domain-image";
@@ -135,9 +142,11 @@ class ItWlsMiiSample {
     logger.info("Environment variables to the script {0}", envMap);
 
     createTestRepoSecret(domainNamespace);
-    logger.info("Registry secret {0} created for domain image successfully in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
+    logger.info("Registry secret {0} created for domain image successfully in namespace {1}",
+        TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
     createBaseRepoSecret(domainNamespace);
-    logger.info("Registry secret {0} for base image created successfully in namespace {1}", BASE_IMAGES_REPO_SECRET_NAME, domainNamespace);
+    logger.info("Registry secret {0} for base image created successfully in namespace {1}",
+        BASE_IMAGES_REPO_SECRET_NAME, domainNamespace);
   }
 
   /**
@@ -241,7 +250,7 @@ class ItWlsMiiSample {
     execTestScriptAndAssertSuccess("-update4", "Failed to run -update4");
   }
 
-   private void execTestScriptAndAssertSuccess(String arg, String errString) {
+  private void execTestScriptAndAssertSuccess(String arg, String errString) {
     Assumptions.assumeTrue(previousTestSuccessful);
     previousTestSuccessful = false;
 
@@ -251,9 +260,11 @@ class ItWlsMiiSample {
     }
 
     String command = miiSampleScript + " " + arg;
-    ExecResult result = Command.withParams(new CommandParams().command(command).env(envMap).redirect(true)).executeAndReturnResult();
+    ExecResult result = Command.withParams(new CommandParams().command(command)
+        .env(envMap).redirect(true)).executeAndReturnResult();
 
-    boolean success = result != null && result.exitValue() == 0 && result.stdout() != null && result.stdout().contains("Finished without errors");
+    boolean success = result != null && result.exitValue() == 0 && result.stdout() != null
+        && result.stdout().contains("Finished without errors");
 
     if (success && "-update4".equals(arg)) {
       Map<String, String> podSnapshotAfter = getPodTimestamps(envMap.get("DOMAIN_NAMESPACE"));
@@ -263,14 +274,15 @@ class ItWlsMiiSample {
         String afterTime = podSnapshotAfter.get(pod);
         if (afterTime != null && !beforeTime.equals(afterTime)) {
           success = false;
-          logger.severe("Unexpected pod restart detected for pod " + pod + ": before=" + beforeTime + " after=" + afterTime);
+          logger.severe("Unexpected pod restart detected for pod "
+              + pod + ": before=" + beforeTime + " after=" + afterTime);
         }
       }
     }
 
-    String outStr = errString + ", command=\n{\n" + command + "\n}\n" +
-        ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n" +
-        ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+    String outStr = errString + ", command=\n{\n" + command + "\n}\n"
+        + ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n"
+        + ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
 
     assertTrue(success, outStr);
     previousTestSuccessful = true;
@@ -278,7 +290,8 @@ class ItWlsMiiSample {
 
   private Map<String, String> getPodTimestamps(String namespace) {
     ExecResult result = Command.withParams(new CommandParams()
-        .command("kubectl get pods -n " + namespace + " -o=jsonpath='{range .items[*]}{.metadata.name}:{.metadata.creationTimestamp}\\n{end}'")
+        .command("kubectl get pods -n " + namespace
+            + " -o=jsonpath='{range .items[*]}{.metadata.name}:{.metadata.creationTimestamp}\\n{end}'")
         .redirect(true)).executeAndReturnResult();
 
     Map<String, String> timestamps = new HashMap<>();
@@ -286,7 +299,9 @@ class ItWlsMiiSample {
       String[] lines = result.stdout().replace("'", "").split("\n");
       for (String line : lines) {
         String[] parts = line.trim().split(":");
-        if (parts.length == 2) timestamps.put(parts[0], parts[1]);
+        if (parts.length == 2) {
+          timestamps.put(parts[0], parts[1]);
+        }
       }
     }
     return timestamps;
