@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -58,6 +58,7 @@ usage() {
     DOMAIN_IMAGE_PULL_SECRET_NAME   : (not set)
     DB_NAMESPACE                    : default (used by -db and -rcu)
     DB_IMAGE_PULL_SECRET            : repo secret (used by -db and -rcu)
+    DB_PDB_ID                       : devpdb.k8s (used by -rcu)
     TRAEFIK_NAMESPACE               : traefik-operator-ns (used by -traefik and by tests)
     TRAEFIK_HTTP_NODEPORT           : 30305 (used by -traefik and by tests, can be 0 to dynamically choose)
     TRAEFIK_HTTPS_NODEPORT          : 30433 (used by -traefik, can be 0 to dynamically choose)
@@ -276,9 +277,9 @@ if [ "$DO_DB" = "true" ]; then
 
   doCommand  "\$DBSAMPLEDIR/stop-db-service.sh -n \$DB_NAMESPACE"
   if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
-    doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT -s \$DB_IMAGE_PULL_SECRET"
+    doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT -l \$DB_PDB_ID -s \$DB_IMAGE_PULL_SECRET"
   else
-    doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT"
+    doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT -l \$DB_PDB_ID"
   fi
 fi
 
@@ -307,7 +308,7 @@ if [ "$DO_RCU" = "true" ]; then
   doCommand -c "cd \$SRCDIR/kubernetes/samples/scripts/create-rcu-schema"
 
   rcuCommand="./create-rcu-schema.sh"
-  rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/devpdb.k8s" # DB url
+  rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/\$DB_PDB_ID" # DB url
   rcuCommand+=" -s FMW$_custom_domain_name_"    # RCU schema prefix
   if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
     rcuCommand+=" -p \$DB_IMAGE_PULL_SECRET"   # FMW infra image pull secret for rcu pod

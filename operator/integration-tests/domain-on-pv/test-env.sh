@@ -1,4 +1,4 @@
-# Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -33,6 +33,7 @@ export DB_NODE_PORT=${DB_NODE_PORT:-30011}
 export DB_IMAGE_NAME=${DB_IMAGE_NAME:-container-registry.oracle.com/database/enterprise}
 export DB_IMAGE_TAG=${DB_IMAGE_TAG:-12.2.0.1-slim}
 export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
+export DB_PDB_ID=${DB_PDB_ID:-devpdb.k8s}
 
 # ::: Traefik settings/defaults, set NODEPORT values to 0 to have
 #     K8S dynamically choose the values for Traefik

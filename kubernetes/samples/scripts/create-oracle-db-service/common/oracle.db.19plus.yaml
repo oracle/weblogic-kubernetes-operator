@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+# Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
@@ -43,20 +43,20 @@ spec:
     spec:
       containers:
       - env:
-        - name: DB_SID
-          value: devcdb
-        - name: DB_PDB
-          value: devpdb
+        - name: ORACLE_SID
+          value: ORCLCDB
+        - name: ORACLE_PDB
+          value: ORCLPDB1
         - name: DB_DOMAIN
           value: k8s
         - name: DB_BUNDLE
           value: basic  
-        - name: DB_PASSWD
+        - name: ORACLE_PWD
           valueFrom:
             secretKeyRef:
               name: oracle-db-secret
               key: password
-        image: container-registry.oracle.com/database/enterprise:12.2.0.1-slim
+        image: container-registry.oracle.com/database/enterprise:19.3.0.0
         imagePullPolicy: IfNotPresent
         name: oracle-db
         ports:
@@ -64,11 +64,12 @@ spec:
           name: tns
           protocol: TCP
         resources:
-          limits:
-            cpu: "2"
-            memory: "6Gi"
           requests:
-            cpu: 500m
+            cpu: "2" 
+            memory: "24Gi"
+          limits:
+            cpu: "4"
+            memory: "40Gi"
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
