@@ -645,6 +645,10 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand    "\$WORKDIR/model-in-image/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   waitForDomain Completed
 
+  # Ensure pods are Ready before comparing timestamps
+  echo "@@ Waiting for all pods to be ready in namespace $DOMAIN_NAMESPACE..."
+  ${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE wait --for=condition=Ready pods --all --timeout=300s
+
   if [ ! "$DRY_RUN" = "true" ]; then
     if [ "$KIND_CLUSTER" = "true" ]; then
       testapp internal cluster-1 v2 "'SampleMinThreads' with configured count: 2" 60 quiet

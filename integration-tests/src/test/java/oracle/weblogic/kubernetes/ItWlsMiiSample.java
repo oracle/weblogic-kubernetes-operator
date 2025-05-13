@@ -257,6 +257,11 @@ class ItWlsMiiSample {
     execTestScriptAndAssertSuccess("-update4", "Failed to run -update4");
   }
 
+  /**
+   * Run script run-test.sh.
+   * @param arg arguments to execute script
+   * @param errString a string of detailed error
+   */
   private void execTestScriptAndAssertSuccess(String arg, String errString) {
     Assumptions.assumeTrue(previousTestSuccessful);
     previousTestSuccessful = false;
