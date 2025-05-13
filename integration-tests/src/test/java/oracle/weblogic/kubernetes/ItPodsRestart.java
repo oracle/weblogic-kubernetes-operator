@@ -416,8 +416,7 @@ class ItPodsRestart {
     logger.info("In the original domain1 runAsUser is: {0}: ",
           domain1.getSpec().getServerPod().getPodSecurityContext().getRunAsUser());
 
-    //TODO Long runAsUser = 1000L;
-    Long runAsUser = 10000L;
+    Long runAsUser = 1000L;
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -662,12 +661,9 @@ class ItPodsRestart {
             .requests(new HashMap<>()));
 
     if (!OKD) {
-      //V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-      //           .runAsUser(0L);
       V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-                 .runAsUser(12345L);
+                 .runAsUser(0L);
       srvrPod.podSecurityContext(podSecCtxt);
-
     }
 
     // create the domain CR
