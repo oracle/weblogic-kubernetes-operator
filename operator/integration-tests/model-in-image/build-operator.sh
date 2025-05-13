@@ -64,8 +64,7 @@ HTTP_BUILD_ARG=""
 [ -n "${https_proxy:-}" ] && HTTP_BUILD_ARG+=" --build-arg https_proxy=$https_proxy"
 [ -n "${no_proxy:-}" ] && HTTP_BUILD_ARG+=" --build-arg no_proxy=$no_proxy"
 
-# Build Docker image
-echo "@@ Info: Building Docker image ${OPER_IMAGE_NAME}:${OPER_IMAGE_TAG}..."
+
 ${WLSIMG_BUILDER:-docker} build ${HTTP_BUILD_ARG:-} \
   -t "${OPER_IMAGE_NAME}:${OPER_IMAGE_TAG}" \
   --build-arg VERSION="${OPER_JAR_VERSION}" \
@@ -80,7 +79,7 @@ save_cksum
 #   ${WLSIMG_BUILDER:-docker} login "$REPO_REGISTRY" -u "$REPO_USERNAME" -p "$REPO_PASSWORD"
 #   ${WLSIMG_BUILDER:-docker} push "${OPER_IMAGE_NAME}:${OPER_IMAGE_TAG}"
 # else
-#   echo "@@ Warning: Skipping Docker push. Set REPO_REGISTRY, REPO_USERNAME, and REPO_PASSWORD to enable."
+#   echo "@@ Warning: Skipping ${WLSIMG_BUILDER:-docker} push. Set REPO_REGISTRY, REPO_USERNAME, and REPO_PASSWORD to enable."
 # fi
 
 echo "@@ Done: Operator image built and tagged successfully."
