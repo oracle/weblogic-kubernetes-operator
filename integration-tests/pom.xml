@@ -41,6 +41,7 @@
         <wko.it.apache.image.tag>${env.APACHE_IMAGE_TAG}</wko.it.apache.image.tag>
         <wko.it.fluentd.image.version>${env.FLUENTD_IMAGE_VERSION}</wko.it.fluentd.image.version>
         <wko.it.skip.build.images.if.exists>${env.SKIP_BUILD_IMAGES_IF_EXISTS}</wko.it.skip.build.images.if.exists>
+        <wko.it.skip.build.images>${env.SKIP_BUILD_IMAGES}</wko.it.skip.build.images>
         <wko.it.wdt.test.version>${env.WDT_TEST_VERSION}</wko.it.wdt.test.version>
         <wko.it.monitoring.exporter.webapp.version>${env.MONITORING_EXPORTER_WEBAPP_VERSION}</wko.it.monitoring.exporter.webapp.version>
         <wko.it.monitoring.exporter.branch>${env.MONITORING_EXPORTER_BRANCH}</wko.it.monitoring.exporter.branch>
@@ -249,6 +250,7 @@
                                 <wko.it.apache.image.tag>${wko.it.apache.image.tag}</wko.it.apache.image.tag>
                                 <wko.it.fluentd.image.version>${wko.it.fluentd.image.version}</wko.it.fluentd.image.version>
                                 <wko.it.skip.build.images.if.exists>${wko.it.skip.build.images.if.exists}</wko.it.skip.build.images.if.exists>
+                                <wko.it.skip.build.images>${wko.it.skip.build.images}</wko.it.skip.build.images>
                                 <wko.it.wdt.test.version>${wko.it.wdt.test.version}</wko.it.wdt.test.version>
                                 <wko.it.monitoring.exporter.webapp.version>${wko.it.monitoring.exporter.webapp.version}</wko.it.monitoring.exporter.webapp.version>
                                 <wko.it.monitoring.exporter.branch>${wko.it.monitoring.exporter.branch}</wko.it.monitoring.exporter.branch>
