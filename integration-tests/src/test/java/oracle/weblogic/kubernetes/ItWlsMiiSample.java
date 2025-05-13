@@ -88,10 +88,16 @@ class ItWlsMiiSample {
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
+    // get a new unique opNamespace
+    logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     String opNamespace = namespaces.get(0);
+
+    logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     String domainNamespace = namespaces.get(1);
+
+    logger.info("Creating unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
 
@@ -103,8 +109,8 @@ class ItWlsMiiSample {
     envMap.put("DOMAIN_UID1", getUniqueName("sample-domain1-"));
     envMap.put("DOMAIN_UID2", getUniqueName("sample-domain2-"));
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
-    envMap.put("TRAEFIK_HTTP_NODEPORT", "0");
-    envMap.put("TRAEFIK_HTTPS_NODEPORT", "0");
+    envMap.put("TRAEFIK_HTTP_NODEPORT", "0");// 0-->dynamically choose the np
+    envMap.put("TRAEFIK_HTTPS_NODEPORT", "0");// 0-->dynamically choose the np
     envMap.put("TRAEFIK_NAME", TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3));
     envMap.put("TRAEFIK_IMAGE_REGISTRY", TRAEFIK_INGRESS_IMAGE_REGISTRY);
     envMap.put("TRAEFIK_IMAGE_REPOSITORY", TRAEFIK_INGRESS_IMAGE_NAME);
