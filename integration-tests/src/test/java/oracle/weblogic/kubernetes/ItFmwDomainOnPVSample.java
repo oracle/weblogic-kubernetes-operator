@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DB_PDB_ID_DEFAULT_19C;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
@@ -63,6 +64,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SampleUtils.createPVHostPathAndChangePermissionInKindCluster;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test and verify Domain on PV FMW domain sample.
@@ -141,6 +143,7 @@ class ItFmwDomainOnPVSample {
     envMap.put("OPER_IMAGE_NAME", TEST_IMAGES_PREFIX + IMAGE_NAME_OPERATOR);
     envMap.put("DOMAIN_CREATION_IMAGE_NAME", TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME);
     envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET_NAME);
+    envMap.put("DB_PDB_ID", DB_PDB_ID_DEFAULT_19C);
 
     // kind cluster uses openjdk which is not supported by image tool
     if (WIT_JAVA_HOME != null) {
@@ -181,7 +184,7 @@ class ItFmwDomainOnPVSample {
   @Order(1)
   public void testInstallOperator() {
     String backupReports = backupReports(UniqueName.uniqueName(this.getClass().getSimpleName()));
-    execTestScriptAndAssertSuccess("-oper", "Failed to run -oper");
+    assertTrue(execTestScriptAndAssertSuccess("-oper", "Failed to run -oper"));
     restoreReports(backupReports);
   }
 
@@ -191,7 +194,8 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(2)
   public void testInstallTraefik() {
-    execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik");
+    Assumptions.assumeTrue(previousTestSuccessful);
+    assertTrue(execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik"));
   }
 
   /**
@@ -200,7 +204,8 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(3)
   public void testPrecleandb() {
-    execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb");
+    Assumptions.assumeTrue(previousTestSuccessful);
+    assertTrue(execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb"));
   }
 
   /**
@@ -209,25 +214,38 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(4)
   public void testCreatedb() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for creating a db");
     if (KIND_REPO != null) {
       String dbimage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
       logger.info("loading image {0} to kind", dbimage);
       imagePush(dbimage);
     }
-    execTestScriptAndAssertSuccess("-db", "Failed to run -db");
+    assertTrue(execTestScriptAndAssertSuccess("-db", "Failed to run -db"));
   }
 
+  /**
+   * Test Domain on PV sample - Initialize schemas in the DB.
+   */
+  @Test
+  @Order(5)
+  public void testCreateRCU() {
+    Assumptions.assumeTrue(previousTestSuccessful);
+    logger.info("test case for initializing schemas in the DB");
+    assertTrue(execTestScriptAndAssertSuccess("-rcu", "Failed to run -rcu"));
+  }
+  
   /**
    * Test Domain on PV sample building image for FMW domain use case.
    */
   @Test
-  @Order(5)
+  @Order(6)
   public void testInitialImage() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for building image");
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
-    execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image");
+    assertTrue(execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image"));
     ExecResult result = Command.withParams(
         new CommandParams()
             .command(WLSIMG_BUILDER + " images")
@@ -247,8 +265,9 @@ class ItFmwDomainOnPVSample {
    * Test Domain on PV sample create FMW domain use case.
    */
   @Test
-  @Order(6)
+  @Order(7)
   public void testInitialMain() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for creating a FMW domain");
 
     // load the base image to kind if using kind cluster
@@ -262,7 +281,7 @@ class ItFmwDomainOnPVSample {
         withLongRetryPolicy,
         checkTestScriptAndAssertSuccess("-initial-main", "Failed to run -initial-main"),
         logger,
-        "create PV HostPath and change Permission in Kind Cluster");
+        "creating FMW domain");
   }
 
   /**
@@ -273,7 +292,6 @@ class ItFmwDomainOnPVSample {
   private boolean execTestScriptAndAssertSuccess(String arg,
                                                  String errString) {
 
-    Assumptions.assumeTrue(previousTestSuccessful);
     previousTestSuccessful = false;
 
     String command = domainOnPvSampleScript
@@ -293,14 +311,14 @@ class ItFmwDomainOnPVSample {
             && result.stdout() != null
             && result.stdout().contains("Finished without errors");
 
-    String outStr = errString;
-    outStr += ", command=\n{\n" + command + "\n}\n";
+    String outStr = success ? "Running test script succeeds: " : errString + ":";
+    outStr += " command=\n{\n" + command + "\n}\n";
     outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
     outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
 
     logger.info("output String is: {0}", outStr);
 
-    previousTestSuccessful = true;
+    previousTestSuccessful = success;
 
     return success;
   }
