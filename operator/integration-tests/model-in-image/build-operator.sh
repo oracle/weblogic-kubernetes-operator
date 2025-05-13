@@ -39,6 +39,7 @@ latest_cksum() {
 
   # force a rebuild if the image isn't cached anymore
   ${WLSIMG_BUILDER:-docker} images "$OPER_IMAGE_NAME:$OPER_IMAGE_TAG" -q || true
+  # force a rebuild if any .java, .sh, or .py file changed
   find "$SRCDIR/operator/src/main" "$SRCDIR/operator/src/test" -type f \( -name "*.java" -o -name "*.sh" -o -name "*.py" \) -exec cat {} + | cksum
 }
 
