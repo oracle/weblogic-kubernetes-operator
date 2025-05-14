@@ -17,9 +17,11 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -159,14 +161,14 @@ public abstract class BaseMain {
     }
   }
 
-  void markReadyAndStartLivenessThread() {
+  void markReadyAndStartLivenessThread(Collection<ScheduledFuture<?>> futures) {
     try {
       new DeploymentReady(delegate).create();
 
       logStartingLivenessMessage();
       // every five seconds we need to update the last modified time on the liveness file
       wrappedExecutorService.scheduleWithFixedDelay(
-              new DeploymentLiveness(delegate), 5, 5, TimeUnit.SECONDS);
+              new DeploymentLiveness(futures, delegate), 5, 5, TimeUnit.SECONDS);
     } catch (IOException io) {
       LOGGER.severe(MessageKeys.EXCEPTION, io);
     }

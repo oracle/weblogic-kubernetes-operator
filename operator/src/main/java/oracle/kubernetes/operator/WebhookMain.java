@@ -1,11 +1,13 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -134,9 +136,10 @@ public class WebhookMain extends BaseMain {
 
       // start periodic recheck of CRD
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
-      delegate.scheduleWithFixedDelay(recheckCrd(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+      ScheduledFuture<?> future =
+          delegate.scheduleWithFixedDelay(recheckCrd(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
 
-      markReadyAndStartLivenessThread();
+      markReadyAndStartLivenessThread(List.of(future));
 
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);

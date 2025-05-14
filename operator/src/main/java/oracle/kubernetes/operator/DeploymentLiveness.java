@@ -1,11 +1,13 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
+import java.util.concurrent.ScheduledFuture;
 
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -18,9 +20,11 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 public class DeploymentLiveness implements Runnable {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private final Collection<ScheduledFuture<?>> futures;
   private final File livenessFile;
 
-  public DeploymentLiveness(CoreDelegate delegate) {
+  public DeploymentLiveness(Collection<ScheduledFuture<?>> futures, CoreDelegate delegate) {
+    this.futures = futures;
     livenessFile = new File(delegate.getProbesHome(), ".alive");
   }
 
@@ -33,7 +37,8 @@ public class DeploymentLiveness implements Runnable {
     } catch (IOException ioe) {
       LOGGER.warning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE);
     }
-    if (livenessFile.setLastModified(new Date().getTime())) {
+    if (futures.stream().filter(ScheduledFuture::isDone).findAny().isEmpty()
+          && livenessFile.setLastModified(new Date().getTime())) {
       LOGGER.fine("Liveness file last modified time set");
     }
   }

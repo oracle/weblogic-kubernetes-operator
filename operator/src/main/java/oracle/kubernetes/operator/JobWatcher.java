@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -317,7 +317,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
         if (jobPod == null) {
           terminationState.remove(packet);
-          return doContinueListOrNext(callResponse, packet, getNext());
+          return doContinueListOrNext(callResponse, packet);
         } else {
           terminationState.setFromPod(jobPod);
           return doNext(getNext(), packet);

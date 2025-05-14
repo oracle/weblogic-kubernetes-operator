@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -35,6 +35,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.FIBER_TIMEOUT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
@@ -161,7 +163,14 @@ class DomainRecheck {
     protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return useBackupStrategy(callResponse)
             ? doNext(createStartNamespacesStep(Namespaces.getConfiguredDomainNamespaces()), packet)
-            : super.onFailureNoRetry(packet, callResponse);
+            : onFailureNoRetryCheckForGone(packet, callResponse);
+    }
+
+    protected NextAction onFailureNoRetryCheckForGone(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      if (Optional.ofNullable(callResponse).map(CallResponse::getStatusCode).orElse(FIBER_TIMEOUT) == HTTP_GONE) {
+        return doEnd(packet);
+      }
+      return super.onFailureNoRetry(packet, callResponse);
     }
 
     // Returns true if the failure wasn't due to authorization, and we have a list of namespaces to manage.
@@ -172,12 +181,13 @@ class DomainRecheck {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       final Set<String> namespacesToStart = getNamespacesToStart(callResponse.getResult());
-      Namespaces.getFoundDomainNamespaces(packet).addAll(namespacesToStart);
+      Collection<String> foundDomainNamespaces = Namespaces.getFoundDomainNamespaces(packet);
+      foundDomainNamespaces.addAll(namespacesToStart);
 
-      return doContinueListOrNext(callResponse, packet, createNextSteps(namespacesToStart));
+      return doContinueListOrNext(callResponse, packet, () -> createNextSteps(foundDomainNamespaces));
     }
 
-    private Step createNextSteps(Set<String> namespacesToStartNow) {
+    private Step createNextSteps(Collection<String> namespacesToStartNow) {
       if (!namespacesToStartNow.isEmpty()) {
         List<Step> nextSteps = new ArrayList<>();
         nextSteps.add(createStartNamespacesStep(namespacesToStartNow));
@@ -190,7 +200,7 @@ class DomainRecheck {
       return current;
     }
 
-    private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
+    private Step createNamespaceReviewStep(Collection<String> namespacesToStartNow) {
       return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
     }
 
