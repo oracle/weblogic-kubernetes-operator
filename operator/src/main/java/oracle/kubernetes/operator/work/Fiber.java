@@ -19,6 +19,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
 import static oracle.kubernetes.operator.work.Step.THROWABLE;
 import static oracle.kubernetes.operator.work.Step.adapt;
 
@@ -259,7 +260,7 @@ public final class Fiber implements Runnable {
       public Cancellable schedule(Fiber fiber, Duration duration) {
         ScheduledFuture<?> future = scheduledExecutorService.schedule(fiber,
                 TimeUnit.MILLISECONDS.convert(duration), TimeUnit.MILLISECONDS);
-        return () -> future.cancel(true);
+        return createCancellable(future);
       }
 
       @Override

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
@@ -56,7 +57,7 @@ class DeploymentLivenessTest {
 
   @Test
   void whenNoExistingLivenessFile_fileCreated() {
-    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(coreDelegate);
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
     File aliveFile = new File(coreDelegate.probesHome, ".alive");
@@ -72,7 +73,7 @@ class DeploymentLivenessTest {
     File aliveFile = new File(coreDelegate.probesHome, ".alive");
     assertTrue(aliveFile.createNewFile());
 
-    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(coreDelegate);
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
     assertThat(coreDelegate.probesHome, anExistingDirectory());
@@ -86,7 +87,7 @@ class DeploymentLivenessTest {
   void whenCantCreateLivenessFile_logWarning() throws IOException {
     assertTrue(coreDelegate.probesHome.setWritable(false, false));
 
-    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(coreDelegate);
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
     assertThat(coreDelegate.probesHome, anExistingDirectory());

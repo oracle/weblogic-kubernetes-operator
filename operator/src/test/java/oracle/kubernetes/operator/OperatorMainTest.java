@@ -114,6 +114,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANA
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_CALL_LIMIT;
+import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
@@ -1421,7 +1422,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     @Override
     public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
       ScheduledFuture<?> future = testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-      return () -> future.cancel(true);
+      return createCancellable(future);
     }
 
     @Override

@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.calls;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
@@ -161,7 +162,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
    * @return Next action for list continue
    */
   protected final Result doContinueListOrNext(KubernetesApiResponse<T> callResponse, Packet packet) {
-    return doContinueListOrNext(callResponse, packet, getNext());
+    return doContinueListOrNext(callResponse, packet, this::getNext);
   }
 
   /**
@@ -170,10 +171,11 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
    *
    * @param callResponse Call response
    * @param packet Packet
-   * @param next Next step, if no continuation
+   * @param next Supplier of next step, if no continuation
    * @return Next action for list continue
    */
-  protected final Result doContinueListOrNext(KubernetesApiResponse<T> callResponse, Packet packet, Step next) {
+  protected final Result doContinueListOrNext(
+      KubernetesApiResponse<T> callResponse, Packet packet, Supplier<Step> next) {
     String cont = accessContinue(callResponse.getObject());
     if (cont != null) {
       packet.put(CONTINUE, cont);
@@ -181,7 +183,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
       // the next window of data.
       return resetRetryStrategyAndReinvokeRequest(packet);
     }
-    return doNext(next, packet);
+    return doNext(next.get(), packet);
   }
 
   private void addDomainFailureStatus(Packet packet, V1Status status) {

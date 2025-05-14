@@ -26,6 +26,7 @@ import static oracle.kubernetes.operator.BaseMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.BaseMain.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.BaseMain.deploymentHome;
 import static oracle.kubernetes.operator.BaseMain.probesHome;
+import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
 
 public class CoreDelegateImpl implements CoreDelegate {
 
@@ -125,12 +126,12 @@ public class CoreDelegateImpl implements CoreDelegate {
   @Override
   public Cancellable schedule(Runnable command, long delay, TimeUnit unit) {
     ScheduledFuture<?> future = scheduledExecutorService.schedule(command, delay, unit);
-    return () -> future.cancel(true);
+    return createCancellable(future);
   }
 
   @Override
   public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
     ScheduledFuture<?> future = scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-    return () -> future.cancel(true);
+    return createCancellable(future);
   }
 }

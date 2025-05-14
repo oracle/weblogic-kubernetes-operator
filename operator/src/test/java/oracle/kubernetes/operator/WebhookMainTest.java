@@ -113,6 +113,7 @@ import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOO
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.tuning.TuningParameters.CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -813,7 +814,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
     @Override
     public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
       ScheduledFuture<?> future = testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-      return () -> future.cancel(true);
+      return createCancellable(future);
     }
 
     @Override
