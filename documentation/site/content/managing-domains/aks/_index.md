@@ -13,6 +13,11 @@ This document is the reference for the Azure Marketplace offer for WebLogic Serv
 
 To deploy the offer from the Azure portal, see [WebLogic Server on Azure](https://aka.ms/wls-aks-portal).
 
+{{% notice note %}}
+With the exception of the resource group, and the username and password for the Oracle Single Sign-On fields, each panel of the offer has been configured with sensible defaults. If you were referred to this guidance by another guidance, it is appropriate to accept the defaults for each panel.
+{{% /notice %}}
+
+
 {{< img "WLS AKS Marketplace Solution Screenshot" "images/aks-solution.png" >}}
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
