@@ -276,8 +276,8 @@ public class OperatorMain extends BaseMain {
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
       int stuckPodInterval = TuningParameters.getInstance().getStuckPodRecheckSeconds();
       Collection<Cancellable> futures = List.of(
-            mainDelegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS),
-            mainDelegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS));
+          mainDelegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS),
+          mainDelegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS));
 
       markReadyAndStartLivenessThread(futures);
 

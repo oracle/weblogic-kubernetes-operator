@@ -7,8 +7,14 @@ import java.util.concurrent.ScheduledFuture;
 
 public interface Cancellable {
   boolean cancel();
+
   boolean isDoneOrCancelled();
 
+  /**
+   * Create instance wrapping a ScheduledFuture.
+   * @param future Scheduled future instance
+   * @return Cancellable wrapping scheduled future
+   */
   static Cancellable createCancellable(ScheduledFuture<?> future) {
     return new Cancellable() {
       @Override
