@@ -38,7 +38,8 @@ class MonitoringExporterConfigurationTest {
     final String jsonString = configuration.asJsonString();
     assertThat(jsonString, hasJsonPath("$.metricsNameSnakeCase", equalTo(true)));
     assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.key", equalTo("name")));
-    assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type", equalTo("WebAppComponentRuntime")));
+    assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type",
+          equalTo("WebAppComponentRuntime")));
     assertThat(configuration.matchesYaml(CONFIG), is(true));
   }
 

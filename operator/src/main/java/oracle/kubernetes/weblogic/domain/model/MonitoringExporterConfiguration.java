@@ -170,7 +170,7 @@ public class MonitoringExporterConfiguration {
       out.endArray();
     }
 
-    private void writeOptionalStringValues(JsonWriter out, @Nullable Map<String, String[]> stringValues) throws IOException {
+    private void writeOptionalStringValues(JsonWriter out, Map<String, String[]> stringValues) throws IOException {
       if (stringValues != null && !stringValues.isEmpty()) {
         out.name("stringValues");
         out.beginObject();
@@ -181,7 +181,7 @@ public class MonitoringExporterConfiguration {
       }
     }
 
-                                           @Override
+    @Override
     public MonitoringExporterConfiguration read(JsonReader in) throws IOException {
       MonitoringExporterConfiguration configuration = new MonitoringExporterConfiguration();
       in.beginObject();
