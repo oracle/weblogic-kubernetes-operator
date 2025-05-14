@@ -295,7 +295,9 @@ doCommand() {
   printdots_start
 
   set +e
-  eval $command > $out_file 2>&1
+  EXPANDED_CMD=$(eval "echo $command")
+  echo "$EXPANDED_CMD"
+  eval $command  2>&1 | tee "$out_file"
   local err_code=$?
   printdots_end
   if [ $err_code -ne 0 ]; then
