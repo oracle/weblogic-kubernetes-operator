@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -35,26 +35,31 @@ class MonitoringExporterConfigurationTest {
   void deserializeFromJson() {
     final MonitoringExporterConfiguration configuration = MonitoringExporterConfiguration.createFromYaml(CONFIG);
 
-    assertThat(configuration.asJsonString(), hasJsonPath("$.metricsNameSnakeCase", equalTo(true)));
-    assertThat(configuration.asJsonString(), hasJsonPath("$.queries[0].applicationRuntimes.key", equalTo("name")));
-    assertThat(configuration.asJsonString(),
-          hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type", equalTo("WebAppComponentRuntime")));
+    final String jsonString = configuration.asJsonString();
+    assertThat(jsonString, hasJsonPath("$.metricsNameSnakeCase", equalTo(true)));
+    assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.key", equalTo("name")));
+    assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type", equalTo("WebAppComponentRuntime")));
+    assertThat(configuration.matchesYaml(CONFIG), is(true));
   }
 
-  private static final String CONFIG = "---\n"
-        + "metricsNameSnakeCase: true\n"
-        + "queries:\n"
-        + "- applicationRuntimes:\n"
-        + "    key: name\n"
-        + "    componentRuntimes:\n"
-        + "      type: WebAppComponentRuntime\n"
-        + "      prefix: webapp_config_\n"
-        + "      key: name\n"
-        + "      values: [deploymentState, type, contextRoot, sourceInfo, openSessionsHighCount]\n"
-        + "      servlets:\n"
-        + "        prefix: weblogic_servlet_\n"
-        + "        key: servletName\n"
-        + "        values: [invocationTotalCount, executionTimeTotal]\n";
+  private static final String CONFIG = """
+          ---
+          metricsNameSnakeCase: true
+          queries:
+          - applicationRuntimes:
+              key: name
+              componentRuntimes:
+                type: WebAppComponentRuntime
+                prefix: webapp_config_
+                key: name
+                values: [deploymentState, type, contextRoot, sourceInfo, openSessionsHighCount]
+                stringValues:
+                  state: [ok,failed,overloaded,critical,warn]
+                servlets:
+                  prefix: weblogic_servlet_
+                  key: servletName
+                  values: [invocationTotalCount, executionTimeTotal]
+          """;
 
   @Test
   void matchVisuallyDifferentYaml() {
