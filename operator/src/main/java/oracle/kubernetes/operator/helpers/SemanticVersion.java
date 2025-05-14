@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -122,9 +122,6 @@ public class SemanticVersion implements Comparable<SemanticVersion> {
 
   @Override
   public int compareTo(@NotNull SemanticVersion o) {
-    if (o == null) {
-      return 1;
-    }
     int majorDiff = this.major - o.major;
     if (majorDiff != 0) {
       return majorDiff;

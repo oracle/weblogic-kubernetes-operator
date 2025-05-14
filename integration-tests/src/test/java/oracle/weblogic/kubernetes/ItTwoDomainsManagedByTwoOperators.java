@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -255,13 +255,11 @@ class ItTwoDomainsManagedByTwoOperators {
    */
   @AfterAll
   void tearDownAll() throws ApiException {
-    if (!SKIP_CLEANUP) {
-      if (pvPvcNamePair != null) {
-        // delete pvc
-        deletePersistentVolumeClaim(pvPvcNamePair.get(1), twoDomainsNamespace);
-        // delete pv
-        deletePersistentVolume(pvPvcNamePair.get(0));
-      }
+    if (!SKIP_CLEANUP && pvPvcNamePair != null) {
+      // delete pvc
+      deletePersistentVolumeClaim(pvPvcNamePair.get(1), twoDomainsNamespace);
+      // delete pv
+      deletePersistentVolume(pvPvcNamePair.get(0));
     }
   }
 
@@ -288,12 +286,12 @@ class ItTwoDomainsManagedByTwoOperators {
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
       createPV(pvName, domainUid, this.getClass().getSimpleName());
       createPVC(pvName, pvcName, domainUid, domainNamespace);
-      LoggingFacade logger = getLogger();
+      LoggingFacade loggingFacade = getLogger();
       // check the persistent volume and persistent volume claim exist
       testUntil(
               assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
                       String.format("pvExists failed with ApiException when checking pv %s", pvName)),
-              logger,
+              loggingFacade,
               "persistent volume {0} exists",
               pvName);
 
@@ -301,7 +299,7 @@ class ItTwoDomainsManagedByTwoOperators {
               assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
                       String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
                               pvcName, domainNamespace)),
-              logger,
+              loggingFacade,
               "persistent volume claim {0} exists in namespace {1}",
               pvcName,
               domainNamespace);
@@ -311,11 +309,11 @@ class ItTwoDomainsManagedByTwoOperators {
           "create-domain-scripts-cm", "create-domain-onpv-job");
 
       // create the domain custom resource configuration object
-      logger.info("Creating domain custom resource");
+      loggingFacade.info("Creating domain custom resource");
       DomainResource domain =
           createDomainCustomResource(domainUid, domainNamespace, pvName, pvcName, t3ChannelPort,replicaCount);
 
-      logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
+      loggingFacade.info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
       createDomainAndVerify(domain, domainNamespace);
 
       String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -328,7 +326,7 @@ class ItTwoDomainsManagedByTwoOperators {
         checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
       }
 
-      logger.info("Validating WebLogic admin server access by login to console");
+      loggingFacade.info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(
           () -> adminLoginPageAccessible(adminServerPodName, "7001",
               domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),

@@ -159,6 +159,7 @@ class ItSessionMigration {
 
   @AfterAll
   void tearDown() {
+    // no-op
   }
 
   /**
@@ -178,12 +179,11 @@ class ItSessionMigration {
     final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + SESSION_STATE;
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
     final String clusterAddress = domainUid + "-cluster-" + clusterName;
-    String serverName = managedServerPrefix + "1";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
     Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
-        serverName, clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
+        clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
 
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
@@ -198,9 +198,8 @@ class ItSessionMigration {
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
     // send a HTTP request to get server and session info after shutting down the primary server
-    serverName = domainUid + "-" + origSecondaryServerName;
     httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
-        serverName, clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
+        clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
     // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);

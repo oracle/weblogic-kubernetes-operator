@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -784,15 +784,16 @@ public class CommonLBTestUtils {
         + "&password=" + ADMIN_PASSWORD_DEFAULT
         + ((host != null) && host.contains(":") ? "&ipv6=true" : "&ipv6=false") + "\"";
     if (hostRouting) {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' -v "
-          + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, host)
-        : String.format("curl -g --show-error -ks --noproxy '*' "
-          + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, getHostAndPort(host, lbPort));
+      curlRequest = OKE_CLUSTER_PRIVATEIP
+        ? String.format("curl -g --show-error -ks --noproxy '*' -v -H 'host: %s' %s://%s/%s",
+          ingressHostName, protocol, host, uri)
+        : String.format("curl -g --show-error -ks --noproxy '*' -H 'host: %s' %s://%s/%s",
+          ingressHostName, protocol, getHostAndPort(host, lbPort), uri);
     } else {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' -v "
-          + "%s://%s" + locationString + "/" + uri, protocol, host)
-        : String.format("curl -g --show-error -ks --noproxy '*' "
-          + "%s://%s" + locationString + "/" + uri, protocol, getHostAndPort(host, lbPort));
+      curlRequest = OKE_CLUSTER_PRIVATEIP
+        ? String.format("curl -g --show-error -ks --noproxy '*' -v %s://%s%s/%s", protocol, host, locationString, uri)
+        : String.format("curl -g --show-error -ks --noproxy '*' %s://%s%s/%s",
+          protocol, getHostAndPort(host, lbPort),locationString, uri);
     }
 
     List<String> managedServers = new ArrayList<>();

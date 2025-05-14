@@ -472,7 +472,7 @@ public class JobHelper {
         V1Pod jobPod = (V1Pod) packet.get(ProcessingConstants.JOB_POD);
         if (!anyTerminatedContainers(jobPod)) {
           // requeue to wait for the job pod
-          return doRequeue(packet);
+          return doRequeue();
         }
         return doNext(packet);
       }
@@ -929,10 +929,9 @@ public class JobHelper {
             for (V1ContainerStatus status : statuses) {
               if (status != null && status.getState() != null) {
                 V1ContainerStateWaiting waiting = status.getState().getWaiting();
-                if (waiting != null && waiting.getReason() != null) {
-                  if (IntrospectionStatus.isImagePullError(waiting.getReason())) {
-                    reason = waiting.getReason();
-                  }
+                if (waiting != null && waiting.getReason() != null
+                    && IntrospectionStatus.isImagePullError(waiting.getReason())) {
+                  reason = waiting.getReason();
                 }
               }
             }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -334,7 +334,7 @@ public class LoggingExporter {
       initcontainers.add(setmaxmap);
     }
     // create Elasticsearch deployment CR object
-    V1Deployment elasticsearchDeployment = new V1Deployment()
+    return new V1Deployment()
         .apiVersion("apps/v1")
         .kind("Deployment")
         .metadata(new V1ObjectMeta()
@@ -366,8 +366,6 @@ public class LoggingExporter {
                         .addEnvItem(new V1EnvVar()
                             .name("discovery.type")
                             .value("single-node")))))));
-
-    return elasticsearchDeployment;
   }
 
   private static V1Deployment createKibanaDeploymentCr(LoggingExporterParams params) {
@@ -380,7 +378,7 @@ public class LoggingExporter {
     labels.put("app", kibanaName);
 
     // create Kibana deployment CR object
-    V1Deployment kibanaDeployment = new V1Deployment()
+    return new V1Deployment()
         .apiVersion("apps/v1")
         .kind("Deployment")
         .metadata(new V1ObjectMeta()
@@ -400,8 +398,6 @@ public class LoggingExporter {
                         .image(kibanaImage)
                         .ports(List.of(new V1ContainerPort()
                             .containerPort(Integer.valueOf(kibanaContainerPort)))))))));
-
-    return kibanaDeployment;
   }
 
   private static V1Service createElasticsearchServiceCr(LoggingExporterParams params) {
@@ -414,7 +410,7 @@ public class LoggingExporter {
     labels.put("app", elasticsearchName);
 
     // create Elasticsearch service CR object
-    V1Service elasticsearchService = new V1Service()
+    return new V1Service()
         .apiVersion("v1")
         .metadata(new V1ObjectMeta()
             .name(elasticsearchName)
@@ -431,8 +427,6 @@ public class LoggingExporter {
                 .port(elasticsearchHttpsPort)
                 .targetPort(new IntOrString(elasticsearchHttpsPort)))
             .selector(labels));
-
-    return elasticsearchService;
   }
 
   private static V1Service createKibanaServiceCr(LoggingExporterParams params) {
@@ -445,7 +439,7 @@ public class LoggingExporter {
     labels.put("app", kibanaName);
 
     // create Kibana service CR object
-    V1Service elasticsearchService = new V1Service()
+    return new V1Service()
         .apiVersion("v1")
         .metadata(new V1ObjectMeta()
             .name(kibanaName)
@@ -455,8 +449,6 @@ public class LoggingExporter {
             .ports(List.of(new V1ServicePort()
                 .port(kibanaContainerPort)))
             .selector(labels));
-
-    return elasticsearchService;
   }
 
   private static String execLoggingExpStatusCheck(String opNamespace, String esNamespace,

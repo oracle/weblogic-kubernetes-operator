@@ -1946,9 +1946,9 @@ class DomainProcessorTest {
   }
 
   private void defineTimedoutIntrospection() {
-    V1Job job = asFailedJob(createIntrospectorJob("TIMEDOUT_JOB"));
-    testSupport.defineResources(job);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    V1Job introspectorJob = asFailedJob(createIntrospectorJob("TIMEDOUT_JOB"));
+    testSupport.defineResources(introspectorJob);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, introspectorJob);
     setJobPodStatusReasonDeadlineExceeded();
   }
 
@@ -1982,9 +1982,9 @@ class DomainProcessorTest {
   }
 
   private void defineIntrospectionWithInitContainerImagePullError() {
-    V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
-    testSupport.defineResources(job);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    V1Job introspectorJob = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
+    testSupport.defineResources(introspectorJob);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, introspectorJob);
     testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(getInitContainerStatusWithImagePullError());
   }
 
@@ -1995,9 +1995,9 @@ class DomainProcessorTest {
   }
 
   private void defineIntrospectionWithInitContainerWithExecFormatError() {
-    V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
-    testSupport.defineResources(job);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    V1Job introspectorJob = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
+    testSupport.defineResources(introspectorJob);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, introspectorJob);
     testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(getInitContainerStatusWithExecFormatError());
   }
 

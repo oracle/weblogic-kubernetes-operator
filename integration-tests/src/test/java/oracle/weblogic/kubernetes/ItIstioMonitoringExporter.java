@@ -84,20 +84,17 @@ class ItIstioMonitoringExporter {
   private static String opNamespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
-  private static String nginxNamespace = null;
 
   private String domain1Uid = "istio1-mii";
   private String domain2Uid = "istio2-mii";
   private String configMapName = "dynamicupdate-istio-configmap";
   private final String clusterName = "cluster-1"; // do not modify
-  private final String workManagerName = "newWM";
   private final int replicaCount = 2;
   private static int prometheusPort;
   private static final String istioNamespace = "istio-system";
   private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private boolean isPrometheusDeployed = false;
-  private boolean isPrometheusPortForward = false;
   private static LoggingFacade logger = null;
   private static String oldRegex;
   private static String miiImageSideCar = null;
@@ -107,7 +104,6 @@ class ItIstioMonitoringExporter {
       "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
 
   private static String testWebAppWarLoc = null;
-  private static String ingressIP = null;
   private static String hostPortPrometheus = null;
 
   /**
@@ -244,7 +240,6 @@ class ItIstioMonitoringExporter {
         assertNotNull(forwardPort, "port-forward fails to assign local port");
         logger.info("Forwarded local port is {0}", forwardPort);
         hostPortPrometheus = localhost + ":" + forwardPort;
-        isPrometheusPortForward = true;
       }
     } else {
       String newRegex = String.format("regex: %s;%s", domainNamespace, domainUid);

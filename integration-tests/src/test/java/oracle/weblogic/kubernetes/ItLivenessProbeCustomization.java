@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -516,9 +516,9 @@ class ItLivenessProbeCustomization {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, server1Name, null,
         true, "/bin/sh", "-c", "chmod +x " + destLocation),
         String.format("Failed to change permissions for file %s in pod %s", destLocation, server1Name));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
-            execResult.stderr(), execResult.stdout()));
+        execResult.stderr(), execResult.stdout()));
     logger.info("File permissions changed inside pod");
 
     /* First, kill the managed server process in the container three times to cause the node manager to
@@ -545,12 +545,12 @@ class ItLivenessProbeCustomization {
 
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
-            getContainerRestartCount(domainNamespace, null, server1Name, null),
+        getContainerRestartCount(domainNamespace, null, server1Name, null),
         String.format("Failed to get the restart count of the container from pod %s in namespace %s",
-            server1Name, domainNamespace));
-    assertTrue(afterRestartCount - beforeRestartCount == 1,
+        server1Name, domainNamespace));
+    assertEquals(1, afterRestartCount - beforeRestartCount,
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
-            server1Name, domainNamespace));
+        server1Name, domainNamespace));
 
     for (int j = 1; j <= replicaCount; j++) {
       String managedServerPodName = domainUid + "-cluster-1-" + MANAGED_SERVER_NAME_BASE + j;

@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -120,7 +119,6 @@ class ItIstioDBOperator {
   private static String dbName = "istio-oracle-sidb";
   private static LoggingFacade logger = null;
 
-  private String clusterName = "cluster-1";
   private int replicaCount = 2;
 
   private static final String wlsDomainUid = "mii-jms-istio-db";
@@ -135,9 +133,6 @@ class ItIstioDBOperator {
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
-  private static String testWebAppWarLoc = null;
-
-  private static String hostHeader;
   Map<String, String> httpHeaders;
 
   private static final String istioNamespace = "istio-system";
@@ -188,7 +183,7 @@ class ItIstioDBOperator {
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
     
     // create testwebapp.war
-    testWebAppWarLoc = createTestWebAppWarFile(wlsDomainNamespace);
+    createTestWebAppWarFile(wlsDomainNamespace);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, wlsDomainNamespace);
@@ -262,8 +257,6 @@ class ItIstioDBOperator {
 
     wlDomainIstioIngressPort = enableIstio("cluster-1", wlsDomainUid, wlsDomainNamespace, wlsAdminServerPodName);
     logger.info("Istio Ingress Port is {0}", wlDomainIstioIngressPort);
-
-    hostHeader = wlsDomainNamespace + ".org";
 
     //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
@@ -382,7 +375,7 @@ class ItIstioDBOperator {
    * Deletes Oracle database instance, operator and storageclass.
    */
   @AfterAll
-  void tearDownAll() throws ApiException {
+  void tearDownAll() {
     if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
     }
@@ -488,7 +481,7 @@ class ItIstioDBOperator {
 
   /**
    * Create leasing Table (ACTIVE) on an Oracle DB Instance. Uses the WebLogic utility utils.Schema to add the table So
-   * the command MUST be run inside a Weblogic Server pod.
+   * the command MUST be run inside a WebLogic Server pod.
    *
    * @param wlPodName the pod name
    * @param namespace the namespace in which WebLogic pod exists

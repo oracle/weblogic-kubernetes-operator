@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -1062,8 +1062,6 @@ abstract class DomainStatusUpdateTestBase {
   }
 
 
-  // todo remove server pod failures when OK
-
   @Test
   void whenNoDynamicClusters_doNotAddReplicasTooHighFailure() {
     defineScenario().withCluster("cluster1", "ms1", "ms2").build();
@@ -1130,8 +1128,6 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE)
         .withMessageContaining(LOGGER.formatMessage(CLUSTER_NOT_READY, "cluster1", 19, 4)));
   }
-
-  // todo add hasCondition matcher for cluster status
 
   @Test
   void whenReplicaCountWithinMaxUnavailableOfReplicas_establishClusterAvailableConditionTrue() {
@@ -1973,6 +1969,7 @@ abstract class DomainStatusUpdateTestBase {
 
       @Override
       public void setInspectionRun() {
+        // no-op
       }
 
       @Override
@@ -1982,11 +1979,12 @@ abstract class DomainStatusUpdateTestBase {
 
       @Override
       public void setLiveInfo(@NotNull DomainPresenceInfo info) {
-
+        // no-op
       }
 
       @Override
       public void clear() {
+        // no-op
       }
 
       @Override
@@ -1996,6 +1994,7 @@ abstract class DomainStatusUpdateTestBase {
 
       @Override
       public void execute() {
+        // no-op
       }
 
       @NotNull

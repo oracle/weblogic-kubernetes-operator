@@ -105,6 +105,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 //import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
@@ -328,8 +329,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
-        /*if (!OCNE && !OKD && !CRIO && !ARM) {
-          installOracleDBOperator();
+        /*if (!OCNE && !CRIO && !ARM) {
+            installOracleDBOperator();
         }*/
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
@@ -338,7 +339,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           logger.info("Installing istio before any test suites are run");
           installIstio();
         }*/
-        if (INSTALL_WEBLOGIC && !OKD && !CRIO && !ARM && !OKE_CLUSTER) {
+
+        if (INSTALL_WEBLOGIC && !CRIO && !ARM && !OKE_CLUSTER) {
           installOnPremWebLogic();
         }
       } finally {
@@ -646,9 +648,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   private Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
     return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + BASE_IMAGES_TENANCY.length() + 2);
-      //TODO
-      //return imagePull(image) && imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
-      return imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
+
+      return imagePull(image) && imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
+      //TODO might need return imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
     });
   }
   

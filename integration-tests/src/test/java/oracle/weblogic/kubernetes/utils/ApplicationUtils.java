@@ -150,13 +150,13 @@ public class ApplicationUtils {
 
     LoggingFacade logger = getLogger();
     String curlString = String.format("curl -g -v --show-error --noproxy '*' "
-        + "--user " + username + ":" + password + " " + headers
+        + "--user %s:%s %s"
         + " -H X-Requested-By:MyClient -H Accept:application/json "
         + "-H Content-Type:application/json "
-        + " -d \"{ target: '" + target + "' }\" "
+        + " -d \"{ target: '%s' }\" "
         + " -X POST "
-        + "http://%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
-        + application + "/getState", hostAndPort);
+        + "http://%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/%s"
+        + "/getState", username, password, headers, target, hostAndPort, application);
 
     logger.info("curl command {0}", curlString);
     testUntil(

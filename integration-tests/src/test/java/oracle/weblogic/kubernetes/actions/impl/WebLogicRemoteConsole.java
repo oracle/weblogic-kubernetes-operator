@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -25,16 +25,14 @@ public class WebLogicRemoteConsole {
 
   /**
    * Install WebLogic Remote Console.
-   * @param domainNamespace namespace in which the domain will be created
-   * @param adminServerPodName the name of the admin server pod
    * @return true if WebLogic Remote Console is successfully installed, false otherwise.
    */
-  public static boolean installWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
+  public static boolean installWlsRemoteConsole() {
     if (!downloadRemoteConsole()) {
       return false;
     }
 
-    if (!runRemoteconsole(domainNamespace, adminServerPodName)) {
+    if (!runRemoteconsole()) {
       return false;
     }
 
@@ -65,7 +63,7 @@ public class WebLogicRemoteConsole {
         .download();
   }
 
-  private static boolean runRemoteconsole(String domainNamespace, String adminServerPodName) {
+  private static boolean runRemoteconsole() {
 
     String jarLocation = REMOTECONSOLE_FILE;
     StringBuffer javaCmd = new StringBuffer("java");

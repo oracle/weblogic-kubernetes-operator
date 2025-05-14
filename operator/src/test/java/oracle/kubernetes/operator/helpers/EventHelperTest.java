@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -918,11 +918,11 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreated() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
-    processor.registerClusterPresenceInfo(info);
+    ClusterPresenceInfo clusterPresenceInfo = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(clusterPresenceInfo);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
-    processor.unregisterClusterPresenceInfo(info);
+    processor.unregisterClusterPresenceInfo(clusterPresenceInfo);
 
     assertThat("Found CLUSTER_DELETED event",
         containsEvent(getEvents(testSupport), CLUSTER_DELETED_EVENT), is(true));
@@ -930,11 +930,11 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedMessage() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
-    processor.registerClusterPresenceInfo(info);
+    ClusterPresenceInfo clusterPresenceInfo = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(clusterPresenceInfo);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
-    processor.unregisterClusterPresenceInfo(info);
+    processor.unregisterClusterPresenceInfo(clusterPresenceInfo);
 
     assertThat("Found CLUSTER_DELETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -944,11 +944,11 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedNamespace() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
-    processor.registerClusterPresenceInfo(info);
+    ClusterPresenceInfo clusterPresenceInfo = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(clusterPresenceInfo);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
-    processor.unregisterClusterPresenceInfo(info);
+    processor.unregisterClusterPresenceInfo(clusterPresenceInfo);
 
     assertThat("Found CLUSTER_DELETED event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -83,7 +83,6 @@ class ItIstioCoherenceTests {
   private static final String COHERENCE_IMAGE_NAME = "coherence-image";
 
   private static String domainUid = "coherence-istio-domain";
-  private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
   private static String containerName = "weblogic-server";
@@ -91,7 +90,6 @@ class ItIstioCoherenceTests {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
 
   /**

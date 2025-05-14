@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -227,8 +227,8 @@ class ItIstioManagedCoherence {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 
     // test adding data to the cache and retrieving them from the cache
-    boolean testCompletedSuccessfully = assertDoesNotThrow(()
-          -> coherenceCacheTest(), "Test Coherence cache failed");
+    boolean testCompletedSuccessfully = assertDoesNotThrow(this::coherenceCacheTest,
+        "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 
@@ -272,8 +272,8 @@ class ItIstioManagedCoherence {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 
     // test adding data to the cache and retrieving them from the cache
-    boolean testCompletedSuccessfully = assertDoesNotThrow(()
-        -> coherenceCacheTest(), "Test Coherence cache failed");
+    boolean testCompletedSuccessfully = assertDoesNotThrow(this::coherenceCacheTest,
+        "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 
@@ -376,8 +376,8 @@ class ItIstioManagedCoherence {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 
     // test adding data to the cache and retrieving them from the cache
-    boolean testCompletedSuccessfully = assertDoesNotThrow(()
-        -> coherenceCacheTest(), "Test Coherence cache failed");
+    boolean testCompletedSuccessfully = assertDoesNotThrow(this::coherenceCacheTest,
+        "Test Coherence cache failed");
     assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
   }
 

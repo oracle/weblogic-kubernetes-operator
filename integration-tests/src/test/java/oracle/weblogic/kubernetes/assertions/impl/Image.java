@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -20,7 +20,7 @@ public class Image {
    */
   public static boolean doesImageExist(String searchString) {
     CommandParams cmdParams = Command.defaultCommandParams()
-        .command(String.format(WLSIMG_BUILDER + " images | grep %s", searchString))
+        .command(String.format("%s images | grep %s", WLSIMG_BUILDER, searchString))
         .saveResults(true)
         .redirect(false);
 

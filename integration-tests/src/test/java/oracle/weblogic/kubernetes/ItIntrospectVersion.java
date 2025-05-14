@@ -23,7 +23,6 @@ import java.util.Properties;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -60,6 +59,7 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -130,7 +130,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
@@ -142,7 +141,6 @@ import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
@@ -294,6 +292,7 @@ class ItIntrospectVersion {
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
+  @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   @Tag("gate")
@@ -426,6 +425,7 @@ class ItIntrospectVersion {
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
+  @Order(2)
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
   void testDomainIntrospectVersionRolling() throws ApiException {
@@ -550,6 +550,7 @@ class ItIntrospectVersion {
    * e. Make a REST api call to access management console using new password.
    * f. Make a REST api call to access management console using old password.
    */
+  @Order(3)
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
   void testCredentialChange() {
@@ -685,6 +686,7 @@ class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
+  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   void testCreateNewCluster() {
@@ -767,6 +769,7 @@ class ItIntrospectVersion {
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
+  @Order(5)
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   void testUpdateImageName() {
@@ -872,6 +875,7 @@ class ItIntrospectVersion {
    * Test that when a domain resource has spec.introspectVersion configured,
    * after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
    */
+  @Order(6)
   @Test
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify label weblogic.introspectVersion set")
   void testDedicatedModeSameNamespaceScale() {
@@ -933,6 +937,7 @@ class ItIntrospectVersion {
    * It also verifies the intospector job is started/stoped and none of the
    * server pod is rolled since there is no change to resource configuration.
    */
+  @Order(7)
   @Test
   @DisplayName("Test to use sample scripts to explicitly initiate introspection")
   void testIntrospectDomainScript() {
@@ -1073,6 +1078,7 @@ class ItIntrospectVersion {
    * type: Completed, status: false
    * Verify the introspector reruns to make it right when model file is fixed.
    */
+  @Order(8)
   @Test
   @DisplayName("Test domain status condition with bad model file")
   void testIntrospectorMakeright() {
@@ -1136,13 +1142,13 @@ class ItIntrospectVersion {
     assertTrue(patchDomainResource(domainUid, miiDomainNamespace, patchStr),
         "patchDomainCustomResource(imageUpdate) failed");
 
-    final String adminServerPodName = domainUid + "-admin-server";
+    final String adminServerName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, miiDomainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, miiDomainNamespace);
+        adminServerName, miiDomainNamespace);
+    checkPodReadyAndServiceExists(adminServerName, domainUid, miiDomainNamespace);
     // check managed server pods are ready
     for (int i = 1; i <= 2; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
@@ -1264,48 +1270,6 @@ class ItIntrospectVersion {
     verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
   }
 
-
-  /**
-   * Create a WebLogic domain on a persistent volume by doing the following.
-   * Create a configmap containing WLST script and property file.
-   * Create a Kubernetes job to create domain on persistent volume.
-   *
-   * @param wlstScriptFile       python script to create domain
-   * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName               name of the persistent volume to create domain in
-   * @param pvcName              name of the persistent volume claim
-   * @param namespace            name of the domain namespace in which the job is created
-   */
-  private static void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-                                         String pvName, String pvcName, String namespace) {
-    logger.info("Preparing to run create domain job using WLST");
-
-    List<Path> domainScriptFiles = new ArrayList<>();
-    domainScriptFiles.add(wlstScriptFile);
-    domainScriptFiles.add(domainPropertiesFile);
-
-    logger.info("Creating a config map to hold domain creation scripts");
-    String domainScriptConfigMapName = "create-domain-scripts-cm";
-    assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation(
-            domainScriptConfigMapName, domainScriptFiles, namespace, ItIntrospectVersion.class.getSimpleName()),
-        "Create configmap for domain creation failed");
-
-    // create a V1Container with specific scripts and properties for creating domain
-    V1Container jobCreationContainer = new V1Container()
-        .addCommandItem("/bin/sh")
-        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
-        .addArgsItem("/u01/weblogic/" + wlstScriptFile.getFileName()) //wlst.sh script
-        .addArgsItem("-skipWLSModuleScanning")
-        .addArgsItem("-loadProperties")
-        .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
-
-    logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
-        namespace, jobCreationContainer);
-
-  }
-
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
       String user, String code) {
 
@@ -1397,10 +1361,8 @@ class ItIntrospectVersion {
     String podName = domainUid + "-" + serverName;
     boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
     final String command = String.format(
-        KUBERNETES_CLI + " exec -n " + introDomainNamespace + "  " + podName + " -- curl \"http://"
-        + podName + ":%s/clusterview/ClusterViewServlet"
-        + "?user=" + wlsUserName
-        + "&password=" + wlsPassword + "&ipv6=" + ipv6 + "\"", managedServerPort);
+        "%s exec -n %s %s -- curl \"http://%s:%s/clusterview/ClusterViewServlet?user=%s&password=%s&ipv6=%b\"",
+        KUBERNETES_CLI, introDomainNamespace, podName, podName, managedServerPort, wlsUserName, wlsPassword, ipv6);
     verifyServerCommunication(command, serverName, managedServerNames);
   }
 

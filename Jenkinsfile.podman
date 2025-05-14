@@ -14,8 +14,8 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-CRON_SETTINGS = '''H 1 * * 0-4 % MAVEN_PROFILE_NAME=kind-parallel
-                   H 2 * * 0-4 % MAVEN_PROFILE_NAME=kind-sequential'''
+CRON_SETTINGS = '''H 1 * * 1-5 % MAVEN_PROFILE_NAME=kind-parallel
+                   H 2 * * 1-5 % MAVEN_PROFILE_NAME=kind-sequential'''
 
 pipeline {
     agent { label 'large-ol9u4' }
@@ -568,6 +568,7 @@ EOF
                             echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.skip.build.images=\"${SKIP_BUILD_IMAGES}\""                                    >> ${WORKSPACE}/.mvn/maven.config
                             echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config

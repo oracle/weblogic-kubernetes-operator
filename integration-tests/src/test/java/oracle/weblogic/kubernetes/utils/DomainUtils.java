@@ -374,16 +374,14 @@ public class DomainUtils {
    * Check the domain status condition type exists.
    * @param domainUid uid of the domain
    * @param namespace namespace of the domain
-   * @param serverName name of the server
    * @param podPhase phase of the server pod
    * @param podReady status of the pod Ready condition
    */
   public static void checkServerStatusPodPhaseAndPodReady(String domainUid,
                                                           String namespace,
-                                                          String serverName,
                                                           String podPhase,
                                                           String podReady) {
-    domainStatusServerStatusHasExpectedPodStatus(domainUid, namespace, serverName, podPhase, podReady);
+    domainStatusServerStatusHasExpectedPodStatus(domainUid, namespace, podPhase, podReady);
   }
 
   /**

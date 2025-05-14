@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks;
@@ -126,7 +126,7 @@ class WebhookRestTest extends RestTestBase {
   private final Scale invalidScale = createScale(CLUSTER_NAME_1, "10");
   private final Scale validScale = createScale(CLUSTER_NAME_1, "2");
 
-  private final ConversionReviewModel conversionReview = createConversionReview();
+  private final ConversionReviewModel conversionReviewModel = createConversionReview();
 
   private AdmissionReview createAdmissionReview() {
     return new AdmissionReview().apiVersion(V1).kind(KIND_ADMISSION_REVIEW);
@@ -306,7 +306,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenGoodConversionWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
-    ConversionReviewModel responseReview = sendConversionWebhookRequestAsReview(conversionReview);
+    ConversionReviewModel responseReview = sendConversionWebhookRequestAsReview(conversionReviewModel);
 
     assertThat(getStatus(responseReview), equalTo("Success"));
     assertThat(getConversionUid(responseReview), equalTo(RESPONSE_UID));

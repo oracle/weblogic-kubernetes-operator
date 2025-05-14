@@ -294,9 +294,9 @@ class OperatorEventProcessingTest {
 
   @Test
   void afterOnAddClusterCreatedEvent_onDeleteClusterCreatedEvent_updateClusterKubernetesEventObjectsMap() {
-    final V1ObjectReference clusterReference =
+    final V1ObjectReference cluster =
         new V1ObjectReference().name(UID + "-cluster1").kind("Cluster").namespace(NS);
-    CoreV1Event event = createClusterEvent(clusterReference);
+    CoreV1Event event = createClusterEvent(cluster);
     dispatchAddedEventWatch(event);
     dispatchDeletedEventWatch(event);
     assertThat("Found CLUSTER_CREATED event in the map", getMatchingClusterEvent(event), nullValue());
@@ -304,9 +304,9 @@ class OperatorEventProcessingTest {
 
   @Test
   void afterOnAddClusterCreatedEvent_onDeleteClusterCreatedEventWithNoInvolvedObject_doNothing() {
-    final V1ObjectReference clusterReference =
+    final V1ObjectReference cluster =
         new V1ObjectReference().name(UID + "-cluster1").kind("Cluster").namespace(NS);
-    CoreV1Event event1 = createClusterEvent(clusterReference);
+    CoreV1Event event1 = createClusterEvent(cluster);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createClusterEvent(null);
     dispatchDeletedEventWatch(event2);

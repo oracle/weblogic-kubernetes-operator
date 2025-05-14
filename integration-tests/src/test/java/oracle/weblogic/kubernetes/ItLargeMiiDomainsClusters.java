@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -135,7 +135,6 @@ class ItLargeMiiDomainsClusters {
   private static final String baseDomainUid = "domain";
   private static final String baseClusterName = "cluster-";
   private static String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String adminServerName = "admin-server";
   private static int numOfDomains;
   private static int numOfClusters;
   private static int numOfServersToStart;

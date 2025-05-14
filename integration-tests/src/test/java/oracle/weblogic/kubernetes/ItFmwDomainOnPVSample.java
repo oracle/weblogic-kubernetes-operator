@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -176,7 +176,7 @@ class ItFmwDomainOnPVSample {
    */
   @Test
   @Order(1)
-  public void testInstallOperator() {
+  void testInstallOperator() {
     String backupReports = backupReports(UniqueName.uniqueName(this.getClass().getSimpleName()));
     execTestScriptAndAssertSuccess("-oper", "Failed to run -oper");
     restoreReports(backupReports);
@@ -187,7 +187,7 @@ class ItFmwDomainOnPVSample {
    */
   @Test
   @Order(2)
-  public void testInstallTraefik() {
+  void testInstallTraefik() {
     execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik");
   }
 
@@ -196,7 +196,7 @@ class ItFmwDomainOnPVSample {
    */
   @Test
   @Order(3)
-  public void testPrecleandb() {
+  void testPrecleandb() {
     execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb");
   }
 
@@ -205,7 +205,7 @@ class ItFmwDomainOnPVSample {
    */
   @Test
   @Order(4)
-  public void testCreatedb() {
+  void testCreatedb() {
     logger.info("test case for creating a db");
     if (KIND_REPO != null) {
       String dbimage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
@@ -220,7 +220,7 @@ class ItFmwDomainOnPVSample {
    */
   @Test
   @Order(5)
-  public void testInitialImage() {
+  void testInitialImage() {
     logger.info("test case for building image");
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
@@ -238,7 +238,7 @@ class ItFmwDomainOnPVSample {
    */
   @Test
   @Order(6)
-  public void testInitialMain() {
+  void testInitialMain() {
     logger.info("test case for creating a FMW domain");
 
     // load the base image to kind if using kind cluster

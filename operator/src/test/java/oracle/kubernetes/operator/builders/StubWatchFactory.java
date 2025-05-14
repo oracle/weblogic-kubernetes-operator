@@ -32,9 +32,6 @@ import oracle.kubernetes.operator.calls.WatchApiFactory;
 public class StubWatchFactory implements WatchApiFactory {
 
   private static final int MAX_TEST_REQUESTS = 100;
-  private static final String SYMBOL = "[A-Z_a-z0-9.]+";
-  private static final String ENCODED_COMMA = "%2C";
-  private static final String PARAMETERS_PATTERN = "(" + SYMBOL + ")=(" + SYMBOL + "(" + ENCODED_COMMA + SYMBOL + ")*)";
   private static StubWatchFactory factory;
   private static List<Map<String, String>> requestParameters;
   private static RuntimeException exceptionOnNext;

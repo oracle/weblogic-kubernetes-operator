@@ -127,13 +127,13 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
-    DomainResource domain = createDomain(UID1, NS);
-    testSupport.defineResources(domain);
+    DomainResource domainResource = createDomain(UID1, NS);
+    testSupport.defineResources(domainResource);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getDomain(), equalTo(domain));
+    assertThat(getDomainPresenceInfo(dp, UID1).getDomain(), equalTo(domainResource));
   }
 
   @Test
@@ -196,23 +196,23 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenClustersMatchDomain_addToDomainPresenceInfo() {
-    DomainResource domain = createDomain(UID1, NS);
+    DomainResource domainResource = createDomain(UID1, NS);
     ClusterResource cluster1 = createClusterResource(NS, CLUSTER_1);
     ClusterResource cluster2 = createClusterResource(NS, CLUSTER_2);
     ClusterResource cluster3 = createClusterResource("ns2", CLUSTER_3);
-    testSupport.defineResources(domain, cluster1, cluster2, cluster3);
+    testSupport.defineResources(domainResource, cluster1, cluster2, cluster3);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
-    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-    configurator.configureCluster(info, CLUSTER_1);
-    configurator.configureCluster(info, CLUSTER_2);
+    DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
+    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domainResource);
+    configurator.configureCluster(domainPresenceInfo, CLUSTER_1);
+    configurator.configureCluster(domainPresenceInfo, CLUSTER_2);
 
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), nullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_2), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_3), nullValue());
   }
 
   @Test
@@ -229,10 +229,10 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
         testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), nullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
+    DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_2), nullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_3), notNullValue());
   }
 
   @Test
@@ -274,10 +274,10 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
+    DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_2), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_3), notNullValue());
     MatcherAssert.assertThat(getDomainPresenceInfo(dp, UID2).getClusterResource(CLUSTER_2), notNullValue());
   }
 
@@ -353,8 +353,8 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   void whenNewDomainAddedWithoutStatus_generateDomainCreatedEvent() {
     processor.getDomainPresenceInfoMap().clear();
     addDomainResource(UID1, NS);
-    DomainResource domain = testSupport.getResourceWithName(DOMAIN, UID1);
-    domain.withStatus(null);
+    DomainResource domainResource = testSupport.getResourceWithName(DOMAIN, UID1);
+    domainResource.withStatus(null);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
 

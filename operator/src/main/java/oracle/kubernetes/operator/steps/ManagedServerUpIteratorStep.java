@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -150,7 +150,7 @@ public class ManagedServerUpIteratorStep extends Step {
       if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)
               && !isWaitingToRoll)) {
         // requeue to wait for managed pod to be ready
-        return doRequeue(packet);
+        return doRequeue();
       }
 
       return doNext(packet);

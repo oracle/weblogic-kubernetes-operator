@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -377,7 +377,7 @@ public class ShutdownManagedServerStep extends Step {
       Throwable throwable = getThrowableResponse(packet);
       if (throwable != null) {
         if (throwable instanceof HttpTimeoutException) {
-          return doRequeue(packet);
+          return doRequeue();
         }
 
         if (shouldRetry(packet)) {
@@ -391,7 +391,7 @@ public class ShutdownManagedServerStep extends Step {
         }
       } else if (response != null && response.statusCode() == HTTP_BAD_REQUEST) {
         // This occurs when the server start is already SUSPENDING
-        return doRequeue(packet);
+        return doRequeue();
       } else {
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }

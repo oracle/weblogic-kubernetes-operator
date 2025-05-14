@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -91,20 +91,20 @@ public class IntegrationTestWatcher implements
   public Object resolveParameter(ParameterContext parameterContext,
       ExtensionContext extensionContext) throws ParameterResolutionException {
     Namespaces ns = parameterContext.findAnnotation(Namespaces.class).get();
-    List<String> namespaces = new ArrayList<>();
+    List<String> resolvedNamespaces = new ArrayList<>();
     for (int i = 1; i <= ns.value(); i++) {
       String namespace = assertDoesNotThrow(() -> createUniqueNamespace(),
           "Failed to create unique namespace due to ApiException");
-      namespaces.add(namespace);
+      resolvedNamespaces.add(namespace);
       getLogger().info("Created a new namespace called {0}", namespace);
     }
     if (this.namespaces == null) {
-      this.namespaces = namespaces;
+      this.namespaces = resolvedNamespaces;
     } else {
-      this.namespaces.addAll(namespaces);
+      this.namespaces.addAll(resolvedNamespaces);
     }
     getLogger().info(this.namespaces.toString());
-    return namespaces;
+    return resolvedNamespaces;
   }
 
   /**
@@ -379,8 +379,7 @@ public class IntegrationTestWatcher implements
   private String getExtDir(ExtensionContext extensionContext, String failedStage) {
     String ext;
     switch (failedStage) {
-      case "beforeEach":
-      case "afterEach":
+      case "beforeEach", "afterEach":
         ext = extensionContext.getRequiredTestMethod().getName() + "_" + failedStage;
         break;
       case "test":

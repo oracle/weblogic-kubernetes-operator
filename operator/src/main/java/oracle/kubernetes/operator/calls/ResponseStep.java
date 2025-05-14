@@ -298,7 +298,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
     } catch (ApiException ae) {
       return doTerminate(ae, packet);
     }
-    return doEnd(packet);
+    return doEnd();
   }
 
   /**
