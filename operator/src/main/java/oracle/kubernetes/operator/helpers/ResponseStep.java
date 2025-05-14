@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,6 +7,7 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -140,7 +141,7 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for list continue
    */
   protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet) {
-    return doContinueListOrNext(callResponse, packet, getNext());
+    return doContinueListOrNext(callResponse, packet, this::getNext);
   }
 
   /**
@@ -149,10 +150,10 @@ public abstract class ResponseStep<T> extends Step {
    *
    * @param callResponse Call response
    * @param packet Packet
-   * @param next Next step, if no continuation
+   * @param next Supplier of next step, if no continuation
    * @return Next action for list continue
    */
-  protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet, Step next) {
+  protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet, Supplier<Step> next) {
     String cont = accessContinue(callResponse.getResult());
     if (cont != null) {
       packet.put(CONTINUE, cont);
@@ -161,9 +162,9 @@ public abstract class ResponseStep<T> extends Step {
       return resetRetryStrategyAndReinvokeRequest(packet);
     }
     if (callResponse.getResult() instanceof KubernetesListObject kubernetesListObject) {
-      return doNext(next, packet).withDebugComment(kubernetesListObject, this::toComment);
+      return doNext(next.get(), packet).withDebugComment(kubernetesListObject, this::toComment);
     } else {
-      return doNext(next, packet);
+      return doNext(next.get(), packet);
     }
   }
 

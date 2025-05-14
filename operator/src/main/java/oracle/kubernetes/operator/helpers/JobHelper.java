@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -818,7 +818,7 @@ public class JobHelper {
               .orElse(null);
 
         if (jobPod == null) {
-          return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
+          return doContinueListOrNext(callResponse, packet, () -> processIntrospectorPodLog(getNext()));
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (isJobPodTimedOut(jobPod)) {
