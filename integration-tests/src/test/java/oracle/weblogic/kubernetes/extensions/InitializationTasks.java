@@ -58,8 +58,8 @@ import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.INSTALL_WEBLOGIC;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
-import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
+//import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -87,6 +87,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants. WEBLOGIC_IMAGE_WLSADM_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SHIPHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -211,9 +212,12 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           Collection<String> images = new ArrayList<>();
 
           images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG);
+          logger.info("!!! Just pulled weblogic generic base image!!!"); //TODO
+          images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_WLSADM_TAG);
+          logger.info("!!! Just pulled wlsadm weblogicbase image!!!"); //TODO
           //images.add(FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG);
           //TODO images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
-          images.add(LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG);
+          //images.add(LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG);
 
           for (String image : images) {
             testUntil(

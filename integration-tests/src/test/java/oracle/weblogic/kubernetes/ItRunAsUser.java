@@ -57,6 +57,8 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXIS
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_WLSADM_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -365,6 +367,8 @@ class ItRunAsUser {
         final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
         imageCreation = createImage(
             defaultWitParams()
+                .baseImageName(WEBLOGIC_IMAGE_NAME)
+                .baseImageTag(WEBLOGIC_IMAGE_WLSADM_TAG)
                 .modelImageName(imageName)
                 .modelImageTag(WDT_BASIC_IMAGE_TAG)
                 .modelFiles(modelList)
@@ -380,6 +384,8 @@ class ItRunAsUser {
       } else if (domainType.equalsIgnoreCase("mii")) {
         imageCreation = createImage(
             defaultWitParams()
+                .baseImageName(WEBLOGIC_IMAGE_NAME)
+                .baseImageTag(WEBLOGIC_IMAGE_WLSADM_TAG)
                 .modelImageName(imageName)
                 .modelImageTag(MII_BASIC_IMAGE_TAG)
                 .modelFiles(modelList)

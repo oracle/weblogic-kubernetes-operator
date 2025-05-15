@@ -133,6 +133,8 @@ public interface TestConstants {
       + getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
   String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
        WEBLOGIC_IMAGE_TAG_DEFAULT);
+  //WebLogic base image tag with added user "wlsadm" for 14.1.2.0-jdk17-ol8
+  String WEBLOGIC_IMAGE_WLSADM_TAG = "14.1.2.0-with-wlsadm-jdk17-ol8";
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
