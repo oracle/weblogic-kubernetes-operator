@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
