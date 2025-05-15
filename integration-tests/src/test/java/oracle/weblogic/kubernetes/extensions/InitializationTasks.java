@@ -49,17 +49,17 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_TENANCY;
 import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.CRIO;
-//import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-//import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.INSTALL_WEBLOGIC;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
-//import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -72,7 +72,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_OPERATOR_NS;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_NODEPORT;
@@ -105,7 +104,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
-//import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
@@ -118,7 +116,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
-//import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.deleteLoadBalancer;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
@@ -212,12 +210,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           Collection<String> images = new ArrayList<>();
 
           images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG);
-          logger.info("!!! Just pulled weblogic generic base image!!!"); //TODO
           images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_WLSADM_TAG);
-          logger.info("!!! Just pulled wlsadm weblogicbase image!!!"); //TODO
-          //images.add(FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG);
-          //TODO images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
-          //images.add(LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG);
+          images.add(FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG);
+          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
+          images.add(LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG);
 
           for (String image : images) {
             testUntil(
@@ -234,10 +230,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         // build MII basic image if does not exits
         logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
-        logger.info("!!!! SKIP_BUILD_IMAGES is: " + SKIP_BUILD_IMAGES);
-        logger.info("!!!! SKIP_BUILD_IMAGES_IF_EXISTS is: " + SKIP_BUILD_IMAGES_IF_EXISTS);
-
-        if (! imageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG) && !SKIP_BUILD_IMAGES) {
+        if (! imageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
           logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -246,13 +239,12 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                 logger,
                 "createBasicImage to be successful");
         } else {
-          logger.info("!!!! domain image {0} exists, or domain image build is skipped !!!!", miiBasicImage);
+          logger.info("!!!! domain image {0} exists !!!!", miiBasicImage);
         }
 
         logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
         // build WDT basic image if does not exits
-        if (!imageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG) && !SKIP_BUILD_IMAGES
-            && !CRIO && !OCNE) {
+        if (!imageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG) && !CRIO && !OCNE) {
           logger.info("Building wdt-basic image {0}", wdtBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -270,12 +262,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
          * as WLSIMG_BUILDER images imagename:imagetag is not working and
          * the test fails even though the image exists.
          */
-        if (!SKIP_BUILD_IMAGES) {
-          assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
+        assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", miiBasicImage));
-        }
 
-        if (!CRIO && !OCNE && !SKIP_BUILD_IMAGES) {
+        if (!CRIO && !OCNE) {
           assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
         }
@@ -294,7 +284,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
             images.add(operatorImage);
           }
           // add images only if SKIP_BUILD_IMAGES_IF_EXISTS is not set
-          if (!SKIP_BUILD_IMAGES_IF_EXISTS && !SKIP_BUILD_IMAGES) {
+          if (!SKIP_BUILD_IMAGES_IF_EXISTS) {
             images.add(miiBasicImage);
             if (!CRIO && !OCNE) {
               images.add(wdtBasicImage);
@@ -333,17 +323,16 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
-        /*if (!OCNE && !CRIO && !ARM) {
-            installOracleDBOperator();
-        }*/
+        if (!OCNE && !CRIO && !ARM) {
+          installOracleDBOperator();
+        }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
-        /*if (!OKD && !CRIO) {
+        if (!OKD && !CRIO) {
           logger.info("Installing istio before any test suites are run");
           installIstio();
-        }*/
-
+        }
         if (INSTALL_WEBLOGIC && !CRIO && !ARM && !OKE_CLUSTER) {
           installOnPremWebLogic();
         }

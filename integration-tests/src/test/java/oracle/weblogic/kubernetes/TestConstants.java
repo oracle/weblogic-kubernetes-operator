@@ -112,8 +112,7 @@ public interface TestConstants {
   String FMWINFRA_IMAGE_TAG_12213 = "12.2.1.3";
   String DB_IMAGE_NAME_DEFAULT = "test-images/database/enterprise";
   String DB_PREBUILT_IMAGE_NAME_DEFAULT = "test-images/database/express";
-  //String DB_IMAGE_TAG_DEFAULT = "19.3.0.0";
-  String DB_IMAGE_TAG_DEFAULT = "12.2.0.1-slim";
+  String DB_IMAGE_TAG_DEFAULT = "19.3.0.0";
 
   // repository to push the domain images created during test execution
   // (a) for kind cluster push to kind repo
@@ -271,8 +270,6 @@ public interface TestConstants {
   String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "mii-ai-image";
   boolean SKIP_BUILD_IMAGES_IF_EXISTS =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images.if.exists", "false"));
-  boolean SKIP_BUILD_IMAGES =
-      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images", "false"));
 
 
   String BUSYBOX_IMAGE = TEST_IMAGES_PREFIX + "test-images/docker/busybox";
