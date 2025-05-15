@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -72,7 +70,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
-import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -399,143 +396,6 @@ class ItRunAsUser {
       }
       return imageCreation;
     });
-  }
-
-  /**
-   * Create a model in image domain and verify the server pods are ready.
-   */
-  private static void createAndVerifyMiiDomain() {
-
-    // get the pre-built image created by IntegrationTestWatcher
-    miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-
-    // create registry secret to pull the image from registry
-    // this secret is used only for non-kind cluster
-    logger.info("Creating registry secret in namespace {0}", domainNamespace);
-    createTestRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Creating encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
-
-    ServerPod srvrPod = new ServerPod()
-        .addEnvItem(new V1EnvVar()
-            .name("JAVA_OPTIONS")
-            .value("-Dweblogic.StdoutDebugEnabled=false"))
-        .addEnvItem(new V1EnvVar()
-            .name("USER_MEM_ARGS")
-            .value("-Djava.security.egd=file:/dev/./urandom "))
-        .resources(new V1ResourceRequirements()
-            .limits(new HashMap<>())
-            .requests(new HashMap<>()));
-
-    if (!OKD) {
-      //V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-      //           .runAsUser(0L);
-      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-                 .runAsUser(12345L);
-      srvrPod.podSecurityContext(podSecCtxt);
-
-    }
-
-    // create the domain CR
-    DomainResource domain = new DomainResource()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .imagePullPolicy(IMAGE_PULL_POLICY)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(TEST_IMAGES_REPO_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1LocalObjectReference()
-                .name(adminSecretName))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IfNeeded")
-            .serverPod(srvrPod)
-            .configuration(new Configuration()
-                .introspectorJobActiveDeadlineSeconds(3000L)
-                .model(new Model()
-                    .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))));
-    setPodAntiAffinity(domain);
-    // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainAndVerify(domain, domainNamespace);
-
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check for managed server pods existence in the domain namespace
-    for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPrefix + i;
-
-      // check that the managed server pod exists in the domain namespace
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
-    }
-  }
-
-  /**
-   * Add server pod compute resources.
-   *
-   * @param cpuLimit cpu limit to be added to domain spec serverPod resources limits
-   * @param cpuRequest cpu request to be added to domain spec serverPod resources requests
-   * @return true if patching domain custom resource is successful, false otherwise
-   */
-  private boolean addServerPodResources(BigDecimal cpuLimit, BigDecimal cpuRequest) {
-    // construct the patch string for adding server pod resources
-    StringBuffer patchStr = new StringBuffer("[{")
-        .append("\"op\": \"add\", ")
-        .append("\"path\": \"/spec/serverPod/resources/limits/cpu\", ")
-        .append("\"value\": \"")
-        .append(cpuLimit)
-        .append("\"}, {")
-        .append("\"op\": \"add\", ")
-        .append("\"path\": \"/spec/serverPod/resources/requests/cpu\", ")
-        .append("\"value\": \"")
-        .append(cpuRequest)
-        .append("\"}]");
-
-    logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
-        domainUid, domainNamespace, patchStr.toString());
-
-    V1Patch patch = new V1Patch(new String(patchStr));
-
-    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
 }
