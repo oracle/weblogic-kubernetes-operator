@@ -269,6 +269,8 @@ public class OperatorMain extends BaseMain {
 
   void completeBegin() {
     try {
+      // Register metrics collectors
+      new NamespaceCollector(mainDelegate).register();
       startMetricsServer();
       startRestServer();
 
