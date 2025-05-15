@@ -231,6 +231,7 @@ class ItIstioDomainInPV  {
     // Currently LOCALE testing is disabled till we have 1412 image with 
     // Japanese Locale
     String imageLocation = WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+    logger.info("!!! Image used for the test!!!" + imageLocation);
 
     // Enable istio in domain custom resource configuration object.
     // Add T3Channel Service with port assigned to Istio TCP ingress port.

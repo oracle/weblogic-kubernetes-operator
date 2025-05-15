@@ -25,7 +25,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -108,8 +107,6 @@ class ItRunAsUser {
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static LoggingFacade logger = null;
-  private Map<String, OffsetDateTime> podsWithTimeStamps = null;
-  private WitParams params;
 
   ConditionFactory withVeryLongRetryPolicy
       = with().pollDelay(0, SECONDS)
@@ -152,7 +149,6 @@ class ItRunAsUser {
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
   void testRunAsUserOver10k() {
 
-    //TODO
     miiImage = MII_BASIC_IMAGE_NAME + "-wlsadm" + ":" + MII_BASIC_IMAGE_TAG;
     // create Mii Image for this test
     createMiiImage();
@@ -184,8 +180,6 @@ class ItRunAsUser {
             .requests(new HashMap<>()));
 
     if (!OKD) {
-      //V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
-      //           .runAsUser(0L);
       V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
                  .runAsUser(12345L);
       srvrPod.podSecurityContext(podSecCtxt);
@@ -277,12 +271,6 @@ class ItRunAsUser {
       logger.info("!!!! domain image {0} exists !!!!", miiImageWlsadm);
     }
 
-    /* Check image exists using WLSIMG_BUILDER images | grep image tag.
-     * Tag name is unique as it contains date and timestamp.
-     * This is a workaround for the issue on Jenkins machine
-     * as WLSIMG_BUILDER images imagename:imagetag is not working and
-     * the test fails even though the image exists.
-     */
     assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
         String.format("Image %s doesn't exist", miiImageWlsadm));
 
@@ -365,9 +353,6 @@ class ItRunAsUser {
       Map<String, String> env = new HashMap<>();
       env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
-      // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-      // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-      // the next JDK 14 versions are released.
       if (WIT_JAVA_HOME != null) {
         env.put("JAVA_HOME", WIT_JAVA_HOME);
       }

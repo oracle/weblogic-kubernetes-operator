@@ -35,7 +35,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -992,7 +991,6 @@ public class DomainUtils {
                                                         int replicaCount,
                                                         int t3ChannelPort,
                                                         Configuration configuration) {
-    getLogger().info("DEBUG!!!! WLS domain on pv is going to createDomainResourceOnPv ");
     return createDomainResourceOnPv(domainUid,
         domNamespace,
         adminSecretName,
@@ -1041,15 +1039,6 @@ public class DomainUtils {
     for (String secret : repoSecretName) {
       secrets.add(new V1LocalObjectReference().name(secret));
     }
-
-    //TODO
-    getLogger().info("DEBUG!!!! domain on pv is going to create CR");
-    V1PodSecurityContext podSecCtxt = new V1PodSecurityContext();
-    getLogger().info("DEBUG!!!! before setting runAsUser: " + podSecCtxt.getRunAsUser());
-    getLogger().info("DEBUG!!!! before settimg FsGroup: " + podSecCtxt.getFsGroup());
-    //podSecCtxt.runAsUser(12345L);
-    //getLogger().info("DEBUG!!!! after setting runAsUser: " + podSecCtxt.getRunAsUser());
-    //getLogger().info("DEBUG!!!! after setting FsGroup: " + podSecCtxt.getFsGroup());
     
     // create a domain custom resource configuration object
     DomainResource domain = new DomainResource()
@@ -1087,8 +1076,7 @@ public class DomainUtils {
                         .claimName(pvcName)))
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/shared")
-                    .name(pvName))
-                 .podSecurityContext(podSecCtxt))
+                    .name(pvName)))
             .adminServer(new AdminServer() //admin server
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()

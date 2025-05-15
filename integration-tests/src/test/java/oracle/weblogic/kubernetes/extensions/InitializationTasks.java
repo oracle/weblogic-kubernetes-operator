@@ -230,8 +230,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         // build MII basic image if does not exits
         logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
-        logger.info("DEBUG!!!! SKIP_BUILD_IMAGES is: " + SKIP_BUILD_IMAGES);
-        logger.info("DEBUG!!!! SKIP_BUILD_IMAGES_IF_EXISTS is: " + SKIP_BUILD_IMAGES_IF_EXISTS);
+        logger.info("!!!! SKIP_BUILD_IMAGES is: " + SKIP_BUILD_IMAGES);
+        logger.info("!!!! SKIP_BUILD_IMAGES_IF_EXISTS is: " + SKIP_BUILD_IMAGES_IF_EXISTS);
 
         if (! imageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG) && !SKIP_BUILD_IMAGES) {
           logger.info("Building mii-basic image {0}", miiBasicImage);
@@ -242,7 +242,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                 logger,
                 "createBasicImage to be successful");
         } else {
-          logger.info("!!!! domain image {0} exists !!!!", miiBasicImage);
+          logger.info("!!!! domain image {0} exists, or domain image build is skipped !!!!", miiBasicImage);
         }
 
         logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
@@ -648,9 +648,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   private Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
     return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + BASE_IMAGES_TENANCY.length() + 2);
-
       return imagePull(image) && imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
-      //TODO might need return imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
     });
   }
   
