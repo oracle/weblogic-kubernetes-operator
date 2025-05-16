@@ -29,13 +29,13 @@ Here are the steps for this use case:
 
 2. Create an updated auxiliary image.
 
-   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `wdt-domain-image:WLS-v1` from files that were staged in `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `wdt-domain-image:WLS-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a directory `/auxiliary/weblogic-deploy` where the WebLogic Deploy Tooling software is installed.
+   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `wdt-domain-image:WLS-v1` from files that were staged in `/tmp/mii-sample/wdt-model-files/WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `wdt-domain-image:WLS-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a directory `/auxiliary/weblogic-deploy` where the WebLogic Deploy Tooling software is installed.
 
    In this use case, you will follow similar steps to the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case domain.
 
    - Understanding your updated WDT archive.
 
-     The updated archive for this use case is in directory `/tmp/sample/wdt-artifacts/archives/archive-v2`. You will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/sample/wdt-artifacts/archives/archive-v1` from the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case with the following differences:
+     The updated archive for this use case is in directory `/tmp/mii-sample/archives/archive-v2`. You will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/mii-sample/archives/archive-v1` from the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case with the following differences:
      - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
      - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference from the original application: it changes the line `out.println("Hello World! This is version 'v1' of the sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the sample JSP web-app.");`.
 
@@ -43,7 +43,7 @@ Here are the steps for this use case:
 
    - Stage a ZIP file of the WDT archive.
 
-     When you create your updated image, you will use the files in the staging directory `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
+     When you create your updated image, you will use the files in the staging directory `/tmp/mii-sample/wdt-model-files/WLS-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
 
      Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -51,23 +51,23 @@ Here are the steps for this use case:
      # Delete existing archive.zip in case we have an old leftover version
      ```
      ```shell
-     $ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/archive.zip
+     $ rm -f /tmp/mii-sample/wdt-model-files/WLS-v2/archive.zip
      ```
      ```
      # Move to the directory which contains the source files for our new archive
      ```
      ```shell
-     $ cd /tmp/sample/wdt-artifacts/archives/archive-v2
+     $ cd /tmp/mii-sample/archives/archive-v2
      ```
      Using the [WDT archive helper tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/), create the archive in the location that we will use later when we run the WebLogic Image Tool.
      `
      ```shell
-     $ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/archive.zip -source=wlsdeploy/applications/myapp-v2
+     $ /tmp/mii-sample/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/mii-sample/wdt-model-files/WLS-v2/archive.zip -source=wlsdeploy/applications/myapp-v2
      ```
 
    - Understanding your staged model files.
 
-     The WDT model YAML file and properties for this use case have already been staged for you to directory `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2`.
+     The WDT model YAML file and properties for this use case have already been staged for you to directory `/tmp/mii-sample/wdt-model-files/WLS-v2`.
 
      The `model.10.yaml` file in this directory has an updated path `wlsdeploy/applications/myapp-v2` that references the updated web application in your archive, but is otherwise identical to the model staged for the original image. The final related YAML file stanza looks like this:
 
@@ -86,19 +86,19 @@ Here are the steps for this use case:
 
      At this point, you have staged all of the files needed for image `wdt-domain-image:WLS-v2`; they include:
 
-     - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/model.10.yaml`
-     - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/model.10.properties`
-     - `/tmp/sample/model-images/wdt-artifacts/wdt-model-files/WLS-v2/archive.zip`
+     - `/tmp/mii-sample/wdt-model-files/WLS-v2/model.10.yaml`
+     - `/tmp/mii-sample/wdt-model-files/WLS-v2/model.10.properties`
+     - `/tmp/mii-sample/wdt-model-files/WLS-v2/archive.zip`
 
      Now, you use the Image Tool to create an auxiliary image named `wdt-domain-image:WLS-v2`. You've already set up this tool during the prerequisite steps.
 
      Run the following commands to create the auxiliary image and verify that it worked:
 
      ```shell
-     $ cd /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2
+     $ cd /tmp/mii-sample/wdt-model-files/WLS-v2
      ```
      ```shell
-     $ /tmp/sample/wdt-artifacts/imagetool/bin/imagetool.sh createAuxImage \
+     $ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh createAuxImage \
        --tag wdt-domain-image:WLS-v2 \
        --wdtModel ./model.10.yaml \
        --wdtVariables ./model.10.properties \

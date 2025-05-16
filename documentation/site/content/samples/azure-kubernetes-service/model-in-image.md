@@ -1,6 +1,6 @@
 ---
 title: "Model in Image"
-date: 2020-11-24T18:22:31-05:00
+date: 2025-05-12T13:22:31-05:00
 weight: 3
 description: "Sample for creating a WebLogic cluster on the Azure Kubernetes Service with model in image domain home source type."
 ---
@@ -114,7 +114,7 @@ Update the repo to get the latest Helm charts. It is a best practice to do this 
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --version 4.2.8 \
+  --version 4.2.16 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --wait
 ```
@@ -123,7 +123,7 @@ The output will show something similar to the following:
 
 ```
 NAME: weblogic-operator
-LAST DEPLOYED: Fri Aug 12 14:28:47 2022
+LAST DEPLOYED: Mon May 12 14:28:47 2025
 NAMESPACE: sample-weblogic-operator-ns
 STATUS: deployed
 REVISION: 1
@@ -144,7 +144,7 @@ The output will show something similar to the following:
 
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
-weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.8  4.2.8
+weblogic-operator       sample-weblogic-operator-ns     1               2025-05-12 15:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.16  4.2.16
 ```
 
 ```shell
@@ -561,7 +561,7 @@ The expected username and password must match the values that you chose during t
 If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
 ```shell
-$ kubectl describe domain domain1
+$ kubectl describe domain sample-domain1 -n sample-domain1-ns
 ```
 
 Make sure the status of cluster-1 is `ServersReady` and `Available`.
@@ -575,7 +575,7 @@ Annotations:  <none>
 API Version:  weblogic.oracle/v9
 Kind:         Domain
 Metadata:
-  Creation Timestamp:  2020-11-30T05:40:11Z
+  Creation Timestamp:  2025-05-12T15:40:11Z
   Generation:          1
   Resource Version:    9346
   Self Link:           /apis/weblogic.oracle/v9/namespaces/sample-domain1-ns/domains/sample-domain1
@@ -637,7 +637,7 @@ Status:
     Replicas:          2
     Replicas Goal:     2
   Conditions:
-    Last Transition Time:        2020-11-30T05:45:15.493Z
+    Last Transition Time:        2025-05-12T15:45:15.493Z
     Reason:                      ServersReady
     Status:                      True
     Type:                        Available
@@ -657,7 +657,7 @@ Status:
     Cluster Name:   cluster-1
     Desired State:  RUNNING
     Health:
-      Activation Time:  2020-11-30T05:44:54.699Z
+      Activation Time:  2025-05-12T15:44:54.699Z
       Overall Health:   ok
       Subsystems:
         Subsystem Name:  ServerRuntime
@@ -668,7 +668,7 @@ Status:
     Cluster Name:   cluster-1
     Desired State:  RUNNING
     Health:
-      Activation Time:  2020-11-30T05:45:07.211Z
+      Activation Time:  2025-05-12T15:45:07.211Z
       Overall Health:   ok
       Subsystems:
         Subsystem Name:  ServerRuntime
@@ -685,7 +685,7 @@ Status:
     Cluster Name:   cluster-1
     Desired State:  SHUTDOWN
     Server Name:    managed-server5
-  Start Time:       2020-11-30T05:40:11.709Z
+  Start Time:       2025-05-12T15:40:11.709Z
 Events:             <none>
 ```
 {{% /expand %}}
