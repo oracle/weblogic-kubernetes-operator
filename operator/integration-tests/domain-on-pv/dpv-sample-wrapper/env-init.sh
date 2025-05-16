@@ -1,4 +1,4 @@
-# Copyright (c) 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This file sets the defaults for the sample wrapper scripts, 
@@ -34,6 +34,7 @@ DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-dpv-domain.yaml.template-$
 DOMAIN_RESOURCE_FILENAME="${DOMAIN_RESOURCE_FILENAME:-domain-resources/dpv-${DOMAIN_UID}.yaml}"
 
 DB_NAMESPACE=${DB_NAMESPACE:-default}
+DB_PDB_ID=${DB_PDB_ID:-devpdb.k8s}
 
 DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}
 DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
