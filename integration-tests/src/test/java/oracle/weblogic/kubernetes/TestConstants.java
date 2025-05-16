@@ -271,7 +271,6 @@ public interface TestConstants {
   boolean SKIP_BUILD_IMAGES_IF_EXISTS =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images.if.exists", "false"));
 
-
   String BUSYBOX_IMAGE = TEST_IMAGES_PREFIX + "test-images/docker/busybox";
   String BUSYBOX_TAG = "1.36";
 
