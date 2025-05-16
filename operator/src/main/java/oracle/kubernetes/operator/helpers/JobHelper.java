@@ -861,6 +861,10 @@ public class JobHelper {
               createIntrospectionFailureSteps(reason, domainIntrospectorJob),
               cleanUpAndReintrospect(getNext())), packet);
         } else if (isJobPodTimedOut(jobPod)) {
+
+          // TEST
+          LOGGER.severe("*** RJE: Location 1, PodListResponseStep.onSuccess, job pod timed out ");
+
           // process job pod timed out same way as job timed out, which is to
           // terminate current fiber
           return doTerminate(createTerminationException(packet), packet);
@@ -947,6 +951,10 @@ public class JobHelper {
   }
 
   private static void logIntrospectorFailure(Packet packet, V1Job domainIntrospectorJob) {
+
+    // TEST
+    LOGGER.severe("*** RJE: Location 2, JobHelper.logIntrospectorFailure, top of method ");
+
     Boolean logged = (Boolean) packet.get(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
     V1Pod jobPod = (V1Pod) packet.get(ProcessingConstants.JOB_POD);
     if (logged == null || !logged) {
@@ -961,6 +969,10 @@ public class JobHelper {
           domainIntrospectorJob.getMetadata().getName(),
           domainIntrospectorJob.toString());
       if (isJobTimedOut(domainIntrospectorJob) || (jobPod != null && isJobPodTimedOut(jobPod))) {
+
+        // TEST
+        LOGGER.severe("*** RJE: Location 3, JobHelper.logIntrospectorFailure, at original log");
+
         LOGGER.info(JOB_DEADLINE_EXCEEDED_MESSAGE,
             Optional.of(domainIntrospectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getName).orElse(""),
             Optional.of(domainIntrospectorJob).map(V1Job::getSpec)
