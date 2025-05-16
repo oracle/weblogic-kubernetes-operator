@@ -35,10 +35,12 @@ class MonitoringExporterConfigurationTest {
   void deserializeFromJson() {
     final MonitoringExporterConfiguration configuration = MonitoringExporterConfiguration.createFromYaml(CONFIG);
 
-    assertThat(configuration.asJsonString(), hasJsonPath("$.metricsNameSnakeCase", equalTo(true)));
-    assertThat(configuration.asJsonString(), hasJsonPath("$.queries[0].applicationRuntimes.key", equalTo("name")));
-    assertThat(configuration.asJsonString(),
-          hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type", equalTo("WebAppComponentRuntime")));
+    final String jsonString = configuration.asJsonString();
+    assertThat(jsonString, hasJsonPath("$.metricsNameSnakeCase", equalTo(true)));
+    assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.key", equalTo("name")));
+    assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type",
+          equalTo("WebAppComponentRuntime")));
+    assertThat(configuration.matchesYaml(CONFIG), is(true));
   }
 
   private static final String CONFIG = """
@@ -52,6 +54,8 @@ class MonitoringExporterConfigurationTest {
                 prefix: webapp_config_
                 key: name
                 values: [deploymentState, type, contextRoot, sourceInfo, openSessionsHighCount]
+                stringValues:
+                  state: [ok,failed,overloaded,critical,warn]
                 servlets:
                   prefix: weblogic_servlet_
                   key: servletName

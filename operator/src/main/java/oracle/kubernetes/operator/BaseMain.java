@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,6 +17,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,6 +36,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.PathSupport;
+import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -149,13 +151,13 @@ public abstract class BaseMain {
     }
   }
 
-  void markReadyAndStartLivenessThread() {
+  void markReadyAndStartLivenessThread(Collection<Cancellable> futures) {
     try {
       new DeploymentReady(delegate).create();
 
       logStartingLivenessMessage();
       // every five seconds we need to update the last modified time on the liveness file
-      delegate.scheduleWithFixedDelay(new DeploymentLiveness(delegate), 5, 5, TimeUnit.SECONDS);
+      delegate.scheduleWithFixedDelay(new DeploymentLiveness(futures, delegate), 5, 5, TimeUnit.SECONDS);
     } catch (IOException io) {
       LOGGER.severe(MessageKeys.EXCEPTION, io);
     }

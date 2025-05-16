@@ -852,7 +852,7 @@ public class JobHelper {
               .orElse(null);
 
         if (jobPod == null) {
-          return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
+          return doContinueListOrNext(callResponse, packet, () -> processIntrospectorPodLog(getNext()));
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
 
           String reason = getImagePullError(jobPod);

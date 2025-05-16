@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
 
 /**
  * A test stub for processing domains in unit tests.
@@ -78,13 +79,13 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public Cancellable schedule(Runnable command, long delay, TimeUnit unit) {
     ScheduledFuture<?> future = testSupport.schedule(command, delay, unit);
-    return () -> future.cancel(true);
+    return createCancellable(future);
   }
 
   @Override
   public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
     ScheduledFuture<?> future = testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-    return () -> future.cancel(true);
+    return createCancellable(future);
   }
 
   @Override
