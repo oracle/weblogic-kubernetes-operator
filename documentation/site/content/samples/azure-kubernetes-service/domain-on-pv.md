@@ -131,7 +131,7 @@ An image can contain multiple properties files, archive ZIP files, and model YAM
 
 #### Creating the image with WIT
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/run-dpv-to-create-auxiliary-image.txt" >}}
 
 {{% notice note %}}
 The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).

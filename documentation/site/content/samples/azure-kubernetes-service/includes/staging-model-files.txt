@@ -57,3 +57,34 @@ The model file:
     - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
         - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
         - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
+
+- To configure WebLogic Domain in Secure mode, make the following changes in `model.10.yaml` file
+    - Set server start mode to secure
+
+```
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'secure'
+```
+
+    - Include and enable SSL Listen Port 8002 for Server Template and enable secure mode under Security Configuration section
+
+```
+    Server:
+        'admin-server':
+            ListenPort: 7001
+    ServerTemplate:
+        'cluster-1-template':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
+            SSL:
+               ListenPort: 8002
+               Enabled: true
+
+    SecurityConfiguration:
+        SecureMode:
+            SecureModeEnabled: true
+```
+
+    - When secure mode is enabled, the WebLogic Server Administration port defaults to 9002
