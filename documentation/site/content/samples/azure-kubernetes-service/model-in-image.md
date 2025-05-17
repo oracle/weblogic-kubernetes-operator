@@ -402,6 +402,13 @@ $ bash $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-servi
 
 After running above commands, you will get three files: `mii-initial.yaml`, `admin-lb.yaml` and `cluster-lb.yaml`.
 
+For secure mode, include "-Dweblogic.security.SSL.ignoreHostnameVerification=true" under JAVA_OPTIONS in mii-initial.yaml file.
+
+```
+   - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.security.SSL.ignoreHostnameVerification=true"
+```
+
 Run the following command to create the domain custom resource:
 
 ```shell
@@ -489,6 +496,30 @@ spec:
 ```
 {{% /expand %}}
 
+In secure mode, as Administration port defaults to 9002, replace port 7001 with 9002 in the admin-lb.yaml file in order to create a load balancer service for the Administration Server.
+
+{{%expand "Click here to view YAML content." %}}
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-domain1-admin-server-external-lb
+  namespace: sample-domain1-ns
+spec:
+  ports:
+  - name: default
+    port: 9002
+    protocol: TCP
+    targetPort: 9002
+  selector:
+    weblogic.domainUID: sample-domain1
+    weblogic.serverName: admin-server
+  sessionAffinity: None
+  type: LoadBalancer
+```
+{{% /expand %}}
+
+
 Use the file `cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.
 
 {{%expand "Click here to view YAML content." %}}
@@ -511,6 +542,30 @@ spec:
   type: LoadBalancer
 
 ```
+
+For Secure mode, similar to the Administration Server Load Balancer service configuration, replace port 8001 with 8002 as Managed Servers will now listen on port 8002 (https) in secure mode
+
+{{%expand "Click here to view YAML content." %}}
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-domain1-cluster-1-lb
+  namespace: sample-domain1-ns
+spec:
+  ports:
+  - name: default
+    port: 8002
+    protocol: TCP
+    targetPort: 8002
+  selector:
+    weblogic.domainUID: sample-domain1
+    weblogic.clusterName: cluster-1
+  sessionAffinity: None
+  type: LoadBalancer
+
+```
+
 {{% /expand %}}
 
 Create the load balancer services using the following commands:
@@ -553,10 +608,23 @@ sample-domain1-managed-server1            ClusterIP      None           <none>  
 sample-domain1-managed-server2            ClusterIP      None           <none>           8001/TCP         7m52s
 ```
 
+For secure mode, the Successful output will look like:
+
+NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)             AGE
+sample-domain1-admin-server               ClusterIP      None           <none>            9002/TCP,7002/TCP   10m
+sample-domain1-admin-server-external-lb   LoadBalancer   10.0.184.118   52.191.234.149    9002:30087/TCP      4m40s
+sample-domain1-cluster-1-lb               LoadBalancer   10.0.76.7      52.191.235.71     8002:32600/TCP      71s
+sample-domain1-cluster-cluster-1          ClusterIP      10.0.118.225   <none>            7002/TCP,9002/TCP   12m
+sample-domain1-managed-server1            ClusterIP      None           <none>            7002/TCP,9002/TCP   12m
+sample-domain1-managed-server2            ClusterIP      None           <none>            7002/TCP,9002/TCP   12m
+
+
 In the example, the URL to access the Administration Server is: `http://52.191.234.149:7001/console`.
+For secure mode, use the URL: `https://52.191.234.149:9002/console`
+
 The expected username and password must match the values that you chose during the [Kubernetes Secrets for WebLogic](#kubernetes-secrets-for-weblogic) step.
 
-**IMPORTANT:** You must ensure that any Network Security Group rules that govern access to the console allow inbound traffic on port 7001.
+**IMPORTANT:** You must ensure that any Network Security Group rules that govern access to the console allow inbound traffic on port 7001 (9002 for secure mode).
 
 If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
@@ -699,6 +767,8 @@ $ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-se
 $ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
+For secure mode, use https://${ADMIN_SERVER_IP}:9002/console/
+
 Access the sample application using the cluster load balancer IP address.
 
 ```shell
@@ -706,8 +776,15 @@ Access the sample application using the cluster load balancer IP address.
 $ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
+**IMPORTANT:** You must ensure that any Network Security Group rules that govern access to the sample application allow inbound traffic on port 8001 (8002 for secure mode).
+
+
 ```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
+```
+For secure mode, use
+```shell
+$ curl -k https://${CLUSTER_IP}:8002/myapp_war/index.jsp
 ```
 
 Successful output will look like:
