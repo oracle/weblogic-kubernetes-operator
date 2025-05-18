@@ -165,7 +165,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   private static boolean isJobConditionFailed(V1JobCondition jobCondition) {
-    return "Failed".equals(getType(jobCondition)) && getStatus(jobCondition).equals("True");
+    return ("FailureTarget".equals(getType(jobCondition)) || "Failed".equals(getType(jobCondition)))
+        && getStatus(jobCondition).equals("True");
   }
 
   private static String getType(V1JobCondition jobCondition) {
@@ -185,7 +186,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {
-        if ("Failed".equals(cond.getType()) && "True".equals(cond.getStatus())) {
+        if (("FailureTarget".equals(cond.getType()) || "Failed".equals(cond.getType()))
+            && "True".equals(cond.getStatus())) {
           return cond.getReason();
         }
       }
