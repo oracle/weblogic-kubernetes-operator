@@ -286,6 +286,8 @@ The domain resource references the cluster resource, a WebLogic Server installat
 
 - Create the load balancer services using the following commands:
 
+  Note: For secure mode, replace port 7001 with 9002 before applying admin-lb.yaml file
+
   ```shell
   $ kubectl apply -f admin-lb.yaml
   ```
@@ -295,6 +297,8 @@ The domain resource references the cluster resource, a WebLogic Server installat
   ```
   service/domain1-admin-server-external-lb created
   ```
+
+  Note: For secure mode, replace port 8001 with 8002 before applying cluster-lb.yaml file
 
   ```shell
   $ kubectl  apply -f cluster-lb.yaml
@@ -363,7 +367,14 @@ The domain resource references the cluster resource, a WebLogic Server installat
 
   ```
 
+  For secure mode, notice ports 9002, 8002 respectively, under PORT(S) column for admin-server and cluster
+  LoadBalancer service configurations, as these ports were included in the admin-lb.yaml and 
+  cluster-lb.yaml files.
+
+
   In the example, the URL to access the Administration Server is: `http://4.157.147.131:7001/console`.
+  Use 'https://4.157.147.131:9002/console' in case of secure mode.
+
   The user name and password that you enter for the Administration Console must match the ones you specified for the `domain1-weblogic-credentials` secret in the [Create secrets](#create-secrets) step.
 
   If the WLS Administration Console is still not available, use `kubectl get events --sort-by='.metadata.creationTimestamp' ` to troubleshoot.
@@ -410,6 +421,8 @@ $ ADMIN_SERVER_IP=$(kubectl get svc domain1-admin-server-external-lb -o=jsonpath
 $ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
+Use Administration Console Address: https://${ADMIN_SERVER_IP}:9002/console/, for secure mode.
+
 Access the sample application using the cluster load balancer IP address.
 
 ```shell
@@ -418,6 +431,11 @@ $ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-lb -o=jsonpath='{.status.loadBa
 
 ```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
+```
+
+For secure mode, use
+```shell
+$ curl https://${CLUSTER_IP}:8002/myapp_war/index.jsp
 ```
 
 The test application will list the server host on the output, like the following:
