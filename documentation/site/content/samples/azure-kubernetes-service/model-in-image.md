@@ -130,7 +130,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.2.8` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.2.16` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -542,6 +542,7 @@ spec:
   type: LoadBalancer
 
 ```
+{{% /expand %}}
 
 For Secure mode, similar to the Administration Server Load Balancer service configuration, replace port 8001 with 8002 as Managed Servers will now listen on port 8002 (https) in secure mode
 
@@ -610,6 +611,7 @@ sample-domain1-managed-server2            ClusterIP      None           <none>  
 
 For secure mode, the Successful output will look like:
 
+```
 NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)             AGE
 sample-domain1-admin-server               ClusterIP      None           <none>            9002/TCP,7002/TCP   10m
 sample-domain1-admin-server-external-lb   LoadBalancer   10.0.184.118   52.191.234.149    9002:30087/TCP      4m40s
@@ -617,9 +619,10 @@ sample-domain1-cluster-1-lb               LoadBalancer   10.0.76.7      52.191.2
 sample-domain1-cluster-cluster-1          ClusterIP      10.0.118.225   <none>            7002/TCP,9002/TCP   12m
 sample-domain1-managed-server1            ClusterIP      None           <none>            7002/TCP,9002/TCP   12m
 sample-domain1-managed-server2            ClusterIP      None           <none>            7002/TCP,9002/TCP   12m
-
+```
 
 In the example, the URL to access the Administration Server is: `http://52.191.234.149:7001/console`.
+
 For secure mode, use the URL: `https://52.191.234.149:9002/console`
 
 The expected username and password must match the values that you chose during the [Kubernetes Secrets for WebLogic](#kubernetes-secrets-for-weblogic) step.
@@ -767,7 +770,7 @@ $ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-se
 $ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
-For secure mode, use https://${ADMIN_SERVER_IP}:9002/console/
+For secure mode, use `https://${ADMIN_SERVER_IP}:9002/console/`
 
 Access the sample application using the cluster load balancer IP address.
 
