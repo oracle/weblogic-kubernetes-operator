@@ -7,7 +7,11 @@ weight: 5
 
 For the current production release {{< latestVersion >}}:
 
-* Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, 1.28.2+, 1.29.1+, 1.30.1+, and 1.31.1+ (check with `kubectl version`).
+{{% notice note %}}
+Support for Kubernetes 1.32.1+ with Oracle WebLogic Server 12.2.1.4 or 14.1.1.0 requires that the WebLogic container images have patch 37788099. No patch is required when using Oracle WebLogic Server 14.1.2.0.
+{{% /notice %}}
+
+* Kubernetes 1.24.0+, 1.25.0+, 1.26.2+, 1.27.2+, 1.28.2+, 1.29.1+, 1.30.1+, 1.31.1+, 1.32.1+ (check with `kubectl version`).
 * Flannel networking v0.13.0-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
  *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 19.03.1+ (check with `docker version`) *or* CRI-O 1.20.2+ (check with `crictl version | grep RuntimeVersion`).
