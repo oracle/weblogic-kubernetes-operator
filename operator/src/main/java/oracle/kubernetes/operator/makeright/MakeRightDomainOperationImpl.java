@@ -466,7 +466,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
 
         private void processList(V1PodList list) {
-          info.addServerNamesFromPodList(list.getItems().stream()
+          info.getReconciliation().addPodServerNames(list.getItems().stream()
               .map(PodHelper::getPodServerName).toList());
           list.getItems().forEach(this::addPod);
         }
@@ -482,6 +482,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
 
         private void addService(V1Service service) {
+          info.getReconciliation().recordService(service);
           ServiceHelper.addToPresence(info, service);
         }
 
@@ -496,10 +497,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
         @Override
         public void completeProcessing(Packet packet) {
-          info.getServerNames().stream().filter(
-              s -> !info.getServerNamesFromPodList().contains(s)).toList()
-              .forEach(name -> info.deleteServerPodFromEvent(name, null));
-          info.clearServerPodNamesFromList();
+          info.getReconciliation().completeReconciliation();
         }
       };
 

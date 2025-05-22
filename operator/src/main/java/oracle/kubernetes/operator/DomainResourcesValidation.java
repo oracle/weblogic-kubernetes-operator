@@ -101,12 +101,11 @@ class DomainResourcesValidation {
         DomainProcessor dp = Optional.ofNullable((DomainProcessor)
             packet.get(ProcessingConstants.DOMAIN_PROCESSOR)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
+        getDomainPresenceInfoMap().values().forEach(info -> info.getReconciliation().completeReconciliation());
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> adjustClusterResources(c, info)));
         executeMakeRightForClusterEvents(dp);
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
-        getDomainPresenceInfoMap().values().forEach(DomainResourcesValidation.this::removeDeletedPodsFromDPI);
-        getDomainPresenceInfoMap().values().forEach(DomainPresenceInfo::clearServerPodNamesFromList);
       }
     };
   }
@@ -140,11 +139,6 @@ class DomainResourcesValidation {
     list.getItems().forEach(this::addPod);
   }
 
-  private void removeDeletedPodsFromDPI(DomainPresenceInfo dpi) {
-    dpi.getServerNames().stream().filter(s -> !dpi.getServerNamesFromPodList().contains(s)).toList()
-        .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
-  }
-
   private void addEvent(CoreV1Event event) {
     DomainProcessorImpl.updateEventK8SObjects(event);
   }
@@ -157,7 +151,7 @@ class DomainResourcesValidation {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
     DomainPresenceInfo info = getOrComputeDomainPresenceInfo(domainUid);
-    Optional.ofNullable(info).ifPresent(i -> i.addServerNameFromPodList(serverName));
+    Optional.ofNullable(info).ifPresent(i -> i.getReconciliation().addPodServerName(serverName));
 
     if (domainUid != null && serverName != null) {
       setServerPodFromEvent(info, serverName, pod);
@@ -190,7 +184,9 @@ class DomainResourcesValidation {
   private void addService(V1Service service) {
     String domainUid = ServiceHelper.getServiceDomainUid(service);
     if (domainUid != null) {
-      ServiceHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), service);
+      DomainPresenceInfo info = getOrComputeDomainPresenceInfo(domainUid);
+      info.getReconciliation().recordService(service);
+      ServiceHelper.addToPresence(info, service);
     }
   }
 

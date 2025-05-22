@@ -84,7 +84,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   private String adminServerName;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
-  private final List<String> serverNamesFromPodList = Collections.synchronizedList(new ArrayList<>());
+  private final FullListingReconciliation reconciliation = new FullListingReconciliation();
   private Map<String, Fiber.StepAndPacket> serversToRoll = Collections.emptyMap();
 
   /**
@@ -893,33 +893,11 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   }
 
   /**
-   * Return server Pod names from List operation.
+   * Returns the reconciliation object to track clean-up as part of a full listing of namespaced resources.
+   * @return Reconciliation object
    */
-  public List<String> getServerNamesFromPodList() {
-    return serverNamesFromPodList;
-  }
-
-  /**
-   * Add server Pod names from List operation.
-   * @param podNames pod names to be added
-   */
-  public void addServerNamesFromPodList(Collection<String> podNames) {
-    serverNamesFromPodList.addAll(podNames);
-  }
-
-  /**
-   * Add server Pod name from List operation.
-   * @param podName pod name to be added
-   */
-  public void addServerNameFromPodList(String podName) {
-    serverNamesFromPodList.add(podName);
-  }
-
-  /**
-   * Clear server Pod names from List operation.
-   */
-  public void clearServerPodNamesFromList() {
-    serverNamesFromPodList.clear();
+  public FullListingReconciliation getReconciliation() {
+    return reconciliation;
   }
 
   /**
@@ -1222,6 +1200,60 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
           .toHashCode();
     }
 
+  }
+
+  public class FullListingReconciliation {
+    private final List<String> podServerNameList = Collections.synchronizedList(new ArrayList<>());
+    private final List<String> serviceNameList = Collections.synchronizedList(new ArrayList<>());
+
+    /**
+     * Add server Pod names from List operation.
+     * @param podServerNames pod names to be added
+     */
+    public void addPodServerNames(Collection<String> podServerNames) {
+      podServerNameList.addAll(podServerNames);
+    }
+
+    /**
+     * Add server Pod name from List operation.
+     * @param podServerName pod name to be added
+     */
+    public void addPodServerName(String podServerName) {
+      podServerNameList.add(podServerName);
+    }
+
+    public void recordServices(Collection<V1Service> services) {
+      services.stream().map(V1Service::getMetadata).filter(Objects::nonNull)
+          .map(V1ObjectMeta::getName).forEach(serviceNameList::add);
+    }
+
+    public void recordService(V1Service service) {
+      Optional.of(service).map(V1Service::getMetadata).map(V1ObjectMeta::getName).ifPresent(serviceNameList::add);
+    }
+
+    /**
+     * Complete reconciliation.
+     */
+    public void completeReconciliation() {
+      Map<String, ServerKubernetesObjects> activeServers = getActiveServers();
+      activeServers.keySet().stream().filter(s -> !podServerNameList.contains(s)).toList()
+          .forEach(name -> deleteServerPodFromEvent(name, null));
+      podServerNameList.clear();
+
+      activeServers.values().stream().filter(Objects::nonNull).forEach(server -> {
+        server.getService().getAndUpdate(this::checkService);
+        server.getExternalService().getAndUpdate(this::checkService);
+      });
+      clusterServices.entrySet().removeIf(entry -> !serviceNameInList(entry.getValue()));
+    }
+
+    private boolean serviceNameInList(V1Service service) {
+      return service != null && serviceNameList.contains(service.getMetadata().getName());
+    }
+
+    private V1Service checkService(V1Service service) {
+      return serviceNameInList(service) ? service : null;
+    }
   }
 
   /** Details about a specific managed server that will be started up. */
