@@ -167,7 +167,13 @@ public class WebLogicImageTool {
 
   private String buildWitCommand() {
     LoggingFacade logger = getLogger();
-    String ownership = " --chown oracle:root";
+    String ownership = null;
+
+    if (params.useridGroupid() == null) {
+      ownership = " --chown oracle:root";
+    } else {
+      ownership = " --chown " + params.useridGroupid();
+    }
     if (OKE_CLUSTER) {
       if (params.baseImageName().equals(FMWINFRA_IMAGE_NAME)) {
         String output = inspectImage(params.baseImageName(), params.baseImageTag());
