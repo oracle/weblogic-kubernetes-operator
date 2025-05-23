@@ -130,6 +130,7 @@ class ItServerStartPolicyConfigCluster {
     String configServerPodName = domainUid + "-config-cluster-server1";
     checkPodReadyAndServiceExists(configServerPodName,
               domainUid, domainNamespace);
+
     testUntil(
             withLongRetryPolicy,
             isManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName),
