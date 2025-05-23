@@ -24,6 +24,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -240,10 +241,19 @@ public class ServerStartPolicyUtils {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true -Xms1024m -Xmx1024m"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addEnvItem(new V1EnvVar()
+                    .name("MEM_ARGS")
+                    .value("-Xms1024m -Xmx1024m"))
+                .livenessProbe(new ProbeTuning()
+                    .initialDelaySeconds(300)
+                    .failureThreshold(2))
+                .readinessProbe(new ProbeTuning()
+                    .initialDelaySeconds(300)
+                    .failureThreshold(2)))
             .adminServer(new AdminServer()
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
