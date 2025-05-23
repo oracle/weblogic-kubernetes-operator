@@ -286,9 +286,16 @@ public class ServerStartPolicyUtils {
         + "for %s in namespace %s", domainUid, domNamespace));
   }
 
+  /**
+   * Verify the server MBEAN configuration through rest API.
+   * @param managedServer name of the managed server
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName name of the admin server
+   * @return true if MBEAN is found otherwise false
+   **/
   public static Callable<Boolean> isManagedServerConfiguration(String managedServer,
-                                                        String domainNamespace,
-                                                        String adminServerPodName) {
+                                                               String domainNamespace,
+                                                               String adminServerPodName) {
     return () -> {
       return checkManagedServerConfiguration(managedServer, domainNamespace, adminServerPodName);
     };
