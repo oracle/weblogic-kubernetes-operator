@@ -131,6 +131,12 @@ class ItServerStartPolicyConfigCluster {
     checkPodReadyAndServiceExists(configServerPodName,
               domainUid, domainNamespace);
 
+    try {
+      Thread.sleep(300000);
+    } catch (Exception ex) {
+      //
+    }
+
     /*
     testUntil(
             withLongRetryPolicy,
