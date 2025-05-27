@@ -132,7 +132,8 @@ class ItServerStartPolicyConfigCluster {
               domainUid, domainNamespace);
 
     try {
-      Thread.sleep(300000);
+      //Thread.sleep(300000);
+      Thread.sleep(60000);
     } catch (Exception ex) {
       //
     }
