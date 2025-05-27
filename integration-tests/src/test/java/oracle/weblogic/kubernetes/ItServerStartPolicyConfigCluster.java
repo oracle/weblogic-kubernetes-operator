@@ -133,7 +133,8 @@ class ItServerStartPolicyConfigCluster {
 
     try {
       //Thread.sleep(300000);
-      Thread.sleep(60000);
+      //Thread.sleep(60000);
+      Thread.sleep(120000);
     } catch (Exception ex) {
       //
     }
