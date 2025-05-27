@@ -580,8 +580,7 @@ public class Kubernetes {
     }
     V1ServiceList v1ServiceList = null;
     try {
-      v1ServiceList
-        = coreV1Api.listServiceForAllNamespaces(
+      v1ServiceList = coreV1Api.listServiceForAllNamespaces(
         Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
         null, // continue to query when there is more results to return.
         null, // selector to restrict the list of returned objects by their fields

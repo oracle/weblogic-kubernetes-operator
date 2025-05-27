@@ -785,15 +785,15 @@ public class CommonLBTestUtils {
         + ((host != null) && host.contains(":") ? "&ipv6=true" : "&ipv6=false") + "\"";
     if (hostRouting) {
       curlRequest = OKE_CLUSTER_PRIVATEIP
-        ? String.format("curl -g --show-error -ks --noproxy '*' -v -H 'host: %s' %s://%s/%s",
-          ingressHostName, protocol, host, uri)
-        : String.format("curl -g --show-error -ks --noproxy '*' -H 'host: %s' %s://%s/%s",
-          ingressHostName, protocol, getHostAndPort(host, lbPort), uri);
+          ? String.format("curl -g --show-error -ks --noproxy '*' -v -H 'host: %s' %s://%s/%s",
+            ingressHostName, protocol, host, uri)
+          : String.format("curl -g --show-error -ks --noproxy '*' -H 'host: %s' %s://%s/%s",
+            ingressHostName, protocol, getHostAndPort(host, lbPort), uri);
     } else {
       curlRequest = OKE_CLUSTER_PRIVATEIP
-        ? String.format("curl -g --show-error -ks --noproxy '*' -v %s://%s%s/%s", protocol, host, locationString, uri)
-        : String.format("curl -g --show-error -ks --noproxy '*' %s://%s%s/%s",
-          protocol, getHostAndPort(host, lbPort),locationString, uri);
+          ? String.format("curl -g --show-error -ks --noproxy '*' -v %s://%s%s/%s", protocol, host, locationString, uri)
+          : String.format("curl -g --show-error -ks --noproxy '*' %s://%s%s/%s",
+            protocol, getHostAndPort(host, lbPort),locationString, uri);
     }
 
     List<String> managedServers = new ArrayList<>();

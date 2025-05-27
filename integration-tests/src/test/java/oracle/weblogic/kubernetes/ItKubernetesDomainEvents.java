@@ -264,10 +264,10 @@ class ItKubernetesDomainEvents {
       timestamp = now();
       logger.info("patch the domain resource with non-existing managed server");
       patchStr = "[{\"op\": \"add\",\"path\": \""
-        + "/spec/managedServers/-\", \"value\": "
-        + "{\"serverName\" : \"nonexisting-ms\", "
-        + "\"serverStartPolicy\": \"IfNeeded\"}"
-        + "}]";
+          + "/spec/managedServers/-\", \"value\": "
+          + "{\"serverName\" : \"nonexisting-ms\", "
+          + "\"serverStartPolicy\": \"IfNeeded\"}"
+          + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
