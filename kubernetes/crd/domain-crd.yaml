@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 29199903d6443114651bf47005d57eacdae7230c7e22b878a1ffbf5ab767f153
+    weblogic.sha256: 9cf6abe951fff8dbdaed379ad9d54b70fcd19bb936ab4762a562813d3fd138b5
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -3098,6 +3098,8 @@ spec:
                                             - value
                                       required:
                                       - port
+                                stopSignal:
+                                  type: string
                             name:
                               type: string
                             tty:
@@ -3665,6 +3667,8 @@ spec:
                                             - value
                                       required:
                                       - port
+                                stopSignal:
+                                  type: string
                             name:
                               type: string
                             tty:
@@ -4956,6 +4960,8 @@ spec:
                                             - value
                                       required:
                                       - port
+                                stopSignal:
+                                  type: string
                             name:
                               type: string
                             tty:
@@ -7081,6 +7087,8 @@ spec:
                                         - value
                                   required:
                                   - port
+                            stopSignal:
+                              type: string
                         name:
                           type: string
                         tty:
@@ -7648,6 +7656,8 @@ spec:
                                         - value
                                   required:
                                   - port
+                            stopSignal:
+                              type: string
                         name:
                           type: string
                         tty:
@@ -10138,6 +10148,8 @@ spec:
                                               - value
                                         required:
                                         - port
+                                  stopSignal:
+                                    type: string
                               name:
                                 type: string
                               tty:
@@ -10705,6 +10717,8 @@ spec:
                                               - value
                                         required:
                                         - port
+                                  stopSignal:
+                                    type: string
                               name:
                                 type: string
                               tty:
