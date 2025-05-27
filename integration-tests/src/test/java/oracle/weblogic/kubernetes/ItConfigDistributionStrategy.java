@@ -1303,7 +1303,7 @@ class ItConfigDistributionStrategy {
         "Getting Nginx loadbalancer service node port failed");
 
     hostAndPort = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
-      ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST + ":" + nginxNodePort;
+        ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST + ":" + nginxNodePort;
     return hostAndPort;
   }
 }
