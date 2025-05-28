@@ -134,14 +134,15 @@ class ItServerStartPolicyConfigCluster {
     try {
       //Thread.sleep(300000);
       //Thread.sleep(60000);
-      //Thread.sleep(120000);
+      Thread.sleep(120000);
       //Thread.sleep(180000);
-      Thread.sleep(240000);
+      //Thread.sleep(240000);
     } catch (Exception ex) {
       //
     }
 
-    /*
+    /* Can't call checkManagedServerConfiguration to exec the curl command multiple times.
+       The test failed consistently
     testUntil(
             withLongRetryPolicy,
             isManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName),
