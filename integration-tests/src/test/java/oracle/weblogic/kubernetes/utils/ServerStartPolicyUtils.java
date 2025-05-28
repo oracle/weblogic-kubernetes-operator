@@ -250,10 +250,10 @@ public class ServerStartPolicyUtils {
                     .value("-Xms1024m -Xmx1024m"))
                 .livenessProbe(new ProbeTuning()
                     .initialDelaySeconds(300)
-                    .failureThreshold(2))
+                    .failureThreshold(3))
                 .readinessProbe(new ProbeTuning()
                     .initialDelaySeconds(300)
-                    .failureThreshold(2)))
+                    .failureThreshold(3)))
             .adminServer(new AdminServer()
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
@@ -318,7 +318,6 @@ public class ServerStartPolicyUtils {
    **/
   public static boolean checkManagedServerConfiguration(String managedServer,
                                                         String domainNamespace, String adminServerPodName) {
-    System.out.println("========= calling checkManagedServerConfiguration");
     ExecResult result;
     StringBuffer checkCluster = new StringBuffer(KUBERNETES_CLI + " exec -n "
         + domainNamespace + " " + adminServerPodName)
@@ -334,10 +333,7 @@ public class ServerStartPolicyUtils {
         .append(" && echo ${status}")
         .append(" \"");
 
-    System.out.println("checkManagedServerConfiguration: curl command " + checkCluster.toString());
-
-    logger.info("========= checkManagedServerConfiguration: curl command:",
-        new String(checkCluster));
+    logger.info("========= checkManagedServerConfiguration: curl command:", checkCluster.toString());
     try {
       result = exec(new String(checkCluster), true);
     } catch (Exception ex) {
