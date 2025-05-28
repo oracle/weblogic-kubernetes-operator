@@ -135,8 +135,8 @@ class ItServerStartPolicyConfigCluster {
       //Thread.sleep(300000);//3/3 passed
       //Thread.sleep(60000);// 2/4 passed
       //Thread.sleep(120000); //2/4 passed
-      Thread.sleep(180000); //2/4 passed
-      //Thread.sleep(240000); //4/4 passed
+      //Thread.sleep(180000); //3/4 passed
+      Thread.sleep(240000); //4/4 passed
     } catch (Exception ex) {
       //
     }
