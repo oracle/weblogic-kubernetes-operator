@@ -335,6 +335,8 @@ public class ServerStartPolicyUtils {
 
     logger.info("========= checkManagedServerConfiguration: curl command:", checkCluster.toString());
     try {
+      logger.info("========= Sleep 2 min before exec curl command:", checkCluster.toString());
+      Thread.sleep(120000);
       result = exec(new String(checkCluster), true);
     } catch (Exception ex) {
       logger.info("Exception in checkManagedServerConfiguration() {0}", ex);

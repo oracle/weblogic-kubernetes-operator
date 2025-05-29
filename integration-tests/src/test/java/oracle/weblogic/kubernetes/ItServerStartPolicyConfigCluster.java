@@ -23,8 +23,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -44,7 +44,7 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_CLUST
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_SERVER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.checkManagedServerConfiguration;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.executeLifecycleScript;
-//import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.isManagedServerConfiguration;
+import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.isManagedServerConfiguration;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedServerNamePrefix;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.restoreEnv;
@@ -131,29 +131,31 @@ class ItServerStartPolicyConfigCluster {
     checkPodReadyAndServiceExists(configServerPodName,
               domainUid, domainNamespace);
 
+    /*
     try {
       //Thread.sleep(300000);//3/3 passed
       //Thread.sleep(60000);// 2/4 passed
       //Thread.sleep(120000); //2/4 passed
-      //Thread.sleep(180000); //3/4 passed
-      Thread.sleep(240000); //4/4 passed
+      //Thread.sleep(180000); //3/4 passed, 2182-2185, 2182 failed
+      Thread.sleep(240000); //4/4 passed 2186 - 2189, 2191 - 2194
     } catch (Exception ex) {
       //
-    }
+    }*/
 
     /* Can't call checkManagedServerConfiguration to exec the curl command multiple times.
-       The test failed consistently
+       The test failed consistently*/
     testUntil(
             withLongRetryPolicy,
             isManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName),
             logger,
-            "Waiting until managed server from configured cluster found");*/
+            "Waiting until managed server from configured cluster found");
 
+    /*
     boolean isServerConfigured = 
          checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
     assertTrue(isServerConfigured, 
         "Could not find managed server from configured cluster");
-    logger.info("Found managed server from configured cluster");
+    logger.info("Found managed server from configured cluster");*/
    
   }
 
