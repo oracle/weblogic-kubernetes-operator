@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.VersionInfo;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
@@ -110,7 +111,7 @@ class VersionCheckTest {
       consoleControl.ignoreMessage(ignoredLogMessage);
     }
 
-    testType.runTest(logRecords, matcher);
+    testType.runTest(testSupport.getCoreDelegate(), logRecords, matcher);
   }
 
   private void specifyK8sVersion(String majorVersion, String minorVersion, String revision) {
@@ -121,20 +122,20 @@ class VersionCheckTest {
   enum TestType {
     LOG_MSG_TEST {
       @Override
-      void runTest(List<LogRecord> logRecords, Matcher matcher) {
-        HealthCheckHelper.performK8sVersionCheck();
+      void runTest(CoreDelegate delegate, List<LogRecord> logRecords, Matcher matcher) {
+        HealthCheckHelper.performK8sVersionCheck(delegate);
 
         assertThat(logRecords, matcher);
       }
     },
     VERSION_TEST {
       @Override
-      void runTest(List<LogRecord> logRecords, Matcher matcher) {
-        assertThat(HealthCheckHelper.performK8sVersionCheck(), matcher);
+      void runTest(CoreDelegate delegate, List<LogRecord> logRecords, Matcher matcher) {
+        assertThat(HealthCheckHelper.performK8sVersionCheck(delegate), matcher);
       }
     };
 
-    abstract void runTest(List<LogRecord> logRecords, Matcher matcher);
+    abstract void runTest(CoreDelegate delegate, List<LogRecord> logRecords, Matcher matcher);
   }
 
   @SuppressWarnings("unused")

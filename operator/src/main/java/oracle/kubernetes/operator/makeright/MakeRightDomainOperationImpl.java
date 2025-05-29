@@ -20,12 +20,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
-import oracle.kubernetes.operator.DomainProcessorDelegate;
-import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
-import oracle.kubernetes.operator.MakeRightExecutor;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.Processors;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -220,7 +215,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
       result.add(getCreateEventStep());
       result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
       result.add(createStatusInitializationStep(hasEventData()));
-      result.add(createListClusterResourcesStep(getNamespace()));
+      result.add(createListClusterResourcesStep(delegate, getNamespace()));
       result.add(createDomainValidationStep(getDomain()));
       result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
     }
@@ -233,8 +228,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         .map(V1ObjectMeta::getDeletionTimestamp).isPresent();
   }
 
-  private static Step createListClusterResourcesStep(String domainNamespace) {
-    return RequestBuilder.CLUSTER.list(domainNamespace, new ListClusterResourcesResponseStep());
+  private static Step createListClusterResourcesStep(CoreDelegate delegate, String domainNamespace) {
+    return delegate.getClusterBuilder().list(domainNamespace, new ListClusterResourcesResponseStep());
   }
 
   @Override
@@ -281,7 +276,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   }
 
   private Step createDomainValidationStep(@Nullable DomainResource domain) {
-    return domain == null ? null : DomainValidationSteps.createDomainValidationSteps(getNamespace());
+    return domain == null ? null : DomainValidationSteps.createDomainValidationSteps(delegate, getNamespace());
   }
 
   private Step createDomainUpPlan(DomainPresenceInfo info) {
@@ -367,8 +362,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       return doNext(
-          RequestBuilder.DOMAIN.get(info.getNamespace(), info.getDomainName(), new ReadDomainResponseStep(getNext())),
-          packet);
+          delegate.getDomainBuilder().get(
+              info.getNamespace(), info.getDomainName(), new ReadDomainResponseStep(getNext())), packet);
     }
   }
 
@@ -503,7 +498,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
       };
 
-      return executor.createNamespacedResourceSteps(processor, info, delegate.getDomainNamespaces());
+      return executor.createNamespacedResourceSteps(delegate, processor, info, delegate.getDomainNamespaces());
     }
 
   }

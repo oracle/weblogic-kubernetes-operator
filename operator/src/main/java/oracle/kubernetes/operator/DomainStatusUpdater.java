@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -31,7 +31,6 @@ import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -395,7 +394,8 @@ public class DomainStatusUpdater {
     }
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {
-      return RequestBuilder.DOMAIN.get(context.getNamespace(), context.getDomainName(), new DomainUpdateStep());
+      CoreDelegate delegate = (CoreDelegate) context.packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return delegate.getDomainBuilder().get(context.getNamespace(), context.getDomainName(), new DomainUpdateStep());
     }
   }
 
@@ -526,7 +526,8 @@ public class DomainStatusUpdater {
           .withSpec(null)
           .withStatus(status);
 
-      return RequestBuilder.DOMAIN.updateStatus(newDomain, DomainResource::getStatus,
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return delegate.getDomainBuilder().updateStatus(newDomain, DomainResource::getStatus,
           domainStatusUpdaterStep.createResponseStep(this));
     }
 

@@ -26,14 +26,14 @@ class ClusterScaleAdmissionCheckerTest extends AdmissionCheckerTestBase {
   void whenClusterReplicasChangedAndValid_returnTrue() {
     proposedCluster.getSpec().withReplicas(GOOD_REPLICAS);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenClusterReplicasChangedAndInvalid_returnFalse() {
     proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((ClusterAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -42,7 +42,7 @@ class ClusterScaleAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
     proposedCluster.setStatus(null);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((ClusterAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -53,7 +53,7 @@ class ClusterScaleAdmissionCheckerTest extends AdmissionCheckerTestBase {
 
     testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((ClusterAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 }

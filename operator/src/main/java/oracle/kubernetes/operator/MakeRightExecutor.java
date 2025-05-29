@@ -28,12 +28,14 @@ public interface MakeRightExecutor {
 
   /**
    * Creates steps to process namespaced Kubernetes resources.
+   * @param delegate Delegate
    * @param processors the processing to be done
    * @param info the presence info which encapsulates the domain
    */
-  default Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info,
+  default Step createNamespacedResourceSteps(CoreDelegate delegate, Processors processors, DomainPresenceInfo info,
                                              DomainNamespaces domainNamespaces) {
-    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid(), domainNamespaces);
+    NamespacedResources resources = new NamespacedResources(
+        delegate, info.getNamespace(), info.getDomainUid(), domainNamespaces);
     resources.addProcessing(processors);
     if (domainNamespaces != null) {
       resources.addProcessing(domainNamespaces.createWatcherResumeProcessing(info.getNamespace()));

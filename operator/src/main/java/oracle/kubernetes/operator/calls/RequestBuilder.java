@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.calls;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -15,35 +13,10 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionList;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobList;
-import io.kubernetes.client.openapi.models.V1Namespace;
-import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
-import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
-import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
-import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
-import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
-import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
@@ -54,10 +27,6 @@ import io.kubernetes.client.util.generic.options.ListOptions;
 import io.kubernetes.client.util.generic.options.PatchOptions;
 import io.kubernetes.client.util.generic.options.UpdateOptions;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.ClusterList;
-import oracle.kubernetes.weblogic.domain.model.ClusterResource;
-import oracle.kubernetes.weblogic.domain.model.DomainList;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 public class RequestBuilder<A extends KubernetesObject, L extends KubernetesListObject> {
   private static final KubernetesApiFactory DEFAULT_KUBERNETES_API_FACTORY = new KubernetesApiFactory() {
@@ -88,68 +57,6 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static WatchApiFactory watchApiFactory = DEFAULT_WATCH_API_FACTORY;
 
-  private static final Map<Class<? extends KubernetesObject>, RequestBuilder<?, ?>> REQUEST_BUILDER_MAP
-      = new HashMap<>();
-  private static final Map<Class<? extends KubernetesListObject>, RequestBuilder<?, ?>> REQUEST_BUILDER_LIST_MAP
-      = new HashMap<>();
-
-  @SuppressWarnings("unchecked")
-  static <X extends KubernetesObject> RequestBuilder<X, ?> lookupByType(Class<X> type) {
-    return (RequestBuilder<X, ?>) REQUEST_BUILDER_MAP.get(type);
-  }
-
-  @SuppressWarnings("unchecked")
-  static <X extends KubernetesListObject> RequestBuilder<?, X> lookupByListType(Class<X> type) {
-    return (RequestBuilder<?, X>) REQUEST_BUILDER_LIST_MAP.get(type);
-  }
-
-  public static final VersionCodeRequestBuilder VERSION = new VersionCodeRequestBuilder();
-
-  public static final RequestBuilder<DomainResource, DomainList> DOMAIN =
-      new RequestBuilder<>(DomainResource.class, DomainList.class, "weblogic.oracle", "v9", "domains", "domain");
-  public static final RequestBuilder<ClusterResource, ClusterList> CLUSTER =
-      new RequestBuilder<>(ClusterResource.class, ClusterList.class, "weblogic.oracle", "v1", "clusters", "cluster");
-
-  public static final RequestBuilder<V1Namespace, V1NamespaceList> NAMESPACE =
-      new RequestBuilder<>(V1Namespace.class, V1NamespaceList.class, "", "v1", "namespaces", "namespace");
-  public static final PodRequestBuilder POD = new PodRequestBuilder();
-  public static final RequestBuilder<V1Service, V1ServiceList> SERVICE =
-      new RequestBuilder<>(V1Service.class, V1ServiceList.class, "", "v1", "services", "service");
-  public static final RequestBuilder<V1ConfigMap, V1ConfigMapList> CM =
-      new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class, "", "v1", "configmaps", "configmap");
-  public static final RequestBuilder<V1Secret, V1SecretList> SECRET =
-      new RequestBuilder<>(V1Secret.class, V1SecretList.class, "", "v1", "secrets", "secret");
-  public static final RequestBuilder<CoreV1Event, CoreV1EventList> EVENT =
-      new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class, "", "v1", "events", "event");
-  public static final RequestBuilder<V1PersistentVolume, V1PersistentVolumeList> PV =
-      new RequestBuilder<>(V1PersistentVolume.class, V1PersistentVolumeList.class,
-          "", "v1", "persistentvolumes", "persistentvolume");
-  public static final RequestBuilder<V1PersistentVolumeClaim, V1PersistentVolumeClaimList> PVC =
-      new RequestBuilder<>(V1PersistentVolumeClaim.class, V1PersistentVolumeClaimList.class,
-          "", "v1", "persistentvolumeclaims", "persistentvolumeclaim");
-
-  public static final RequestBuilder<V1CustomResourceDefinition, V1CustomResourceDefinitionList> CRD =
-      new RequestBuilder<>(V1CustomResourceDefinition.class, V1CustomResourceDefinitionList.class,
-          "apiextensions.k8s.io", "v1", "customresourcedefinitions", "customresourcedefinition");
-  public static final RequestBuilder<V1ValidatingWebhookConfiguration, V1ValidatingWebhookConfigurationList> VWC =
-      new RequestBuilder<>(V1ValidatingWebhookConfiguration.class, V1ValidatingWebhookConfigurationList.class,
-          "admissionregistration.k8s.io", "v1", "validatingwebhookconfigurations", "validatingwebhookconfiguration");
-
-  public static final RequestBuilder<V1Job, V1JobList> JOB =
-      new RequestBuilder<>(V1Job.class, V1JobList.class, "batch", "v1", "jobs", "job");
-  public static final RequestBuilder<V1PodDisruptionBudget, V1PodDisruptionBudgetList> PDB =
-      new RequestBuilder<>(V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
-          "policy", "v1", "poddisruptionbudgets", "poddisruptionbudget");
-  public static final RequestBuilder<V1TokenReview, KubernetesListObject> TR =
-      new RequestBuilder<>(V1TokenReview.class, KubernetesListObject.class,
-          "authentication.k8s.io", "v1", "tokenreviews", "tokenreview");
-  public static final RequestBuilder<V1SelfSubjectRulesReview, KubernetesListObject> SSRR =
-      new RequestBuilder<>(V1SelfSubjectRulesReview.class, KubernetesListObject.class,
-          "authorization.k8s.io", "v1", "selfsubjectrulesreviews", "selfsubjectrulesreview");
-  public static final RequestBuilder<V1SubjectAccessReview, KubernetesListObject> SAR =
-      new RequestBuilder<>(V1SubjectAccessReview.class, KubernetesListObject.class,
-          "authorization.k8s.io", "v1", "selfsubjectaccessreviews", "selfsubjectaccessreview");
-
   protected final Class<A> apiTypeClass;
   protected final Class<L> apiListTypeClass;
   protected final String apiGroup;
@@ -157,7 +64,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   protected final String resourcePlural;
   protected final String resourceSingular;
 
-  RequestBuilder(
+  public RequestBuilder(
       Class<A> apiTypeClass,
       Class<L> apiListTypeClass,
       String apiGroup,
@@ -170,11 +77,6 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
     this.resourceSingular = resourceSingular;
     this.apiTypeClass = apiTypeClass;
     this.apiListTypeClass = apiListTypeClass;
-
-    REQUEST_BUILDER_MAP.put(apiTypeClass, this);
-    if (!KubernetesListObject.class.equals(apiListTypeClass)) {
-      REQUEST_BUILDER_LIST_MAP.put(apiListTypeClass, this);
-    }
   }
 
   String getApiGroup() {

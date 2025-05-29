@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -28,6 +29,7 @@ public class AuthorizationProxy {
    * resource in the specified scope. Call this version of the method when you know that the
    * principal is not a member of any groups.
    *
+   * @param delegate Delegate
    * @param principal The user, group or service account.
    * @param operation The operation to be authorized.
    * @param resource The kind of resource on which the operation is to be authorized.
@@ -38,19 +40,21 @@ public class AuthorizationProxy {
    * @return true if the operation is allowed, or false if not.
    */
   public boolean check(
+      CoreDelegate delegate,
       String principal,
       Operation operation,
       Resource resource,
       String resourceName,
       Scope scope,
       String namespaceName) {
-    return check(principal, null, operation, resource, resourceName, scope, namespaceName);
+    return check(delegate, principal, null, operation, resource, resourceName, scope, namespaceName);
   }
 
   /**
    * Check if the specified principal is allowed to perform the specified operation on the specified
    * resource in the specified scope.
    *
+   * @param delegate Delegate
    * @param principal The user, group or service account.
    * @param groups The groups that principal is a member of.
    * @param operation The operation to be authorized.
@@ -62,6 +66,7 @@ public class AuthorizationProxy {
    * @return true if the operation is allowed, or false if not.
    */
   public boolean check(
+      CoreDelegate delegate,
       String principal,
       final List<String> groups,
       Operation operation,
@@ -74,7 +79,7 @@ public class AuthorizationProxy {
         prepareSubjectAccessReview(
             principal, groups, operation, resource, resourceName, scope, namespaceName);
     try {
-      subjectAccessReview = RequestBuilder.SAR.create(subjectAccessReview);
+      subjectAccessReview = delegate.getSubjectAccessReviewBuilder().create(subjectAccessReview);
     } catch (ApiException e) {
       LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
       LOGGER.exiting(Boolean.FALSE);
@@ -164,14 +169,14 @@ public class AuthorizationProxy {
     return resourceAttributes;
   }
 
-  V1SelfSubjectRulesReview review(String namespace) {
+  V1SelfSubjectRulesReview review(CoreDelegate delegate, String namespace) {
     V1SelfSubjectRulesReview subjectRulesReview = new V1SelfSubjectRulesReview();
     V1SelfSubjectRulesReviewSpec spec = new V1SelfSubjectRulesReviewSpec();
     spec.setNamespace(namespace);
     subjectRulesReview.setSpec(spec);
     subjectRulesReview.setMetadata(new V1ObjectMeta()); // work around NPE in GenericKubernetesApi
     try {
-      return RequestBuilder.SSRR.create(subjectRulesReview);
+      return delegate.getSelfSubjectRulesReviewBuilder().create(subjectRulesReview);
     } catch (ApiException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return null;

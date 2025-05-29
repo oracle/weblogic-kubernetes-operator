@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.model;
@@ -9,6 +9,7 @@ import java.util.Map;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.webhooks.resource.AdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.ClusterCreateAdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.ClusterScaleAdmissionChecker;
@@ -192,7 +193,7 @@ public class AdmissionRequest {
       }
 
       @Override
-      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
+      public AdmissionChecker getAdmissionChecker(CoreDelegate delegate, AdmissionRequest request) {
         DomainResource existing = (DomainResource) request.getExistingResource();
         DomainResource proposed = (DomainResource) request.getProposedResource();
         return request.isNewResource()
@@ -212,7 +213,7 @@ public class AdmissionRequest {
       }
 
       @Override
-      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
+      public AdmissionChecker getAdmissionChecker(CoreDelegate delegate, AdmissionRequest request) {
         ClusterResource existing = (ClusterResource) request.getExistingResource();
         ClusterResource proposed = (ClusterResource) request.getProposedResource();
         return request.isNewResource()
@@ -232,9 +233,9 @@ public class AdmissionRequest {
       }
 
       @Override
-      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) throws ApiException {
+      public AdmissionChecker getAdmissionChecker(CoreDelegate delegate, AdmissionRequest request) throws ApiException {
         Scale proposed = (Scale) request.getProposedResource();
-        ClusterResource cluster = getCluster(proposed.getMetadata().getName(),
+        ClusterResource cluster = getCluster(delegate, proposed.getMetadata().getName(),
               proposed.getMetadata().getNamespace());
         if (cluster != null) {
           cluster.getSpec().withReplicas(Integer.valueOf(proposed.getSpec().get("replicas")));
@@ -244,8 +245,8 @@ public class AdmissionRequest {
         }
       }
 
-      private ClusterResource getCluster(String clusterName, String namespace) throws ApiException {
-        List<ClusterResource> clusters = AdmissionChecker.getClusters(namespace);
+      private ClusterResource getCluster(CoreDelegate delegate, String clusterName, String namespace) throws ApiException {
+        List<ClusterResource> clusters = AdmissionChecker.getClusters(delegate, namespace);
         return clusters.stream().filter(cluster -> clusterName.equals(cluster.getMetadata().getName()))
             .findFirst().orElse(null);
       }
@@ -267,7 +268,7 @@ public class AdmissionRequest {
       }
 
       @Override
-      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
+      public AdmissionChecker getAdmissionChecker(CoreDelegate delegate, AdmissionRequest request) {
         throw new AssertionError(NOT_SUPPORTED_MSG);
       }
     };
@@ -280,7 +281,8 @@ public class AdmissionRequest {
 
     public abstract Object readProposedObject(AdmissionRequest request);
 
-    public abstract AdmissionChecker getAdmissionChecker(AdmissionRequest request) throws ApiException;
+    public abstract AdmissionChecker getAdmissionChecker(CoreDelegate delegate,
+                                                         AdmissionRequest request) throws ApiException;
 
   }
 

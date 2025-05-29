@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -13,9 +13,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.WatchTuning;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 
 import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER;
 
@@ -27,17 +27,19 @@ public class OperatorEventWatcher extends Watcher<CoreV1Event> {
   private final String ns;
 
   private OperatorEventWatcher(
+        CoreDelegate delegate,
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
         WatchListener<CoreV1Event> listener,
         AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
+    super(delegate, initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
   }
 
   /**
    * Create and start a new DomainEventWatcher.
+   * @param delegate Delegate
    * @param factory thread factory to use for this watcher's threads
    * @param ns namespace
    * @param initialResourceVersion the oldest version to return for this watch
@@ -47,6 +49,7 @@ public class OperatorEventWatcher extends Watcher<CoreV1Event> {
    * @return the domain watcher
    */
   public static OperatorEventWatcher create(
+      CoreDelegate delegate,
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
@@ -54,14 +57,14 @@ public class OperatorEventWatcher extends Watcher<CoreV1Event> {
       WatchListener<CoreV1Event> listener,
       AtomicBoolean isStopping) {
     OperatorEventWatcher watcher =
-        new OperatorEventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+        new OperatorEventWatcher(delegate, ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
   @Override
   public Watchable<CoreV1Event> initiateWatch(ListOptions options) throws ApiException {
-    return RequestBuilder.EVENT.watch(ns, options.labelSelector(OPERATOR_EVENT_LABEL_FILTER));
+    return delegate.getEventBuilder().watch(ns, options.labelSelector(OPERATOR_EVENT_LABEL_FILTER));
   }
 
   @Override

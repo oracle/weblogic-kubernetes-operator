@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimStatus;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
@@ -67,8 +68,9 @@ public class PersistentVolumeClaimHelper {
     @Override
     public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       if (info.getDomain().getInitPvDomainPersistentVolumeClaim() != null) {
-        return doNext(createContext(packet).readAndCreatePersistentVolumeClaimStep(getNext()), packet);
+        return doNext(createContext(packet).readAndCreatePersistentVolumeClaimStep(delegate, getNext()), packet);
       }
       return doNext(packet);
     }
@@ -90,12 +92,12 @@ public class PersistentVolumeClaimHelper {
       return new PersistentVolumeClaimContext.ConflictStep();
     }
 
-    Step readAndCreatePersistentVolumeClaimStep(Step next) {
+    Step readAndCreatePersistentVolumeClaimStep(CoreDelegate delegate, Step next) {
       Step nextStep = next;
       if (Boolean.TRUE.equals(getWaitForPvcToBind())) {
         nextStep = waitForPvcToBind(getPersistentVolumeClaimName(), next);
       }
-      return RequestBuilder.PVC.get(info.getNamespace(),
+      return delegate.getPersistentVolumeClaimBuilder().get(info.getNamespace(),
           getPersistentVolumeClaimName(), new ReadResponseStep(nextStep));
     }
 
@@ -169,11 +171,12 @@ public class PersistentVolumeClaimHelper {
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<V1PersistentVolumeClaim> callResponse) {
         DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         V1PersistentVolumeClaim persistentVolumeClaim = callResponse.getObject();
 
         if (persistentVolumeClaim == null) {
           removePersistentVolumeClaimFromRecord();
-          return doNext(createNewPersistentVolumeClaim(getNext()), packet);
+          return doNext(createNewPersistentVolumeClaim(delegate, getNext()), packet);
         } else {
           logPersistentVolumeClaimExists(info.getDomain().getDomainUid(),
               info.getDomain().getInitPvDomainPersistentVolumeClaim());
@@ -186,12 +189,12 @@ public class PersistentVolumeClaimHelper {
         LOGGER.fine(PVC_EXISTS, pvc.getMetadata().getName(), domainUid);
       }
 
-      private Step createNewPersistentVolumeClaim(Step next) {
-        return createPersistentVolumeClaim(getPVCCreatedMessageKey(), next);
+      private Step createNewPersistentVolumeClaim(CoreDelegate delegate, Step next) {
+        return createPersistentVolumeClaim(delegate, getPVCCreatedMessageKey(), next);
       }
 
-      private Step createPersistentVolumeClaim(String messageKey, Step next) {
-        return RequestBuilder.PVC.create(createModel(),
+      private Step createPersistentVolumeClaim(CoreDelegate delegate, String messageKey, Step next) {
+        return delegate.getPersistentVolumeClaimBuilder().create(createModel(),
             new PersistentVolumeClaimHelper.PersistentVolumeClaimContext.CreateResponseStep(messageKey, next));
       }
     }
@@ -199,8 +202,9 @@ public class PersistentVolumeClaimHelper {
     private class ConflictStep extends Step {
       @Override
       public @Nonnull Result apply(Packet packet) {
-        return doNext(RequestBuilder.PVC.get(info.getNamespace(), getPersistentVolumeClaimName(),
-            new ReadResponseStep(conflictStep)), packet);
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+        return doNext(delegate.getPersistentVolumeClaimBuilder().get(
+            info.getNamespace(), getPersistentVolumeClaimName(), new ReadResponseStep(conflictStep)), packet);
       }
 
       private String getPersistentVolumeClaimName() {

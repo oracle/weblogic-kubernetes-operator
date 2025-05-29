@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.resource;
@@ -10,7 +10,7 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -36,18 +36,19 @@ public abstract class AdmissionChecker {
 
   /**
    * Validating a proposed request.
-   *
+   * @param delegate Delegate
    * @return a AdmissionResponse object
    */
-  abstract AdmissionResponse validate();
+  abstract AdmissionResponse validate(CoreDelegate delegate);
 
   /**
    * Validate a new resource or a proposed resource against an existing resource. It returns true if the new resource
    * or proposed changes in the proposed resource can be honored, otherwise, returns false.
    *
+   * @param delegate Delegate
    * @return true if valid, otherwise false
    */
-  public abstract boolean isProposedChangeAllowed();
+  public abstract boolean isProposedChangeAllowed(CoreDelegate delegate);
 
   boolean hasNoFatalValidationErrors(DomainResource proposedDomain) {
     List<String> failures = proposedDomain.getFatalValidationFailures();
@@ -55,8 +56,8 @@ public abstract class AdmissionChecker {
     return failures.isEmpty();
   }
 
-  public static List<ClusterResource> getClusters(String namespace) throws ApiException {
-    return Optional.of(RequestBuilder.CLUSTER.list(namespace))
+  public static List<ClusterResource> getClusters(CoreDelegate delegate, String namespace) throws ApiException {
+    return Optional.of(delegate.getClusterBuilder().list(namespace))
         .map(ClusterList::getItems).orElse(Collections.emptyList());
   }
 

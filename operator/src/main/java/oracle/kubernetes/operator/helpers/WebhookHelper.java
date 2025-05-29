@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,7 +21,8 @@ import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.CoreDelegate;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -80,7 +81,8 @@ public class WebhookHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(createContext().verifyValidatingWebhookConfiguration(getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createContext().verifyValidatingWebhookConfiguration(delegate, getNext()), packet);
     }
 
     protected ValidatingWebhookConfigurationContext createContext() {
@@ -164,8 +166,8 @@ public class WebhookHelper {
           .map(Base64::decodeBase64).orElse(null);
     }
 
-    private Step verifyValidatingWebhookConfiguration(Step next) {
-      return RequestBuilder.VWC.get(getName(model), createReadResponseStep(next));
+    private Step verifyValidatingWebhookConfiguration(CoreDelegate delegate, Step next) {
+      return delegate.getValidatingWebhookConfigurationBuilder().get(getName(model), createReadResponseStep(next));
     }
 
     @Nullable
@@ -193,10 +195,11 @@ public class WebhookHelper {
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<V1ValidatingWebhookConfiguration> callResponse) {
         V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getObject();
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (existingWebhookConfig == null) {
-          return doNext(createValidatingWebhookConfiguration(getNext()), packet);
+          return doNext(createValidatingWebhookConfiguration(delegate, getNext()), packet);
         } else if (shouldUpdate(existingWebhookConfig)) {
-          return doNext(replaceValidatingWebhookConfiguration(getNext(), existingWebhookConfig), packet);
+          return doNext(replaceValidatingWebhookConfiguration(delegate, getNext(), existingWebhookConfig), packet);
         } else {
           return doNext(packet);
         }
@@ -230,16 +233,18 @@ public class WebhookHelper {
         return l.isEmpty() ? null : l.get(0);
       }
 
-      private Step createValidatingWebhookConfiguration(Step next) {
-        return RequestBuilder.VWC.create(model, createCreateResponseStep(next));
+      private Step createValidatingWebhookConfiguration(CoreDelegate delegate, Step next) {
+        return delegate.getValidatingWebhookConfigurationBuilder().create(model, createCreateResponseStep(next));
       }
 
       private ResponseStep<V1ValidatingWebhookConfiguration> createCreateResponseStep(Step next) {
         return new CreateResponseStep(next);
       }
 
-      private Step replaceValidatingWebhookConfiguration(Step next, V1ValidatingWebhookConfiguration existing) {
-        return RequestBuilder.VWC.update(updateModel(existing), createReplaceResponseStep(next));
+      private Step replaceValidatingWebhookConfiguration(CoreDelegate delegate, Step next,
+                                                         V1ValidatingWebhookConfiguration existing) {
+        return delegate.getValidatingWebhookConfigurationBuilder().update(
+            updateModel(existing), createReplaceResponseStep(next));
       }
 
       private V1ValidatingWebhookConfiguration updateModel(V1ValidatingWebhookConfiguration existing) {
@@ -349,11 +354,13 @@ public class WebhookHelper {
   private static class DeleteValidatingWebhookConfigurationStep extends Step {
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(createActionStep(), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createActionStep(delegate), packet);
     }
 
-    private Step createActionStep() {
-      return RequestBuilder.VWC.delete(VALIDATING_WEBHOOK_NAME, new DefaultResponseStep<>(getNext()));
+    private Step createActionStep(CoreDelegate delegate) {
+      return delegate.getValidatingWebhookConfigurationBuilder().delete(
+          VALIDATING_WEBHOOK_NAME, new DefaultResponseStep<>(getNext()));
     }
   }
 }

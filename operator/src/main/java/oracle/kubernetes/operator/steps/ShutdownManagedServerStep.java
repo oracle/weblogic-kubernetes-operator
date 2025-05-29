@@ -24,10 +24,10 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ShutdownType;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
@@ -84,14 +84,15 @@ public class ShutdownManagedServerStep extends Step {
     LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
     V1Service service = getDomainPresenceInfo(packet).getServerService(serverName);
 
+    CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
     String now = OffsetDateTime.now().toString();
     if (service == null || !PodHelper.isReady(pod) || PodHelper.isFailed(pod) || PodHelper.isWaitingToRoll(pod)) {
-      return doNext(PodHelper.annotatePodAsNeedingToShutdown(pod, now, getNext()), packet);
+      return doNext(PodHelper.annotatePodAsNeedingToShutdown(delegate, pod, now, getNext()), packet);
     }
     return doNext(
           Step.chain(
               SecretHelper.createAuthorizationSourceStep(),
-              PodHelper.annotatePodAsNeedingToShutdown(pod, now,
+              PodHelper.annotatePodAsNeedingToShutdown(delegate, pod, now,
                   new ShutdownManagedServerWithHttpStep(service, pod, getNext()))),
           packet);
   }
@@ -396,12 +397,13 @@ public class ShutdownManagedServerStep extends Step {
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
       removeShutdownRequestRetryCount(packet);
-      return doNext(Step.chain(createDomainRefreshStep(getDomainPresenceInfo(packet).getDomainName(),
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(Step.chain(createDomainRefreshStep(delegate, getDomainPresenceInfo(packet).getDomainName(),
           getDomainPresenceInfo(packet).getNamespace()), getNext()), packet);
     }
 
-    private Step createDomainRefreshStep(String domainName, String namespace) {
-      return RequestBuilder.DOMAIN.get(namespace, domainName, new DomainUpdateStep());
+    private Step createDomainRefreshStep(CoreDelegate delegate, String domainName, String namespace) {
+      return delegate.getDomainBuilder().get(namespace, domainName, new DomainUpdateStep());
     }
 
     private boolean shouldRetry(Packet packet) {

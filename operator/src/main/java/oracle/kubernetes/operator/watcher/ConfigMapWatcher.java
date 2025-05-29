@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -12,9 +12,9 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.WatchTuning;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 
 /**
@@ -25,17 +25,19 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
   private final String ns;
 
   private ConfigMapWatcher(
+      CoreDelegate delegate,
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
       WatchListener<V1ConfigMap> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
+    super(delegate, initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
   }
 
   /**
    * Create watcher.
+   * @param delegate Delegate
    * @param factory thread factory
    * @param ns namespace
    * @param initialResourceVersion initial resource version
@@ -45,6 +47,7 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
    * @return watcher
    */
   public static ConfigMapWatcher create(
+      CoreDelegate delegate,
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
@@ -52,14 +55,14 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
       WatchListener<V1ConfigMap> listener,
       AtomicBoolean isStopping) {
     ConfigMapWatcher watcher =
-        new ConfigMapWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+        new ConfigMapWatcher(delegate, ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
   @Override
   public Watchable<V1ConfigMap> initiateWatch(ListOptions options) throws ApiException {
-    return RequestBuilder.CM.watch(ns, options.labelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL));
+    return delegate.getConfigMapBuilder().watch(ns, options.labelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL));
   }
 
   @Override

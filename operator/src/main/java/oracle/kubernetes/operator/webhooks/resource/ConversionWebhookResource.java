@@ -17,6 +17,7 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
@@ -72,17 +73,14 @@ public class ConversionWebhookResource extends BaseResource {
       LOGGER.fine("Conversion webhook request: " + body);
     }
 
+    ResourceConfig rc = (ResourceConfig) application;
+    RestConfig r = (RestConfig) rc.getProperty(RestConfig.REST_CONFIG_PROPERTY);
+    RestBackend be = r.getBackend(null);
+
     try {
       conversionReview = readConversionReview(body);
-
-      ResourceConfig rc = (ResourceConfig) application;
-      RestConfig r = (RestConfig) rc.getProperty(RestConfig.REST_CONFIG_PROPERTY);
-      RestBackend be = r.getBackend(null);
-
       conversionResponse = createConversionResponse(conversionReview.getRequest(), be);
     } catch (Exception e) {
-
-      // TEST
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
       e.printStackTrace(pw);
@@ -92,7 +90,7 @@ public class ConversionWebhookResource extends BaseResource {
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
           .uid(getUid(conversionReview)).result(new Result().status(FAILED_STATUS).message("Exception: " + e));
-      generateFailedEvent(e, getConversionRequest(conversionReview));
+      generateFailedEvent(r.getCoreDelegate(), e, getConversionRequest(conversionReview));
     }
     ConversionReviewModel conversionReviewModel = new ConversionReviewModel()
         .apiVersion(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getApiVersion).orElse(null))
@@ -111,10 +109,10 @@ public class ConversionWebhookResource extends BaseResource {
         .map(ConversionRequest::toString).orElse(null);
   }
 
-  private void generateFailedEvent(Exception exception, String conversionRequest) {
+  private void generateFailedEvent(CoreDelegate delegate, Exception exception, String conversionRequest) {
     EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, exception.getMessage())
         .resourceName(OPERATOR_WEBHOOK_COMPONENT).additionalMessage(conversionRequest);
-    createConversionWebhookEvent(eventData);
+    createConversionWebhookEvent(delegate, eventData);
   }
 
   private String getUid(ConversionReviewModel conversionReview) {

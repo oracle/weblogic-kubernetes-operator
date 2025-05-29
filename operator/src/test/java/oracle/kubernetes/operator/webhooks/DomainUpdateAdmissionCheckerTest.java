@@ -45,18 +45,18 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
   @Test
   void whenSameObject_returnTrue() {
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenNothingChanged_returnTrue() {
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenSpecAdded_returnTrue() {
     existingDomain.withSpec(null);
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   // DomainResource replica count validation
@@ -64,14 +64,14 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
   void whenDomainReplicasChangedAloneValid_returnTrue() {
     proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenDomainReplicasChangedAloneAndInvalid_returnFalse() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -79,7 +79,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -87,7 +87,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -95,14 +95,14 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome("/home/dir");
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypeChanged_returnTrue() {
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertFalse(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings());
   }
 
@@ -111,7 +111,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -120,7 +120,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -129,7 +129,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -138,7 +138,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     setPVDomainSourceTypeWithAdditionalVolume(existingDomain);
     setPVDomainSourceTypeWithAdditionalVolume(proposedDomain);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   private void setPVDomainSourceTypeWithAdditionalVolume(DomainResource domain) {
@@ -153,7 +153,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertTrue(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings());
   }
 
@@ -163,7 +163,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -174,7 +174,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -185,7 +185,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -197,7 +197,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -209,7 +209,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -221,7 +221,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings(), equalTo(true));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).getWarnings().get(0),
         equalTo(getWarningMessageForDomainResource(proposedDomain, proposedCluster, proposedCluster2)));
@@ -240,7 +240,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingCluster.getSpec().withReplicas(2);
     proposedCluster.getSpec().withReplicas(null);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasException(), equalTo(false));
   }
 
@@ -251,7 +251,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
     testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasException(), equalTo(true));
   }
 
@@ -262,7 +262,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
     testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings(), equalTo(false));
   }
 
@@ -273,7 +273,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     testSupport.defineResources(existingDomain);
     proposedCluster.getSpec().withReplicas(GOOD_REPLICAS);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -281,7 +281,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     testSupport.defineResources(proposedDomain);
     proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -291,7 +291,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
     proposedCluster.setStatus(null);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -302,7 +302,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingCluster.getSpec().withReplicas(2);
     proposedCluster.getSpec().withReplicas(null);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -313,7 +313,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
     existingCluster.getSpec().withReplicas(2);
     proposedCluster.getSpec().withReplicas(null);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -326,7 +326,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
     testSupport.failOnList(KubernetesTestSupport.DOMAIN, NS, HTTP_FORBIDDEN);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(true));
   }
 
@@ -337,7 +337,7 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
     testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 }

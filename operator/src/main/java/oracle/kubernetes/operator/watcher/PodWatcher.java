@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -19,9 +19,9 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.WatchTuning;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 
@@ -38,12 +38,13 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   private final Map<String, Collection<Consumer<V1Pod>>> deletedCallbackRegistrations = new HashMap<>();
 
   private PodWatcher(
+      CoreDelegate delegate,
       String namespace,
       String initialResourceVersion,
       WatchTuning tuning,
       WatchListener<V1Pod> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping);
+    super(delegate, initialResourceVersion, tuning, isStopping);
     setListener(this);
     this.namespace = namespace;
     this.listener = listener;
@@ -52,6 +53,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   /**
    * Factory for PodWatcher.
    *
+   * @param delegate Delegate
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
@@ -61,13 +63,14 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
    * @return Pod watcher for the namespace
    */
   public static PodWatcher create(
+      CoreDelegate delegate,
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
       WatchListener<V1Pod> listener,
       AtomicBoolean isStopping) {
-    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+    PodWatcher watcher = new PodWatcher(delegate, ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -86,7 +89,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
 
   @Override
   public Watchable<V1Pod> initiateWatch(ListOptions options) throws ApiException {
-    return RequestBuilder.POD.watch(namespace,
+    return delegate.getPodBuilder().watch(namespace,
             options.labelSelector(LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL));
   }
 

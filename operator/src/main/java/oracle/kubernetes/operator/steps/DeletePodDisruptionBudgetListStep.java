@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -7,7 +7,7 @@ import java.util.Collection;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
-import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.work.Step;
 
 /**
@@ -20,8 +20,9 @@ public class DeletePodDisruptionBudgetListStep extends AbstractListStep<V1PodDis
     super(c, next);
   }
 
-  Step createActionStep(V1PodDisruptionBudget pdb) {
+  Step createActionStep(CoreDelegate delegate, V1PodDisruptionBudget pdb) {
     V1ObjectMeta meta = pdb.getMetadata();
-    return RequestBuilder.PDB.delete(meta.getNamespace(), meta.getName(), new DefaultResponseStep<>(this));
+    return delegate.getPodDisruptionBudgetBuilder().delete(
+        meta.getNamespace(), meta.getName(), new DefaultResponseStep<>(this));
   }
 }

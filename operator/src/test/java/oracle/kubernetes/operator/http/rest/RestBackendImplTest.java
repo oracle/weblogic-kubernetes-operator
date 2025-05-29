@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
 import jakarta.ws.rs.WebApplicationException;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -108,7 +109,7 @@ class RestBackendImplTest {
     testSupport.doOnCreate(CLUSTER, c -> createdClusterResource = (ClusterResource) c);
     domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     domain1ConfigSupport.addWlsCluster("cluster2", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
-    restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
+    restBackend = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces);
 
     setupScanCache();
   }
@@ -454,21 +455,21 @@ class RestBackendImplTest {
 
   @Test
   void whenUsingAccessToken_userInfoIsNull() {
-    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces);
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces);
     assertThat(restBackendImpl.getUserInfo(), nullValue());
   }
 
   @Test
   void whenUsingTokenReview_userInfoNotNull() {
     TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
-    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces);
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces);
     assertThat(restBackendImpl.getUserInfo(), notNullValue());
   }
 
   @Test
   void whenUsingAccessToken_authorizationCheckNotCalled() {
     AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
-    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces)
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces)
         .withAuthorizationProxy(authorizationProxyStub);
     restBackendImpl.getClusters(DOMAIN1);
     assertThat(authorizationProxyStub.atzCheck, is(false));
@@ -478,7 +479,7 @@ class RestBackendImplTest {
   void whenUsingTokenReview_authorizationCheckCalled() {
     TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
     AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
-    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces)
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces)
         .withAuthorizationProxy(authorizationProxyStub);
     restBackendImpl.getClusters(DOMAIN1);
     assertThat(authorizationProxyStub.atzCheck, is(true));
@@ -506,6 +507,7 @@ class RestBackendImplTest {
      * Check if the specified principal is allowed to perform the specified operation on the specified
      * resource in the specified scope.
      *
+     * @param delegate Delegate
      * @param principal The user, group or service account.
      * @param groups The groups that principal is a member of.
      * @param operation The operation to be authorized.
@@ -518,6 +520,7 @@ class RestBackendImplTest {
      */
     @Override
     public boolean check(
+        CoreDelegate delegate,
         String principal,
         final List<String> groups,
         Operation operation,

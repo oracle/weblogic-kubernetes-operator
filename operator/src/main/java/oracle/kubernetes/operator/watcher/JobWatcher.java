@@ -26,10 +26,10 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.IntrospectionJobHolder;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.WatchTuning;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -47,11 +47,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   private final Map<String,Consumer<V1Job>> completeCallbackRegistrations = new ConcurrentHashMap<>();
 
   private JobWatcher(
+      CoreDelegate delegate,
       String namespace,
       String initialResourceVersion,
       WatchTuning tuning,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping);
+    super(delegate, initialResourceVersion, tuning, isStopping);
     setListener(this);
     this.namespace = namespace;
   }
@@ -74,6 +75,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   /**
    * Creates a new JobWatcher.
    *
+   * @param delegate Delegate
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
@@ -83,13 +85,14 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    * @return Job watcher for the namespace
    */
   public static JobWatcher create(
+        CoreDelegate delegate,
         ThreadFactory factory,
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
         @SuppressWarnings("unused") WatchListener<V1Job> listener,
         AtomicBoolean isStopping) {
-    JobWatcher watcher = new JobWatcher(ns, initialResourceVersion, tuning, isStopping);
+    JobWatcher watcher = new JobWatcher(delegate, ns, initialResourceVersion, tuning, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -182,7 +185,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   @Override
   public Watchable<V1Job> initiateWatch(ListOptions options) throws ApiException {
-    return RequestBuilder.JOB.watch(namespace,
+    return delegate.getJobBuilder().watch(namespace,
             options.labelSelector(LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL));
   }
 

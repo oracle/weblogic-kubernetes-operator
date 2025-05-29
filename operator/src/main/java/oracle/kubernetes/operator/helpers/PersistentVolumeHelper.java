@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,9 +14,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -64,8 +64,9 @@ public class PersistentVolumeHelper {
     @Override
     public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       if (info.getDomain().getInitPvDomainPersistentVolume() != null) {
-        return doNext(createContext(packet).readAndCreatePersistentVolumeStep(getNext()), packet);
+        return doNext(createContext(packet).readAndCreatePersistentVolumeStep(delegate, getNext()), packet);
       }
       return doNext(packet);
     }
@@ -87,8 +88,8 @@ public class PersistentVolumeHelper {
       return new PersistentVolumeHelper.PersistentVolumeContext.ConflictStep();
     }
 
-    Step readAndCreatePersistentVolumeStep(Step next) {
-      return RequestBuilder.PV.get(getPersistentVolumeName(), new ReadResponseStep(next));
+    Step readAndCreatePersistentVolumeStep(CoreDelegate delegate, Step next) {
+      return delegate.getPersistentVolumeBuilder().get(getPersistentVolumeName(), new ReadResponseStep(next));
     }
 
     private String getPersistentVolumeName() {
@@ -155,9 +156,10 @@ public class PersistentVolumeHelper {
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<V1PersistentVolume> callResponse) {
         DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         V1PersistentVolume persistentVolume = callResponse.getObject();
         if (persistentVolume == null) {
-          return doNext(createNewPersistentVolume(getNext()), packet);
+          return doNext(createNewPersistentVolume(delegate, getNext()), packet);
         } else {
           logPersistentVolumeExists(info.getDomain().getDomainUid(),
               info.getDomain().getInitPvDomainPersistentVolume());
@@ -169,12 +171,12 @@ public class PersistentVolumeHelper {
         LOGGER.fine(PV_EXISTS, pv.getMetadata().getName(), domainUid);
       }
 
-      private Step createNewPersistentVolume(Step next) {
-        return createPersistentVolume(getPVCreatedMessageKey(), next);
+      private Step createNewPersistentVolume(CoreDelegate delegate, Step next) {
+        return createPersistentVolume(delegate, getPVCreatedMessageKey(), next);
       }
 
-      private Step createPersistentVolume(String messageKey, Step next) {
-        return RequestBuilder.PV.create(createModel(), new PersistentVolumeHelper.PersistentVolumeContext
+      private Step createPersistentVolume(CoreDelegate delegate, String messageKey, Step next) {
+        return delegate.getPersistentVolumeBuilder().create(createModel(), new PersistentVolumeHelper.PersistentVolumeContext
             .CreateResponseStep(messageKey, next));
       }
     }
@@ -182,7 +184,8 @@ public class PersistentVolumeHelper {
     private class ConflictStep extends Step {
       @Override
       public @Nonnull Result apply(Packet packet) {
-        return doNext(RequestBuilder.PV.get(getPersistentVolumeName(info),
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+        return doNext(delegate.getPersistentVolumeBuilder().get(getPersistentVolumeName(info),
             new ReadResponseStep(conflictStep)), packet);
       }
 

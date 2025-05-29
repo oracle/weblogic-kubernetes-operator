@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.webhooks.resource;
 
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 
@@ -31,15 +32,15 @@ public class ClusterScaleAdmissionChecker extends ClusterAdmissionChecker {
   }
 
   @Override
-  AdmissionResponse validate() {
+  AdmissionResponse validate(CoreDelegate delegate) {
     LOGGER.fine("Validating ClusterResource " + proposedCluster);
 
-    return validateIt();
+    return validateIt(delegate);
   }
 
   @Override
-  public boolean isProposedChangeAllowed() {
-    return skipValidation(proposedCluster.getStatus()) || isReplicaCountValid();
+  public boolean isProposedChangeAllowed(CoreDelegate delegate) {
+    return skipValidation(proposedCluster.getStatus()) || isReplicaCountValid(delegate);
   }
 
   @Override

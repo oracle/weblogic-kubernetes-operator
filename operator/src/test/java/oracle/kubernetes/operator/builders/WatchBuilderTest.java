@@ -15,6 +15,7 @@ import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.NoopWatcherStarter;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -49,11 +50,13 @@ class WatchBuilderTest {
   private static final String BOOKMARK_RESOURCE_VERSION = "456";
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
   private final List<Memento> mementos = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   @BeforeEach
   void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StubWatchFactory.install());
+    mementos.add(testSupport.install());
     mementos.add(NoopWatcherStarter.install());
   }
 
@@ -71,7 +74,8 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("cluster1", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(cluster));
 
-    Watchable<ClusterResource> clusterWatch = RequestBuilder.CLUSTER.watch(NAMESPACE, new ListOptions());
+    Watchable<ClusterResource> clusterWatch = testSupport.getCoreDelegate()
+        .getClusterBuilder().watch(NAMESPACE, new ListOptions());
 
     assertThat(clusterWatch, contains(addEvent(cluster)));
   }
@@ -85,7 +89,8 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("cluster1", NAMESPACE, BOOKMARK_RESOURCE_VERSION));
     StubWatchFactory.addCallResponses(createBookmarkResponse(cluster));
 
-    Watchable<ClusterResource> clusterWatch = RequestBuilder.CLUSTER.watch(NAMESPACE, new ListOptions());
+    Watchable<ClusterResource> clusterWatch = testSupport.getCoreDelegate()
+        .getClusterBuilder().watch(NAMESPACE, new ListOptions());
 
     assertThat(clusterWatch, contains(bookmarkEvent(cluster)));
   }
@@ -99,7 +104,8 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("domain1", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(domain));
 
-    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
+    Watchable<DomainResource> domainWatch = testSupport.getCoreDelegate()
+        .getDomainBuilder().watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(addEvent(domain)));
   }
@@ -113,7 +119,8 @@ class WatchBuilderTest {
                     .withMetadata(createMetaData("domain1", NAMESPACE, BOOKMARK_RESOURCE_VERSION));
     StubWatchFactory.addCallResponses(createBookmarkResponse(domain));
 
-    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
+    Watchable<DomainResource> domainWatch = testSupport.getCoreDelegate()
+        .getDomainBuilder().watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(bookmarkEvent(domain)));
   }
@@ -154,7 +161,8 @@ class WatchBuilderTest {
             .withMetadata(createMetaData("domain2", NAMESPACE));
     StubWatchFactory.addCallResponses(createModifyResponse(domain1), createDeleteResponse(domain2));
 
-    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
+    Watchable<DomainResource> domainWatch = testSupport.getCoreDelegate()
+        .getDomainBuilder().watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(List.of(modifyEvent(domain1), deleteEvent(domain2))));
   }
@@ -163,7 +171,8 @@ class WatchBuilderTest {
   void whenDomainWatchReceivesErrorResponse_returnItFromIterator() throws Exception {
     StubWatchFactory.addCallResponses(createErrorResponse(HTTP_ENTITY_TOO_LARGE));
 
-    Watchable<DomainResource> domainWatch = RequestBuilder.DOMAIN.watch(NAMESPACE, new ListOptions());
+    Watchable<DomainResource> domainWatch = testSupport.getCoreDelegate()
+        .getDomainBuilder().watch(NAMESPACE, new ListOptions());
 
     assertThat(domainWatch, contains(errorEvent(HTTP_ENTITY_TOO_LARGE)));
   }
@@ -179,7 +188,7 @@ class WatchBuilderTest {
 
     StubWatchFactory.addCallResponses(createModifyResponse(service));
 
-    Watchable<V1Service> serviceWatch = RequestBuilder.SERVICE.watch(NAMESPACE,
+    Watchable<V1Service> serviceWatch = testSupport.getCoreDelegate().getServiceBuilder().watch(NAMESPACE,
             new ListOptions()
                     .resourceVersion(startResourceVersion)
                     .labelSelector(DOMAINUID_LABEL + "," + CREATEDBYOPERATOR_LABEL));
@@ -196,7 +205,7 @@ class WatchBuilderTest {
         new V1Pod().apiVersion(API_VERSION).kind("Pod").metadata(createMetaData("pod4", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(pod));
 
-    Watchable<V1Pod> podWatch = RequestBuilder.POD.watch(NAMESPACE,
+    Watchable<V1Pod> podWatch = testSupport.getCoreDelegate().getPodBuilder().watch(NAMESPACE,
             new ListOptions().fieldSelector("thisValue").limit(25));
 
     assertThat(podWatch, contains(addEvent(pod)));
@@ -207,7 +216,7 @@ class WatchBuilderTest {
   @Test
   void whenPodWatchFindsNoData_hasNextReturnsFalse() throws Exception {
 
-    Watchable<V1Pod> podWatch = RequestBuilder.POD.watch(NAMESPACE, new ListOptions());
+    Watchable<V1Pod> podWatch = testSupport.getCoreDelegate().getPodBuilder().watch(NAMESPACE, new ListOptions());
 
     assertThat(podWatch.hasNext(), is(false));
   }

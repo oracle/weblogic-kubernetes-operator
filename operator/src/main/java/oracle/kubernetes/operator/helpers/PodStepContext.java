@@ -53,6 +53,7 @@ import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
@@ -63,7 +64,6 @@ import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -435,7 +435,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private Step createPodAsync(ResponseStep<V1Pod> response) {
-    return RequestBuilder.POD.create(getPodModel(), response);
+    CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+    return delegate.getPodBuilder().create(getPodModel(), response);
   }
 
   /**
@@ -1170,7 +1171,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       String patch = patchBuilder.build().toString();
       patch = updateForDeepSubstitution(currentPod.getSpec(), patch);
 
-      return RequestBuilder.POD.patch(getNamespace(), getPodName(),
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return delegate.getPodBuilder().patch(getNamespace(), getPodName(),
           V1Patch.PATCH_FORMAT_JSON_PATCH,
           new V1Patch(patch), patchResponse(next));
     }

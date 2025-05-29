@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.webhooks.resource;
 
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -37,10 +38,10 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
   }
 
   @Override
-  AdmissionResponse validate() {
+  AdmissionResponse validate(CoreDelegate delegate) {
     LOGGER.fine("Validating new DomainResource " + proposedDomain);
 
-    AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
+    AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed(delegate));
     if (!response.isAllowed()) {
       return response.status(new AdmissionResponseStatus().message(createMessage()));
     }
@@ -48,7 +49,7 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
   }
 
   @Override
-  public boolean isProposedChangeAllowed() {
+  public boolean isProposedChangeAllowed(CoreDelegate delegate) {
     return hasNoFatalValidationErrors(proposedDomain);
   }
 }

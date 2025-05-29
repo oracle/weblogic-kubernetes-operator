@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.http.rest;
 import java.util.Collection;
 import java.util.function.Supplier;
 
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.Certificates;
 
@@ -14,6 +15,7 @@ public class RestConfigImpl implements RestConfig {
 
   public static final Integer CONVERSION_WEBHOOK_HTTPS_PORT = 8084;
 
+  private final CoreDelegate delegate;
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
   private final Certificates certificates;
@@ -22,18 +24,21 @@ public class RestConfigImpl implements RestConfig {
    * Constructs a RestConfigImpl.
    * @param certificates Certificates.
    */
-  public RestConfigImpl(Certificates certificates) {
-    this(null, null, certificates);
+  public RestConfigImpl(CoreDelegate delegate, Certificates certificates) {
+    this(delegate, null, null, certificates);
   }
 
   /**
    * Constructs a RestConfigImpl.
-   *  @param principal is the name of the Kubernetes User or Service Account to use when calling the
+   * @param delegate Delegate
+   * @param principal is the name of the Kubernetes User or Service Account to use when calling the
    *     Kubernetes REST API.
    * @param domainNamespaces returns a list of the Kubernetes Namespaces covered by this Operator.
    * @param certificates Certificates
    */
-  public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces, Certificates certificates) {
+  public RestConfigImpl(CoreDelegate delegate, String principal, Supplier<Collection<String>> domainNamespaces,
+                        Certificates certificates) {
+    this.delegate = delegate;
     this.domainNamespaces = domainNamespaces;
     this.principal = principal;
     this.certificates = certificates;
@@ -101,7 +106,7 @@ public class RestConfigImpl implements RestConfig {
 
   @Override
   public RestBackend getBackend(String accessToken) {
-    return new RestBackendImpl(principal, accessToken, domainNamespaces);
+    return new RestBackendImpl(delegate, principal, accessToken, domainNamespaces);
   }
 
   @Override
@@ -122,5 +127,10 @@ public class RestConfigImpl implements RestConfig {
   @Override
   public String getWebhookKeyFile() {
     return certificates.getWebhookKeyFilePath();
+  }
+
+  @Override
+  public CoreDelegate getCoreDelegate() {
+    return delegate;
   }
 }

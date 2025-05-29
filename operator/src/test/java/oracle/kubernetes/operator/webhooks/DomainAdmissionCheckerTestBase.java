@@ -55,7 +55,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
     setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -64,7 +64,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(DUPLICATE_SERVER_NAME));
     proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(DUPLICATE_SERVER_NAME));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -72,7 +72,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().getClusters().add(new V1LocalObjectReference().name(DUPLICATE_CLUSTER_NAME));
     proposedDomain.getSpec().getClusters().add(new V1LocalObjectReference().name(DUPLICATE_CLUSTER_NAME));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -80,7 +80,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(BAD_MOUNT_PATH));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -88,7 +88,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -96,7 +96,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN_2));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -106,7 +106,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().setLogHomeEnabled(true);
     proposedDomain.getSpec().setLogHome(BAD_LOG_HOME);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -116,7 +116,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().setLogHomeEnabled(false);
     proposedDomain.getSpec().setLogHome(BAD_LOG_HOME);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -124,7 +124,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     List<V1EnvVar> list = createEnvVarListWithReservedName();
     proposedDomain.getSpec().setEnv(list);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Nonnull
@@ -139,7 +139,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     List<V1EnvVar> list = createEnvVarListWithReservedName();
     proposedDomain.getSpec().getOrCreateAdminServer().setEnv(list);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -147,28 +147,28 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().setDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().setConfiguration(new Configuration().withOverridesConfigMap("my-config-map"));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
   void whenDomainHasIntrospectorJobName_returnFalse() {
     proposedDomain.getSpec().setDomainUid(BAD_DOMAIN_UID);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
   void whenDomainASHasReservedContainerName_returnFalse() {
     proposedDomain.getSpec().getOrCreateAdminServer().getContainers().add(new V1Container().name(WLS_CONTAINER_NAME));
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
   void whenDomainASHasInvalidContainerPortName_returnFalse() {
     setASInvalidContainerPortName();
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   private void setASInvalidContainerPortName() {
@@ -180,7 +180,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   void whenDomainHasWDTInstallHomeContainsModelHome_returnFalse() {
     setWDTInstallNameContainsModelHome();
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   private void setWDTInstallNameContainsModelHome() {
@@ -192,7 +192,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   void whenDomainHasModelHomeContainsWDTInstallHome_returnFalse() {
     setModelHomeContainsWDTInstallHome();
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   private void setModelHomeContainsWDTInstallHome() {
@@ -205,7 +205,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     setAuxiliaryImages(proposedDomain, List.of(new AuxiliaryImage()));
     setDomainSpecMountPathUsingDefaultAuxImageMountPath();
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   private void setDomainSpecMountPathUsingDefaultAuxImageMountPath() {
@@ -218,7 +218,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     setAuxiliaryImages(proposedDomain, List.of(new AuxiliaryImage()));
     setDomainASMountPathUsingDefaultAuxImageMountPath();
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   private void setDomainASMountPathUsingDefaultAuxImageMountPath() {
@@ -230,7 +230,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   void whenDomainHasMountPathConflictsWithoutAuxiliaryImages_returnTrue() {
     setDomainSpecMountPathUsingDefaultAuxImageMountPath();
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -240,7 +240,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     List<AuxiliaryImage> images = List.of(image1, image2);
     setAuxiliaryImages(proposedDomain, images);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -250,7 +250,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     List<AuxiliaryImage> images = List.of(image1, image2);
     setAuxiliaryImages(proposedDomain, images);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -260,7 +260,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     List<DomainCreationImage> images = List.of(image1, image2);
     setDomainCreationImages(proposedDomain, images);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -270,6 +270,6 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     List<DomainCreationImage> images = List.of(image1, image2);
     setDomainCreationImages(proposedDomain, images);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 }

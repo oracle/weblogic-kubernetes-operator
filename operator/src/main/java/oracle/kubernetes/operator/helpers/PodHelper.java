@@ -32,7 +32,6 @@ import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -414,16 +413,16 @@ public class PodHelper {
             .map(l -> l.containsKey(annotation)).orElse(false);
   }
 
-  private static Step patchPodAnnotation(V1Pod pod, String annotation, Step next) {
-    return patchPodAnnotation(pod, annotation, "true", next);
+  private static Step patchPodAnnotation(CoreDelegate delegate, V1Pod pod, String annotation, Step next) {
+    return patchPodAnnotation(delegate, pod, annotation, "true", next);
   }
 
-  private static Step patchPodAnnotation(V1Pod pod, String annotation, String value, Step next) {
+  private static Step patchPodAnnotation(CoreDelegate delegate, V1Pod pod, String annotation, String value, Step next) {
     if (!hasAnnotation(pod, annotation)) {
       JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
       patchBuilder.add("/metadata/annotations/" + annotation, value);
       V1ObjectMeta meta = pod.getMetadata();
-      return RequestBuilder.POD.patch(meta.getNamespace(), meta.getName(),
+      return delegate.getPodBuilder().patch(meta.getNamespace(), meta.getName(),
               V1Patch.PATCH_FORMAT_JSON_PATCH,
               new V1Patch(patchBuilder.build().toString()), patchResponse(next));
     }
@@ -458,12 +457,13 @@ public class PodHelper {
 
   /**
    * Annotate pod as needing to shut down.
+   * @param delegate Delgate
    * @param pod Pod
    * @param next Next step
    * @return Step that will check for existing annotation and add if it is missing
    */
-  public static Step annotatePodAsNeedingToShutdown(V1Pod pod, String value, Step next) {
-    return patchPodAnnotation(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL, value, next);
+  public static Step annotatePodAsNeedingToShutdown(CoreDelegate delegate, V1Pod pod, String value, Step next) {
+    return patchPodAnnotation(delegate, pod, LabelConstants.TO_BE_SHUTDOWN_LABEL, value, next);
   }
 
   /**
@@ -822,7 +822,8 @@ public class PodHelper {
 
     // Patch the pod to indicate a pending roll.
     private Step annotatePodAsNeedingToRoll(V1Pod pod, Step next) {
-      return patchPodAnnotation(pod, LabelConstants.TO_BE_ROLLED_LABEL, next);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return patchPodAnnotation(delegate, pod, LabelConstants.TO_BE_ROLLED_LABEL, next);
     }
 
     private Fiber.StepAndPacket createRollRequest(Step deferredStep) {
@@ -932,6 +933,7 @@ public class PodHelper {
     @Override
     public @Nonnull Result apply(Packet packet) {
       final DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+      final CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       final V1Pod oldPod = info.getServerPod(serverName);
 
       if (oldPod == null || info.getDomain() == null) {
@@ -945,7 +947,7 @@ public class PodHelper {
         }
 
         return doNext(
-            deletePod(name, info.getNamespace(), isMustWait, gracePeriodSeconds, getNext()),
+            deletePod(delegate, name, info.getNamespace(), isMustWait, gracePeriodSeconds, getNext()),
             packet);
       }
     }
@@ -982,8 +984,9 @@ public class PodHelper {
       return effectiveServerSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
     }
 
-    private Step deletePod(String name, String namespace, boolean isMustWait, long gracePeriodSeconds, Step next) {
-      Step conflictStep = RequestBuilder.POD.get(namespace, name, new DefaultResponseStep<>(next) {
+    private Step deletePod(CoreDelegate delegate, String name, String namespace, boolean isMustWait,
+                           long gracePeriodSeconds, Step next) {
+      Step conflictStep = delegate.getPodBuilder().get(namespace, name, new DefaultResponseStep<>(next) {
         @Override
         public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
           V1Pod pod = callResponse.getObject();
@@ -997,7 +1000,7 @@ public class PodHelper {
       });
 
       DeleteOptions deleteOptions = (DeleteOptions) new DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
-      return RequestBuilder.POD.delete(namespace, name, deleteOptions,
+      return delegate.getPodBuilder().delete(namespace, name, deleteOptions,
               new DefaultResponseStep<V1Pod>(conflictStep, next) {
           @Override
           public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {

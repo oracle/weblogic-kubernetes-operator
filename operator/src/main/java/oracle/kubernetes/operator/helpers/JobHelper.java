@@ -35,12 +35,7 @@ import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.IntrospectionStatus;
-import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -205,7 +200,8 @@ public class JobHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(new IntrospectorJobStepContext(packet).createStartSteps(getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(new IntrospectorJobStepContext(packet).createStartSteps(delegate, getNext()), packet);
     }
 
   }
@@ -228,15 +224,15 @@ public class JobHelper {
       super(packet);
     }
 
-    private Step createStartSteps(Step next) {
+    private Step createStartSteps(CoreDelegate delegate, Step next) {
       return Step.chain(
             DomainValidationSteps.createAdditionalDomainValidationSteps(getJobModelPodSpec()),
-            verifyIntrospectorJob(),
+            verifyIntrospectorJob(delegate),
             DomainValidationSteps.createValidateDomainTopologySteps(next));
     }
 
-    private Step verifyIntrospectorJob() {
-      return RequestBuilder.JOB.get(getNamespace(), getJobName(), createReadJobResponse());
+    private Step verifyIntrospectorJob(CoreDelegate delegate) {
+      return delegate.getJobBuilder().get(getNamespace(), getJobName(), createReadJobResponse());
     }
 
     @Nonnull
@@ -253,12 +249,13 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (isInProgressJobOutdated(job)) {
-          return doNext(cleanUpAndReintrospect(getNext()), packet);
+          return doNext(cleanUpAndReintrospect(delegate, getNext()), packet);
         } else if (job != null) {
           return doNext(processExistingIntrospectorJob(getNext()), packet);
         } else if (isIntrospectionNeeded(packet)) {
-          return doNext(createIntrospectionSteps(getNext()), packet);
+          return doNext(createIntrospectionSteps(delegate, getNext()), packet);
         } else {
           return doNext(packet);
         }
@@ -416,14 +413,14 @@ public class JobHelper {
               .orElse("");
     }
 
-    private Step cleanUpAndReintrospect(Step next) {
-      return Step.chain(deleteIntrospectorJob(), createIntrospectionSteps(next));
+    private Step cleanUpAndReintrospect(CoreDelegate delegate, Step next) {
+      return Step.chain(deleteIntrospectorJob(), createIntrospectionSteps(delegate, next));
     }
 
-    private Step createIntrospectionSteps(Step next) {
+    private Step createIntrospectionSteps(CoreDelegate delegate, Step next) {
       return Step.chain(
               readExistingIntrospectorConfigMap(),
-              createNewJob(),
+              createNewJob(delegate),
               processExistingIntrospectorJob(next));
     }
 
@@ -442,14 +439,15 @@ public class JobHelper {
       public @Nonnull Result apply(Packet packet) {
         V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (JobWatcher.isFailed(domainIntrospectorJob)) {
           return doNext(
               Step.chain(createIntrospectionFailureSteps(getFailedReason(domainIntrospectorJob), domainIntrospectorJob),
-                  cleanUpAndReintrospect(getNext())), packet);
+                  cleanUpAndReintrospect(delegate, getNext())), packet);
         }
         if (JobWatcher.isComplete(domainIntrospectorJob)) {
           if (isOutdated(domainIntrospectorJob)) {
-            return doNext(cleanUpAndReintrospect(getNext()), packet);
+            return doNext(cleanUpAndReintrospect(delegate, getNext()), packet);
           }
           return doNext(createRemoveFailuresStep(getNext()), packet);
         }
@@ -517,10 +515,11 @@ public class JobHelper {
 
         String jobPodName = JobHelper.getName(jobPod);
 
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         Optional.ofNullable(jobPod).map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getCreationTimestamp).map(OffsetDateTime::toString)
                 .ifPresent(creationTime -> packet.put(INTROSPECTION_TIME, creationTime));
-        return doNext(readDomainIntrospectorPodLog(jobPodName, containerName, getNext()), packet);
+        return doNext(readDomainIntrospectorPodLog(delegate, jobPodName, containerName, getNext()), packet);
       }
 
       private V1ContainerStatus getJobPodContainerStatus(V1Pod jobPod) {
@@ -551,8 +550,9 @@ public class JobHelper {
         return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
       }
 
-      private Step readDomainIntrospectorPodLog(String jobPodName, String containerName, Step next) {
-        return RequestBuilder.POD.logs(getNamespace(), jobPodName,
+      private Step readDomainIntrospectorPodLog(CoreDelegate delegate, String jobPodName,
+                                                String containerName, Step next) {
+        return delegate.getPodBuilder().logs(getNamespace(), jobPodName,
             containerName, new ReadPodLogResponseStep(next));
       }
     }
@@ -567,8 +567,9 @@ public class JobHelper {
         logJobDeleted(getDomainUid(), getNamespace(), getJobName(), packet);
         DeleteOptions deleteOptions = (DeleteOptions) new DeleteOptions()
             .gracePeriodSeconds((long) JOB_DELETE_TIMEOUT_SECONDS).propagationPolicy("Foreground");
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         return doNext(
-            RequestBuilder.JOB.delete(getNamespace(), getJobName(), deleteOptions,
+            delegate.getJobBuilder().delete(getNamespace(), getJobName(), deleteOptions,
                 new DefaultResponseStep<>(getNext())), packet);
       }
     }
@@ -738,8 +739,8 @@ public class JobHelper {
 
       private Step listPodsInNamespace(Packet packet, String namespace, Step next) {
         V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-
-        return RequestBuilder.POD.list(namespace, new ListOptions()
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+        return delegate.getPodBuilder().list(namespace, new ListOptions()
                 .labelSelector(LabelConstants.JOBNAME_LABEL + "=" + domainIntrospectorJob.getMetadata().getName()),
                 new PodListResponseStep(next));
       }
@@ -851,6 +852,7 @@ public class JobHelper {
               .findFirst()
               .orElse(null);
 
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, () -> processIntrospectorPodLog(getNext()));
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
@@ -859,7 +861,7 @@ public class JobHelper {
           V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
           return doNext(Step.chain(
               createIntrospectionFailureSteps(reason, domainIntrospectorJob),
-              cleanUpAndReintrospect(getNext())), packet);
+              cleanUpAndReintrospect(delegate, getNext())), packet);
         } else if (isJobPodTimedOut(jobPod)) {
           // process job pod timed out same way as job timed out, which is to
           // terminate current fiber

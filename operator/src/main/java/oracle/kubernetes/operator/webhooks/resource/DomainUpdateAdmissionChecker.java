@@ -13,6 +13,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -66,10 +67,10 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   }
 
   @Override
-  AdmissionResponse validate() {
+  AdmissionResponse validate(CoreDelegate delegate) {
     LOGGER.fine("Validating DomainResource " + proposedDomain + " against " + existingDomain);
 
-    AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
+    AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed(delegate));
     if (!response.isAllowed()) {
       return response.status(new AdmissionResponseStatus().message(createMessage()));
     } else if (!warnings.isEmpty()) {
@@ -79,16 +80,16 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   }
 
   @Override
-  public boolean isProposedChangeAllowed() {
-    return isSpecUnchanged() || areChangesAllowed();
+  public boolean isProposedChangeAllowed(CoreDelegate delegate) {
+    return isSpecUnchanged() || areChangesAllowed(delegate);
   }
 
-  private boolean areChangesAllowed() {
-    return hasNoFatalValidationErrors(proposedDomain) && isProposedReplicaCountValid();
+  private boolean areChangesAllowed(CoreDelegate delegate) {
+    return hasNoFatalValidationErrors(proposedDomain) && isProposedReplicaCountValid(delegate);
   }
 
-  private boolean isProposedReplicaCountValid() {
-    return areAllClusterReplicaCountsValid(proposedDomain) || shouldIntrospect();
+  private boolean isProposedReplicaCountValid(CoreDelegate delegate) {
+    return areAllClusterReplicaCountsValid(delegate, proposedDomain) || shouldIntrospect();
   }
 
   private boolean isSpecUnchanged() {
@@ -114,12 +115,12 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return changed;
   }
 
-  boolean areAllClusterReplicaCountsValid(DomainResource domain) {
+  boolean areAllClusterReplicaCountsValid(CoreDelegate delegate, DomainResource domain) {
     boolean allValid = true;
     List<String> names = new ArrayList<>();
     List<Integer> replicaCounts = new ArrayList<>();
     for (ClusterStatus status : getClusterStatusList(domain)) {
-      if (FALSE.equals(isReplicaCountValid(domain, status))) {
+      if (FALSE.equals(isReplicaCountValid(delegate, domain, status))) {
         allValid = false;
         names.add(status.getClusterName());
         replicaCounts.add(getClusterSize(status));
@@ -154,10 +155,12 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
         .orElse(Collections.emptyList());
   }
 
-  private Boolean isReplicaCountValid(@Nonnull DomainResource domain, @Nonnull ClusterStatus status) {
+  private Boolean isReplicaCountValid(CoreDelegate delegate, @Nonnull DomainResource domain,
+                                      @Nonnull ClusterStatus status) {
     boolean isValid = false;
     try {
-      isValid = getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
+      isValid = getProposedReplicaCount(
+          domain, getCluster(delegate, domain, status.getClusterName())) <= getClusterSize(status);
       if (!isValid) {
         failed.add(status);
       }
@@ -200,8 +203,9 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return warnings;
   }
 
-  private ClusterSpec getCluster(@Nonnull DomainResource domain, String clusterName) throws ApiException {
-    List<ClusterResource> clusters = getClusters(domain.getNamespace());
+  private ClusterSpec getCluster(CoreDelegate delegate, @Nonnull DomainResource domain,
+                                 String clusterName) throws ApiException {
+    List<ClusterResource> clusters = getClusters(delegate, domain.getNamespace());
     return clusters.stream().filter(cluster -> clusterName.equals(cluster.getClusterName())
         && isReferenced(domain, cluster)).findFirst().map(ClusterResource::getSpec).orElse(null);
   }

@@ -31,10 +31,7 @@ import jakarta.json.JsonPatchBuilder;
 import jakarta.json.JsonValue;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.http.rest.Scan;
@@ -190,7 +187,8 @@ public class ConfigMapHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(context.verifyConfigMap(getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(context.verifyConfigMap(delegate, getNext()), packet);
     }
   }
 
@@ -309,8 +307,8 @@ public class ConfigMapHelper {
      * @param next the step to run after the config map processing is done
      * @return the new step to run
      */
-    Step verifyConfigMap(Step next) {
-      return RequestBuilder.CM.get(namespace, getName(), new ReadResponseStep(next));
+    Step verifyConfigMap(CoreDelegate delegate, Step next) {
+      return delegate.getConfigMapBuilder().get(namespace, getName(), new ReadResponseStep(next));
     }
 
     boolean isOutdated(V1ConfigMap existingMap) {
@@ -348,14 +346,15 @@ public class ConfigMapHelper {
         Optional.ofNullable((String) packet.get(INTROSPECTION_TIME))
                 .ifPresent(value -> addAnnotation(INTROSPECTION_TIME, value));
         V1ConfigMap existingMap = withoutTransientData(callResponse.getObject());
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (existingMap == null) {
-          return doNext(createConfigMap(getNext()), packet);
+          return doNext(createConfigMap(delegate, getNext()), packet);
         } else if (isOutdated(existingMap)) {
-          return doNext(replaceConfigMap(getNext()), packet);
+          return doNext(replaceConfigMap(delegate, getNext()), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
-          return doNext(patchCurrentMap(existingMap, getNext()), packet);
+          return doNext(patchCurrentMap(delegate, existingMap, getNext()), packet);
         } else if (mustPatchImageHashInMap(existingMap, packet)) {
-          return doNext(patchImageHashInCurrentMap(existingMap, packet, getNext()), packet);
+          return doNext(patchImageHashInCurrentMap(delegate, existingMap, packet, getNext()), packet);
         } else {
           logConfigMapExists();
           recordCurrentMap(packet, existingMap);
@@ -367,8 +366,8 @@ public class ConfigMapHelper {
         return new CreateResponseStep(next);
       }
 
-      private Step createConfigMap(Step next) {
-        return RequestBuilder.CM.create(getModel(), createCreateResponseStep(next));
+      private Step createConfigMap(CoreDelegate delegate, Step next) {
+        return delegate.getConfigMapBuilder().create(getModel(), createCreateResponseStep(next));
       }
 
       private void logConfigMapExists() {
@@ -379,8 +378,8 @@ public class ConfigMapHelper {
         return new ReplaceResponseStep(next);
       }
 
-      private Step replaceConfigMap(Step next) {
-        return RequestBuilder.CM.update(model, createReplaceResponseStep(next));
+      private Step replaceConfigMap(CoreDelegate delegate, Step next) {
+        return delegate.getConfigMapBuilder().update(model, createReplaceResponseStep(next));
       }
 
       private Map<String,String> getAnnotations() {
@@ -408,7 +407,7 @@ public class ConfigMapHelper {
         return new PatchResponseStep(next);
       }
 
-      private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
+      private Step patchCurrentMap(CoreDelegate delegate, V1ConfigMap currentMap, Step next) {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
         if (labelsNotDefined(currentMap)) {
@@ -418,17 +417,17 @@ public class ConfigMapHelper {
         KubernetesUtils.addPatches(
             patchBuilder, "/metadata/labels/", getMapLabels(currentMap), getLabels());
 
-        return RequestBuilder.CM.patch(
+        return delegate.getConfigMapBuilder().patch(
             namespace, name, V1Patch.PATCH_FORMAT_JSON_PATCH,
             new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
       }
 
-      private Step patchImageHashInCurrentMap(V1ConfigMap currentMap, Packet packet, Step next) {
+      private Step patchImageHashInCurrentMap(CoreDelegate delegate, V1ConfigMap currentMap, Packet packet, Step next) {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
         patchBuilder.add("/data/" + DOMAIN_INPUTS_HASH, (String)packet.get(DOMAIN_INPUTS_HASH));
 
-        return RequestBuilder.CM.patch(
+        return delegate.getConfigMapBuilder().patch(
             namespace, name, V1Patch.PATCH_FORMAT_JSON_PATCH,
             new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
       }
@@ -520,11 +519,12 @@ public class ConfigMapHelper {
     @Override
     public @Nonnull Result apply(Packet packet) {
       IntrospectionLoader loader = new IntrospectionLoader(packet, this);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       if (loader.isTopologyNotValid()) {
         return doNext(reportTopologyErrorsAndStop(), packet);
       } else if (loader.getDomainConfig() == null)  {
         loader.updateImageHashInPacket();
-        return doNext(loader.createIntrospectionVersionUpdateStep(), packet);
+        return doNext(loader.createIntrospectionVersionUpdateStep(delegate), packet);
       } else {
         loader.updatePacket();
         return doNext(loader.createValidationStep(), packet);
@@ -594,8 +594,8 @@ public class ConfigMapHelper {
       copyToPacketAndFileIfPresent(DOMAIN_INPUTS_HASH, getModelInImageSpecHash());
     }
 
-    private Step createIntrospectionVersionUpdateStep() {
-      return createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext());
+    private Step createIntrospectionVersionUpdateStep(CoreDelegate delegate) {
+      return createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(delegate, conflictStep.getNext());
     }
 
     private Step createValidationStep() {
@@ -735,7 +735,8 @@ public class ConfigMapHelper {
     }
 
     public Fiber.StepAndPacket createStepAndPacket(Packet packet) {
-      return new Fiber.StepAndPacket(verifyConfigMap(null), packet.copy());
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return new Fiber.StepAndPacket(verifyConfigMap(delegate, null), packet.copy());
     }
   }
 
@@ -763,7 +764,8 @@ public class ConfigMapHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      Step step = RequestBuilder.CM.list(
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      Step step = delegate.getConfigMapBuilder().list(
           namespace, new ListOptions().labelSelector(LabelConstants.getCreatedByOperatorSelector()),
           new SelectConfigMapsToDeleteStep(domainUid, namespace, getNext()));
 
@@ -833,7 +835,8 @@ public class ConfigMapHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(deleteIntrospectorConfigMap(getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(deleteIntrospectorConfigMap(delegate, getNext()), packet);
     }
 
     String getConfigMapDeletedMessageKey() {
@@ -844,9 +847,9 @@ public class ConfigMapHelper {
       LOGGER.fine(getConfigMapDeletedMessageKey());
     }
 
-    private Step deleteIntrospectorConfigMap(Step next) {
+    private Step deleteIntrospectorConfigMap(CoreDelegate delegate, Step next) {
       logConfigMapDeleted();
-      return RequestBuilder.CM.delete(namespace, configMapName, new DefaultResponseStep<>(next));
+      return delegate.getConfigMapBuilder().delete(namespace, configMapName, new DefaultResponseStep<>(next));
     }
   }
 
@@ -875,15 +878,16 @@ public class ConfigMapHelper {
     @Override
     public @Nonnull Result apply(Packet packet) {
       final DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
-      return doNext(createReadStep(info), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createReadStep(delegate, info), packet);
     }
 
-    private Step createReadStep(DomainPresenceInfo info) {
+    private Step createReadStep(CoreDelegate delegate, DomainPresenceInfo info) {
       final String ns = info.getNamespace();
       final String domainUid = info.getDomainUid();
       final String configMapName = getIntrospectorConfigMapName(domainUid);
 
-      return RequestBuilder.CM.get(ns, configMapName, responseStepConstructor.apply(getNext()));
+      return delegate.getConfigMapBuilder().get(ns, configMapName, responseStepConstructor.apply(getNext()));
     }
   }
 
@@ -996,10 +1000,11 @@ public class ConfigMapHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       if (hasNoFluentdSpecification(packet)) {
         return doNext(packet);
       } else {
-        return doNext(createNextStep(DomainPresenceInfo.fromPacket(packet).orElseThrow()), packet);
+        return doNext(createNextStep(delegate, DomainPresenceInfo.fromPacket(packet).orElseThrow()), packet);
       }
     }
 
@@ -1010,8 +1015,8 @@ public class ConfigMapHelper {
           .isEmpty();
     }
 
-    private Step createNextStep(DomainPresenceInfo info) {
-      return RequestBuilder.CM.get(
+    private Step createNextStep(CoreDelegate delegate, DomainPresenceInfo info) {
+      return delegate.getConfigMapBuilder().get(
           info.getNamespace(), info.getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX,
           new ReadFluentdConfigMapResponseStep(getNext()));
     }
@@ -1070,28 +1075,29 @@ public class ConfigMapHelper {
       super(next);
     }
 
-    private static Step createFluentdConfigMap(DomainPresenceInfo info, Step next) {
-      return RequestBuilder.CM.create(
+    private static Step createFluentdConfigMap(CoreDelegate delegate, DomainPresenceInfo info, Step next) {
+      return delegate.getConfigMapBuilder().create(
           FluentdHelper.getFluentdConfigMap(info), new CreateFluentdConfigMapResponseStep(next));
     }
 
-    private static Step replaceFluentdConfigMap(DomainPresenceInfo info, Step next) {
-      return RequestBuilder.CM.update(
+    private static Step replaceFluentdConfigMap(CoreDelegate delegate, DomainPresenceInfo info, Step next) {
+      return delegate.getConfigMapBuilder().update(
           FluentdHelper.getFluentdConfigMap(info), new ReplaceFluentdConfigMapResponseStep(next));
     }
 
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1ConfigMap> callResponse) {
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       String existingConfigMapData = Optional.ofNullable(callResponse.getObject())
               .map(V1ConfigMap::getData)
               .map(c -> c.get(FLUENTD_CONFIG_DATA_NAME))
               .orElse(null);
 
       if (existingConfigMapData == null) {
-        return doNext(createFluentdConfigMap(info, getNext()), packet);
+        return doNext(createFluentdConfigMap(delegate, info, getNext()), packet);
       } else if (isOutdated(info, existingConfigMapData)) {
-        return doNext(replaceFluentdConfigMap(info, getNext()), packet);
+        return doNext(replaceFluentdConfigMap(delegate, info, getNext()), packet);
       }
       return doNext(packet);
     }
@@ -1113,10 +1119,11 @@ public class ConfigMapHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       if (hasNoFluentbitSpecification(packet)) {
         return doNext(packet);
       } else {
-        return doNext(createNextStep(DomainPresenceInfo.fromPacket(packet).orElseThrow()), packet);
+        return doNext(createNextStep(delegate, DomainPresenceInfo.fromPacket(packet).orElseThrow()), packet);
       }
     }
 
@@ -1127,8 +1134,8 @@ public class ConfigMapHelper {
               .isEmpty();
     }
 
-    private Step createNextStep(DomainPresenceInfo info) {
-      return RequestBuilder.CM.get(info.getNamespace(),
+    private Step createNextStep(CoreDelegate delegate, DomainPresenceInfo info) {
+      return delegate.getConfigMapBuilder().get(info.getNamespace(),
           info.getDomainUid() + FLUENTBIT_CONFIGMAP_NAME_SUFFIX,
           new ReadFluentbitConfigMapResponseStep(getNext()));
     }
@@ -1167,28 +1174,29 @@ public class ConfigMapHelper {
       super(next);
     }
 
-    private static Step createFluentbitConfigMap(DomainPresenceInfo info, Step next) {
-      return RequestBuilder.CM.create(FluentbitHelper.getFluentbitConfigMap(info),
+    private static Step createFluentbitConfigMap(CoreDelegate delegate, DomainPresenceInfo info, Step next) {
+      return delegate.getConfigMapBuilder().create(FluentbitHelper.getFluentbitConfigMap(info),
           new CreateFluentbitConfigMapResponseStep(next));
     }
 
-    private static Step replaceFluentbitConfigMap(DomainPresenceInfo info, Step next) {
-      return RequestBuilder.CM.update(FluentbitHelper.getFluentbitConfigMap(info),
+    private static Step replaceFluentbitConfigMap(CoreDelegate delegate, DomainPresenceInfo info, Step next) {
+      return delegate.getConfigMapBuilder().update(FluentbitHelper.getFluentbitConfigMap(info),
           new ReplaceFluentbitConfigMapResponseStep(next));
     }
 
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1ConfigMap> callResponse) {
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       String existingConfigMapData = Optional.ofNullable(callResponse.getObject())
               .map(V1ConfigMap::getData)
               .map(c -> c.get(FLUENTBIT_CONFIG_DATA_NAME))
               .orElse(null);
 
       if (existingConfigMapData == null) {
-        return doNext(createFluentbitConfigMap(info, getNext()), packet);
+        return doNext(createFluentbitConfigMap(delegate, info, getNext()), packet);
       } else if (isOutdated(info, existingConfigMapData)) {
-        return doNext(replaceFluentbitConfigMap(info, getNext()), packet);
+        return doNext(replaceFluentbitConfigMap(delegate, info, getNext()), packet);
       }
       return doNext(packet);
     }

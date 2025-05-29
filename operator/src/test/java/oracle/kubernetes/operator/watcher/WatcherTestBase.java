@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.ThreadFactoryTestBase;
 import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.tuning.FakeWatchTuning;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
@@ -41,6 +42,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("214748364700");
   private static final String NAMESPACE = "testspace";
 
+  protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final RuntimeException hasNextException = new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
   private final List<Memento> mementos = new ArrayList<>();
   private final List<Watch.Response<?>> callBacks = new ArrayList<>();
@@ -77,6 +79,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   void setUp() throws Exception {
     mementos.add(configureOperatorLogger());
     mementos.add(StubWatchFactory.install());
+    mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
 
     TuningParametersStub.setParameter(WATCH_BACKSTOP_RECHECK_COUNT, "1");

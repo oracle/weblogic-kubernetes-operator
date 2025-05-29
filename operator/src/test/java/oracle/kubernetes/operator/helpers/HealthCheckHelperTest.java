@@ -115,7 +115,8 @@ class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(
+          testSupport.getCoreDelegate(), ns);
       HealthCheckHelper.verifyAccess(status, ns, true);
     }
   }
@@ -126,7 +127,8 @@ class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(
+          testSupport.getCoreDelegate(), ns);
       HealthCheckHelper.verifyAccess(status, ns, true);
     }
 
@@ -138,7 +140,8 @@ class HealthCheckHelperTest {
     accessChecks.setMayAccessNamespace(false);
     expectSelfSubjectRulesReview();
 
-    V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(OPERATOR_NAMESPACE);
+    V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(
+        testSupport.getCoreDelegate(), OPERATOR_NAMESPACE);
     HealthCheckHelper.verifyAccess(status, OPERATOR_NAMESPACE, false);
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));

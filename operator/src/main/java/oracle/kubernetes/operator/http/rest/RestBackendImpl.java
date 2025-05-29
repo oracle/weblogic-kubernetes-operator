@@ -43,6 +43,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.calls.RequestBuilder;
@@ -87,6 +88,7 @@ public class RestBackendImpl implements RestBackend {
         return null;
       };
 
+  private final CoreDelegate delegate;
   private final AuthenticationProxy atn = new AuthenticationProxy();
   private AuthorizationProxy atz = new AuthorizationProxy();
   private final String principal;
@@ -97,13 +99,16 @@ public class RestBackendImpl implements RestBackend {
 
   /**
    * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.
-   *  @param principal is the name of the Kubernetes user to use when calling the Kubernetes REST
+   * @param delegate Delegate
+   * @param principal is the name of the Kubernetes user to use when calling the Kubernetes REST
    *     api.
    * @param accessToken is the access token of the Kubernetes service account of the client calling
    *     the WebLogic operator REST api.
    * @param domainNamespaces a function that returns the names of the managed Kubernetes namepaces.
    */
-  RestBackendImpl(String principal, String accessToken, Supplier<Collection<String>> domainNamespaces) {
+  RestBackendImpl(CoreDelegate delegate, String principal, String accessToken,
+                  Supplier<Collection<String>> domainNamespaces) {
+    this.delegate = delegate;
     this.domainNamespaces = domainNamespaces;
     this.principal = principal;
     userInfo = authenticate(accessToken);
@@ -128,6 +133,7 @@ public class RestBackendImpl implements RestBackend {
     if (domainUid == null) {
       authorized =
           atz.check(
+              delegate,
               userInfo.getUsername(),
               userInfo.getGroups(),
               operation,
@@ -138,6 +144,7 @@ public class RestBackendImpl implements RestBackend {
     } else {
       authorized =
           atz.check(
+              delegate,
               userInfo.getUsername(),
               userInfo.getGroups(),
               operation,
@@ -162,7 +169,7 @@ public class RestBackendImpl implements RestBackend {
     if (!useAuthenticateWithTokenReview()) {
       return null;
     }
-    V1TokenReviewStatus status = atn.check(principal, accessToken,
+    V1TokenReviewStatus status = atn.check(delegate, principal, accessToken,
         OperatorMain.isDedicated() ? getOperatorNamespace() : null);
     if (status == null) {
       throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_TOKEN_REVIEW_STATUS));
@@ -207,7 +214,7 @@ public class RestBackendImpl implements RestBackend {
 
   private List<DomainResource> getDomains(String ns) {
     try {
-      return RequestBuilder.DOMAIN.list(ns, new ListOptions(), clientSupplier).getItems();
+      return delegate.getDomainBuilder().list(ns, new ListOptions(), clientSupplier).getItems();
     } catch (ApiException e) {
       throw handleApiException(e);
     }
@@ -215,7 +222,7 @@ public class RestBackendImpl implements RestBackend {
 
   private List<ClusterResource> getClusterResources(String ns) {
     try {
-      return RequestBuilder.CLUSTER.list(ns, new ListOptions(), clientSupplier).getItems();
+      return delegate.getClusterBuilder().list(ns, new ListOptions(), clientSupplier).getItems();
     } catch (ApiException e) {
       throw handleApiException(e);
     }
@@ -391,7 +398,7 @@ public class RestBackendImpl implements RestBackend {
 
   private void patchCluster(ClusterResource cluster, JsonPatchBuilder patchBuilder) {
     try {
-      RequestBuilder.CLUSTER.patch(cluster.getMetadata().getNamespace(), cluster.getMetadata().getName(),
+      delegate.getClusterBuilder().patch(cluster.getMetadata().getNamespace(), cluster.getMetadata().getName(),
               V1Patch.PATCH_FORMAT_JSON_PATCH, new V1Patch(patchBuilder.build().toString()),
               new PatchOptions(), clientSupplier);
     } catch (ApiException e) {
@@ -415,7 +422,7 @@ public class RestBackendImpl implements RestBackend {
                 .controller(true)))
         .withReplicas(replicas);
     try {
-      RequestBuilder.CLUSTER.create(cluster, new CreateOptions(), clientSupplier);
+      delegate.getClusterBuilder().create(cluster, new CreateOptions(), clientSupplier);
     } catch (ApiException e) {
       throw handleApiException(e);
     }
@@ -442,7 +449,7 @@ public class RestBackendImpl implements RestBackend {
     String name = (String) metadata.get("name");
     Object currentCluster = null;
     try {
-      ClusterResource cr = RequestBuilder.CLUSTER.get(namespace, name, new GetOptions(), clientSupplier);
+      ClusterResource cr = delegate.getClusterBuilder().get(namespace, name, new GetOptions(), clientSupplier);
       if (cr != null) {
         currentCluster = toMap(cr);
       }
@@ -454,7 +461,7 @@ public class RestBackendImpl implements RestBackend {
 
     if (currentCluster == null) {
       try {
-        ClusterResource cr = RequestBuilder.CLUSTER.create(toResource(cluster),
+        ClusterResource cr = delegate.getClusterBuilder().create(toResource(cluster),
                 new CreateOptions(), clientSupplier);
         Object result = cr != null ? toMap(cr) : null;
         if (LOGGER.isFineEnabled()) {
@@ -469,7 +476,8 @@ public class RestBackendImpl implements RestBackend {
     metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
         .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
     try {
-      ClusterResource cr = RequestBuilder.CLUSTER.update(toResource(cluster), new UpdateOptions(), clientSupplier);
+      ClusterResource cr = delegate.getClusterBuilder().update(toResource(cluster),
+          new UpdateOptions(), clientSupplier);
       Object result = cr != null ? toMap(cr) : null;
       if (LOGGER.isFineEnabled()) {
         LOGGER.fine("Replaced Cluster: " + result);
@@ -484,7 +492,7 @@ public class RestBackendImpl implements RestBackend {
   @SuppressWarnings("unchecked")
   public List<Map<String, Object>> listClusters(String namespace) {
     try {
-      ClusterList l = RequestBuilder.CLUSTER.list(namespace, new ListOptions(), clientSupplier);
+      ClusterList l = delegate.getClusterBuilder().list(namespace, new ListOptions(), clientSupplier);
       Map<String, Object> clusterList = l != null ? toMap(l) : null;
       return Optional.of(clusterList).map(cl -> (List<Map<String, Object>>) cl.get("items"))
           .orElse(Collections.emptyList());
@@ -496,7 +504,7 @@ public class RestBackendImpl implements RestBackend {
 
   private void patchDomain(DomainResource domain, JsonPatchBuilder patchBuilder) {
     try {
-      RequestBuilder.DOMAIN.patch(domain.getMetadata().getNamespace(), domain.getMetadata().getName(),
+      delegate.getDomainBuilder().patch(domain.getMetadata().getNamespace(), domain.getMetadata().getName(),
               V1Patch.PATCH_FORMAT_JSON_PATCH, new V1Patch(patchBuilder.build().toString()),
               new PatchOptions(), clientSupplier);
     } catch (ApiException e) {

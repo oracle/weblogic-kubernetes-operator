@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetSpec;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.RequestBuilder;
@@ -69,7 +70,8 @@ public class PodDisruptionBudgetHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(createContext(packet).verifyPodDisruptionBudget(getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createContext(packet).verifyPodDisruptionBudget(delegate, getNext()), packet);
     }
 
     protected PodDisruptionBudgetHelper.PodDisruptionBudgetContext createContext(Packet packet) {
@@ -166,8 +168,9 @@ public class PodDisruptionBudgetHelper {
     private class ConflictStep extends Step {
       @Override
       public @Nonnull Result apply(Packet packet) {
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         return doNext(
-            RequestBuilder.PDB.get(info.getNamespace(), getPDBName(),
+            delegate.getPodDisruptionBudgetBuilder().get(info.getNamespace(), getPDBName(),
                 new PodDisruptionBudgetContext.ReadResponseStep(conflictStep)),
             packet);
       }
@@ -198,20 +201,20 @@ public class PodDisruptionBudgetHelper {
       }
     }
 
-    Step verifyPodDisruptionBudget(Step next) {
+    Step verifyPodDisruptionBudget(CoreDelegate delegate, Step next) {
       V1PodDisruptionBudget podDisruptionBudget = getPodDisruptionBudgetFromRecord();
       if (podDisruptionBudget == null) {
-        return createNewPodDisruptionBudget(next);
+        return createNewPodDisruptionBudget(delegate, next);
       } else if (mustPatch(podDisruptionBudget)) {
-        return patchPodDisruptionBudgetStep(next);
+        return patchPodDisruptionBudgetStep(delegate, next);
       } else {
         logPodDisruptionBudgetExists();
         return next;
       }
     }
 
-    private Step patchPodDisruptionBudgetStep(Step next) {
-      return RequestBuilder.PDB.patch(
+    private Step patchPodDisruptionBudgetStep(CoreDelegate delegate, Step next) {
+      return delegate.getPodDisruptionBudgetBuilder().patch(
           info.getNamespace(), getPDBName(),
           V1Patch.PATCH_FORMAT_JSON_PATCH,
           createPodDisruptionBudgetPatch(clusterName, info), new PatchResponseStep(next));
@@ -239,16 +242,16 @@ public class PodDisruptionBudgetHelper {
               - info.getMaxUnavailable(clusterName));
     }
 
-    private Step createNewPodDisruptionBudget(Step next) {
-      return createPodDisruptionBudget(getPDBCreatedMessageKey(), next);
+    private Step createNewPodDisruptionBudget(CoreDelegate delegate, Step next) {
+      return createPodDisruptionBudget(delegate, getPDBCreatedMessageKey(), next);
     }
 
     protected String getPDBCreatedMessageKey() {
       return CLUSTER_PDB_CREATED;
     }
 
-    private Step createPodDisruptionBudget(String messageKey, Step next) {
-      return RequestBuilder.PDB.create(
+    private Step createPodDisruptionBudget(CoreDelegate delegate, String messageKey, Step next) {
+      return delegate.getPodDisruptionBudgetBuilder().create(
           createModel(), new PodDisruptionBudgetHelper.PodDisruptionBudgetContext.CreateResponseStep(messageKey, next));
     }
 

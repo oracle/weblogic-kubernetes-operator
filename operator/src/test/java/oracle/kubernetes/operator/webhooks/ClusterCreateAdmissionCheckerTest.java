@@ -30,19 +30,19 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
 
   @Test
   void whenNewClusterCreated_returnTrue() {
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenNewClusterCreatedWithInvalidReplicas_returnTrue() {
     proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenClusterHasNoVolumeMountPath_returnTrue() {
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -50,7 +50,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(BAD_MOUNT_PATH));
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -58,7 +58,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(""));
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
@@ -66,7 +66,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(GOOD_MOUNT_PATH));
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -74,7 +74,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN));
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -82,12 +82,12 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN_2));
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenClusterSpecHasNoEnvs_returnTrue() {
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
@@ -95,7 +95,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     List<V1EnvVar> list = createEnvVarListWithReservedName();
     proposedCluster.getSpec().setEnv(list);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Nonnull
@@ -109,33 +109,33 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   void whenClusterHasReservedContainerName_returnFalse() {
     proposedCluster.getSpec().getContainers().add(new V1Container().name(WLS_CONTAINER_NAME));
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
   void whenClusterHasInvalidContainerPortName_returnFalse() {
     setInvalidContainerPortName();
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   @Test
   void whenClusterHasValidContainerPortName_returnTrue() {
     setValidContainerPortName();
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenClusterHasNoLivenessProbeSuccessThreshold_returnTrue() {
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenClusterHasInvalidLivenessProbeSuccessThreshold_returnFalse() {
     setInvalidLivenessProbeSuccessThreshold();
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
   }
 
   private void setInvalidLivenessProbeSuccessThreshold() {
@@ -150,7 +150,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   void whenClusterHasValidLivenessProbeSuccessThreshold_returnTrue() {
     setValidLivenessProbeSuccessThreshold();
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   private void setInvalidContainerPortName() {

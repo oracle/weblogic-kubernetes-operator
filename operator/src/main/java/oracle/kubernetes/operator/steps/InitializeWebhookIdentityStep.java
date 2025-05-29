@@ -23,6 +23,8 @@ import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import oracle.kubernetes.operator.CoreDelegate;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebhookMainDelegate;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
@@ -115,7 +117,9 @@ public class InitializeWebhookIdentityStep extends Step {
       writeToFile(certString, webhookCertFile);
       // put the new certificate and key in the webhook's secret so that it will be available
       // the next time the webhook is started
-      return doNext(recordWebhookIdentity(new WebhookIdentity(key, certString.getBytes()), getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(recordWebhookIdentity(
+          delegate, new WebhookIdentity(key, certString.getBytes()), getNext()), packet);
     } catch (Exception e) {
       throw new IdentityInitializationException(e);
     }
@@ -134,8 +138,8 @@ public class InitializeWebhookIdentityStep extends Step {
     return Base64.getEncoder().encodeToString(identityFactory.convertToPEM(cert).getBytes());
   }
 
-  private Step recordWebhookIdentity(WebhookIdentity webhookIdentity, Step next) {
-    return RequestBuilder.SECRET.get(
+  private Step recordWebhookIdentity(CoreDelegate delegate, WebhookIdentity webhookIdentity, Step next) {
+    return delegate.getSecretBuilder().get(
         getWebhookNamespace(), WEBHOOK_SECRETS, readSecretResponseStep(next, webhookIdentity));
   }
 
@@ -151,12 +155,12 @@ public class InitializeWebhookIdentityStep extends Step {
       this.webhookIdentity = webhookIdentity;
     }
 
-    private Step createSecret(Step next, WebhookIdentity webhookIdentity) {
-      return RequestBuilder.SECRET.create(createModel(null, webhookIdentity), new DefaultResponseStep<>(next));
+    private Step createSecret(CoreDelegate delegate, Step next, WebhookIdentity webhookIdentity) {
+      return delegate.getSecretBuilder().create(createModel(null, webhookIdentity), new DefaultResponseStep<>(next));
     }
 
-    private Step replaceSecret(Step next, V1Secret secret, WebhookIdentity webhookIdentity) {
-      return RequestBuilder.SECRET.update(createModel(secret, webhookIdentity),
+    private Step replaceSecret(CoreDelegate delegate, Step next, V1Secret secret, WebhookIdentity webhookIdentity) {
+      return delegate.getSecretBuilder().update(createModel(secret, webhookIdentity),
           new ReplaceSecretResponseStep(webhookIdentity, next));
     }
 
@@ -164,8 +168,9 @@ public class InitializeWebhookIdentityStep extends Step {
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getObject();
       Map<String, byte[]> data = Optional.ofNullable(existingSecret).map(V1Secret::getData).orElse(new HashMap<>());
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       if (existingSecret == null) {
-        return doNext(createSecret(getNext(), webhookIdentity), packet);
+        return doNext(createSecret(delegate, getNext(), webhookIdentity), packet);
       } else if (identityExists(data)) {
         try {
           reuseExistingIdentity(data);
@@ -175,7 +180,7 @@ public class InitializeWebhookIdentityStep extends Step {
         }
         return doNext(getNext(), packet);
       }
-      return doNext(replaceSecret(getNext(), existingSecret, webhookIdentity), packet);
+      return doNext(replaceSecret(delegate, getNext(), existingSecret, webhookIdentity), packet);
     }
 
     private boolean identityExists(Map<String, byte[]> data) {

@@ -136,7 +136,8 @@ public class NamespaceTest {
   }
 
   private void processNamespaces() {
-    testSupport.withClearPacket().runSteps(new DomainRecheck(dp, domainNamespaces).readExistingNamespaces());
+    testSupport.withClearPacket().runSteps(
+        new DomainRecheck(testSupport.getCoreDelegate(), dp, domainNamespaces).readExistingNamespaces());
   }
 
   @Test

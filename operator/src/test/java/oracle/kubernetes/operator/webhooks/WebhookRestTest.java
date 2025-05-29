@@ -25,6 +25,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestTestBase;
@@ -215,7 +216,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Override
   protected Application configure() {
-    return new WebhookRestServer(create(this::getRestBackend)).createResourceConfig();
+    return new WebhookRestServer(create(this::getCoreDelegate, this::getRestBackend)).createResourceConfig();
   }
 
   // Note: the #configure method is called during class initialization, before the restBackend field
@@ -223,6 +224,10 @@ class WebhookRestTest extends RestTestBase {
   // it will return the initialized and configured field.
   private RestBackend getRestBackend() {
     return restBackend;
+  }
+
+  private CoreDelegate getCoreDelegate() {
+    return testSupport.getCoreDelegate();
   }
 
   // test cases for conversion webhook
@@ -860,19 +865,25 @@ class WebhookRestTest extends RestTestBase {
   }
 
   abstract static class RestConfigStub implements RestConfig {
+    private final Supplier<CoreDelegate> delegateSupplier;
     private final Supplier<RestBackend> restBackendSupplier;
 
-    RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
+    RestConfigStub(Supplier<CoreDelegate> delegateSupplier, Supplier<RestBackend> restBackendSupplier) {
+      this.delegateSupplier = delegateSupplier;
       this.restBackendSupplier = restBackendSupplier;
     }
 
-    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
-      return createStrictStub(RestConfigStub.class, restBackendSupplier);
+    static RestConfig create(Supplier<CoreDelegate> delegateSupplier, Supplier<RestBackend> restBackendSupplier) {
+      return createStrictStub(RestConfigStub.class, delegateSupplier, restBackendSupplier);
     }
 
     @Override
     public RestBackend getBackend(String accessToken) {
       return restBackendSupplier.get();
+    }
+
+    public CoreDelegate getCoreDelegate() {
+      return delegateSupplier.get();
     }
 
     @Override

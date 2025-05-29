@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
@@ -44,23 +43,26 @@ import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadC
 class DomainRecheck {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  private final CoreDelegate delegate;
   private final DomainProcessor domainProcessor;
   private final DomainNamespaces domainNamespaces;
   private final boolean fullRecheck;
 
   DomainRecheck(MainDelegate delegate, boolean fullRecheck) {
-    this(delegate.getDomainProcessor(), delegate.getDomainNamespaces(), fullRecheck);
+    this(delegate, delegate.getDomainProcessor(), delegate.getDomainNamespaces(), fullRecheck);
   }
 
   DomainRecheck(MainDelegate delegate) {
     this(delegate, false);
   }
 
-  DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces) {
-    this(domainProcessor, domainNamespaces, false);
+  DomainRecheck(CoreDelegate delegate, DomainProcessor domainProcessor, DomainNamespaces domainNamespaces) {
+    this(delegate, domainProcessor, domainNamespaces, false);
   }
 
-  DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
+  DomainRecheck(CoreDelegate delegate, DomainProcessor domainProcessor,
+                DomainNamespaces domainNamespaces, boolean fullRecheck) {
+    this.delegate = delegate;
     this.domainProcessor = domainProcessor;
     this.domainNamespaces = domainNamespaces;
     this.fullRecheck = fullRecheck;
@@ -108,7 +110,7 @@ class DomainRecheck {
         }
 
         try {
-          return HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+          return HealthCheckHelper.getSelfSubjectRulesReviewStatus(delegate, ns);
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
@@ -144,7 +146,7 @@ class DomainRecheck {
    * identified as domain namespaces.
    */
   Step readExistingNamespaces() {
-    return RequestBuilder.NAMESPACE.list(new NamespaceListResponseStep());
+    return delegate.getNamespaceBuilder().list(new NamespaceListResponseStep());
   }
 
   private class NamespaceListResponseStep extends DefaultResponseStep<V1NamespaceList> {
@@ -227,7 +229,7 @@ class DomainRecheck {
       return Step.chain(
           createNamespaceReview(ns),
           new StartNamespaceBeforeStep(ns),
-          domainNamespaces.readExistingResources(ns, domainProcessor));
+          domainNamespaces.readExistingResources(delegate, ns, domainProcessor));
     }
   }
 

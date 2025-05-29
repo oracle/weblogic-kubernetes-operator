@@ -8,6 +8,8 @@ import java.util.Iterator;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
+import oracle.kubernetes.operator.CoreDelegate;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -26,11 +28,12 @@ public abstract class AbstractListStep<T> extends Step {
   @Override
   public @Nonnull Result apply(Packet packet) {
     if (it.hasNext()) {
-      return doNext(createActionStep(it.next()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createActionStep(delegate, it.next()), packet);
     } else {
       return doNext(packet);
     }
   }
 
-  abstract Step createActionStep(T item);
+  abstract Step createActionStep(CoreDelegate delegate, T item);
 }

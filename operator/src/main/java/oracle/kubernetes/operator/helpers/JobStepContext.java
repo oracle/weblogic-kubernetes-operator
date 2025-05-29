@@ -36,12 +36,7 @@ import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.common.utils.CommonUtils;
-import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.LogHomeLayoutType;
-import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -283,19 +278,21 @@ public class JobStepContext extends BasePodStepContext {
   /**
    * Creates the specified new pod and performs any additional needed processing.
    *
+   * @param delegate Delegate
    * @return a step to be scheduled.
    */
-  Step createNewJob() {
-    return createJob();
+  Step createNewJob(CoreDelegate delegate) {
+    return createJob(delegate);
   }
 
   /**
    * Creates the specified new job.
    *
+   * @param delegate Delegate
    * @return a step to be scheduled.
    */
-  Step createJob() {
-    conflict = RequestBuilder.JOB.create(getJobModel(), newCreateResponse());
+  Step createJob(CoreDelegate delegate) {
+    conflict = delegate.getJobBuilder().create(getJobModel(), newCreateResponse());
     return conflict;
   }
 

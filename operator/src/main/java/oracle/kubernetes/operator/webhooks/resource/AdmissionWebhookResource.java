@@ -11,7 +11,11 @@ import io.kubernetes.client.openapi.ApiException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import oracle.kubernetes.operator.CoreDelegate;
+import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.resource.BaseResource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -19,6 +23,7 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
+import org.glassfish.jersey.server.ResourceConfig;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
@@ -33,6 +38,9 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAd
 public class AdmissionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
+
+  @Context
+  private Application application;
 
   /** Construct a AdmissionWebhookResource. */
   public AdmissionWebhookResource() {
@@ -56,10 +64,13 @@ public class AdmissionWebhookResource extends BaseResource {
     AdmissionRequest admissionRequest = null;
     AdmissionResponse admissionResponse;
 
+    ResourceConfig rc = (ResourceConfig) application;
+    RestConfig r = (RestConfig) rc.getProperty(RestConfig.REST_CONFIG_PROPERTY);
+
     try {
       admissionReview = readAdmissionReview(body);
       admissionRequest = getAdmissionRequest(admissionReview);
-      admissionResponse = createAdmissionResponse(admissionRequest);
+      admissionResponse = createAdmissionResponse(r.getCoreDelegate(), admissionRequest);
     } catch (Exception e) {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
       admissionResponse = createResponseWithException(admissionRequest, e);
@@ -109,23 +120,25 @@ public class AdmissionWebhookResource extends BaseResource {
     return Optional.ofNullable(request).map(AdmissionRequest::getUid).orElse(null);
   }
 
-  private AdmissionResponse createAdmissionResponse(AdmissionRequest request) throws ApiException {
+  private AdmissionResponse createAdmissionResponse(CoreDelegate delegate,
+                                                    AdmissionRequest request) throws ApiException {
     if (request == null || request.getObject() == null || !request.getRequestKind().isSupported()) {
       return new AdmissionResponse().uid(getUid(request)).allowed(true);
     }
 
-    return validate(request);
+    return validate(delegate, request);
   }
 
-  private AdmissionResponse validate(@Nonnull AdmissionRequest request) throws ApiException {
+  private AdmissionResponse validate(CoreDelegate delegate, @Nonnull AdmissionRequest request) throws ApiException {
     LOGGER.fine("Validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
-    return getAdmissionChecker(request).validate().uid(getUid(request));
+    return getAdmissionChecker(delegate, request).validate(delegate).uid(getUid(request));
   }
 
   @Nonnull
-  private AdmissionChecker getAdmissionChecker(@Nonnull AdmissionRequest request) throws ApiException {
-    return request.getRequestKind().getAdmissionChecker(request);
+  private AdmissionChecker getAdmissionChecker(CoreDelegate delegate,
+                                               @Nonnull AdmissionRequest request) throws ApiException {
+    return request.getRequestKind().getAdmissionChecker(delegate, request);
   }
 }

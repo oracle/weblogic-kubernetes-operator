@@ -123,7 +123,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Override
   protected JobWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
-    return JobWatcher.create(this, ns, rv.toString(), tuning, NULL_LISTENER, stopping);
+    return JobWatcher.create(testSupport.getCoreDelegate(), this, ns, rv.toString(), tuning, NULL_LISTENER, stopping);
   }
 
   @Test

@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
@@ -112,12 +113,14 @@ public final class HealthCheckHelper {
    * Access the self-subject rules review for the namespace. The namespace may be the operator's
    * namespace, a domain namespace, or both.
    *
+   * @param delegate Delegate
    * @param namespace namespace
    * @return self-subject rules review for the namespace
    */
-  public static V1SubjectRulesReviewStatus getSelfSubjectRulesReviewStatus(@Nonnull String namespace) {
+  public static V1SubjectRulesReviewStatus getSelfSubjectRulesReviewStatus(CoreDelegate delegate,
+                                                                           @Nonnull String namespace) {
     AuthorizationProxy ap = new AuthorizationProxy();
-    return Optional.ofNullable(ap.review(namespace)).map(V1SelfSubjectRulesReview::getStatus).orElse(null);
+    return Optional.ofNullable(ap.review(delegate, namespace)).map(V1SelfSubjectRulesReview::getStatus).orElse(null);
   }
 
   /**
@@ -201,15 +204,16 @@ public final class HealthCheckHelper {
   /**
    * Verify the k8s version.
    *
+   * @param delegate Delegate
    * @return Major and minor version information
    */
-  public static KubernetesVersion performK8sVersionCheck() {
+  public static KubernetesVersion performK8sVersionCheck(CoreDelegate delegate) {
     LOGGER.fine(MessageKeys.VERIFY_K8S_MIN_VERSION);
 
     try {
       while (true) {
         try {
-          return createAndValidateKubernetesVersion(RequestBuilder.VERSION.versionCode().value());
+          return createAndValidateKubernetesVersion(delegate.getVersionBuilder().versionCode().value());
         } catch (ApiException e) {
           Thread.sleep(TuningParameters.getInstance().getInitializationRetryDelaySeconds() * 1000L);
         }

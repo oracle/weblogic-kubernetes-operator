@@ -666,7 +666,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterReadingExistingResourcesForNamespace_WatchersAreDefined() {
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(domainNamespaces.getClusterWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(NS), notNullValue());
@@ -680,14 +680,14 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterReadingExistingResourcesForNamespace_ScriptConfigMapIsDefined() {
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(getScriptMap(NS), notNullValue());
   }
 
   @Test
   void afterReadingExistingResourcesForNamespace_withoutExistingEvent_domainEventK8SObjectsEmpty() {
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
     assertThat(getDomainEventMapSize(), equalTo(0));
   }
 
@@ -697,7 +697,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     CoreV1Event event2 = createDomainEvent("event2").reason(DOMAIN_CHANGED_EVENT);
 
     testSupport.defineResources(event1, event2);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(getDomainEventMapSize(), equalTo(2));
   }

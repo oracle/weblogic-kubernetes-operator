@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -41,15 +42,15 @@ public class ClusterUpdateAdmissionChecker extends ClusterScaleAdmissionChecker 
   }
 
   @Override
-  AdmissionResponse validate() {
+  AdmissionResponse validate(CoreDelegate delegate) {
     LOGGER.fine("Validating ClusterResource " + proposedCluster + " against " + existingCluster);
 
-    return validateIt();
+    return validateIt(delegate);
   }
 
   @Override
-  public boolean isProposedChangeAllowed() {
-    return isUnchanged() || super.isProposedChangeAllowed();
+  public boolean isProposedChangeAllowed(CoreDelegate delegate) {
+    return isUnchanged() || super.isProposedChangeAllowed(delegate);
   }
 
   @Override

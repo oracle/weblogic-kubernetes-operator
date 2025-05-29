@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -43,14 +44,14 @@ class AuthenticationProxyTest {
   @Test
   void verify_authorizationScope_isCluster_whenNamespaceIsNull() {
     AuthenticationProxy authorizationProxy = new AuthenticationProxy();
-    authorizationProxy.check("", "", null);
+    authorizationProxy.check(testSupport.getCoreDelegate(), "", "", null);
     assertThat(authorizationProxyStub.scope, equalTo(Scope.CLUSTER));
   }
 
   @Test
   void verify_authorizationScope_isNamespace_whenNamespaceIsDefined() {
     AuthenticationProxy authorizationProxy = new AuthenticationProxy();
-    authorizationProxy.check("", "", "NS");
+    authorizationProxy.check(testSupport.getCoreDelegate(), "", "", "NS");
     assertThat(authorizationProxyStub.scope, equalTo(Scope.NAMESPACE));
   }
 
@@ -59,6 +60,7 @@ class AuthenticationProxyTest {
 
     @Override
     public boolean check(
+        CoreDelegate delegate,
         String principal,
         Operation operation,
         Resource resource,

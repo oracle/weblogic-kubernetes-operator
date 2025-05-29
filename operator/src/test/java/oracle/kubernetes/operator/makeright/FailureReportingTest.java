@@ -20,13 +20,7 @@ import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import oracle.kubernetes.operator.DomainNamespaces;
-import oracle.kubernetes.operator.DomainProcessorDelegateStub;
-import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
-import oracle.kubernetes.operator.MakeRightExecutor;
-import oracle.kubernetes.operator.Processors;
-import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.SimulatedStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -526,7 +520,8 @@ class FailureReportingTest {
     }
 
     @Override
-    public Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info, DomainNamespaces ns) {
+    public Step createNamespacedResourceSteps(
+        CoreDelegate delegate, Processors processors, DomainPresenceInfo info, DomainNamespaces ns) {
       return null;
     }
   }

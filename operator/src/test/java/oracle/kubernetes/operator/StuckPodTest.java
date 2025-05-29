@@ -13,8 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.*;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -25,6 +25,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -207,7 +210,47 @@ class StuckPodTest {
 
     @Override
     public void runSteps(Packet packet, Step firstStep,  Runnable completionAction) {
+      packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, this);
       testSupport.runSteps(packet, firstStep);
+    }
+
+    public RequestBuilder.PodRequestBuilder getPodBuilder() {
+      return new RequestBuilder.PodRequestBuilder();
+    }
+
+    public RequestBuilder<V1ConfigMap, V1ConfigMapList> getConfigMapBuilder() {
+      return new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class,
+              "", "v1", "configmaps", "configmap");
+    }
+
+    public RequestBuilder<CoreV1Event, CoreV1EventList> getEventBuilder() {
+      return new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class,
+              "", "v1", "events", "event");
+    }
+
+    public RequestBuilder<V1Job, V1JobList> getJobBuilder() {
+      return new RequestBuilder<>(V1Job.class, V1JobList.class,
+              "batch", "v1", "jobs", "job");
+    }
+
+    public RequestBuilder<V1Service, V1ServiceList> getServiceBuilder() {
+      return new RequestBuilder<>(V1Service.class, V1ServiceList.class,
+              "", "v1", "services", "service");
+    }
+
+    public RequestBuilder<V1PodDisruptionBudget, V1PodDisruptionBudgetList> getPodDisruptionBudgetBuilder() {
+      return new RequestBuilder<>(V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
+              "policy", "v1", "poddisruptionbudgets", "poddisruptionbudget");
+    }
+
+    public RequestBuilder<DomainResource, DomainList> getDomainBuilder() {
+      return new RequestBuilder<>(DomainResource.class, DomainList.class,
+              "weblogic.oracle", "v9", "domains", "domain");
+    }
+
+    public RequestBuilder<ClusterResource, ClusterList> getClusterBuilder() {
+      return new RequestBuilder<>(ClusterResource.class, ClusterList.class,
+              "weblogic.oracle", "v1", "clusters", "cluster");
     }
 
     @Override

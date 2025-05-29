@@ -34,7 +34,6 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HelmAccess;
@@ -222,7 +221,7 @@ public class OperatorMain extends BaseMain {
     }
 
     OperatorEventWatcher startWatcher(String ns, String resourceVersion) {
-      return OperatorEventWatcher.create(DomainNamespaces.getThreadFactory(), ns,
+      return OperatorEventWatcher.create(mainDelegate, DomainNamespaces.getThreadFactory(), ns,
           resourceVersion, DomainNamespaces.getWatchTuning(), processor::dispatchEventWatch, null);
     }
   }
@@ -235,7 +234,7 @@ public class OperatorMain extends BaseMain {
     }
 
     private Step createOperatorNamespaceEventListStep() {
-      return RequestBuilder.EVENT.list(getOperatorNamespace(),
+      return mainDelegate.getEventBuilder().list(getOperatorNamespace(),
           new ListOptions().labelSelector(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER),
           new EventListResponseStep(mainDelegate.getDomainProcessor()));
     }
@@ -243,7 +242,7 @@ public class OperatorMain extends BaseMain {
     @Override
     public Step getDefaultSelection() {
       return Step.chain(
-          RequestBuilder.NAMESPACE.list(new StartNamespaceWatcherStep()),
+          mainDelegate.getNamespaceBuilder().list(new StartNamespaceWatcherStep()),
           createOperatorNamespaceEventListStep(),
           createDomainRecheckSteps());
     }
@@ -253,6 +252,7 @@ public class OperatorMain extends BaseMain {
 
     private NamespaceWatcher createNamespaceWatcher(String initialResourceVersion) {
       return NamespaceWatcher.create(
+          mainDelegate,
           threadFactory,
           initialResourceVersion,
           TuningParameters.getInstance().getWatchTuning(),
@@ -347,7 +347,8 @@ public class OperatorMain extends BaseMain {
     @Override
     public @Nonnull Result apply(Packet packet) {
       return doNext(
-          RequestBuilder.CRD.get(KubernetesConstants.DOMAIN_CRD_NAME, createReadResponseStep(getNext())), packet);
+          mainDelegate.getCustomResourceDefinitionBuilder().get(
+              KubernetesConstants.DOMAIN_CRD_NAME, createReadResponseStep(getNext())), packet);
     }
   }
 
@@ -388,7 +389,8 @@ public class OperatorMain extends BaseMain {
     protected Result onFailureNoRetry(Packet packet,
                                           KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
       return isNotAuthorizedOrForbidden(callResponse)
-          ? doNext(RequestBuilder.DOMAIN.list(getOperatorNamespace(), new CrdPresenceResponseStep(getNext())), packet)
+          ? doNext(mainDelegate.getDomainBuilder().list(getOperatorNamespace(),
+              new CrdPresenceResponseStep(getNext())), packet)
           : super.onFailureNoRetry(packet, callResponse);
     }
   }
@@ -418,7 +420,7 @@ public class OperatorMain extends BaseMain {
   @Override
   protected BaseRestServer createRestServer() {
     return OperatorRestServer.create(
-        new RestConfigImpl(mainDelegate.getPrincipal(), mainDelegate.getDomainNamespaces()::getNamespaces,
+        new RestConfigImpl(mainDelegate, mainDelegate.getPrincipal(), mainDelegate.getDomainNamespaces()::getNamespaces,
                 new Certificates(mainDelegate)));
   }
 

@@ -7,7 +7,8 @@ import java.io.File;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import io.kubernetes.client.openapi.models.VersionInfo;
+import io.kubernetes.client.openapi.models.*;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.Cancellable;
@@ -15,6 +16,10 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
@@ -95,7 +100,52 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
   @Override
   public void runSteps(Packet packet, Step firstStep, Runnable completionCallback) {
+    packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, this);
     testSupport.runSteps(packet, firstStep);
+  }
+
+  public RequestBuilder.PodRequestBuilder getPodBuilder() {
+    return new RequestBuilder.PodRequestBuilder();
+  }
+
+  public RequestBuilder<V1ConfigMap, V1ConfigMapList> getConfigMapBuilder() {
+    return new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class,
+            "", "v1", "configmaps", "configmap");
+  }
+
+  public RequestBuilder<V1Secret, V1SecretList> getSecretBuilder() {
+    return new RequestBuilder<>(V1Secret.class, V1SecretList.class,
+            "", "v1", "secrets", "secret");
+  }
+
+  public RequestBuilder<CoreV1Event, CoreV1EventList> getEventBuilder() {
+    return new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class,
+            "", "v1", "events", "event");
+  }
+
+  public RequestBuilder<V1Job, V1JobList> getJobBuilder() {
+    return new RequestBuilder<>(V1Job.class, V1JobList.class,
+            "batch", "v1", "jobs", "job");
+  }
+
+  public RequestBuilder<V1Service, V1ServiceList> getServiceBuilder() {
+    return new RequestBuilder<>(V1Service.class, V1ServiceList.class,
+            "", "v1", "services", "service");
+  }
+
+  public RequestBuilder<V1PodDisruptionBudget, V1PodDisruptionBudgetList> getPodDisruptionBudgetBuilder() {
+    return new RequestBuilder<>(V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
+            "policy", "v1", "poddisruptionbudgets", "poddisruptionbudget");
+  }
+
+  public RequestBuilder<DomainResource, DomainList> getDomainBuilder() {
+    return new RequestBuilder<>(DomainResource.class, DomainList.class,
+            "weblogic.oracle", "v9", "domains", "domain");
+  }
+
+  public RequestBuilder<ClusterResource, ClusterList> getClusterBuilder() {
+    return new RequestBuilder<>(ClusterResource.class, ClusterList.class,
+            "weblogic.oracle", "v1", "clusters", "cluster");
   }
 
   @Override

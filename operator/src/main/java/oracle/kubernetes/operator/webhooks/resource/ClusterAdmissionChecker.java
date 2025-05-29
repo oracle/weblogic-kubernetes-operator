@@ -11,6 +11,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -35,8 +36,8 @@ public abstract class ClusterAdmissionChecker extends AdmissionChecker {
 
   abstract String getErrorMessage();
 
-  AdmissionResponse validateIt() {
-    response.allowed(isProposedChangeAllowed());
+  AdmissionResponse validateIt(CoreDelegate delegate) {
+    response.allowed(isProposedChangeAllowed(delegate));
     if (!response.isAllowed()) {
       if (exception == null) {
         return response.status(new AdmissionResponseStatus().message(createMessage()));
@@ -47,10 +48,10 @@ public abstract class ClusterAdmissionChecker extends AdmissionChecker {
     return response;
   }
 
-  boolean isReplicaCountValid() {
+  boolean isReplicaCountValid(CoreDelegate delegate) {
     boolean isValid = (getClusterReplicaCount() != null
         ? getClusterReplicaCount() <= getClusterSize(proposedCluster.getStatus())
-        : isDomainReplicaCountValid());
+        : isDomainReplicaCountValid(delegate));
 
     if (!isValid) {
       messages.add(LOGGER.formatMessage(getErrorMessage(),
@@ -67,9 +68,9 @@ public abstract class ClusterAdmissionChecker extends AdmissionChecker {
     return Optional.of(proposedCluster).map(ClusterResource::getSpec).map(ClusterSpec::getReplicas).orElse(null);
   }
 
-  private boolean isDomainReplicaCountValid() {
+  private boolean isDomainReplicaCountValid(CoreDelegate delegate) {
     try {
-      return getDomainResources(proposedCluster).stream()
+      return getDomainResources(delegate, proposedCluster).stream()
           .allMatch(domain -> getDomainReplicaCount(domain) <= getClusterSize(proposedCluster.getStatus()));
     } catch (ApiException e) {
       exception = e;
@@ -86,8 +87,8 @@ public abstract class ClusterAdmissionChecker extends AdmissionChecker {
     return exception != null;
   }
 
-  List<DomainResource> getDomainResources(ClusterResource clusterResource) throws ApiException {
-    return referencingDomains(clusterResource, RequestBuilder.DOMAIN.list(getNamespace(clusterResource)));
+  List<DomainResource> getDomainResources(CoreDelegate delegate, ClusterResource clusterResource) throws ApiException {
+    return referencingDomains(clusterResource, delegate.getDomainBuilder().list(getNamespace(clusterResource)));
   }
 
   private List<DomainResource> referencingDomains(ClusterResource clusterResource, DomainList domains) {

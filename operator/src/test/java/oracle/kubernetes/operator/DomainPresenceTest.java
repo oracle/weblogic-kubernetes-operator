@@ -120,7 +120,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   @Test
   void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(dp.getDomainPresenceInfos(), is(anEmptyMap()));
   }
@@ -131,7 +131,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(domainResource);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getDomain(), equalTo(domainResource));
   }
@@ -144,13 +144,13 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(domain1, domain2, domain3);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
 
     testSupport.deleteResources(domain2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(2));
     assertThat(getDomainPresenceInfoMap(dp), not(hasKey(UID2)));
@@ -164,14 +164,14 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(domain1, domain2, domain3);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
 
     testSupport.deleteResources(domain2);
     dp.setBeingProcessed(NS, UID2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     dp.clearBeingProcessed(NS, UID2);
     assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
@@ -203,7 +203,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(domainResource, cluster1, cluster2, cluster3);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
     DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domainResource);
@@ -224,10 +224,10 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     }
     testSupport.defineResources(domain);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
     testSupport.deleteResources(
         testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
     MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
@@ -247,12 +247,12 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     dp.clusters.put(NS, clusterPresenceInfoMap);
     testSupport.defineResources(domain);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
     testSupport.deleteResources(
         testSupport.<DomainResource>getResourceWithName(DOMAIN, domain.getDomainUid()));
     testSupport.deleteResources(
         testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_1), notNullValue());
     MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_2), nullValue());
@@ -272,7 +272,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(domain, domain2);
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
     MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
@@ -344,7 +344,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
   }
@@ -356,7 +356,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     DomainResource domainResource = testSupport.getResourceWithName(DOMAIN, UID1);
     domainResource.withStatus(null);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
   }
@@ -366,7 +366,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     processor.getDomainPresenceInfoMap().clear();
     addDomainResource(UID1, NS);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, not(hasEvent(DOMAIN_CREATED.getReason())));
   }
@@ -381,7 +381,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     domain2.getMetadata().setGeneration(2345L);
     testSupport.defineResources(domain2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(DOMAIN_CHANGED.getReason()));
   }
@@ -395,7 +395,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     domain1.setStatus(null);
     testSupport.defineResources(domain1);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
   }
@@ -407,7 +407,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(service);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
   }
@@ -421,7 +421,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(null));
   }
@@ -434,7 +434,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(pod));
   }
@@ -449,7 +449,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("managed-server1"), notNullValue());
     assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("managed-server" + MULTICHUNK_LAST_POD_NUM),
@@ -463,7 +463,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(pod);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(pod));
   }
@@ -476,7 +476,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     pod.getMetadata().getLabels().remove(SERVERNAME_LABEL);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
   }
@@ -490,7 +490,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
   }
@@ -518,7 +518,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     addEventResource(UID1, "admin", "ignore this event");
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getLastKnownServerStatus("admin"), nullValue());
   }
@@ -544,7 +544,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(service1, service2, volume, claim);
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(dp.isDeletingStrandedResources(UID1), is(true));
   }
@@ -556,7 +556,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     V1Service service2 = createServerService("UID" + LAST_DOMAIN_NUM, NS, "admin");
     testSupport.defineResources(service1, service2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(dp.isEstablishingDomain("UID1"), is(true));
     assertThat(dp.isEstablishingDomain("UID" + LAST_DOMAIN_NUM), is(true));
@@ -570,7 +570,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, dp));
 
     assertThat(dp.isStatusUpdated(), is(true));
   }

@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.webhooks.resource;
 import java.util.List;
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -32,9 +33,9 @@ public class ClusterCreateAdmissionChecker extends AdmissionChecker {
   }
 
   @Override
-  AdmissionResponse validate() {
+  AdmissionResponse validate(CoreDelegate delegate) {
     LOGGER.fine("Validating new ClusterResource " + proposedCluster);
-    response.allowed(isProposedChangeAllowed());
+    response.allowed(isProposedChangeAllowed(delegate));
     if (!response.isAllowed()) {
       return response.status(new AdmissionResponseStatus().message(createMessage()));
     }
@@ -42,7 +43,7 @@ public class ClusterCreateAdmissionChecker extends AdmissionChecker {
   }
 
   @Override
-  public boolean isProposedChangeAllowed() {
+  public boolean isProposedChangeAllowed(CoreDelegate delegate) {
     return hasNoFatalValidationErrors();
   }
 

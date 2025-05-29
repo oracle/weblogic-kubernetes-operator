@@ -44,12 +44,14 @@ import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSele
  * A Class to manage listing Kubernetes resources associated with a namespace and doing processing on them.
  */
 class NamespacedResources {
+  private final CoreDelegate delegate;
   private final String namespace;
   private final String domainUid;
   private final List<Processors> processors = new ArrayList<>();
   private final DomainNamespaces domainNamespaces;
 
-  NamespacedResources(String namespace, String domainUid, DomainNamespaces domainNamespaces) {
+  NamespacedResources(CoreDelegate delegate, String namespace, String domainUid, DomainNamespaces domainNamespaces) {
+    this.delegate = delegate;
     this.namespace = namespace;
     this.domainUid = domainUid;
     this.domainNamespaces = domainNamespaces;
@@ -84,7 +86,7 @@ class NamespacedResources {
 
   private Step createConfigMapListStep(List<Consumer<V1ConfigMapList>> processing) {
     return Step.chain(getPauseWatchersStep(getConfigMapWatcher()),
-        RequestBuilder.CM.list(namespace, new ListResponseStep<>(processing)));
+        delegate.getConfigMapBuilder().list(namespace, new ListResponseStep<>(processing)));
   }
 
   private ConfigMapWatcher getConfigMapWatcher() {
@@ -97,7 +99,7 @@ class NamespacedResources {
 
   private Step createPodEventListStep(List<Consumer<CoreV1EventList>> processing) {
     return Step.chain(getPauseWatchersStep(getEventWatcher()),
-        RequestBuilder.EVENT.list(namespace,
+        delegate.getEventBuilder().list(namespace,
             new ListOptions().fieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER),
             new ListResponseStep<>(processing)));
   }
@@ -113,7 +115,7 @@ class NamespacedResources {
 
   private Step createOperatorEventListStep(List<Consumer<CoreV1EventList>> processing) {
     return Step.chain(getPauseWatchersStep(getOperatorEventWatcher()),
-        RequestBuilder.EVENT.list(namespace,
+        delegate.getEventBuilder().list(namespace,
             new ListOptions().labelSelector(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER),
             new ListResponseStep<>(processing)));
   }
@@ -129,7 +131,7 @@ class NamespacedResources {
 
   private Step createPodDisruptionBudgetListStep(List<Consumer<V1PodDisruptionBudgetList>> processing) {
     return Step.chain(getPauseWatchersStep(getPodDisruptionBudgetWatcher()),
-        RequestBuilder.PDB.list(namespace,
+        delegate.getPodDisruptionBudgetBuilder().list(namespace,
             new ListOptions().labelSelector(forDomainUidSelector(domainUid) + "," + getCreatedByOperatorSelector()),
             new ListResponseStep<>(processing)));
   }
@@ -145,7 +147,7 @@ class NamespacedResources {
 
   private Step createJobListStep(List<Consumer<V1JobList>> processing) {
     return Step.chain(getPauseWatchersStep(getJobWatcher()),
-        RequestBuilder.JOB.list(namespace,
+        delegate.getJobBuilder().list(namespace,
             new ListOptions().labelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL + "," + getDomainUidLabel()),
             new ListResponseStep<>(processing)));
   }
@@ -160,7 +162,7 @@ class NamespacedResources {
 
   private Step createPodListStep(List<Consumer<V1PodList>> processing) {
     return Step.chain(getPauseWatchersStep(getPodWatcher()),
-        RequestBuilder.POD.list(namespace,
+        delegate.getPodBuilder().list(namespace,
             new ListOptions().labelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL + "," + getDomainUidLabel()),
             new ListResponseStep<>(processing)));
   }
@@ -179,7 +181,7 @@ class NamespacedResources {
 
   private Step createServiceListStep(List<Consumer<V1ServiceList>> processing) {
     return Step.chain(getPauseWatchersStep(getServiceWatcher()),
-        RequestBuilder.SERVICE.list(namespace,
+        delegate.getServiceBuilder().list(namespace,
             new ListOptions().labelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL + "," + getDomainUidLabel()),
             new ListResponseStep<>(processing)));
   }
@@ -194,7 +196,7 @@ class NamespacedResources {
 
   private Step createClusterListSteps(List<Consumer<ClusterList>> processing) {
     return Step.chain(getPauseWatchersStep(getClusterWatcher()),
-        RequestBuilder.CLUSTER.list(namespace, new ListResponseStep<>(processing)));
+        delegate.getClusterBuilder().list(namespace, new ListResponseStep<>(processing)));
   }
 
   private ClusterWatcher getClusterWatcher() {
@@ -207,7 +209,7 @@ class NamespacedResources {
 
   private Step createDomainListSteps(List<Consumer<DomainList>> processing) {
     return Step.chain(getPauseWatchersStep(getDomainWatcher()),
-        RequestBuilder.DOMAIN.list(namespace, new ListResponseStep<>(processing)));
+        delegate.getDomainBuilder().list(namespace, new ListResponseStep<>(processing)));
   }
 
   private DomainWatcher getDomainWatcher() {

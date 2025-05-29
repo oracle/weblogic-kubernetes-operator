@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,7 +15,6 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -84,10 +83,11 @@ public class ClusterResourceStatusUpdater {
 
     private static Step createUpdateClusterResourceStatusSteps(Packet packet,
                                                                Collection<ClusterResource> clusterResources) {
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       List<Fiber.StepAndPacket> result = clusterResources.stream()
           .filter(res -> createContext(packet, res).isClusterResourceStatusChanged())
           .map(res -> new Fiber.StepAndPacket(
-                  createContext(packet, res).createReplaceClusterResourceStatusStep(), packet))
+                  createContext(packet, res).createReplaceClusterResourceStatusStep(delegate), packet))
           .toList();
       return result.isEmpty() ? null : new RunInParallelStep(result);
     }
@@ -124,18 +124,19 @@ public class ClusterResourceStatusUpdater {
       if (isUnrecoverable(callResponse)) {
         return super.onFailure(packet, callResponse);
       } else {
-        return onFailure(createRetry(), packet, callResponse);
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+        return onFailure(createRetry(delegate), packet, callResponse);
       }
     }
 
-    private Step createRetry() {
+    private Step createRetry(CoreDelegate delegate) {
       return Step.chain(
-          createClusterResourceRefreshStep(),
+          createClusterResourceRefreshStep(delegate),
           new SingleClusterResourceStatusUpdateStep(context.getClusterName()));
     }
 
-    private Step createClusterResourceRefreshStep() {
-      return RequestBuilder.CLUSTER.get(
+    private Step createClusterResourceRefreshStep(CoreDelegate delegate) {
+      return delegate.getClusterBuilder().get(
           context.getNamespace(), context.getClusterResourceName(), new ReadClusterResponseStep());
     }
   }
@@ -210,7 +211,7 @@ public class ClusterResourceStatusUpdater {
       return !Objects.equals(getNewStatus(), resource.getStatus());
     }
 
-    private Step createReplaceClusterResourceStatusStep() {
+    private Step createReplaceClusterResourceStatusStep(CoreDelegate delegate) {
       LOGGER.fine(MessageKeys.CLUSTER_STATUS, getClusterResourceName(),
           getNewStatus());
 
@@ -222,7 +223,7 @@ public class ClusterResourceStatusUpdater {
       }
 
       final List<Step> result = new ArrayList<>();
-      result.add(createReplaceClusterStatusAsyncStep());
+      result.add(createReplaceClusterStatusAsyncStep(delegate));
 
       // add steps to create events for updating conditions
       Optional.ofNullable(newClusterStatus)
@@ -278,8 +279,8 @@ public class ClusterResourceStatusUpdater {
       return clusterStatuses.stream().filter(cs -> clusterName.equals(cs.getClusterName())).findFirst().orElse(null);
     }
 
-    private Step createReplaceClusterStatusAsyncStep() {
-      return RequestBuilder.CLUSTER.updateStatus(
+    private Step createReplaceClusterStatusAsyncStep(CoreDelegate delegate) {
+      return delegate.getClusterBuilder().updateStatus(
           createReplacementClusterResource(), ClusterResource::getStatus,
           new ClusterResourceStatusReplaceResponseStep(this));
     }
@@ -315,7 +316,8 @@ public class ClusterResourceStatusUpdater {
       // Get the ClusterResource, that was refreshed, from DomainPresenceInfo.
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       ClusterResource res = info.getClusterResource(clusterName);
-      return doNext(createContext(packet, res).createReplaceClusterResourceStatusStep(), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createContext(packet, res).createReplaceClusterResourceStatusStep(delegate), packet);
     }
   }
 }

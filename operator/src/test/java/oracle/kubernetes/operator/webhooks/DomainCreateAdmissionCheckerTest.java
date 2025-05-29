@@ -23,13 +23,13 @@ class DomainCreateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
   @Test
   void whenNewDomainCreated_returnTrue() {
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 
   @Test
   void whenNewDomainCreatedWithInvalidReplicas_returnTrue() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(domainChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
   }
 }

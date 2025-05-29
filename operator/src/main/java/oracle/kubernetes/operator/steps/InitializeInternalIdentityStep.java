@@ -23,7 +23,9 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.MainDelegate;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -100,8 +102,9 @@ public class InitializeInternalIdentityStep extends Step {
     writeToFile(getBase64Encoded(cert), internalCertFile);
     // put the new certificate in the operator's config map so that it will be available
     // the next time the operator is started
-    return doNext(recordInternalOperatorCert(cert,
-            recordInternalOperatorKey(key, getNext())), packet);
+    CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+    return doNext(recordInternalOperatorCert(delegate, cert,
+            recordInternalOperatorKey(delegate, key, getNext())), packet);
   }
 
   private static String convertToPEM(Object object) throws IOException {
@@ -125,18 +128,19 @@ public class InitializeInternalIdentityStep extends Step {
     return Base64.getEncoder().encodeToString(convertToPEM(cert).getBytes());
   }
 
-  private static Step recordInternalOperatorCert(X509Certificate cert, Step next) throws IOException {
+  private static Step recordInternalOperatorCert(CoreDelegate delegate,
+                                                 X509Certificate cert, Step next) throws IOException {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
 
-    return RequestBuilder.CM.patch(
+    return delegate.getConfigMapBuilder().patch(
         getOperatorNamespace(), OPERATOR_CM,
         V1Patch.PATCH_FORMAT_JSON_PATCH,
         new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
   }
 
-  private static Step recordInternalOperatorKey(String key, Step next) {
-    return RequestBuilder.SECRET.get(getOperatorNamespace(), OPERATOR_SECRETS, readSecretResponseStep(next, key));
+  private static Step recordInternalOperatorKey(CoreDelegate delegate, String key, Step next) {
+    return delegate.getSecretBuilder().get(getOperatorNamespace(), OPERATOR_SECRETS, readSecretResponseStep(next, key));
   }
 
   private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String internalOperatorKey) {
@@ -151,21 +155,24 @@ public class InitializeInternalIdentityStep extends Step {
       this.internalOperatorKey = internalOperatorKey;
     }
 
-    private static Step createSecret(Step next, String internalOperatorKey) {
-      return RequestBuilder.SECRET.create(createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
+    private static Step createSecret(CoreDelegate delegate, Step next, String internalOperatorKey) {
+      return delegate.getSecretBuilder().create(
+          createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
     }
 
-    private static Step replaceSecret(Step next, V1Secret secret, String internalOperatorKey) {
-      return RequestBuilder.SECRET.update(createModel(secret, internalOperatorKey), new DefaultResponseStep<>(next));
+    private static Step replaceSecret(CoreDelegate delegate, Step next, V1Secret secret, String internalOperatorKey) {
+      return delegate.getSecretBuilder().update(
+          createModel(secret, internalOperatorKey), new DefaultResponseStep<>(next));
     }
 
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getObject();
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
       if (existingSecret == null) {
-        return doNext(createSecret(getNext(), internalOperatorKey), packet);
+        return doNext(createSecret(delegate, getNext(), internalOperatorKey), packet);
       } else {
-        return doNext(replaceSecret(getNext(), existingSecret, internalOperatorKey), packet);
+        return doNext(replaceSecret(delegate, getNext(), existingSecret, internalOperatorKey), packet);
       }
     }
   }

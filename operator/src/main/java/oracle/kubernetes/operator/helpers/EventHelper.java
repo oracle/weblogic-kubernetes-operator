@@ -16,13 +16,13 @@ import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -199,25 +199,27 @@ public class EventHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createEventAPICall(delegate, createEventModel(packet, eventData)), packet);
     }
 
-    private Step createEventAPICall(CoreV1Event event) {
+    private Step createEventAPICall(CoreDelegate delegate, CoreV1Event event) {
       CoreV1Event existingEvent = getExistingEvent(event);
-      return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
+      return existingEvent != null
+          ? createReplaceEventCall(delegate, event, existingEvent) : createCreateEventCall(delegate, event);
     }
 
-    private Step createCreateEventCall(CoreV1Event event) {
+    private Step createCreateEventCall(CoreDelegate delegate, CoreV1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       event.firstTimestamp(event.getLastTimestamp());
-      return RequestBuilder.EVENT.create(event, new CreateEventResponseStep(getNext()));
+      return delegate.getEventBuilder().create(event, new CreateEventResponseStep(getNext()));
     }
 
-    private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
+    private Step createReplaceEventCall(CoreDelegate delegate, CoreV1Event event, @NotNull CoreV1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
-      return RequestBuilder.EVENT.update(existingEvent,
+      return delegate.getEventBuilder().update(existingEvent,
           new ReplaceEventResponseStep(this, existingEvent, getNext()));
     }
 
@@ -292,12 +294,14 @@ public class EventHelper {
         if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
         }
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (isNotFound(callResponse) || hasConflict(callResponse)) {
-          return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
+          return doNext(Step.chain(
+              createCreateEventCall(delegate, createEventModel(packet, eventData)), getNext()), packet);
         } else if (isUnrecoverable(callResponse)) {
           return onFailureNoRetry(packet, callResponse);
         } else {
-          return onFailure(createRetry(existingEvent), packet, callResponse);
+          return onFailure(createRetry(delegate, existingEvent), packet, callResponse);
         }
       }
 
@@ -308,12 +312,12 @@ public class EventHelper {
         existingEvent.count(existingEvent.getCount() - 1);
       }
 
-      Step createRetry(CoreV1Event event) {
-        return Step.chain(createEventRefreshStep(event), replaceEventStep);
+      Step createRetry(CoreDelegate delegate, CoreV1Event event) {
+        return Step.chain(createEventRefreshStep(delegate, event), replaceEventStep);
       }
 
-      private Step createEventRefreshStep(CoreV1Event event) {
-        return RequestBuilder.EVENT.get(
+      private Step createEventRefreshStep(CoreDelegate delegate, CoreV1Event event) {
+        return delegate.getEventBuilder().get(
             event.getMetadata().getNamespace(), event.getMetadata().getName(), new ReadEventResponseStep(getNext()));
       }
     }
@@ -1092,11 +1096,12 @@ public class EventHelper {
   /**
    * Create the conversion webhook related event.
    *
+   * @param delegate Delegate
    * @param eventData Data for the event to be created.
    */
-  public static void createConversionWebhookEvent(EventData eventData) {
+  public static void createConversionWebhookEvent(CoreDelegate delegate, EventData eventData) {
     try {
-      RequestBuilder.EVENT.create(createConversionWebhookEventModel(eventData.getItem(), eventData));
+      delegate.getEventBuilder().create(createConversionWebhookEventModel(eventData.getItem(), eventData));
     } catch (ApiException apiException) {
       LOGGER.warning(EXCEPTION, apiException);
     }
@@ -1178,25 +1183,27 @@ public class EventHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(createEventAPICall(createEventModel(eventData)), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createEventAPICall(delegate, createEventModel(eventData)), packet);
     }
 
-    private Step createEventAPICall(CoreV1Event event) {
+    private Step createEventAPICall(CoreDelegate delegate, CoreV1Event event) {
       CoreV1Event existingEvent = getExistingClusterEvent(event);
-      return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
+      return existingEvent != null
+          ? createReplaceEventCall(delegate, event, existingEvent) : createCreateEventCall(delegate, event);
     }
 
-    private Step createCreateEventCall(CoreV1Event event) {
+    private Step createCreateEventCall(CoreDelegate delegate, CoreV1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       event.firstTimestamp(event.getLastTimestamp());
-      return RequestBuilder.EVENT.create(event, new CreateClusterResourceEventResponseStep(getNext()));
+      return delegate.getEventBuilder().create(event, new CreateClusterResourceEventResponseStep(getNext()));
     }
 
-    private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
+    private Step createReplaceEventCall(CoreDelegate delegate, CoreV1Event event, @NotNull CoreV1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
-      return RequestBuilder.EVENT.update(
+      return delegate.getEventBuilder().update(
           existingEvent, new ReplaceClusterResourceEventResponseStep(this, existingEvent, getNext()));
     }
 
@@ -1235,12 +1242,13 @@ public class EventHelper {
       @Override
       public Result onFailure(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
         restoreExistingClusterEvent();
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (isNotFound(callResponse) || hasConflict(callResponse)) {
-          return doNext(Step.chain(createCreateEventCall(createEventModel(eventData)), getNext()), packet);
+          return doNext(Step.chain(createCreateEventCall(delegate, createEventModel(eventData)), getNext()), packet);
         } else if (isUnrecoverable(callResponse)) {
           return onFailureNoRetry(packet, callResponse);
         } else {
-          return onFailure(createClusterEventRetryStep(existingClusterEvent), packet, callResponse);
+          return onFailure(createClusterEventRetryStep(delegate, existingClusterEvent), packet, callResponse);
         }
       }
 
@@ -1251,12 +1259,12 @@ public class EventHelper {
         existingClusterEvent.count(existingClusterEvent.getCount() - 1);
       }
 
-      Step createClusterEventRetryStep(CoreV1Event event) {
-        return Step.chain(createClusterEventRefreshStep(event), replaceClusterEventStep);
+      Step createClusterEventRetryStep(CoreDelegate delegate, CoreV1Event event) {
+        return Step.chain(createClusterEventRefreshStep(delegate, event), replaceClusterEventStep);
       }
 
-      private Step createClusterEventRefreshStep(CoreV1Event event) {
-        return RequestBuilder.EVENT.get(
+      private Step createClusterEventRefreshStep(CoreDelegate delegate, CoreV1Event event) {
+        return delegate.getEventBuilder().get(
             event.getMetadata().getNamespace(), event.getMetadata().getName(), new ReadEventResponseStep(getNext()));
       }
     }

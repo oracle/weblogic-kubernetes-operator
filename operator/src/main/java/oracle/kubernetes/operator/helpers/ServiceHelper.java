@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.RequestBuilder;
@@ -223,7 +224,8 @@ public class ServiceHelper {
     }
 
     private Result doVerifyService(Step next, Packet packet) {
-      return doNext(createContext(packet).verifyService(next), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createContext(packet).verifyService(delegate, next), packet);
     }
 
     protected abstract ServiceStepContext createContext(Packet packet);
@@ -554,37 +556,37 @@ public class ServiceHelper {
       return AnnotationHelper.getHash(model).equals(AnnotationHelper.getHash(current));
     }
 
-    Step verifyService(Step next) {
+    Step verifyService(CoreDelegate delegate, Step next) {
       V1Service service = getServiceFromRecord();
       if (service == null) {
-        return createNewService(next);
+        return createNewService(delegate, next);
       } else if (canUseCurrentService(createModel(), service)) {
         logServiceExists();
         return next;
       } else {
         removeServiceFromRecord();
-        return deleteAndReplaceService(next);
+        return deleteAndReplaceService(delegate, next);
       }
     }
 
     protected abstract void logServiceExists();
 
-    private Step createNewService(Step next) {
-      return createService(getServiceCreatedMessageKey(), next);
+    private Step createNewService(CoreDelegate delegate, Step next) {
+      return createService(delegate, getServiceCreatedMessageKey(), next);
     }
 
     protected abstract String getServiceCreatedMessageKey();
 
-    private Step deleteAndReplaceService(Step next) {
+    private Step deleteAndReplaceService(CoreDelegate delegate, Step next) {
       if (serviceType == EXTERNAL) {
-        return deleteAndReplaceNodePortService();
+        return deleteAndReplaceNodePortService(delegate);
       } else {
-        return RequestBuilder.SERVICE.delete(getNamespace(), createServiceName(), new DeleteServiceResponse(next));
+        return delegate.getServiceBuilder().delete(getNamespace(), createServiceName(), new DeleteServiceResponse(next));
       }
     }
 
-    private Step deleteAndReplaceNodePortService() {
-      return RequestBuilder.SERVICE.list(getNamespace(),
+    private Step deleteAndReplaceNodePortService(CoreDelegate delegate) {
+      return delegate.getServiceBuilder().list(getNamespace(),
           new ListOptions().labelSelector(
               forDomainUidSelector(info.getDomainUid()) + "," + getCreatedByOperatorSelector()),
           new ActionResponseStep<>() {
@@ -593,27 +595,28 @@ public class ServiceHelper {
               return new DeleteServiceListStep(Optional.ofNullable(result).map(list -> list.getItems().stream()
                   .filter(ServiceHelper::isNodePortType)
                   .toList()).orElse(new ArrayList<>()),
-                  createReplacementService(next));
+                  createReplacementService(delegate, next));
             }
           });
     }
 
-    private Step createReplacementService(Step next) {
-      return createService(getServiceReplaceMessageKey(), next);
+    private Step createReplacementService(CoreDelegate delegate, Step next) {
+      return createService(delegate, getServiceReplaceMessageKey(), next);
     }
 
     protected abstract String getServiceReplaceMessageKey();
 
-    private Step createService(String messageKey, Step next) {
-      return RequestBuilder.SERVICE.create(createModel(), new CreateResponse(messageKey, next));
+    private Step createService(CoreDelegate delegate, String messageKey, Step next) {
+      return delegate.getServiceBuilder().create(createModel(), new CreateResponse(messageKey, next));
     }
 
     private class ConflictStep extends Step {
       @Override
       public @Nonnull Result apply(Packet packet) {
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         return doNext(
-            RequestBuilder.SERVICE.get(getNamespace(), createServiceName(), new ReadServiceResponse(conflictStep)),
-            packet);
+            delegate.getServiceBuilder().get(
+                getNamespace(), createServiceName(), new ReadServiceResponse(conflictStep)), packet);
       }
 
       @Override
@@ -680,7 +683,8 @@ public class ServiceHelper {
 
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
-        return doNext(createReplacementService(getNext()), packet);
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+        return doNext(createReplacementService(delegate, getNext()), packet);
       }
     }
 
@@ -725,18 +729,19 @@ public class ServiceHelper {
     @Override
     public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-      return doNext(createActionStep(info), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(createActionStep(delegate, info), packet);
     }
 
-    private Step createActionStep(DomainPresenceInfo info) {
+    private Step createActionStep(CoreDelegate delegate, DomainPresenceInfo info) {
       return Optional.ofNullable(info.removeServerService(serverName))
             .map(V1Service::getMetadata)
-            .map(this::deleteService)
+            .map(m -> deleteService(delegate, m))
             .orElse(getNext());
     }
 
-    Step deleteService(V1ObjectMeta metadata) {
-      return RequestBuilder.SERVICE.delete(
+    Step deleteService(CoreDelegate delegate, V1ObjectMeta metadata) {
+      return delegate.getServiceBuilder().delete(
           metadata.getNamespace(), metadata.getName(), new DefaultResponseStep<>(getNext()));
     }
   }
@@ -884,12 +889,12 @@ public class ServiceHelper {
     }
 
     @Override
-    Step verifyService(Step next) {
+    Step verifyService(CoreDelegate delegate, Step next) {
       if (info.getDomain().isExternalServiceConfigured()) {
-        return super.verifyService(next);
+        return super.verifyService(delegate, next);
       } else {
         removeServiceFromRecord();
-        return deleteExternalService(next);
+        return deleteExternalService(delegate, next);
       }
     }
 
@@ -949,12 +954,12 @@ public class ServiceHelper {
       return getNullableAdminService().map(AdminService::getAnnotations).orElse(Collections.emptyMap());
     }
 
-    private Step deleteExternalService(Step next) {
-      return Step.chain(getStep(), next);
+    private Step deleteExternalService(CoreDelegate delegate, Step next) {
+      return Step.chain(getStep(delegate), next);
     }
 
-    private Step getStep() {
-      return RequestBuilder.SERVICE.list(info.getNamespace(),
+    private Step getStep(CoreDelegate delegate) {
+      return delegate.getServiceBuilder().list(info.getNamespace(),
           new ListOptions().labelSelector(forDomainUidSelector(info.getDomainUid()) + ","
               + getCreatedByOperatorSelector() + "," + getServiceTypeSelector("EXTERNAL")),
           new ActionResponseStep<>() {

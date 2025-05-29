@@ -1113,7 +1113,7 @@ class DomainProcessorTest {
     cluster1.setStatus(null);
     testSupport.defineResources(cluster1);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CREATED.getReason()));
   }
@@ -1125,7 +1125,7 @@ class DomainProcessorTest {
     cluster1.setStatus(new ClusterStatus());
     testSupport.defineResources(cluster1);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, not(hasEvent(CLUSTER_CREATED.getReason())));
   }
@@ -1140,7 +1140,7 @@ class DomainProcessorTest {
     cluster2.getMetadata().setGeneration(1234L);
     testSupport.defineResources(cluster2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
     assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), not(empty()));
@@ -1156,7 +1156,7 @@ class DomainProcessorTest {
     cluster2.getMetadata().setGeneration(1234L);
     testSupport.defineResources(cluster2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
     assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), not(empty()));
@@ -1178,7 +1178,7 @@ class DomainProcessorTest {
     cluster2.getMetadata().setGeneration(1000L);
     testSupport.defineResources(cluster2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), empty());
   }
@@ -1192,7 +1192,7 @@ class DomainProcessorTest {
     ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
     testSupport.defineResources(cluster2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), empty());
   }
@@ -1203,7 +1203,7 @@ class DomainProcessorTest {
     testSupport.defineResources(cluster1);
     newInfo.getDomain().getClusters().add(new V1LocalObjectReference().name(CLUSTER4));
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CREATED.getReason()));
     MatcherAssert.assertThat("Found CLUSTER_CREATED event with expected labels",
@@ -1236,7 +1236,7 @@ class DomainProcessorTest {
     ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(null);
     testSupport.defineResources(cluster2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CREATED.getReason()));
   }
@@ -1252,7 +1252,7 @@ class DomainProcessorTest {
     cluster2.getMetadata().setGeneration(1234L);
     testSupport.defineResources(cluster2);
 
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
     MatcherAssert.assertThat("Found CLUSTER_CHANGED event with expected labels",

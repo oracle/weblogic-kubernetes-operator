@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -11,8 +11,8 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.WatchTuning;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
@@ -23,17 +23,19 @@ public class DomainWatcher extends Watcher<DomainResource> {
   private final String ns;
 
   private DomainWatcher(
+      CoreDelegate delegate,
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
       WatchListener<DomainResource> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
+    super(delegate, initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
   }
 
   /**
    * Create domain watcher.
+   * @param delegate Delegate
    * @param factory thread factory
    * @param ns namespace
    * @param initialResourceVersion initial resource version
@@ -43,6 +45,7 @@ public class DomainWatcher extends Watcher<DomainResource> {
    * @return watcher
    */
   public static DomainWatcher create(
+      CoreDelegate delegate,
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
@@ -50,14 +53,14 @@ public class DomainWatcher extends Watcher<DomainResource> {
       WatchListener<DomainResource> listener,
       AtomicBoolean isStopping) {
     DomainWatcher watcher =
-        new DomainWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+        new DomainWatcher(delegate, ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
   @Override
   public Watchable<DomainResource> initiateWatch(ListOptions options) throws ApiException {
-    return RequestBuilder.DOMAIN.watch(ns, options);
+    return delegate.getDomainBuilder().watch(ns, options);
   }
 
   @Override

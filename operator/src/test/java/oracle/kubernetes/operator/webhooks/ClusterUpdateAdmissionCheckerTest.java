@@ -29,7 +29,7 @@ class ClusterUpdateAdmissionCheckerTest extends ClusterScaleAdmissionCheckerTest
     existingCluster.getSpec().withReplicas(2);
     proposedCluster.getSpec().withReplicas(null);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(true));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -40,7 +40,7 @@ class ClusterUpdateAdmissionCheckerTest extends ClusterScaleAdmissionCheckerTest
     existingCluster.getSpec().withReplicas(2);
     proposedCluster.getSpec().withReplicas(null);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
@@ -53,7 +53,7 @@ class ClusterUpdateAdmissionCheckerTest extends ClusterScaleAdmissionCheckerTest
 
     testSupport.failOnList(KubernetesTestSupport.DOMAIN, NS, HTTP_FORBIDDEN);
 
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(clusterChecker.isProposedChangeAllowed(testSupport.getCoreDelegate()), equalTo(false));
     assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(true));
   }
 

@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -45,7 +44,7 @@ public class StuckPodProcessing {
   }
 
   void checkStuckPods(String namespace) {
-    Step step = RequestBuilder.POD.list(namespace,
+    Step step = mainDelegate.getPodBuilder().list(namespace,
         new ListOptions().labelSelector(LabelConstants.getCreatedByOperatorSelector()),
         new PodListProcessing(namespace, SystemClock.now()));
     mainDelegate.runSteps(BaseMain.createPacketWithLoggingContext(namespace), step, null);
@@ -121,11 +120,11 @@ public class StuckPodProcessing {
     @Nonnull
     private Step readExistingNamespaces() {
       return mainDelegate.getDomainNamespaces().readExistingResources(
-          namespace, mainDelegate.getDomainProcessor());
+          mainDelegate, namespace, mainDelegate.getDomainProcessor());
     }
 
     private Step createForcedDeletePodStep(V1Pod pod) {
-      return RequestBuilder.POD.delete(getNamespace(pod), getName(pod),
+      return mainDelegate.getPodBuilder().delete(getNamespace(pod), getName(pod),
           (DeleteOptions) new DeleteOptions().gracePeriodSeconds(0L),
           new ForcedDeleteResponseStep(getName(pod), getNamespace(pod), getDomainUid(pod)));
     }

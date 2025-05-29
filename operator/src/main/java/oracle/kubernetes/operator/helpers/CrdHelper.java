@@ -47,9 +47,10 @@ import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -202,7 +203,8 @@ public class CrdHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(context.verifyCrd(getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(context.verifyCrd(delegate, getNext()), packet);
     }
   }
 
@@ -219,7 +221,8 @@ public class CrdHelper {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(context.verifyCrd(getNext()), packet);
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return doNext(context.verifyCrd(delegate, getNext()), packet);
     }
   }
 
@@ -445,23 +448,24 @@ public class CrdHelper {
           .putPropertiesItem("status", status);
     }
 
-    Step verifyCrd(Step next) {
-      return RequestBuilder.CRD.get(model.getMetadata().getName(), createReadResponseStep(next));
+    Step verifyCrd(CoreDelegate delegate, Step next) {
+      return delegate.getCustomResourceDefinitionBuilder().get(
+          model.getMetadata().getName(), createReadResponseStep(next));
     }
 
     ResponseStep<V1CustomResourceDefinition> createReadResponseStep(Step next) {
       return new ReadResponseStep(next);
     }
 
-    Step createCrd(Step next) {
-      return RequestBuilder.CRD.create(model, createCreateResponseStep(next));
+    Step createCrd(CoreDelegate delegate, Step next) {
+      return delegate.getCustomResourceDefinitionBuilder().create(model, createCreateResponseStep(next));
     }
 
     ResponseStep<V1CustomResourceDefinition> createCreateResponseStep(Step next) {
       return new CreateResponseStep(next);
     }
 
-    Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
+    Step updateExistingCrd(CoreDelegate delegate, Step next, V1CustomResourceDefinition existingCrd) {
       List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
       for (V1CustomResourceDefinitionVersion crdVersion : versions) {
         crdVersion.setStorage(false);
@@ -474,18 +478,18 @@ public class CrdHelper {
               .served(true)
               .storage(true));
 
-      return RequestBuilder.CRD.update(existingCrd, createReplaceResponseStep(next));
+      return delegate.getCustomResourceDefinitionBuilder().update(existingCrd, createReplaceResponseStep(next));
     }
 
-    Step updateExistingCrdWithConversion(Step next, V1CustomResourceDefinition existingCrd) {
+    Step updateExistingCrdWithConversion(CoreDelegate delegate, Step next, V1CustomResourceDefinition existingCrd) {
       existingCrd.getSpec().conversion(createConversionWebhook(certificates));
-      return RequestBuilder.CRD.update(existingCrd, createReplaceResponseStep(next));
+      return delegate.getCustomResourceDefinitionBuilder().update(existingCrd, createReplaceResponseStep(next));
     }
 
-    Step updateCrd(Step next, V1CustomResourceDefinition existingCrd) {
+    Step updateCrd(CoreDelegate delegate, Step next, V1CustomResourceDefinition existingCrd) {
       model.getMetadata().setResourceVersion(existingCrd.getMetadata().getResourceVersion());
 
-      return RequestBuilder.CRD.update(model, createReplaceResponseStep(next));
+      return delegate.getCustomResourceDefinitionBuilder().update(model, createReplaceResponseStep(next));
     }
 
     ResponseStep<V1CustomResourceDefinition> createReplaceResponseStep(Step next) {
@@ -557,14 +561,15 @@ public class CrdHelper {
       public Result onSuccess(
           Packet packet, KubernetesApiResponse<V1CustomResourceDefinition> callResponse) {
         V1CustomResourceDefinition existingCrd = callResponse.getObject();
+        CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
         if (existingCrd == null) {
-          return doNext(createCrd(getNext()), packet);
+          return doNext(createCrd(delegate, getNext()), packet);
         } else if (isOutdatedCrd(existingCrd)) {
-          return doNext(updateCrd(getNext(), existingCrd), packet);
+          return doNext(updateCrd(delegate, getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          return doNext(updateExistingCrd(getNext(), existingCrd), packet);
+          return doNext(updateExistingCrd(delegate, getNext(), existingCrd), packet);
         } else if (!existingCrdContainsCompatibleConversionWebhook(existingCrd)) {
-          return doNext(updateExistingCrdWithConversion(getNext(), existingCrd), packet);
+          return doNext(updateExistingCrdWithConversion(delegate, getNext(), existingCrd), packet);
         } else {
           return doNext(packet);
         }

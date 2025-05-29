@@ -20,7 +20,6 @@ import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.GetOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
@@ -54,7 +53,7 @@ public class WebhookMain extends BaseMain {
   private final WebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
   private final AtomicInteger crdPresenceCheckCount = new AtomicInteger(0);
-  private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
+  private final RestConfig restConfig = new RestConfigImpl(delegate, new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
 
@@ -149,7 +148,7 @@ public class WebhookMain extends BaseMain {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       EventHelper.EventData eventData = new EventHelper.EventData(WEBHOOK_STARTUP_FAILED, e.getMessage())
           .resourceName(OPERATOR_WEBHOOK_COMPONENT);
-      createConversionWebhookEvent(eventData);
+      createConversionWebhookEvent(delegate, eventData);
 
     }
   }
@@ -184,7 +183,7 @@ public class WebhookMain extends BaseMain {
   }
 
   private String getCrdResourceVersion(String crdName) throws ApiException {
-    return Optional.ofNullable(RequestBuilder.CRD.get(crdName, new GetOptions().isPartialObjectMetadataRequest(true)))
+    return Optional.ofNullable(delegate.getCustomResourceDefinitionBuilder().get(crdName, new GetOptions().isPartialObjectMetadataRequest(true)))
         .map(V1CustomResourceDefinition::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse(null);
   }
 
@@ -204,7 +203,7 @@ public class WebhookMain extends BaseMain {
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
   private Step createDomainCRDPresenceCheck() {
-    return RequestBuilder.DOMAIN.list(getWebhookNamespace(),
+    return delegate.getDomainBuilder().list(getWebhookNamespace(),
         new ListOptions().isPartialObjectMetadataListRequest(true),
         new CrdPresenceResponseStep<>());
   }
@@ -213,7 +212,7 @@ public class WebhookMain extends BaseMain {
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
   private Step createClusterCRDPresenceCheck() {
-    return RequestBuilder.CLUSTER.list(getWebhookNamespace(),
+    return delegate.getClusterBuilder().list(getWebhookNamespace(),
         new ListOptions().isPartialObjectMetadataListRequest(true),
         new CrdPresenceResponseStep<>());
   }

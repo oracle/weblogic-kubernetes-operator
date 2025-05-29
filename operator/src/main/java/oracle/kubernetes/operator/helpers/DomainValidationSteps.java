@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -56,11 +57,11 @@ public class DomainValidationSteps {
    * Returns a chain of steps to validate the domain in the current packet.
    * @param namespace the namespace for the domain
    */
-  public static Step createDomainValidationSteps(String namespace) {
+  public static Step createDomainValidationSteps(CoreDelegate delegate, String namespace) {
     return Step.chain(
-          createListSecretsStep(namespace),
-          createListConfigMapsStep(namespace),
-          createListClustersStep(namespace),
+          createListSecretsStep(delegate, namespace),
+          createListConfigMapsStep(delegate, namespace),
+          createListClustersStep(delegate, namespace),
           new DomainValidationStep());
   }
 
@@ -72,8 +73,8 @@ public class DomainValidationSteps {
     return createStatusUpdateStep(new ValidateDomainTopologyStep(next));
   }
 
-  private static Step createListSecretsStep(String domainNamespace) {
-    return RequestBuilder.SECRET.list(domainNamespace, new ListSecretsResponseStep());
+  private static Step createListSecretsStep(CoreDelegate delegate, String domainNamespace) {
+    return delegate.getSecretBuilder().list(domainNamespace, new ListSecretsResponseStep());
   }
 
   static class ListSecretsResponseStep extends DefaultResponseStep<V1SecretList> {
@@ -92,8 +93,8 @@ public class DomainValidationSteps {
     }
   }
 
-  private static Step createListConfigMapsStep(String domainNamespace) {
-    return RequestBuilder.CM.list(domainNamespace, new ListConfigMapsResponseStep());
+  private static Step createListConfigMapsStep(CoreDelegate delegate, String domainNamespace) {
+    return delegate.getConfigMapBuilder().list(domainNamespace, new ListConfigMapsResponseStep());
   }
 
   static class ListConfigMapsResponseStep extends DefaultResponseStep<V1ConfigMapList> {
@@ -112,8 +113,8 @@ public class DomainValidationSteps {
     }
   }
 
-  private static Step createListClustersStep(String domainNamespace) {
-    return RequestBuilder.CLUSTER.list(domainNamespace, new ListClustersResponseStep());
+  private static Step createListClustersStep(CoreDelegate delegate, String domainNamespace) {
+    return delegate.getClusterBuilder().list(domainNamespace, new ListClustersResponseStep());
   }
 
   static class ListClustersResponseStep extends DefaultResponseStep<ClusterList> {

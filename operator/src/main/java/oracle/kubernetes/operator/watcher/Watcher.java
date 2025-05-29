@@ -17,6 +17,7 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -38,6 +39,7 @@ public abstract class Watcher<T> {
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
+  protected final CoreDelegate delegate;
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // not final so unit tests can set it
   private static WatcherStarter starter = Watcher::startAsynchronousWatch;
@@ -52,11 +54,13 @@ public abstract class Watcher<T> {
    * Constructs a watcher without specifying a listener. Needed when the listener is the watch
    * subclass itself.
    *
+   * @param delegate Delegate
    * @param resourceVersion the oldest version to return for this watch
    * @param tuning Watch tuning parameters
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
-  Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
+  Watcher(CoreDelegate delegate, String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
+    this.delegate = delegate;
     this.resourceVersion = resourceVersion;
     this.tuning = tuning;
     this.stopping = stopping;
@@ -65,17 +69,19 @@ public abstract class Watcher<T> {
   /**
    * Constructs a watcher with a separate listener.
    *
+   * @param delegate Delegate
    * @param resourceVersion the oldest version to return for this watch
    * @param tuning Watch tuning parameters
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    * @param listener a listener to which to dispatch watch events
    */
   protected Watcher(
+          CoreDelegate delegate,
           String resourceVersion,
           WatchTuning tuning,
           AtomicBoolean stopping,
           WatchListener<T> listener) {
-    this(resourceVersion, tuning, stopping);
+    this(delegate, resourceVersion, tuning, stopping);
     this.listener = listener;
   }
 

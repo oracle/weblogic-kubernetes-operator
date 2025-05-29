@@ -66,6 +66,6 @@ class DomainWatcherTest extends WatcherTestBase implements WatchListener<DomainR
 
   @Override
   protected DomainWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
-    return DomainWatcher.create(this, ns, rv.toString(), tuning, this, stopping);
+    return DomainWatcher.create(testSupport.getCoreDelegate(), this, ns, rv.toString(), tuning, this, stopping);
   }
 }

@@ -229,7 +229,8 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
   @SuppressWarnings("SameParameterValue")
   protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger initialResourceVersion) {
-    return PodWatcher.create(this, ns, initialResourceVersion.toString(), tuning, this, stopping);
+    return PodWatcher.create(
+        testSupport.getCoreDelegate(), this, ns, initialResourceVersion.toString(), tuning, this, stopping);
   }
 
   @Test

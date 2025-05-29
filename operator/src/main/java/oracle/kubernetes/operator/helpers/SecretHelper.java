@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,8 +11,8 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.LoggingFilter;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -74,7 +74,9 @@ public class SecretHelper {
           return doNext(packet);
         } else {
           LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-          return doNext(RequestBuilder.SECRET.get(namespace, secretName, new SecretResponseStep(getNext())), packet);
+          CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+          return doNext(delegate.getSecretBuilder().get(namespace, secretName,
+              new SecretResponseStep(getNext())), packet);
         }
       }
     }
