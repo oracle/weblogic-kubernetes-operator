@@ -117,47 +117,51 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   }
 
   public RequestBuilder.PodRequestBuilder getPodBuilder() {
-    return new RequestBuilder.PodRequestBuilder();
+    return new RequestBuilder.PodRequestBuilder(getResourceCache());
   }
 
   public RequestBuilder<V1ConfigMap, V1ConfigMapList> getConfigMapBuilder() {
-    return new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class,
+    return new RequestBuilder<>(getResourceCache(), V1ConfigMap.class, V1ConfigMapList.class,
             "", "v1", "configmaps", "configmap");
   }
 
   public RequestBuilder<V1Secret, V1SecretList> getSecretBuilder() {
-    return new RequestBuilder<>(V1Secret.class, V1SecretList.class,
+    return new RequestBuilder<>(getResourceCache(), V1Secret.class, V1SecretList.class,
             "", "v1", "secrets", "secret");
   }
 
   public RequestBuilder<CoreV1Event, CoreV1EventList> getEventBuilder() {
-    return new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class,
+    return new RequestBuilder<>(getResourceCache(), CoreV1Event.class, CoreV1EventList.class,
             "", "v1", "events", "event");
   }
 
   public RequestBuilder<V1Job, V1JobList> getJobBuilder() {
-    return new RequestBuilder<>(V1Job.class, V1JobList.class,
+    return new RequestBuilder<>(getResourceCache(), V1Job.class, V1JobList.class,
             "batch", "v1", "jobs", "job");
   }
 
   public RequestBuilder<V1Service, V1ServiceList> getServiceBuilder() {
-    return new RequestBuilder<>(V1Service.class, V1ServiceList.class,
+    return new RequestBuilder<>(getResourceCache(), V1Service.class, V1ServiceList.class,
             "", "v1", "services", "service");
   }
 
   public RequestBuilder<V1PodDisruptionBudget, V1PodDisruptionBudgetList> getPodDisruptionBudgetBuilder() {
-    return new RequestBuilder<>(V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
+    return new RequestBuilder<>(getResourceCache(), V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
             "policy", "v1", "poddisruptionbudgets", "poddisruptionbudget");
   }
 
   public RequestBuilder<DomainResource, DomainList> getDomainBuilder() {
-    return new RequestBuilder<>(DomainResource.class, DomainList.class,
+    return new RequestBuilder<>(getResourceCache(), DomainResource.class, DomainList.class,
             "weblogic.oracle", "v9", "domains", "domain");
   }
 
   public RequestBuilder<ClusterResource, ClusterList> getClusterBuilder() {
-    return new RequestBuilder<>(ClusterResource.class, ClusterList.class,
+    return new RequestBuilder<>(getResourceCache(), ClusterResource.class, ClusterList.class,
             "weblogic.oracle", "v1", "clusters", "cluster");
+  }
+
+  public ResourceCache getResourceCache() {
+    return null;
   }
 
   @Override

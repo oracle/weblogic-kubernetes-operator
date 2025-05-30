@@ -130,4 +130,6 @@ public interface CoreDelegate {
   RequestBuilder<V1SelfSubjectRulesReview, KubernetesListObject> getSelfSubjectRulesReviewBuilder();
 
   RequestBuilder<V1SubjectAccessReview, KubernetesListObject> getSubjectAccessReviewBuilder();
+
+  ResourceCache getResourceCache();
 }

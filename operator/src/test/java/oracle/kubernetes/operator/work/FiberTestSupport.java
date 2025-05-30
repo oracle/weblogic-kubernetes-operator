@@ -45,6 +45,7 @@ import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ResourceCache;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -495,95 +496,101 @@ public class FiberTestSupport {
     }
 
     public RequestBuilder.VersionCodeRequestBuilder getVersionBuilder() {
-      return new RequestBuilder.VersionCodeRequestBuilder();
+      return new RequestBuilder.VersionCodeRequestBuilder(getResourceCache());
     }
 
     public RequestBuilder<DomainResource, DomainList> getDomainBuilder() {
-      return new RequestBuilder<>(DomainResource.class, DomainList.class,
+      return new RequestBuilder<>(getResourceCache(), DomainResource.class, DomainList.class,
               "weblogic.oracle", "v9", "domains", "domain");
     }
 
     public RequestBuilder<ClusterResource, ClusterList> getClusterBuilder() {
-      return new RequestBuilder<>(ClusterResource.class, ClusterList.class,
+      return new RequestBuilder<>(getResourceCache(), ClusterResource.class, ClusterList.class,
               "weblogic.oracle", "v1", "clusters", "cluster");
     }
 
     public RequestBuilder<V1Namespace, V1NamespaceList> getNamespaceBuilder() {
-      return new RequestBuilder<>(V1Namespace.class, V1NamespaceList.class,
+      return new RequestBuilder<>(getResourceCache(), V1Namespace.class, V1NamespaceList.class,
               "", "v1", "namespaces", "namespace");
     }
 
     public RequestBuilder.PodRequestBuilder getPodBuilder() {
-      return new RequestBuilder.PodRequestBuilder();
+      return new RequestBuilder.PodRequestBuilder(getResourceCache());
     }
 
     public RequestBuilder<V1Service, V1ServiceList> getServiceBuilder() {
-      return new RequestBuilder<>(V1Service.class, V1ServiceList.class,
+      return new RequestBuilder<>(getResourceCache(), V1Service.class, V1ServiceList.class,
               "", "v1", "services", "service");
     }
 
     public RequestBuilder<V1ConfigMap, V1ConfigMapList> getConfigMapBuilder() {
-      return new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class,
+      return new RequestBuilder<>(getResourceCache(), V1ConfigMap.class, V1ConfigMapList.class,
               "", "v1", "configmaps", "configmap");
     }
 
     public RequestBuilder<V1Secret, V1SecretList> getSecretBuilder() {
-      return new RequestBuilder<>(V1Secret.class, V1SecretList.class,
+      return new RequestBuilder<>(getResourceCache(), V1Secret.class, V1SecretList.class,
               "", "v1", "secrets", "secret");
     }
 
     public RequestBuilder<CoreV1Event, CoreV1EventList> getEventBuilder() {
-      return new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class,
+      return new RequestBuilder<>(getResourceCache(), CoreV1Event.class, CoreV1EventList.class,
               "", "v1", "events", "event");
     }
 
     public RequestBuilder<V1PersistentVolume, V1PersistentVolumeList> getPersistentVolumeBuilder() {
-      return new RequestBuilder<>(V1PersistentVolume.class, V1PersistentVolumeList.class,
+      return new RequestBuilder<>(getResourceCache(), V1PersistentVolume.class, V1PersistentVolumeList.class,
               "", "v1", "persistentvolumes", "persistentvolume");
     }
 
     public RequestBuilder<V1PersistentVolumeClaim, V1PersistentVolumeClaimList> getPersistentVolumeClaimBuilder() {
-      return new RequestBuilder<>(V1PersistentVolumeClaim.class, V1PersistentVolumeClaimList.class,
+      return new RequestBuilder<>(getResourceCache(), V1PersistentVolumeClaim.class, V1PersistentVolumeClaimList.class,
               "", "v1", "persistentvolumeclaims", "persistentvolumeclaim");
     }
 
     public RequestBuilder<V1CustomResourceDefinition, V1CustomResourceDefinitionList>
         getCustomResourceDefinitionBuilder() {
-      return new RequestBuilder<>(V1CustomResourceDefinition.class, V1CustomResourceDefinitionList.class,
+      return new RequestBuilder<>(getResourceCache(),
+              V1CustomResourceDefinition.class, V1CustomResourceDefinitionList.class,
               "apiextensions.k8s.io", "v1",
               "customresourcedefinitions", "customresourcedefinition");
     }
 
     public RequestBuilder<V1ValidatingWebhookConfiguration, V1ValidatingWebhookConfigurationList>
         getValidatingWebhookConfigurationBuilder() {
-      return new RequestBuilder<>(V1ValidatingWebhookConfiguration.class, V1ValidatingWebhookConfigurationList.class,
+      return new RequestBuilder<>(getResourceCache(),
+              V1ValidatingWebhookConfiguration.class, V1ValidatingWebhookConfigurationList.class,
               "admissionregistration.k8s.io", "v1",
               "validatingwebhookconfigurations", "validatingwebhookconfiguration");
     }
 
     public RequestBuilder<V1Job, V1JobList> getJobBuilder() {
-      return new RequestBuilder<>(V1Job.class, V1JobList.class,
+      return new RequestBuilder<>(getResourceCache(), V1Job.class, V1JobList.class,
               "batch", "v1", "jobs", "job");
     }
 
     public RequestBuilder<V1PodDisruptionBudget, V1PodDisruptionBudgetList> getPodDisruptionBudgetBuilder() {
-      return new RequestBuilder<>(V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
+      return new RequestBuilder<>(getResourceCache(), V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
               "policy", "v1", "poddisruptionbudgets", "poddisruptionbudget");
     }
 
     public RequestBuilder<V1TokenReview, KubernetesListObject> getTokenReviewBuilder() {
-      return new RequestBuilder<>(V1TokenReview.class, KubernetesListObject.class,
+      return new RequestBuilder<>(getResourceCache(), V1TokenReview.class, KubernetesListObject.class,
               "authentication.k8s.io", "v1", "tokenreviews", "tokenreview");
     }
 
     public RequestBuilder<V1SelfSubjectRulesReview, KubernetesListObject> getSelfSubjectRulesReviewBuilder() {
-      return new RequestBuilder<>(V1SelfSubjectRulesReview.class, KubernetesListObject.class,
+      return new RequestBuilder<>(getResourceCache(), V1SelfSubjectRulesReview.class, KubernetesListObject.class,
               "authorization.k8s.io", "v1", "selfsubjectrulesreviews", "selfsubjectrulesreview");
     }
 
     public RequestBuilder<V1SubjectAccessReview, KubernetesListObject> getSubjectAccessReviewBuilder() {
-      return new RequestBuilder<>(V1SubjectAccessReview.class, KubernetesListObject.class,
+      return new RequestBuilder<>(getResourceCache(), V1SubjectAccessReview.class, KubernetesListObject.class,
               "authorization.k8s.io", "v1", "selfsubjectaccessreviews", "selfsubjectaccessreview");
+    }
+
+    public ResourceCache getResourceCache() {
+      return null;
     }
   }
 }

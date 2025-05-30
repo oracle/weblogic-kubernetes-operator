@@ -70,6 +70,8 @@ public class CoreDelegateImpl implements CoreDelegate {
   protected String domainCrdResourceVersion;
   protected String clusterCrdResourceVersion;
 
+  private final ResourceCache resourceCache = new ResourceCacheImpl();
+
   private final RequestBuilder.VersionCodeRequestBuilder versionBuilder;
   private final RequestBuilder<DomainResource, DomainList> domainBuilder;
   private final RequestBuilder<ClusterResource, ClusterList> clusterBuilder;
@@ -82,9 +84,9 @@ public class CoreDelegateImpl implements CoreDelegate {
   private final RequestBuilder<V1PersistentVolume, V1PersistentVolumeList> persistentVolumeBuilder;
   private final RequestBuilder<V1PersistentVolumeClaim, V1PersistentVolumeClaimList> persistentVolumeClaimBuilder;
   private final RequestBuilder<V1CustomResourceDefinition, V1CustomResourceDefinitionList>
-      customResourceDefinitionBuilder;
+          customResourceDefinitionBuilder;
   private final RequestBuilder<V1ValidatingWebhookConfiguration, V1ValidatingWebhookConfigurationList>
-      validatingWebhookConfigurationBuilder;
+          validatingWebhookConfigurationBuilder;
   private final RequestBuilder<V1Job, V1JobList> jobBuilder;
   private final RequestBuilder<V1PodDisruptionBudget, V1PodDisruptionBudgetList> podDisruptionBudgetBuilder;
   private final RequestBuilder<V1TokenReview, KubernetesListObject> tokenReviewBuilder;
@@ -96,42 +98,46 @@ public class CoreDelegateImpl implements CoreDelegate {
     deploymentImpl = getBranch(buildProps) + "." + getCommit(buildProps);
     deploymentBuildTime = getBuildTime(buildProps);
 
-    versionBuilder = new RequestBuilder.VersionCodeRequestBuilder();
-    domainBuilder = new RequestBuilder<>(DomainResource.class, DomainList.class,
+    versionBuilder = new RequestBuilder.VersionCodeRequestBuilder(resourceCache);
+    domainBuilder = new RequestBuilder<>(resourceCache, DomainResource.class, DomainList.class,
             "weblogic.oracle", "v9", "domains", "domain");
-    clusterBuilder = new RequestBuilder<>(ClusterResource.class, ClusterList.class,
+    clusterBuilder = new RequestBuilder<>(resourceCache, ClusterResource.class, ClusterList.class,
             "weblogic.oracle", "v1", "clusters", "cluster");
-    namespaceBuilder = new RequestBuilder<>(V1Namespace.class, V1NamespaceList.class,
+    namespaceBuilder = new RequestBuilder<>(resourceCache, V1Namespace.class, V1NamespaceList.class,
             "", "v1", "namespaces", "namespace");
-    podBuilder = new RequestBuilder.PodRequestBuilder();
-    serviceBuilder = new RequestBuilder<>(V1Service.class, V1ServiceList.class,
+    podBuilder = new RequestBuilder.PodRequestBuilder(resourceCache);
+    serviceBuilder = new RequestBuilder<>(resourceCache, V1Service.class, V1ServiceList.class,
             "", "v1", "services", "service");
-    configMapBuilder = new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class,
+    configMapBuilder = new RequestBuilder<>(resourceCache, V1ConfigMap.class, V1ConfigMapList.class,
             "", "v1", "configmaps", "configmap");
-    secretBuilder = new RequestBuilder<>(V1Secret.class, V1SecretList.class,
+    secretBuilder = new RequestBuilder<>(resourceCache, V1Secret.class, V1SecretList.class,
             "", "v1", "secrets", "secret");
-    eventBuilder = new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class,
+    eventBuilder = new RequestBuilder<>(resourceCache, CoreV1Event.class, CoreV1EventList.class,
             "", "v1", "events", "event");
-    persistentVolumeBuilder = new RequestBuilder<>(V1PersistentVolume.class, V1PersistentVolumeList.class,
+    persistentVolumeBuilder = new RequestBuilder<>(resourceCache, V1PersistentVolume.class,
+            V1PersistentVolumeList.class,
             "", "v1", "persistentvolumes", "persistentvolume");
-    persistentVolumeClaimBuilder = new RequestBuilder<>(V1PersistentVolumeClaim.class,
+    persistentVolumeClaimBuilder = new RequestBuilder<>(resourceCache, V1PersistentVolumeClaim.class,
             V1PersistentVolumeClaimList.class,
             "", "v1", "persistentvolumeclaims", "persistentvolumeclaim");
-    customResourceDefinitionBuilder = new RequestBuilder<>(V1CustomResourceDefinition.class,
+    customResourceDefinitionBuilder = new RequestBuilder<>(resourceCache, V1CustomResourceDefinition.class,
             V1CustomResourceDefinitionList.class,
             "apiextensions.k8s.io", "v1", "customresourcedefinitions", "customresourcedefinition");
-    validatingWebhookConfigurationBuilder = new RequestBuilder<>(V1ValidatingWebhookConfiguration.class,
+    validatingWebhookConfigurationBuilder = new RequestBuilder<>(resourceCache, V1ValidatingWebhookConfiguration.class,
             V1ValidatingWebhookConfigurationList.class,
             "admissionregistration.k8s.io", "v1", "validatingwebhookconfigurations", "validatingwebhookconfiguration");
-    jobBuilder = new RequestBuilder<>(V1Job.class, V1JobList.class,
+    jobBuilder = new RequestBuilder<>(resourceCache, V1Job.class, V1JobList.class,
             "batch", "v1", "jobs", "job");
-    podDisruptionBudgetBuilder = new RequestBuilder<>(V1PodDisruptionBudget.class, V1PodDisruptionBudgetList.class,
+    podDisruptionBudgetBuilder = new RequestBuilder<>(resourceCache, V1PodDisruptionBudget.class,
+            V1PodDisruptionBudgetList.class,
             "policy", "v1", "poddisruptionbudgets", "poddisruptionbudget");
-    tokenReviewBuilder = new RequestBuilder<>(V1TokenReview.class, KubernetesListObject.class,
+    tokenReviewBuilder = new RequestBuilder<>(resourceCache, V1TokenReview.class, KubernetesListObject.class,
             "authentication.k8s.io", "v1", "tokenreviews", "tokenreview");
-    selfSubjectRulesReviewBuilder = new RequestBuilder<>(V1SelfSubjectRulesReview.class, KubernetesListObject.class,
+    selfSubjectRulesReviewBuilder = new RequestBuilder<>(resourceCache, V1SelfSubjectRulesReview.class,
+            KubernetesListObject.class,
             "authorization.k8s.io", "v1", "selfsubjectrulesreviews", "selfsubjectrulesreview");
-    subjectAccessReviewBuilder = new RequestBuilder<>(V1SubjectAccessReview.class, KubernetesListObject.class,
+    subjectAccessReviewBuilder = new RequestBuilder<>(resourceCache, V1SubjectAccessReview.class,
+            KubernetesListObject.class,
             "authorization.k8s.io", "v1", "selfsubjectaccessreviews", "selfsubjectaccessreview");
 
     productVersion = new SemanticVersion(buildVersion);
@@ -223,6 +229,11 @@ public class CoreDelegateImpl implements CoreDelegate {
   public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
     ScheduledFuture<?> future = scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     return createCancellable(future);
+  }
+
+  @Override
+  public ResourceCache getResourceCache() {
+    return resourceCache;
   }
 
   @Override

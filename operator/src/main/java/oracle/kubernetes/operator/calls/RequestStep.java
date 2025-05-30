@@ -4,7 +4,9 @@
 package oracle.kubernetes.operator.calls;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -30,9 +32,9 @@ import io.kubernetes.client.util.generic.options.GetOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import io.kubernetes.client.util.generic.options.PatchOptions;
 import io.kubernetes.client.util.generic.options.UpdateOptions;
+import oracle.kubernetes.operator.ResourceCache;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * A Step driven by a call to the Kubernetes API.
@@ -44,8 +46,9 @@ public abstract class RequestStep<
   public static final String CONTINUE = "continue";
   public static final int FIBER_TIMEOUT = 0;
 
-  private final Class<A> apiTypeClass;
-  private final Class<L> apiListTypeClass;
+  protected final ResourceCache resourceCache;
+  protected final Class<A> apiTypeClass;
+  protected final Class<L> apiListTypeClass;
   private final String apiGroup;
   private final String apiVersion;
   private final String resourcePlural;
@@ -56,6 +59,7 @@ public abstract class RequestStep<
   /**
    * Construct request step.
    *
+   * @param resourceCache Resource cache
    * @param next Response step
    * @param apiTypeClass API type class
    * @param apiListTypeClass API list type class
@@ -67,6 +71,7 @@ public abstract class RequestStep<
    */
   @SuppressWarnings("this-escape")
   protected RequestStep(
+          ResourceCache resourceCache,
           ResponseStep<R> next,
           Class<A> apiTypeClass,
           Class<L> apiListTypeClass,
@@ -77,6 +82,7 @@ public abstract class RequestStep<
           String operationName,
           UnaryOperator<ApiClient> clientSelector) {
     super(next);
+    this.resourceCache = resourceCache;
     this.apiGroup = apiGroup;
     this.apiVersion = apiVersion;
     this.resourcePlural = resourcePlural;
@@ -91,6 +97,8 @@ public abstract class RequestStep<
 
   abstract KubernetesApiResponse<R> execute(
       KubernetesApi<A, L> client, Packet packet);
+
+  abstract void recordInCache(KubernetesApiResponse<R> result);
 
   /**
    * Access continue field, if any, from list metadata.
@@ -108,16 +116,26 @@ public abstract class RequestStep<
   }
 
   @Override
-  public @Nonnull Result apply(Packet packet) {
+  public final @Nonnull Result apply(Packet packet) {
     KubernetesApi<A, L> client
             = RequestBuilder.createKubernetesApi(apiTypeClass, apiListTypeClass, apiGroup, apiVersion,
             resourcePlural, clientSelector);
     KubernetesApiResponse<R> result = execute(client, packet);
+    recordInCache(result);
 
     // update packet
     packet.put(RESPONSE_COMPONENT_NAME, result);
 
     return doNext(packet);
+  }
+
+  protected static boolean isFirstNewer(@Nonnull KubernetesObject k1, KubernetesObject k2) {
+    OffsetDateTime time1 = Optional.ofNullable(k1.getMetadata())
+        .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MIN);
+    OffsetDateTime time2 = Optional.ofNullable(k2).map(KubernetesObject::getMetadata)
+        .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MIN);
+
+    return time1.isAfter(time2);
   }
 
   String getResourceSingular() {
@@ -144,6 +162,7 @@ public abstract class RequestStep<
     /**
      * Construct get request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -156,6 +175,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public ClusterGetRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -166,7 +186,7 @@ public abstract class RequestStep<
         String name,
         GetOptions getOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
               resourceSingular, "get", clientSelector);
       this.name = name;
       this.getOptions = getOptions;
@@ -181,6 +201,16 @@ public abstract class RequestStep<
         KubernetesApi<A, L> client, Packet packet) {
       return client.get(name, getOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      if (resourceCache != null && result.isSuccess()) {
+        ConcurrentMap<String, A> resources = resourceCache.lookupByType(apiTypeClass);
+        if (resources != null) {
+          A res = result.getObject();
+          resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
+        }
+      }
+    }
   }
 
   public static class GetRequestStep<A extends KubernetesObject, L extends KubernetesListObject>
@@ -192,6 +222,7 @@ public abstract class RequestStep<
     /**
      * Construct get request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -205,6 +236,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public GetRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -216,7 +248,7 @@ public abstract class RequestStep<
         String name,
         GetOptions getOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
               resourceSingular, "get", clientSelector);
       this.namespace = namespace;
       this.name = name;
@@ -231,6 +263,10 @@ public abstract class RequestStep<
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.get(namespace, name, getOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
+    }
   }
 
   public static class UpdateRequestStep<A extends KubernetesObject, L extends KubernetesListObject>
@@ -241,6 +277,7 @@ public abstract class RequestStep<
     /**
      * Construct update request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -253,6 +290,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public UpdateRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -263,7 +301,7 @@ public abstract class RequestStep<
         A object,
         UpdateOptions updateOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
               resourceSingular, "update", clientSelector);
       this.object = object;
       this.updateOptions = updateOptions;
@@ -284,6 +322,10 @@ public abstract class RequestStep<
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.update(object, updateOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
+    }
   }
 
   public static class ClusterPatchRequestStep<A extends KubernetesObject,
@@ -297,6 +339,7 @@ public abstract class RequestStep<
     /**
      * Construct get request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -311,6 +354,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public ClusterPatchRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -323,7 +367,7 @@ public abstract class RequestStep<
         V1Patch patch,
         PatchOptions patchOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               "patch", clientSelector);
       this.name = name;
       this.patchType = patchType;
@@ -339,6 +383,10 @@ public abstract class RequestStep<
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.patch(name, patchType, patch, patchOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
+    }
   }
 
   public static class PatchRequestStep<A extends KubernetesObject, L extends KubernetesListObject>
@@ -352,6 +400,7 @@ public abstract class RequestStep<
     /**
      * Construct get request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -367,6 +416,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public PatchRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -380,7 +430,7 @@ public abstract class RequestStep<
         V1Patch patch,
         PatchOptions patchOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               "patch", clientSelector);
       this.namespace = namespace;
       this.name = name;
@@ -402,6 +452,10 @@ public abstract class RequestStep<
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.patch(namespace, name, patchType, patch, patchOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
+    }
   }
 
   public static class ClusterDeleteRequestStep<A extends KubernetesObject, L extends KubernetesListObject>
@@ -412,6 +466,7 @@ public abstract class RequestStep<
     /**
      * Construct delete request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -424,6 +479,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public ClusterDeleteRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -434,7 +490,7 @@ public abstract class RequestStep<
         String name,
         DeleteOptions deleteOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               "delete", clientSelector);
       this.name = name;
       this.deleteOptions = deleteOptions;
@@ -448,6 +504,10 @@ public abstract class RequestStep<
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.delete(name, deleteOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
+    }
   }
 
   public static class DeleteRequestStep<A extends KubernetesObject, L extends KubernetesListObject>
@@ -459,6 +519,7 @@ public abstract class RequestStep<
     /**
      * Construct delete request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -472,6 +533,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public DeleteRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -483,7 +545,7 @@ public abstract class RequestStep<
         String name,
         DeleteOptions deleteOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               "delete", clientSelector);
       this.namespace = namespace;
       this.name = name;
@@ -496,18 +558,16 @@ public abstract class RequestStep<
     }
 
     @Override
-    @NotNull
-    public Result apply(Packet packet) {
-      return super.apply(packet);
-    }
-
-    @Override
     String getNamespace() {
       return namespace;
     }
 
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.delete(namespace, name, deleteOptions);
+    }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
     }
   }
 
@@ -518,6 +578,7 @@ public abstract class RequestStep<
     /**
      * Construct list request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -529,6 +590,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public ClusterListRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<L> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -538,7 +600,7 @@ public abstract class RequestStep<
         String resourceSingular,
         ListOptions listOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               "list", clientSelector);
       this.listOptions = listOptions;
     }
@@ -546,6 +608,10 @@ public abstract class RequestStep<
     KubernetesApiResponse<L> execute(
         KubernetesApi<A, L> client, Packet packet) {
       return client.list(listOptions);
+    }
+
+    void recordInCache(KubernetesApiResponse<L> result) {
+      // TODO
     }
   }
 
@@ -557,6 +623,7 @@ public abstract class RequestStep<
     /**
      * Construct list request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -569,6 +636,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public ListRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<L> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -579,7 +647,7 @@ public abstract class RequestStep<
         String namespace,
         ListOptions listOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               "list", clientSelector);
       this.namespace = namespace;
       this.listOptions = listOptions;
@@ -598,6 +666,10 @@ public abstract class RequestStep<
       }
       return client.list(namespace, listOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<L> result) {
+      // TODO
+    }
   }
 
   public static class CreateRequestStep<A extends KubernetesObject, L extends KubernetesListObject>
@@ -608,6 +680,7 @@ public abstract class RequestStep<
     /**
      * Construct create request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -620,6 +693,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public CreateRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -630,7 +704,7 @@ public abstract class RequestStep<
         A object,
         CreateOptions createOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               "create", clientSelector);
       this.object = object;
       this.createOptions = createOptions;
@@ -651,6 +725,10 @@ public abstract class RequestStep<
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.create(object, createOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
+    }
   }
 
   public static class UpdateStatusRequestStep<A extends KubernetesObject, L extends KubernetesListObject>
@@ -662,6 +740,7 @@ public abstract class RequestStep<
     /**
      * Construct update request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -675,6 +754,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public UpdateStatusRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<A> next,
         Class<A> apiTypeClass,
         Class<L> apiListTypeClass,
@@ -686,7 +766,7 @@ public abstract class RequestStep<
         Function<A, Object> status,
         UpdateOptions updateOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
               resourceSingular, "updateStatus", clientSelector);
       this.object = object;
       this.status = status;
@@ -707,6 +787,10 @@ public abstract class RequestStep<
 
     KubernetesApiResponse<A> execute(KubernetesApi<A, L> client, Packet packet) {
       return client.updateStatus(object, status, updateOptions);
+    }
+
+    void recordInCache(KubernetesApiResponse<A> result) {
+      // TODO
     }
   }
 
@@ -740,6 +824,7 @@ public abstract class RequestStep<
     /**
      * Construct logs request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -753,6 +838,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public LogsRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<RequestBuilder.StringObject> next,
         Class<V1Pod> apiTypeClass,
         Class<V1PodList> apiListTypeClass,
@@ -764,7 +850,7 @@ public abstract class RequestStep<
         String name,
         String container,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
               resourceSingular, "logs", clientSelector);
       this.namespace = namespace;
       this.name = name;
@@ -785,6 +871,10 @@ public abstract class RequestStep<
         KubernetesApi<V1Pod, V1PodList> client, Packet packet) {
       return client.logs(namespace, name, container);
     }
+
+    void recordInCache(KubernetesApiResponse<RequestBuilder.StringObject> result) {
+      // TODO
+    }
   }
 
   public static class DeleteCollectionRequestStep extends RequestStep<V1Pod, V1PodList, RequestBuilder.V1StatusObject> {
@@ -795,6 +885,7 @@ public abstract class RequestStep<
     /**
      * Construct logs request step.
      *
+     * @param resourceCache Resource cache
      * @param next Response step
      * @param apiTypeClass API type class
      * @param apiListTypeClass API list type class
@@ -808,6 +899,7 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public DeleteCollectionRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<RequestBuilder.V1StatusObject> next,
         Class<V1Pod> apiTypeClass,
         Class<V1PodList> apiListTypeClass,
@@ -819,7 +911,7 @@ public abstract class RequestStep<
         ListOptions listOptions,
         DeleteOptions deleteOptions,
         UnaryOperator<ApiClient> clientSelector) {
-      super(next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
+      super(resourceCache, next, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural,
               resourceSingular, "deleteCollection", clientSelector);
       this.namespace = namespace;
       this.listOptions = listOptions;
@@ -835,6 +927,10 @@ public abstract class RequestStep<
         KubernetesApi<V1Pod, V1PodList> client, Packet packet) {
       return client.deleteCollection(namespace, listOptions, deleteOptions);
     }
+
+    void recordInCache(KubernetesApiResponse<RequestBuilder.V1StatusObject> result) {
+      // TODO
+    }
   }
 
   public static class VersionCodeRequestStep
@@ -846,14 +942,19 @@ public abstract class RequestStep<
      * @param clientSelector Client selector
      */
     public VersionCodeRequestStep(
+        ResourceCache resourceCache,
         ResponseStep<RequestBuilder.VersionInfoObject> next, UnaryOperator<ApiClient> clientSelector) {
-      super(next, KubernetesObject.class, KubernetesListObject.class, "", "", "", "",
+      super(resourceCache, next, KubernetesObject.class, KubernetesListObject.class, "", "", "", "",
               "getVersion", clientSelector);
     }
 
     KubernetesApiResponse<RequestBuilder.VersionInfoObject> execute(
         KubernetesApi<KubernetesObject, KubernetesListObject> client, Packet packet) {
       return client.getVersionCode();
+    }
+
+    void recordInCache(KubernetesApiResponse<RequestBuilder.VersionInfoObject> result) {
+      // TODO
     }
   }
 }

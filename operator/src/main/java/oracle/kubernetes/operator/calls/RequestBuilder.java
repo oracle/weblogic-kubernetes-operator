@@ -26,6 +26,7 @@ import io.kubernetes.client.util.generic.options.GetOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import io.kubernetes.client.util.generic.options.PatchOptions;
 import io.kubernetes.client.util.generic.options.UpdateOptions;
+import oracle.kubernetes.operator.ResourceCache;
 import oracle.kubernetes.operator.work.Packet;
 
 public class RequestBuilder<A extends KubernetesObject, L extends KubernetesListObject> {
@@ -57,6 +58,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static WatchApiFactory watchApiFactory = DEFAULT_WATCH_API_FACTORY;
 
+  protected final ResourceCache resourceCache;
   protected final Class<A> apiTypeClass;
   protected final Class<L> apiListTypeClass;
   protected final String apiGroup;
@@ -66,6 +68,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
 
   /**
    * Create a request builder.
+   * @param resourceCache Resource cache
    * @param apiTypeClass API type
    * @param apiListTypeClass API list type
    * @param apiGroup Group
@@ -74,12 +77,14 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
    * @param resourceSingular Singular
    */
   public RequestBuilder(
+      ResourceCache resourceCache,
       Class<A> apiTypeClass,
       Class<L> apiListTypeClass,
       String apiGroup,
       String apiVersion,
       String resourcePlural,
       String resourceSingular) {
+    this.resourceCache = resourceCache;
     this.apiGroup = apiGroup;
     this.apiVersion = apiVersion;
     this.resourcePlural = resourcePlural;
@@ -138,6 +143,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           A object, CreateOptions createOptions, ResponseStep<A> responseStep,
           UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.CreateRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             object, createOptions, clientSelector);
   }
@@ -212,6 +218,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           String name, DeleteOptions deleteOptions, ResponseStep<A> responseStep,
           UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.ClusterDeleteRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             name, deleteOptions, clientSelector);
   }
@@ -254,6 +261,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           String namespace, String name, DeleteOptions deleteOptions, ResponseStep<A> responseStep,
           UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.DeleteRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             namespace, name, deleteOptions, clientSelector);
   }
@@ -368,6 +376,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   public RequestStep<A, L, A> get(
           String name, GetOptions getOptions, ResponseStep<A> responseStep, UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.ClusterGetRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             name, getOptions, clientSelector);
   }
@@ -410,6 +419,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           String namespace, String name, GetOptions getOptions, ResponseStep<A> responseStep,
           UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.GetRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             namespace, name, getOptions, clientSelector);
   }
@@ -520,6 +530,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   public RequestStep<A, L, L> list(
           ListOptions listOptions, ResponseStep<L> responseStep, UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.ClusterListRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             listOptions, clientSelector);
   }
@@ -559,6 +570,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           String namespace, ListOptions listOptions, ResponseStep<L> responseStep,
           UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.ListRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             namespace, listOptions, clientSelector);
   }
@@ -667,6 +679,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           A object, UpdateOptions updateOptions, ResponseStep<A> responseStep,
           UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.UpdateRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             object, updateOptions, clientSelector);
   }
@@ -748,6 +761,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           String name, String patchType, V1Patch patch, PatchOptions patchOptions, ResponseStep<A> responseStep,
           UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.ClusterPatchRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             name, patchType, patch, patchOptions, clientSelector);
   }
@@ -797,6 +811,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           String namespace, String name, String patchType, V1Patch patch,
           PatchOptions patchOptions, ResponseStep<A> responseStep, UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.PatchRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             namespace, name, patchType, patch, patchOptions, clientSelector);
   }
@@ -930,6 +945,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
           A object, Function<A, Object> status,
           UpdateOptions updateOptions, ResponseStep<A> responseStep, UnaryOperator<ApiClient> clientSelector) {
     return new RequestStep.UpdateStatusRequestStep<>(
+            resourceCache,
             responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
             object, status, updateOptions, clientSelector);
   }
@@ -1082,8 +1098,8 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
 
   public static class PodRequestBuilder extends RequestBuilder<V1Pod, V1PodList> {
 
-    public PodRequestBuilder() {
-      super(V1Pod.class, V1PodList.class, "", "v1", "pods", "pod");
+    public PodRequestBuilder(ResourceCache resourceCache) {
+      super(resourceCache, V1Pod.class, V1PodList.class, "", "v1", "pods", "pod");
     }
 
     /**
@@ -1112,6 +1128,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
             String namespace, String name, String container, ResponseStep<StringObject> responseStep,
             UnaryOperator<ApiClient> clientSelector) {
       return new RequestStep.LogsRequestStep(
+              resourceCache,
               responseStep, apiTypeClass, apiListTypeClass, apiGroup, apiVersion, resourcePlural, resourceSingular,
               namespace, name, container, clientSelector);
     }
@@ -1143,6 +1160,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
             String namespace, ListOptions listOptions, DeleteOptions deleteOptions,
             ResponseStep<V1StatusObject> responseStep, UnaryOperator<ApiClient> clientSelector) {
       return new RequestStep.DeleteCollectionRequestStep(
+              resourceCache,
               responseStep, V1Pod.class, V1PodList.class, apiGroup, apiVersion, resourcePlural, resourceSingular,
               namespace, listOptions, deleteOptions, clientSelector);
     }
@@ -1150,8 +1168,8 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
 
   public static class VersionCodeRequestBuilder extends RequestBuilder<KubernetesObject, KubernetesListObject> {
 
-    public VersionCodeRequestBuilder() {
-      super(KubernetesObject.class, KubernetesListObject.class, "", "", "", "");
+    public VersionCodeRequestBuilder(ResourceCache resourceCache) {
+      super(resourceCache, KubernetesObject.class, KubernetesListObject.class, "", "", "", "");
     }
 
     /**
@@ -1172,7 +1190,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
      */
     public RequestStep<KubernetesObject, KubernetesListObject, VersionInfoObject> versionCode(
             ResponseStep<VersionInfoObject> responseStep, UnaryOperator<ApiClient> clientSelector) {
-      return new RequestStep.VersionCodeRequestStep(responseStep, clientSelector);
+      return new RequestStep.VersionCodeRequestStep(resourceCache, responseStep, clientSelector);
     }
 
     /**

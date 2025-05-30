@@ -872,7 +872,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
     }
 
     public RequestBuilder.VersionCodeRequestBuilder getVersionBuilder() {
-      return new RequestBuilder.VersionCodeRequestBuilder();
+      return new RequestBuilder.VersionCodeRequestBuilder(getResourceCache());
     }
 
     /**
@@ -881,25 +881,31 @@ public class WebhookMainTest extends CrdHelperTestBase {
      */
     public RequestBuilder<V1ValidatingWebhookConfiguration, V1ValidatingWebhookConfigurationList>
         getValidatingWebhookConfigurationBuilder() {
-      return new RequestBuilder<>(V1ValidatingWebhookConfiguration.class, V1ValidatingWebhookConfigurationList.class,
+      return new RequestBuilder<>(getResourceCache(),
+              V1ValidatingWebhookConfiguration.class, V1ValidatingWebhookConfigurationList.class,
               "admissionregistration.k8s.io", "v1",
               "validatingwebhookconfigurations", "validatingwebhookconfiguration");
     }
 
     public RequestBuilder<DomainResource, DomainList> getDomainBuilder() {
-      return new RequestBuilder<>(DomainResource.class, DomainList.class,
+      return new RequestBuilder<>(getResourceCache(), DomainResource.class, DomainList.class,
               "weblogic.oracle", "v9", "domains", "domain");
     }
 
     public RequestBuilder<ClusterResource, ClusterList> getClusterBuilder() {
-      return new RequestBuilder<>(ClusterResource.class, ClusterList.class,
+      return new RequestBuilder<>(getResourceCache(), ClusterResource.class, ClusterList.class,
               "weblogic.oracle", "v1", "clusters", "cluster");
     }
 
     public RequestBuilder<V1CustomResourceDefinition, V1CustomResourceDefinitionList>
         getCustomResourceDefinitionBuilder() {
-      return new RequestBuilder<>(V1CustomResourceDefinition.class, V1CustomResourceDefinitionList.class,
+      return new RequestBuilder<>(getResourceCache(),
+              V1CustomResourceDefinition.class, V1CustomResourceDefinitionList.class,
               "apiextensions.k8s.io", "v1", "customresourcedefinitions", "customresourcedefinition");
+    }
+
+    public ResourceCache getResourceCache() {
+      return null;
     }
   }
 
