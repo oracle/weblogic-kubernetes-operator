@@ -169,8 +169,13 @@ public class FiberTestSupport {
     return packet;
   }
 
+  /**
+   * Clear the packet.
+   * @return Fiber test support
+   */
   public FiberTestSupport withClearPacket() {
     packet.clear();
+    packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, coreDelegate);
     return this;
   }
 

@@ -685,6 +685,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info) {
     Packet packet = new Packet();
     packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, info);
+    packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, delegate);
     Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
           .ifPresent(steps -> delegate.runSteps(packet, steps, null));
   }
@@ -693,6 +694,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public void updateDomainStatus(@Nonnull V1PersistentVolumeClaim pvc, DomainPresenceInfo info) {
     Packet packet = new Packet();
     packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, info);
+    packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, delegate);
     if (!ProcessingConstants.BOUND.equals(getPhase(pvc))) {
       delegate.runSteps(packet, DomainStatusUpdater
               .createPersistentVolumeClaimFailureSteps(getMessage(pvc)), null);
@@ -1253,6 +1255,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       Packet packet = new Packet();
       packet.put(ProcessingConstants.DOMAIN_COMPONENT_NAME, delegate.getKubernetesVersion());
       packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
+      packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, delegate);
       return packet;
     }
 

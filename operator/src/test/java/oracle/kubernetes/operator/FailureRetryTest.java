@@ -63,7 +63,7 @@ class FailureRetryTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final StepFactory stepFactory = new StepFactory();
-  private final MakeRightStub makeRight = MakeRightStub.createFor(info, stepFactory);
+  private final MakeRightStub makeRight = MakeRightStub.createFor(testSupport.getCoreDelegate(), info, stepFactory);
   private final LocalDomainProcessorDelegateStub delegate
       = Stub.createStrictStub(LocalDomainProcessorDelegateStub.class, testSupport, makeRight);
   private final DomainProcessorImpl domainProcessor = new DomainProcessorImpl(delegate);
@@ -311,16 +311,18 @@ class FailureRetryTest {
   }
 
   abstract static class MakeRightStub implements MakeRightDomainOperation {
+    private final CoreDelegate delegate;
     private final DomainPresenceInfo info;
     private final StepFactory stepFactory;
     private boolean explicitRecheck = false;
     private MakeRightExecutor executor;
 
-    static MakeRightStub createFor(DomainPresenceInfo info, StepFactory stepFactory) {
-      return Stub.createStrictStub(MakeRightStub.class, info, stepFactory);
+    static MakeRightStub createFor(CoreDelegate delegate, DomainPresenceInfo info, StepFactory stepFactory) {
+      return Stub.createStrictStub(MakeRightStub.class, delegate, info, stepFactory);
     }
 
-    MakeRightStub(DomainPresenceInfo info, StepFactory stepFactory) {
+    MakeRightStub(CoreDelegate delegate, DomainPresenceInfo info, StepFactory stepFactory) {
+      this.delegate = delegate;
       this.info = info;
       this.stepFactory = stepFactory;
     }
@@ -353,7 +355,7 @@ class FailureRetryTest {
 
     @Override
     public MakeRightDomainOperation createRetry(@Nonnull DomainPresenceInfo info) {
-      final MakeRightStub retry = createFor(info, stepFactory);
+      final MakeRightStub retry = createFor(delegate, info, stepFactory);
       retry.setExecutor(executor);
       retry.explicitRecheck = true;
       return retry;
@@ -401,6 +403,7 @@ class FailureRetryTest {
       Packet packet = new Packet();
       packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, info);
       packet.put(ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION, this);
+      packet.put(ProcessingConstants.DELEGATE_COMPONENT_NAME, delegate);
       return packet;
     }
 
