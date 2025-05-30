@@ -64,6 +64,15 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   protected final String resourcePlural;
   protected final String resourceSingular;
 
+  /**
+   * Create a request builder.
+   * @param apiTypeClass API type
+   * @param apiListTypeClass API list type
+   * @param apiGroup Group
+   * @param apiVersion Version
+   * @param resourcePlural Plural
+   * @param resourceSingular Singular
+   */
   public RequestBuilder(
       Class<A> apiTypeClass,
       Class<L> apiListTypeClass,

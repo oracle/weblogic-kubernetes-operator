@@ -21,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.ListOptions;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.ClusterWatcher;
 import oracle.kubernetes.operator.watcher.ConfigMapWatcher;

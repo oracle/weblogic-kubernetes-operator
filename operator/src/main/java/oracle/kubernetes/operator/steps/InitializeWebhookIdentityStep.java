@@ -26,7 +26,6 @@ import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebhookMainDelegate;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;

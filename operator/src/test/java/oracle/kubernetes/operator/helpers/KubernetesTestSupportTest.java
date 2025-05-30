@@ -275,7 +275,8 @@ class KubernetesTestSupportTest {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     patchBuilder.replace("/status/message", "changed it");
     patchBuilder.add("/status/reason", "added a reason");
-    testSupport.getCoreDelegate().getDomainBuilder().patch(NS, "domain", V1Patch.PATCH_FORMAT_JSON_PATCH, getPatchBody(patchBuilder));
+    testSupport.getCoreDelegate().getDomainBuilder().patch(
+        NS, "domain", V1Patch.PATCH_FORMAT_JSON_PATCH, getPatchBody(patchBuilder));
 
     assertThat(getDomainStatus("domain").getMessage(), equalTo("leave this"));
     assertThat(getDomainStatus("domain").getReason(), nullValue());
@@ -292,7 +293,8 @@ class KubernetesTestSupportTest {
     testSupport.defineResources(originalDomain);
 
     DomainResource newDomain = createDomain(NS, "domain1");
-    testSupport.runSteps(testSupport.getCoreDelegate().getDomainBuilder().update(newDomain, (ResponseStep<DomainResource>) null));
+    testSupport.runSteps(testSupport.getCoreDelegate().getDomainBuilder().update(
+        newDomain, (ResponseStep<DomainResource>) null));
 
     assertThat(getDomainStatus("domain1").getMessage(), equalTo("leave this"));
   }

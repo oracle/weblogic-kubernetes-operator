@@ -183,7 +183,8 @@ public class WebhookMain extends BaseMain {
   }
 
   private String getCrdResourceVersion(String crdName) throws ApiException {
-    return Optional.ofNullable(delegate.getCustomResourceDefinitionBuilder().get(crdName, new GetOptions().isPartialObjectMetadataRequest(true)))
+    return Optional.ofNullable(delegate.getCustomResourceDefinitionBuilder()
+                .get(crdName, new GetOptions().isPartialObjectMetadataRequest(true)))
         .map(V1CustomResourceDefinition::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse(null);
   }
 

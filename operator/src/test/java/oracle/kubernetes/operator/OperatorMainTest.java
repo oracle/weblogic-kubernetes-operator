@@ -107,6 +107,7 @@ import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
+import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
@@ -666,7 +667,8 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterReadingExistingResourcesForNamespace_WatchersAreDefined() {
-    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(
+        testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(domainNamespaces.getClusterWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(NS), notNullValue());
@@ -680,14 +682,16 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterReadingExistingResourcesForNamespace_ScriptConfigMapIsDefined() {
-    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(
+        testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(getScriptMap(NS), notNullValue());
   }
 
   @Test
   void afterReadingExistingResourcesForNamespace_withoutExistingEvent_domainEventK8SObjectsEmpty() {
-    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(
+        testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
     assertThat(getDomainEventMapSize(), equalTo(0));
   }
 
@@ -697,7 +701,8 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     CoreV1Event event2 = createDomainEvent("event2").reason(DOMAIN_CHANGED_EVENT);
 
     testSupport.defineResources(event1, event2);
-    testSupport.runSteps(domainNamespaces.readExistingResources(testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
+    testSupport.runSteps(domainNamespaces.readExistingResources(
+        testSupport.getCoreDelegate(), NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(getDomainEventMapSize(), equalTo(2));
   }
@@ -1414,6 +1419,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     @Override
     public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
+      packet.put(DELEGATE_COMPONENT_NAME, this);
       testSupport.withPacket(packet)
                  .withCompletionAction(completionAction)
                  .runSteps(firstStep);

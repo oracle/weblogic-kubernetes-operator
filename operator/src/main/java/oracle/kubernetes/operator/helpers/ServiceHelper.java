@@ -23,7 +23,6 @@ import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -581,7 +580,8 @@ public class ServiceHelper {
       if (serviceType == EXTERNAL) {
         return deleteAndReplaceNodePortService(delegate);
       } else {
-        return delegate.getServiceBuilder().delete(getNamespace(), createServiceName(), new DeleteServiceResponse(next));
+        return delegate.getServiceBuilder().delete(getNamespace(), createServiceName(),
+            new DeleteServiceResponse(next));
       }
     }
 

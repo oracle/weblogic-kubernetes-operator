@@ -37,12 +37,15 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1RuleWithOperations;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.CrdHelperTestBase;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -61,6 +64,10 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
@@ -101,6 +108,7 @@ import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
+import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -806,6 +814,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
 
     @Override
     public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
+      packet.put(DELEGATE_COMPONENT_NAME, this);
       testSupport.withPacket(packet)
                  .withCompletionAction(completionAction)
                  .runSteps(firstStep);
@@ -862,6 +871,36 @@ public class WebhookMainTest extends CrdHelperTestBase {
       this.clusterCrdResourceVersion = resourceVersion;
     }
 
+    public RequestBuilder.VersionCodeRequestBuilder getVersionBuilder() {
+      return new RequestBuilder.VersionCodeRequestBuilder();
+    }
+
+    /**
+     * Get validating webhook configuration builder.
+     * @return Builder
+     */
+    public RequestBuilder<V1ValidatingWebhookConfiguration, V1ValidatingWebhookConfigurationList>
+        getValidatingWebhookConfigurationBuilder() {
+      return new RequestBuilder<>(V1ValidatingWebhookConfiguration.class, V1ValidatingWebhookConfigurationList.class,
+              "admissionregistration.k8s.io", "v1",
+              "validatingwebhookconfigurations", "validatingwebhookconfiguration");
+    }
+
+    public RequestBuilder<DomainResource, DomainList> getDomainBuilder() {
+      return new RequestBuilder<>(DomainResource.class, DomainList.class,
+              "weblogic.oracle", "v9", "domains", "domain");
+    }
+
+    public RequestBuilder<ClusterResource, ClusterList> getClusterBuilder() {
+      return new RequestBuilder<>(ClusterResource.class, ClusterList.class,
+              "weblogic.oracle", "v1", "clusters", "cluster");
+    }
+
+    public RequestBuilder<V1CustomResourceDefinition, V1CustomResourceDefinitionList>
+        getCustomResourceDefinitionBuilder() {
+      return new RequestBuilder<>(V1CustomResourceDefinition.class, V1CustomResourceDefinitionList.class,
+              "apiextensions.k8s.io", "v1", "customresourcedefinitions", "customresourcedefinition");
+    }
   }
 
   static class TestStepFactory implements WebhookMain.NextStepFactory {

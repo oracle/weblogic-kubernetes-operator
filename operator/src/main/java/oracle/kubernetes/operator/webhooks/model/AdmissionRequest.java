@@ -245,7 +245,8 @@ public class AdmissionRequest {
         }
       }
 
-      private ClusterResource getCluster(CoreDelegate delegate, String clusterName, String namespace) throws ApiException {
+      private ClusterResource getCluster(CoreDelegate delegate, String clusterName,
+                                         String namespace) throws ApiException {
         List<ClusterResource> clusters = AdmissionChecker.getClusters(delegate, namespace);
         return clusters.stream().filter(cluster -> clusterName.equals(cluster.getMetadata().getName()))
             .findFirst().orElse(null);

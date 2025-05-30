@@ -46,7 +46,6 @@ import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.OperatorMain;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;

@@ -455,21 +455,24 @@ class RestBackendImplTest {
 
   @Test
   void whenUsingAccessToken_userInfoIsNull() {
-    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces);
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(),
+        "", "", this::getDomainNamespaces);
     assertThat(restBackendImpl.getUserInfo(), nullValue());
   }
 
   @Test
   void whenUsingTokenReview_userInfoNotNull() {
     TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
-    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces);
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(),
+        "", "", this::getDomainNamespaces);
     assertThat(restBackendImpl.getUserInfo(), notNullValue());
   }
 
   @Test
   void whenUsingAccessToken_authorizationCheckNotCalled() {
     AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
-    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces)
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(),
+        "", "", this::getDomainNamespaces)
         .withAuthorizationProxy(authorizationProxyStub);
     restBackendImpl.getClusters(DOMAIN1);
     assertThat(authorizationProxyStub.atzCheck, is(false));
@@ -479,7 +482,8 @@ class RestBackendImplTest {
   void whenUsingTokenReview_authorizationCheckCalled() {
     TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
     AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
-    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(), "", "", this::getDomainNamespaces)
+    RestBackendImpl restBackendImpl = new RestBackendImpl(testSupport.getCoreDelegate(),
+        "", "", this::getDomainNamespaces)
         .withAuthorizationProxy(authorizationProxyStub);
     restBackendImpl.getClusters(DOMAIN1);
     assertThat(authorizationProxyStub.atzCheck, is(true));

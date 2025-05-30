@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.OperatorMain;
-import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;

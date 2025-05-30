@@ -96,13 +96,6 @@ public class CoreDelegateImpl implements CoreDelegate {
     deploymentImpl = getBranch(buildProps) + "." + getCommit(buildProps);
     deploymentBuildTime = getBuildTime(buildProps);
 
-    productVersion = new SemanticVersion(buildVersion);
-    kubernetesVersion = HealthCheckHelper.performK8sVersionCheck(this);
-
-    this.scheduledExecutorService = scheduledExecutorService;
-
-    PodHelper.setProductVersion(productVersion.toString());
-
     versionBuilder = new RequestBuilder.VersionCodeRequestBuilder();
     domainBuilder = new RequestBuilder<>(DomainResource.class, DomainList.class,
             "weblogic.oracle", "v9", "domains", "domain");
@@ -121,11 +114,14 @@ public class CoreDelegateImpl implements CoreDelegate {
             "", "v1", "events", "event");
     persistentVolumeBuilder = new RequestBuilder<>(V1PersistentVolume.class, V1PersistentVolumeList.class,
             "", "v1", "persistentvolumes", "persistentvolume");
-    persistentVolumeClaimBuilder = new RequestBuilder<>(V1PersistentVolumeClaim.class, V1PersistentVolumeClaimList.class,
+    persistentVolumeClaimBuilder = new RequestBuilder<>(V1PersistentVolumeClaim.class,
+            V1PersistentVolumeClaimList.class,
             "", "v1", "persistentvolumeclaims", "persistentvolumeclaim");
-    customResourceDefinitionBuilder = new RequestBuilder<>(V1CustomResourceDefinition.class, V1CustomResourceDefinitionList.class,
+    customResourceDefinitionBuilder = new RequestBuilder<>(V1CustomResourceDefinition.class,
+            V1CustomResourceDefinitionList.class,
             "apiextensions.k8s.io", "v1", "customresourcedefinitions", "customresourcedefinition");
-    validatingWebhookConfigurationBuilder = new RequestBuilder<>(V1ValidatingWebhookConfiguration.class, V1ValidatingWebhookConfigurationList.class,
+    validatingWebhookConfigurationBuilder = new RequestBuilder<>(V1ValidatingWebhookConfiguration.class,
+            V1ValidatingWebhookConfigurationList.class,
             "admissionregistration.k8s.io", "v1", "validatingwebhookconfigurations", "validatingwebhookconfiguration");
     jobBuilder = new RequestBuilder<>(V1Job.class, V1JobList.class,
             "batch", "v1", "jobs", "job");
@@ -137,6 +133,13 @@ public class CoreDelegateImpl implements CoreDelegate {
             "authorization.k8s.io", "v1", "selfsubjectrulesreviews", "selfsubjectrulesreview");
     subjectAccessReviewBuilder = new RequestBuilder<>(V1SubjectAccessReview.class, KubernetesListObject.class,
             "authorization.k8s.io", "v1", "selfsubjectaccessreviews", "selfsubjectaccessreview");
+
+    productVersion = new SemanticVersion(buildVersion);
+    kubernetesVersion = HealthCheckHelper.performK8sVersionCheck(this);
+
+    this.scheduledExecutorService = scheduledExecutorService;
+
+    PodHelper.setProductVersion(productVersion.toString());
   }
 
   protected static String getBuildVersion(Properties buildProps) {
