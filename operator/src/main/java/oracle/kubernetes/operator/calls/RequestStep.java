@@ -32,6 +32,7 @@ import io.kubernetes.client.util.generic.options.GetOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import io.kubernetes.client.util.generic.options.PatchOptions;
 import io.kubernetes.client.util.generic.options.UpdateOptions;
+import oracle.kubernetes.operator.NamespacedResourceCache;
 import oracle.kubernetes.operator.ResourceCache;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -99,6 +100,56 @@ public abstract class RequestStep<
       KubernetesApi<A, L> client, Packet packet);
 
   abstract void recordInCache(KubernetesApiResponse<R> result);
+
+  protected void recordObjectInCache(KubernetesApiResponse<A> result) {
+    if (resourceCache != null && result.isSuccess()) {
+      NamespacedResourceCache cache = Optional.ofNullable(getNamespace())
+          .map(resourceCache::findNamespace).orElse(resourceCache);
+      ConcurrentMap<String, A> resources = cache.lookupByType(apiTypeClass);
+      if (resources != null) {
+        A res = result.getObject();
+        resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
+      }
+    }
+  }
+
+  protected void recordClusterObjectInCache(KubernetesApiResponse<A> result) {
+    if (resourceCache != null && result.isSuccess()) {
+      ConcurrentMap<String, A> resources = resourceCache.lookupByType(apiTypeClass);
+      if (resources != null) {
+        A res = result.getObject();
+        resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  protected void recordListObjectInCache(KubernetesApiResponse<L> result) {
+    if (resourceCache != null && result.isSuccess()) {
+      NamespacedResourceCache cache = Optional.ofNullable(getNamespace())
+          .map(resourceCache::findNamespace).orElse(resourceCache);
+      ConcurrentMap<String, A> resources = cache.lookupByType(apiTypeClass);
+      if (resources != null) {
+        L resList = result.getObject();
+        for (KubernetesObject ko : resList.getItems()) {
+          resources.compute(ko.getMetadata().getName(), (k, v) -> isFirstNewer(ko, v) ? (A) ko : v);
+        }
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  protected void recordClusterListObjectInCache(KubernetesApiResponse<L> result) {
+    if (resourceCache != null && result.isSuccess()) {
+      ConcurrentMap<String, A> resources = resourceCache.lookupByType(apiTypeClass);
+      if (resources != null) {
+        L resList = result.getObject();
+        for (KubernetesObject ko : resList.getItems()) {
+          resources.compute(ko.getMetadata().getName(), (k, v) -> isFirstNewer(ko, v) ? (A) ko : v);
+        }
+      }
+    }
+  }
 
   /**
    * Access continue field, if any, from list metadata.
@@ -203,13 +254,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      if (resourceCache != null && result.isSuccess()) {
-        ConcurrentMap<String, A> resources = resourceCache.lookupByType(apiTypeClass);
-        if (resources != null) {
-          A res = result.getObject();
-          resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
-        }
-      }
+      recordClusterObjectInCache(result);
     }
   }
 
@@ -265,7 +310,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      recordObjectInCache(result);
     }
   }
 
@@ -324,7 +369,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      recordObjectInCache(result);
     }
   }
 
@@ -385,7 +430,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      recordClusterObjectInCache(result);
     }
   }
 
@@ -454,7 +499,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      recordObjectInCache(result);
     }
   }
 
@@ -506,7 +551,12 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      if (resourceCache != null && result.isSuccess()) {
+        ConcurrentMap<String, A> resources = resourceCache.lookupByType(apiTypeClass);
+        if (resources != null) {
+          resources.remove(getName());
+        }
+      }
     }
   }
 
@@ -567,7 +617,14 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      if (resourceCache != null && result.isSuccess()) {
+        NamespacedResourceCache cache = Optional.ofNullable(getNamespace())
+                .map(resourceCache::findNamespace).orElse(resourceCache);
+        ConcurrentMap<String, A> resources = cache.lookupByType(apiTypeClass);
+        if (resources != null) {
+          resources.remove(getName());
+        }
+      }
     }
   }
 
@@ -611,7 +668,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<L> result) {
-      // TODO
+      recordClusterListObjectInCache(result);
     }
   }
 
@@ -668,7 +725,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<L> result) {
-      // TODO
+      recordListObjectInCache(result);
     }
   }
 
@@ -727,7 +784,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      recordObjectInCache(result);
     }
   }
 
@@ -790,7 +847,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<A> result) {
-      // TODO
+      recordObjectInCache(result);
     }
   }
 
@@ -873,7 +930,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<RequestBuilder.StringObject> result) {
-      // TODO
+      // no-op
     }
   }
 
@@ -883,7 +940,7 @@ public abstract class RequestStep<
     private final DeleteOptions deleteOptions;
 
     /**
-     * Construct logs request step.
+     * Delete collection request step.
      *
      * @param resourceCache Resource cache
      * @param next Response step
@@ -929,7 +986,16 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<RequestBuilder.V1StatusObject> result) {
-      // TODO
+      // This is a special case in that we know that we only use the "deletecollection" verb to
+      // remove all resources of this type in the namespace
+      if (resourceCache != null && result.isSuccess()) {
+        NamespacedResourceCache cache = Optional.ofNullable(getNamespace())
+                .map(resourceCache::findNamespace).orElse(resourceCache);
+        ConcurrentMap<String, ?> resources = cache.lookupByType(apiTypeClass);
+        if (resources != null) {
+          resources.clear();
+        }
+      }
     }
   }
 
@@ -954,7 +1020,7 @@ public abstract class RequestStep<
     }
 
     void recordInCache(KubernetesApiResponse<RequestBuilder.VersionInfoObject> result) {
-      // TODO
+      // no-op
     }
   }
 }

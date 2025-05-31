@@ -897,6 +897,10 @@ public class WebhookMainTest extends CrdHelperTestBase {
               "weblogic.oracle", "v1", "clusters", "cluster");
     }
 
+    /**
+     * Returns CRD request builder.
+     * @return CRD request builder
+     */
     public RequestBuilder<V1CustomResourceDefinition, V1CustomResourceDefinitionList>
         getCustomResourceDefinitionBuilder() {
       return new RequestBuilder<>(getResourceCache(),

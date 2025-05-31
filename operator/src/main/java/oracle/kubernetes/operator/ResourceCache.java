@@ -6,5 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.concurrent.ConcurrentMap;
 
 public interface ResourceCache extends NamespacedResourceCache {
-    ConcurrentMap<String, NamespacedResourceCache> getNamespaces();
+  ConcurrentMap<String, NamespacedResourceCache> getNamespaces();
+
+  NamespacedResourceCache findNamespace(String namespace);
 }

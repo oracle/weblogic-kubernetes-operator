@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
-import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
@@ -63,6 +62,12 @@ public class ResourceCacheImpl implements ResourceCache {
     RESOURCE_LIST_MAP.put(V1PodDisruptionBudgetList.class, ResourceCache::getConfigMapResources);
   }
 
+  /**
+   * Lookup resource map based on class type.
+   * @param <X> Kubernetes resource class type
+   * @param type Type
+   * @return Resource map
+   */
   @SuppressWarnings("unchecked")
   public <X extends KubernetesObject> ConcurrentMap<String, X> lookupByType(Class<X> type) {
     Function<ResourceCacheImpl, ConcurrentMap<String, ?>> func = RESOURCE_MAP.get(type);
@@ -72,6 +77,13 @@ public class ResourceCacheImpl implements ResourceCache {
     return null;
   }
 
+  /**
+   * Lookup resource map based on list class type.
+   * @param <X> Kubernetes resource list class type
+   * @param <Y> Kubernetes resource class type
+   * @param type Type
+   * @return Resource map
+   */
   @SuppressWarnings("unchecked")
   public <X extends KubernetesListObject, Y extends KubernetesObject> ConcurrentMap<String, Y>
       lookupByListType(Class<X> type) {
@@ -82,7 +94,7 @@ public class ResourceCacheImpl implements ResourceCache {
     return null;
   }
 
-  private final V1Namespace namespace;
+  private final String namespace;
   private final ConcurrentMap<String, NamespacedResourceCache> namespacesResources = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, DomainResource> domainResources = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ClusterResource> clusterResources = new ConcurrentHashMap<>();
@@ -99,7 +111,7 @@ public class ResourceCacheImpl implements ResourceCache {
     this(null);
   }
 
-  ResourceCacheImpl(V1Namespace namespace) {
+  ResourceCacheImpl(String namespace) {
     this.namespace = namespace;
   }
 
@@ -109,7 +121,12 @@ public class ResourceCacheImpl implements ResourceCache {
   }
 
   @Override
-  public V1Namespace getNamespace() {
+  public NamespacedResourceCache findNamespace(String namespace) {
+    return namespacesResources.computeIfAbsent(namespace, ResourceCacheImpl::new);
+  }
+
+  @Override
+  public String getNamespace() {
     return namespace;
   }
 
