@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -213,7 +214,7 @@ public class DomainNamespaces {
     getNamespaceStatus(ns).clearNamespaceStartingFlag();
   }
 
-  interface WatcherFactory<T, W extends Watcher<T>> {
+  interface WatcherFactory<T extends KubernetesObject, W extends Watcher<T>> {
     W create(
           CoreDelegate delegate,
           ThreadFactory threadFactory,
@@ -224,9 +225,9 @@ public class DomainNamespaces {
           AtomicBoolean stopping);
   }
 
-  interface ListenerSelector<T> extends Function<DomainProcessor, WatchListener<T>> { }
+  interface ListenerSelector<T extends KubernetesObject> extends Function<DomainProcessor, WatchListener<T>> { }
 
-  class WatcherControl<T, W extends Watcher<T>> {
+  class WatcherControl<T extends KubernetesObject, W extends Watcher<T>> {
     private final Map<String, W> watchers = new ConcurrentHashMap<>();
     private final WatcherFactory<T,W> factory;
     private final ListenerSelector<T> selector;

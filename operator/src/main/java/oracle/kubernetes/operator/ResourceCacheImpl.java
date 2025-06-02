@@ -122,6 +122,9 @@ public class ResourceCacheImpl implements ResourceCache {
 
   @Override
   public NamespacedResourceCache findNamespace(String namespace) {
+    if (namespace == null) {
+      return this;
+    }
     return namespacesResources.computeIfAbsent(namespace, ResourceCacheImpl::new);
   }
 

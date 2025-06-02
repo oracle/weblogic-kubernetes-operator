@@ -12,6 +12,7 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
@@ -233,7 +234,7 @@ class NamespacedResources {
     }
   }
 
-  static class PauseWatchersStep<T> extends Step {
+  static class PauseWatchersStep<T extends KubernetesObject> extends Step {
     private final Watcher<T> watcher;
 
     PauseWatchersStep(Watcher<T> watcher) {

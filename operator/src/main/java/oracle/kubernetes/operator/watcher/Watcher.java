@@ -1,15 +1,19 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
 
 import java.lang.reflect.Method;
+import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -18,6 +22,8 @@ import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.CoreDelegate;
+import oracle.kubernetes.operator.NamespacedResourceCache;
+import oracle.kubernetes.operator.ResourceCache;
 import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -31,7 +37,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
  *
  * @param <T> The type of the object to be watched.
  */
-public abstract class Watcher<T> {
+public abstract class Watcher<T extends KubernetesObject> {
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String IGNORED = "0";
@@ -254,12 +260,55 @@ public abstract class Watcher<T> {
     return item.type.equalsIgnoreCase("ERROR");
   }
 
+  @SuppressWarnings("unchecked")
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.finer(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.object);
+
+    // HERE: Is this the correct place to update ResourceCache?
+    ResourceCache resourceCache = delegate.getResourceCache();
+    KubernetesObject res = item.object;
+    switch (item.type) {
+      case "ADDED", "MODIFIED":
+        if (resourceCache != null && res != null) {
+          Class<? extends KubernetesObject> cz = item.object.getClass();
+          NamespacedResourceCache cache = Optional.ofNullable(getNamespace())
+              .map(resourceCache::findNamespace).orElse(resourceCache);
+          ConcurrentMap<String, KubernetesObject> resources
+              = (ConcurrentMap<String, KubernetesObject>) cache.lookupByType(cz);
+          if (resources != null) {
+            resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
+          }
+        }
+        break;
+      case "DELETED":
+        if (resourceCache != null && res != null) {
+          Class<? extends KubernetesObject> cz = item.object.getClass();
+          NamespacedResourceCache cache = Optional.ofNullable(getNamespace())
+                  .map(resourceCache::findNamespace).orElse(resourceCache);
+          ConcurrentMap<String, KubernetesObject> resources
+                  = (ConcurrentMap<String, KubernetesObject>) cache.lookupByType(cz);
+          if (resources != null) {
+            resources.remove(res.getMetadata().getName());
+          }
+        }
+        break;
+      case "ERROR":
+      default:
+    }
+
     if (listener != null) {
       listener.receivedResponse(item);
     }
+  }
+
+  protected static boolean isFirstNewer(@Nonnull KubernetesObject k1, KubernetesObject k2) {
+    OffsetDateTime time1 = Optional.ofNullable(k1.getMetadata())
+            .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MIN);
+    OffsetDateTime time2 = Optional.ofNullable(k2).map(KubernetesObject::getMetadata)
+            .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MIN);
+
+    return time1.isAfter(time2);
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
