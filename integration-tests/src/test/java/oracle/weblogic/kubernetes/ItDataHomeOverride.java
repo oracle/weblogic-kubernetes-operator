@@ -48,7 +48,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("olcne-mrg")
 @Tag("oke-arm")
 @Tag("oke-parallel")
-@Tag("okd-wls-mrg")
 class ItDataHomeOverride {
 
   // domain constants
