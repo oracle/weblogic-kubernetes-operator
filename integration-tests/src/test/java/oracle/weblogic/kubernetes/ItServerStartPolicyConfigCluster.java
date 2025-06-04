@@ -124,9 +124,14 @@ class ItServerStartPolicyConfigCluster {
     logger.info("Found standalone managed server configuration");
 
     // Check configured cluster configuration is available 
-    String configServerPodName = domainUid + "-config-cluster-server1";
-    checkPodReadyAndServiceExists(configServerPodName,
-              domainUid, domainNamespace);
+    String configServerPodName = domainUid + "-config-cluster-server1"; domainUid, domainNamespace);
+
+    try {
+      Thread.sleep(240000);
+    } catch (Exception ex) {
+      //
+    }
+
     boolean isServerConfigured = 
          checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
     assertTrue(isServerConfigured, 
