@@ -108,7 +108,7 @@ public abstract class RequestStep<
       ConcurrentMap<String, A> resources = cache.lookupByType(apiTypeClass);
       if (resources != null) {
         A res = result.getObject();
-        resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
+        resources.compute(cache.selectKey(res), (k, v) -> isFirstNewer(res, v) ? res : v);
       }
     }
   }
@@ -118,7 +118,7 @@ public abstract class RequestStep<
       ConcurrentMap<String, A> resources = resourceCache.lookupByType(apiTypeClass);
       if (resources != null) {
         A res = result.getObject();
-        resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
+        resources.compute(resourceCache.selectKey(res), (k, v) -> isFirstNewer(res, v) ? res : v);
       }
     }
   }
@@ -132,7 +132,7 @@ public abstract class RequestStep<
       if (resources != null) {
         L resList = result.getObject();
         for (KubernetesObject ko : resList.getItems()) {
-          resources.compute(ko.getMetadata().getName(), (k, v) -> isFirstNewer(ko, v) ? (A) ko : v);
+          resources.compute(cache.selectKey(ko), (k, v) -> isFirstNewer(ko, v) ? (A) ko : v);
         }
       }
     }
@@ -145,7 +145,7 @@ public abstract class RequestStep<
       if (resources != null) {
         L resList = result.getObject();
         for (KubernetesObject ko : resList.getItems()) {
-          resources.compute(ko.getMetadata().getName(), (k, v) -> isFirstNewer(ko, v) ? (A) ko : v);
+          resources.compute(resourceCache.selectKey(ko), (k, v) -> isFirstNewer(ko, v) ? (A) ko : v);
         }
       }
     }

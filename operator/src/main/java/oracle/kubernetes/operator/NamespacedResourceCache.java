@@ -23,6 +23,8 @@ public interface NamespacedResourceCache {
 
   <X extends KubernetesListObject, Y extends KubernetesObject> ConcurrentMap<String, Y> lookupByListType(Class<X> type);
 
+  String selectKey(KubernetesObject resource);
+
   String getNamespace();
 
   ConcurrentMap<String, DomainResource> getDomainResources();

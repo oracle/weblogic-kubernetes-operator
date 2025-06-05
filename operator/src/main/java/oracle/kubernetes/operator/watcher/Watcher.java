@@ -265,7 +265,6 @@ public abstract class Watcher<T extends KubernetesObject> {
     LOGGER.finer(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.object);
 
-    // HERE: Is this the correct place to update ResourceCache?
     ResourceCache resourceCache = delegate.getResourceCache();
     KubernetesObject res = item.object;
     switch (item.type) {
@@ -277,7 +276,7 @@ public abstract class Watcher<T extends KubernetesObject> {
           ConcurrentMap<String, KubernetesObject> resources
               = (ConcurrentMap<String, KubernetesObject>) cache.lookupByType(cz);
           if (resources != null) {
-            resources.compute(res.getMetadata().getName(), (k, v) -> isFirstNewer(res, v) ? res : v);
+            resources.compute(cache.selectKey(res), (k, v) -> isFirstNewer(res, v) ? res : v);
           }
         }
         break;
@@ -289,7 +288,7 @@ public abstract class Watcher<T extends KubernetesObject> {
           ConcurrentMap<String, KubernetesObject> resources
                   = (ConcurrentMap<String, KubernetesObject>) cache.lookupByType(cz);
           if (resources != null) {
-            resources.remove(res.getMetadata().getName());
+            resources.remove(cache.selectKey(res));
           }
         }
         break;

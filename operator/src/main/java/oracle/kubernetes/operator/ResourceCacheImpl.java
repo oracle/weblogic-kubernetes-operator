@@ -39,27 +39,27 @@ public class ResourceCacheImpl implements ResourceCache {
       Function<ResourceCacheImpl, ConcurrentMap<String, ?>>> RESOURCE_LIST_MAP = new HashMap<>();
 
   static {
-    RESOURCE_MAP.put(DomainResource.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(ClusterResource.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(V1Pod.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(V1Service.class, ResourceCache::getConfigMapResources);
+    RESOURCE_MAP.put(DomainResource.class, ResourceCache::getDomainResources);
+    RESOURCE_MAP.put(ClusterResource.class, ResourceCache::getClusterResources);
+    RESOURCE_MAP.put(V1Pod.class, ResourceCache::getPodResources);
+    RESOURCE_MAP.put(V1Service.class, ResourceCache::getServiceResources);
     RESOURCE_MAP.put(V1ConfigMap.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(V1Secret.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(V1Job.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(V1PersistentVolume.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(V1PersistentVolumeClaim.class, ResourceCache::getConfigMapResources);
-    RESOURCE_MAP.put(V1PodDisruptionBudget.class, ResourceCache::getConfigMapResources);
+    RESOURCE_MAP.put(V1Secret.class, ResourceCache::getSecretResources);
+    RESOURCE_MAP.put(V1Job.class, ResourceCache::getJobResources);
+    RESOURCE_MAP.put(V1PersistentVolume.class, ResourceCache::getPersistentVolumeResources);
+    RESOURCE_MAP.put(V1PersistentVolumeClaim.class, ResourceCache::getPersistentVolumeClaimResources);
+    RESOURCE_MAP.put(V1PodDisruptionBudget.class, ResourceCache::getPodDistributionBudgetResources);
 
-    RESOURCE_LIST_MAP.put(DomainList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(ClusterList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(V1PodList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(V1ServiceList.class, ResourceCache::getConfigMapResources);
+    RESOURCE_LIST_MAP.put(DomainList.class, ResourceCache::getDomainResources);
+    RESOURCE_LIST_MAP.put(ClusterList.class, ResourceCache::getClusterResources);
+    RESOURCE_LIST_MAP.put(V1PodList.class, ResourceCache::getPodResources);
+    RESOURCE_LIST_MAP.put(V1ServiceList.class, ResourceCache::getServiceResources);
     RESOURCE_LIST_MAP.put(V1ConfigMapList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(V1SecretList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(V1JobList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(V1PersistentVolumeList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(V1PersistentVolumeClaimList.class, ResourceCache::getConfigMapResources);
-    RESOURCE_LIST_MAP.put(V1PodDisruptionBudgetList.class, ResourceCache::getConfigMapResources);
+    RESOURCE_LIST_MAP.put(V1SecretList.class, ResourceCache::getSecretResources);
+    RESOURCE_LIST_MAP.put(V1JobList.class, ResourceCache::getJobResources);
+    RESOURCE_LIST_MAP.put(V1PersistentVolumeList.class, ResourceCache::getPersistentVolumeResources);
+    RESOURCE_LIST_MAP.put(V1PersistentVolumeClaimList.class, ResourceCache::getPersistentVolumeClaimResources);
+    RESOURCE_LIST_MAP.put(V1PodDisruptionBudgetList.class, ResourceCache::getPodDistributionBudgetResources);
   }
 
   /**
@@ -113,6 +113,14 @@ public class ResourceCacheImpl implements ResourceCache {
 
   ResourceCacheImpl(String namespace) {
     this.namespace = namespace;
+  }
+
+  @Override
+  public String selectKey(KubernetesObject resource) {
+    if (resource instanceof DomainResource domainResource) {
+      return domainResource.getDomainUid();
+    }
+    return resource.getMetadata().getName();
   }
 
   @Override
