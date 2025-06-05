@@ -128,11 +128,12 @@ class ItServerStartPolicyConfigCluster {
     checkPodReadyAndServiceExists(configServerPodName, domainUid, domainNamespace);
 
     try {
-      Thread.sleep(240000);
+      Thread.sleep(120000);
+      //Thread.sleep(240000);
     } catch (Exception ex) {
       //
     }
-    
+
     boolean isServerConfigured = 
          checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
     assertTrue(isServerConfigured, 
