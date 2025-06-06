@@ -97,7 +97,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")
-@Tag("okd-wls-mrg")
 class ItReadOnlyRootFS {
 
   private static String opNamespace;
