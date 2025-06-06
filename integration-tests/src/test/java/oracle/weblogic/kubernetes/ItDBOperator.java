@@ -111,6 +111,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-weekly-sequential")
 @Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItDBOperator {
 
   private static String dbNamespace = null;
