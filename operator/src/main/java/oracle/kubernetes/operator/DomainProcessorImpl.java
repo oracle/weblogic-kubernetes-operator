@@ -106,16 +106,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @SuppressWarnings("FieldMayBeFinal")
   private static Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
 
-  // Map namespace to map of domainUID to Domain; tests may replace this value.
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
-
   // map namespace to map of uid to processing.
   @SuppressWarnings("FieldMayBeFinal")
   private static Map<String, Map<String, Cancellable>> statusUpdaters = new ConcurrentHashMap<>();
-
-  // List of clusters in a namespace.
-  private static final Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
 
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
@@ -142,53 +135,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
-    return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
-  }
-
-  private DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
-    return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
-  }
-
-  private static ClusterPresenceInfo getExistingClusterPresenceInfo(String ns, String clusterName) {
-    return clusters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(clusterName);
-  }
-
-  private static ClusterPresenceInfo getExistingClusterPresenceInfo(ClusterPresenceInfo newPresence) {
-    return getExistingClusterPresenceInfo(newPresence.getNamespace(), newPresence.getResourceName());
-  }
-
-  @Override
-  public Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
-    return domains;
-  }
-
-  @Override
-  public Map<String,DomainPresenceInfo>  getDomainPresenceInfoMapForNS(String namespace) {
-    return domains.get(namespace);
-  }
-
-  @Override
-  public Map<String, Map<String,ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
-    return clusters;
-  }
-
-  @Override
   public Map<String, FiberGate> getMakeRightFiberGateMap() {
     return makeRightFiberGates;
   }
 
-  @Override
-  public List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
-    List<DomainPresenceInfo> referencingDomains = new ArrayList<>();
-    Optional.ofNullable(domains.get(ns)).ifPresent(d -> d.values().stream()
-        .filter(info -> info.doesReferenceCluster(cluster)).forEach(referencingDomains::add));
-    return referencingDomains;
-  }
-
   static void cleanupNamespace(String namespace) {
     clusterEventK8SObjects.remove(namespace);
-    domains.remove(namespace);
     domainEventK8SObjects.remove(namespace);
     namespaceEventK8SObjects.remove(namespace);
     statusUpdaters.remove((namespace));
@@ -290,17 +242,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void processServerEvent(CoreV1Event event) {
-    String[] domainAndServer = Objects.requireNonNull(event.getInvolvedObject().getName()).split("-");
-    String domainUid = domainAndServer[0];
-    String serverName = domainAndServer[1];
-    String status = getReadinessStatus(event);
-    if (status == null) {
-      return;
-    }
-
-    Optional.ofNullable(domains.get(event.getMetadata().getNamespace()))
-          .map(m -> m.get(domainUid))
-          .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
+    // no-op
   }
 
   /**
@@ -340,13 +282,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static String getReadinessStatus(CoreV1Event event) {
-    return Optional.ofNullable(event.getMessage())
-          .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
-          .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
-          .orElse(null);
-  }
-
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   public static Step bringAdminServerUp(DomainPresenceInfo info) {
@@ -383,6 +318,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
+    // HERE, FIXME: there won't be a difference between cached and live info
     final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
     if (isNewDomain(cachedInfo)) {
       return true;
@@ -396,7 +332,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         || liveInfo.isDomainGenerationChanged(cachedInfo)) {
       return true;
     } else {
-      cachedInfo.setDomain(liveInfo.getDomain());
       return false;
     }
   }
@@ -934,7 +869,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @NotNull
   private ClusterPresenceInfo createInfoForClusterEventOnly(ClusterResource cluster) {
-    return new ClusterPresenceInfo(cluster);
+    return new ClusterPresenceInfo(delegate.getResourceCache(), cluster);
   }
 
   /**
@@ -961,7 +896,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleAddedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    DomainPresenceInfo info = new DomainPresenceInfo(delegate.getResourceCache(), domain);
     Optional.ofNullable(domain.getSpec()).map(DomainSpec::getClusters).ifPresent(list -> list.forEach(clusterName -> {
       ClusterPresenceInfo c = getExistingClusterPresenceInfo(domain.getNamespace(), clusterName.getName());
       if (c != null) {
@@ -980,7 +915,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return;
     }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain))
+    createMakeRightOperation(new DomainPresenceInfo(delegate.getResourceCache(), domain))
         .interrupt()
         .withEventData(new EventData(DOMAIN_CHANGED))
         .execute();
@@ -988,7 +923,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
+    createMakeRightOperation(new DomainPresenceInfo(delegate.getResourceCache(), domain))
+        .interrupt().forDeletion().withExplicitRecheck()
         .withEventData(new EventData(EventItem.DOMAIN_DELETED))
         .execute();
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,21 +8,22 @@ import java.util.Optional;
 
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.NamespacedResourceCache;
 
 /**
  * Base class for DomainPresenceInfo and ClusterPresenceInfo.
  */
 public abstract class ResourcePresenceInfo {
 
-  final String namespace;
+  final NamespacedResourceCache resourceCache;
 
   /**
    * Create presence for a domain or cluster.
-   * @param namespace Namespace
+   * @param resourceCache Resource cache
    *
    */
-  protected ResourcePresenceInfo(String namespace) {
-    this.namespace = namespace;
+  protected ResourcePresenceInfo(NamespacedResourceCache resourceCache) {
+    this.resourceCache = resourceCache;
   }
 
   /**
@@ -31,7 +32,7 @@ public abstract class ResourcePresenceInfo {
    * @return Namespace
    */
   public String getNamespace() {
-    return namespace;
+    return resourceCache.getNamespace();
   }
 
   public abstract String getResourceName();
@@ -44,7 +45,7 @@ public abstract class ResourcePresenceInfo {
   public String toString() {
     return "ResourcePresenceInfo{"
         + ", namespace="
-        + namespace
+        + getNamespace()
         + ", resourceName="
         + getResourceName()
         + "}";

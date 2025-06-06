@@ -39,6 +39,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
 
 /**
  * Operations for dealing with namespaces.
@@ -116,7 +117,6 @@ public class PodDisruptionBudgetHelper {
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<V1PodDisruptionBudget> callResponse) {
         logPodDisruptionBudgetCreated(messageKey);
-        addPodDisruptionBudgetToRecord(callResponse.getObject());
         return doNext(packet);
       }
     }
@@ -131,17 +131,6 @@ public class PodDisruptionBudgetHelper {
         return callResponse.getHttpStatusCode() == HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : onFailure(getConflictStep(), packet, callResponse);
-      }
-
-      @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<V1PodDisruptionBudget> callResponse) {
-        V1PodDisruptionBudget podDisruptionBudget = callResponse.getObject();
-        if (podDisruptionBudget == null) {
-          removePodDisruptionBudgetFromRecord();
-        } else {
-          addPodDisruptionBudgetToRecord(callResponse.getObject());
-        }
-        return doNext(packet);
       }
     }
 
@@ -220,7 +209,7 @@ public class PodDisruptionBudgetHelper {
     }
 
     private String getPDBName() {
-      return getDomainUid() + "-" + clusterName;
+      return toDns1123LegalName(getDomainUid() + "-" + clusterName);
     }
 
     private V1Patch createPodDisruptionBudgetPatch(String clusterName, DomainPresenceInfo info) {
@@ -282,14 +271,6 @@ public class PodDisruptionBudgetHelper {
       return info.getPodDisruptionBudget(clusterName);
     }
 
-    protected void addPodDisruptionBudgetToRecord(@Nonnull V1PodDisruptionBudget pdb) {
-      info.setPodDisruptionBudget(clusterName, pdb);
-    }
-
-    protected void removePodDisruptionBudgetFromRecord() {
-      info.removePodDisruptionBudget(clusterName);
-    }
-
     protected void logPodDisruptionBudgetCreated(String messageKey) {
       LOGGER.info(messageKey, getDomainUid(), clusterName);
     }
@@ -330,31 +311,6 @@ public class PodDisruptionBudgetHelper {
    */
   public static String getClusterName(V1PodDisruptionBudget pdb) {
     return getLabelValue(pdb);
-  }
-
-  /**
-   * Update PodDisruptionBudget in domain presence info from the event.
-   *
-   * @param presenceInfo the domain presence info
-   * @param event        the event associated with pod disruption budget
-   */
-  public static void updatePDBFromEvent(DomainPresenceInfo presenceInfo, V1PodDisruptionBudget event) {
-    presenceInfo.setPodDisruptionBudgetFromEvent(getClusterName(event), event);
-  }
-
-  public static void addToPresence(DomainPresenceInfo presenceInfo, V1PodDisruptionBudget pdb) {
-    Optional.ofNullable(presenceInfo).ifPresent(i -> i.setPodDisruptionBudget(getClusterName(pdb), pdb));
-  }
-
-  /**
-   * Delete PodDisruptionBudget in domain presence info from the event.
-   *
-   * @param presenceInfo the domain presence info
-   * @param event        the event associated with pod disruption budget
-   * @return true if the pod disruption budget was actually removed
-   */
-  public static boolean deleteFromEvent(DomainPresenceInfo presenceInfo, V1PodDisruptionBudget event) {
-    return presenceInfo.deletePodDisruptionBudgetFromEvent(getClusterName(event), event);
   }
 
   private static String getLabelValue(V1PodDisruptionBudget podDisruptionBudget) {

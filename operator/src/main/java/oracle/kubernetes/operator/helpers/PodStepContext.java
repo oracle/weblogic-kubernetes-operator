@@ -63,7 +63,6 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -399,10 +398,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   // ----------------------- step methods ------------------------------
-
-  private void setRecordedPod(V1Pod pod) {
-    info.setServerPod(getServerName(), pod);
-  }
 
   /**
    * Reads the specified pod and decides whether it must be created or replaced.
@@ -1514,12 +1509,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
       logPodCreated();
-      V1Pod pod = callResponse.getObject();
-      if (pod != null) {
-        info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
-        setRecordedPod(pod);
-      }
-
       return doNext(packet);
     }
 
@@ -1582,9 +1571,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     protected V1Pod processResponse(KubernetesApiResponse<V1Pod> callResponse) {
       V1Pod newPod = callResponse.getObject();
       logPodChanged();
-      if (newPod != null) {
-        setRecordedPod(newPod);
-      }
       return newPod;
     }
   }

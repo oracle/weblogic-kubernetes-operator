@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
@@ -403,7 +402,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private Step createDomainRefreshStep(CoreDelegate delegate, String domainName, String namespace) {
-      return delegate.getDomainBuilder().get(namespace, domainName, new DomainUpdateStep());
+      return delegate.getDomainBuilder().get(namespace, domainName, new DefaultResponseStep<>(getNext()));
     }
 
     private boolean shouldRetry(Packet packet) {
@@ -434,17 +433,6 @@ public class ShutdownManagedServerStep extends Step {
 
     void setHttpAsyncRequestStep(HttpRequestStep requestStep) {
       this.requestStep = requestStep;
-    }
-  }
-
-  static class DomainUpdateStep extends DefaultResponseStep<DomainResource> {
-    @Override
-    public Result onSuccess(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
-      if (callResponse.getObject() != null) {
-        DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-        info.setDomain(callResponse.getObject());
-      }
-      return doNext(packet);
     }
   }
 }

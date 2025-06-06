@@ -157,7 +157,7 @@ public class PodHelper {
     return Optional.ofNullable(getServerName(pod)).map(s -> !s.equals(adminServerName)).orElse(true);
   }
 
-  static String getServerName(@Nullable V1Pod pod) {
+  public static String getServerName(@Nullable V1Pod pod) {
     return Optional.ofNullable(pod)
             .map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getLabels)
@@ -440,9 +440,6 @@ public class PodHelper {
 
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
-      DomainPresenceInfo info = (DomainPresenceInfo)  packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-      V1Pod pod = callResponse.getObject();
-      info.setServerPod(getPodServerName(pod), pod);
       return doNext(packet);
     }
 
@@ -969,11 +966,6 @@ public class PodHelper {
           .orElse(Shutdown.DEFAULT_TIMEOUT);
     }
 
-    private String getServerStateFromInfo(DomainPresenceInfo info, String serverName) {
-      return Optional.ofNullable(info.getLastKnownServerStatus(serverName))
-          .map(LastKnownStatus::getStatus).orElse(getServerState(info.getDomain(), serverName));
-    }
-
     // We add a 10-second fudge factor here to account for the fact that WLST takes
     // ~6 seconds to start, so along with any other delay in connecting and issuing
     // the shutdown, the actual server instance has the full configured timeout to
@@ -1001,14 +993,10 @@ public class PodHelper {
 
       DeleteOptions deleteOptions = (DeleteOptions) new DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       return delegate.getPodBuilder().delete(namespace, name, deleteOptions,
-              new DefaultResponseStep<V1Pod>(conflictStep, next) {
+              new DefaultResponseStep<>(conflictStep, next) {
           @Override
           public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
-            DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-            if (callResponse.getHttpStatusCode() == HTTP_NOT_FOUND) {
-              info.setServerPod(serverName, null);
-            } else if (isMustWait) {
-              info.setServerPod(serverName, callResponse.getObject());
+            if (isMustWait) {
               // requeue to wait for pod to be deleted and gone
               return doRequeue();
             }

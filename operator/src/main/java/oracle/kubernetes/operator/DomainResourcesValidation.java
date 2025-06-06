@@ -101,8 +101,6 @@ class DomainResourcesValidation {
         DomainProcessor dp = Optional.ofNullable((DomainProcessor)
             packet.get(ProcessingConstants.DOMAIN_PROCESSOR)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
-        Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
-            .forEach(info -> adjustClusterResources(c, info)));
         executeMakeRightForClusterEvents(dp);
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
         getDomainPresenceInfoMap().values().forEach(DomainResourcesValidation.this::removeDeletedPodsFromDPI);
@@ -124,16 +122,6 @@ class DomainResourcesValidation {
   @NotNull
   private List<ClusterResource> getActiveClusterResources() {
     return Optional.ofNullable(activeClusterResources).map(ClusterList::getItems).orElse(new ArrayList<>());
-  }
-
-  private void adjustClusterResources(ClusterList clusters, DomainPresenceInfo info) {
-    List<ClusterResource> resources = clusters.getItems().stream()
-        .filter(c -> isForDomain(c, info)).toList();
-    info.adjustClusterResources(resources);
-  }
-
-  private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
-    return info.doesReferenceCluster(clusterResource.getMetadata().getName());
   }
 
   private void addPodList(V1PodList list) {
@@ -171,27 +159,12 @@ class DomainResourcesValidation {
     Optional.ofNullable(info).ifPresent(i -> i.setServerPodFromEvent(serverName, pod));
   }
 
-  private DomainPresenceInfo getOrComputeDomainPresenceInfo(String domainUid) {
-    return getDomainPresenceInfoMap().computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
-  }
-
-  private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap() {
-    return processor.getDomainPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
-  }
-
-  private Map<String, ClusterPresenceInfo> getClusterPresenceInfoMap() {
-    return processor.getClusterPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
-  }
-
   private void addServiceList(V1ServiceList list) {
     list.getItems().forEach(this::addService);
   }
 
   private void addService(V1Service service) {
-    String domainUid = ServiceHelper.getServiceDomainUid(service);
-    if (domainUid != null) {
-      ServiceHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), service);
-    }
+    // no-op
   }
 
   private void addPodDisruptionBudgetList(V1PodDisruptionBudgetList list) {
@@ -199,10 +172,7 @@ class DomainResourcesValidation {
   }
 
   private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
-    String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
-    if (domainUid != null) {
-      PodDisruptionBudgetHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), pdb);
-    }
+    // no-op
   }
 
   private void addDomainList(DomainList list) {

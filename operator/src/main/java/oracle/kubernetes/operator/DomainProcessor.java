@@ -3,10 +3,7 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -17,7 +14,6 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
-import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.work.FiberGate;
@@ -115,41 +111,9 @@ public interface DomainProcessor {
     // no-op
   }
 
-  /**
-   * Get the map of domain presence infos for a given namespace.
-   *
-   * @param namespace the namespace
-   * @return Map of cached domain presence infos.
-   */
-  default Map<String,DomainPresenceInfo> getDomainPresenceInfoMapForNS(String namespace) {
-    return new ConcurrentHashMap<>();
-  }
-
-  /**
-   * Get the map of domain presence infos.
-   * @return Map of cached domain presence infos.
-   */
-  default Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
-    return new ConcurrentHashMap<>();
-  }
-
-  /**
-   * Get the map of cluster presence infos.
-   * @return Map of cached cluster presence infos.
-   */
-  default Map<String, Map<String, ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
-    return new ConcurrentHashMap<>();
-  }
-
   Map<String, FiberGate> getMakeRightFiberGateMap();
-
-  DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
 
   void updateDomainStatus(V1Pod pod, DomainPresenceInfo info);
 
   void updateDomainStatus(V1PersistentVolumeClaim pvc, DomainPresenceInfo info);
-
-  default List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String namespace, String clusterName) {
-    return Collections.emptyList();
-  }
 }

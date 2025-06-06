@@ -36,7 +36,6 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PersistentVolumeClaimHelper;
 import oracle.kubernetes.operator.helpers.PersistentVolumeHelper;
-import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -246,10 +245,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<ClusterList> callResponse) {
-      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-      callResponse.getObject().getItems().stream().filter(c -> isForDomain(c, info))
-          .forEach(info::addClusterResource);
-
       return doContinueListOrNext(callResponse, packet);
     }
 
@@ -385,7 +380,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     private void updateCache(DomainPresenceInfo info, DomainResource domain) {
       info.setDeleting(isBeingDeleted(domain));
-      info.setDomain(domain);
     }
 
     private boolean isBeingDeleted(DomainResource domain) {
@@ -472,8 +466,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
 
         private void addPod(V1Pod pod) {
-          Optional.ofNullable(PodHelper.getPodServerName(pod))
-              .ifPresent(name -> info.setServerPodFromEvent(name, pod));
+          // no-op
         }
 
         @Override
@@ -491,14 +484,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
 
         private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
-          PodDisruptionBudgetHelper.addToPresence(info, pdb);
+          // no-op
         }
 
         @Override
         public void completeProcessing(Packet packet) {
-          info.getServerNames().stream().filter(
-              s -> !info.getServerNamesFromPodList().contains(s)).toList()
-              .forEach(name -> info.deleteServerPodFromEvent(name, null));
           info.clearServerPodNamesFromList();
         }
       };

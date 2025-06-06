@@ -370,16 +370,6 @@ public class ServiceHelper {
     protected V1Service getServiceFromRecord() {
       return info.getServerService(serverName);
     }
-
-    @Override
-    protected void addServiceToRecord(@Nonnull V1Service service) {
-      info.setServerService(serverName, service);
-    }
-
-    @Override
-    protected void removeServiceFromRecord() {
-      info.setServerService(serverName, null);
-    }
   }
 
   private abstract static class ServiceStepContext extends StepContextBase {
@@ -547,10 +537,6 @@ public class ServiceHelper {
 
     protected abstract V1Service getServiceFromRecord();
 
-    protected abstract void addServiceToRecord(V1Service service);
-
-    protected abstract void removeServiceFromRecord();
-
     private static boolean canUseCurrentService(V1Service model, V1Service current) {
       return AnnotationHelper.getHash(model).equals(AnnotationHelper.getHash(current));
     }
@@ -563,7 +549,6 @@ public class ServiceHelper {
         logServiceExists();
         return next;
       } else {
-        removeServiceFromRecord();
         return deleteAndReplaceService(delegate, next);
       }
     }
@@ -656,17 +641,6 @@ public class ServiceHelper {
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
-
-      @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
-        V1Service service = callResponse.getObject();
-        if (service == null) {
-          removeServiceFromRecord();
-        } else {
-          addServiceToRecord(service);
-        }
-        return doNext(packet);
-      }
     }
 
     private class DeleteServiceResponse extends ResponseStep<V1Service> {
@@ -708,13 +682,6 @@ public class ServiceHelper {
       private Result updateDomainStatus(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
         return doNext(createKubernetesFailureSteps(callResponse, createFailureMessage(callResponse)), packet);
       }
-
-      @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<V1Service> callResponse) {
-        logServiceCreated(messageKey);
-        addServiceToRecord(callResponse.getObject());
-        return doNext(packet);
-      }
     }
   }
 
@@ -734,7 +701,7 @@ public class ServiceHelper {
     }
 
     private Step createActionStep(CoreDelegate delegate, DomainPresenceInfo info) {
-      return Optional.ofNullable(info.removeServerService(serverName))
+      return Optional.ofNullable(info.getServerService(serverName))
             .map(V1Service::getMetadata)
             .map(m -> deleteService(delegate, m))
             .orElse(getNext());
@@ -819,16 +786,6 @@ public class ServiceHelper {
     }
 
     @Override
-    protected void addServiceToRecord(@Nonnull V1Service service) {
-      info.setClusterService(clusterName, service);
-    }
-
-    @Override
-    protected void removeServiceFromRecord() {
-      info.removeClusterService(clusterName);
-    }
-
-    @Override
     protected void logServiceCreated(String messageKey) {
       LOGGER.info(messageKey, getDomainUid(), clusterName);
     }
@@ -893,7 +850,6 @@ public class ServiceHelper {
       if (info.getDomain().isExternalServiceConfigured()) {
         return super.verifyService(delegate, next);
       } else {
-        removeServiceFromRecord();
         return deleteExternalService(delegate, next);
       }
     }
@@ -922,16 +878,6 @@ public class ServiceHelper {
     @Override
     protected V1Service getServiceFromRecord() {
       return info.getExternalService(adminServerName);
-    }
-
-    @Override
-    protected void addServiceToRecord(V1Service service) {
-      info.setExternalService(adminServerName, service);
-    }
-
-    @Override
-    protected void removeServiceFromRecord() {
-      info.setExternalService(adminServerName, null);
     }
 
     @Override

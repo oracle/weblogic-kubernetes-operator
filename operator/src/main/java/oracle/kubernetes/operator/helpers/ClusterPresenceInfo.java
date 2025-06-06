@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.MakeRightClusterOperation;
+import oracle.kubernetes.operator.NamespacedResourceCache;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 
 /**
@@ -19,10 +20,11 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
   /**
    * Create presence for a cluster resource.
    *
+   * @param resourceCache Resource cache
    * @param cluster the cluster resource that the to be created presence info contains
    */
-  public ClusterPresenceInfo(ClusterResource cluster) {
-    super(cluster.getNamespace());
+  public ClusterPresenceInfo(NamespacedResourceCache resourceCache, ClusterResource cluster) {
+    super(resourceCache);
     this.cluster = cluster;
   }
 

@@ -373,10 +373,6 @@ public class DomainStatusUpdater {
 
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
-      if (callResponse.getObject() != null) {
-        DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-        info.setDomain(callResponse.getObject());
-      }
       return doNext(createClusterResourceStatusUpdaterStep(getNext()), packet);
     }
 
@@ -395,25 +391,8 @@ public class DomainStatusUpdater {
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {
       CoreDelegate delegate = (CoreDelegate) context.packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
-      return delegate.getDomainBuilder().get(context.getNamespace(), context.getDomainName(), new DomainUpdateStep());
-    }
-  }
-
-  static class DomainUpdateStep extends ResponseStep<DomainResource> {
-    @Override
-    public Result onSuccess(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
-      if (callResponse.getObject() != null) {
-        DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-        info.setDomain(callResponse.getObject());
-      }
-      return doNext(packet);
-    }
-
-    @Override
-    public Result onFailure(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
-      return callResponse.getHttpStatusCode() == HTTP_NOT_FOUND
-          ? doNext(null, packet)
-          : super.onFailure(packet, callResponse);
+      return delegate.getDomainBuilder().get(
+          context.getNamespace(), context.getDomainName(), new DefaultResponseStep<>(getNext()));
     }
   }
 

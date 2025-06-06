@@ -7,7 +7,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +34,8 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
+import oracle.kubernetes.operator.NamespacedResourceCache;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
@@ -58,8 +57,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
-import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
+import static oracle.kubernetes.operator.helpers.LegalNames.*;
+import static oracle.kubernetes.operator.helpers.PodHelper.*;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -67,17 +66,12 @@ import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
  */
 public class DomainPresenceInfo extends ResourcePresenceInfo {
   private final String domainUid;
-  private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
+  private final ConcurrentMap<String, Integer> httpRequestFailureCountMap = new ConcurrentHashMap<>(); // FIXME
 
-  private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, ClusterResource> clusters = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1Service> clusterServices = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1PersistentVolumeClaim> persistentVolumeClaims = new ConcurrentHashMap<>();
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
   private OffsetDateTime webLogicCredentialsSecretLastSet;
@@ -90,11 +84,11 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   /**
    * Create presence for a domain.
    *
+   * @param resourceCache Resource cache
    * @param domain Domain
    */
-  public DomainPresenceInfo(DomainResource domain) {
-    super(domain.getMetadata().getNamespace());
-    this.domain = new AtomicReference<>(domain);
+  public DomainPresenceInfo(NamespacedResourceCache resourceCache, DomainResource domain) {
+    super(resourceCache);
     this.domainUid = domain.getDomainUid();
     this.serverStartupInfo = new AtomicReference<>(null);
     this.serverShutdownInfo = new AtomicReference<>(null);
@@ -103,12 +97,11 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   /**
    * Create presence for a domain.
    *
-   * @param namespace Namespace
+   * @param resourceCache Resource cache
    * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
    */
-  public DomainPresenceInfo(String namespace, String domainUid) {
-    super(namespace);
-    this.domain = new AtomicReference<>(null);
+  public DomainPresenceInfo(NamespacedResourceCache resourceCache, String domainUid) {
+    super(resourceCache);
     this.domainUid = domainUid;
     this.serverStartupInfo = new AtomicReference<>(null);
     this.serverShutdownInfo = new AtomicReference<>(null);
@@ -238,7 +231,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   }
 
   public ThreadLoggingContext setThreadContext() {
-    return ThreadLoggingContext.setThreadContext().namespace(namespace).domainUid(domainUid);
+    return ThreadLoggingContext.setThreadContext().namespace(getNamespace()).domainUid(domainUid);
   }
 
   /**
@@ -288,18 +281,12 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
   @Nonnull
   private Stream<V1Pod> getServersInNoOtherCluster(String clusterName) {
-    return getActiveServers().values().stream()
-            .map(ServerKubernetesObjects::getPod)
-            .map(AtomicReference::get)
-            .filter(this::isNotDeletingPod)
-            .filter(p -> hasClusterNameOrNull(p, clusterName));
+    return getServerPods().filter(this::isNotDeletingPod).filter(p -> hasClusterNameOrNull(p, clusterName));
   }
 
   @Nonnull
   private Stream<V1Pod> getManagedServersInNoOtherCluster(String clusterName, String adminServerName) {
-    return getActiveServers().values().stream()
-          .map(ServerKubernetesObjects::getPod)
-          .map(AtomicReference::get)
+    return getServerPods()
           .filter(this::isNotDeletingPod)
           .filter(p -> isNotAdminServer(p, adminServerName))
           .filter(p -> hasClusterNameOrNull(p, clusterName));
@@ -309,20 +296,8 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
-  public void setServerService(String serverName, V1Service service) {
-    getSko(serverName).getService().set(service);
-  }
-
-  private ServerKubernetesObjects getSko(String serverName) {
-    return servers.computeIfAbsent(serverName, (n -> new ServerKubernetesObjects()));
-  }
-
   public V1Service getServerService(String serverName) {
-    return getSko(serverName).getService().get();
-  }
-
-  V1Service removeServerService(String serverName) {
-    return getSko(serverName).getService().getAndSet(null);
+    return resourceCache.getServiceResources().get(toServerServiceName(getDomainUid(), serverName));
   }
 
   public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
@@ -338,23 +313,13 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   }
 
   /**
-   * Specifies the pod associated with an operator-managed server.
-   *
-   * @param serverName the name of the server
-   * @param pod the pod
-   */
-  public void setServerPod(String serverName, V1Pod pod) {
-    getSko(serverName).getPod().set(pod);
-  }
-
-  /**
    * Returns the pod associated with an operator-managed server.
    *
    * @param serverName the name of the server
    * @return the corresponding pod, or null if none exists
    */
   public V1Pod getServerPod(String serverName) {
-    return getPod(getSko(serverName));
+    return resourceCache.getPodResources().get(toPodName(getDomainUid(), serverName));
   }
 
   /**
@@ -363,7 +328,11 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @return a pod stream
    */
   public Stream<V1Pod> getServerPods() {
-    return getActiveServers().values().stream().map(this::getPod).filter(Objects::nonNull);
+    return resourceCache.getPodResources().values().stream().filter(this::isDomainPod);
+  }
+
+  private boolean isDomainPod(V1Pod pod) {
+    return getDomainUid().equals(getPodDomainUid(pod));
   }
 
   /**
@@ -372,23 +341,15 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @return a pod stream
    */
   public Stream<V1Pod> getServerPodsNotBeingDeleted() {
-    return getActiveServers().values().stream().filter(
-        sko -> !PodHelper.isPodAlreadyAnnotatedForShutdown(sko.getPod().get())).map(this::getPod)
-        .filter(Objects::nonNull);
-  }
-
-  private V1Pod getPod(ServerKubernetesObjects sko) {
-    return sko.getPod().get();
+    return getServerPods().filter(p -> !isPodAlreadyAnnotatedForShutdown(p));
   }
 
   public boolean isServerPodBeingDeleted(String serverName) {
-    return Optional.ofNullable(getSko(serverName)).map(ServerKubernetesObjects::getPod).map(AtomicReference::get)
-        .map(PodHelper::isPodAlreadyAnnotatedForShutdown).orElse(false);
+    return Optional.ofNullable(getServerPod(serverName)).map(PodHelper::isPodAlreadyAnnotatedForShutdown).orElse(false);
   }
 
   public boolean isServerPodDeleted(String serverName) {
-    return Optional.ofNullable(getSko(serverName)).map(ServerKubernetesObjects::getPod).map(AtomicReference::get)
-        .map(PodHelper::isDeleting).orElse(false);
+    return Optional.ofNullable(getServerPod(serverName)).map(PodHelper::isDeleting).orElse(false);
   }
 
   /**
@@ -401,7 +362,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @return HTTP request failure count for the given server.
    */
   public int getHttpRequestFailureCount(String serverName) {
-    return getSko(serverName).getHttpRequestFailureCount().get();
+    return httpRequestFailureCountMap.getOrDefault(serverName, 0);
   }
 
   /**
@@ -411,7 +372,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param failureCount the failure count
    */
   public void setHttpRequestFailureCount(String serverName, int failureCount) {
-    getSko(serverName).getHttpRequestFailureCount().set(failureCount);
+    httpRequestFailureCountMap.put(serverName, failureCount);
   }
 
   /**
@@ -420,245 +381,23 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param serverName the name of the server
    */
   public void incrementHttpRequestFailureCount(String serverName) {
-    getSko(serverName).getHttpRequestFailureCount().getAndIncrement();
+    httpRequestFailureCountMap.compute(serverName, (k, v) -> v == null ? 1 : v + 1);
   }
 
   /**
    * Returns a collection of the names of the active servers.
    */
   public Collection<String> getServerNames() {
-    return getActiveServers().keySet();
-  }
-
-  private boolean hasDefinedServer(Map.Entry<String, ServerKubernetesObjects> e) {
-    return e.getValue().getPod().get() != null;
-  }
-
-  /**
-   * Applies an add or modify event for a server pod. If the current pod is newer than the one
-   * associated with the event, ignores the event.
-   *
-   * @param serverName the name of the server associated with the event
-   * @param event the pod associated with the event
-   */
-  public void setServerPodFromEvent(String serverName, V1Pod event) {
-    updateStatus(serverName, event);
-    getSko(serverName).getPod().accumulateAndGet(event, this::getNewerPod);
-  }
-
-  /**
-   * Applies an add or modify event for a server pod. If the current pod is newer than the one
-   * associated with the event, ignores the event.
-   *
-   * @param serverName the name of the server associated with the event
-   * @param event the pod associated with the event
-   * @param podPredicate predicate to be applied to the original pod
-   * @return boolean result from applying the original pod to the podFunction provided
-   */
-  public boolean setServerPodFromEvent(String serverName, V1Pod event, @Nonnull Predicate<V1Pod> podPredicate) {
-    updateStatus(serverName, event);
-    return podPredicate.test(getSko(serverName).getPod().getAndAccumulate(event, this::getNewerPod));
-  }
-
-  private void updateStatus(String serverName, V1Pod event) {
-    getSko(serverName)
-        .getLastKnownStatus()
-        .getAndUpdate(
-            lastKnownStatus -> {
-              LastKnownStatus updatedStatus = lastKnownStatus;
-              if (PodHelper.isReady(event)) {
-                if (lastKnownStatus == null
-                    || !WebLogicConstants.RUNNING_STATE.equals(lastKnownStatus.getStatus())) {
-                  updatedStatus = new LastKnownStatus(WebLogicConstants.RUNNING_STATE);
-                }
-              } else {
-                if (lastKnownStatus != null
-                    && WebLogicConstants.RUNNING_STATE.equals(lastKnownStatus.getStatus())) {
-                  updatedStatus = null;
-                }
-              }
-              return updatedStatus;
-            });
-  }
-
-  private V1Pod getNewerPod(V1Pod first, V1Pod second) {
-    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
-  }
-
-  private V1ObjectMeta getMetadata(V1Pod pod) {
-    return pod == null ? null : pod.getMetadata();
-  }
-
-  private V1ObjectMeta getMetadata(V1Service service) {
-    return service == null ? null : service.getMetadata();
-  }
-
-  private V1ObjectMeta getMetadata(V1PodDisruptionBudget pdb) {
-    return pdb == null ? null : pdb.getMetadata();
-  }
-
-  /**
-   * Handles a delete event. If the cached pod is newer than the one associated with the event, ignores the attempt
-   * as out-of-date and returns false; otherwise deletes the pod and returns true.
-   *
-   * @param serverName the server name associated with the pod
-   * @param event the pod associated with the delete event
-   * @return true if the pod was deleted from the cache.
-   */
-  public boolean deleteServerPodFromEvent(String serverName, V1Pod event) {
-    if (serverName == null) {
-      return false;
-    }
-    ServerKubernetesObjects sko = getSko(serverName);
-    V1Pod deletedPod = sko.getPod().getAndAccumulate(event, this::getNewerCurrentOrNull);
-    if (deletedPod != null) {
-      sko.getLastKnownStatus().set(new LastKnownStatus(WebLogicConstants.SHUTDOWN_STATE));
-    }
-    return deletedPod != null;
-  }
-
-  private V1Pod getNewerCurrentOrNull(V1Pod pod, V1Pod event) {
-    return KubernetesUtils.isFirstNewer(getMetadata(pod), getMetadata(event)) ? pod : null;
-  }
-
-  /**
-   * Computes the result of a delete attempt. If the current service is newer than the one
-   * associated with the delete event, returns it; otherwise returns null, thus deleting the value.
-   *
-   * @param service the current service
-   * @param event the service associated with the delete event
-   * @return the new value for the service.
-   */
-  private V1Service getNewerCurrentOrNull(V1Service service, V1Service event) {
-    return KubernetesUtils.isFirstNewer(getMetadata(service), getMetadata(event)) ? service : null;
-  }
-
-  /**
-   * Returns the last status reported for the specified server.
-   *
-   * @param serverName the name of the server
-   * @return the corresponding reported status
-   */
-  public LastKnownStatus getLastKnownServerStatus(String serverName) {
-    return getSko(serverName).getLastKnownStatus().get();
-  }
-
-  /**
-   * Updates the last status reported for the specified server.
-   *
-   * @param serverName the name of the server
-   * @param status the new status
-   */
-  public void updateLastKnownServerStatus(String serverName, String status) {
-    getSko(serverName)
-        .getLastKnownStatus()
-        .getAndUpdate(
-            lastKnownStatus -> {
-              LastKnownStatus updatedStatus = null;
-              if (status != null) {
-                updatedStatus =
-                    (lastKnownStatus != null && status.equals(lastKnownStatus.getStatus()))
-                        ? new LastKnownStatus(status, lastKnownStatus.getUnchangedCount() + 1)
-                        : new LastKnownStatus(status);
-              }
-              return updatedStatus;
-            });
-  }
-
-  /**
-   * Applies an add or modify event for a server service. If the current service is newer than the
-   * one associated with the event, ignores the event.
-   *
-   * @param serverName the name of the server associated with the event
-   * @param event the service associated with the event
-   */
-  void setServerServiceFromEvent(String serverName, V1Service event) {
-    getSko(serverName).getService().accumulateAndGet(event, this::getNewerService);
-  }
-
-  /**
-   * Given the service associated with a server service-deleted event, removes the service if it is
-   * not older than the one recorded.
-   *
-   * @param serverName the name of the associated server
-   * @param event the service associated with the event
-   * @return true if the service was actually removed
-   */
-  boolean deleteServerServiceFromEvent(String serverName, V1Service event) {
-    if (serverName == null) {
-      return false;
-    }
-    V1Service deletedService =
-        getSko(serverName).getService().getAndAccumulate(event, this::getNewerCurrentOrNull);
-    return deletedService != null;
-  }
-
-  void removeClusterService(String clusterName) {
-    clusterServices.remove(clusterName);
+    return getServerPods().map(PodHelper::getServerName).toList();
   }
 
   public V1Service getClusterService(String clusterName) {
-    return clusterServices.get(clusterName);
-  }
-
-  void setClusterService(String clusterName, V1Service service) {
-    clusterServices.put(clusterName, service);
-  }
-
-  void setPodDisruptionBudget(String clusterName, V1PodDisruptionBudget pdb) {
-    podDisruptionBudgets.put(clusterName, pdb);
+    return resourceCache.getServiceResources().get(toClusterServiceName(getDomainUid(), clusterName));
   }
 
   public V1PodDisruptionBudget getPodDisruptionBudget(String clusterName) {
-    return podDisruptionBudgets.get(clusterName);
-  }
-
-  void removePodDisruptionBudget(String clusterName) {
-    podDisruptionBudgets.remove(clusterName);
-  }
-
-  /**
-   * Applies an add or modify event for a pod disruption budget. If the current pod disruption budget is newer than the
-   * one associated with the event, ignores the event.
-   *
-   * @param clusterName the name of the cluster associated with the event
-   * @param event the pod disruption budget associated with the event
-   */
-  void setPodDisruptionBudgetFromEvent(String clusterName, V1PodDisruptionBudget event) {
-    if (clusterName == null) {
-      return;
-    }
-    podDisruptionBudgets.compute(clusterName, (k, s) -> getNewerPDB(s, event));
-  }
-
-  /**
-   * Given the pod disruption budget associated with a cluster pdb-deleted event, removes the pod disruption budget if
-   * it is not older than the one recorded.
-   *
-   * @param clusterName the name of the associated cluster
-   * @param event the pod disruption budget associated with the event
-   * @return true if the pod disruption budget was actually removed
-   */
-  boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1PodDisruptionBudget event) {
-    return removeIfPresentAnd(
-            podDisruptionBudgets,
-            clusterName,
-            s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
-  }
-
-  void setClusterServiceFromEvent(String clusterName, V1Service event) {
-    if (clusterName == null) {
-      return;
-    }
-
-    clusterServices.compute(clusterName, (k, s) -> getNewerService(s, event));
-  }
-
-  boolean deleteClusterServiceFromEvent(String clusterName, V1Service event) {
-    return removeIfPresentAnd(
-        clusterServices,
-        clusterName,
-        s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
+    return resourceCache.getPodDistributionBudgetResources().get(
+        toDns1123LegalName(getDomainUid() + "-" + clusterName));
   }
 
   /**
@@ -701,35 +440,8 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     }
   }
 
-  private V1Service getNewerService(V1Service first, V1Service second) {
-    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
-  }
-
-  private V1PodDisruptionBudget getNewerPDB(V1PodDisruptionBudget first, V1PodDisruptionBudget second) {
-    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
-  }
-
   public V1Service getExternalService(String serverName) {
     return getSko(serverName).getExternalService().get();
-  }
-
-  public void setExternalService(String serverName, V1Service service) {
-    getSko(serverName).getExternalService().set(service);
-  }
-
-  void setExternalServiceFromEvent(String serverName, V1Service event) {
-    getSko(serverName).getExternalService().accumulateAndGet(event, this::getNewerService);
-  }
-
-  boolean deleteExternalServiceFromEvent(String serverName, V1Service event) {
-    if (serverName == null) {
-      return false;
-    }
-    V1Service deletedService =
-        getSko(serverName)
-            .getExternalService()
-            .getAndAccumulate(event, this::getNewerCurrentOrNull);
-    return deletedService != null;
   }
 
   public boolean isNotDeleting() {
@@ -754,16 +466,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @return Domain
    */
   public DomainResource getDomain() {
-    return domain.get();
-  }
-
-  /**
-   * Sets the domain.
-   *
-   * @param domain Domain
-   */
-  public void setDomain(DomainResource domain) {
-    this.domain.set(domain);
+    return resourceCache.getDomainResources().get(domainUid);
   }
 
   /**
@@ -787,30 +490,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   @Override
   public String getResourceName() {
     return getDomainUid();
-  }
-
-  // Returns a map of the active servers (those with a known running pod).
-  private Map<String, ServerKubernetesObjects> getActiveServers() {
-    return servers.entrySet().stream()
-          .filter(this::hasDefinedServer)
-          .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-
-  }
-
-  /**
-   * Returns a list of server names whose pods are defined and match the specified criteria.
-   * @param criteria a function that returns true for the desired pods.
-   */
-  public List<String> getSelectedActiveServerNames(Predicate<V1Pod> criteria) {
-    return servers.entrySet().stream()
-          .filter(e -> hasMatchingServer(e, criteria))
-          .map(Map.Entry::getKey)
-          .toList();
-  }
-
-  private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Predicate<V1Pod> criteria) {
-    final V1Pod pod = e.getValue().getPod().get();
-    return pod != null && criteria.test(pod);
   }
 
   /**
@@ -877,7 +556,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
               "uid=%s, namespace=%s",
               getDomain().getDomainUid(), getDomain().getMetadata().getNamespace()));
     } else {
-      sb.append(", namespace=").append(namespace);
+      sb.append(", namespace=").append(getNamespace());
     }
     sb.append("}");
 
@@ -956,10 +635,9 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @return Cluster resource, if found
    */
   public ClusterResource getClusterResource(String clusterName) {
-    if (clusterName != null) {
-      return clusters.get(clusterName);
-    }
-    return null;
+    ConcurrentMap<String, ClusterResource> clusters = resourceCache.getClusterResources();
+    return clusters.values().stream()
+        .filter(cluster -> clusterName.equals(cluster.getMetadata().getName())).findFirst().orElse(null);
   }
 
   public boolean doesReferenceCluster(String cluster) {
@@ -973,43 +651,14 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
 
   public List<ClusterResource> getReferencedClusters() {
-    return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList())
-        .stream().map(this::findCluster).filter(Objects::nonNull).toList();
+    return Optional.ofNullable(getDomain()).map(DomainResource::getSpec).map(DomainSpec::getClusters)
+            .orElse(Collections.emptyList()).stream().map(this::findCluster).filter(Objects::nonNull).toList();
   }
 
   private ClusterResource findCluster(V1LocalObjectReference reference) {
-    return Optional.ofNullable(reference.getName())
-        .flatMap(name -> clusters.values().stream().filter(cluster -> name.equals(cluster.getMetadata().getName()))
-            .findFirst()).orElse(null);
-  }
-
-  /**
-   * Add a ClusterResource resource.
-   * @param clusterResource ClusterResource object.
-   */
-  public void addClusterResource(ClusterResource clusterResource) {
-    Optional.ofNullable(clusterResource)
-        .map(ClusterResource::getClusterName)
-        .ifPresent(name -> clusters.put(name, clusterResource));
-  }
-
-  /**
-   * Remove a named cluster resource.
-   * @param clusterName the name of the resource to remove.
-   */
-  public ClusterResource removeClusterResource(String clusterName) {
-    return Optional.ofNullable(clusterName).map(clusters::remove).orElse(null);
-  }
-
-  /**
-   * Updates cluster references.
-   * @param resources list of cluster resources.
-   */
-  public void adjustClusterResources(Collection<ClusterResource> resources) {
-    Map<String, ClusterResource> updated = new HashMap<>();
-    resources.forEach(cr -> updated.put(cr.getClusterName(), cr));
-    clusters.keySet().retainAll(updated.keySet());
-    clusters.putAll(updated);
+    ConcurrentMap<String, ClusterResource> clusters = resourceCache.getClusterResources();
+    return Optional.ofNullable(reference.getName()).flatMap(name -> clusters.values().stream()
+        .filter(cluster -> name.equals(cluster.getMetadata().getName())).findFirst()).orElse(null);
   }
 
   /**
@@ -1019,27 +668,8 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList());
   }
 
-  /**
-   * Add a PersistentVolumeClaim resource.
-   * @param pvc PersistentVolumeClaim object.
-   */
-  public void addPersistentVolumeClaim(V1PersistentVolumeClaim pvc) {
-    Optional.ofNullable(pvc)
-        .map(V1PersistentVolumeClaim::getMetadata)
-        .map(V1ObjectMeta::getName)
-        .ifPresent(name -> persistentVolumeClaims.put(name, pvc));
-  }
-
-  /**
-   * Remove a named PersistentVolumeClaim resource.
-   * @param pvcName the name of the resource to remove.
-   */
-  public V1PersistentVolumeClaim removePersistentVolumeClaim(String pvcName) {
-    return Optional.ofNullable(pvcName).map(persistentVolumeClaims::remove).orElse(null);
-  }
-
   public V1PersistentVolumeClaim getPersistentVolumeClaim(String pvcName) {
-    return Optional.ofNullable(pvcName).map(persistentVolumeClaims::get).orElse(null);
+    return resourceCache.getPersistentVolumeClaimResources().get(pvcName);
   }
 
   /**
@@ -1115,10 +745,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   public int getMaxConcurrentShutdown(@Nonnull String clusterName) {
     ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
     return getDomainApi().getMaxConcurrentShutdown(clusterSpec);
-  }
-
-  public Collection<ClusterResource> getClusterResources() {
-    return clusters.values();
   }
 
   public boolean hasRetryableFailure() {
