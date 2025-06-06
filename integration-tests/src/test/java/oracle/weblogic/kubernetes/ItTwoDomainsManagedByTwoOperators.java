@@ -110,6 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("oke-weekly-sequential")
 @Tag("oke-arm")
+@Tag("okd-wls-mrg")
 class ItTwoDomainsManagedByTwoOperators {
 
   private static final int numberOfDomains = 2;
