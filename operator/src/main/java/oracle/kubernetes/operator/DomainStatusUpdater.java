@@ -35,7 +35,6 @@ import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -75,7 +74,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
 import static oracle.kubernetes.common.logging.MessageKeys.POD_UNSCHEDULABLE_MESSAGE;
 import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.MINIMUM_CLUSTER_COUNT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -1383,8 +1381,7 @@ public class DomainStatusUpdater {
         } else if (isDeleting(serverName)) {
           return SHUTTING_DOWN_STATE;
         } else {
-          return Optional.ofNullable(getInfo().getLastKnownServerStatus(serverName))
-              .map(LastKnownStatus::getStatus).orElse(getStateFromPacket(serverName));
+          return getStateFromPacket(serverName);
         }
       }
 

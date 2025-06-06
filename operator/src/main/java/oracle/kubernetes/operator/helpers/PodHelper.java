@@ -949,6 +949,13 @@ public class PodHelper {
       }
     }
 
+    private String getServerStateFromInfo(DomainPresenceInfo info, String serverName) {
+      return Optional.ofNullable(info.getDomain()).map(DomainResource::getStatus)
+          .map(DomainStatus::getServers).orElse(Collections.emptyList()).stream()
+          .filter(ss -> serverName.equals(ss.getServerName())).findFirst()
+          .map(ServerStatus::getState).orElse(null);
+    }
+
     @Nonnull
     private Boolean isServerShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(s -> SHUTDOWN_STATE.equals(s) || UNKNOWN_STATE.equals(s))

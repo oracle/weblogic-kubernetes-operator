@@ -897,12 +897,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private void handleAddedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     DomainPresenceInfo info = new DomainPresenceInfo(delegate.getResourceCache(), domain);
-    Optional.ofNullable(domain.getSpec()).map(DomainSpec::getClusters).ifPresent(list -> list.forEach(clusterName -> {
-      ClusterPresenceInfo c = getExistingClusterPresenceInfo(domain.getNamespace(), clusterName.getName());
-      if (c != null) {
-        info.addClusterResource(c.getCluster());
-      }
-    }));
     createMakeRightOperation(info)
         .interrupt()
         .withExplicitRecheck()

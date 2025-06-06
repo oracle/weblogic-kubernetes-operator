@@ -441,7 +441,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   }
 
   public V1Service getExternalService(String serverName) {
-    return getSko(serverName).getExternalService().get();
+    return resourceCache.getServiceResources().get(toExternalServiceName(getDomainUid(), serverName));
   }
 
   public boolean isNotDeleting() {
