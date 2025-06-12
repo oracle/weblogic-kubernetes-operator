@@ -248,11 +248,13 @@ public class ServerStartPolicyUtils {
                 .addEnvItem(new V1EnvVar()
                     .name("MEM_ARGS")
                     .value("-Xms1024m -Xmx1024m"))
-                .livenessProbe(new ProbeTuning()
+                .lilivenessProbevenessProbe(new ProbeTuning()
                     .initialDelaySeconds(300)
+                    .periodSeconds(60)
                     .failureThreshold(3))
                 .readinessProbe(new ProbeTuning()
                     .initialDelaySeconds(300)
+                    .periodSeconds(60)
                     .failureThreshold(3)))
             .adminServer(new AdminServer()
                 .adminService(new AdminService()
@@ -299,6 +301,21 @@ public class ServerStartPolicyUtils {
   /**
    * Verify the server MBEAN configuration through rest API.
    * @param managedServer name of the managed server
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName name of the admin server
+   * @return true if MBEAN is found otherwise false
+   **/
+  public static Callable<Boolean> isManagedServerConfiguration(String managedServer,
+                                                               String domainNamespace,
+                                                               String adminServerPodName) {
+    return () -> {
+      return checkManagedServerConfiguration(managedServer, domainNamespace, adminServerPodName);
+    };
+  }
+
+  /**
+   * Verify the server MBEAN configuration through rest API.
+   * @param managedServer name of the managed server
    * @return true if MBEAN is found otherwise false
    **/
   public static boolean checkManagedServerConfiguration(String managedServer,
@@ -312,7 +329,7 @@ public class ServerStartPolicyUtils {
         .append(" http://" + adminServerPodName + ":7001")
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
-        .append(" --silent --show-error ")
+        .append(" --silent --show-error --connect-timeout 300 --max-time 600 ")
         .append(" -o /dev/null")
         .append(" -w %{http_code}")
         .append(" && echo ${status}")
