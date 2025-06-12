@@ -24,7 +24,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ProbeTuning;
+//import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -219,7 +219,7 @@ public class ServerStartPolicyUtils {
       String encryptionSecretName,
       String configmapName) {
     List<String> securityList = new ArrayList<>();
-    
+
     // create the domain CR
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
@@ -247,15 +247,7 @@ public class ServerStartPolicyUtils {
                     .value("-Djava.security.egd=file:/dev/./urandom "))
                 .addEnvItem(new V1EnvVar()
                     .name("MEM_ARGS")
-                    .value("-Xms1024m -Xmx1024m"))
-                .lilivenessProbevenessProbe(new ProbeTuning()
-                    .initialDelaySeconds(300)
-                    .periodSeconds(60)
-                    .failureThreshold(3))
-                .readinessProbe(new ProbeTuning()
-                    .initialDelaySeconds(300)
-                    .periodSeconds(60)
-                    .failureThreshold(3)))
+                    .value("-Xms1024m -Xmx1024m")))
             .adminServer(new AdminServer()
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
