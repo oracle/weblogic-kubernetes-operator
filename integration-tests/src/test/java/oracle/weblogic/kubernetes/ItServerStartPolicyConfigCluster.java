@@ -23,6 +23,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -127,10 +129,11 @@ class ItServerStartPolicyConfigCluster {
     String configServerPodName = domainUid + "-config-cluster-server1";
     checkPodReadyAndServiceExists(configServerPodName,
               domainUid, domainNamespace);
-    boolean isServerConfigured = 
-         checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
-    assertTrue(isServerConfigured, 
-        "Could not find managed server from configured cluster");
+    testUntil(
+        withLongRetryPolicy,
+        isManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName),
+        logger,
+        "Waiting until managed server from configured cluster found");
     logger.info("Found managed server from configured cluster");
    
   }
@@ -424,4 +427,13 @@ class ItServerStartPolicyConfigCluster {
     scalingClusters(domainUid, domainNamespace, CONFIG_CLUSTER, configServerPodName,
         replicaCount, regex, false, samplePath);
   }
+  
+  public static Callable<Boolean> isManagedServerConfiguration(String managedServer,
+                                                               String domainNamespace,
+                                                               String adminServerPodName) {
+    return () -> {
+      return checkManagedServerConfiguration(managedServer, domainNamespace, adminServerPodName);
+    };
+  }
+
 }

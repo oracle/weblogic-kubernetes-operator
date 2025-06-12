@@ -297,7 +297,7 @@ public class ServerStartPolicyUtils {
     StringBuffer checkCluster = new StringBuffer(KUBERNETES_CLI + " exec -n "
         + domainNamespace + " " + adminServerPodName)
         .append(" -- /bin/bash -c \"")
-        .append("curl --user ")
+        .append("curl --timeout 30 --user ")
         .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + adminServerPodName + ":7001")
         .append("/management/tenant-monitoring/servers/")
