@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("kind-parallel")
 @Tag("oke-parallel")
 @Tag("gate")
+@Tag("okd-wls-mrg")
 class ItEvictedPodsCycling {
 
   // constants for Domain

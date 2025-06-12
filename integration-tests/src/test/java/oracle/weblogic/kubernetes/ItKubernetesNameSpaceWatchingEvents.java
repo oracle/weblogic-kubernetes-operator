@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("kind-parallel")
 @Tag("oke-arm")
 @Tag("oke-parallel")
+@Tag("okd-wls-mrg")
 class ItKubernetesNameSpaceWatchingEvents {
 
   private static final String newNSWithoutLabels = "ns-newnamespace1";

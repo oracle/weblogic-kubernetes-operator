@@ -56,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
+@Tag("okd-wls-mrg")
 class ItRetryImprovementMisc {
 
   private static String domainNamespace = null;
