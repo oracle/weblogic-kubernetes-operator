@@ -136,19 +136,7 @@ class ItServerStartPolicyConfigCluster {
             logger,
             "Waiting until managed server from configured cluster found");
 
-    /*
-    try {
-      Thread.sleep(240000);
-    } catch (Exception ex) {
-      //
-    }
-
-    boolean isServerConfigured = 
-         checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
-    assertTrue(isServerConfigured, 
-        "Could not find managed server from configured cluster");*/
     logger.info("Found managed server from configured cluster");
-   
   }
 
   /**
