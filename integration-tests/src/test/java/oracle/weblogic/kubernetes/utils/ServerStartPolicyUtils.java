@@ -24,6 +24,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -246,7 +247,15 @@ public class ServerStartPolicyUtils {
                     .value("-Djava.security.egd=file:/dev/./urandom "))
                 .addEnvItem(new V1EnvVar()
                     .name("MEM_ARGS")
-                    .value("-Xms1024m -Xmx1024m")))
+                    .value("-Xms1024m -Xmx1024m"))
+                .livenessProbe(new ProbeTuning()
+                    .initialDelaySeconds(300)
+                    .periodSeconds(30)
+                    .failureThreshold(3))
+                .readinessProbe(new ProbeTuning()
+                    .initialDelaySeconds(300)
+                    .periodSeconds(30)
+                    .failureThreshold(3)))
             .adminServer(new AdminServer()
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
