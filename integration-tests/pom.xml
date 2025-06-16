@@ -572,11 +572,14 @@
                   **/ItDedicatedMode,
                   **/ItExternalLbTunneling,
                   **/ItExternalNodePortService,
+                  **/ItEvictedPodsCycling,
                   **/ItInitContainers,
                   **/ItIntrospectVersion,
+                  **/ItKubernetesNameSpaceWatchingEvents,
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
+                  **/ItMaxConcurOptions,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiCustomSslStore,
                   **/ItMiiSampleWlsAux,
@@ -586,6 +589,7 @@
                   **/ItPodTemplates,
                   **/ItProductionSecureMode,
                   **/ItRemoteConsole,
+                  **/ItRetryImprovementMisc,
                   **/ItServerStartPolicy,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
@@ -594,7 +598,8 @@
                   **/ItSystemResOverrides,
                   **/ItMonitoringExporterWebApp,
                   **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples
+                  **/ItMonitoringExporterSamples,
+                  **/ItWlsDomainOnPV
                 </includes-failsafe>
             </properties>
         </profile>

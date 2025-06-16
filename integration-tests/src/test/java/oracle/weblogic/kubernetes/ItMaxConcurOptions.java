@@ -91,6 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-sequential")
+@Tag("okd-wls-mrg")
 class ItMaxConcurOptions {
 
   private static String opNamespace = null;

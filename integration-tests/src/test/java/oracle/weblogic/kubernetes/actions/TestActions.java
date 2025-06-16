@@ -1241,10 +1241,9 @@ public class TestActions {
    * @return true if the operation succeeds
    */
   public static boolean buildAppArchive(AppParams params) {
-    return
-        AppBuilder
-            .withParams(params)
-            .build();
+    return AppBuilder
+        .withParams(params)
+        .build();
   }
 
   /**
