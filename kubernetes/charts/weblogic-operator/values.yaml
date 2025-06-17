@@ -278,3 +278,13 @@ clusterSizePaddingValidationEnabled: true
 # that will be allocated.
 #jvmOptions: -XshowSettings:vm -XX:MaxRAMPercentage=70
 
+# operatorLogPVC specifies the PVC name for persistent storage for operator log files.  You must also specify
+# operatorLogDir and operatorLogMount
+#operatorLogPVC:
+
+# operatorLogDir specifies the operator logging directory.  The operator will create the directory but the default uid
+# (oracle:1000) must have permission to do so. It must be prefixed by operatorLogMount.
+#operatorLogDir:
+
+# operatorLogMount specifies the operator logging volumeMount.  The operator will mount this path with the operatorLogPVC
+#operatorLogMount:
