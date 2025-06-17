@@ -131,7 +131,7 @@ An image can contain multiple properties files, archive ZIP files, and model YAM
 
 #### Creating the image with WIT
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/run-dpv-to-create-auxiliary-image.txt" >}}
 
 {{% notice note %}}
 The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).
@@ -286,6 +286,8 @@ The domain resource references the cluster resource, a WebLogic Server installat
 
 - Create the load balancer services using the following commands:
 
+  Note: For secure mode, replace port 7001 with 9002 in admin-lb.yaml file before applying
+
   ```shell
   $ kubectl apply -f admin-lb.yaml
   ```
@@ -295,6 +297,9 @@ The domain resource references the cluster resource, a WebLogic Server installat
   ```
   service/domain1-admin-server-external-lb created
   ```
+
+  Note: For secure mode, replace port 8001 with 8002 in cluster-lb.yaml file before applying
+
 
   ```shell
   $ kubectl  apply -f cluster-lb.yaml
@@ -363,7 +368,15 @@ The domain resource references the cluster resource, a WebLogic Server installat
 
   ```
 
+  For secure mode, notice ports 9002, 8002 respectively, under PORT(S) column for admin-server and cluster
+  LoadBalancer service configurations, as these ports were included in the admin-lb.yaml and 
+  cluster-lb.yaml files.
+
+
   In the example, the URL to access the Administration Server is: `http://4.157.147.131:7001/console`.
+
+  For secure mode, use `https://4.157.147.131:9002/console`.
+
   The user name and password that you enter for the Administration Console must match the ones you specified for the `domain1-weblogic-credentials` secret in the [Create secrets](#create-secrets) step.
 
   If the WLS Administration Console is still not available, use `kubectl get events --sort-by='.metadata.creationTimestamp' ` to troubleshoot.
@@ -410,6 +423,8 @@ $ ADMIN_SERVER_IP=$(kubectl get svc domain1-admin-server-external-lb -o=jsonpath
 $ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
+For secure mode, use Administration Console Address: `https://${ADMIN_SERVER_IP}:9002/console/`.
+
 Access the sample application using the cluster load balancer IP address.
 
 ```shell
@@ -419,6 +434,9 @@ $ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-lb -o=jsonpath='{.status.loadBa
 ```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
+
+For secure mode, use
+`curl https://${CLUSTER_IP}:8002/myapp_war/index.jsp`
 
 The test application will list the server host on the output, like the following:
 
