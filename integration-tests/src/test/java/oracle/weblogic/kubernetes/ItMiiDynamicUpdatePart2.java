@@ -167,7 +167,7 @@ class ItMiiDynamicUpdatePart2 {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams",
-        "newdburl"), "JDBCSystemResource DB URL not found");
+        "jdbc:oracle:thin:@host:1234:sid"), "JDBCSystemResource DB URL not found");
     logger.info("JDBCSystemResource DB URL found");
 
     // verify the application is undeployed
