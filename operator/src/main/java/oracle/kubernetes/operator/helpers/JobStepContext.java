@@ -473,22 +473,28 @@ public class JobStepContext extends BasePodStepContext {
     getInitializeDomainOnPV().ifPresent(initializeDomainOnPV -> addInitDomainOnPVInitContainer(initContainers));
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
-    initContainers.addAll(getAdditionalInitContainers().stream()
-            .filter(container -> isAllowedInIntrospector(container.getName()))
-            .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
-            .toList());
+    List<V1Container> introspectorInitContainers = getIntrospectorInitContainers();
+    if (introspectorInitContainers.isEmpty()) {
+      initContainers.addAll(getAdditionalInitContainers().stream()
+              .filter(container -> isAllowedInIntrospector(container.getName()))
+              .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
+              .toList());
+    } else {
+      for (V1Container initContainer : introspectorInitContainers) {
+        if (initContainers.stream().noneMatch(
+                container -> container.getName().equals(initContainer.getName()))) {
+          initContainer.securityContext(getInitContainerSecurityContext());
+          initContainers.add(initContainer);
+        }
+      }
+    }
     podSpec.initContainers(initContainers);
   }
 
   private void addInitContainers(List<V1Container> initContainers, List<? extends DeploymentImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
-        initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx,
-                isInitializeDomainOnPV())));
-    List<V1Container> introspectorInitContainers = getIntrospectorInitContainers();
-    for (V1Container initContainer : introspectorInitContainers) {
-      initContainer.securityContext(getInitContainerSecurityContext());
-      initContainers.add(initContainer);
-    }
+            initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx,
+                    isInitializeDomainOnPV())));
   }
 
   private Optional<InitializeDomainOnPV> getInitializeDomainOnPV() {
