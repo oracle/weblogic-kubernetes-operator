@@ -202,7 +202,7 @@ class ItMiiDynamicUpdatePart2 {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
     LinkedHashMap<String, OffsetDateTime> pods = null;
-    if(!isDataSourceCreated) {
+    if (!isDataSourceCreated) {
       pods =
               helper.addDataSourceAndVerify(false);
     } else {
