@@ -14,7 +14,7 @@ resources:
                     RowPrefetchSize: 200
                     JNDIName: jdbc/TestDataSource2
                 JDBCDriverParams:
-                    URL: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:url@@'
+                    URL: 'jdbc:oracle:thin:@host:1234:sid'
                     PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:password@@'
                     DriverName: oracle.jdbc.OracleDriver
                     Properties:
