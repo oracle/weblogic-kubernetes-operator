@@ -75,7 +75,9 @@ locals {
   cluster-context = try(format("context-%s", substr(local.cluster_id, -11, -1)), "")
 
   existing_cluster_endpoints  = coalesce(one(flatten(data.oci_containerengine_clusters.existing_cluster[*].clusters[*].endpoints)), tomap({}))
-  public_endpoint_available   = var.cluster_id != null ? length(lookup(local.existing_cluster_endpoints, "public_endpoint", "")) > 0 : var.control_plane_is_public && var.assign_public_ip_to_control_plane
+  public_endpoint_available   = var.cluster_id != null
+      ? length(lookup(local.existing_cluster_endpoints, "public_endpoint", "")) > 0
+      : false
   private_endpoint_available  = var.cluster_id != null ? length(lookup(local.existing_cluster_endpoints, "private_endpoint", "")) > 0 : true
   kubeconfig_public           = var.control_plane_is_public ? try(yamldecode(replace(lookup(one(data.oci_containerengine_cluster_kube_config.public), "content", ""), local.cluster-context, var.cluster_name)), tomap({})) : null
   kubeconfig_private          = try(yamldecode(replace(lookup(one(data.oci_containerengine_cluster_kube_config.private), "content", ""), local.cluster-context, var.cluster_name)), tomap({}))
