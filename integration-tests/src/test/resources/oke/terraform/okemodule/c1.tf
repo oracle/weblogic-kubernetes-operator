@@ -90,6 +90,7 @@ locals {
 }
 
 
+
 module "c1" {
 
   source  = "oracle-terraform-modules/oke/oci"
@@ -168,7 +169,8 @@ module "c1" {
   cluster_name                = var.cluster_name
   cluster_type                = var.cluster_type
   cni_type                    = var.preferred_cni
-  control_plane_is_public     = true
+  control_plane_is_public = var.oke_control_plane == "public"
+
   control_plane_allowed_cidrs = [local.anywhere]
   kubernetes_version          = var.kubernetes_version
   services_cidr               = lookup(lookup(var.clusters, "c1"), "services")
