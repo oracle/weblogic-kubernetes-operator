@@ -24,6 +24,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -446,7 +447,15 @@ class ItMaxConcurOptions {
                     .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .livenessProbe(new ProbeTuning()
+                    .initialDelaySeconds(300)
+                    .periodSeconds(30)
+                    .failureThreshold(5))
+                .readinessProbe(new ProbeTuning()
+                    .initialDelaySeconds(300)
+                    .periodSeconds(30)
+                    .failureThreshold(5)))
             .adminServer(new AdminServer()
                 .adminChannelPortForwardingEnabled(false)
                 .serverService(new ServerService()
