@@ -42,7 +42,7 @@ mount_target_ocid="@MOUNTTARGETOCID@"
 #
      cluster_type = "basic"
 #
-     oke_control_plane = "public"
+     oke_control_plane = "private"
      node_shape = "@NODEPOOLSHAPE@"
 nodepools = {
   np1 = {
