@@ -93,7 +93,7 @@ locals {
 module "c1" {
 
   source  = "oracle-terraform-modules/oke/oci"
-  version = "5.1.1"
+  version = "5.3.0"
 
   count = lookup(lookup(var.clusters, "c1"), "enabled") ? 1 : 0
 
