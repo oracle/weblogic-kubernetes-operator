@@ -74,6 +74,8 @@ class ItMiiDynamicUpdatePart2 {
   public static Path pathToChangReadsYaml = null;
   static LoggingFacade logger = null;
 
+  static boolean isDataSourceCreated = false;
+
   /**
    * Install Operator.
    * Create domain resource defintion.
@@ -167,7 +169,7 @@ class ItMiiDynamicUpdatePart2 {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams",
-        "newdburl"), "JDBCSystemResource DB URL not found");
+        "jdbc:oracle:thin:@host:1234:sid"), "JDBCSystemResource DB URL not found");
     logger.info("JDBCSystemResource DB URL found");
 
     // verify the application is undeployed
@@ -179,6 +181,7 @@ class ItMiiDynamicUpdatePart2 {
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected status");
     helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+    isDataSourceCreated = true;
   }
 
   /**
@@ -197,9 +200,18 @@ class ItMiiDynamicUpdatePart2 {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, OffsetDateTime> pods =
-        helper.addDataSourceAndVerify(false);
-
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap();
+    if (!isDataSourceCreated) {
+      pods = helper.addDataSourceAndVerify(false);
+    } else {
+      // get the creation time of the admin server pod before patching
+      pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
+      // get the creation time of the managed server pods before patching
+      for (int i = 1; i <= helper.replicaCount; i++) {
+        pods.put(helper.managedServerPrefix + i,
+                getPodCreationTime(helper.domainNamespace, helper.managedServerPrefix + i));
+      }
+    }
     // write sparse yaml to delete datasource to file
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
