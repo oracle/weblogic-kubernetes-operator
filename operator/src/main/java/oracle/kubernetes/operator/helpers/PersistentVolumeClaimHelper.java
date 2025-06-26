@@ -150,7 +150,6 @@ public class PersistentVolumeClaimHelper {
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<V1PersistentVolumeClaim> callResponse) {
         logPersistentVolumeClaimCreated(messageKey);
-        addPersistentVolumeClaimToRecord(callResponse.getObject());
         return doNext(packet);
       }
     }
@@ -174,12 +173,10 @@ public class PersistentVolumeClaimHelper {
         V1PersistentVolumeClaim persistentVolumeClaim = callResponse.getObject();
 
         if (persistentVolumeClaim == null) {
-          removePersistentVolumeClaimFromRecord();
           return doNext(createNewPersistentVolumeClaim(delegate, getNext()), packet);
         } else {
           logPersistentVolumeClaimExists(info.getDomain().getDomainUid(),
               info.getDomain().getInitPvDomainPersistentVolumeClaim());
-          addPersistentVolumeClaimToRecord(callResponse.getObject());
         }
         return doNext(packet);
       }
@@ -251,14 +248,6 @@ public class PersistentVolumeClaimHelper {
 
     protected void logPersistentVolumeClaimCreated(String messageKey) {
       LOGGER.info(messageKey, getPersistentVolumeClaimName(), getDomainUid());
-    }
-
-    protected void addPersistentVolumeClaimToRecord(@Nonnull V1PersistentVolumeClaim pvc) {
-      info.addPersistentVolumeClaim(pvc);
-    }
-
-    protected void removePersistentVolumeClaimFromRecord() {
-      info.removePersistentVolumeClaim(getPersistentVolumeClaimName());
     }
   }
 

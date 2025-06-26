@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +38,6 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
-import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
@@ -113,18 +111,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
 
-  // Map namespace to map of domainUID to KubernetesEventObjects; tests may replace this value.
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Map<String, Map<String, KubernetesEventObjects>> domainEventK8SObjects = new ConcurrentHashMap<>();
-
-  // Map namespace to KubernetesEventObjects; tests may replace this value.
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Map<String, KubernetesEventObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
-
-  // Map namespace to map of cluster resource name to KubernetesEventObjects; tests may replace this value.
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Map<String, Map<String, KubernetesEventObjects>> clusterEventK8SObjects = new ConcurrentHashMap<>();
-
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this(delegate, null);
   }
@@ -140,9 +126,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   static void cleanupNamespace(String namespace) {
-    clusterEventK8SObjects.remove(namespace);
-    domainEventK8SObjects.remove(namespace);
-    namespaceEventK8SObjects.remove(namespace);
     statusUpdaters.remove((namespace));
   }
 
@@ -155,78 +138,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  public static void updateEventK8SObjects(CoreV1Event event) {
-    getEventK8SObjects(event).update(event);
-  }
-
-  private static void updateClusterEventK8SObjects(CoreV1Event event) {
-    getClusterEventK8SObjects(event).update(event);
-  }
-
-  private static String getEventNamespace(CoreV1Event event) {
-    return Optional.ofNullable(event).map(CoreV1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
-  }
-
-  private static String getEventDomainUid(CoreV1Event event) {
-    return Optional.ofNullable(event)
-        .map(CoreV1Event::getMetadata)
-        .map(V1ObjectMeta::getLabels)
-        .orElse(Collections.emptyMap())
-        .get(LabelConstants.DOMAINUID_LABEL);
-  }
-
-  public static KubernetesEventObjects getEventK8SObjects(CoreV1Event event) {
-    return getEventK8SObjects(getEventNamespace(event), getEventDomainUid(event));
-  }
-
-  private static KubernetesEventObjects getEventK8SObjects(String ns, String domainUid) {
-    return Optional.ofNullable(domainUid)
-        .map(d -> getDomainEventK8SObjects(ns, d))
-        .orElse(getNamespaceEventK8SObjects(ns));
-  }
-
-  public static KubernetesEventObjects getClusterEventK8SObjects(CoreV1Event event) {
-    return getClusterEventK8SObjects(getEventNamespace(event), getClusterName(event));
-  }
-
-  private static KubernetesEventObjects getClusterEventK8SObjects(String ns, String clusterResourceName) {
-    return clusterEventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
-        .computeIfAbsent(clusterResourceName, c -> new KubernetesEventObjects());
-  }
-
-  private static String getClusterName(CoreV1Event event) {
-    return Optional.ofNullable(event.getInvolvedObject())
-        .map(V1ObjectReference::getName)
-        .orElse("");
-  }
-
-  private static void deleteClusterEventK8SObjects(CoreV1Event event) {
-    getClusterEventK8SObjects(event).remove(event);
-  }
-
-  private static KubernetesEventObjects getNamespaceEventK8SObjects(String ns) {
-    return namespaceEventK8SObjects.computeIfAbsent(ns, d -> new KubernetesEventObjects());
-  }
-
-  private static KubernetesEventObjects getDomainEventK8SObjects(String ns, String domainUid) {
-    return domainEventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
-        .computeIfAbsent(domainUid, d -> new KubernetesEventObjects());
-  }
-
-  private static void deleteEventK8SObjects(CoreV1Event event) {
-    getEventK8SObjects(event).remove(event);
-  }
-
   private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_POD:
         processPodEvent(name, event);
-        break;
-      case EventConstants.EVENT_KIND_DOMAIN, EventConstants.EVENT_KIND_NAMESPACE:
-        updateEventK8SObjects(event);
-        break;
-      case EventConstants.EVENT_KIND_CLUSTER:
-        updateClusterEventK8SObjects(event);
         break;
       default:
         break;
@@ -234,9 +149,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void processPodEvent(@Nonnull String name, CoreV1Event event) {
-    if (name.equals(NamespaceHelper.getOperatorPodName())) {
-      updateEventK8SObjects(event);
-    } else {
+    if (!name.equals(NamespaceHelper.getOperatorPodName())) {
       processServerEvent(event);
     }
   }
@@ -245,41 +158,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     // no-op
   }
 
-  /**
-   * Get all the domain resources in the given namespace.
-   *
-   * @param ns the namespace
-   * @return list of the domain resources
-   */
-  public static List<DomainResource> getDomains(String ns) {
-    List<DomainResource> domains = new ArrayList<>();
-    Optional.ofNullable(DomainProcessorImpl.domains.get(ns)).ifPresent(d -> d.values()
-        .forEach(domain -> addToList(domains, domain)));
-    return domains;
-  }
-
-  private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
-    if (isNotDeleting(info)) {
-      list.add(info.getDomain());
-    }
-  }
-
   private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
-    switch (kind) {
-      case EventConstants.EVENT_KIND_DOMAIN, EventConstants.EVENT_KIND_NAMESPACE:
-        deleteEventK8SObjects(event);
-        break;
-      case EventConstants.EVENT_KIND_POD:
-        if (name.equals(NamespaceHelper.getOperatorPodName())) {
-          deleteEventK8SObjects(event);
-        }
-        break;
-      case EventConstants.EVENT_KIND_CLUSTER:
-        deleteClusterEventK8SObjects(event);
-        break;
-      default:
-        break;
-    }
+    // no-op
   }
 
   // pre-conditions: DomainPresenceInfo SPI
@@ -431,28 +311,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public void unregisterDomainEventK8SObjects(DomainPresenceInfo info) {
-    unregisterEventK8SObject(info.getNamespace(), info.getDomainUid());
-  }
-
-  @Override
-  public void unregisterClusterPresenceInfo(ClusterPresenceInfo info) {
-    unregisterPresenceInfoForCluster(info.getNamespace(), info.getResourceName());
-  }
-
-  private static void unregisterEventK8SObject(String ns, String domainUid) {
-    Optional.ofNullable(domainEventK8SObjects.get(ns)).ifPresent(m -> m.remove(domainUid));
-  }
-
-  private static void unregisterPresenceInfo(String ns, String domainUid) {
-    Optional.ofNullable(domains.get(ns)).ifPresent(m -> m.remove(domainUid));
-  }
-
-  private static void unregisterPresenceInfoForCluster(String ns, String clusterName) {
-    Optional.ofNullable(clusters.get(ns)).ifPresent(m -> m.remove(clusterName));
-  }
-
-  @Override
   public void endScheduledDomainStatusUpdates(DomainPresenceInfo info) {
     Map<String, Cancellable> map = statusUpdaters.get(info.getNamespace());
     if (map != null) {
@@ -535,13 +393,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     String serverName = getPodLabel(pod, LabelConstants.SERVERNAME_LABEL);
     switch (watchType) {
-      case ADDED:
-        info.setServerPodFromEvent(serverName, pod);
-        break;
       case MODIFIED:
-        boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
         boolean isEvicted = PodHelper.isEvicted(pod);
-        if (isEvicted && !podPreviouslyEvicted) {
+        if (isEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
             LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
           } else {
@@ -559,8 +413,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         }
         break;
       case DELETED:
-        boolean removed = info.deleteServerPodFromEvent(serverName, pod);
-        if (removed && isNotDeleting(info) && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
+        if (isNotDeleting(info) && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);
         }
         createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
@@ -674,12 +527,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     switch (item.type) {
-      case ADDED, MODIFIED:
-        ServiceHelper.updatePresenceFromEvent(info, item.object);
-        break;
       case DELETED:
-        boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
-        if (removed && isNotDeleting(info)) {
+        if (isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
@@ -705,12 +554,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     switch (item.type) {
-      case ADDED, MODIFIED:
-        PodDisruptionBudgetHelper.updatePDBFromEvent(info, item.object);
-        break;
       case DELETED:
-        boolean removed = PodDisruptionBudgetHelper.deleteFromEvent(info, item.object);
-        if (removed && isNotDeleting(info)) {
+        if (isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
@@ -802,7 +647,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
-        info.addClusterResource(cluster);
         createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, info.getDomainUid())
             .andThen(createMakeRightOperation(info)
                 .interrupt()
@@ -843,7 +687,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getMetadata().getName(), info.getDomainUid());
-        info.removeClusterResource(cluster.getClusterName());
         createMakeRightOperationForClusterEvent(EventItem.CLUSTER_DELETED, cluster, info.getDomainUid())
             .andThen(createMakeRightOperation(info)
                 .interrupt()

@@ -471,11 +471,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
         @Override
         public Consumer<V1ServiceList> getServiceListProcessing() {
-          return list -> list.getItems().forEach(this::addService);
-        }
-
-        private void addService(V1Service service) {
-          ServiceHelper.addToPresence(info, service);
+          // no-op
         }
 
         @Override

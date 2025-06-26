@@ -61,8 +61,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EV
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
-import static oracle.kubernetes.operator.DomainProcessorImpl.getClusterEventK8SObjects;
-import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_CHANGED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_COMPLETED_EVENT;

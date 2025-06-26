@@ -3,11 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
@@ -20,7 +16,6 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.CoreDelegate;
-import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -133,7 +128,6 @@ public class DomainValidationSteps {
   }
 
   static class DomainValidationStep extends Step {
-
     @Override
     public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
@@ -239,7 +233,7 @@ public class DomainValidationSteps {
     }
 
     @Override
-    public List<V1Secret> getSecrets() {
+    public Collection<V1Secret> getSecrets() {
       return getSecrets(packet);
     }
 
@@ -301,8 +295,9 @@ public class DomainValidationSteps {
     }
 
     @Override
-    public List<DomainResource> getDomains(String ns) {
-      return DomainProcessorImpl.getDomains(ns);
+    public Collection<DomainResource> getDomains(String ns) {
+      CoreDelegate delegate = (CoreDelegate) packet.get(ProcessingConstants.DELEGATE_COMPONENT_NAME);
+      return delegate.getResourceCache().findNamespace(ns).getDomainResources().values();
     }
   }
 

@@ -11,6 +11,8 @@ import java.util.function.Function;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -49,6 +51,7 @@ public class ResourceCacheImpl implements ResourceCache {
     RESOURCE_MAP.put(V1PersistentVolume.class, ResourceCache::getPersistentVolumeResources);
     RESOURCE_MAP.put(V1PersistentVolumeClaim.class, ResourceCache::getPersistentVolumeClaimResources);
     RESOURCE_MAP.put(V1PodDisruptionBudget.class, ResourceCache::getPodDistributionBudgetResources);
+    RESOURCE_MAP.put(CoreV1Event.class, ResourceCache::getEventResources);
 
     RESOURCE_LIST_MAP.put(DomainList.class, ResourceCache::getDomainResources);
     RESOURCE_LIST_MAP.put(ClusterList.class, ResourceCache::getClusterResources);
@@ -60,6 +63,7 @@ public class ResourceCacheImpl implements ResourceCache {
     RESOURCE_LIST_MAP.put(V1PersistentVolumeList.class, ResourceCache::getPersistentVolumeResources);
     RESOURCE_LIST_MAP.put(V1PersistentVolumeClaimList.class, ResourceCache::getPersistentVolumeClaimResources);
     RESOURCE_LIST_MAP.put(V1PodDisruptionBudgetList.class, ResourceCache::getPodDistributionBudgetResources);
+    RESOURCE_LIST_MAP.put(CoreV1EventList.class, ResourceCache::getEventResources);
   }
 
   /**
@@ -106,6 +110,7 @@ public class ResourceCacheImpl implements ResourceCache {
   private final ConcurrentMap<String, V1PersistentVolume> pvResources = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1PersistentVolumeClaim> pvcResources = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1PodDisruptionBudget> pdbResources = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, CoreV1Event> eventResources = new ConcurrentHashMap<>();
 
   ResourceCacheImpl() {
     this(null);
@@ -189,5 +194,10 @@ public class ResourceCacheImpl implements ResourceCache {
   @Override
   public ConcurrentMap<String, V1PodDisruptionBudget> getPodDistributionBudgetResources() {
     return pdbResources;
+  }
+
+  @Override
+  public ConcurrentMap<String, CoreV1Event> getEventResources() {
+    return eventResources;
   }
 }

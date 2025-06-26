@@ -99,20 +99,8 @@ public class ServiceHelper {
     return new ServerServiceStepContext(false, null, packet).createModel();
   }
 
-  public static void addToPresence(DomainPresenceInfo info, V1Service service) {
-    Optional.ofNullable(info).ifPresent(i -> OperatorServiceType.getType(service).addToPresence(i, service));
-  }
-
-  public static void updatePresenceFromEvent(DomainPresenceInfo info, V1Service service) {
-    OperatorServiceType.getType(service).updateFromEvent(info, service);
-  }
-
   public static boolean isServerService(V1Service service) {
     return OperatorServiceType.getType(service) == OperatorServiceType.SERVER;
-  }
-
-  public static boolean deleteFromEvent(DomainPresenceInfo info, V1Service service) {
-    return OperatorServiceType.getType(service).deleteFromEvent(info, service);
   }
 
   public static String getServiceDomainUid(V1Service service) {

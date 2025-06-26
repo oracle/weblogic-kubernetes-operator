@@ -11,66 +11,20 @@ import io.kubernetes.client.openapi.models.V1Service;
 public enum OperatorServiceType {
   SERVER {
     @Override
-    void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
-      presenceInfo.setServerService(ServiceHelper.getServerName(service), service);
-    }
-
-    @Override
-    void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service event) {
-      presenceInfo.setServerServiceFromEvent(ServiceHelper.getServerName(event), event);
-    }
-
-    @Override
     boolean matches(V1Service service) {
       return ServiceHelper.getServerName(service) != null && !ServiceHelper.isNodePortType(service);
     }
-
-    @Override
-    boolean deleteFromEvent(DomainPresenceInfo info, V1Service event) {
-      return info.deleteServerServiceFromEvent(ServiceHelper.getServerName(event), event);
-    }
-
   },
   EXTERNAL {
     @Override
     boolean matches(V1Service service) {
       return ServiceHelper.getServerName(service) != null && ServiceHelper.isNodePortType(service);
     }
-
-    @Override
-    void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
-      presenceInfo.setExternalService(ServiceHelper.getServerName(service), service);
-    }
-
-    @Override
-    void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {
-      presenceInfo.setExternalServiceFromEvent(ServiceHelper.getServerName(service), service);
-    }
-
-    @Override
-    boolean deleteFromEvent(DomainPresenceInfo info, V1Service event) {
-      return info.deleteExternalServiceFromEvent(ServiceHelper.getServerName(event), event);
-    }
   },
   CLUSTER {
     @Override
     boolean matches(V1Service service) {
       return ServiceHelper.getClusterName(service) != null;
-    }
-
-    @Override
-    void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
-      presenceInfo.setClusterService(ServiceHelper.getClusterName(service), service);
-    }
-
-    @Override
-    void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {
-      presenceInfo.setClusterServiceFromEvent(ServiceHelper.getClusterName(service), service);
-    }
-
-    @Override
-    boolean deleteFromEvent(DomainPresenceInfo info, V1Service event) {
-      return info.deleteClusterServiceFromEvent(ServiceHelper.getClusterName(event), event);
     }
   },
   UNKNOWN {
@@ -104,14 +58,6 @@ public enum OperatorServiceType {
     return false;
   }
 
-  void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
-    // no-op
-  }
-
-  void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {
-    // no-op
-  }
-
   /**
    * build with type label.
    * @param service service
@@ -122,9 +68,5 @@ public enum OperatorServiceType {
         .map(V1Service::getMetadata)
         .ifPresent(meta -> meta.putLabelsItem(SERVICE_TYPE, toString()));
     return service;
-  }
-
-  boolean deleteFromEvent(DomainPresenceInfo info, V1Service service) {
-    return false;
   }
 }

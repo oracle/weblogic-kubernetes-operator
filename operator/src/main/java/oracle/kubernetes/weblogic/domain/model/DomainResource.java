@@ -1580,7 +1580,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private boolean isSecretExists(List<V1Secret> secrets, String name, String namespace) {
+    private boolean isSecretExists(Collection<V1Secret> secrets, String name, String namespace) {
       return secrets.stream().anyMatch(s -> isSpecifiedSecret(s, name, namespace));
     }
 
@@ -1610,13 +1610,13 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private boolean isOpssWalletPasswordFound(List<V1Secret> secrets, String name, String namespace) {
+    private boolean isOpssWalletPasswordFound(Collection<V1Secret> secrets, String name, String namespace) {
       return Optional.ofNullable(findSecret(secrets, name, namespace))
           .map(V1Secret::getData).orElse(Collections.emptyMap())
           .get("walletPassword") != null;
     }
 
-    private V1Secret findSecret(List<V1Secret> secrets, String name, String namespace) {
+    private V1Secret findSecret(Collection<V1Secret> secrets, String name, String namespace) {
       Optional<V1Secret> secret = secrets.stream().filter(s -> isSpecifiedSecret(s, name, namespace)).findFirst();
       return secret.orElse(null);
     }

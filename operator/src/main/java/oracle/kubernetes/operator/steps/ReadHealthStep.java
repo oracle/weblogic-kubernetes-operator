@@ -349,7 +349,6 @@ public class ReadHealthStep extends Step {
       }
 
       private void recordServerState(String state) {
-        getDomainPresenceInfo().updateLastKnownServerStatus(serverName, state);
         getServerStateMap().put(serverName, state);
       }
 

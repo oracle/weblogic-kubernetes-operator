@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -105,19 +104,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     this.domainUid = domainUid;
     this.serverStartupInfo = new AtomicReference<>(null);
     this.serverShutdownInfo = new AtomicReference<>(null);
-  }
-
-  private static <K, V> boolean removeIfPresentAnd(
-      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
-    Objects.requireNonNull(predicateFunction);
-    for (V oldValue; (oldValue = map.get(key)) != null; ) {
-      if (!predicateFunction.test(oldValue)) {
-        return false;
-      } else if (map.remove(key, oldValue)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**

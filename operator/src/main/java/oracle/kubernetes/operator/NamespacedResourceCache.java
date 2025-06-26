@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -46,4 +47,6 @@ public interface NamespacedResourceCache {
   ConcurrentMap<String, V1PersistentVolumeClaim> getPersistentVolumeClaimResources();
 
   ConcurrentMap<String, V1PodDisruptionBudget> getPodDistributionBudgetResources();
+
+  ConcurrentMap<String, CoreV1Event> getEventResources();
 }

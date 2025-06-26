@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.work.Fiber.StepAndPacket;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.OperatorUtils;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 
@@ -78,7 +79,7 @@ public class RollingHelper {
     }
 
     protected List<String> getReadyServers() {
-      return getInfo().getSelectedActiveServerNames(RollingHelper::hasReadyServer);
+      return getInfo().getServerPods().filter(RollingHelper::hasReadyServer).map(PodHelper::getServerName).toList();
     }
   }
 

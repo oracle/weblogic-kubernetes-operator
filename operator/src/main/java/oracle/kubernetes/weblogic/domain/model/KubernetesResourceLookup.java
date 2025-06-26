@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.List;
+import java.util.Collection;
 
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -18,7 +18,7 @@ public interface KubernetesResourceLookup {
 
    * @return list of secrets
    */
-  List<V1Secret> getSecrets();
+  Collection<V1Secret> getSecrets();
 
   /**
    * Returns true if the Kubernetes cluster to which this domain is deployed has a config map with the specified
@@ -50,5 +50,5 @@ public interface KubernetesResourceLookup {
    * @param namespace the containing namespace
    * @return list of DomainResources
    */
-  List<DomainResource> getDomains(String namespace);
+  Collection<DomainResource> getDomains(String namespace);
 }
