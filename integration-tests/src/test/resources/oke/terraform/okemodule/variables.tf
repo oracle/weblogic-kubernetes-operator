@@ -183,10 +183,5 @@ variable "cluster_ca_cert" {
   type        = string
 }
 
-variable "assign_public_ip_to_control_plane" {
-  type        = bool
-  description = "Whether to assign a public IP to the Kubernetes API endpoint"
-  default     = true
-}
 
 
