@@ -52,5 +52,6 @@ nodepools = {
     size             = 2,
     boot_volume_size = 150,
   }
+  assign_public_ip_to_control_plane = true
 }
 

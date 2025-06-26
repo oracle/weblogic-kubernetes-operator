@@ -168,6 +168,7 @@ module "c1" {
   cluster_name                = var.cluster_name
   cluster_type                = var.cluster_type
   cni_type                    = var.preferred_cni
+  assign_public_ip_to_control_plane = true
   control_plane_is_public     = true
   control_plane_allowed_cidrs = [local.anywhere]
   kubernetes_version          = var.kubernetes_version
