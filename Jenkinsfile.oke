@@ -86,13 +86,14 @@ pipeline {
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.31.1'
+               defaultValue: '1.33.1'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
                        //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
                        //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaatkz7laillswel25edlbmq67ino2y2pv6xhp2lml2vzha44ao5gtq'
+                       //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
                        
                 )
         string(name: 'KUBECTL_VERSION',
@@ -147,7 +148,7 @@ pipeline {
         )
         string(name: 'NODE_SHAPE',
                        description: '',
-                       defaultValue: "VM.Standard.E5.Flex"
+                       defaultValue: "VM.Standard.E3.Flex"
         )
         string(name: 'MOUNT_TARGET_OCID',
                       description: 'only for debug runs on wko-oke-dev',
