@@ -93,12 +93,12 @@ locals {
 module "c1" {
 
   source  = "oracle-terraform-modules/oke/oci"
-  version = "5.1.1"
+  version = "5.3.0"
 
   count = lookup(lookup(var.clusters, "c1"), "enabled") ? 1 : 0
 
   home_region = lookup(local.regions, var.home_region)
-  
+
   #region      = lookup(local.regions, lookup(lookup(var.clusters, "c1"), "region"))
   region      = lookup(local.regions, var.home_region)
 
@@ -137,7 +137,7 @@ module "c1" {
   create_bastion              = true           # *true/false
   bastion_allowed_cidrs       = []             # e.g. ["0.0.0.0/0"] to allow traffic from all sources
   bastion_availability_domain = null           # Defaults to first available
-  bastion_image_id            = null           # Ignored when 
+  bastion_image_id            = null           # Ignored when
   bastion_image_os            = "Oracle Linux" # Ignored when bastion_image_type = "custom"
   bastion_image_os_version    = "8"            # Ignored when bastion_image_type = "custom"
   bastion_image_type          = "platform"     # platform/custom
@@ -168,6 +168,7 @@ module "c1" {
   cluster_name                = var.cluster_name
   cluster_type                = var.cluster_type
   cni_type                    = var.preferred_cni
+  assign_public_ip_to_control_plane = true
   control_plane_is_public     = true
   control_plane_allowed_cidrs = [local.anywhere]
   kubernetes_version          = var.kubernetes_version
@@ -197,6 +198,6 @@ module "c1" {
 
 
 resource "local_file" "test_kube_config_file" {
-  content  = data.oci_containerengine_cluster_kube_config.kube_config.content 
+  content  = data.oci_containerengine_cluster_kube_config.kube_config.content
   filename = "${path.module}/${var.cluster_name}_kubeconfig"
 }
