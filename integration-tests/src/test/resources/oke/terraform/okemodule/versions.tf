@@ -7,6 +7,11 @@ terraform {
     oci = {
       source = "oracle/oci"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.7.1"
+    }
   }
-  required_version = ">= 1.0.0"
+  required_version = ">= 1.1.0"
 }
+
