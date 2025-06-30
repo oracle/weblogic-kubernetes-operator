@@ -141,7 +141,51 @@ public class WDTArchiveHelper {
    * @throws java.io.IOException when WDT download fails
    */
   public boolean createArchiveWithStructuredApplication() throws IOException {
-    return createArchive(true);
+    // check and install WDT
+    checkAndInstallWDT();
+    String archiveSrcDir = params.appArchiveDir() + "/wlsdeploy/applications";
+    // prepare the archive directory and copy over the app src
+    try {
+      cleanupDirectory(archiveSrcDir);
+      checkDirectory(archiveSrcDir);
+      for (String item : params.srcDirList()) {
+        copyFolder(
+            APP_DIR + "/" + item,
+            archiveSrcDir);
+      }
+    } catch (IOException ioe) {
+      getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
+      return false;
+    }
+
+    // make sure that we always have an app name
+    if (params.appName() == null) {
+      params.appName(params.srcDirList().get(0));
+    }
+
+    // createArchive a zip file that can be passed to WIT
+    String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), params.appName());
+
+    // make sure that we always have an app name
+    if (params.appName() == null) {
+      params.appName(params.srcDirList().get(0));
+    }
+
+    String cmd = String.format(
+        "cd %s/wlsdeploy/applications; "
+        + archiveHelperScript + " add structuredApplication"
+        + " -archive_file %s"
+        + " -source %s ",
+        params.appArchiveDir(),
+        zipPath,
+        params.appName());
+
+    return Command.withParams(
+        defaultCommandParams()
+            .command(cmd)
+            .verbose(true)
+            .redirect(false))
+        .execute();
   }
 
   /**
