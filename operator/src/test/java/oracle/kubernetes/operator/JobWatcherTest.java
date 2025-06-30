@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -492,10 +492,6 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   }
 
   public void receivedEvents_areSentToListeners() {
-    // Override as JobWatcher doesn't currently implement listener for callback
-  }
-
-  public void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }
 

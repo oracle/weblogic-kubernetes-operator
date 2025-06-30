@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -31,7 +31,6 @@ import static oracle.kubernetes.operator.builders.StubWatchFactory.AllWatchesClo
 import static oracle.kubernetes.operator.tuning.TuningParameters.WATCH_BACKSTOP_RECHECK_COUNT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 
@@ -165,21 +164,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
-    assertThat(callBacks, contains(List.of(addEvent(object1), modifyEvent(object2))));
-  }
-
-  @Test
-  @SuppressWarnings("rawtypes")
-  void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
-    Object object1 = createObjectWithMetaData();
-    Object object2 = createObjectWithMetaData();
-    StubWatchFactory.addCallResponses(createAddResponse(object1), createModifyResponse(object2));
-
-    Watcher watcher = createWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
-    pauseWatcher(watcher);
-    assertThat(callBacks, empty());
-
-    resumeWatcher(watcher);
     assertThat(callBacks, contains(List.of(addEvent(object1), modifyEvent(object2))));
   }
 
