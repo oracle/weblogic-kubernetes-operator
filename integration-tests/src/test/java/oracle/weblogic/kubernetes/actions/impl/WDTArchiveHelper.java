@@ -27,16 +27,16 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- *  Implementation of actions that createArchive an application archive file.
+ * Implementation of actions that createArchive an application archive file.
  */
-
 public class WDTArchiveHelper {
-  
+
   private AppParams params;
 
   /**
    * Create an AppParams instance with the default values.
-   * @return an AppParams instance 
+   *
+   * @return an AppParams instance
    */
   public static AppParams defaultAppParams() {
     return new AppParams().defaults();
@@ -44,6 +44,7 @@ public class WDTArchiveHelper {
 
   /**
    * Create an AppParams instance with the custom values.
+   *
    * @return an AppParams instance
    */
   public static AppParams customAppParams(List<String> srcDirList) {
@@ -52,9 +53,9 @@ public class WDTArchiveHelper {
 
   /**
    * Set up the AppBuilder with given parameters.
-   * 
+   *
    * @param params instance of {@link AppParams} that contains parameters to createArchive an application archive
-   * @return the AppBuilder instance 
+   * @return the AppBuilder instance
    */
   public static WDTArchiveHelper withParams(AppParams params) {
     return new WDTArchiveHelper().params(params);
@@ -82,10 +83,10 @@ public class WDTArchiveHelper {
       checkDirectory(archiveSrcDir);
       for (String item : params.srcDirList()) {
         copyFolder(
-            APP_DIR + "/" + item, 
+            APP_DIR + "/" + item,
             archiveSrcDir);
       }
-    } catch (IOException ioe) {    
+    } catch (IOException ioe) {
       getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
       return false;
     }
@@ -100,7 +101,7 @@ public class WDTArchiveHelper {
       String jarPath = String.format("%s.ear", params.appName());
       jarBuilt = buildJarArchive(jarPath, archiveSrcDir);
     }
-    
+
     // createArchive a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), params.appName());
     boolean zipBuilt = buildZipArchive(zipPath, params.appArchiveDir());
@@ -132,19 +133,20 @@ public class WDTArchiveHelper {
       return createArchive();
     }
   }
-  
+
   /**
    * Build an application archive using a pre-populated AppParams instance.
-   * @return true if the command succeeds 
+   *
+   * @return true if the command succeeds
    * @throws java.io.IOException when WDT download fails
    */
   public boolean createArchiveWithStructuredApplication() throws IOException {
     return createArchive(true);
   }
-  
 
   /**
    * Build an application archive using a pre-populated AppParams instance.
+   *
    * @return true if the command succeeds
    */
   public boolean buildCoherence() {
@@ -172,7 +174,7 @@ public class WDTArchiveHelper {
       String jarPath = String.format("%s.gar", params.appName());
       jarBuilt = buildJarArchive(jarPath, archiveSrcDir);
     } else if (params.appName().contains("CoherenceApp")) {
-      String [] appTypes = {"ear", "gar"};
+      String[] appTypes = {"ear", "gar"};
       try {
         for (String appType : appTypes) {
           String appSrcDir = String.format("%s/%s/u01/application/builddir/%s.%s",
@@ -205,14 +207,14 @@ public class WDTArchiveHelper {
    * @param srcDir source directory
    */
   private boolean buildJarArchive(
-      String jarPath, 
+      String jarPath,
       String srcDir
   ) {
 
     String cmd = String.format("cd %s; jar -cfM %s . ", srcDir, jarPath);
 
     return Command.withParams(
-            defaultCommandParams()
+        defaultCommandParams()
             .command(cmd)
             .redirect(false))
         .execute();
@@ -225,7 +227,7 @@ public class WDTArchiveHelper {
    * @param srcDir source directory
    */
   public boolean buildZipArchive(
-      String zipPath, 
+      String zipPath,
       String srcDir
   ) {
 
@@ -242,6 +244,62 @@ public class WDTArchiveHelper {
         srcDir,
         zipPath,
         params.appName());
+
+    return Command.withParams(
+        defaultCommandParams()
+            .command(cmd)
+            .verbose(true)
+            .redirect(false))
+        .execute();
+  }
+
+  /**
+   * Build a zip archive that includes an ear file in the srcDir.
+   *
+   * @param zipPath zip file path for the resulting archive
+   * @param serverName server name
+   * @param source source directory
+   */
+  public boolean addServerKeyStore(
+      String zipPath,
+      String serverName,
+      String source
+  ) {
+
+    String cmd = String.format(
+        archiveHelperScript + " add serverKeyStore"
+        + " -archive_file %s"
+        + " -source %s ",
+        zipPath,
+        source);
+
+    return Command.withParams(
+        defaultCommandParams()
+            .command(cmd)
+            .verbose(true)
+            .redirect(false))
+        .execute();
+  }
+
+  /**
+   * Build a zip archive that includes an ear file in the srcDir.
+   *
+   * @param zipPath zip file path for the resulting archive
+   * @param source source directory
+   */
+  public boolean addCustom(
+      String zipPath,
+      String source
+  ) {
+
+    String cmd = String.format(
+        archiveHelperScript + " add custom"
+        + " -archive_file %s"
+        + "-path patch"
+        + "-use_non_replicable_location"
+        + " -source %s ",
+        zipPath,
+        source);
 
     return Command.withParams(
         defaultCommandParams()
@@ -272,27 +330,27 @@ public class WDTArchiveHelper {
 
     if (params.appName().contains("CoherenceApp")) {
       cmd = String.format(
-        "cd %s ; zip -r %s.zip wlsdeploy/applications ",
-        params.appArchiveDir(),
-        params.appName()
+          "cd %s ; zip -r %s.zip wlsdeploy/applications ",
+          params.appArchiveDir(),
+          params.appName()
       );
     }
 
     return Command.withParams(
-      defaultCommandParams()
-        .command(cmd)
-        .redirect(false))
-      .execute();
+        defaultCommandParams()
+            .command(cmd)
+            .redirect(false))
+        .execute();
   }
 
   /**
-   * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
-   * to create an image with the application for a model-in-image use case.
+   * Archive an application from provided ear or war file that can be used by WebLogic Image Tool to create an image
+   * with the application for a model-in-image use case.
    *
    * @return true if the operation succeeds
    */
   public boolean archiveApp() {
-    List<String> srcFiles  = params.srcDirList();
+    List<String> srcFiles = params.srcDirList();
     String srcFile = srcFiles.get(0);
     String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
     params.appName(appName);
@@ -306,7 +364,7 @@ public class WDTArchiveHelper {
           getLogger().info("copy {0} to {1} ", appSrcFile, archiveSrcDir);
           String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
           Files.copy(Paths.get(appSrcFile), Paths.get(archiveSrcDir + "/" + fileName),
-                  StandardCopyOption.REPLACE_EXISTING);
+              StandardCopyOption.REPLACE_EXISTING);
         }
       }
     } catch (IOException ioe) {
@@ -315,18 +373,18 @@ public class WDTArchiveHelper {
     }
 
     String cmd = String.format(
-            "cd %s ; zip -r %s.zip wlsdeploy/applications ",
-            params.appArchiveDir(),
-            appName
+        "cd %s ; zip -r %s.zip wlsdeploy/applications ",
+        params.appArchiveDir(),
+        appName
     );
 
     return Command.withParams(
-            defaultCommandParams()
-                    .command(cmd)
-                    .redirect(false))
-            .execute();
+        defaultCommandParams()
+            .command(cmd)
+            .redirect(false))
+        .execute();
   }
-  
+
   static Path archiveHelperScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "archiveHelper.sh");
 
   private static void downloadAndInstallWDT() throws IOException {
