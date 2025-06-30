@@ -72,10 +72,10 @@ class ItCrossDomainTransactionCustomTrustStore {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
-  String miiAuxiliaryImage1Tag = "auximage1" + getDateAndTimeStamp();
-  String miiAuxiliaryImage2Tag = "auximage2" + getDateAndTimeStamp();
-  String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
-  String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
+  private static String miiAuxiliaryImage1Tag = "auximage1" + getDateAndTimeStamp();
+  private static String miiAuxiliaryImage2Tag = "auximage2" + getDateAndTimeStamp();
+  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
+  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
   private final int replicaCount = 1;
   private static String adminSecretName1;
   private static String adminSecretName2;
@@ -123,6 +123,9 @@ class ItCrossDomainTransactionCustomTrustStore {
     encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domain1Namespace,
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
+    
+    generateKeyStores();
+    createAuxDomain();
   }
   
   /*
@@ -191,7 +194,7 @@ class ItCrossDomainTransactionCustomTrustStore {
   }
 
   
-  private void createAuxDomain() throws IOException {
+  private static void createAuxDomain() throws IOException {
 
     //create the archive.zip with appliocation and cusom store files
     AppParams appParams = WDTArchiveHelper
