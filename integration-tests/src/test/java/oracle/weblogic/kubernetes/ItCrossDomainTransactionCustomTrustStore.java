@@ -151,14 +151,13 @@ class ItCrossDomainTransactionCustomTrustStore {
         + "-deststoretype pkcs12  "
         + "-storepass " + storePass
         + " -keypass " + keyPass
-        + "-keystore " + storeDir + "/DomainIdentityStore.p12";
+        + " -keystore " + storeDir + "/DomainIdentityStore.p12";
     runCommand(command);
     command = "keytool "
         + "-export "
         + "-alias server_alias "
         + "-file " + storeDir + "/domain.der "
-        + "-keystore " + storeDir
-        + "/DomainIdentityStore.p12 "
+        + "-keystore " + storeDir + "/DomainIdentityStore.p12 "
         + "-storepass " + storePass
         + " -keypass " + keyPass;
     runCommand(command);
@@ -169,7 +168,7 @@ class ItCrossDomainTransactionCustomTrustStore {
         + "-file " + storeDir + "/domain.der "
         + "-keystore " + storeDir + "/DomainTrustStore.p12 "
         + "-storepass " + storePass
-        + "-keypass " + keyPass
+        + " -keypass " + keyPass
         + " -deststoretype pkcs12 -noprompt";
     runCommand(command);
     command = "keytool "
