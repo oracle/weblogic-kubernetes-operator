@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAUL
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -199,7 +200,8 @@ class ItCrossDomainTransactionCustomTrustStore {
     //create the archive.zip with appliocation and cusom store files
     AppParams appParams = WDTArchiveHelper
         .defaultAppParams().appName("archive")
-        .srcDirList(List.of(WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15") ? "jakartawebapp" : "javaxwebapp"));
+        .srcDirList(List.of(WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15")
+            ? APP_DIR + "/jakartawebapp" : APP_DIR + "/javaxwebapp"));
     boolean status = WDTArchiveHelper.withParams(appParams)
         .createArchiveWithStructuredApplication();
     assertTrue(status, "Failed to create a archive of application");
