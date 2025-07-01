@@ -166,11 +166,6 @@ public class WDTArchiveHelper {
     // createArchive a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), params.appName());
 
-    // make sure that we always have an app name
-    if (params.appName() == null) {
-      params.appName(params.srcDirList().get(0));
-    }
-
     String cmd = String.format(
         "cd %s/wlsdeploy/applications; "
         + archiveHelperScript + " add structuredApplication"
@@ -178,7 +173,7 @@ public class WDTArchiveHelper {
         + " -source %s ",
         params.appArchiveDir(),
         zipPath,
-        params.appName());
+        archiveSrcDir);
 
     return Command.withParams(
         defaultCommandParams()

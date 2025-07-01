@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
@@ -152,7 +153,7 @@ class ItCrossDomainTransactionCustomTrustStore {
         + "-storepass " + storePass
         + " -keypass " + keyPass
         + " -keystore " + storeDir + "/DomainIdentityStore.p12";
-    runCommand(command);
+    assertTrue(runCommand(command), "Failed to create domain identity store");
     command = "keytool "
         + "-export "
         + "-alias server_alias "
@@ -160,7 +161,7 @@ class ItCrossDomainTransactionCustomTrustStore {
         + "-keystore " + storeDir + "/DomainIdentityStore.p12 "
         + "-storepass " + storePass
         + " -keypass " + keyPass;
-    runCommand(command);
+    assertTrue(runCommand(command), "Failed to export domain identity store");
     //Creating Domain/Client Trust Store by importing certificate
     command = "keytool "
         + "-import -trustcacerts "
@@ -170,7 +171,7 @@ class ItCrossDomainTransactionCustomTrustStore {
         + "-storepass " + storePass
         + " -keypass " + keyPass
         + " -deststoretype pkcs12 -noprompt";
-    runCommand(command);
+    assertTrue(runCommand(command), "Failed to create domain trust store");
     command = "keytool "
         + "-import "
         + "-trustcacerts "
@@ -180,11 +181,11 @@ class ItCrossDomainTransactionCustomTrustStore {
         + "-storepass " + storePass
         + " -keypass " + keyPass
         + " -deststoretype pkcs12 -noprompt";
-    runCommand(command);
+    assertTrue(runCommand(command), "Failed to import domain trust store");
   }
 
-  private static void runCommand(String command) {
-    Command.withParams(
+  private static boolean runCommand(String command) {
+    return Command.withParams(
         defaultCommandParams()
             .command(command)
             .verbose(true)
@@ -199,14 +200,18 @@ class ItCrossDomainTransactionCustomTrustStore {
     AppParams appParams = WDTArchiveHelper
         .defaultAppParams().appName("archive")
         .srcDirList(List.of(WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15") ? "jakartawebapp" : "javaxwebapp"));
-    WDTArchiveHelper.withParams(appParams).createArchiveWithStructuredApplication();
+    boolean status = WDTArchiveHelper.withParams(appParams)
+        .createArchiveWithStructuredApplication();
+    assertTrue(status, "Failed to create a archive of application");
     String appArchiveDir = appParams.appArchiveDir();
-    WDTArchiveHelper.withParams(appParams)
+    status = WDTArchiveHelper.withParams(appParams)
         .addServerKeyStore(appArchiveDir + "/archive.zip", "cluster-1-template", 
             storeDir + "/DomainTrustStore.p12");
-    WDTArchiveHelper.withParams(appParams)
+    assertTrue(status, "Failed to create a archive of application");
+    status = WDTArchiveHelper.withParams(appParams)
         .addServerKeyStore(appArchiveDir + "/archive.zip", "cluster-1-template", 
             storeDir + "//DomainIdentityStore.p12");
+    assertTrue(status, "Failed to create a archive of application");
     //WDTArchiveHelper.withParams(appParams).addCustom(miiImage, miiImage);
 
     String modelFile;
