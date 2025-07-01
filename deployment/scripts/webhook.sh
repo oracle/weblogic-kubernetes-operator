@@ -66,11 +66,12 @@ fi
 
 sed -i -e "s|JAVA_LOGGING_MAXSIZE|${JAVA_LOGGING_MAXSIZE:-20000000}|g" $LOGGING_CONFIG
 sed -i -e "s|JAVA_LOGGING_COUNT|${JAVA_LOGGING_COUNT:-10}|g" $LOGGING_CONFIG
+sed -i -e "s|LOGGING_DIR|${OPERATOR_LOGDIR:-/logs}|g" $LOGGING_CONFIG
 
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
 # assumption is that we have mounted a volume on /logs which is also visible to
 # the logstash container/pod.
-mkdir -m 777 -p /logs
+mkdir -m 777 -p ${OPERATOR_LOGDIR:-/logs}
 
 # Container memory optimization flags
 HEAP="-XshowSettings:vm"

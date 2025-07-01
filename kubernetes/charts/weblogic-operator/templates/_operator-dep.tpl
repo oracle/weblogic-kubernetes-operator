@@ -2,6 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorDeployment" }}
+
 ---
 {{- if not .webhookOnly }}
 apiVersion: "apps/v1"
@@ -91,6 +92,13 @@ spec:
           value: {{ .javaLoggingFileCount | default 10 | quote }}
         - name: "JVM_OPTIONS"
           value: {{ .jvmOptions | default "-XshowSettings:vm -XX:MaxRAMPercentage=70" | quote }}
+        {{- if and .operatorLogDir .operatorLogMount }}
+           {{- if not (hasPrefix (toString .operatorLogMount) (toString .operatorLogDir)) }}
+            {{- fail (printf "Error: Invalid Configuration: operatorLogDir %s must start with operatorlogMount %s" .operatorLogDir .operatorLogMount) }}
+          {{- end }}
+        - name: "OPERATOR_LOGDIR"
+          value: {{ .operatorLogDir | quote }}
+        {{- end }}
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
@@ -133,8 +141,14 @@ spec:
         - name: "weblogic-operator-secrets-volume"
           mountPath: "/deployment/secrets"
           readOnly: true
-        {{- if .elkIntegrationEnabled }}
+        {{- if and .elkIntegrationEnabled .operatorLogPVC }}
+            {{- fail "Error: elkIntegrationEnabled and opeatorLogPVC cannot be set at the same time."}}
+        {{- else if .elkIntegrationEnabled }}
         - mountPath: "/logs"
+          name: "log-dir"
+          readOnly: false
+        {{- else if .operatorLogPVC }}
+        - mountPath: {{ .operatorLogMount | quote }}
           name: "log-dir"
           readOnly: false
         {{- end }}
@@ -207,6 +221,13 @@ spec:
         secret:
           secretName: "logstash-certs-secret"
           optional: true
+      {{- else if .operatorLogPVC }}
+      {{- if not (and .operatorLogMount .operatorLogDir) }}
+        {{- fail "Must provide operatorLogMount and operatorLogDir when using operatorLogPVC" }}
+      {{- end }}
+      - name: "log-dir"
+        persistentVolumeClaim:
+         claimName: {{ .operatorLogPVC }}
       {{- end }}
 {{- end }}
 ---
@@ -318,6 +339,13 @@ spec:
               value: {{ int64 .javaLoggingFileSizeLimit | default 20000000 | quote }}
             - name: "JAVA_LOGGING_COUNT"
               value: {{ .javaLoggingFileCount | default 10 | quote }}
+            {{- if and .operatorLogDir .operatorLogMount }}
+              {{- if not (hasPrefix (toString .operatorLogMount) (toString .operatorLogDir)) }}
+                {{- fail (printf "Error: Invalid Configuration: operatorLogDir %s must start with operatorlogMount %s" .operatorLogDir .operatorLogMount) }}
+              {{- end }}
+            - name: "OPERATOR_LOGDIR"
+              value: {{ .operatorLogDir | quote }}
+            {{- end }}
             {{- if .remoteDebugNodePortEnabled }}
             - name: "REMOTE_DEBUG_PORT"
               value: {{ .webhookDebugHttpPort | quote }}
@@ -354,8 +382,14 @@ spec:
             - name: "weblogic-webhook-secrets-volume"
               mountPath: "/deployment/secrets"
               readOnly: true
-            {{- if .elkIntegrationEnabled }}
+            {{- if and .elkIntegrationEnabled .operatorLogPVC }}
+                {{- fail "Error: elkIntegrationEnabled and opeatorLogPVC cannot be set at the same time."}}
+            {{- else if .elkIntegrationEnabled }}
             - mountPath: "/logs"
+              name: "log-dir"
+              readOnly: false
+            {{- else if .operatorLogPVC }}
+            - mountPath: {{ .operatorLogMount | quote }}
               name: "log-dir"
               readOnly: false
             {{- end }}
@@ -423,6 +457,13 @@ spec:
             secret:
               secretName: "logstash-certs-secret"
               optional: true
+          {{- else if .operatorLogPVC }}
+          {{- if not (and .operatorLogMount .operatorLogDir) }}
+            {{- fail "Must provide operatorLogMount and operatorLogDir when using operatorLogPVC" }}
+          {{- end }}
+          - name: "log-dir"
+            persistentVolumeClaim:
+             claimName: {{ .operatorLogPVC }}
           {{- end }}
   {{- end }}
   {{- end }}

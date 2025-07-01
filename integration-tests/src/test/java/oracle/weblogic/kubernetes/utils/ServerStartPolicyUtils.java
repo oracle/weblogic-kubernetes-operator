@@ -24,6 +24,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -240,10 +241,21 @@ public class ServerStartPolicyUtils {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true -Xms1024m -Xmx1024m"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addEnvItem(new V1EnvVar()
+                    .name("MEM_ARGS")
+                    .value("-Xms1024m -Xmx1024m"))
+                .livenessProbe(new ProbeTuning()
+                     .initialDelaySeconds(300)
+                     .periodSeconds(30)
+                     .failureThreshold(3))
+                .readinessProbe(new ProbeTuning()
+                     .initialDelaySeconds(300)
+                     .periodSeconds(30)
+                     .failureThreshold(3)))
             .adminServer(new AdminServer()
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
@@ -289,6 +301,21 @@ public class ServerStartPolicyUtils {
   /**
    * Verify the server MBEAN configuration through rest API.
    * @param managedServer name of the managed server
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName name of the admin server
+   * @return true if MBEAN is found otherwise false
+   **/
+  public static Callable<Boolean> isManagedServerConfiguration(String managedServer,
+                                                               String domainNamespace,
+                                                               String adminServerPodName) {
+    return () -> {
+      return checkManagedServerConfiguration(managedServer, domainNamespace, adminServerPodName);
+    };
+  }
+
+  /**
+   * Verify the server MBEAN configuration through rest API.
+   * @param managedServer name of the managed server
    * @return true if MBEAN is found otherwise false
    **/
   public static boolean checkManagedServerConfiguration(String managedServer,
@@ -297,7 +324,7 @@ public class ServerStartPolicyUtils {
     StringBuffer checkCluster = new StringBuffer(KUBERNETES_CLI + " exec -n "
         + domainNamespace + " " + adminServerPodName)
         .append(" -- /bin/bash -c \"")
-        .append("curl --user ")
+        .append("curl  --connect-timeout 10 --max-time 20 --user ")
         .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + adminServerPodName + ":7001")
         .append("/management/tenant-monitoring/servers/")
