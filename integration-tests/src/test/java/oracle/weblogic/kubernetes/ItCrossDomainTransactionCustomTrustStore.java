@@ -143,11 +143,11 @@ class ItCrossDomainTransactionCustomTrustStore {
         + "-alias server_alias "
         + "-validity 360 "
         + "-keysize 2048 "
-        + "-dname CN=" + hostname
+        + "-dname \"CN=" + hostname
         + " OU=WLS, "
         + "O=Oracle, "
         + "L=Basking Ridge, "
-        + "ST=CA, C=US "
+        + "ST=CA, C=US\" "
         + "-deststoretype pkcs12  "
         + "-storepass " + storePass
         + " -keypass " + keyPass
