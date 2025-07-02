@@ -246,6 +246,7 @@ class ItCrossDomainTransactionCustomTrustStore {
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
             .modelImageTag(miiAuxiliaryImage2Tag)
             .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
             .modelVariableFiles(modelProperties);
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);
 
@@ -332,7 +333,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domain1Uid, miiAuxiliaryImage1, domainNamespace);
+        domain2Uid, miiAuxiliaryImage2, domainNamespace);
     adminServerPodName = domain2Uid + "-adminserver";
     managedServerPrefix = domain2Uid + "-managed-server";
 
