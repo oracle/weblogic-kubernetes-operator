@@ -157,7 +157,6 @@ public class WDTArchiveHelper {
           archiveHelperScript + " add structuredApplication"
           + " -archive_file %s"
           + " -source %s ",
-          params.appArchiveDir(),
           zipPath,
           application);
       result = Command.withParams(
