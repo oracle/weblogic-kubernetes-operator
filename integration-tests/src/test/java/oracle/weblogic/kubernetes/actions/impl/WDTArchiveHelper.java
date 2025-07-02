@@ -300,14 +300,14 @@ public class WDTArchiveHelper {
    * @param serverName server name
    * @param source source directory
    */
-  public boolean addServerKeyStore(
+  public boolean addServerKeystore(
       String zipPath,
       String serverName,
       String source
   ) {
 
     String cmd = String.format(
-        archiveHelperScript + " add serverKeyStore"
+        archiveHelperScript + " add serverKeystore"
         + " -archive_file %s"
         + " -server_name %s"
         + " -source %s ",
