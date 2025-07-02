@@ -3,6 +3,6 @@
 appDeployments:
     Application:
         myear:
-            SourcePath: wlsdeploy/applications/webapp
+            SourcePath: wlsdeploy/structuredApplications/webapp
             ModuleType: ear
             Target: '@@PROP:CLUSTER_NAME@@,@@PROP:ADMIN_SERVER_NAME@@'
