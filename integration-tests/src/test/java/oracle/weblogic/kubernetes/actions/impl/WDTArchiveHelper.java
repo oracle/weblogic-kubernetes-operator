@@ -140,7 +140,7 @@ public class WDTArchiveHelper {
    * @return true if the command succeeds
    * @throws java.io.IOException when WDT download fails
    */
-  public boolean createArchiveWithStructuredApplication() throws IOException {
+  public boolean createArchiveWithStructuredApplication(String archiveName) throws IOException {
     // check and install WDT
     checkAndInstallWDT();
     // make sure that we always have an app name
@@ -166,24 +166,19 @@ public class WDTArchiveHelper {
     }
 
     // createArchive a zip file that can be passed to WIT
-    String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), params.appName());
-
-    boolean result = true;
-    for (String application : params.srcDirList()) {
-      String cmd = String.format(
-          archiveHelperScript + " add structuredApplication"
-          + " -archive_file %s"
-          + " -source %s ",
-          zipPath,
-          archiveSrcDir);
-      result = Command.withParams(
-          defaultCommandParams()
-              .command(cmd)
-              .verbose(true)
-              .redirect(false))
-          .execute() && result;
-    }
-    return result;
+    String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), archiveName);
+    String cmd = String.format(
+        archiveHelperScript + " add structuredApplication"
+        + " -archive_file %s"
+        + " -source %s ",
+        zipPath,
+        archiveSrcDir);
+    return Command.withParams(
+        defaultCommandParams()
+            .command(cmd)
+            .verbose(true)
+            .redirect(false))
+        .execute();
   }
 
   /**

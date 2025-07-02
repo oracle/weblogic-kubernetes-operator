@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
@@ -199,11 +198,11 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     //create the archive.zip with appliocation and cusom store files
     AppParams appParams = WDTArchiveHelper
-        .defaultAppParams().appName("archive")
+        .defaultAppParams().appName("webapp")
         .srcDirList(List.of(WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15")
             ? APP_DIR + "/jakartawebapp" : APP_DIR + "/javaxwebapp"));
     boolean status = WDTArchiveHelper.withParams(appParams)
-        .createArchiveWithStructuredApplication();
+        .createArchiveWithStructuredApplication("archive");
     assertTrue(status, "Failed to create a archive of application");
     String appArchiveDir = appParams.appArchiveDir();
     status = WDTArchiveHelper.withParams(appParams)
@@ -292,11 +291,7 @@ class ItCrossDomainTransactionCustomTrustStore {
         createSecretsForImageRepos(domain1Namespace),
         encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage1);
-    
-    domainCR.spec().serverPod()
-        .addEnvItem(new V1EnvVar()
-            .name("JAVA_OPTIONS")
-            .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"));
+
     domainCR.spec()
         .configuration(new Configuration()
             .model(new Model()
