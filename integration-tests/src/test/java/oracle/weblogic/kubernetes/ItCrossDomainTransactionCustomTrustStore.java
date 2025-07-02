@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
@@ -293,8 +294,10 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     HashMap domain1Map = new HashMap<>();
     domain1Map.put("weblogic.domainUID", "domain1");
-    domainCR.metadata().name("domain1")
-        .namespace(domainNamespace).labels(domain1Map);
+    domainCR.metadata()
+        .name(domain1Uid)
+        .namespace(domainNamespace)
+        .labels(domain1Map);
     domainCR.spec()
         .configuration(new Configuration()
             .model(new Model()
@@ -313,6 +316,8 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     createDomainAndVerify(domain1Uid, domainCR, domainNamespace, adminServerPodName, 
         managedServerPrefix, replicaCount);
+    
+    logger.info("domain1 CR\n{0}\n", Yaml.dump(domainCR));
 
     AuxiliaryImage image = domainCR.spec()
         .configuration()
@@ -339,6 +344,8 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
         managedServerPrefix, replicaCount);
+    
+    logger.info("domain2 CR\n{0}\n", Yaml.dump(domainCR));
 
   }
 
