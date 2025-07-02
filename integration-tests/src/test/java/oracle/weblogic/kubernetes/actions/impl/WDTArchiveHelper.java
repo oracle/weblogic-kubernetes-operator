@@ -147,6 +147,21 @@ public class WDTArchiveHelper {
     if (params.appName() == null) {
       params.appName(params.srcDirList().get(0));
     }
+    String archiveSrcDir = params.appArchiveDir()
+        + "/wlsdeploy/applications/" + params.appName();
+    // prepare the archive directory and copy over the app src
+    try {
+      cleanupDirectory(archiveSrcDir);
+      checkDirectory(archiveSrcDir);
+      for (String item : params.srcDirList()) {
+        copyFolder(
+            item,
+            archiveSrcDir);
+      }
+    } catch (IOException ioe) {
+      getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
+      return false;
+    }
 
     // createArchive a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), params.appName());
