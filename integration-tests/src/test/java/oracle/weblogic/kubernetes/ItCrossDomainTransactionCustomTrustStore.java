@@ -331,6 +331,7 @@ class ItCrossDomainTransactionCustomTrustStore {
         .namespace(domainNamespace).labels(domain2Map);
 
     domainCR.spec()
+        .domainUid(domain2Uid)
         .configuration()
         .model()
         .configMap(domain2cm)
