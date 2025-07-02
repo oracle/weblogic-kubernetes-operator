@@ -336,6 +336,8 @@ class ItCrossDomainTransactionCustomTrustStore {
         .configMap(domain2cm)
         .withAuxiliaryImages(List.of(image));
     
+    logger.info("domain2 CR\n{0}\n", Yaml.dump(domainCR));
+    
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domain2Uid, miiAuxiliaryImage2, domainNamespace);
@@ -345,7 +347,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
         managedServerPrefix, replicaCount);
     
-    logger.info("domain2 CR\n{0}\n", Yaml.dump(domainCR));
+    
 
   }
 
