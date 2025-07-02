@@ -250,7 +250,7 @@ class ItCrossDomainTransactionCustomTrustStore {
             .modelImageTag(miiAuxiliaryImage2Tag)
             .modelFiles(modelList)
             .modelVariableFiles(modelProperties);
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);
 
   }
   

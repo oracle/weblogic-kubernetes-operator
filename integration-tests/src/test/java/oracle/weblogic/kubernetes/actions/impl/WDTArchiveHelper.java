@@ -175,7 +175,7 @@ public class WDTArchiveHelper {
           + " -archive_file %s"
           + " -source %s ",
           zipPath,
-          application);
+          archiveSrcDir);
       result = Command.withParams(
           defaultCommandParams()
               .command(cmd)
