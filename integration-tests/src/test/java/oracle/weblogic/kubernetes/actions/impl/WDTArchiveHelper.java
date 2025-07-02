@@ -294,8 +294,10 @@ public class WDTArchiveHelper {
     String cmd = String.format(
         archiveHelperScript + " add serverKeyStore"
         + " -archive_file %s"
+        + " -server_name %s"
         + " -source %s ",
         zipPath,
+        serverName,
         source);
 
     return Command.withParams(
