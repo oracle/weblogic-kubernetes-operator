@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Configuration;
@@ -67,8 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItCrossDomainTransactionCustomTrustStore {
 
   private static String opNamespace = null;
-  private static String domain1Namespace = null;
-  private static String domain2Namespace = null;
+  private static String domainNamespace = null;
 
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
@@ -90,7 +88,7 @@ class ItCrossDomainTransactionCustomTrustStore {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) throws IOException {
+  public static void initAll(@Namespaces(2) List<String> namespaces) throws IOException {
     logger = getLogger();
     
     storeDir = Files.createTempDirectory(Paths.get(WORK_DIR), "cxtxcustom").toString();
@@ -102,27 +100,26 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     logger.info("Creating unique namespace for domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    domain1Namespace = namespaces.get(1);
-    domain2Namespace = namespaces.get(2);
+    domainNamespace = namespaces.get(1);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for domain1 admin credentials");
     adminSecretName1 = "domain1-weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName1, domain1Namespace, 
+    createSecretWithUsernamePassword(adminSecretName1, domainNamespace, 
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     
     logger.info("Create secret for domain2 admin credentials");
     adminSecretName2 = "domain2-weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName2, domain2Namespace, 
+    createSecretWithUsernamePassword(adminSecretName2, domainNamespace, 
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
     encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domain1Namespace,
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
     
     generateKeyStores();
@@ -270,14 +267,14 @@ class ItCrossDomainTransactionCustomTrustStore {
             Paths.get(RESOURCE_DIR, "customstore","model1.properties"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jms.yaml")), domain1Namespace);
+            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jms.yaml")), domainNamespace);
     
     ConfigMapUtils.createConfigMapFromFiles(domain2cm, 
         List.of(
             Paths.get(RESOURCE_DIR, "customstore","model2.properties"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jms.yaml")), domain1Namespace);    
+            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jms.yaml")), domainNamespace);    
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
@@ -287,12 +284,16 @@ class ItCrossDomainTransactionCustomTrustStore {
         domain1Uid, miiAuxiliaryImage1);
     
     DomainResource domainCR = CommonMiiTestUtils
-        .createDomainResourceWithAuxiliaryImage(domain1Uid, domain1Namespace,
+        .createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName1, 
-        createSecretsForImageRepos(domain1Namespace),
+        createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage1);
 
+    HashMap domain1Map = new HashMap<>();
+    domain1Map.put("weblogic.domainUID", "domain1");
+    domainCR.metadata().name("domain2")
+        .namespace(domainNamespace).labels(domain1Map);
     domainCR.spec()
         .configuration(new Configuration()
             .model(new Model()
@@ -305,11 +306,11 @@ class ItCrossDomainTransactionCustomTrustStore {
     
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domain1Uid, miiAuxiliaryImage1, domain1Namespace);
-    String adminServerPodName = domain1Uid + "-admin-server";
+        domain1Uid, miiAuxiliaryImage1, domainNamespace);
+    String adminServerPodName = domain1Uid + "-adminserver";
     String managedServerPrefix = domain1Uid + "-managed-server";
 
-    createDomainAndVerify(domain1Uid, domainCR, domain1Namespace, adminServerPodName, 
+    createDomainAndVerify(domain1Uid, domainCR, domainNamespace, adminServerPodName, 
         managedServerPrefix, replicaCount);
 
     AuxiliaryImage image = domainCR.spec()
@@ -318,10 +319,10 @@ class ItCrossDomainTransactionCustomTrustStore {
         .getAuxiliaryImages().getFirst()
         .image(miiAuxiliaryImage2).sourceModelHome("/auxiliary/models");
 
-    Map domain2Map = new HashMap<>();
+    HashMap domain2Map = new HashMap<>();
     domain2Map.put("weblogic.domainUID", "domain2");
     domainCR.metadata().name("domain2")
-        .namespace(domain2Namespace).labels(domain2Map);
+        .namespace(domainNamespace).labels(domain2Map);
 
     domainCR.spec()
         .configuration()
