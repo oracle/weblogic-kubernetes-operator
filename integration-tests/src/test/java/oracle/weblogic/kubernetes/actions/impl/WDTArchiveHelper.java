@@ -145,6 +145,7 @@ public class WDTArchiveHelper {
     checkAndInstallWDT();
     // make sure that we always have an app name
     if (params.appName() == null) {
+      getLogger().info("Appname is not set, setting it to app src dir name");
       params.appName(params.srcDirList().get(0));
     }
     String archiveSrcDir = params.appArchiveDir()
@@ -154,6 +155,7 @@ public class WDTArchiveHelper {
       cleanupDirectory(archiveSrcDir);
       checkDirectory(archiveSrcDir);
       for (String item : params.srcDirList()) {
+        getLogger().info("Copying {0} to {1}", item, archiveSrcDir);
         copyFolder(
             item,
             archiveSrcDir);

@@ -212,7 +212,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     assertTrue(status, "Failed to create a archive of application");
     status = WDTArchiveHelper.withParams(appParams)
         .addServerKeystore(appArchiveDir + "/archive.zip", "cluster-1-template", 
-            storeDir + "//DomainIdentityStore.p12");
+            storeDir + "/DomainIdentityStore.p12");
     assertTrue(status, "Failed to create a archive of application");
     //WDTArchiveHelper.withParams(appParams).addCustom(miiImage, miiImage);
 
