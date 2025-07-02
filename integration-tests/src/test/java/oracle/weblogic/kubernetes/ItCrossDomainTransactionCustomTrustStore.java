@@ -292,7 +292,7 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     HashMap domain1Map = new HashMap<>();
     domain1Map.put("weblogic.domainUID", "domain1");
-    domainCR.metadata().name("domain2")
+    domainCR.metadata().name("domain1")
         .namespace(domainNamespace).labels(domain1Map);
     domainCR.spec()
         .configuration(new Configuration()
@@ -329,6 +329,16 @@ class ItCrossDomainTransactionCustomTrustStore {
         .model()
         .configMap(domain2cm)
         .withAuxiliaryImages(List.of(image));
+    
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+        domain1Uid, miiAuxiliaryImage1, domainNamespace);
+    adminServerPodName = domain2Uid + "-adminserver";
+    managedServerPrefix = domain2Uid + "-managed-server";
+
+    createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
+        managedServerPrefix, replicaCount);
+
   }
 
 
