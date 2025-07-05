@@ -46,8 +46,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -292,7 +290,7 @@ class ItCrossDomainTransactionCustomTrustStore {
         encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage1);
 
-    HashMap domain1Map = new HashMap<>();
+    HashMap<String, String> domain1Map = new HashMap<>();
     domain1Map.put("weblogic.domainUID", "domain1");
     domainCR.metadata()
         .name(domain1Uid)
@@ -366,32 +364,8 @@ class ItCrossDomainTransactionCustomTrustStore {
       }
     }
   }
+  
+    private void checkCrossDomainTx() {
 
-  /**
-   * Check Configured JMS Resource.
-   *
-   * @param domainNamespace domain namespace
-   * @param adminServerPodName  admin server pod name
-   * @param adminSvcExtHost admin server external host
-   */
-  private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
-                                               String adminSvcExtHost) {
-    verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
-        "JMSSystemResources", "TestClusterJmsModule2", "200");
-  }
-
-  /**
-   * Check Configured JDBC Resource.
-   *
-   * @param domainNamespace domain namespace
-   * @param adminServerPodName  admin server pod name
-   * @param adminSvcExtHost admin server external host
-   */
-  public static void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName,
-                                                String adminSvcExtHost) {
-
-    verifyConfiguredSystemResouceByPath(domainNamespace, adminServerPodName, adminSvcExtHost,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB");
   }
 }

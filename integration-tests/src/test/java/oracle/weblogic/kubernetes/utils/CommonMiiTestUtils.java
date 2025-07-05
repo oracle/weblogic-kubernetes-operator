@@ -498,10 +498,15 @@ public class CommonMiiTestUtils {
             .serverPod(new oracle.weblogic.domain.ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                    .value("-Djavax.net.debug=ssl -Dweblogic.security.SSL.ignoreHostnameVerification=true "
+                        + "-Dweblogic.debug.DebugSecuritySSL=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("XJAVA_OPTIONS")
+                    .value("-Djavax.net.debug=ssl -Dweblogic.security.SSL.ignoreHostnameVerification=true "
+                        + "-Dweblogic.debug.DebugSecuritySSL=true"))
                 .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=true"))
                 .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
