@@ -345,14 +345,8 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
         managedServerPrefix, replicaCount);
-    
-    
-
   }
 
-
-  
-  
   /**
    * Cleanup images.
    */
@@ -364,8 +358,9 @@ class ItCrossDomainTransactionCustomTrustStore {
       }
     }
   }
-  
-    private void checkCrossDomainTx() {
+
+  private void checkCrossDomainTx() {
 
   }
+
 }
