@@ -54,7 +54,7 @@ topology:
              HostnameVerificationIgnored: true
              ServerPrivateKeyAlias: 'server_alias'
              ServerPrivateKeyPassPhraseEncrypted: 'changeit'
-             UseServerCerts: true
+             UseServerCerts: false
              Enabled: true
              ListenPort: 6000
 resources:
