@@ -15,6 +15,7 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.util.Yaml;
+import java.util.concurrent.TimeUnit;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
@@ -259,7 +260,7 @@ class ItCrossDomainTransactionCustomTrustStore {
    */
   @Test
   @DisplayName("Test to create domain using createAuxImage with default options")
-  void testCreateDomainUsingAuxImageDefaultOptions() {
+  void testCreateDomainUsingAuxImageDefaultOptions() throws InterruptedException {
     String domain1cm = "domain1-mii-cm";
     String domain2cm = "domain2-mii-cm";
     
@@ -361,6 +362,7 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
         managedServerPrefix, replicaCount);
+    TimeUnit.HOURS.sleep(5);
   }
 
   /**
