@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Configuration;
@@ -290,12 +291,27 @@ class ItCrossDomainTransactionCustomTrustStore {
         encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage1);
 
+    String options = " -Djavax.net.debug=ssl -Dweblogic.security.SSL.ignoreHostnameVerification=true"
+        + " -Dweblogic.debug.DebugSecuritySSL=true "
+        + " -Dweblogic.security.CustomTrustKeyStoreFileName="
+        + "$(DOMAIN_HOME)/config/wlsdeploy/servers/cluster-1-template/DomainTrustStore.p12"
+        + " -Dweblogic.security.CustomTrustKeyStoreType=PKCS12"
+        + " -Dweblogic.security.CustomTrustKeyStorePassPhrase=changeit"
+        + " -Dweblogic.security.CustomIdentityKeyStoreFileName="
+        + "$(DOMAIN_HOME)/config/wlsdeploy/servers/cluster-1-template/DomainIdentityStore.p12"
+        + " -Dweblogic.security.CustomIdentityKeyStoreType=PKCS12"
+        + " -Dweblogic.security.CustomIdentityKeyStorePassPhrase=changeit"
+        + " -Dweblogic.security.KeyStores=CustomIdentityAndCustomTrust";
+
     HashMap<String, String> domain1Map = new HashMap<>();
     domain1Map.put("weblogic.domainUID", "domain1");
     domainCR.metadata()
         .name(domain1Uid)
         .namespace(domainNamespace)
         .labels(domain1Map);
+    domainCR.spec().serverPod().env(List.of(new V1EnvVar()
+        .name("JAVA_OPTIONS").value(options), new V1EnvVar()
+        .name("XJAVA_OPTIONS").value(options)));
     domainCR.spec()
         .configuration(new Configuration()
             .model(new Model()
