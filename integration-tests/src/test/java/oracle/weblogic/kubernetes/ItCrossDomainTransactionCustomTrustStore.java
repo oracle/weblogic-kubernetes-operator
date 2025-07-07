@@ -268,7 +268,6 @@ class ItCrossDomainTransactionCustomTrustStore {
     
     ConfigMapUtils.createConfigMapFromFiles(domain1cm, 
         List.of(
-            Paths.get(archiveFile),
             Paths.get(RESOURCE_DIR, "customstore","model1.properties"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
@@ -276,7 +275,6 @@ class ItCrossDomainTransactionCustomTrustStore {
     
     ConfigMapUtils.createConfigMapFromFiles(domain2cm, 
         List.of(
-            Paths.get(archiveFile),
             Paths.get(RESOURCE_DIR, "customstore","model2.properties"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
