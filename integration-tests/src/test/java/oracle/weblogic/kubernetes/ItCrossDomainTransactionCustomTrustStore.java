@@ -80,6 +80,7 @@ class ItCrossDomainTransactionCustomTrustStore {
   private static String adminSecretName2;
   private static String encryptionSecretName;
   private static String storeDir;
+  private static String archiveFile;
 
   /**
    * Install Operator.
@@ -221,6 +222,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     
     // image1 with model files for domain config, ds, app and wdt install files
     List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/archive.zip");
+    archiveFile = appParams.appArchiveDir() + "/archive.zip";
 
     List<String> modelProperties = new ArrayList<>();
     String modelProperty = "model1.properties";
@@ -265,6 +267,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     
     ConfigMapUtils.createConfigMapFromFiles(domain1cm, 
         List.of(
+            Paths.get(archiveFile),
             Paths.get(RESOURCE_DIR, "customstore","model1.properties"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
@@ -272,6 +275,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     
     ConfigMapUtils.createConfigMapFromFiles(domain2cm, 
         List.of(
+            Paths.get(archiveFile),
             Paths.get(RESOURCE_DIR, "customstore","model2.properties"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
             Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
