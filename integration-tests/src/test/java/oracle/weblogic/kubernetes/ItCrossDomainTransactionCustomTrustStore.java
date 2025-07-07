@@ -223,6 +223,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     // image1 with model files for domain config, ds, app and wdt install files
     List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/archive.zip");
     archiveFile = appParams.appArchiveDir() + "/archive.zip";
+    logger.info(archiveFile);
 
     List<String> modelProperties = new ArrayList<>();
     String modelProperty = "model1.properties";
