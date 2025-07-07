@@ -34,6 +34,19 @@ topology:
     Server:
         "@@PROP:ADMIN_SERVER_NAME@@":
             ListenPort: 7001
+            KeyStores: "CustomIdentityAndCustomTrust"
+            CustomIdentityKeyStoreFileName: "config/wlsdeploy/servers/AdminServer/DomainIdentityStore.p12"
+            CustomIdentityKeyStoreType: "PKCS12"
+            CustomIdentityKeyStorePassPhraseEncrypted: "changeit"
+            CustomTrustKeyStoreFileName: "config/wlsdeploy/servers/AdminServer/DomainTrustStore.p12"
+            CustomTrustKeyStoreType: "PKCS12"
+            CustomTrustKeyStorePassPhraseEncrypted: "changeit"
+            SSL:
+                Enabled: true
+                HostnameVerificationIgnored: true
+                ListenPort: 7002
+                ServerPrivateKeyAlias: "server_alias"
+                ServerPrivateKeyPassPhraseEncrypted: "changeit"
             NetworkAccessPoint:
                 T3Channel:
                     ListenPort: '@@PROP:T3CHANNELPORT@@'

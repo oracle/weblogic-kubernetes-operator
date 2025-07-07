@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Configuration;
@@ -310,9 +309,11 @@ class ItCrossDomainTransactionCustomTrustStore {
         .name(domain1Uid)
         .namespace(domainNamespace)
         .labels(domain1Map);
+    /*
     domainCR.spec().serverPod().env(List.of(new V1EnvVar()
         .name("JAVA_OPTIONS").value(options), new V1EnvVar()
         .name("XJAVA_OPTIONS").value(options)));
+    */
     domainCR.spec()
         .configuration(new Configuration()
             .model(new Model()
