@@ -211,6 +211,9 @@ def filter_model(model):
         if 'Server' not in topology:
           topology['Server'] = {}
 
+        if 'Machine' in topology:
+          topology['Machine'] = {}
+
         if admin_server not in topology['Server']:
           topology['Server'][admin_server] = {}
 
@@ -255,6 +258,8 @@ def customizeServerTemplates(model):
   if template_names is not None:
     for template_name in template_names:
       template = serverTemplates[template_name]
+      if 'Machine' in template:
+        del template['Machine']
       cluster_name = getClusterNameOrNone(template)
       if cluster_name is not None:
         customizeServerTemplate(topology, template, template_name)
@@ -377,6 +382,9 @@ def customizeServer(model, server, name):
   adminServer = None
   if 'AdminServerName' in model['topology'] and len(model['topology']['AdminServerName']) > 0:
     adminServer = model['topology']['AdminServerName']
+
+  if 'Machine' in server:
+    del server['Machine']
 
   customizeLog(name, server)
   customizeAccessLog(name, server)
