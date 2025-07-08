@@ -212,7 +212,7 @@ def filter_model(model):
           topology['Server'] = {}
 
         if 'Machine' in topology:
-          topology['Machine'] = {}
+          del topology['Machine']
 
         if admin_server not in topology['Server']:
           topology['Server'][admin_server] = {}
