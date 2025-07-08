@@ -65,7 +65,7 @@ find "$SRCDIR/operator" -name target -type d -exec chmod -R u+w {} \; -exec rm -
 TEMP_M2_REPO="/tmp/m2repo-$RANDOM"
 
 echo "@@ Info: Running Maven build..."
-mvn clean install -Dmaven.repo.local="$TEMP_M2_REPO"
+mvn clean install -Dmaven.repo.local="$TEMP_M2_REPO" -DskipTests
 
 # Handle build args for proxy if set
 HTTP_BUILD_ARG=""
