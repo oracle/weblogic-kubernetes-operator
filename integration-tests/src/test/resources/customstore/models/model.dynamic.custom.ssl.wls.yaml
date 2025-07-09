@@ -42,7 +42,7 @@ topology:
             CustomTrustKeyStoreType: PKCS12
             CustomTrustKeyStorePassPhraseEncrypted: 'changeit'
             SSL:
-                Enabled: true
+                Enabled: false
                 HostnameVerificationIgnored: true
                 ListenPort: 7002
                 ServerPrivateKeyAlias: "server_alias"
@@ -67,7 +67,7 @@ topology:
              HostnameVerificationIgnored: true
              ServerPrivateKeyAlias: 'server_alias'
              ServerPrivateKeyPassPhraseEncrypted: 'changeit'
-             UseServerCerts: false
+             UseServerCerts: true
              Enabled: true
              ListenPort: 6000
 resources:
