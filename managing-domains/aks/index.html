@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1752118749" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1752118749" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1752182832" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1752182832" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1752118749"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1752182832"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1752118749"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1752118749"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1752182832"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1752182832"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1752118749"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1752182832"></script>
 
     
   </div>
@@ -3920,7 +3920,6 @@
     <li><a href="#tlsssl">TLS/SSL</a>
       <ul>
         <li><a href="#upload-existing-keystores">Upload existing KeyStores</a></li>
-        <li><a href="#use-keystores-stored-in-azure-key-vault">Use KeyStores stored in Azure Key Vault</a></li>
       </ul>
     </li>
     <li><a href="#load-balancing">Load balancing</a>
@@ -3940,11 +3939,6 @@
     <li><a href="#tags">Tags</a></li>
     <li><a href="#review--create">Review + create</a></li>
     <li><a href="#template-outputs">Template outputs</a></li>
-    <li><a href="#useful-resources">Useful resources</a>
-      <ul>
-        <li><a href="#store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</a></li>
-      </ul>
-    </li>
   </ul>
 </nav>
     </div>
@@ -3993,7 +3987,6 @@
     <li><a href="#tlsssl">TLS/SSL</a>
       <ul>
         <li><a href="#upload-existing-keystores">Upload existing KeyStores</a></li>
-        <li><a href="#use-keystores-stored-in-azure-key-vault">Use KeyStores stored in Azure Key Vault</a></li>
       </ul>
     </li>
     <li><a href="#load-balancing">Load balancing</a>
@@ -4013,11 +4006,6 @@
     <li><a href="#tags">Tags</a></li>
     <li><a href="#review--create">Review + create</a></li>
     <li><a href="#template-outputs">Template outputs</a></li>
-    <li><a href="#useful-resources">Useful resources</a>
-      <ul>
-        <li><a href="#store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</a></li>
-      </ul>
-    </li>
   </ul>
 </nav></div>
 <h3 id="introduction">Introduction</h3>
@@ -4279,8 +4267,8 @@
 <p>When you are satisfied with your selections, select <strong>Next</strong> and open <strong>TLS/SSL</strong> blade.</p>
 <h3 id="tlsssl">TLS/SSL</h3>
 <p>With the <strong>TLS/SSL</strong> blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA). See <a href="https://aka.ms/arm-oraclelinux-wls-ssl-configuration">Oracle WebLogic Server Keystores configuration</a> for more information.</p>
-<p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.</strong> If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next</strong>. If you select <strong>Yes</strong>, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.</p>
-<p>If you want to upload existing keystores, select <strong>Upload existing KeyStores</strong> for the option <strong>How would you like to provide required configuration</strong>, and enter the values for the fields listed in the following table.</p>
+<p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.</strong> If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next</strong>. If you select <strong>Yes</strong>, you must upload your existing keystores.</p>
+<p>Enter the values for the fields listed in the following table.</p>
 <h4 id="upload-existing-keystores">Upload existing KeyStores</h4>
 <table>
 <thead>
@@ -4336,58 +4324,6 @@
 </tr>
 </tbody>
 </table>
-<p>If you want to use keystores that are stored in Azure Key Vault, select <strong>Use KeyStores stored in Azure Key Vault</strong> for the option <strong>How would you like to provide required configuration</strong>, and enter the values for the fields listed in the following table.</p>
-<h4 id="use-keystores-stored-in-azure-key-vault">Use KeyStores stored in Azure Key Vault</h4>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Resource group name in current subscription containing the Key Vault</td>
-<td>Enter the name of the Resource Group containing the Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination.</td>
-</tr>
-<tr>
-<td>Name of the Azure Key Vault containing secrets for the TLS/SSL certificate</td>
-<td>Enter the name of the Azure Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the Identity KeyStore Data</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the identity keystore data. Follow <a href="#store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</a> to upload the certificate to Azure Key Vault.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the passphrase for the Identity KeyStore</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the identity keystore.</td>
-</tr>
-<tr>
-<td>The Identity KeyStore type (JKS,PKCS12)</td>
-<td>Select the type of custom identity keystore. The supported values are JKS and PKCS12.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the Private Key Alias</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the private key alias.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the passphrase for the Private Key</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the private key.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the Trust KeyStore Data</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the trust keystore data. Follow <a href="#store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</a> to upload the certificate to Azure Key Vault.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the passphrase for the Trust KeyStore</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the the passphrase for the trust keystore.</td>
-</tr>
-<tr>
-<td>The Trust KeyStore type (JKS,PKCS12)</td>
-<td>Select the type of custom trust keystore. The supported values are JKS and PKCS12.</td>
-</tr>
-</tbody>
-</table>
 <p>When you are satisfied with your selections, select <strong>Next</strong> and open <strong>Load balancing</strong> blade.</p>
 <h3 id="load-balancing">Load balancing</h3>
 <p>Use this blade to configure load balancing. There are three options:</p>
@@ -4423,7 +4359,6 @@
 <ul>
 <li>Generate a self-signed front-end certificate: Generate a self-signed front-end certificate and apply it during deployment.</li>
 <li>Upload a TLS/SSL certificate: Upload the pre-signed certificate now.</li>
-<li>Identify an Azure Key Vault: The Key Vault must already contain the certificate and its password stored as secrets.</li>
 </ul>
 <p><strong>Generate a self-signed frontend certificate</strong></p>
 <table>
@@ -4464,37 +4399,6 @@
 <tr>
 <td>Trusted root certificate(.cer, .cert)</td>
 <td>A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate.</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Identify an Azure Key Vault</strong></p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Resource group name in current subscription containing the KeyVault</td>
-<td>Enter the name of the Resource Group containing the Key Vault that stores the application gateway SSL certificate and the data required for SSL termination.</td>
-</tr>
-<tr>
-<td>Name of the Azure KeyVault containing secrets for the Certificate for SSL Termination</td>
-<td>Enter the name of the Azure Key Vault that stores the application gateway SSL certificate and the data required for SSL termination.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the front-end TLS/SSL certificate data</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the Application Gateway front-end SSL certificate data. Follow <a href="#store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</a> to upload the certificate to Azure Key Vault.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the password for the front-end TLS/SSL certificate</td>
-<td>Enter the name of the Azure Key Vault secret that holds the value of the password for the application gateway front-end SSL certificate.</td>
-</tr>
-<tr>
-<td>The name of the secret in the specified Key Vault whose value is the trusted root certificate data</td>
-<td>A trusted root certificate is required to allow back-end instances in the application gateway. Enter the name of the Azure Key Vault secret that holds the value of the application gateway trusted root certificate data. Follow <a href="#store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</a> to upload the certificate to Azure Key Vault.</td>
 </tr>
 </tbody>
 </table>
@@ -4812,41 +4716,6 @@
 </tr>
 </tbody>
 </table>
-<h3 id="useful-resources">Useful resources</h3>
-<p>Review the following useful resources.</p>
-<h4 id="store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</h4>
-<ol>
-<li>
-<p>Base 64 encode the certificate file; omit the <code>-w0</code> for macOS:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>base64 myIdentity.jks -w0 &gt;mycert.txt
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 myIdentity.p12 -w0 &gt;mycert.txt</span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 myTrust.jks -w0 &gt;mycert.txt</span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 myTrust.p12 -w0 &gt;mycert.txt</span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 root.cert -w0 &gt;mycert.txt</span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 gatewayCert.pfx -w0 &gt;mycert.txt</span>
-</span></span></code></pre></div></li>
-<li>
-<p>From the Azure portal, open your Key Vault.</p>
-</li>
-<li>
-<p>In the Settings section, select Secrets.</p>
-</li>
-<li>
-<p>Select Generate/Import.</p>
-</li>
-<li>
-<p>Under Upload options, leave the default value.</p>
-</li>
-<li>
-<p>Under Name, enter <code>myIdentityCertData</code>, or whatever name you like.</p>
-</li>
-<li>
-<p>Under Value, enter the content of the mycert.txt file.</p>
-</li>
-<li>
-<p>Leave the remaining values at their defaults and select Create.</p>
-</li>
-</ol>
 
 
 
@@ -7471,19 +7340,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1752118749"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1752118749"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1752118749"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1752118749"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1752118749"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1752118749"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1752182833"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1752182833"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1752182833"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1752182833"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1752182833"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1752182833"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1752118749"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1752118749"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1752118749"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1752182833"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1752182833"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1752182833"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1752118749"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1752182833"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
