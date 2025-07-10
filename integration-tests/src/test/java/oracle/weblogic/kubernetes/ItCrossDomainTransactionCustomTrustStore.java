@@ -7,12 +7,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AuxiliaryImage;
@@ -28,6 +29,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ConfigMapUtils;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -37,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -48,20 +51,20 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultC
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("toolkits-srg")
-@Tag("okd-wls-srg")
-@Tag("olcne-mrg")
-@Tag("oke-arm")
 @Tag("oke-parallel")
 class ItCrossDomainTransactionCustomTrustStore {
 
@@ -262,7 +265,7 @@ class ItCrossDomainTransactionCustomTrustStore {
    */
   @Test
   @DisplayName("Test to create domain using createAuxImage with default options")
-  void testCreateDomainUsingAuxImageDefaultOptions() throws InterruptedException {
+  void testCreateDomainUsingAuxImageDefaultOptions() throws InterruptedException, IOException {
     String domain1cm = "domain1-mii-cm";
     String domain2cm = "domain2-mii-cm";
     
@@ -366,7 +369,9 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
         managedServerPrefix, replicaCount);
-    TimeUnit.HOURS.sleep(5);
+    
+    //verify the cross domain transaction
+    checkCrossDomainTx();
   }
 
   /**
@@ -381,8 +386,53 @@ class ItCrossDomainTransactionCustomTrustStore {
     }
   }
 
-  private void checkCrossDomainTx() {
+  private void checkCrossDomainTx() throws IOException {
+    Path jmsClientSrc = Paths.get(RESOURCE_DIR, "customstore", "JmsClient.java");
+    Path jmsClientDst = Paths.get(WORK_DIR, "customstore", "JmsClient.java");
+    Path shellScript = Paths.get(RESOURCE_DIR, "customstore", "runtest.sh");
+    String expectedResult = "All expected strings were found in the log";
 
+    if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15")) {
+
+      Files.copy(jmsClientSrc, jmsClientDst, StandardCopyOption.REPLACE_EXISTING);
+      replaceStringInFile(jmsClientDst.toString(), "jakarta", "javax");
+    } else {
+      Files.copy(jmsClientSrc, jmsClientDst, StandardCopyOption.REPLACE_EXISTING);
+    }
+    String adminServerPodName = domain1Uid + "-adminserver";
+    String destLocation = "/u01/domains/JmsClient.java";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+        adminServerPodName, "weblogic-server",
+        jmsClientDst,
+        Paths.get(destLocation)
+    ));
+    assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
+        shellScript, expectedResult, "t3", "8001"), "unsecure transactiuon didn't go through");
+    assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
+        shellScript, expectedResult, "t3s", "6000"), "secure transactiuon didn't go through");
+  }
+
+  public static boolean runClientInsidePodVerifyResult(String podName, String namespace,
+      Path shellScript, String expectedResult, String... args) {
+    final LoggingFacade logger = getLogger();
+    StringBuilder shellCmd = new StringBuilder(KUBERNETES_CLI + " exec -n ");
+    shellCmd.append(namespace);
+    shellCmd.append(" -it ");
+    shellCmd.append(" -c weblogic-server ");
+    shellCmd.append(podName);
+    shellCmd.append(" -- /bin/bash -c \"");
+    shellCmd.append(shellScript);
+    shellCmd.append(" ");
+    for (String arg : args) {
+      shellCmd.append(arg).append(" ");
+    }
+    shellCmd.append(" \"");
+    logger.info("shell command to be run {0}", shellCmd.toString());
+
+    ExecResult result = assertDoesNotThrow(() -> exec(shellCmd.toString(), true));
+    logger.info("command returned {0}", result.toString());
+    logger.info("command returned EXIT value {0}", result.exitValue());
+    return ((result.exitValue() == 0 && result.stdout().contains(expectedResult)));
   }
 
 }
