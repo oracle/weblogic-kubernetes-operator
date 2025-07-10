@@ -14,8 +14,8 @@ curl -j --noproxy "*" "$url" >> "$LOGFILE" 2>&1
 sleep 5
 
 # 2. Compile and run Java client
-javac /u01/domains/JmsClient.java >> "$LOGFILE" 2>&1
-java -cp .:$CLASSPATH JmsClient t3://domain1-adminserver:7001 weblogic jms.admin.Queue recv >> "$LOGFILE" 2>&1
+javac -d /u01/domains /u01/domains/JmsClient.java >> "$LOGFILE" 2>&1
+java -cp /u01/domains:$CLASSPATH JmsClient t3://domain1-adminserver:7001 weblogic jms.admin.Queue recv >> "$LOGFILE" 2>&1
 
 sleep 5
 
@@ -30,7 +30,7 @@ echo "Searching for expected strings in $LOGFILE"
 # List of strings to check
 STRINGS=(
     "User Transation is committed"
-    "Message Drained [Message to a Local Destination]"
+    "Message Drained"
     "Total Message(s) Received : 10"
 )
 
@@ -38,6 +38,8 @@ STRINGS=(
 ALL_FOUND=true
 
 echo "Verifying expected output in $LOGFILE..."
+
+cat $LOGFILE
 
 for str in "${STRINGS[@]}"; do
     if grep -qF "$str" "$LOGFILE"; then

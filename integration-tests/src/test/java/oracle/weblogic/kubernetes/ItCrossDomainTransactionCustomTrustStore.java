@@ -388,28 +388,33 @@ class ItCrossDomainTransactionCustomTrustStore {
 
   private void checkCrossDomainTx() throws IOException {
     Path jmsClientSrc = Paths.get(RESOURCE_DIR, "customstore", "JmsClient.java");
-    Path jmsClientDst = Paths.get(WORK_DIR, "customstore", "JmsClient.java");
-    Path shellScript = Paths.get(RESOURCE_DIR, "customstore", "runtest.sh");
+    Path jmsClientDst = Paths.get(storeDir, "JmsClient.java");
+    Path shellScriptSrc = Paths.get(RESOURCE_DIR, "customstore", "runtest.sh");
+    Path shellScriptDst = Paths.get("u01", "domains", "runtest.sh");
     String expectedResult = "All expected strings were found in the log";
 
     if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15")) {
-
       Files.copy(jmsClientSrc, jmsClientDst, StandardCopyOption.REPLACE_EXISTING);
       replaceStringInFile(jmsClientDst.toString(), "jakarta", "javax");
     } else {
       Files.copy(jmsClientSrc, jmsClientDst, StandardCopyOption.REPLACE_EXISTING);
     }
     String adminServerPodName = domain1Uid + "-adminserver";
-    String destLocation = "/u01/domains/JmsClient.java";
+    Path destLocationInPod = Paths.get("u01", "domains", "JmsClient.java");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "weblogic-server",
         jmsClientDst,
-        Paths.get(destLocation)
+        destLocationInPod
+    ));
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+        adminServerPodName, "weblogic-server",
+        shellScriptSrc,
+        shellScriptDst
     ));
     assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
-        shellScript, expectedResult, "t3", "8001"), "unsecure transactiuon didn't go through");
+        shellScriptSrc, expectedResult, "t3", "8001"), "unsecure transactiuon didn't go through");
     assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
-        shellScript, expectedResult, "t3s", "6000"), "secure transactiuon didn't go through");
+        shellScriptSrc, expectedResult, "t3s", "6000"), "secure transactiuon didn't go through");
   }
 
   public static boolean runClientInsidePodVerifyResult(String podName, String namespace,
@@ -421,6 +426,8 @@ class ItCrossDomainTransactionCustomTrustStore {
     shellCmd.append(" -c weblogic-server ");
     shellCmd.append(podName);
     shellCmd.append(" -- /bin/bash -c \"");
+    shellCmd.append(" ");
+    shellCmd.append("chmod +x /u01/domains/runtest.sh;");
     shellCmd.append(shellScript);
     shellCmd.append(" ");
     for (String arg : args) {
