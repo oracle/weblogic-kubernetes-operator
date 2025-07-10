@@ -88,8 +88,7 @@ class ItCrossDomainTransactionCustomTrustStore {
   /**
    * Install Operator, generate custom store and create auxiliary domains.
    *
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the 
-   *    JUnit engine parameter resolution mechanism
+   * @param namespaces list of namespaces
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) throws IOException {
