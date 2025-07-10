@@ -9,7 +9,7 @@ LOGFILE=/tmp/jms_test_output.log
 
 # 1. Commit transaction
 url="http://domain1-adminserver:7001/webapp/dtx.jsp?remoteurl=${protocol}://domain2-cluster-cluster-2:${port}&action=commit"
-curl -j --noproxy "*" "$url" >> "$LOGFILE" 2>&1
+curl -j --noproxy "*" "$url" > "$LOGFILE" 2>&1
 
 sleep 5
 
