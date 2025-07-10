@@ -692,7 +692,7 @@
     <maven.compiler.target>21</maven.compiler.target>
     <java.version.range>21</java.version.range>
     <maven.version.range>[3.8.1,)</maven.version.range>
-    <maven-enforcer-plugin-version>3.5.0</maven-enforcer-plugin-version>
+    <maven-enforcer-plugin-version>3.6.0</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.5.0</maven-clean-plugin-version>
     <maven-compiler-plugin-version>3.14.0</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.1.4</maven-deploy-plugin-version>
