@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
+@DisplayName("Test to do cross domain transaction in SSL with custom store")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")
@@ -86,15 +86,15 @@ class ItCrossDomainTransactionCustomTrustStore {
   private static String archiveFile;
 
   /**
-   * Install Operator.
+   * Install Operator, generate custom store and create auxiliary domains.
    *
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the 
+   *    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) throws IOException {
     logger = getLogger();
-    
+
     storeDir = Files.createTempDirectory(Paths.get(WORK_DIR), "cxtxcustom").toString();
 
     // get a new unique opNamespace
@@ -112,12 +112,12 @@ class ItCrossDomainTransactionCustomTrustStore {
     // create secret for admin credentials
     logger.info("Create secret for domain1 admin credentials");
     adminSecretName1 = "domain1-weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName1, domainNamespace, 
+    createSecretWithUsernamePassword(adminSecretName1, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    
+
     logger.info("Create secret for domain2 admin credentials");
     adminSecretName2 = "domain2-weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName2, domainNamespace, 
+    createSecretWithUsernamePassword(adminSecretName2, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
@@ -125,19 +125,19 @@ class ItCrossDomainTransactionCustomTrustStore {
     encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
-    
+
     generateKeyStores();
     createAuxDomain();
   }
-  
+
   /*
-   * "Creating Domain SelfSigned Identity Store and Trust store"
+   * "Creating Domain SelfSigned certificates, Identity Store and Trust store"
    */
   private static void generateKeyStores() throws UnknownHostException, IOException {
     String keyPass = "changeit";
     String storePass = "changeit";
     String hostname = InetAddress.getLocalHost().getHostAddress();
-    
+
     //Creating Domain SelfSigned Identity Store
     String command = "keytool "
         + "-genkey "
@@ -194,7 +194,11 @@ class ItCrossDomainTransactionCustomTrustStore {
         .execute();
   }
 
-  
+  /**
+   * create auxiliary domain images and push it to the repo with custom ssl stores.
+   *
+   * @throws IOException when creating certificates fails.
+   */
   private static void createAuxDomain() throws IOException {
 
     //create the archive.zip with appliocation and cusom store files
@@ -207,11 +211,11 @@ class ItCrossDomainTransactionCustomTrustStore {
     assertTrue(status, "Failed to create a archive of application");
     String appArchiveDir = appParams.appArchiveDir();
     status = WDTArchiveHelper.withParams(appParams)
-        .addServerKeystore(appArchiveDir + "/archive.zip", "cluster-1-template", 
+        .addServerKeystore(appArchiveDir + "/archive.zip", "cluster-1-template",
             storeDir + "/DomainTrustStore.p12");
     assertTrue(status, "Failed to create a archive of application");
     status = WDTArchiveHelper.withParams(appParams)
-        .addServerKeystore(appArchiveDir + "/archive.zip", "cluster-1-template", 
+        .addServerKeystore(appArchiveDir + "/archive.zip", "cluster-1-template",
             storeDir + "/DomainIdentityStore.p12");
     assertTrue(status, "Failed to create a archive of application");
     //WDTArchiveHelper.withParams(appParams).addCustom(miiImage, miiImage);
@@ -222,7 +226,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     } else {
       modelFile = "model.dynamic.demo.ssl.yaml";
     }
-    
+
     // image1 with model files for domain config, ds, app and wdt install files
     List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/archive.zip");
     archiveFile = appParams.appArchiveDir() + "/archive.zip";
@@ -257,69 +261,52 @@ class ItCrossDomainTransactionCustomTrustStore {
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);
 
   }
-  
-  
+   
   /**
-   * Create a domain using auxiliary images. Create auxiliary image using default options.
-   * Verify the domain is running and JMS resource is added.
+   * Create 2 domains using sparse models and auxiliary images.
+   *
+   * Verify the domain is running with custom ssl certificates and cross domain trx works with non ssl and ssl urls.
    */
   @Test
-  @DisplayName("Test to create domain using createAuxImage with default options")
-  void testCreateDomainUsingAuxImageDefaultOptions() throws InterruptedException, IOException {
+  @DisplayName("Test to do cross domain using transaction with custom SSL store")
+  void testCrossDomainTxWithCustomSSLStore() throws InterruptedException, IOException {
     String domain1cm = "domain1-mii-cm";
     String domain2cm = "domain2-mii-cm";
-    
-    ConfigMapUtils.createConfigMapFromFiles(domain1cm, 
+
+    ConfigMapUtils.createConfigMapFromFiles(domain1cm,
         List.of(
-            Paths.get(RESOURCE_DIR, "customstore","model1.properties"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jms.yaml")), domainNamespace);
-    
-    ConfigMapUtils.createConfigMapFromFiles(domain2cm, 
+            Paths.get(RESOURCE_DIR, "customstore", "model1.properties"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.application.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jdbc.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jms.yaml")), domainNamespace);
+
+    ConfigMapUtils.createConfigMapFromFiles(domain2cm,
         List.of(
-            Paths.get(RESOURCE_DIR, "customstore","model2.properties"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.application.yaml"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jdbc.yaml"),
-            Paths.get(RESOURCE_DIR, "customstore","models","sparse.jms.yaml")), domainNamespace);    
+            Paths.get(RESOURCE_DIR, "customstore", "model2.properties"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.application.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jdbc.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jms.yaml")), domainNamespace);
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
-   
+
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain1Uid, miiAuxiliaryImage1);
-    
+
     DomainResource domainCR = CommonMiiTestUtils
         .createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName1, 
-        createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, auxiliaryImagePath,
-        miiAuxiliaryImage1);
-
-    String options = " -Djavax.net.debug=ssl -Dweblogic.security.SSL.ignoreHostnameVerification=true"
-        + " -Dweblogic.debug.DebugSecuritySSL=true "
-        + " -Dweblogic.security.CustomTrustKeyStoreFileName="
-        + "$(DOMAIN_HOME)/config/wlsdeploy/servers/cluster-1-template/DomainTrustStore.p12"
-        + " -Dweblogic.security.CustomTrustKeyStoreType=PKCS12"
-        + " -Dweblogic.security.CustomTrustKeyStorePassPhrase=changeit"
-        + " -Dweblogic.security.CustomIdentityKeyStoreFileName="
-        + "$(DOMAIN_HOME)/config/wlsdeploy/servers/cluster-1-template/DomainIdentityStore.p12"
-        + " -Dweblogic.security.CustomIdentityKeyStoreType=PKCS12"
-        + " -Dweblogic.security.CustomIdentityKeyStorePassPhrase=changeit"
-        + " -Dweblogic.security.KeyStores=CustomIdentityAndCustomTrust";
+            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName1,
+            createSecretsForImageRepos(domainNamespace),
+            encryptionSecretName, auxiliaryImagePath,
+            miiAuxiliaryImage1);
 
     HashMap<String, String> domain1Map = new HashMap<>();
-    domain1Map.put("weblogic.domainUID", "domain1");
+    domain1Map.put("weblogic.domainUID", domain1Uid);
     domainCR.metadata()
         .name(domain1Uid)
         .namespace(domainNamespace)
         .labels(domain1Map);
-    /*
-    domainCR.spec().serverPod().env(List.of(new V1EnvVar()
-        .name("JAVA_OPTIONS").value(options), new V1EnvVar()
-        .name("XJAVA_OPTIONS").value(options)));
-    */
     domainCR.spec()
         .configuration(new Configuration()
             .model(new Model()
@@ -329,18 +316,19 @@ class ItCrossDomainTransactionCustomTrustStore {
                     .image(miiAuxiliaryImage1)
                     .sourceModelHome("/auxiliary/models")))
                 .runtimeEncryptionSecret(encryptionSecretName)));
-    
+
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domain1Uid, miiAuxiliaryImage1, domainNamespace);
     String adminServerPodName = domain1Uid + "-adminserver";
     String managedServerPrefix = domain1Uid + "-managed-server";
 
-    createDomainAndVerify(domain1Uid, domainCR, domainNamespace, adminServerPodName, 
+    createDomainAndVerify(domain1Uid, domainCR, domainNamespace, adminServerPodName,
         managedServerPrefix, replicaCount);
-    
+
     logger.info("domain1 CR\n{0}\n", Yaml.dump(domainCR));
 
+    //create the second domain using auxiliary image 2
     AuxiliaryImage image = domainCR.spec()
         .configuration()
         .model()
@@ -348,8 +336,8 @@ class ItCrossDomainTransactionCustomTrustStore {
         .image(miiAuxiliaryImage2).sourceModelHome("/auxiliary/models");
 
     HashMap domain2Map = new HashMap<>();
-    domain2Map.put("weblogic.domainUID", "domain2");
-    domainCR.metadata().name("domain2")
+    domain2Map.put("weblogic.domainUID", domain2Uid);
+    domainCR.metadata().name(domain2Uid)
         .namespace(domainNamespace).labels(domain2Map);
 
     domainCR.spec()
@@ -358,9 +346,9 @@ class ItCrossDomainTransactionCustomTrustStore {
         .model()
         .configMap(domain2cm)
         .withAuxiliaryImages(List.of(image));
-    
+
     logger.info("domain2 CR\n{0}\n", Yaml.dump(domainCR));
-    
+
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domain2Uid, miiAuxiliaryImage2, domainNamespace);
@@ -369,7 +357,7 @@ class ItCrossDomainTransactionCustomTrustStore {
 
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
         managedServerPrefix, replicaCount);
-    
+
     //verify the cross domain transaction
     checkCrossDomainTx();
   }
@@ -386,6 +374,11 @@ class ItCrossDomainTransactionCustomTrustStore {
     }
   }
 
+  /**
+   * Copies the JmsCliennt and shell script to run the clients to the admin pod and verifies the transactions.
+   *
+   * @throws IOException when file copying to pod fails.
+   */
   private void checkCrossDomainTx() throws IOException {
     Path jmsClientSrc = Paths.get(RESOURCE_DIR, "customstore", "JmsClient.java");
     Path jmsClientDst = Paths.get(storeDir, "JmsClient.java");
@@ -417,7 +410,17 @@ class ItCrossDomainTransactionCustomTrustStore {
         shellScriptDst, expectedResult, "t3s", "6000"), "secure transactiuon didn't go through");
   }
 
-  public static boolean runClientInsidePodVerifyResult(String podName, String namespace,
+  /**
+   * Run the script inside the admin server pod.
+   *
+   * @param podName name of the pod in which to run the command
+   * @param namespace namespace in which pod is running
+   * @param shellScript the shell script to run inside the pod
+   * @param expectedResult expected string from the script
+   * @param args arguments to the shell script
+   * @return true if script return 0
+   */
+  private static boolean runClientInsidePodVerifyResult(String podName, String namespace,
       Path shellScript, String expectedResult, String... args) {
     final LoggingFacade logger = getLogger();
     StringBuilder shellCmd = new StringBuilder(KUBERNETES_CLI + " exec -n ");
@@ -427,7 +430,7 @@ class ItCrossDomainTransactionCustomTrustStore {
     shellCmd.append(podName);
     shellCmd.append(" -- /bin/bash -c \"");
     shellCmd.append(" ");
-    shellCmd.append("chmod +x /u01/domains/runtest.sh;");
+    shellCmd.append("chmod +x " + shellScript + ";");
     shellCmd.append(shellScript);
     shellCmd.append(" ");
     for (String arg : args) {
