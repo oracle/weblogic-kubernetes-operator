@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -16,12 +16,10 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.calls.Client;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LastKnownStatus;
@@ -166,13 +164,12 @@ public class ServerStatusReader {
       final boolean tty = false;
       Process proc = null;
       String state = null;
-      ApiClient client = Client.getInstance();
 
       try {
         try (ThreadLoggingContext stack =
                  setThreadContext().namespace(getNamespace(currentPod)).domainUid(getDomainUid(currentPod))) {
 
-          KubernetesExec kubernetesExec = execFactory.create(client, currentPod, WLS_CONTAINER_NAME);
+          KubernetesExec kubernetesExec = execFactory.create(currentPod, WLS_CONTAINER_NAME);
           kubernetesExec.setStdin(stdin);
           kubernetesExec.setTty(tty);
           proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");

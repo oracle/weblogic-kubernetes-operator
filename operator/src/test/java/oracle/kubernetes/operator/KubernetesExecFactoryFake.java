@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -10,7 +10,6 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.utils.KubernetesExec;
@@ -38,7 +37,7 @@ class KubernetesExecFactoryFake implements KubernetesExecFactory {
   }
 
   @Override
-  public KubernetesExec create(ApiClient client, V1Pod pod, String containerName) {
+  public KubernetesExec create(V1Pod pod, String containerName) {
     return new KubernetesExec() {
       @Override
       public Process exec(String... command) {
