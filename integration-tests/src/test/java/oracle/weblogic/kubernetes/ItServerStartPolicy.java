@@ -136,6 +136,11 @@ class ItServerStartPolicy {
         "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
+    logger.info("Check standalone managed service/pod {0} is created in namespace {1}",
+        domainUid + "-standalone-managed", domainNamespace);
+    checkPodReadyAndServiceExists(domainUid + "-standalone-managed",
+        domainUid, domainNamespace);
+
     // Check standalone server configuration is available
     boolean isStandaloneServerConfigured =
         checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
