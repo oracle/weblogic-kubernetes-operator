@@ -405,8 +405,10 @@ class ItCrossDomainTransactionSecurity {
     ));
     assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
         shellScriptDst, expectedResult, "t3", "8001"), "unsecure transactiuon didn't go through");
-    assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
-        shellScriptDst, expectedResult, "t3s", "6000"), "secure transactiuon didn't go through");
+    if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("12.2")) {
+      assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
+          shellScriptDst, expectedResult, "t3s", "6000"), "secure transactiuon didn't go through");
+    }
   }
 
   /**
