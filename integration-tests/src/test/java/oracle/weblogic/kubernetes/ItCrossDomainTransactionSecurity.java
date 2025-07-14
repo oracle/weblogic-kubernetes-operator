@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")
-class ItCrossDomainTransaction {
+class ItCrossDomainTransactionSecurity {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
