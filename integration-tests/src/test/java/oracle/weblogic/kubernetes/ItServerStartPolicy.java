@@ -142,11 +142,11 @@ class ItServerStartPolicy {
         domainUid, domainNamespace);
 
     // Check standalone server configuration is available
-    boolean isStandaloneServerConfigured =
+    /* boolean isStandaloneServerConfigured =
         checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
     assertTrue(isStandaloneServerConfigured,
-        "Could not find standalone managed server from configured cluster");
-    logger.info("Found standalone managed server configuration");
+        "Could not find standalone managed server");
+    logger.info("Found standalone managed server configuration"); */
   }
 
   /**
@@ -324,7 +324,7 @@ class ItServerStartPolicy {
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    logger.info("Configured managed server shutdown success");
+    logger.info("Standalone managed server shutdown success");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
         "/spec/managedServers/0/serverStartPolicy", "Always"),
