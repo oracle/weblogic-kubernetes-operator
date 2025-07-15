@@ -34,6 +34,10 @@ def filter_model(model):
           model['topology']['Server'] = {}
         model['topology']['Server'][admin_server] = {}
 
+      admin = model['topology']['Server'][admin_server]
+      if 'Machine' in admin:
+        del admin['Machine']
+
       if 'Name' in topology:
         model['topology']['Name'] = topology['Name']
 
