@@ -17,16 +17,10 @@ spec:
   serverStartPolicy: "IfNeeded"
   serverPod:
     env:
-    - name: XJAVA_OPTIONS
-      value: " -Dweblogic.debug.DebugSecuritySSL=true -Dweblogic.StdoutDebugEnabled=true -Djavax.net.debug=ssl -Dweblogic.security.SSL.ignoreHostnameVerification=true"
     - name: JAVA_OPTIONS
       value: " -Dweblogic.debug.DebugSecuritySSL=true -Dweblogic.StdoutDebugEnabled=true -Dweblogic.security.SSL.ignoreHostnameVerification=true"
-    - name: XJAVA_OPTIONS
-      value: " -Dweblogic.StdoutDebugEnabled=true -Dweblogic.security.SSL.ignoreHostnameVerification=true"
     - name: USER_MEM_ARGS
       value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
-    - name: PRE_CLASSPATH
-      value: "$(DOMAIN_HOME)/wlsdeploy/custom/patch/patch2_1412.jar"
   adminServer:
     adminService:
       channels:

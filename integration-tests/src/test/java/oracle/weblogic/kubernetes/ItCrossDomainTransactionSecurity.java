@@ -268,7 +268,7 @@ class ItCrossDomainTransactionSecurity {
    */
   @Test
   @DisplayName("Test to do cross domain using transaction with custom SSL store")
-  void testCrossDomainTxWithCustomSSLStore() throws InterruptedException, IOException {
+  void testCrossDomainTxWithSSL() throws InterruptedException, IOException {
     String domain1cm = "domain1-mii-cm";
     String domain2cm = "domain2-mii-cm";
 
