@@ -13,6 +13,7 @@ mark/*
 **/configfwkdebug.xml
 **/.idea
 .idea
+.oca
 target/*
 target
 **/.classpath
