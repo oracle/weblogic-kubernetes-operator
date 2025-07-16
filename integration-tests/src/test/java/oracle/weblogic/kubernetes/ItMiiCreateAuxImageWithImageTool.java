@@ -3,12 +3,14 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.WDTArchiveHelper;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -43,7 +45,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
@@ -126,10 +127,18 @@ class ItMiiCreateAuxImageWithImageTool {
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
 
     // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-            .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+    try {
+      // createArchive app
+      assertTrue(WDTArchiveHelper
+          .withParams(defaultAppParams()
+              .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
+              .appName(MII_BASIC_APP_NAME))
+          .createArchive(),
+          String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+    } catch (IOException ex) {
+      getLogger().severe(ex.getLocalizedMessage());
+    }
+
   }
 
   /**
