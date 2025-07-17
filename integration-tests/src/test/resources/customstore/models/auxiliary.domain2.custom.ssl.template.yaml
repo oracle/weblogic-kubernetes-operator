@@ -1,0 +1,75 @@
+apiVersion: "weblogic.oracle/@DOMAIN_VERSION@"
+kind: Domain
+metadata:
+  name: domain2
+  namespace: @NAMESPACE@
+  labels:
+    weblogic.domainUID: domain2
+spec:
+  domainHome: /u01/oracle/user_projects/domains/domain2
+  domainHomeSourceType: FromModel
+  image: "oracle/weblogic:@WLS_VERSION@"
+  imagePullPolicy: "Never"
+  webLogicCredentialsSecret: 
+    name: domain2-weblogic-credentials
+  includeServerOutInPodLog: true
+  dataHome: ""
+  serverStartPolicy: "IfNeeded"
+  serverPod:
+    env:
+    - name: XJAVA_OPTIONS
+      value: " -Dweblogic.debug.DebugSecuritySSL=true -Dweblogic.StdoutDebugEnabled=true -Djavax.net.debug=ssl  -Dweblogic.security.SSL.ignoreHostnameVerification=true"
+    - name: JAVA_OPTIONS
+      value: " -Dweblogic.debug.DebugSecuritySSL=true -Dweblogic.StdoutDebugEnabled=true -Dweblogic.security.SSL.ignoreHostnameVerification=true"
+    - name: XJAVA_OPTIONS
+      value: " -Dweblogic.StdoutDebugEnabled=true -Dweblogic.security.SSL.ignoreHostnameVerification=true"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+    - name: PRE_CLASSPATH
+      value: "$(DOMAIN_HOME)/wlsdeploy/custom/patch/patch2_1412.jar"
+    
+  adminServer:
+    adminService:
+      channels:
+       - channelName: default
+         nodePort: 30702
+       - channelName: T3Channel
+  clusters:
+  - name: @CLUSTER_NAME@
+  configuration:
+      model:
+        configMap: domain2-mii-cm
+        domainType: WLS
+        auxiliaryImages:
+        - image: "model-in-image:aux2"
+          sourceModelHome: "/auxiliary/models"
+          sourceWDTInstallHome: "/auxiliary/weblogic-deploy"
+        runtimeEncryptionSecret: domain2-weblogic-credentials
+
+---
+
+apiVersion: "weblogic.oracle/@CLUSTER_VERSION@"
+kind: Cluster
+metadata:
+  name: @CLUSTER_NAME@
+  namespace: @NAMESPACE@
+spec:
+# The desired behavior for starting a specific cluster's member servers
+  clusterName: @CLUSTER_NAME@
+  serverPod:
+    # Instructs Kubernetes scheduler to prefer nodes for new cluster members 
+    # where there are not already members of the same cluster.
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: "weblogic.clusterName"
+                    operator: In
+                    values:
+                      - $(CLUSTER_NAME)
+              topologyKey: "kubernetes.io/hostname"
+  # The number of managed servers to start for this cluster
+  replicas: 2

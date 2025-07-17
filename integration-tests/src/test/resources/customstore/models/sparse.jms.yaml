@@ -1,0 +1,64 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+resources:
+    FileStore:
+        TestFileStore:
+           Target: '@@PROP:ADMIN_SERVER_NAME@@'
+        TestClusterFileStore:
+           Target: '@@PROP:CLUSTER_NAME@@'
+    JMSServer:
+        TestJmsServer:
+            ProductionPausedAtStartup: false
+            ConsumptionPausedAtStartup: false
+            Target: '@@PROP:ADMIN_SERVER_NAME@@'
+            PersistentStore: 'TestFileStore'
+            InsertionPausedAtStartup: false
+            MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+        TestClusterJmsServer:
+            ProductionPausedAtStartup: false
+            ConsumptionPausedAtStartup: false
+            Target: '@@PROP:CLUSTER_NAME@@'
+            PersistentStore: 'TestClusterFileStore'
+            InsertionPausedAtStartup: false
+            MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+
+    JMSSystemResource:
+        TestClusterJmsModule:
+            Target: '@@PROP:CLUSTER_NAME@@'
+            SubDeployment:
+                TestClusterSubDeployment:
+                    Target: TestClusterJmsServer
+            JmsResource:
+              ConnectionFactory:
+                ClusterConnectionFactory:
+                   JNDIName: jms/test/cluster/ConnectionFactory
+                   DefaultTargetingEnabled: true
+                   LoadBalancingParams:
+                       ServerAffinityEnabled: false
+                       LoadBalancingEnabled: true
+                   TransactionParams:
+                       XAConnectionFactoryEnabled: true
+              UniformDistributedQueue:
+                testUniformQueue:
+                   SubDeploymentName: TestClusterSubDeployment
+                   JNDIName: jms/test/UniformQueue
+              UniformDistributedTopic:
+                testUniformTopic:
+                   SubDeploymentName: TestClusterSubDeployment
+                   ForwardingPolicy: Partitioned
+                   JNDIName: jms/test/UniformTopic
+
+        TestJmsModule:
+            Target: '@@PROP:ADMIN_SERVER_NAME@@'
+            SubDeployment:
+                TestSubDeployment:
+                    Target: TestJmsServer
+            JmsResource:
+              Queue:
+                testQueue:
+                   SubDeploymentName: TestSubDeployment
+                   JNDIName: jms/admin/Queue
+              Topic:
+                testTopic:
+                   SubDeploymentName: TestSubDeployment
+                   JNDIName: jms/admin/Topic
