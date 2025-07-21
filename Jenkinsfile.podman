@@ -534,7 +534,8 @@ EOF
                                 PARALLEL_RUN='false'
                             elif [ "${MAVEN_PROFILE_NAME}" == "kind-upgrade" ]; then
                                 PARALLEL_RUN='false'
-                            elif [ -n "${IT_TEST}" ]; then
+                            fi
+                            if [ -n "${IT_TEST}" ]; then
                                 echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
                                 MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
