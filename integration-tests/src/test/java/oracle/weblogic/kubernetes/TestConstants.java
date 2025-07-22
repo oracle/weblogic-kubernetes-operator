@@ -472,8 +472,7 @@ public interface TestConstants {
   
   boolean INSTALL_WEBLOGIC
       = Boolean.parseBoolean((getNonEmptySystemProperty("wko.it.install.weblogic", "false")));
-  String WEBLOGIC_SHIPHOME = getNonEmptySystemProperty("wko.it.wls.shiphome",
-      "https://home.us.oracle.com/results/published/pub/loads/141200/latest/release/src141200/fmw_14.1.2.0.0_wls_generic.jar");
+  String WEBLOGIC_SHIPHOME = System.getenv("WLS_INSTALLERS_BASE_URL");
   
   String ORACLE_OPERATOR_NS = "ns-oracle-operator";
   
