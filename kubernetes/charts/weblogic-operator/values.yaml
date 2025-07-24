@@ -288,3 +288,6 @@ clusterSizePaddingValidationEnabled: true
 
 # operatorLogMount specifies the operator logging volumeMount.  The operator will mount this path with the operatorLogPVC
 #operatorLogMount:
+
+#readOnlyRootFilesystem set the operator and webhook pods to use read only file system
+#readOnlyRootFilesystem: false

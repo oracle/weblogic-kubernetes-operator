@@ -52,6 +52,18 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .readOnlyRootFilesystem }}
+      initContainers:
+      - name:  "copy-container"
+        image: {{ .image | quote }}
+        imagePullPolicy: "IfNotPresent"
+        command: ["/bin/sh", "-c", "cp /deployment/* /deployment_copy && cp /probes/* /probes_copy"]
+        volumeMounts:
+        - name: "deployment-volume"
+          mountPath: "/deployment_copy"
+        - name: "probes-volume"
+          mountPath: "/probes_copy"
+      {{- end }}
       containers:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
@@ -129,6 +141,9 @@ spec:
           runAsUser: {{ .runAsUser | default 1000 }}
           {{- end }}
           runAsNonRoot: true
+          {{- if .readOnlyRootFilesystem }}
+          readOnlyRootFilesystem: true
+          {{- end }}
           privileged: false
           allowPrivilegeEscalation: false
           capabilities:
@@ -141,6 +156,14 @@ spec:
         - name: "weblogic-operator-secrets-volume"
           mountPath: "/deployment/secrets"
           readOnly: true
+        {{- if .readOnlyRootFilesystem }}
+        - name: "deployment-volume"
+          mountPath: "/deployment"
+        - name: "log-volume"
+          mountPath: "/logs"
+        - name: "probes-volume"
+          mountPath: "/probes"
+        {{- end }}
         {{- if and .elkIntegrationEnabled .operatorLogPVC }}
             {{- fail "Error: elkIntegrationEnabled and opeatorLogPVC cannot be set at the same time."}}
         {{- else if .elkIntegrationEnabled }}
@@ -201,6 +224,14 @@ spec:
       - name: "weblogic-operator-secrets-volume"
         secret:
           secretName: "weblogic-operator-secrets"
+      {{- if .readOnlyRootFilesystem }}
+      - name: "deployment-volume"
+        emptyDir: {}
+      - name: "log-volume"
+        emptyDir: {}
+      - name: "probes-volume"
+        emptyDir: {}
+      {{- end }}
       {{- if .elkIntegrationEnabled }}
       - name: "log-dir"
         emptyDir:
@@ -229,6 +260,7 @@ spec:
         persistentVolumeClaim:
          claimName: {{ .operatorLogPVC }}
       {{- end }}
+
 {{- end }}
 ---
   {{ $chartVersion := .Chart.Version }}
@@ -311,6 +343,18 @@ spec:
           tolerations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if .readOnlyRootFilesystem }}
+          initContainers:
+          - name:  "copy-container"
+            image: {{ .image | quote }}
+            imagePullPolicy: "IfNotPresent"
+            command: ["/bin/sh", "-c", "cp /deployment/* /deployment_copy && cp /probes/* /probes_copy"]
+            volumeMounts:
+            - name: "deployment-volume"
+              mountPath: "/deployment_copy"
+            - name: "probes-volume"
+              mountPath: "/probes_copy"
+          {{- end }}
           containers:
           - name: "weblogic-operator-webhook"
             image: {{ .image | quote }}
@@ -374,6 +418,9 @@ spec:
               runAsNonRoot: true
               privileged: false
               allowPrivilegeEscalation: false
+              {{- if .readOnlyRootFilesystem }}
+              readOnlyRootFilesystem: true
+              {{- end }}
               capabilities:
                 drop: ["ALL"]
             volumeMounts:
@@ -382,6 +429,14 @@ spec:
             - name: "weblogic-webhook-secrets-volume"
               mountPath: "/deployment/secrets"
               readOnly: true
+            {{- if .readOnlyRootFilesystem }}
+            - name: "deployment-volume"
+              mountPath: "/deployment"
+            - name: "log-volume"
+              mountPath: "/logs"
+            - name: "probes-volume"
+              mountPath: "/probes"
+            {{- end }}
             {{- if and .elkIntegrationEnabled .operatorLogPVC }}
                 {{- fail "Error: elkIntegrationEnabled and opeatorLogPVC cannot be set at the same time."}}
             {{- else if .elkIntegrationEnabled }}
@@ -437,6 +492,14 @@ spec:
           - name: "weblogic-webhook-secrets-volume"
             secret:
               secretName: "weblogic-webhook-secrets"
+          {{- if .readOnlyRootFilesystem }}
+          - name: "deployment-volume"
+            emptyDir: {}
+          - name: "log-volume"
+            emptyDir: {}
+          - name: "probes-volume"
+            emptyDir: {}
+          {{- end }}
           {{- if .elkIntegrationEnabled }}
           - name: "log-dir"
             emptyDir:
