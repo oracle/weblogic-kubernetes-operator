@@ -1,815 +1,450 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.V1IngressBackend;
-import io.kubernetes.client.openapi.models.V1IngressRule;
-import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AuxiliaryImage;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.ClusterList;
-import oracle.weblogic.domain.ClusterSpec;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.domain.Model;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
-import oracle.weblogic.kubernetes.actions.impl.Cluster;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
-import oracle.weblogic.kubernetes.actions.impl.Service;
+import oracle.weblogic.kubernetes.actions.impl.WDTArchiveHelper;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
+import oracle.weblogic.kubernetes.utils.ConfigMapUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static java.net.InetAddress.getLocalHost;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
-import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
-import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Cross domain transaction with CrossDomainSecurityEnabled set to true.
- */
-@DisplayName("Verify cross domain transaction is successful with CrossDomainSecurityEnabled set to true")
+@DisplayName("Test to do cross domain transaction in SSL with custom store")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-weekly-sequential")
+@Tag("oke-parallel")
 class ItCrossDomainTransactionSecurity {
-
-  private static final String auxImageName1 = DOMAIN_IMAGES_PREFIX + "domain1-cdxaction-aux";
-  private static final String auxImageName2 = DOMAIN_IMAGES_PREFIX + "domain2-cdxaction-aux";
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String domainUid1 = "domain1";
-  private static String domainUid2 = "domain2";
-  private static String adminServerName = "admin-server";
-  private static String domain1AdminServerPodName = domainUid1 + "-" + adminServerName;
-  private static String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
-  private static String domain2AdminServerPodName = domainUid2 + "-" + adminServerName;
-  private static String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
+
   private static LoggingFacade logger = null;
-  private static int replicaCount = 2;
-  private static int t3ChannelPort1 = getNextFreePort();
-  private static int t3ChannelPort2 = getNextFreePort();
-  private static String domain1AdminExtSvcRouteHost = null;
-  private static String hostAndPort1 = null;
-  private static String hostHeader1;
-  private static String nginxNamespace = null;
-  private static NginxParams nginxHelmParams = null;
-  private static int nginxNodePort;
-  private static Path tlsCertFile;
-  private static Path tlsKeyFile;
-  private static Path jksTrustFile;
-  private static String tlsSecretName = domainUid2 + "-test-tls-secret";
-  private static String hostAddress = K8S_NODEPORT_HOST;
+  private String domain1Uid = "domain1";
+  private String domain2Uid = "domain2";
+  private static String miiAuxiliaryImage1Tag = "auximage1" + getDateAndTimeStamp();
+  private static String miiAuxiliaryImage2Tag = "auximage2" + getDateAndTimeStamp();
+  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
+  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
+  private final int replicaCount = 1;
+  private static String adminSecretName1;
+  private static String adminSecretName2;
+  private static String encryptionSecretName;
+  private static String storeDir;
+  private static String archiveFile;
 
   /**
-   * Install Operator.
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *     JUnit engine parameter resolution mechanism
+   * Install Operator, generate custom store and create auxiliary domains.
+   *
+   * @param namespaces list of namespaces
    */
   @BeforeAll
-  static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
+  public static void initAll(@Namespaces(2) List<String> namespaces) throws IOException {
     logger = getLogger();
+
+    storeDir = Files.createTempDirectory(Paths.get(WORK_DIR), "cxtxcustom").toString();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    assertNotNull(namespaces.getFirst(), "Namespace list is null");
+    assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Creating unique namespace for domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
-
-    // get a unique Nginx namespace
-    logger.info("Assign a unique namespace for Nginx");
-    assertNotNull(namespaces.get(2), "Namespace list is null");
-    nginxNamespace = namespaces.get(2);
-
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createTestRepoSecret(domainNamespace);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    if (OKE_CLUSTER) {
-      logger.info("Installing Nginx controller using helm");
-      // install and verify Nginx
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    }
+    // create secret for admin credentials
+    logger.info("Create secret for domain1 admin credentials");
+    adminSecretName1 = "domain1-weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName1, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    buildDomains();
-
-    logger.info("2 domains with crossDomainSecurity enabled start up!");
-    int domain1AdminServiceNodePort
-          = getServiceNodePort(domainNamespace, getExternalServicePodName(domain1AdminServerPodName), "default");
-    assertNotEquals(-1, domain1AdminServiceNodePort, "domain1 admin server default node port is not valid");
-    logger.info("domain1AdminServiceNodePort is: " + domain1AdminServiceNodePort);
-    int domain2AdminServiceNodePort
-          = getServiceNodePort(domainNamespace, getExternalServicePodName(domain2AdminServerPodName), "default");
-    assertNotEquals(-1, domain1AdminServiceNodePort, "domain2 admin server default node port is not valid");
-    logger.info("domain2AdminServiceNodePort is: " + domain2AdminServiceNodePort);
-
-    if (OKE_CLUSTER) {
-      createNginxIngressPathRoutingRules();
-      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-      hostAndPort1 = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace);
-    } else {
-      hostAndPort1 = getHostAndPort(domain1AdminExtSvcRouteHost, domain1AdminServiceNodePort);
-      if (TestConstants.KIND_CLUSTER
-          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        hostHeader1 = createIngressHostRouting(domainNamespace, domainUid1, adminServerName, 7001);
-        hostAndPort1 = formatIPv6Host(getLocalHost().getHostAddress())
-            + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
-
-      }
-    }
-    logger.info("hostHeader1 for domain1 is: " + hostHeader1);
-    logger.info("hostAndPort1 for domain1 is: " + hostAndPort1);
-  }
-
-  /**
-   * Configure two domains d1 and d2 with CrossDomainSecurityEnabled set to true
-   * On both domains create a user (cross-domain) with group CrossDomainConnectors
-   * Add required Credential Mapping
-   * Deploy a JSP on d1's admin server that takes 2 parameteers
-   * a. The tx action b. the d2's cluster service url
-   * Starts a User transcation
-   * Using t3 send 10 messgaes to a distributed destination (jms.testUniformQueue) on d2 that has 2 members
-   * Using t3 Send a message to local destination (jms.admin.adminQueue) on d1
-   * Commit/rollback the transation
-   * Using t3 receive the messages from the distributed destination (jms.testUniformQueue) on d2
-   * Using t3 receive the message from the local destination (jms.admin.adminQueue) on d1
-   */
-  @Test
-  @DisplayName("Check cross domain transaction works")
-  void testCrossDomainTxWithCrossDomainSecurityEnabled() {
-    
-    // build the standalone JMS Client on Admin pod
-    String destLocation = "/u01/JmsSendReceiveClient.java";
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
-        domain1AdminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
-        Paths.get(destLocation)));
-    runJavacInsidePod(domain1AdminServerPodName, domainNamespace, destLocation);
-
-    //In a UserTransaction send 10 msg to remote udq and 1 msg to local queue and commit the tx
-    StringBuffer curlCmd1 = new StringBuffer("curl -skg --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd1.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url1 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=commit\"";
-    curlCmd1.append(url1);
-    logger.info("Executing curl command: {0}", curlCmd1);
-    assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
-          "Didn't send expected msg ");
-
-    //receive msg from the udq that has 2 memebers
-    StringBuffer curlCmd2 = new StringBuffer("curl -j --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd2.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url2 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=recv&dest=jms.testUniformQueue\"";
-    curlCmd2.append(url2);
-    logger.info("Executing curl command: {0}", curlCmd2);
-    for (int i = 0; i < 2; i++) {
-      assertTrue(getCurlResult(curlCmd2.toString()).contains("Total Message(s) Received : 5"),
-          "Didn't receive expected msg count from remote queue");
-    }
-
-    // receive 1 msg from the local queue
-    testUntil(
-        runClientInsidePod(domain1AdminServerPodName, domainNamespace,
-            "/u01", "JmsSendReceiveClient",
-            "t3://" + "localhost" + ":" + "7001", "receive", "jms.admin.adminQueue", "1"),
-        logger,
-        "Wait for JMS Client to send/recv msg");
-
-    //In a UserTransaction send 10 msg to remote udq and 1 msg to local queue and rollback the tx
-    StringBuffer curlCmd3 = new StringBuffer("curl -skg --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd3.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url3 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=rollback\"";
-    curlCmd3.append(url3);
-    logger.info("Executing curl command: {0}", curlCmd3);
-    assertTrue(getCurlResult(curlCmd3.toString()).contains("Message sent in a rolled-back User Transation"),
-          "Didn't send expected msg ");
-
-    //receive 0 msg from the udq that has 2 memebers
-    StringBuffer curlCmd4 = new StringBuffer("curl -j --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd4.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url4 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl=t3://domain2-cluster-cluster-2:8001&action=recv&dest=jms.testUniformQueue\"";
-    curlCmd4.append(url4);
-    logger.info("Executing curl command: {0}", curlCmd4);
-    for (int i = 0; i < 2; i++) {
-      assertTrue(getCurlResult(curlCmd4.toString()).contains("Total Message(s) Received : 0"),
-          "Didn't receive expected msg count from remote queue");
-    }
-
-    // receive 0 msg from the local queue
-    testUntil(
-        runClientInsidePod(domain1AdminServerPodName, domainNamespace,
-            "/u01", "JmsSendReceiveClient",
-            "t3://" + "localhost" + ":" + "7001", "receive", "jms.admin.adminQueue", "0"),
-        logger,
-        "Wait for JMS Client to send/recv msg");
-  }
-
-  /**
-   * Configure two domains d1 and d2 with CrossDomainSecurityEnabled set to true
-   * On both domains create a user (cross-domain) with group CrossDomainConnectors
-   * Add required Credential Mapping
-   * Deploy a JSP on d1's admin server that takes 2 parameteers
-   * a. The tx action b. the d2's cluster service url
-   * Starts a User transcation
-   * Using t3s send 10 messgaes to a distributed destination (jms.testUniformQueue) on d2 that has 2 members
-   * Using t3s Send a message to local destination (jms.admin.adminQueue) on d1
-   * Commit/rollback the transation
-   * Using t3s receive the messages from the distributed destination (jms.testUniformQueue) on d2
-   * Using t3s Receive the message from the local destination (jms.admin.adminQueue) on d1
-   */
-  @Test
-  @DisplayName("Check cross domain transaction works when SSL enabled")
-  @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
-  void testCrossDomainTxWithCrossDomainSecurityAndSSLEnabled() {
-
-    // Create SSL certificate and key using openSSL with SAN extension
-    createCertKeyFiles(hostAddress);
-    // Create kubernates secret using genereated certificate and key
-    createSecretWithTLSCertKey(tlsSecretName);
-    // Import the tls certificate into a JKS truststote to be used while
-    // running the standalone client.
-    importKeytoTrustStore();
-
-    //In a UserTransaction send 10 msg to remote udq and 1 msg to local queue and commit the tx
-    StringBuffer curlCmd1 = new StringBuffer("curl -skg --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd1.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url1 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2:8500&action=commit\"";
-    curlCmd1.append(url1);
-    logger.info("Executing curl command: {0}", curlCmd1);
-    assertTrue(getCurlResult(curlCmd1.toString()).contains("Message sent in a commit User Transation"),
-          "Didn't send expected msg ");
-
-    //receive msg from the udq that has 2 memebers
-    StringBuffer curlCmd2 = new StringBuffer("curl -j --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd2.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url2 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain2-cluster-cluster-2:8500&action=recv&dest=jms.testUniformQueue\"";
-    curlCmd2.append(url2);
-    logger.info("Executing curl command: {0}", curlCmd2);
-    for (int i = 0; i < 2; i++) {
-      assertTrue(getCurlResult(curlCmd2.toString()).contains("Total Message(s) Received : 5"),
-          "Didn't receive expected msg count from remote queue");
-    }
-
-    // receive 1 msg from the local queue
-    logger.info("Receiving 1 msg from the local queue");
-    StringBuffer curlCmdx = new StringBuffer("curl -j --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmdx.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String urlx = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain1-admin-server:7002&action=recv&dest=jms.admin.adminQueue\"";
-    curlCmdx.append(urlx);
-    logger.info("Executing curl command for local queue: {0}", curlCmdx);
-    assertTrue(getCurlResult(curlCmdx.toString()).contains("Total Message(s) Received : 1"),
-          "Didn't receive expected msg count from local queue");
-
-    //In a UserTransaction send 10 msg to remote udq and 1 msg to local queue and rollback the tx
-    StringBuffer curlCmd3 = new StringBuffer("curl -skg --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd3.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url3 = "\"http://" + hostAndPort1
-        + "/sample_war/dtx.jsp?remoteurl=t3s://domain2-cluster-cluster-2:8500&action=rollback\"";
-    curlCmd3.append(url3);
-    logger.info("Executing curl command: {0}", curlCmd3);
-    assertTrue(getCurlResult(curlCmd3.toString()).contains("Message sent in a rolled-back User Transation"),
-          "Didn't send expected msg ");
-
-    //receive 0 msg from the udq that has 2 memebers
-    StringBuffer curlCmd4 = new StringBuffer("curl -j --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmd4.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String url4 = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain2-cluster-cluster-2:8500&action=recv&dest=jms.testUniformQueue\"";
-    curlCmd4.append(url4);
-    logger.info("Executing curl command: {0}", curlCmd4);
-    for (int i = 0; i < 2; i++) {
-      assertTrue(getCurlResult(curlCmd4.toString()).contains("Total Message(s) Received : 0"),
-          "Didn't receive expected msg count from remote queue");
-    }
-
-    // receive 0 msg from the local queue
-    logger.info("Receiving 0 msg from the local queue");
-    StringBuffer curlCmdy = new StringBuffer("curl -j --show-error --noproxy '*' ");
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      curlCmdy.append(" -H 'host: " + hostHeader1 + "' ");
-    }
-    String urly = "\"http://" + hostAndPort1
-          + "/sample_war/get.jsp?remoteurl="
-          + "t3s://domain1-admin-server:7002&action=recv&dest=jms.admin.adminQueue\"";
-    curlCmdy.append(urly);
-    logger.info("Executing curl command for local queue: {0}", curlCmdy);
-    assertTrue(getCurlResult(curlCmdx.toString()).contains("Total Message(s) Received : 0"),
-          "Didn't receive expected msg count from local queue");
-
-  }
-
-  private static String createAuxImage(String imageName, String imageTag, List<String> wdtModelFile,
-                                       String wdtVariableFile) {
-
-    // build sample-app application
-    AppParams appParams = defaultAppParams()
-        .srcDirList(Collections.singletonList("crossdomain-security"))
-        .appArchiveDir(ARCHIVE_DIR + ItCrossDomainTransactionSecurity.class.getName())
-        .appName("crossdomainsec");
-    assertTrue(buildAppArchive(appParams),
-        String.format("Failed to create app archive for %s", "crossdomainsec"));
-    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + "crossdomainsec" + ".zip");
-
-    //create an auxiliary image with model and application
-    WitParams witParams
-        = new WitParams()
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(wdtModelFile)
-            .modelVariableFiles(Arrays.asList(wdtVariableFile))
-            .modelArchiveFiles(archiveList);
-    createAndPushAuxiliaryImage(imageName, imageTag, witParams);
-
-    return imageName + ":" + imageTag;
-  }
-
-  private static void buildDomains() {
-
-    String auxImageTag = getDateAndTimeStamp();
-    String modelDir = RESOURCE_DIR + "/" + "crossdomsecurity";
-    List<String> modelList = new ArrayList<>();
-    modelList.add(modelDir + "/" + "model.dynamic.wls.yaml");
-    modelList.add(modelDir + "/sparse.jdbc.yaml");
-    modelList.add(modelDir + "/sparse.jms.yaml");
-    modelList.add(modelDir + "/sparse.application.yaml");
-
-    // create WDT properties file for the WDT model domain1
-    Path wdtVariableFile1 = Paths.get(WORK_DIR, ItCrossDomainTransactionSecurity.class.getName(),
-        "wdtVariable1.properties");
-    logger.info("The K8S_NODEPORT_HOSTNAME is: " + K8S_NODEPORT_HOSTNAME);
-    logger.info("The K8S_NODEPORT_HOST is: " + K8S_NODEPORT_HOST);
-    logger.info("In the domain1 t3ChannelPort1 is: " + t3ChannelPort1);
-    logger.info("In the domain2 t3ChannelPort2 is " + t3ChannelPort2);
-
-    assertDoesNotThrow(() -> {
-      Files.deleteIfExists(wdtVariableFile1);
-      Files.createDirectories(wdtVariableFile1.getParent());
-      Files.writeString(wdtVariableFile1, "DOMAIN_UID=domain1\n", StandardOpenOption.CREATE);
-      Files.writeString(wdtVariableFile1, "CLUSTER_NAME=cluster-1\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile1, "ADMIN_SERVER_NAME=admin-server\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile1, "MANAGED_SERVER_BASE_NAME=managed-server\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile1, "MANAGED_SERVER_PORT=8001\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile1, "MANAGED_SERVER_COUNT=4\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile1, "T3PUBLICADDRESS=" + K8S_NODEPORT_HOSTNAME + "\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile1, "T3CHANNELPORT=" + t3ChannelPort1 + "\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile1, "REMOTE_DOMAIN=domain2\n", StandardOpenOption.APPEND);
-    });
-
-    // create auxiliary image for domain1
-    String auxImage1 = createAuxImage(auxImageName1, auxImageTag, modelList, wdtVariableFile1.toString());
-
-    // create WDT properties file for the WDT model domain2
-    Path wdtVariableFile2 = Paths.get(WORK_DIR, ItCrossDomainTransactionSecurity.class.getName(),
-        "wdtVariable2.properties");
-    assertDoesNotThrow(() -> {
-      Files.deleteIfExists(wdtVariableFile2);
-      Files.createDirectories(wdtVariableFile2.getParent());
-      Files.writeString(wdtVariableFile2, "DOMAIN_UID=domain2\n", StandardOpenOption.CREATE);
-      Files.writeString(wdtVariableFile2, "CLUSTER_NAME=cluster-2\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile2, "ADMIN_SERVER_NAME=admin-server\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile2, "MANAGED_SERVER_BASE_NAME=managed-server\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile2, "MANAGED_SERVER_PORT=8001\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile2, "MANAGED_SERVER_COUNT=4\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile2, "T3PUBLICADDRESS=" + K8S_NODEPORT_HOSTNAME + "\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile2, "T3CHANNELPORT=" + t3ChannelPort2 + "\n", StandardOpenOption.APPEND);
-      Files.writeString(wdtVariableFile2, "REMOTE_DOMAIN=domain1\n", StandardOpenOption.APPEND);
-    });
-
-    // create auxiliary image for domain2
-    String auxImage2 = createAuxImage(auxImageName2, auxImageTag, modelList, wdtVariableFile2.toString());
-
-    // create admin credential secret for domain1
-    logger.info("Create admin credential secret for domain1");
-    String domain1AdminSecretName = domainUid1 + "-weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        domain1AdminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid1));
-
-    // create admin credential secret for domain2
-    logger.info("Create admin credential secret for domain2");
-    String domain2AdminSecretName = domainUid2 + "-weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        domain2AdminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
+    logger.info("Create secret for domain2 admin credentials");
+    adminSecretName2 = "domain2-weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName2, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
+    encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-        "weblogicenc", "weblogicenc");
+        ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
 
-    //create domain1 and verify its running
-    createDomain(domainUid1, auxImage1, domainNamespace, domain1AdminSecretName, encryptionSecretName,
-        "cluster-1", domain1AdminServerPodName, domain1ManagedServerPrefix, t3ChannelPort1);
-
-    //create domain2 and verify its running
-    createDomain(domainUid2, auxImage2, domainNamespace, domain2AdminSecretName, encryptionSecretName,
-        "cluster-2", domain2AdminServerPodName, domain2ManagedServerPrefix, t3ChannelPort2);
+    generateKeyStores();
+    createAuxDomain();
   }
 
-  private static void createDomain(String domainUid, String imageName, String domainNamespace, String
-      domainAdminSecretName, String encryptionSecretName, String clusterName, String adminServerPodName,
-      String managedServerPrefix, int t3ChannelPort) {
+  /*
+   * "Creating Domain SelfSigned certificates, Identity Store and Trust store"
+   */
+  private static void generateKeyStores() throws UnknownHostException, IOException {
+    String keyPass = "changeit";
+    String storePass = "changeit";
+    String hostname = InetAddress.getLocalHost().getHostAddress();
 
+    //Creating Domain SelfSigned Identity Store
+    String command = "keytool "
+        + "-genkey "
+        + "-keyalg RSA "
+        + "-alias server_alias "
+        + "-validity 360 "
+        + "-keysize 2048 "
+        + "-dname \"CN=" + hostname
+        + " OU=WLS, "
+        + "O=Oracle, "
+        + "L=Basking Ridge, "
+        + "ST=CA, C=US\" "
+        + "-deststoretype pkcs12  "
+        + "-storepass " + storePass
+        + " -keypass " + keyPass
+        + " -keystore " + storeDir + "/DomainIdentityStore.p12";
+    assertTrue(runCommand(command), "Failed to create domain identity store");
+    command = "keytool "
+        + "-export "
+        + "-alias server_alias "
+        + "-file " + storeDir + "/domain.der "
+        + "-keystore " + storeDir + "/DomainIdentityStore.p12 "
+        + "-storepass " + storePass
+        + " -keypass " + keyPass;
+    assertTrue(runCommand(command), "Failed to export domain identity store");
+    //Creating Domain/Client Trust Store by importing certificate
+    command = "keytool "
+        + "-import -trustcacerts "
+        + "-alias server_trust "
+        + "-file " + storeDir + "/domain.der "
+        + "-keystore " + storeDir + "/DomainTrustStore.p12 "
+        + "-storepass " + storePass
+        + " -keypass " + keyPass
+        + " -deststoretype pkcs12 -noprompt";
+    assertTrue(runCommand(command), "Failed to create domain trust store");
+    command = "keytool "
+        + "-import "
+        + "-trustcacerts "
+        + "-alias client_trust "
+        + "-file " + storeDir + "/domain.der "
+        + "-keystore " + storeDir + "/ClientTrustStore.p12 "
+        + "-storepass " + storePass
+        + " -keypass " + keyPass
+        + " -deststoretype pkcs12 -noprompt";
+    assertTrue(runCommand(command), "Failed to import domain trust store");
+  }
+
+  private static boolean runCommand(String command) {
+    return Command.withParams(
+        defaultCommandParams()
+            .command(command)
+            .verbose(true)
+            .redirect(false))
+        .execute();
+  }
+
+  /**
+   * create auxiliary domain images and push it to the repo with custom ssl stores.
+   *
+   * @throws IOException when creating certificates fails.
+   */
+  private static void createAuxDomain() throws IOException {
+
+    //create the archive.zip with appliocation and cusom store files
+    AppParams appParams = WDTArchiveHelper
+        .defaultAppParams().appName("webapp")
+        .srcDirList(List.of(WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15")
+            ? APP_DIR + "/jakartawebapp" : APP_DIR + "/javaxwebapp"));
+    boolean status = WDTArchiveHelper.withParams(appParams)
+        .createArchiveWithStructuredApplication("archive");
+    assertTrue(status, "Failed to create a archive of application");
+    String appArchiveDir = appParams.appArchiveDir();
+    status = WDTArchiveHelper.withParams(appParams)
+        .addServerKeystore(appArchiveDir + "/archive.zip", "cluster-1-template",
+            storeDir + "/DomainTrustStore.p12");
+    assertTrue(status, "Failed to create a archive of application");
+    status = WDTArchiveHelper.withParams(appParams)
+        .addServerKeystore(appArchiveDir + "/archive.zip", "cluster-1-template",
+            storeDir + "/DomainIdentityStore.p12");
+    assertTrue(status, "Failed to create a archive of application");
+    //WDTArchiveHelper.withParams(appParams).addCustom(miiImage, miiImage);
+
+    String modelFile;
+    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("14.1.2") || WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15")) {
+      modelFile = "model.dynamic.custom.ssl.wls.yaml";
+    } else {
+      modelFile = "model.dynamic.demo.ssl.yaml";
+    }
+
+    // image1 with model files for domain config, ds, app and wdt install files
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/archive.zip");
+    archiveFile = appParams.appArchiveDir() + "/archive.zip";
+    logger.info(archiveFile);
+
+    List<String> modelProperties = new ArrayList<>();
+    String modelProperty = "model1.properties";
+    modelProperties.add(RESOURCE_DIR + "/customstore/" + modelProperty);
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(RESOURCE_DIR + "/customstore/models/" + modelFile);
+
+    WitParams witParams
+        = new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage1Tag)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .modelVariableFiles(modelProperties);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, witParams);
+
+    modelProperties.clear();
+    modelProperty = "model2.properties";
+    modelProperties.add(RESOURCE_DIR + "/customstore/" + modelProperty);
+    witParams
+        = new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage2Tag)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .modelVariableFiles(modelProperties);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);
+
+  }
+   
+  /**
+   * Create 2 domains using sparse models and auxiliary images.
+   *
+   * Verify the domain is running with custom ssl certificates and cross domain trx works with non ssl and ssl urls.
+   */
+  @Test
+  @DisplayName("Test to do cross domain using transaction with custom SSL store")
+  void testCrossDomainTxWithSSL() throws InterruptedException, IOException {
+    String domain1cm = "domain1-mii-cm";
+    String domain2cm = "domain2-mii-cm";
+
+    ConfigMapUtils.createConfigMapFromFiles(domain1cm,
+        List.of(
+            Paths.get(RESOURCE_DIR, "customstore", "model1.properties"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.application.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jdbc.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jms.yaml")), domainNamespace);
+
+    ConfigMapUtils.createConfigMapFromFiles(domain2cm,
+        List.of(
+            Paths.get(RESOURCE_DIR, "customstore", "model2.properties"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.application.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jdbc.yaml"),
+            Paths.get(RESOURCE_DIR, "customstore", "models", "sparse.jms.yaml")), domainNamespace);
+
+    // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
-    //create domain resource with the auxiliary image
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1}",
-        domainUid, imageName);
-    DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, domainAdminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, t3ChannelPort, auxiliaryImagePath,
-        imageName);
 
-    domainCR = createClusterResourceAndAddReferenceToDomain(
-        domainUid + "-" + clusterName, clusterName, domainNamespace, domainCR, replicaCount);
+    // create domain custom resource using auxiliary image
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domain1Uid, miiAuxiliaryImage1);
+
+    DomainResource domainCR = CommonMiiTestUtils
+        .createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
+            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName1,
+            createSecretsForImageRepos(domainNamespace),
+            encryptionSecretName, auxiliaryImagePath,
+            miiAuxiliaryImage1);
+
+    HashMap<String, String> domain1Map = new HashMap<>();
+    domain1Map.put("weblogic.domainUID", domain1Uid);
+    domainCR.metadata()
+        .name(domain1Uid)
+        .namespace(domainNamespace)
+        .labels(domain1Map);
+    domainCR.spec()
+        .configuration(new Configuration()
+            .model(new Model()
+                .configMap(domain1cm)
+                .domainType("WLS")
+                .withAuxiliaryImages(List.of(new AuxiliaryImage()
+                    .image(miiAuxiliaryImage1)
+                    .sourceModelHome("/auxiliary/models")))
+                .runtimeEncryptionSecret(encryptionSecretName)));
+
     // create domain and verify its running
-    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
-        domainUid, imageName, domainNamespace);
-    createDomainAndVerify(domainUid, domainCR, domainNamespace,
-        adminServerPodName, managedServerPrefix, replicaCount);
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+        domain1Uid, miiAuxiliaryImage1, domainNamespace);
+    String adminServerPodName = domain1Uid + "-adminserver";
+    String managedServerPrefix = domain1Uid + "-managed-server";
 
+    createDomainAndVerify(domain1Uid, domainCR, domainNamespace, adminServerPodName,
+        managedServerPrefix, replicaCount);
+
+    logger.info("domain1 CR\n{0}\n", Yaml.dump(domainCR));
+
+    //create the second domain using auxiliary image 2
+    AuxiliaryImage image = domainCR.spec()
+        .configuration()
+        .model()
+        .getAuxiliaryImages().getFirst()
+        .image(miiAuxiliaryImage2).sourceModelHome("/auxiliary/models");
+
+    HashMap domain2Map = new HashMap<>();
+    domain2Map.put("weblogic.domainUID", domain2Uid);
+    domainCR.metadata().name(domain2Uid)
+        .namespace(domainNamespace).labels(domain2Map);
+
+    domainCR.spec()
+        .domainUid(domain2Uid)
+        .configuration()
+        .model()
+        .configMap(domain2cm)
+        .withAuxiliaryImages(List.of(image));
+
+    logger.info("domain2 CR\n{0}\n", Yaml.dump(domainCR));
+
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+        domain2Uid, miiAuxiliaryImage2, domainNamespace);
+    adminServerPodName = domain2Uid + "-adminserver";
+    managedServerPrefix = domain2Uid + "-managed-server";
+
+    createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName,
+        managedServerPrefix, replicaCount);
+
+    //verify the cross domain transaction
+    checkCrossDomainTx();
   }
 
-  private static DomainResource createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String baseImageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int t3ChannelPort,
-      String auxiliaryImagePath,
-      String... auxiliaryImageName) {
-
-    DomainResource domainCR = createDomainResource(
-        domainResourceName,
-        domNamespace,
-        baseImageName,
-        adminSecretName,
-        repoSecretName,
-        encryptionSecretName,
-        replicaCount,
-        Collections.<String>emptyList(),
-        false,
-        0,
-        t3ChannelPort);
-    int index = 0;
-    for (String cmImageName: auxiliaryImageName) {
-      AuxiliaryImage auxImage = new AuxiliaryImage()
-          .image(cmImageName).imagePullPolicy(IMAGE_PULL_POLICY);
-      //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
-      if (index == 0) {
-        auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
-            .sourceModelHome(auxiliaryImagePath + "/models");
-      }
-      domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
-      index++;
-    }
-    return domainCR;
-  }
-
-  private static DomainResource createDomainResource(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames,
-      boolean prefixDomainName,
-      int nodePort,
-      int t3ChannelPort) {
-
-    // create secrets
-    List<V1LocalObjectReference> secrets = new ArrayList<>();
-    for (String secret : repoSecretName) {
-      secrets.add(new V1LocalObjectReference().name(secret));
-    }
-
-    // create the domain CR
-    DomainResource domain = new DomainResource()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
-            .name(domainResourceName)
-            .namespace(domNamespace))
-        .spec(new oracle.weblogic.domain.DomainSpec()
-            .domainUid(domainResourceName)
-            .domainHomeSourceType("FromModel")
-            .image(imageName)
-            .imagePullPolicy(IMAGE_PULL_POLICY)
-            .webLogicCredentialsSecret(new V1LocalObjectReference()
-                .name(adminSecretName))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IfNeeded")
-            .serverPod(new oracle.weblogic.domain.ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
-                .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new oracle.weblogic.domain.AdminServer()
-                .adminService(new oracle.weblogic.domain.AdminService()
-                    .addChannelsItem(new oracle.weblogic.domain.Channel()
-                        .channelName("default")
-                        .nodePort(nodePort))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .configuration(new oracle.weblogic.domain.Configuration()
-                .model(new oracle.weblogic.domain.Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(3000L)));
-
-    domain.spec().setImagePullSecrets(secrets);
-
-    ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
-
-    if (clusterNames != null) {
-      for (String clusterName : clusterNames) {
-        String clusterResName = prefixDomainName ? domainResourceName + "-" + clusterName : clusterName;
-        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterResName))) {
-          getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, domNamespace);
-        } else {
-          getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
-          ClusterSpec spec =
-              new ClusterSpec().withClusterName(clusterName).replicas(replicaCount).serverStartPolicy("IfNeeded");
-          createClusterAndVerify(createClusterResource(clusterResName, domNamespace, spec));
-        }
-        // set cluster references
-        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+  /**
+   * Cleanup images.
+   */
+  public void tearDownAll() {
+    if (!SKIP_CLEANUP) {
+      // delete images
+      for (String image : List.of(miiAuxiliaryImage1, miiAuxiliaryImage2)) {
+        deleteImage(image);
       }
     }
-
-    setPodAntiAffinity(domain);
-    return domain;
   }
 
-  private String getCurlResult(String curlCmd) {
-    ExecResult result = null;
-    try {
-      result = ExecCommand.exec(curlCmd, true);
-    } catch (Exception e) {
-      logger.info("Got exception while running command: {0}", curlCmd);
-      logger.info(e.toString());
+  /**
+   * Copies the JmsCliennt and shell script to run the clients to the admin pod and verifies the transactions.
+   *
+   * @throws IOException when file copying to pod fails.
+   */
+  private void checkCrossDomainTx() throws IOException {
+    Path jmsClientSrc = Paths.get(RESOURCE_DIR, "customstore", "JmsClient.java");
+    Path jmsClientDst = Paths.get(storeDir, "JmsClient.java");
+    Path shellScriptSrc = Paths.get(RESOURCE_DIR, "customstore", "runtest.sh");
+    Path shellScriptDst = Paths.get("/u01", "domains", "runtest.sh");
+    String expectedResult = "All expected strings were found in the log";
+
+    if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15")) {
+      Files.copy(jmsClientSrc, jmsClientDst, StandardCopyOption.REPLACE_EXISTING);
+      replaceStringInFile(jmsClientDst.toString(), "jakarta", "javax");
+    } else {
+      Files.copy(jmsClientSrc, jmsClientDst, StandardCopyOption.REPLACE_EXISTING);
     }
-    if (result != null) {
-      logger.info("result.stderr: \n{0}", result.stderr());
+    String adminServerPodName = domain1Uid + "-adminserver";
+    Path destLocationInPod = Paths.get("/u01", "domains", "JmsClient.java");
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+        adminServerPodName, "weblogic-server",
+        jmsClientDst,
+        destLocationInPod
+    ));
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+        adminServerPodName, "weblogic-server",
+        shellScriptSrc,
+        shellScriptDst
+    ));
+    assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
+        shellScriptDst, expectedResult, "t3", "8001"), "unsecure transactiuon didn't go through");
+    if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("12.2")) {
+      assertTrue(runClientInsidePodVerifyResult(adminServerPodName, domainNamespace,
+          shellScriptDst, expectedResult, "t3s", "6000"), "secure transactiuon didn't go through");
     }
-    return result.stdout();
   }
 
-  private static void createNginxIngressPathRoutingRules() {
-    // create an ingress in domain namespace
-    final int ADMIN_SERVER_PORT = 7001;
-    String ingressName = domainNamespace + "-nginx-path-routing";
-    String ingressClassName = nginxHelmParams.getIngressClassName();
-
-    // create ingress rules for two domains
-    List<V1IngressRule> ingressRules = new ArrayList<>();
-    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
-
-    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
-        .path("/")
-        .pathType("Prefix")
-        .backend(new V1IngressBackend()
-            .service(new V1IngressServiceBackend()
-                .name(domainUid1 + "-admin-server")
-                .port(new V1ServiceBackendPort()
-                    .number(ADMIN_SERVER_PORT)))
-        );
-    httpIngressPaths.add(httpIngressPath);
-
-    V1IngressRule ingressRule = new V1IngressRule()
-        .host("")
-        .http(new V1HTTPIngressRuleValue()
-            .paths(httpIngressPaths));
-
-    ingressRules.add(ingressRule);
-
-    createIngressAndRetryIfFail(60, false, ingressName, domainNamespace, null, ingressClassName, ingressRules, null);
-
-    // check the ingress was found in the domain namespace
-    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
-        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
-        .contains(ingressName);
-
-    logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
-
-    // check the ingress is ready to route the app to the server pod
-    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-    nginxNodePort = assertDoesNotThrow(() -> Service.getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
-        "Getting Nginx loadbalancer service node port failed");
-
-    String hostAndPort = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
-        ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST + ":" + nginxNodePort;
-
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
-        + "/weblogic/ready --write-out %{http_code} -o /dev/null";
-    if (OKE_CLUSTER) {
-      try {
-        if (!callWebAppAndWaitTillReady(curlCmd, 60)) {
-          ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
-          logger.info(result.stdout());
-          //restart core-dns service
-          result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
-          logger.info(result.stdout());
-          checkPodReady("core-dns", null, "kube-system");
-          result = ExecCommand.exec(curlCmd);
-          logger.info(result.stdout());
-        }
-      } catch (Exception ex) {
-        logger.warning(ex.getLocalizedMessage());
-      }
+  /**
+   * Run the script inside the admin server pod.
+   *
+   * @param podName name of the pod in which to run the command
+   * @param namespace namespace in which pod is running
+   * @param shellScript the shell script to run inside the pod
+   * @param expectedResult expected string from the script
+   * @param args arguments to the shell script
+   * @return true if script return 0
+   */
+  private static boolean runClientInsidePodVerifyResult(String podName, String namespace,
+      Path shellScript, String expectedResult, String... args) {
+    final LoggingFacade logger = getLogger();
+    StringBuilder shellCmd = new StringBuilder(KUBERNETES_CLI + " exec -n ");
+    shellCmd.append(namespace);
+    shellCmd.append(" -it ");
+    shellCmd.append(" -c weblogic-server ");
+    shellCmd.append(podName);
+    shellCmd.append(" -- /bin/bash -c \"");
+    shellCmd.append(" ");
+    shellCmd.append("chmod +x " + shellScript + ";");
+    shellCmd.append(shellScript);
+    shellCmd.append(" ");
+    for (String arg : args) {
+      shellCmd.append(arg).append(" ");
     }
+    shellCmd.append(" \"");
+    logger.info("shell command to be run {0}", shellCmd.toString());
 
-    logger.info("Executing curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+    ExecResult result = assertDoesNotThrow(() -> exec(shellCmd.toString(), true));
+    logger.info("command returned {0}", result.toString());
+    logger.info("command returned EXIT value {0}", result.exitValue());
+    return ((result.exitValue() == 0 && result.stdout().contains(expectedResult)));
   }
-
-  // Create and display SSL certificate and key using openSSL with SAN extension
-  private static void createCertKeyFiles(String cn) {
-
-    Map<String, String> sanConfigTemplateMap  = new HashMap<>();
-    sanConfigTemplateMap.put("INGRESS_HOST", hostAddress);
-
-    Path srcFile = Paths.get(RESOURCE_DIR,
-        "tunneling", "san.config.template.txt");
-    Path targetFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcFile.toString(),
-        "san.config.txt", sanConfigTemplateMap));
-    logger.info("Generated SAN config file {0}", targetFile);
-
-    tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
-    tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
-    String opcmd = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
-          + "-keyout " + tlsKeyFile + " -out " + tlsCertFile
-          + " -subj \"/CN=" + cn + "\" -extensions san"
-          + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
-    assertTrue(
-          Command.withParams(new CommandParams()
-             .command(opcmd)).execute(), "openssl req command fails");
-
-    String opcmd2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
-    assertTrue(
-          Command.withParams(new CommandParams()
-             .command(opcmd2)).execute(), "openssl list command fails");
-  }
-
-  // Import the certificate into a JKS TrustStore to be used while running
-  // external JMS client to send message to WebLogic.
-  private static void importKeytoTrustStore() {
-
-    jksTrustFile = Paths.get(RESULTS_ROOT, domainNamespace + "-trust.jks");
-    String keycmd = "keytool -import -file " + tlsCertFile
-        + " --keystore " + jksTrustFile
-        + " -storetype jks -storepass password -noprompt ";
-    assertTrue(
-          Command.withParams(new CommandParams()
-             .command(keycmd)).execute(), "keytool import command fails");
-
-    String keycmd2 = "keytool -list -keystore " + jksTrustFile
-                   + " -storepass password -noprompt";
-    assertTrue(
-          Command.withParams(new CommandParams()
-             .command(keycmd2)).execute(), "keytool list command fails");
-  }
-
-  // Create kubernetes secret from the ssl key and certificate
-  private static void createSecretWithTLSCertKey(String tlsSecretName) {
-    String kcmd = KUBERNETES_CLI + " create secret tls " + tlsSecretName + " --key "
-          + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
-    assertTrue(
-          Command.withParams(new CommandParams()
-             .command(kcmd)).execute(), KUBERNETES_CLI + " create secret command fails");
-  }
-
 
 }
 
