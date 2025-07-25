@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentStrategy;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
@@ -222,6 +223,20 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                 .serviceAccountName(getInputs().getServiceAccount())
                                 .securityContext(new V1PodSecurityContext().seccompProfile(
                                     new V1SeccompProfile().type("RuntimeDefault")))
+                                .addInitContainersItem(
+                                    newContainer()
+                                        .name("copy-container")
+                                        .image(getInputs().getWeblogicOperatorImage())
+                                        .imagePullPolicy("IfNotPresent")
+                                        .addCommandItem("/bin/sh")
+                                        .addCommandItem("-c")
+                                        .addCommandItem(
+                                            "cp /deployment/* /deployment_copy && cp /probes/* /probes_copy")
+                                        .addVolumeMountsItem(
+                                            newVolumeMount().name("deployment-volume").mountPath("/deployment_copy"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount().name("probes-volume").mountPath("/probes_copy"))
+                                )
                                 .addContainersItem(
                                     newContainer()
                                         .name("weblogic-operator")
@@ -280,6 +295,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .securityContext(
                                             new V1SecurityContext().runAsUser(1000L)
                                                 .runAsNonRoot(true)
+                                                .readOnlyRootFilesystem(true)
                                                 .privileged(false).allowPrivilegeEscalation(false)
                                                 .capabilities(new V1Capabilities().addDropItem("ALL")))
                                         .addVolumeMountsItem(
@@ -294,7 +310,19 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newVolumeMount()
                                                 .name("weblogic-operator-secrets-volume")
                                                 .mountPath("/deployment/secrets")
-                                                .readOnly(true)))
+                                                .readOnly(true))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("deployment-volume")
+                                                .mountPath("/deployment"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("log-volume")
+                                                .mountPath("/logs"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("probes-volume")
+                                                .mountPath("/probes")))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("weblogic-operator-cm-volume")
@@ -313,7 +341,20 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .name("weblogic-operator-secrets-volume")
                                         .secret(
                                             newSecretVolumeSource()
-                                                .secretName("weblogic-operator-secrets"))))));
+                                                .secretName("weblogic-operator-secrets")))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("deployment-volume")
+                                        .emptyDir(new V1EmptyDirVolumeSource()))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("log-volume")
+                                        .emptyDir(new V1EmptyDirVolumeSource()))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("probes-volume")
+                                        .emptyDir(new V1EmptyDirVolumeSource()))
+                        )));
   }
 
   void expectProbes(V1Container container) {
