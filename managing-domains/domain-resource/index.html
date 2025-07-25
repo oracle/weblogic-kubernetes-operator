@@ -12,20 +12,20 @@
     <title>Domain and Cluster resources :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1753415093" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1753415093" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1753480577" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1753480577" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1753415093"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1753480577"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1753415093"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1753415093"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1753480577"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1753480577"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1753415093"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1753480577"></script>
 
     
   </div>
@@ -3912,6 +3912,7 @@
       </ul>
     </li>
     <li><a href="#jvm-memory-and-java-option-environment-variables">JVM memory and Java option environment variables</a></li>
+    <li><a href="#node-manager-environment-variables">Node Manager environment variables</a></li>
     <li><a href="#pod-generation">Pod generation</a></li>
   </ul>
 </nav>
@@ -3953,6 +3954,7 @@
       </ul>
     </li>
     <li><a href="#jvm-memory-and-java-option-environment-variables">JVM memory and Java option environment variables</a></li>
+    <li><a href="#node-manager-environment-variables">Node Manager environment variables</a></li>
     <li><a href="#pod-generation">Pod generation</a></li>
   </ul>
 </nav></div>
@@ -4158,6 +4160,13 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
 <li><code>WLSDEPLOY_PROPERTIES</code>: System properties for WebLogic Deploy Tooling commands during Model in Image introspector jobs or WebLogic Server instance containers.</li>
 <li><code>PRE_CLASSPATH</code>: Path(s) that are <em>prepended</em> to the WebLogic Server system classpath; delimit multiple paths with a colon <code>:</code>.</li>
 <li><code>CLASSPATH</code>: Path(s) that are <em>appended</em> to the WebLogic Server system classpath; delimit multiple paths with a colon <code>:</code>.</li>
+</ul>
+<h3 id="node-manager-environment-variables">Node Manager environment variables</h3>
+<p>You can use the following environment variables to specify the logging files limit.</p>
+<ul>
+<li><code>NODEMGR_LOG_FILE_MAX</code>: Maximum size of the Node Manager Log specified as an integer. When this limit is reached, a new log file is started. Default: 0, no limit.</li>
+<li><code>NODEMGR_LOG_LEVEL</code>: Severity level of logging used for the Node Manager log. Node Manager uses the standard logging levels from the java.util.logging.level package. Default: FINEST.</li>
+<li><code>NODEMGR_LOG_COUNT</code>: Maximum number of log files to create when LogLimit is exceeded. Default: 1.</li>
 </ul>
 <p><strong>NOTES</strong>:</p>
 <ul>
@@ -6901,19 +6910,19 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1753415093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1753415093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1753415093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1753415093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1753415093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1753415093"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1753480577"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1753480577"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1753480577"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1753480577"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1753480577"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1753480577"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1753415093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1753415093"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1753415093"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1753480577"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1753480577"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1753480577"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1753415093"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1753480577"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
