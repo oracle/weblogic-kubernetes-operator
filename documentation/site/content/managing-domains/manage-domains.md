@@ -163,6 +163,12 @@ Be aware of the following important considerations for WebLogic domains running 
 
     For more information, see [JVM memory and Java option environment variables]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}).
 
+* _Node Manager environment variables:_ You can use the following environment variables to specify the logging files limit.
+
+    * `NODEMGR_LOG_FILE_MAX`: Maximum size of the Node Manager Log specified as an integer. When this limit is reached, a new log file is started. Default: 0, no limit.
+    * `NODEMGR_LOG_LEVEL`: Severity level of logging used for the Node Manager log. Node Manager uses the standard logging levels from the java.util.logging.level package. Default: FINEST.
+    * `NODEMGR_LOG_COUNT`: Maximum number of log files to create when LogLimit is exceeded. Default: 1.
+
 
 The following features are **not** certified or supported in this release:
 

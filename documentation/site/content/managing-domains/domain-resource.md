@@ -243,6 +243,14 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `PRE_CLASSPATH`: Path(s) that are *prepended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 * `CLASSPATH`: Path(s) that are *appended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 
+### Node Manager environment variables
+
+You can use the following environment variables to specify the logging files limit. 
+
+* `NODEMGR_LOG_FILE_MAX`: Maximum size of the Node Manager Log specified as an integer. When this limit is reached, a new log file is started. Default: 0, no limit.
+* `NODEMGR_LOG_LEVEL`: Severity level of logging used for the Node Manager log. Node Manager uses the standard logging levels from the java.util.logging.level package. Default: FINEST.
+* `NODEMGR_LOG_COUNT`: Maximum number of log files to create when LogLimit is exceeded. Default: 1.
+
 **NOTES**:
 
 * The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
