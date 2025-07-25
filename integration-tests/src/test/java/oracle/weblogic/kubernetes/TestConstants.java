@@ -484,8 +484,8 @@ public interface TestConstants {
   
   public static final boolean INSTALL_WEBLOGIC = Boolean.valueOf((getNonEmptySystemProperty("wko.it.install.weblogic",
       "false")));
-  public static final String WEBLOGIC_SHIPHOME = getNonEmptySystemProperty("wko.it.wls.shiphome",
-      "https://home.us.oracle.com/results/release/src141200/fmw_14.1.2.0.0_wls_generic.jar");
+  public static final String WEBLOGIC_SHIPHOME = System.getenv("WLS_INSTALLERS_BASE_URL")
+       + "/results/published/pub/loads/141200/latest/release/src141200/fmw_14.1.2.0.0_wls_generic.jar";
   
   public static final String ORACLE_OPERATOR_NS = "ns-oracle-operator";  
   
