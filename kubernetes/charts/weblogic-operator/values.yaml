@@ -288,3 +288,4 @@ clusterSizePaddingValidationEnabled: true
 
 # operatorLogMount specifies the operator logging volumeMount.  The operator will mount this path with the operatorLogPVC
 #operatorLogMount:
+
