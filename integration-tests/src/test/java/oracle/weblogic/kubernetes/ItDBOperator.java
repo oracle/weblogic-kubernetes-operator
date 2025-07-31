@@ -512,6 +512,7 @@ class ItDBOperator {
 
     // Restart the domain to make sure the JTA Recovery Service is
     // migrated back to original hosting server
+    restartManagedServer("managed-server2");
     restartDomain();
     assertTrue(checkJtaRecoveryServiceRuntime("managed-server2",
         "managed-server2", "true"),
