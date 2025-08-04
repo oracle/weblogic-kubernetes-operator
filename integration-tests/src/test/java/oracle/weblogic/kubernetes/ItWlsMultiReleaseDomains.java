@@ -28,7 +28,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
@@ -92,18 +91,6 @@ class ItWlsMultiReleaseDomains {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
-  }
-
-  //@ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
-  /**
-   * Patch the domain with the different base image name. Verify all the pods are restarted and back to ready state.
-   * Verify configured JMS and JDBC resources.
-   */
-  @ParameterizedTest
-  @ValueSource(strings = {"12.2.1.4-ol8"})
-  @DisplayName("Test to create domains with different WLS releases")
-  void testCreateDomainWithDiffWlsReleases(String wlsRelease) {
-
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     createSecretWithUsernamePassword(adminSecretName, domainNamespace,
@@ -138,8 +125,18 @@ class ItWlsMultiReleaseDomains {
             .wdtModelOnly(true)
             .modelFiles(modelList)
             .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);    
+  }
 
+  //@ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
+  /**
+   * Patch the domain with the different base image name. Verify all the pods are restarted and back to ready state.
+   * Verify configured JMS and JDBC resources.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
+  @DisplayName("Test to create domains with different WLS releases")
+  void testCreateDomainWithDiffWlsReleases(String wlsRelease) {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
     String clusterName = "cluster-1";
@@ -147,9 +144,7 @@ class ItWlsMultiReleaseDomains {
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    String wlsImage = WEBLOGIC_IMAGE_TO_USE_IN_SPEC.substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC
-        .lastIndexOf(":")) + ":" + wlsRelease;
-    wlsImage = LOCALE_IMAGE_NAME + ":" + wlsRelease;
+    String wlsImage = LOCALE_IMAGE_NAME + ":" + wlsRelease;
     logger.info(wlsImage);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid1, domainNamespace,
         wlsImage, adminSecretName, createSecretsForImageRepos(domainNamespace),
