@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -32,8 +31,10 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
@@ -41,6 +42,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredS
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
@@ -134,7 +136,7 @@ class ItWlsMultiReleaseDomains {
    * Verify configured JMS and JDBC resources.
    */
   @ParameterizedTest
-  @ValueSource(strings = {"15.1.1.0.0-jdk17"})
+  @ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
   @DisplayName("Test to create domains with different WLS releases")
   void testCreateDomainWithDiffWlsReleases(String wlsRelease) {
     // admin/managed server name here should match with model yaml
@@ -176,7 +178,14 @@ class ItWlsMultiReleaseDomains {
             domainUid1, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
-    TestActions.deleteDomainCustomResource(domainUid1, domainNamespace);
+    shutdownDomain(domainUid1, domainNamespace);
+        logger.info("Checking for admin server pod shutdown");
+    checkPodDoesNotExist(adminServerPodNameDomain1, domainUid1, domainNamespace);
+    logger.info("Checking managed server pods were shutdown");
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefixDomain1 + i, domainUid1, domainNamespace);
+    }
+    deleteDomainCustomResource(domainUid1, domainNamespace);
   }
 
   /**
