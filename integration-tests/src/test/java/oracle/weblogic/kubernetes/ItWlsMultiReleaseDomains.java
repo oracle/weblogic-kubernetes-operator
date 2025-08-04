@@ -179,7 +179,7 @@ class ItWlsMultiReleaseDomains {
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
     shutdownDomain(domainUid1, domainNamespace);
-        logger.info("Checking for admin server pod shutdown");
+    logger.info("Checking for admin server pod shutdown");
     checkPodDoesNotExist(adminServerPodNameDomain1, domainUid1, domainNamespace);
     logger.info("Checking managed server pods were shutdown");
     for (int i = 1; i <= replicaCount; i++) {
