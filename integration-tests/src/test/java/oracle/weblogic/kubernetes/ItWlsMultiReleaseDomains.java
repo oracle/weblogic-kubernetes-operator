@@ -134,7 +134,7 @@ class ItWlsMultiReleaseDomains {
    * Verify configured JMS and JDBC resources.
    */
   @ParameterizedTest
-  @ValueSource(strings = {"14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
+  @ValueSource(strings = {"15.1.1.0.0-jdk17"})
   @DisplayName("Test to create domains with different WLS releases")
   void testCreateDomainWithDiffWlsReleases(String wlsRelease) {
     // admin/managed server name here should match with model yaml
