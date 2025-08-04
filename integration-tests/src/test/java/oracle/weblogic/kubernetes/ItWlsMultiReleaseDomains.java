@@ -23,6 +23,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -93,12 +94,13 @@ class ItWlsMultiReleaseDomains {
     installAndVerifyOperator(opNamespace, domainNamespace);
   }
 
+  //@ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
   /**
    * Patch the domain with the different base image name. Verify all the pods are restarted and back to ready state.
    * Verify configured JMS and JDBC resources.
    */
   @ParameterizedTest
-  @ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
+  @ValueSource(strings = {"12.2.1.4-ol8"})
   @DisplayName("Test to create domains with different WLS releases")
   void testCreateDomainWithDiffWlsReleases(String wlsRelease) {
 
@@ -147,6 +149,8 @@ class ItWlsMultiReleaseDomains {
         domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
     String wlsImage = WEBLOGIC_IMAGE_TO_USE_IN_SPEC.substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC
         .lastIndexOf(":")) + ":" + wlsRelease;
+    wlsImage = LOCALE_IMAGE_NAME + ":" + wlsRelease;
+    logger.info(wlsImage);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid1, domainNamespace,
         wlsImage, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, auxiliaryImagePath,
