@@ -692,9 +692,8 @@ class ItSystemResOverrides {
 
     String wdtUrl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
 
-    Path destLocation = Path.of(DOWNLOAD_DIR, "sysresoverride", "wdt", "weblogic-deploy.zip");
-    encryptModelScript = Path.of(DOWNLOAD_DIR, "sysresoverride", 
-        "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
+    Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
+    encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
     if (!Files.exists(destLocation) && !Files.exists(encryptModelScript)) {
       logger.info("Downloading WDT from {0} to {1}", wdtUrl, destLocation);
       Files.createDirectories(destLocation.getParent());

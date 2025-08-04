@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -55,7 +54,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -67,7 +65,6 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readRuntimeResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
@@ -94,7 +91,6 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -509,7 +505,10 @@ class ItDBOperator {
         "ClusterJmsServer@managed-server2@jms.testUniformQueue");
     runJmsClientOnAdminPod("receive",
         "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
-    restartDomain();
+
+    // Restart the managed server(2) to make sure the JTA Recovery Service is
+    // migrated back to original hosting server
+    restartManagedServer("managed-server2");
     assertTrue(checkJtaRecoveryServiceRuntime("managed-server2",
         "managed-server2", "true"),
         "JTARecoveryService@managed-server2 is not on managed-server2 after restart");
@@ -550,39 +549,6 @@ class ItDBOperator {
     }
   }
 
-  //restart pods by manipulating the serverStartPolicy to Never and IfNeeded
-  private void restartDomain() {
-    logger.info("Restarting domain {0}", wlsDomainNamespace);
-    TestActions.shutdownDomain(wlsDomainUid, wlsDomainNamespace);
-
-    logger.info("Checking for admin server pod shutdown");
-    checkPodDoesNotExist(wlsAdminServerPodName, wlsDomainUid, wlsDomainNamespace);
-    logger.info("Checking managed server pods were shutdown");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(wlsManagedServerPrefix + i, wlsDomainUid, wlsDomainNamespace);
-    }
-
-    startDomain(wlsDomainUid, wlsDomainNamespace);
-
-    // verify the admin server service created
-    checkServiceExists(wlsAdminServerPodName, wlsDomainNamespace);
-
-    logger.info("Checking for admin server pod readiness");
-    checkPodReady(wlsAdminServerPodName, wlsDomainUid, wlsDomainNamespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          wlsManagedServerPrefix + i, wlsDomainNamespace);
-      checkServiceExists(wlsManagedServerPrefix + i, wlsDomainNamespace);
-    }
-
-    logger.info("Checking for managed servers pod readiness");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReady(wlsManagedServerPrefix + i, wlsDomainUid, wlsDomainNamespace);
-    }
-  }
-  
   // Restart the managed-server
   private void restartManagedServer(String serverName) {
     String commonParameters = " -d " + wlsDomainUid + " -n " + wlsDomainNamespace;
