@@ -509,10 +509,6 @@ class ItDBOperator {
         "ClusterJmsServer@managed-server2@jms.testUniformQueue");
     runJmsClientOnAdminPod("receive",
         "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
-
-    // Restart the domain to make sure the JTA Recovery Service is
-    // migrated back to original hosting server
-    restartManagedServer("managed-server2");
     restartDomain();
     assertTrue(checkJtaRecoveryServiceRuntime("managed-server2",
         "managed-server2", "true"),
