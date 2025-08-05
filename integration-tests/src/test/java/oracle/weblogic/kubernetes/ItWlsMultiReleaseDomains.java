@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -31,10 +31,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
@@ -42,7 +40,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredS
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
@@ -52,14 +49,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image. "
-    + "Multiple domains are created in the same namespace in this class.")
+    + "Multiple domains are created in the same namespace in this class "
+    + "using multiple releases of WebLogic Server.")
 @IntegrationTest
 @Tag("kind-parallel")
 class ItWlsMultiReleaseDomains {
   
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
-  private static final String domainUid1 = "domain1";
+  private static String domainUid1 = "domain1";
   private static final String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
   private static final String miiAuxiliaryImage2Tag = "image2" + MII_BASIC_IMAGE_TAG;
@@ -75,11 +73,13 @@ class ItWlsMultiReleaseDomains {
       .appArchiveDir(ARCHIVE_DIR + ItMiiAuxiliaryImage.class.getSimpleName());
 
   /**
-   * Install Operator. Create a domain using multiple auxiliary images. One auxiliary image containing the domain
-   * configuration and another auxiliary image with JMS system resource, verify the domain is running and JMS resource
-   * is added.
+   * Install Operator. 
+   * Create a domain using multiple auxiliary images. 
+   * One auxiliary image containing the domain
+   * configuration and another auxiliary image with JMS system resource.
+   * Verify the domain is running and JMS resource is added.
    *
-   * @param namespaces list of namespaces 
+   * @param namespaces list of namespaces. 
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -130,18 +130,18 @@ class ItWlsMultiReleaseDomains {
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);    
   }
 
-  //@ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
   /**
-   * Patch the domain with the different base image name. Verify all the pods are restarted and back to ready state.
+   * Create domains using multiple releases of WebLogic.
+   * Verify all the pods are started and in ready state.
    * Verify configured JMS and JDBC resources.
    */
   @ParameterizedTest
   @ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
   @DisplayName("Test to create domains with different WLS releases")
-  void testCreateDomainWithDiffWlsReleases(String wlsRelease) {
-    // admin/managed server name here should match with model yaml
+  void testCreateDomainWithMultipleWLSReleases(String wlsRelease) {
     final String auxiliaryImagePath = "/auxiliary";
     String clusterName = "cluster-1";
+    domainUid1 = wlsRelease.substring(0, 8).replace(".", "");
 
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
@@ -178,6 +178,7 @@ class ItWlsMultiReleaseDomains {
             domainUid1, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    /*
     shutdownDomain(domainUid1, domainNamespace);
     logger.info("Checking for admin server pod shutdown");
     checkPodDoesNotExist(adminServerPodNameDomain1, domainUid1, domainNamespace);
@@ -186,6 +187,7 @@ class ItWlsMultiReleaseDomains {
       checkPodDoesNotExist(managedServerPrefixDomain1 + i, domainUid1, domainNamespace);
     }
     deleteDomainCustomResource(domainUid1, domainNamespace);
+    */
   }
 
   /**
