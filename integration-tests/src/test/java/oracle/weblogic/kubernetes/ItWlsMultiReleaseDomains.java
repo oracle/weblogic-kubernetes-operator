@@ -141,7 +141,7 @@ class ItWlsMultiReleaseDomains {
   void testCreateDomainWithMultipleWLSReleases(String wlsRelease) {
     final String auxiliaryImagePath = "/auxiliary";
     String clusterName = "cluster-1";
-    domainUid1 = wlsRelease.substring(0, 8).replace(".", "");
+    domainUid1 = "domain" + wlsRelease.substring(0, 8).replace(".", "");
 
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
