@@ -5,45 +5,86 @@ package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,6 +99,7 @@ class ItWlsMultiReleaseDomains {
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
   private static final String domainUid1 = "domain1";
+  private static String domainUid;
   private static final String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
   private static final String miiAuxiliaryImage2Tag = "image2" + MII_BASIC_IMAGE_TAG;
@@ -71,6 +113,12 @@ class ItWlsMultiReleaseDomains {
   private static String opNamespace = null;
   private static AppParams appParams = defaultAppParams()
       .appArchiveDir(ARCHIVE_DIR + ItMiiAuxiliaryImage.class.getSimpleName());
+  private static String miiImage;
+  
+  ConditionFactory withVeryLongRetryPolicy
+      = with().pollDelay(0, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(30, MINUTES).await();
 
   /**
    * Install Operator. 
@@ -139,6 +187,31 @@ class ItWlsMultiReleaseDomains {
   @ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
   @DisplayName("Test to create domains with different WLS releases")
   void testCreateDomainWithMultipleWLSReleases(String wlsRelease) {
+    String myMiiImageName = DOMAIN_IMAGES_PREFIX + "mii-multirelease-image";
+    String myMiiImage = myMiiImageName + ":" + wlsRelease;
+
+    testUntil(withVeryLongRetryPolicy,
+        createBasicImage(myMiiImageName, wlsRelease, MII_BASIC_WDT_MODEL_FILE,
+            null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
+        logger,
+        "createBasicImage to be successful");
+    if (KIND_REPO != null) {
+      logger.info("kind load docker-image {0} --name kind", myMiiImage);
+    } else {
+      logger.info(WLSIMG_BUILDER + " push image {0} to {1}", myMiiImage, DOMAIN_IMAGES_REPO);
+    }
+    testUntil(
+        withVeryLongRetryPolicy,
+        () -> imagePush(myMiiImage),
+        logger,
+        WLSIMG_BUILDER + " push to TEST_IMAGES_REPO/kind for image {0} to be successful",
+        myMiiImage);
+    domainUid = "domain" + wlsRelease.substring(0, 8).replace(".", "");
+    createAndVerifyMiiDomain(myMiiImage, domainUid, domainUid + "-admin-server",
+        domainUid + "-managed-server");
+  }
+  
+  private void test1() {
     final String auxiliaryImagePath = "/auxiliary";
     String clusterName = "cluster-1";
     //domainUid1 = "domain" + wlsRelease.substring(0, 8).replace(".", "");
@@ -146,7 +219,7 @@ class ItWlsMultiReleaseDomains {
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    String wlsImage = LOCALE_IMAGE_NAME + ":" + wlsRelease;
+    String wlsImage = LOCALE_IMAGE_NAME;// + ":" + wlsRelease;
     logger.info(wlsImage);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid1, domainNamespace,
         wlsImage, adminSecretName, createSecretsForImageRepos(domainNamespace),
@@ -204,5 +277,189 @@ class ItWlsMultiReleaseDomains {
     verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
         "JMSSystemResources", "TestClusterJmsModule2", "200");
   }
+  
+  /**
+   * Create a model in image domain and verify the server pods are ready.
+   */
+  private static void createAndVerifyMiiDomain(String miiImage, String domainUid, 
+      String adminServerPodName, String managedServerPrefix) {
+
+    // create registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
+    createTestRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Creating encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
+    ServerPod srvrPod = new ServerPod()
+        .addEnvItem(new V1EnvVar()
+            .name("JAVA_OPTIONS")
+            .value("-Dweblogic.StdoutDebugEnabled=false"))
+        .addEnvItem(new V1EnvVar()
+            .name("USER_MEM_ARGS")
+            .value("-Djava.security.egd=file:/dev/./urandom "))
+        .resources(new V1ResourceRequirements()
+            .limits(new HashMap<>())
+            .requests(new HashMap<>()));
+
+    if (!OKD) {
+      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
+                 .runAsUser(0L);
+      srvrPod.podSecurityContext(podSecCtxt);
+    }
+
+    // create the domain CR
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IfNeeded")
+            .serverPod(srvrPod)
+            .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(3000L)
+                .model(new Model()
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))));
+    setPodAntiAffinity(domain);
+    // create model in image domain
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
+        domainUid, domainNamespace, miiImage);
+    createDomainAndVerify(domain, domainNamespace);
+
+    // check that admin server pod exists in the domain namespace
+    logger.info("Checking that admin server pod {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodExists(adminServerPodName, domainUid, domainNamespace);
+
+    logger.info("Checking that admin service {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
+    // check that admin server pod is ready
+    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check for managed server pods existence in the domain namespace
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+
+      // check that the managed server pod exists in the domain namespace
+      logger.info("Checking that managed server pod {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodExists(managedServerPodName, domainUid, domainNamespace);
+
+      // check that the managed server service exists in the domain namespace
+      logger.info("Checking that managed server service {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkServiceExists(managedServerPodName, domainNamespace);
+
+      // check that the managed server pod is ready
+      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReady(managedServerPodName, domainUid, domainNamespace);
+    }
+  }
+
+  /**
+   * Create image with basic domain model yaml, variable file and sample application.
+   *
+   * @param imageName  name of the image
+   * @param imageTag   tag of the image
+   * @param modelFile  model file to build the image
+   * @param varFile    variable file to build the image
+   * @param appName    name of the application to build the image
+   * @param domainType domain type to be built
+   * @return true if image is created successfully
+   */
+
+  public Callable<Boolean> createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
+                                            String appName, String domainType) {
+    return (() -> {
+      LoggingFacade logger = getLogger();
+      final String image = imageName + ":" + imageTag;
+
+      // build the model file list
+      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
+
+      // build an application archive using what is in resources/apps/APP_NAME
+      logger.info("Build an application archive using resources/apps/{0}", appName);
+      assertTrue(buildAppArchive(defaultAppParams()
+              .srcDirList(Collections.singletonList(appName))),
+          String.format("Failed to create app archive for %s", appName));
+
+      // build the archive list
+      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+      final List<String> archiveList = Collections.singletonList(zipFile);
+
+      // Set additional environment variables for WIT
+      checkDirectory(WIT_BUILD_DIR);
+      Map<String, String> env = new HashMap<>();
+      env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+
+      // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+      // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+      // the next JDK 14 versions are released.
+      if (WIT_JAVA_HOME != null) {
+        env.put("JAVA_HOME", WIT_JAVA_HOME);
+      }
+
+      String witTarget = ((OKD) ? "OpenShift" : "Default");
+
+      // build an image using WebLogic Image Tool
+      boolean imageCreation = false;
+      logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
+      if (domainType.equalsIgnoreCase("wdt")) {
+        final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
+        imageCreation = createImage(
+            defaultWitParams()
+                .modelImageName(imageName)
+                .modelImageTag(WDT_BASIC_IMAGE_TAG)
+                .modelFiles(modelList)
+                .modelArchiveFiles(archiveList)
+                .modelVariableFiles(modelVarList)
+                .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
+                .wdtOperation("CREATE")
+                .wdtVersion(WDT_VERSION)
+                .target(witTarget)
+                .env(env)
+                .redirect(true));
+      } else if (domainType.equalsIgnoreCase("mii")) {
+        imageCreation = createImage(
+            defaultWitParams()
+                .modelImageName(imageName)
+                .modelImageTag(MII_BASIC_IMAGE_TAG)
+                .modelFiles(modelList)
+                .modelArchiveFiles(archiveList)
+                .wdtModelOnly(true)
+                .wdtVersion(WDT_VERSION)
+                .target(witTarget)
+                .env(env)
+                .redirect(true));
+      }
+      return imageCreation;
+    });
+  }
+  
 
 }
