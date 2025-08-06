@@ -29,7 +29,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+//import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -108,7 +108,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("oke-sequential")
 
 @IntegrationTest
-@Disabled
+//@Disabled
 class ItLiftAndShiftFromOnPremDomain {
   private static String traefikNamespace = null;
   private static String domainNamespace = null;
