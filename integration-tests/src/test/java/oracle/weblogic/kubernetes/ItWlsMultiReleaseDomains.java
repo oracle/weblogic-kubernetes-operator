@@ -57,13 +57,13 @@ class ItWlsMultiReleaseDomains {
   
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
-  private static String domainUid1 = "domain1";
+  private static final String domainUid1 = "domain1";
   private static final String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
   private static final String miiAuxiliaryImage2Tag = "image2" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
-  private static String adminServerPodNameDomain1;
-  private static String managedServerPrefixDomain1;
+  private static final String adminServerPodNameDomain1 = domainUid1 + "-admin-server";
+  private static final String managedServerPrefixDomain1 = domainUid1 + "-managed-server";
   private static final int replicaCount = 2;
   private static String adminSvcExtHostDomain1 = null;
   private static String adminSecretName = "weblogic-credentials";
@@ -142,8 +142,8 @@ class ItWlsMultiReleaseDomains {
     final String auxiliaryImagePath = "/auxiliary";
     String clusterName = "cluster-1";
     domainUid1 = "domain1";// + wlsRelease.substring(0, 8).replace(".", "");
-    adminServerPodNameDomain1 = domainUid1 + "-admin-server";
-    managedServerPrefixDomain1 = domainUid1 + "-managed-server";
+    
+    
 
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
