@@ -563,6 +563,10 @@ class ItDBOperator {
     }
 
     startDomain(wlsDomainUid, wlsDomainNamespace);
+    boolean psuccess = scaleCluster(wlsClusterResName, wlsDomainNamespace, 2);
+    assertTrue(psuccess,
+        String.format("Cluster replica patching failed for domain %s in namespace %s",
+            wlsDomainUid, wlsDomainNamespace));
 
     // verify the admin server service created
     checkServiceExists(wlsAdminServerPodName, wlsDomainNamespace);
