@@ -604,7 +604,7 @@ public class JobStepContext extends BasePodStepContext {
             .restartPolicy("Never")
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .automountServiceAccountToken(info.getDomain().getSpec().getAutomountServiceAccountToken())
-            .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
+            .addVolumesItem(new V1Volume().name(WEBLOGIC_CREDENTIALS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
             .addVolumesItem(
@@ -742,7 +742,7 @@ public class JobStepContext extends BasePodStepContext {
   protected V1Container createPrimaryContainer() {
     Integer numOfConfigMaps = getSpecifiedNumConfigMaps();
     V1Container container = super.createPrimaryContainer()
-        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+        .addVolumeMountsItem(readOnlyVolumeMount(WEBLOGIC_CREDENTIALS_VOLUME, SECRETS_MOUNT_PATH))
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(
           volumeMount(

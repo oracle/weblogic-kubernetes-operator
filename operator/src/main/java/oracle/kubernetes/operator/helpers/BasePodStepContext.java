@@ -45,6 +45,8 @@ import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPFS_SECRETS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPFS_SECRETS_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -130,6 +132,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         mounts = new ArrayList<>();
       }
       mounts.add(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+      mounts.add(new V1VolumeMount().name(TMPFS_SECRETS_VOLUME).mountPath(TMPFS_SECRETS_PATH));
       container.volumeMounts(mounts);
     }
 
@@ -295,6 +298,17 @@ public abstract class BasePodStepContext extends StepContextBase {
     return hostAliases.isEmpty() ? null : hostAliases;
   }
 
+  protected boolean isExternalSecrets() {
+    List<V1EnvVar> envVars = getEnvironmentVariables();
+    if (!envVars.isEmpty()) {
+      for (V1EnvVar envVar : envVars) {
+        if (envVar.getName().equals("USE-EXTERNAL-SECRETS")) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
   /**
    * Abstract method to be implemented by subclasses to return a list of configured and additional
    * environment variables to be set up in the pod.

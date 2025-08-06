@@ -27,11 +27,11 @@ LOCAL_WLSDOMAIN_CONFIG_ZIP="/tmp/wlsdomain_config.gz"
 LOCAL_PRIM_DOMAIN_TAR="/tmp/prim_domain.tar"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
-RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
+RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/tmpfs/model-runtime-secret/password"
 DOMAIN_BIN_LIB_LIST="/weblogic-operator/introspector/binliblist"
 # we export the opss password file location because it's also used by introspectDomain.py
-export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
-OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
+export OPSS_KEY_PASSPHRASE="/weblogic-operator/tmpfs/opss-walletkey-secret/walletPassword"
+OPSS_KEY_B64EWALLET="/weblogic-operator/tmpfs/opss-walletfile-secret/walletFile"
 IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
@@ -73,13 +73,13 @@ FATAL_JRF_INTROSPECTOR_ERROR_MSG="Model In Image JRF domain creation and schema 
  value. If the error is not related to a database credential, then you must also drop and recreate the
  JRF schemas before patching the domain resource. Introspection Error: "
 
-export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
+export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/tmpfs/config-overrides-secrets"
 [ ! -d ${WDT_MODEL_SECRETS_DIRS} ] && unset WDT_MODEL_SECRETS_DIRS
 
 #TBD: CREDENTIALS_SECRET_NAME is unexpectedly empty. Maybe that's a regression?
-#  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
+#  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/tmpfs/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/tmpfs/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
 #For now:
-export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
+export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/tmpfs/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/tmpfs/secrets"
 
 if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   trace "Creating WDT standard output directory: '${WDT_OUTPUT_DIR}'"
@@ -459,8 +459,8 @@ getSecretsAndEnvMD5() {
   trace "Entering getSecretsAndEnvMD5"
 
   local secrets_and_env_text="/tmp/secrets.txt"
-  local override_secrets="/weblogic-operator/config-overrides-secrets/"
-  local weblogic_secrets="/weblogic-operator/secrets/"
+  local override_secrets="/weblogic-operator/tmpfs/config-overrides-secrets/"
+  local weblogic_secrets="/weblogic-operator/tmpfs/secrets/"
   local env_var
 
   rm -f ${secrets_and_env_text}
@@ -1164,8 +1164,8 @@ wdtHandleOnlineUpdate() {
 
   # Save off the encrypted model
   cp ${DOMAIN_HOME}/wlsdeploy/domain_model.json /tmp/encrypted_merge_model.json
-  local admin_user=$(cat /weblogic-operator/secrets/username)
-  local admin_pwd=$(cat /weblogic-operator/secrets/password)
+  local admin_user=$(cat /weblogic-operator/tmpfs/secrets/username)
+  local admin_pwd=$(cat /weblogic-operator/tmpfs/secrets/password)
 
   if [ -z ${AS_SERVICE_NAME} ] || [ -z ${ADMIN_PORT} ] ; then
     trace SEVERE "Cannot find admin service name or port"

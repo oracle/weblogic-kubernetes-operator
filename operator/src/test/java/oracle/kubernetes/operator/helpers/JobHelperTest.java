@@ -1107,9 +1107,9 @@ class JobHelperTest extends DomainValidationTestBase {
     assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
           SECOND_LONG_RESOURCE_NAME, MODE_420));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
-          "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
+          "/weblogic-operator/tmpfs/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
-          "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
+          "/weblogic-operator/tmpfs/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
   }
 
   @Test
@@ -1129,9 +1129,9 @@ class JobHelperTest extends DomainValidationTestBase {
     assertThat(getJobVolumes(), hasSecretVolume(SECOND_LONG_RESOURCE_NAME,
         SECOND_LONG_RESOURCE_NAME, MODE_420));
     assertThat(getJobVolumeMounts(), hasVolumeMount(LONG_RESOURCE_NAME,
-        "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
+        "/weblogic-operator/tmpfs/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(SECOND_LONG_RESOURCE_NAME,
-        "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
+        "/weblogic-operator/tmpfs/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
   }
 
   @Test
@@ -1176,9 +1176,9 @@ class JobHelperTest extends DomainValidationTestBase {
     assertThat(getJobVolumes(), hasSecretVolume(SECRET_NAME + "-volume", SECRET_NAME, MODE_420));
     assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_RESOURCE_NAME, MODE_420));
     assertThat(getJobVolumeMounts(), hasVolumeMount(SECRET_NAME + "-volume",
-          "/weblogic-operator/config-overrides-secrets/" + SECRET_NAME, true));
+          "/weblogic-operator/tmpfs/config-overrides-secrets/" + SECRET_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
-          "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
+          "/weblogic-operator/tmpfs/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
   }
 
   @Test

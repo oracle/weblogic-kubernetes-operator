@@ -24,5 +24,7 @@ public class CommonConstants {
   public static final String SECRETS_WEBHOOK_KEY = "/secrets/webhookKey";
 
   public static final String LATEST_IMAGE_SUFFIX = ":latest";
+  public static final String TMPFS_SECRETS_VOLUME = "wko-tmpfs-secrets-volume";
+  public static final String TMPFS_SECRETS_PATH = "/weblogic-operator/tmpfs";
 
 }

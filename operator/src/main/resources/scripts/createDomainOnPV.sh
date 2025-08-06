@@ -10,9 +10,9 @@ source ${SCRIPTPATH}/wdt_common.sh
 
 
 # we export the opss password file location because it's also used by introspectDomain.py
-export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
-OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
-WDT_MODEL_ENCRYPTION_PASSPHRASE_ROOT="/weblogic-operator/wdt-encryption-passphrase"
+export OPSS_KEY_PASSPHRASE="/weblogic-operator/tmpfs/opss-walletkey-secret/walletPassword"
+OPSS_KEY_B64EWALLET="/weblogic-operator/tmpfs/opss-walletfile-secret/walletFile"
+WDT_MODEL_ENCRYPTION_PASSPHRASE_ROOT="/weblogic-operator/tmpfs/wdt-encryption-passphrase"
 WDT_MODEL_ENCRYPTION_PASSPHRASE="${WDT_MODEL_ENCRYPTION_PASSPHRASE_ROOT}/passphrase"
 
 IMG_MODELS_HOME="/auxiliary/models"
@@ -34,10 +34,10 @@ FATAL_JRF_INTROSPECTOR_ERROR_MSG="Domain On PV domain creation encountered an un
  value and try again. If the domain type requires RCU and you are not setting 'DomainAndRCU' in 'domain.spec.configuration.initializeDomainOnPV.domain.createIfNotExists'
  then you may have to drop and recreate the RCU schema before retry. Introspection Error: "
 
-export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
+export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/tmpfs/config-overrides-secrets"
 [ ! -d ${WDT_MODEL_SECRETS_DIRS} ] && unset WDT_MODEL_SECRETS_DIRS
 
-export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
+export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/tmpfs/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/tmpfs/secrets"
 
 if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   trace "Creating WDT standard output directory: '${WDT_OUTPUT_DIR}'"

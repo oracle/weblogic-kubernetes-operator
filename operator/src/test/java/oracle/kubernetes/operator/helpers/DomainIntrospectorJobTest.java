@@ -135,7 +135,7 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEYPA
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEY_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_VOLUME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SECRETS_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WEBLOGIC_CREDENTIALS_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDTCONFIGMAP_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME;
@@ -479,7 +479,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     V1Job job = jobs.get(0);
 
     assertThat(getJobPodSpec(job).getVolumes(),
-        hasItem(new V1Volume().name(SECRETS_VOLUME).secret(
+        hasItem(new V1Volume().name(WEBLOGIC_CREDENTIALS_VOLUME).secret(
             new V1SecretVolumeSource().secretName("webLogicCredentialsSecretName").defaultMode(420))));
     assertThat(getJobPodSpec(job).getVolumes(),
         hasItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
@@ -523,7 +523,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     V1Job job = jobs.get(0);
 
     assertThat(getJobPodSpec(job).getVolumes(),
-        hasItem(new V1Volume().name(SECRETS_VOLUME).secret(
+        hasItem(new V1Volume().name(WEBLOGIC_CREDENTIALS_VOLUME).secret(
             new V1SecretVolumeSource().secretName("webLogicCredentialsSecretName").defaultMode(420))));
     assertThat(getJobPodSpec(job).getVolumes(),
         not(hasItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(

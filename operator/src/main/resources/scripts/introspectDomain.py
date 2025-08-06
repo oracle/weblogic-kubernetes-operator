@@ -29,14 +29,14 @@
 #   A running WL node manager at port 5556 (see introspectDomain.sh).
 #
 #   Plain text WL admin username/password in:
-#     /weblogic-operator/secrets/username 
-#     /weblogic-operator/secrets/password
+#     /weblogic-operator/tmpfs/secrets/username 
+#     /weblogic-operator/tmpfs/secrets/password
 #
 #   Optional custom sit cfg 'configOverrides' templates in:
-#     /weblogic-operator/config-overrides-secrets
+#     /weblogic-operator/tmpfs/config-overrides-secrets
 #
 #   Optional custom sit cfg 'configOverridesSecrets' in:
-#     /weblogic-operator/config-overrides-secrets/<secret-name>/<key>
+#     /weblogic-operator/tmpfs/config-overrides-secrets/<secret-name>/<key>
 #
 #   The following env vars:
 #     DOMAIN_UID         - completely unique id for this domain
@@ -157,8 +157,8 @@ class OfflineWlstEnv(object):
     self.WDT_DOMAIN_TYPE              = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
-    self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
-    self.CUSTOM_SECRET_ROOT      = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/config-overrides-secrets')
+    self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/tmpfs/secrets')
+    self.CUSTOM_SECRET_ROOT      = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/tmpfs/config-overrides-secrets')
     self.CUSTOM_SITCFG_PATH      = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
     self.NM_HOST                 = self.getEnvOrDef('NM_HOST', 'localhost')
 

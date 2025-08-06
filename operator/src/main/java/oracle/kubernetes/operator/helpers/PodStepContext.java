@@ -92,6 +92,7 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_V
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPFS_SECRETS_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
@@ -736,6 +737,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     if (isReadOnlyRootFileSystem()) {
       volumes.add(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
     }
+
+    volumes.add(new V1Volume().name(TMPFS_SECRETS_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
+
     return volumes;
   }
 

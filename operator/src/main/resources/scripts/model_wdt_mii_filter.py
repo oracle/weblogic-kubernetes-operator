@@ -79,7 +79,7 @@ class OfflineWlstEnv(object):
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
-    self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
+    self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/tmpfs/secrets')
     self.TOPOLOGY_YAML_PATH = '/weblogic-operator/introspectormii/topology.yaml'
     self.DOMAIN_NAME = None
 
