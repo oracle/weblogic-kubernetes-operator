@@ -45,20 +45,16 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -192,7 +188,7 @@ class ItWlsMultiReleaseDomains {
 
     testUntil(withVeryLongRetryPolicy,
         createBasicImage(myMiiImageName, wlsRelease, MII_BASIC_WDT_MODEL_FILE,
-            null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
+            null, MII_BASIC_APP_NAME),
         logger,
         "createBasicImage to be successful");
     if (KIND_REPO != null) {
@@ -394,7 +390,7 @@ class ItWlsMultiReleaseDomains {
    */
 
   public Callable<Boolean> createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
-                                            String appName, String domainType) {
+                                            String appName) {
     return (() -> {
       LoggingFacade logger = getLogger();
       final String image = imageName + ":" + imageTag;
@@ -417,46 +413,25 @@ class ItWlsMultiReleaseDomains {
       Map<String, String> env = new HashMap<>();
       env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
-      // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-      // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-      // the next JDK 14 versions are released.
-      if (WIT_JAVA_HOME != null) {
-        env.put("JAVA_HOME", WIT_JAVA_HOME);
-      }
-
       String witTarget = ((OKD) ? "OpenShift" : "Default");
 
       // build an image using WebLogic Image Tool
       boolean imageCreation = false;
       logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
-      if (domainType.equalsIgnoreCase("wdt")) {
-        final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
-        imageCreation = createImage(
-            defaultWitParams()
-                .modelImageName(imageName)
-                .modelImageTag(WDT_BASIC_IMAGE_TAG)
-                .modelFiles(modelList)
-                .modelArchiveFiles(archiveList)
-                .modelVariableFiles(modelVarList)
-                .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
-                .wdtOperation("CREATE")
-                .wdtVersion(WDT_VERSION)
-                .target(witTarget)
-                .env(env)
-                .redirect(true));
-      } else if (domainType.equalsIgnoreCase("mii")) {
-        imageCreation = createImage(
-            defaultWitParams()
-                .modelImageName(imageName)
-                .modelImageTag(MII_BASIC_IMAGE_TAG)
-                .modelFiles(modelList)
-                .modelArchiveFiles(archiveList)
-                .wdtModelOnly(true)
-                .wdtVersion(WDT_VERSION)
-                .target(witTarget)
-                .env(env)
-                .redirect(true));
-      }
+
+      imageCreation = createImage(
+          defaultWitParams()
+              .baseImageTag(imageTag)
+              .modelImageName(imageName)
+              .modelImageTag(imageTag)
+              .modelFiles(modelList)
+              .modelArchiveFiles(archiveList)
+              .wdtModelOnly(true)
+              .wdtVersion(WDT_VERSION)
+              .target(witTarget)
+              .env(env)
+              .redirect(true));
+      
       return imageCreation;
     });
   }
