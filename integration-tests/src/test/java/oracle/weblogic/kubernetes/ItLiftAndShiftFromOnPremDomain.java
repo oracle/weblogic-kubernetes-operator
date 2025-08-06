@@ -188,6 +188,9 @@ class ItLiftAndShiftFromOnPremDomain {
     });
 
     // Copy the on-prem domain files to a temporary directory
+    //TODO
+    logger.info("on-prem domain source dir is: " + DOMAIN_SRC_DIR);
+    logger.info("temp on-prem target domain dir is: " + DOMAIN_TEMP_DIR);
     try {
       copyFolder(DOMAIN_SRC_DIR, DOMAIN_TEMP_DIR);
     } catch (IOException  ioex) {
