@@ -141,7 +141,7 @@ class ItWlsMultiReleaseDomains {
   void testCreateDomainWithMultipleWLSReleases(String wlsRelease) {
     final String auxiliaryImagePath = "/auxiliary";
     String clusterName = "cluster-1";
-    domainUid1 = "domain" + wlsRelease.substring(0, 8).replace(".", "");
+    domainUid1 = "domain1";// + wlsRelease.substring(0, 8).replace(".", "");
     adminServerPodNameDomain1 = domainUid1 + "-admin-server";
     managedServerPrefixDomain1 = domainUid1 + "-managed-server";
 
