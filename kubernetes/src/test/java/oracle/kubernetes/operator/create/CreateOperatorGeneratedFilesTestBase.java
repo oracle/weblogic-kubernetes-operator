@@ -32,6 +32,8 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
 import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
 import oracle.kubernetes.operator.utils.OperatorValues;
@@ -197,7 +199,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   protected V1Deployment getExpectedWeblogicOperatorDeployment() {
-    return newDeployment()
+    V1Deployment deployment = newDeployment()
         .metadata(
             newObjectMeta()
                 .name("weblogic-operator")
@@ -317,10 +319,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .mountPath("/deployment"))
                                         .addVolumeMountsItem(
                                             newVolumeMount()
-                                                .name("log-volume")
-                                                .mountPath("/logs"))
-                                        .addVolumeMountsItem(
-                                            newVolumeMount()
                                                 .name("probes-volume")
                                                 .mountPath("/probes")))
                                 .addVolumesItem(
@@ -348,13 +346,20 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .emptyDir(new V1EmptyDirVolumeSource()))
                                 .addVolumesItem(
                                     newVolume()
-                                        .name("log-volume")
-                                        .emptyDir(new V1EmptyDirVolumeSource()))
-                                .addVolumesItem(
-                                    newVolume()
                                         .name("probes-volume")
                                         .emptyDir(new V1EmptyDirVolumeSource()))
                         )));
+
+    boolean isElkIntegrationEnabled = Boolean.parseBoolean(getInputs().getElkIntegrationEnabled());
+    if (!isElkIntegrationEnabled) {
+      List<V1VolumeMount> mounts = deployment.getSpec().getTemplate().getSpec()
+          .getContainers().get(0).getVolumeMounts();
+      mounts.add(mounts.size() - 1, newVolumeMount().name("log-volume").mountPath("/logs"));
+      List<V1Volume> volumees = deployment.getSpec().getTemplate().getSpec().getVolumes();
+      volumees.add(volumees.size() - 1, newVolume().name("log-volume").emptyDir(new V1EmptyDirVolumeSource()));
+    }
+
+    return deployment;
   }
 
   void expectProbes(V1Container container) {
