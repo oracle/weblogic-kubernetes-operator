@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1356,6 +1357,50 @@ public abstract class PodStepContext extends BasePodStepContext {
           }));
     }
 
+    private void restoreOldStyleSecretVolumes(V1Pod recipe, V1Pod currentPod) {
+      Optional.ofNullable(recipe.getSpec())
+              .map(V1PodSpec::getVolumes)
+              .ifPresent(volumes ->
+                      volumes.removeIf(volume -> TMPFS_SECRETS_VOLUME.equals(volume.getName())));
+
+      Optional.ofNullable(recipe.getSpec())
+              .map(V1PodSpec::getContainers)
+              .stream()
+              .flatMap(Collection::stream)
+              .filter(container -> "weblogic-server".equals(container.getName()))
+              .findFirst()
+              .map(V1Container::getVolumeMounts)
+              .ifPresent(volumeMounts ->
+                      volumeMounts.removeIf(volumeMount ->
+                              TMPFS_SECRETS_VOLUME.equals(volumeMount.getName())));
+
+      Optional.ofNullable(recipe.getSpec())
+              .map(V1PodSpec::getInitContainers)
+              .stream()
+              .flatMap(Collection::stream)
+              .forEach(container ->
+                      Optional.ofNullable(container.getVolumeMounts())
+                        .ifPresent(volumeMounts ->
+                      volumeMounts.removeIf(volumeMount ->
+                              TMPFS_SECRETS_VOLUME.equals(volumeMount.getName()))));
+
+      Optional.ofNullable(recipe.getSpec())
+              .map(V1PodSpec::getContainers)
+              .stream()
+              .flatMap(Collection::stream)
+              .filter(container -> "weblogic-server".equals(container.getName()))
+              .findFirst()
+              .map(V1Container::getVolumeMounts)
+              .ifPresent(volumeMounts ->
+                      volumeMounts.forEach(volumeMount -> {
+                        String currentPath = volumeMount.getMountPath();
+                        if (currentPath != null && currentPath.contains("/tmpfs/")) {
+                          String newPath = currentPath.replace("/tmpfs/", "/");
+                          volumeMount.setMountPath(newPath);
+                        }
+                      }));
+    }
+
     private void restoreFluentdVolume(V1Pod recipe, V1Pod currentPod) {
       Optional.ofNullable(recipe.getSpec().getVolumes())
           .ifPresent(volumes -> volumes.stream().filter(volume -> FLUENTD_CONFIGMAP_VOLUME.equals(volume.getName()))
@@ -1429,6 +1474,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           Pair.of("restoreSecurityContext", this::restoreSecurityContext),
           Pair.of("restoreSecurityContextEmpty", this::restoreSecurityContextEmpty),
           Pair.of("restoreSecurityContextEmptyInitContainer", this::restoreSecurityContextEmptyInitContainer),
+          Pair.of("restoreOldStyleSecretVolumes", this::restoreOldStyleSecretVolumes),
           Pair.of("restoreNoStartupProbe", this::restoreNoStartupProbe));
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))

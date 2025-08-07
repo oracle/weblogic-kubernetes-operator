@@ -135,10 +135,10 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEYPA
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEY_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_VOLUME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.WEBLOGIC_CREDENTIALS_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDTCONFIGMAP_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WEBLOGIC_CREDENTIALS_VOLUME;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;

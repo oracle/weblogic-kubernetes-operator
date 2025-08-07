@@ -309,6 +309,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     }
     return false;
   }
+
   /**
    * Abstract method to be implemented by subclasses to return a list of configured and additional
    * environment variables to be set up in the pod.
