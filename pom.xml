@@ -715,7 +715,7 @@
     <maven-dependency-plugin-version>3.8.1</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.6.0</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.5.1</exec-maven-plugin-version>
-    <checkstyle-version>10.26.1</checkstyle-version>
+    <checkstyle-version>11.0.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.6.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.2.8</maven-gpg-plugin-version>
@@ -724,7 +724,7 @@
     <jakarta-json-version>2.0.1</jakarta-json-version>
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
-    <commons-cli-version>1.9.0</commons-cli-version>
+    <commons-cli-version>1.10.0</commons-cli-version>
     <networknt-jsonschmema-validator-version>1.5.8</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.5.0</commons-exec-version>
     <commons-lang3-version>3.18.0</commons-lang3-version>
@@ -742,7 +742,7 @@
     <findbugs-version>3.0.1u2</findbugs-version>
     <kotlin-stdlib-version>2.2.0</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
-    <okio-version>3.15.0</okio-version>
+    <okio-version>3.16.0</okio-version>
     <bc-jdk18on-version>1.81</bc-jdk18on-version>
     <junit.jupiter.version>5.13.4</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
@@ -762,8 +762,8 @@
     <slf4j-version>2.0.17</slf4j-version>
     <logback-classic-version>1.5.18</logback-classic-version>
     <protobuf-java-version>4.31.1</protobuf-java-version>
-    <json-smart-version>2.5.2</json-smart-version>
-    <nimbus-jose-jwt-version>10.4</nimbus-jose-jwt-version>
+    <json-smart-version>2.6.0</json-smart-version>
+    <nimbus-jose-jwt-version>10.4.1</nimbus-jose-jwt-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
