@@ -1,0 +1,6 @@
+#Keystore Properties
+#Wed Aug 06 20:41:28 UTC 2025
+keystore.passphrase={AES256}ILt4jNjaQvcYL+vuyZXtkKAYkYSucBHTgfsW1usQYw5+FHFG61M+xzHGI8deT58d
+keystore.type=PKCS12
+keystore.purpose=trust
+keystore.name=machine-trust

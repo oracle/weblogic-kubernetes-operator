@@ -1,0 +1,9 @@
+#Keystore Properties
+#Wed Aug 06 20:41:29 UTC 2025
+keystore.passphrase={AES256}LX0Nfk+XI0Mokm/zcglpCCu83FKz8AzVFG2wDEI2pDgXhrhMAk1+/m1trqF3ABCY
+keystore.type=PKCS12
+keystore.purpose=certificate-authority
+keystore.name=domain-ca
+keystore.ca.next.generation.number=2
+keystore.privatekey.passphrase.domainpki-domain-ca={AES256}ZlmFWjh5cJVk16U51F30JWmuzaFuiIdDq2yOhXaEwLwI1i+tFDEstZWHDIpNCDL4
+keystore.privatekey.passphrase.domainpki-machine-ca={AES256}xMjxLuBbYpxXmVYxuV2FyfyoTFcyn3wbe1JQUBDjxfuSN6YQNzloP/O5jUzsBb3T
