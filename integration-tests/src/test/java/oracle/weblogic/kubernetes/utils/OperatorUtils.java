@@ -554,17 +554,18 @@ public class OperatorUtils {
     logger.info("Operator release {0} status is deployed in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
 
+    // wait for the webhook pod to be ready
+    logger.info("Wait for the operator webhook pod is ready in namespace {0}", opNamespace);
+    testUntil(
+        withLongRetryPolicy,
+        assertDoesNotThrow(() -> operatorWebhookIsReady(opNamespace),
+          "operatorWebhookIsReady failed with ApiException"),
+        logger,
+        "operator webhook to be running in namespace {0}",
+        opNamespace);
+
     // wait for the operator to be ready
-    if (webhookOnly) {
-      logger.info("Wait for the operator webhook pod is ready in namespace {0}", opNamespace);
-      testUntil(
-          withLongRetryPolicy,
-          assertDoesNotThrow(() -> operatorWebhookIsReady(opNamespace),
-              "operatorWebhookIsReady failed with ApiException"),
-          logger,
-          "operator webhook to be running in namespace {0}",
-          opNamespace);
-    } else {
+    if (!webhookOnly) {
       logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
       testUntil(
           withLongRetryPolicy,
