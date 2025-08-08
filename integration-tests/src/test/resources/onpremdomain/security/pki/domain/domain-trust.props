@@ -1,6 +1,0 @@
-#Keystore Properties
-#Wed Aug 06 20:41:28 UTC 2025
-keystore.passphrase={AES256}K8aB0QwOrAksNzA1mWG03v3wG+PY3WjpLJobLZHHbWpKxv90MU+Vk0CQ0AHDgEvr
-keystore.type=PKCS12
-keystore.purpose=trust
-keystore.name=domain-trust
