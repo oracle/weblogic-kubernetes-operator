@@ -20,12 +20,9 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.AppParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -42,7 +39,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -60,28 +56,19 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,16 +87,11 @@ class ItWlsMultiReleaseDomains {
   private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
   private static final String miiAuxiliaryImage2Tag = "image2" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
-  private static final String adminServerPodNameDomain1 = domainUid1 + "-admin-server";
-  private static final String managedServerPrefixDomain1 = domainUid1 + "-managed-server";
-  private static final int replicaCount = 2;
-  private static String adminSvcExtHostDomain1 = null;
+  private static final int replicaCount = 1;
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
   private static String opNamespace = null;
-  private static AppParams appParams = defaultAppParams()
-      .appArchiveDir(ARCHIVE_DIR + ItMiiAuxiliaryImage.class.getSimpleName());
-  private static String miiImage;
+  private static List<String> images = new ArrayList<>();
   
   ConditionFactory withVeryLongRetryPolicy
       = with().pollDelay(0, SECONDS)
@@ -146,32 +128,6 @@ class ItWlsMultiReleaseDomains {
     logger.info("Create encryption secret");
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
-
-    // build app
-    assertTrue(buildAppArchive(appParams
-        .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-        .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
-
-    // image1 with model files for domain config, ds, app and wdt install files
-    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
-
-    List<String> modelList = new ArrayList<>();
-    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
-    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, archiveList, modelList);
-
-    // image2 with model files for jms config
-    modelList = new ArrayList<>();
-    modelList.add(MODEL_DIR + "/model.jms2.yaml");
-    WitParams witParams
-        = new WitParams()
-            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
-            .modelImageTag(miiAuxiliaryImage2Tag)
-            .wdtModelOnly(true)
-            .modelFiles(modelList)
-            .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);    
   }
 
   /**
@@ -207,71 +163,15 @@ class ItWlsMultiReleaseDomains {
         domainUid + "-managed-server");
   }
   
-  private void test1() {
-    final String auxiliaryImagePath = "/auxiliary";
-    String clusterName = "cluster-1";
-    //domainUid1 = "domain" + wlsRelease.substring(0, 8).replace(".", "");
-
-    // create domain custom resource using 2 auxiliary images
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
-        domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    String wlsImage = LOCALE_IMAGE_NAME;// + ":" + wlsRelease;
-    logger.info(wlsImage);
-    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid1, domainNamespace,
-        wlsImage, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, auxiliaryImagePath,
-        miiAuxiliaryImage1,
-        miiAuxiliaryImage2);
-
-    domainCR = createClusterResourceAndAddReferenceToDomain(
-        domainUid1 + "-" + clusterName, clusterName, domainNamespace, domainCR, replicaCount);
-
-    // create domain and verify its running
-    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
-        domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2, domainNamespace);
-    createDomainAndVerify(domainUid1, domainCR, domainNamespace,
-        adminServerPodNameDomain1, managedServerPrefixDomain1, replicaCount);
-
-    //create router for admin service on OKD
-    if (adminSvcExtHostDomain1 == null) {
-      adminSvcExtHostDomain1 = createRouteForOKD(getExternalServicePodName(adminServerPodNameDomain1), domainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHostDomain1);
-    }
-
-    // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
-
-    // get the original domain resource before update
-    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid1, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid1, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
-    /*
-    shutdownDomain(domainUid1, domainNamespace);
-    logger.info("Checking for admin server pod shutdown");
-    checkPodDoesNotExist(adminServerPodNameDomain1, domainUid1, domainNamespace);
-    logger.info("Checking managed server pods were shutdown");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefixDomain1 + i, domainUid1, domainNamespace);
-    }
-    deleteDomainCustomResource(domainUid1, domainNamespace);
-    */
-  }
 
   /**
    * Cleanup images.
    */
   public void tearDownAll() {
     // delete images
-    deleteImage(miiAuxiliaryImage1);
-    deleteImage(miiAuxiliaryImage2);
-  }
-
-  private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
-      String adminSvcExtHost) {
-    verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
-        "JMSSystemResources", "TestClusterJmsModule2", "200");
+    for (String image : images) {
+      deleteImage(image);
+    }
   }
   
   /**
@@ -431,10 +331,10 @@ class ItWlsMultiReleaseDomains {
               .target(witTarget)
               .env(env)
               .redirect(true));
+      images.add(imageName + ":" + imageTag);
       
       return imageCreation;
     });
   }
   
-
 }
