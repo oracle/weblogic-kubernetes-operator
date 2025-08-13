@@ -129,7 +129,7 @@ class ItWlsMultiReleaseDomains {
    * Verify all the pods are started and in ready state.
    */
   @ParameterizedTest
-  @MethodSource("releaseProvider")
+  @MethodSource("tagProvider")
   @DisplayName("Test to create domains with different WLS releases")
   void testCreateDomainWithMultipleWLSReleases(String wlsRelease) {
     String myMiiImageName = DOMAIN_IMAGES_PREFIX + "mii-multirelease-image";
@@ -156,13 +156,10 @@ class ItWlsMultiReleaseDomains {
         domainUid + "-managed-server");
   }
   
-  static Stream<Arguments> releaseProvider() {
-    String[] tags = Arrays.stream(DEFAULT_WEBLOGIC_IMAGE_TAGS.split(","))
+  static Stream<Arguments> tagProvider() {
+    return Arrays.stream(DEFAULT_WEBLOGIC_IMAGE_TAGS.split(","))
         .map(String::trim)
-        .toArray(String[]::new);
-    return Stream.of(
-        Arguments.of((Object) tags)
-    );
+	.map(Arguments::of);
   }
   
   /**
