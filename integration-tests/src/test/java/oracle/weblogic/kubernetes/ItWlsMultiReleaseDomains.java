@@ -4,11 +4,13 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -28,20 +30,20 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_WEBLOGIC_IMAGE_TAGS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -81,12 +83,7 @@ class ItWlsMultiReleaseDomains {
   
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
-  private static final String domainUid1 = "domain1";
   private static String domainUid;
-  private static final String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
-  private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
-  private static final String miiAuxiliaryImage2Tag = "image2" + MII_BASIC_IMAGE_TAG;
-  private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
   private static final int replicaCount = 1;
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
@@ -99,12 +96,7 @@ class ItWlsMultiReleaseDomains {
           .atMost(30, MINUTES).await();
 
   /**
-   * Install Operator. 
-   * Create a domain using multiple auxiliary images. 
-   * One auxiliary image containing the domain
-   * configuration and another auxiliary image with JMS system resource.
-   * Verify the domain is running and JMS resource is added.
-   *
+   * Install Operator.
    * @param namespaces list of namespaces. 
    */
   @BeforeAll
@@ -130,13 +122,14 @@ class ItWlsMultiReleaseDomains {
         "weblogicenc", "weblogicenc");
   }
 
+  //@ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
+  
   /**
    * Create domains using multiple releases of WebLogic.
    * Verify all the pods are started and in ready state.
-   * Verify configured JMS and JDBC resources.
    */
   @ParameterizedTest
-  @ValueSource(strings = {"12.2.1.4-ol8", "14.1.2.0-generic-jdk17-ol8", "15.1.1.0.0-jdk17"})
+  @MethodSource("releaseProvider")
   @DisplayName("Test to create domains with different WLS releases")
   void testCreateDomainWithMultipleWLSReleases(String wlsRelease) {
     String myMiiImageName = DOMAIN_IMAGES_PREFIX + "mii-multirelease-image";
@@ -163,7 +156,15 @@ class ItWlsMultiReleaseDomains {
         domainUid + "-managed-server");
   }
   
-
+  static Stream<Arguments> releaseProvider() {
+    String[] tags = Arrays.stream(DEFAULT_WEBLOGIC_IMAGE_TAGS.split(","))
+        .map(String::trim)
+        .toArray(String[]::new);
+    return Stream.of(
+        Arguments.of((Object) tags)
+    );
+  }
+  
   /**
    * Cleanup images.
    */
