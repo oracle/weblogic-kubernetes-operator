@@ -7,6 +7,7 @@
 
 source ${SCRIPTPATH}/utils.sh
 source ${SCRIPTPATH}/wdt_common.sh
+source ${SCRIPTPATH}/secrets_helper.sh
 
 OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
@@ -306,6 +307,27 @@ overrideWDTTimeoutValues() {
 createWLDomain() {
   start_trap
   trace "Entering createWLDomain"
+
+  # TODO prime the secrets if external or maybe for native also
+  if [ "true" == "${USE-EXTERNAL-SECRETS}" ] ; then
+    if [ "true" == "${HASHICORP-ENABLED}" ] ; then
+      # HASHICORP_K8S_ROLE
+      # HASHICORP_VAULT_URL
+      # HASHICORP_SECRET_PATH
+      trace "Using hashicorp secrets"
+      process_hashicorp_weblogic_credential "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
+      process_hashicorp_opss_secret "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
+      process_hashicorp_runtime_encryption_secret "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
+      process_hashicorp_opss_secret "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
+      process_hashicorp_config_secrets "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
+    fi
+
+    if [ "true" == "${K8S-ENABLED}" ] ; then
+      trace "Using k8s secrets but not mounting it in pod "
+    fi
+    trace "Sleeping for a while"
+    sleep 60
+  fi
 
   if [ ! -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
     trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \

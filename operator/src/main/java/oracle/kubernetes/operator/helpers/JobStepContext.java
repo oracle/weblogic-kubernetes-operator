@@ -620,20 +620,26 @@ public class JobStepContext extends BasePodStepContext {
                         .configMap(getIntrospectMD5VolumeSource(i)));
       }
     }
-
+    // TODO
     if (getOpssWalletPasswordSecretVolume() != null) {
-      podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
-          getOpssWalletPasswordSecretVolume()));
+      if (!isExternalSecrets()) {
+        podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
+                getOpssWalletPasswordSecretVolume()));
+      }
     }
     if (getOpssWalletFileSecretName() != null) {
-      podSpec.addVolumesItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
-              getOpssWalletFileSecretVolume()));
+      if (!isExternalSecrets()) {
+        podSpec.addVolumesItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
+                getOpssWalletFileSecretVolume()));
+      }
     }
 
     if (getModelEncryptionSecretVolume() != null) {
-      podSpec.addVolumesItem(new V1Volume().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME).secret(
-              getModelEncryptionSecretVolume()
-      ));
+      if (!isExternalSecrets()) {
+        podSpec.addVolumesItem(new V1Volume().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME).secret(
+                getModelEncryptionSecretVolume()
+        ));
+      }
     }
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
@@ -741,8 +747,8 @@ public class JobStepContext extends BasePodStepContext {
   @Override
   protected V1Container createPrimaryContainer() {
     Integer numOfConfigMaps = getSpecifiedNumConfigMaps();
+    // TODO
     V1Container container = super.createPrimaryContainer()
-        .addVolumeMountsItem(readOnlyVolumeMount(WEBLOGIC_CREDENTIALS_VOLUME, SECRETS_MOUNT_PATH))
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(
           volumeMount(
@@ -750,6 +756,9 @@ public class JobStepContext extends BasePodStepContext {
               "/weblogic-operator/introspectormii")
               .readOnly(false));
 
+    if (!isExternalSecrets()) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(WEBLOGIC_CREDENTIALS_VOLUME, SECRETS_MOUNT_PATH));
+    }
     if (numOfConfigMaps != null && numOfConfigMaps > 1) {
       for (int i = 1; i < numOfConfigMaps; i++) {
         container.addVolumeMountsItem(
@@ -759,17 +768,23 @@ public class JobStepContext extends BasePodStepContext {
                                 .readOnly(false));
       }
     }
-
+    // TODO
     if (getOpssWalletPasswordSecretVolume() != null) {
-      container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
+      if (!isExternalSecrets()) {
+        container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
+      }
     }
     if (getOpssWalletFileSecretVolume() != null) {
-      container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
+      if (!isExternalSecrets()) {
+        container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
+      }
     }
 
     if (getModelEncryptionSecretVolume() != null) {
-      container.addVolumeMountsItem(readOnlyVolumeMount(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME,
-              WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH));
+      if (!isExternalSecrets()) {
+        container.addVolumeMountsItem(readOnlyVolumeMount(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME,
+                WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH));
+      }
     }
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
@@ -785,11 +800,14 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dci -> addVolumeMountIfMissing(container,
         DOMAIN_CREATION_IMAGE_MOUNT_PATH));
 
-    List<String> configOverrideSecrets = getConfigOverrideSecrets();
-    for (String secretName : configOverrideSecrets) {
-      container.addVolumeMountsItem(
-            readOnlyVolumeMount(
-                  getVolumeName(secretName, SECRET_TYPE), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+    // TODO
+    if (!isExternalSecrets()) {
+      List<String> configOverrideSecrets = getConfigOverrideSecrets();
+      for (String secretName : configOverrideSecrets) {
+        container.addVolumeMountsItem(
+                readOnlyVolumeMount(
+                     getVolumeName(secretName, SECRET_TYPE), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+      }
     }
 
     if (isDomainSourceFromModel()) {
@@ -797,9 +815,12 @@ public class JobStepContext extends BasePodStepContext {
         container.addVolumeMountsItem(
             readOnlyVolumeMount(getVolumeName(getWdtConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
       }
-      container.addVolumeMountsItem(
-          readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
-              RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
+      // TODO
+      if (!isExternalSecrets()) {
+        container.addVolumeMountsItem(
+                readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
+                        RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
+      }
     }
 
     if (isInitializeDomainOnPV() && getDomainCreationConfigMap() != null) {

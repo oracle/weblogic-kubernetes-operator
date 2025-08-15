@@ -731,7 +731,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
     if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
-      volumes.add(createRuntimeEncryptionSecretVolume());
+      // TODO
+      if (!isExternalSecrets()) {
+        volumes.add(createRuntimeEncryptionSecretVolume());
+      }
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
 
@@ -816,7 +819,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
     if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
-      mounts.add(createRuntimeEncryptionSecretVolumeMount());
+      // TODO
+      if (!isExternalSecrets()) {
+        mounts.add(createRuntimeEncryptionSecretVolumeMount());
+      }
     }
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     return mounts;
