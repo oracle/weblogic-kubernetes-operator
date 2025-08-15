@@ -15,7 +15,7 @@ spec:
   - args:
     - sleep
     - infinity
-    image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
+    image: container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8
     imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
     name: rcu
     volumeMounts:

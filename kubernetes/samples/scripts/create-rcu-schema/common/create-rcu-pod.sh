@@ -20,7 +20,7 @@ usage() {
   echo "  -p FMW Infrastructure ImagePullSecret (optional) "
   echo "      (default: none) "
   echo "  -i FMW Infrastructure Image (optional) "
-  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) "
+  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8) "
   echo "  -u FMW Infrastructure ImagePullPolicy (optional) "
   echo "      (default: IfNotPresent) "
   echo "  -o Output directory for the generated YAML file. (optional)"
@@ -34,7 +34,7 @@ usage() {
 
 namespace="default"
 credSecret="oracle-rcu-secret"
-fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
+fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8"
 imagePullPolicy="IfNotPresent"
 rcuOutputDir="rcuoutput"
 

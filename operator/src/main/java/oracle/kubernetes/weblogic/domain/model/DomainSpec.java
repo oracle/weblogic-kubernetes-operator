@@ -196,11 +196,11 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * The WebLogic Server image.
    *
-   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
+   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8
    */
   @Description(
       "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; "
-          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
+          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.")
   private String image;
 
   /**

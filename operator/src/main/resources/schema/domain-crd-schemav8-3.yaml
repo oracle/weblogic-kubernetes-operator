@@ -5887,7 +5887,7 @@ openAPIV3Schema:
           type: string
         image:
           description: The WebLogic Server image; required when `domainHomeSourceType`
-            is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
+            is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.
           type: string
         imagePullPolicy:
           description: The image pull policy for the WebLogic Server image.
