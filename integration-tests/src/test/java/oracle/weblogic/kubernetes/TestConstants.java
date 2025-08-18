@@ -161,7 +161,7 @@ public interface TestConstants {
   // For kind, replace repo name in image name with KIND_REPO, 
   // otherwise use the actual image name
   // For example, if the image name is
-  // container-registry.oracle.com/middleware/weblogic:12.2.1.4 
+  // container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8 
   // it will be pushed/used as
   // localhost:5000/middleware/weblogic:12.2.1.4 in kind and 
   // in non-kind cluster it will be used as is.

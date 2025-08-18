@@ -18,7 +18,7 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 Model in Image requires an image with a WebLogic Server installation.
 
-- You can start with WebLogic Server 12.2.1.4 or later, an Oracle Container Registry pre-built base image, such as `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
+- You can start with WebLogic Server 12.2.1.4 or later, an Oracle Container Registry pre-built base image, such as `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8`.
   {{% notice note %}}
   The images in `container-registry.oracle.com/middleware/weblogic` are unpatched images. You should always either use patched images from `container-registry.oracle.com/middleware/weblogic_cpu` or build your own patched images (see [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})).
   {{% /notice %}}

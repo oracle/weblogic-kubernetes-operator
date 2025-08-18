@@ -14,7 +14,7 @@ see `samples/scripts/create-oracle-db-service/README.md` about using its `start-
 The `create-rcu-schema.sh` script generates an RCU schema in an Oracle database by deploying a pod named `rcu`
 (if one isn't already deployed) and running a script named `createRepository.sh` in the pod.
 
-The `rcu` pod assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`,
+The `rcu` pod assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8`,
 is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`.
 To create a secret for accessing `container-registry.oracle.com`, see `create-image-pull-secret.sh`.
 
@@ -54,7 +54,7 @@ usage: ./create-rcu-schema.sh -s <schemaPrefix> [-t <schemaType>] [-d <dburl>] [
   -p FMW Infrastructure ImagePullSecret (optional) 
       (default: none) 
   -i FMW Infrastructure Image (optional) 
-      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) 
+      (default: container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8) 
   -u FMW Infrastructure ImagePullPolicy (optional) 
       (default: IfNotPresent) 
   -o Output directory for the generated YAML file. (optional)
@@ -71,7 +71,7 @@ $ kubectl -n MYNAMESPACE create secret generic oracle-rcu-secret \
 ```
 ```shell
 $ ./create-rcu-schema.sh -s domain1
-ImagePullSecret[none] Image[container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4] dburl[oracle-db.default.svc.cluster.local:1521/devpdb.k8s] rcuType[fmw]
+ImagePullSecret[none] Image[container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8] dburl[oracle-db.default.svc.cluster.local:1521/devpdb.k8s] rcuType[fmw]
 pod/rcu created
 [rcu] already initialized ..
 Checking Pod READY column for State [1/1]
@@ -153,7 +153,7 @@ Use the `./drop-rcu-schema.sh` script to drop the RCU schema based `schemaPrefix
 The script works by deploying a pod named `rcu`
 (if one isn't already deployed) and running a script named `dropRepository.sh` in the pod.
 
-The `rcu` pod assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`,
+The `rcu` pod assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8`,
 is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`.
 To create a secret for accessing `container-registry.oracle.com`, see `create-image-pull-secret.sh`.
 
@@ -183,7 +183,7 @@ usage: ./drop-rcu-schema.sh -s <schemaPrefix> [-t <schemaType>] [-d <dburl>] [-n
   -p FMW Infrastructure ImagePullSecret (optional) 
       (default: none) 
   -i FMW Infrastructure Image (optional) 
-      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) 
+      (default: container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8) 
   -u FMW Infrastructure ImagePullPolicy (optional) 
       (default: IfNotPresent) 
   -o Output directory for the generated YAML file. (optional)
