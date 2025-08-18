@@ -44,7 +44,7 @@ public interface TestConstants {
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
   public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
-  public static final String DEFAULT_WEBLOGIC_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
+  public static final String DEFAULT_WEBLOGIC_IMAGE_TAGS = "12.2.1.4-ol8, 14.1.2.0-generic-jdk17-ol8, 15.1.1.0.0-jdk17";
   public static final String WEBLOGIC_IMAGE_TAGS =
       getNonEmptySystemProperty("wko.it.weblogic.image.tags", DEFAULT_WEBLOGIC_IMAGE_TAGS);
   public static final int DEFAULT_MAX_CLUSTER_SIZE = 5;
