@@ -379,6 +379,10 @@
                                 <resource>
                                     <directory>${resource-integration-test}</directory>
                                     <filtering>true</filtering>
+                                    <excludes>
+                                        <exclude>**/*.jks</exclude>
+                                        <exclude>**/SerializedSystemIni.dat</exclude>
+                                    </excludes>
                                 </resource>
                             </resources>
                         </configuration>
