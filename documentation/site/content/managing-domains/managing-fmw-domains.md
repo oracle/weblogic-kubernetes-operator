@@ -70,13 +70,13 @@ $ docker login container-registry.oracle.com
 Then, you can pull the image with this command:
 
 ```shell
-$ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
+$ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8
 ```
 If desired, you can:
 
-* Check the WLS version with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
+* Check the WLS version with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
 
-* Check the WLS patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
+* Check the WLS patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
 
 Additional information about using this image is available in the
 [Oracle Container Registry](https://container-registry.oracle.com).

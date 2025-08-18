@@ -317,7 +317,7 @@ $ cd /tmp/mii-sample/model-images
 ```shell
 $ ./imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
-  --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
+  --fromImage container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8 \
   --wdtModel      ./model-in-image__WLS-v1/model.10.yaml \
   --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
   --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
@@ -330,7 +330,7 @@ If you don’t see the `imagetool` directory, then you missed a step in the prer
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-  - Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+  - Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8` base image.
   - Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
       - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
       - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.

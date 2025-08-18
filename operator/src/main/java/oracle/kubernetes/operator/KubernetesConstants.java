@@ -7,7 +7,7 @@ import java.net.HttpURLConnection;
 
 /** Kubernetes constants. */
 public interface KubernetesConstants {
-  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
+  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8";
   String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.5";
   String DEFAULT_FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
