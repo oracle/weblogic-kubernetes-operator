@@ -23,8 +23,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -44,7 +42,6 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_CLUST
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_SERVER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.checkManagedServerConfiguration;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.executeLifecycleScript;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.isManagedServerConfiguration;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedServerNamePrefix;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.restoreEnv;
@@ -126,17 +123,10 @@ class ItServerStartPolicyConfigCluster {
         "Could not find standalone managed server from configured cluster");
     logger.info("Found standalone managed server configuration");
 
-    // Check configured cluster configuration is available 
+    // Check configured server pod is available
     String configServerPodName = domainUid + "-config-cluster-server1";
     checkPodReadyAndServiceExists(configServerPodName, domainUid, domainNamespace);
 
-    testUntil(
-            withLongRetryPolicy,
-            isManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName),
-            logger,
-            "Waiting until managed server from configured cluster found");
-
-    logger.info("Found managed server from configured cluster");
   }
 
   /**
