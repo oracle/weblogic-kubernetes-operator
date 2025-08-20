@@ -14,7 +14,7 @@ The following steps will direct you to accept the license agreement for WebLogic
   - Ensure that Docker is running. Find and pull the WebLogic 12.2.1.4 installation image:
      ```shell
      $ docker login container-registry.oracle.com -u ${ORACLE_SSO_EMAIL} -p ${ORACLE_SSO_PASSWORD}
-     $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
+     $ docker pull container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8
      ```
 
    If you have problems accessing the Oracle Container Registry, you can build your own images from the [Oracle GitHub repository](https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles).
