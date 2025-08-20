@@ -12,20 +12,20 @@
     <title>PersistentVolumes and PersistentVolumeClaims :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1755706949" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1755706949" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1755713811" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1755713811" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1755706949"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1755713811"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1755706949"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1755706949"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1755713811"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1755713811"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1755706949"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1755713811"></script>
 
     
   </div>
@@ -3961,7 +3961,7 @@
 <h3 id="persistent-volume-storage-locations">Persistent volume storage locations</h3>
 <p>PersistentVolumes can point to different storage locations, for example NFS servers or a local directory path. For a list of available options, see the <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">Kubernetes documentation</a>.</p>
 <p><strong>Note regarding HostPath</strong>: In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, <code>HOST_PATH</code> provides the simplest configuration.  In a multinode Kubernetes cluster, a <code>HOST_PATH</code> that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely-available option.  There are other options listed in the referenced table.</p>
-<p>The operator provides a sample script to create the PersistentVolume and PersistentVolumeClaim for the domain. This script must be executed before creating the domain.  Beginning with operator version 4.1.0, for the Domain on PV <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a>, the operator provides options to create the PV and PVC during the domain initialization. See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/">Domain on PV documentation</a> or the <code>domain.spec.configuration.initializeDomainOnPV</code> section in the domain resource <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/4.2/documentation/domains/Domain.md">schema</a> for more details.</p>
+<p>The operator provides a sample script to create the PersistentVolume and PersistentVolumeClaim for the domain. This script must be executed before creating the domain.  Beginning with operator version 4.1.0, for the Domain on PV <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a>, the operator provides options to create the PV and PVC during the domain initialization. See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/">Domain on PV documentation</a> or the <code>domain.spec.configuration.initializeDomainOnPV</code> section in the domain resource <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md">schema</a> for more details.</p>
 <h4 id="persistent-volumes-using-hostpath-approach">Persistent volumes using HostPath approach</h4>
 <p>The <code>HOST_PATH</code> provider is the simplest case for creating a PersistentVolume. It requires creating a directory on the Kubernetes master and ensuring that it has the correct permissions:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ mkdir -m <span style="color:#ae81ff">777</span> -p /path/to/domain1PersistentVolume
@@ -6600,19 +6600,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1755706949"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1755706949"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1755706949"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1755706949"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1755706949"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1755706949"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1755713811"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1755713811"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1755713811"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1755713811"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1755713811"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1755713811"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1755706949"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1755706949"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1755706949"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1755713811"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1755713811"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1755713811"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1755706949"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1755713811"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
