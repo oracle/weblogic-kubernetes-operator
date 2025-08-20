@@ -1,4 +1,4 @@
-# Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -9,6 +9,11 @@ name: "PublishGitHubPages"
 on:
   schedule:
     - cron: '15 3 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'documentation/**'
 
 defaults:
   run:
@@ -24,8 +29,8 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 32
-          ref: release/4.2
-          path: branch-4.2
+          ref: main
+          path: branch-main
 
       - name: Checkout gh-pages
         uses: actions/checkout@v5
@@ -43,12 +48,12 @@ jobs:
           
           cp -R $GITHUB_WORKSPACE/gh-pages/charts $GITHUB_WORKSPACE/WORK
           
-          cd $GITHUB_WORKSPACE/branch-4.2/documentation
-          echo "Building documentation for 4.2 minor version..."
-          latest_42_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | cut -c12- | sort --version-sort | tail -1)
-          echo "Latest tag is $latest_42_tag..."
-          echo $latest_42_tag >| $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
-          cat $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
+          cd $GITHUB_WORKSPACE/branch-main/documentation
+          echo "Building documentation..."
+          latest_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.3 | cut -c12- | sort --version-sort | tail -1)
+          echo "Latest tag is $latest_tag..."
+          echo $latest_tag >| $GITHUB_WORKSPACE/branch-main/documentation/site/layouts/shortcodes/latestVersion.html
+          cat $GITHUB_WORKSPACE/branch-main/documentation/site/layouts/shortcodes/latestVersion.html
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
           echo "Copying static files into place..."
           cp -R domains "$GITHUB_WORKSPACE/WORK"
