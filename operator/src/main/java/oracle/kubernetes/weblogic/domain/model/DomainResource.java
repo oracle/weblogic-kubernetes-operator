@@ -860,6 +860,15 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return getNextRetryTime() != null;
   }
 
+  public boolean isExternalSecrets() {
+    return true;
+  }
+
+  public String getHashicorpBaseUrl() {
+    return "";
+  }
+
+
   /**
    * Returns the next time a retry should be done. If the domain resource has no status, or there is no
    * retry needed, returns null.

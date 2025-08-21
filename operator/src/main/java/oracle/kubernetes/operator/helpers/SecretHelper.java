@@ -73,6 +73,7 @@ public class SecretHelper {
         if (secretName == null) {
           return doNext(packet);
         } else {
+
           LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
           return doNext(RequestBuilder.SECRET.get(namespace, secretName, new SecretResponseStep(getNext())), packet);
         }
