@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Configure RCU schema based on schemaPreifix and rcuDatabaseURL
@@ -25,7 +25,7 @@ usage() {
   echo "  -p FMW Infrastructure ImagePullSecret (optional) "
   echo "      (default: none) "
   echo "  -i FMW Infrastructure Image (optional) "
-  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) "
+  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8) "
   echo "  -u FMW Infrastructure ImagePullPolicy (optional) "
   echo "      (default: IfNotPresent) "
   echo "  -o Output directory for the generated YAML file. (optional)"

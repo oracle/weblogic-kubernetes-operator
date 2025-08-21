@@ -20,7 +20,7 @@ jobs:
           echo "IMAGE_NAME=${{ env.BASE_IMAGE_NAME }}:$VERSION" >> $GITHUB_ENV
 
       - name: Checkout branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -51,7 +51,7 @@ jobs:
           gh release create ${{ github.ref_name }} \
             --draft \
             --generate-notes \
-            --target release/4.2 \
+            --target main \
             --title 'Operator ${{ env.VERSION }}' \
             --repo https://github.com/oracle/weblogic-kubernetes-operator \
             domain-upgrader/target/domain-upgrader.jar \
@@ -83,7 +83,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: gh-pages
           path: gh-pages
