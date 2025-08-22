@@ -1,0 +1,43 @@
+At this point, you have all of the files needed for `image wdt-domain-image:WLS-v1` staged; they include:
+
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.yaml`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.properties`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip`
+
+Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You’ve already set up this tool during the prerequisite steps.
+
+Run the following command to create the image and verify that it worked. 
+
+```shell
+$ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh createAuxImage \
+  --tag wdt-domain-image:WLS-v1 \
+  --wdtModel ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.yaml \
+  --wdtVariables ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.properties \
+  --wdtArchive ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip
+```
+
+This command runs the WebLogic Image Tool to create the domain creation image and does the following:
+
+  - Builds the final container image as a layer on a small `busybox` base image.
+  - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
+    - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
+    - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+  - Copies the specified WDT model, properties, and application archives to image location `/auxiliary/models`.
+
+When the command succeeds, it should end with output like the following:
+
+```
+[INFO   ] Build successful. Build time=70s. Image tag=wdt-domain-image:WLS-v1
+```
+
+Verify the image is available in the local Docker server with the following command.
+
+```shell
+$ docker images | grep WLS-v1
+```
+
+The output will show something similar to the following:
+
+```
+wdt-domain-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
+```

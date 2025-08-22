@@ -1,0 +1,59 @@
+In this step, you explore the staged WDT model YAML file and properties in the `${WDT_MODEL_FILES_PATH}/WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration.
+
+Here is the WLS `model.10.properties`:
+
+```
+CLUSTER_SIZE=5
+```
+
+Here is the WLS `model.10.yaml`:
+
+```yaml
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'prod'
+
+topology:
+    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
+    AdminServerName: 'admin-server'
+    Cluster:
+        'cluster-1':
+            DynamicServers:
+                ServerTemplate:  'cluster-1-template'
+                ServerNamePrefix: 'managed-server'
+                DynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
+                MaxDynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
+                MinDynamicClusterSize: '0'
+                CalculatedListenPorts: false
+    Server:
+        'admin-server':
+            ListenPort: 7001
+    ServerTemplate:
+        'cluster-1-template':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
+
+appDeployments:
+    Application:
+        myapp:
+            SourcePath: 'wlsdeploy/applications/myapp-v1'
+            ModuleType: ear
+            Target: 'cluster-1'
+```
+
+The model file:
+
+- Defines a WebLogic domain with:
+    - Cluster `cluster-1`
+    - Administration Server `admin-server`
+    - An EAR application, targeted to `cluster-1`, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
+
+- Leverages macros to inject external values:
+    - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
+    - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
+        - You set this environment variable later in this sample using an `env` field in its Domain.
+        - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image_.
+    - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
+        - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
+        - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.

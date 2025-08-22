@@ -1,0 +1,9 @@
+Download the WebLogic Kubernetes Operator sample ZIP file. We will use several scripts in this zip file to create a WebLogic domain. This sample was tested with v4.2.8, but should work with the latest release.
+
+```shell
+$ cd $BASE_DIR
+$ mkdir sample-scripts
+$ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/releases/download/v4.2.8/sample-scripts.zip \
+      -o ${BASE_DIR}/sample-scripts/sample-scripts.zip
+$ unzip ${BASE_DIR}/sample-scripts/sample-scripts.zip -d ${BASE_DIR}/sample-scripts
+```

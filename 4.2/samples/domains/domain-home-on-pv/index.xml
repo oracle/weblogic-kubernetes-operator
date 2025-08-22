@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Domain on PV on WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/</link>
+    <description>Recent content in Domain on PV on WebLogic Kubernetes Operator</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 17:32:31 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Prerequisites</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/prerequisites/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/prerequisites/</guid>
+      <description>Contents Prerequisites for WLS and JRF domain types Additional prerequisites for JRF domains Prerequisites for WLS and JRF domain types Choose the type of domain you’re going to use throughout the sample, WLS or JRF.&#xA;The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.&#xA;Get the operator source and put it in /tmp/weblogic-kubernetes-operator.&#xA;For example:&#xA;$ cd /tmp $ git clone --branch v4.</description>
+    </item>
+    <item>
+      <title>Build domain creation image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/build-domain-creation-image/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/build-domain-creation-image/</guid>
+      <description>Contents Overview Build the domain creation image Understand your first archive Stage the archive ZIP file Stage the model files Create the image with WIT Before you begin: Complete the steps in Prerequisites.&#xA;Overview The image build process uses the WebLogic Image Tool to create a Domain on PV domain creation image. This image contains:&#xA;The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image&amp;rsquo;s /auxiliary/weblogic-deploy directory, by default.</description>
+    </item>
+    <item>
+      <title>Sample</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/sample/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/sample/</guid>
+      <description>Contents Overview Domain creation image Deploy resources - Introduction Secrets Domain resource Verify the PV, PVC, and domain Verify the persistent volume Verify the persistent volume claim Verify the domain Verify the pods Verify the services Invoke the web application Clean up resources and remove the generated domain home Remove the PVC and PV Delete the domain namespace. Before you begin: Perform the steps in Prerequisites and then build a Domain on PV domain creation image by completing the steps in Build the domain creation image.</description>
+    </item>
+    <item>
+      <title>Cleanup</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/cleanup/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/samples/domains/domain-home-on-pv/cleanup/</guid>
+      <description>Remove the domain and cluster Remove the domain&amp;rsquo;s ingress routes by using kubectl.&#xA;$ kubectl delete ingressroute traefik-ingress-sample-domain1-admin-server -n sample-domain1-ns $ kubectl delete ingressroute traefik-ingress-sample-domain1-cluster-cluster-1 -n sample-domain1-ns $ kubectl delete ingressroute traefik-ingress-sample-domain2-cluster-cluster-1 -n sample-domain1-ns Use kubectl to delete the domain resource.&#xA;$ kubectl delete domain sample-domain1 -n sample-domain1-ns Use kubectl to confirm that the WebLogic Server instance Pods and Domain are gone.&#xA;$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns Use kubectl to delete the cluster resource.</description>
+    </item>
+  </channel>
+</rss>

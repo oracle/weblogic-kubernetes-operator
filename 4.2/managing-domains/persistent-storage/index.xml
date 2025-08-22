@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Persistent storage on WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/</link>
+    <description>Recent content in Persistent storage on WebLogic Kubernetes Operator</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 12 Feb 2020 12:12:12 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>PersistentVolumes and PersistentVolumeClaims</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/pv-pvc/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:09 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/pv-pvc/</guid>
+      <description>This document show you how to set up a Kubernetes PersistentVolume and PersistentVolumeClaim, which can be used as storage for WebLogic domain homes and log files. A PersistentVolume can be shared by multiple WebLogic domains or dedicated to a particular domain.&#xA;Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the volume:&#xA;Create a Kubernetes Namespace for the PersistentVolumeClaim unless the intention is to use the default namespace.</description>
+    </item>
+    <item>
+      <title>Use OCI File Storage (FSS) for persistent volumes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/oci-fss-pv/</link>
+      <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/oci-fss-pv/</guid>
+      <description>Oracle recommends using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store the WebLogic domain home or log files when running the Kubernetes cluster on Oracle Container Engine for Kubernetes (OKE). When using the FSS with OKE for domain home or log files, the file system handling will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.&#xA;File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux-based systems.</description>
+    </item>
+    <item>
+      <title>Provide access to a PersistentVolumeClaim</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/volumes/</link>
+      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/volumes/</guid>
+      <description>Some applications need access to a file, either to read data or to provide additional logging beyond what is built into the operator. One common way of doing that within Kubernetes is to create a PersistentVolumeClaim (PVC) and map it to a file. The domain configuration can then be used to provide access to the claim across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the configuration of the desired scope.</description>
+    </item>
+    <item>
+      <title>Provide access to a ConfigMap</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/configmaps/</link>
+      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/persistent-storage/configmaps/</guid>
+      <description>Configuration files can be supplied to Kubernetes Pods and Jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.&#xA;For example, given a ConfigMap named my-map with entries key-1 and key-2, you can provide access to both values as separate files in the same directory within the cluster-1 cluster with the following in your Domain:</description>
+    </item>
+  </channel>
+</rss>

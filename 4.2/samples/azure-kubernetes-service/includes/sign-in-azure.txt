@@ -1,0 +1,24 @@
+The steps in this section show you how to sign in to the Azure CLI.
+
+1. Open a Bash shell.
+
+1. Sign out and delete some authentication files to remove any lingering credentials.
+
+   ```shell
+   $ az logout
+   $ rm ~/.azure/accessTokens.json
+   $ rm ~/.azure/azureProfile.json
+   ```
+
+1. Sign in to your Azure CLI.
+
+   ```shell
+   $ az login
+   ```
+
+1. Set the subscription ID. Be sure to replace the placeholder with the appropriate value.
+
+   ```shell
+   $ export SUBSCRIPTION_ID="<your-sub-id>"
+   $ az account set -s $SUBSCRIPTION_ID
+   ```

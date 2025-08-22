@@ -1,0 +1,4 @@
+```shell
+$ az group delete --yes --no-wait --name $AKS_PERS_RESOURCE_GROUP
+```
+

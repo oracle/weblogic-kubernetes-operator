@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Access and monitor domains on WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/</link>
+    <description>Recent content in Access and monitor domains on WebLogic Kubernetes Operator</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 24 Oct 2022 16:43:45 -0500</lastBuildDate>
+    <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Use the Administration Console</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/weblogic-admin-console/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/weblogic-admin-console/</guid>
+      <description>Contents Introduction Use a load balancer Configure ingress path routing rules for a non-SSL port Configure ingress path routing rules for an SSL port and enable WebLogic Plugin Enabled Use an Administration Server NodePort Use a kubectl port-forward connection Test Introduction You can access the WebLogic Server Administration Console external to the Kubernetes cluster using the following approaches:&#xA;Use a load balancer&#xA;Use an Administration Server NodePort&#xA;Use a kubectl port-forward connection</description>
+    </item>
+    <item>
+      <title>Use the Remote Console</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/remote-admin-console/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/remote-admin-console/</guid>
+      <description>Contents Introduction Setup Use an Administration Server NodePort Configure ingress path routing rules Use a kubectl port-forward connection Test Introduction The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. It is an alternative to the WebLogic Server Administration Console. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Remote Console&amp;rdquo;.</description>
+    </item>
+    <item>
+      <title>Use WLST</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/wlst/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/wlst/</guid>
+      <description>Contents Introduction Use kubectl exec Use a NodePort Use port forwarding Introduction You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.&#xA;To give WLST access to a domain running in Kubernetes, you can:&#xA;Use kubectl exec Use a NodePort Use port forwarding NOTE: If your domain home type is either Domain in Image or Model in Image, then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart.</description>
+    </item>
+    <item>
+      <title>Use port forwarding</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/port-forward/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/port-forward/</guid>
+      <description>Contents Overview Set up Administration Server network channels for port forward access Port forward to an Administration Server Pod Port forward example Port forward notes and warnings Enabling WLST access when local and remote ports do not match Terminating port forwarding Overview Beginning with WebLogic Kubernetes Operator version 3.3.2, or earlier if you are using an Istio-enabled domain, you can use the kubectl port-forward command to set up external access for the WebLogic Server Administration Console, the Remote Console, and WLST.</description>
+    </item>
+    <item>
+      <title>Use an OCI load balancer</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/oci-lb/</link>
+      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/oci-lb/</guid>
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), then you can have Oracle Cloud Infrastructure automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik.&#xA;OKE Kubernetes worker nodes typically do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
+    </item>
+    <item>
+      <title>Istio support</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/istio/istio/</link>
+      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/istio/istio/</guid>
+      <description>Contents Overview Limitations Determining the Istio version Setting up an operator with Istio support Creating a domain with Istio support Configuring the domain resource Applying a Domain YAML file Exposing applications in Istio-enabled domains Traffic management Distributed tracing Automatically added network channels Network channel for Istio versions v1.10 and later Network channel for WebLogic EJB and servlet session state replication traffic Security Mutual TLS Authorization policy Destination rule Ingress gateway Overview These instructions assume that you are using a Kubernetes cluster with Istio installed and configured already.</description>
+    </item>
+    <item>
+      <title>External WebLogic clients</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/external-clients/</link>
+      <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/external-clients/</guid>
+      <description>Contents Overview Load balancer tunneling Adding a WebLogic custom channel When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes Kubernetes NodePorts NodePort overview NodePort warnings NodePort steps Setting up a NodePort Sample NodePort resource Table of NodePort attributes Enabling unknown host access When is it necessary to enable unknown host access? How to enable unknown host access Cross-domain transactions RMI forwarding When is it necessary to configure RMI forwarding?</description>
+    </item>
+    <item>
+      <title>Domain events</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/domain-events/</link>
+      <pubDate>Mon, 30 Nov 2020 16:43:45 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/domain-events/</guid>
+      <description>Contents Overview What&amp;rsquo;s new Operator-generated event types Operator-generated event details How to access the events Examples of generated events Overview This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Most of the operator-generated events are associated with a domain resource, and those events are included in the Domain resource object as well.</description>
+    </item>
+    <item>
+      <title>Status conditions</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/status-conditions/</link>
+      <pubDate>Mon, 24 Oct 2022 16:43:45 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/status-conditions/</guid>
+      <description>Contents Overview Checking domain or cluster conditions Attributes in a condition Types of domain conditions Failed Completed Available ConfigChangesPendingRestart Rolling Types of cluster conditions Completed Available Conditions life cycle Conditions and generations Conditions and events Overview The WebLogic Kubernetes Operator populates status conditions on Domain and Cluster resources to provide high-level status reporting. Status conditions are a Kubernetes standard mechanism and the conditions generated by the operator are similar to those that Kubernetes provides for Pod and Deployment resources.</description>
+    </item>
+    <item>
+      <title>Log files</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/logs/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/logs/</guid>
+      <description>Contents Overview WebLogic Server log file location WebLogic Server log file rotation and size Overview The operator can automatically override WebLogic Server, domain, and introspector .log and .out locations. This occurs if the Domain logHomeEnabled field is explicitly set to true, or if logHomeEnabled isn&amp;rsquo;t set and domainHomeSourceType is set to PersistentVolume. When overriding, the log location will be the location specified by the logHome setting.&#xA;WebLogic Server .out files contain a subset of WebLogic Server .</description>
+    </item>
+    <item>
+      <title>Monitoring exporter</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/monitoring-exporter/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/4.2/managing-domains/accessing-the-domain/monitoring-exporter/</guid>
+      <description>The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in its domain specification. For more details, see the WebLogic Monitoring Exporter document, Use the Monitoring Exporter with WebLogic Kubernetes Operator.</description>
+    </item>
+  </channel>
+</rss>
