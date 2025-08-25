@@ -620,7 +620,7 @@ public class JobStepContext extends BasePodStepContext {
                         .configMap(getIntrospectMD5VolumeSource(i)));
       }
     }
-    // TODO
+
     if (getOpssWalletPasswordSecretVolume() != null) {
       if (!isExternalSecrets()) {
         podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
@@ -747,7 +747,7 @@ public class JobStepContext extends BasePodStepContext {
   @Override
   protected V1Container createPrimaryContainer() {
     Integer numOfConfigMaps = getSpecifiedNumConfigMaps();
-    // TODO
+
     V1Container container = super.createPrimaryContainer()
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(
@@ -768,7 +768,7 @@ public class JobStepContext extends BasePodStepContext {
                                 .readOnly(false));
       }
     }
-    // TODO
+
     if (getOpssWalletPasswordSecretVolume() != null) {
       if (!isExternalSecrets()) {
         container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
@@ -800,7 +800,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dci -> addVolumeMountIfMissing(container,
         DOMAIN_CREATION_IMAGE_MOUNT_PATH));
 
-    // TODO
+
     if (!isExternalSecrets()) {
       List<String> configOverrideSecrets = getConfigOverrideSecrets();
       for (String secretName : configOverrideSecrets) {
@@ -815,7 +815,7 @@ public class JobStepContext extends BasePodStepContext {
         container.addVolumeMountsItem(
             readOnlyVolumeMount(getVolumeName(getWdtConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
       }
-      // TODO
+
       if (!isExternalSecrets()) {
         container.addVolumeMountsItem(
                 readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
@@ -1091,6 +1091,12 @@ public class JobStepContext extends BasePodStepContext {
       if (!runningServer.isEmpty()) {
         addEnvVar(vars, MII_RUNNING_SERVERS_STATES, runningServer.toString());
       }
+    }
+
+    if (isHashiCropExternalSecrets()) {
+      addEnvVar(vars, ServerEnvVars.HASHICORP_VAULT_URL, getDomain().getHashicorpBaseUrl());
+      addEnvVar(vars, ServerEnvVars.HASHICORP_K8S_ROLE, getDomain().getHashicorpK8sRole());
+      addEnvVar(vars, ServerEnvVars.HASHICORP_SECRET_PATH, getDomain().getHashicorpSecretPath());
     }
 
     return vars;

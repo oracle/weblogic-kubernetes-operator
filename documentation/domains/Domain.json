@@ -380,6 +380,10 @@
           "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
           "type": "string"
         },
+        "externalSecrets": {
+          "description": "Configure the domain to use external vault for operator managed secrets.",
+          "$ref": "#/definitions/ExternalSecrets"
+        },
         "replaceVariablesInJavaOptions": {
           "default": false,
           "description": "Specifies whether the operator will replace the environment variables in the Java options in certain situations, such as when the JAVA_OPTIONS are specified using a config map. Defaults to false.",
@@ -600,6 +604,15 @@
         }
       }
     },
+    "ExternalSecrets": {
+      "type": "object",
+      "properties": {
+        "hashiCorpVault": {
+          "description": "HashiCorp vault for operator managed secrets.",
+          "$ref": "#/definitions/HashiCorpVault"
+        }
+      }
+    },
     "FluentbitSpecification": {
       "type": "object",
       "properties": {
@@ -719,6 +732,30 @@
           }
         }
       }
+    },
+    "HashiCorpVault": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "description": "HashiCorp vault Kubernetes Role",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Use HashiCorp vault for operator managed secrets.",
+          "type": "boolean"
+        },
+        "url": {
+          "description": "HashiCorp vault base URL",
+          "type": "string"
+        },
+        "secretPath": {
+          "description": "HashiCorp vault secret path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "enabled"
+      ]
     },
     "InitializeDomainOnPV": {
       "type": "object",

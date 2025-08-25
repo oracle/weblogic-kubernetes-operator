@@ -307,13 +307,16 @@ overrideWDTTimeoutValues() {
 createWLDomain() {
   start_trap
   trace "Entering createWLDomain"
+  local HASHICORP_ENABLED="false"
+  local USE_EXTERNAL_SECRETS="false"
 
-  # TODO prime the secrets if external or maybe for native also
-  if [ "true" == "${USE-EXTERNAL-SECRETS}" ] ; then
-    if [ "true" == "${HASHICORP-ENABLED}" ] ; then
-      # HASHICORP_K8S_ROLE
-      # HASHICORP_VAULT_URL
-      # HASHICORP_SECRET_PATH
+  if [ ! -z "${HASHICORP_VAULT_URL}" ] ; then
+    HASHICORP_ENABLED="true"
+    USE_EXTERNAL_SECRETS="true"
+  fi
+
+  if [ "true" == "${USE_EXTERNAL_SECRETS}" ] ; then
+    if [ "true" == "${HASHICORP_ENABLED}" ] ; then
       trace "Using hashicorp secrets"
       process_hashicorp_weblogic_credential "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
       process_hashicorp_opss_secret "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
@@ -325,8 +328,6 @@ createWLDomain() {
     if [ "true" == "${K8S-ENABLED}" ] ; then
       trace "Using k8s secrets but not mounting it in pod "
     fi
-    trace "Sleeping for a while"
-    sleep 60
   fi
 
   if [ ! -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then

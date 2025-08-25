@@ -860,14 +860,45 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return getNextRetryTime() != null;
   }
 
-  public boolean isExternalSecrets() {
-    return true;
+  /**
+   * return true if HashiCorp Vault is enabled for external secrets, false otherwise.
+   */
+  public boolean isHashiCorpExternalSecrets() {
+    return Optional.ofNullable(spec.getExternalSecrets())
+            .map(ExternalSecrets::getHashiCorpVault)
+            .map(HashiCorpVault::isEnabled)
+            .orElse(false);
   }
 
+  /**
+   * Retrieves the base URL for the HashiCorp Vault from the external secrets configuration.
+   */
   public String getHashicorpBaseUrl() {
-    return "";
+    return Optional.ofNullable(spec.getExternalSecrets())
+            .map(ExternalSecrets::getHashiCorpVault)
+            .map(HashiCorpVault::getUrl)
+            .orElse(null);
   }
 
+  /**
+   * Retrieves the HashiCorp Kubernetes role associated with external secrets configuration.
+   */
+  public String getHashicorpK8sRole() {
+    return Optional.ofNullable(spec.getExternalSecrets())
+            .map(ExternalSecrets::getHashiCorpVault)
+            .map(HashiCorpVault::getRole)
+            .orElse(null);
+  }
+
+  /**
+   * Retrieves the secret path for HashiCorp Vault from the external secrets specification.
+   */
+  public String getHashicorpSecretPath() {
+    return Optional.ofNullable(spec.getExternalSecrets())
+            .map(ExternalSecrets::getHashiCorpVault)
+            .map(HashiCorpVault::getSecretPath)
+            .orElse(null);
+  }
 
   /**
    * Returns the next time a retry should be done. If the domain resource has no status, or there is no
@@ -928,6 +959,36 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         .map(gen -> gen.compareTo(getOrElse(cachedResource)) > 0)
         .orElse(getOrElse(cachedResource) != 0);
   }
+
+  /**
+   * if using HashiCorp vault is enabled.
+   * @return true if using HashiCorp vault is enabled
+   */
+  public boolean useHashiCorpExternalSecrets() {
+    return Optional.of(getSpec())
+            .map(DomainSpec::getExternalSecrets)
+            .map(ExternalSecrets::getHashiCorpVault)
+            .map(HashiCorpVault::isEnabled)
+            .orElse(false);
+  }
+
+  /**
+   * Retrieves the HashiCorpVault configuration if external secrets are enabled
+   * and a configuration for HashiCorpVault is provided in the specifications.
+   *
+   * @return the HashiCorpVault configuration if available, or null if external secrets
+   *         are not enabled or the configuration is not provided.
+   */
+  public HashiCorpVault getHashiCorpVault() {
+    if (useHashiCorpExternalSecrets()) {
+      return Optional.of(getSpec())
+              .map(DomainSpec::getExternalSecrets)
+              .map(ExternalSecrets::getHashiCorpVault)
+              .orElse(null);
+    }
+    return null;
+  }
+
 
   @org.jetbrains.annotations.NotNull
   private Long getOrElse(DomainResource cachedResource) {

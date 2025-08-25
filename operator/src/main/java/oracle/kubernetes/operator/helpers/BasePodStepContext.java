@@ -299,15 +299,11 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected boolean isExternalSecrets() {
-    List<V1EnvVar> envVars = getEnvironmentVariables();
-    if (!envVars.isEmpty()) {
-      for (V1EnvVar envVar : envVars) {
-        if (envVar.getName().equals("USE-EXTERNAL-SECRETS")) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return info.getDomain().isHashiCorpExternalSecrets();
+  }
+
+  protected boolean isHashiCropExternalSecrets() {
+    return info.getDomain().isHashiCorpExternalSecrets();
   }
 
   /**

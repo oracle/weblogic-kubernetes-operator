@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.steps.ReadHashiCorpSecretStep;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -69,13 +70,15 @@ public class SecretHelper {
       } else {
         secretName = dpi.getDomain().getWebLogicCredentialsSecretName();
         namespace = dpi.getNamespace();
-        // TODO
         if (secretName == null) {
           return doNext(packet);
         } else {
-
           LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-          return doNext(RequestBuilder.SECRET.get(namespace, secretName, new SecretResponseStep(getNext())), packet);
+          if (dpi.getDomain().isHashiCorpExternalSecrets()) {
+            return doNext(new ReadHashiCorpSecretStep(getNext()), packet);
+          } else {
+            return doNext(RequestBuilder.SECRET.get(namespace, secretName, new SecretResponseStep(getNext())), packet);
+          }
         }
       }
     }

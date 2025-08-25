@@ -731,7 +731,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
     if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
-      // TODO
+
       if (!isExternalSecrets()) {
         volumes.add(createRuntimeEncryptionSecretVolume());
       }
@@ -819,7 +819,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
     if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
-      // TODO
+
       if (!isExternalSecrets()) {
         mounts.add(createRuntimeEncryptionSecretVolumeMount());
       }
@@ -871,6 +871,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxiliaryImageEnv(ais, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
+    if (isHashiCropExternalSecrets()) {
+      addEnvVar(vars, ServerEnvVars.HASHICORP_VAULT_URL, getDomain().getHashicorpBaseUrl());
+      addEnvVar(vars, ServerEnvVars.HASHICORP_K8S_ROLE, getDomain().getHashicorpK8sRole());
+      addEnvVar(vars, ServerEnvVars.HASHICORP_SECRET_PATH, getDomain().getHashicorpSecretPath());
+    }
     Optional.ofNullable(getKubernetesPlatform()).ifPresent(v ->
             addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
   }

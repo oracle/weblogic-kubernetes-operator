@@ -324,6 +324,9 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
+  @Description("Configure the domain to use external vault for operator managed secrets.")
+  private ExternalSecrets externalSecrets;
+
   /**
    * The WebLogic Monitoring Exporter configuration.
    *
@@ -851,6 +854,20 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  public ExternalSecrets getExternalSecrets() {
+    return externalSecrets;
+  }
+
+  public void setExternalSecrets(ExternalSecrets externalSecrets) {
+    this.externalSecrets = externalSecrets;
+  }
+
+  public DomainSpec withExternalSecrets(ExternalSecrets externalSecrets) {
+    setExternalSecrets(externalSecrets);
+    return this;
+  }
+
+
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
@@ -1146,8 +1163,9 @@ public class DomainSpec extends BaseConfiguration {
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("fluentdSpecification", fluentdSpecification)
+            .append("externalSecrets", externalSecrets)
             .append("replaceVariablesInJavaOptions", replaceVariablesInJavaOptions)
-                .append("fluentbitSpecification", fluentbitSpecification);
+            .append("fluentbitSpecification", fluentbitSpecification);
 
     return builder.toString();
   }
@@ -1181,7 +1199,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(webLogicCredentialsSecret)
             .append(fluentdSpecification)
             .append(replaceVariablesInJavaOptions)
-                .append(fluentbitSpecification);
+            .append(fluentbitSpecification)
+            .append(externalSecrets);
 
     return builder.toHashCode();
   }
@@ -1222,6 +1241,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(getMaxClusterUnavailable(), rhs.getMaxClusterUnavailable())
             .append(fluentdSpecification, rhs.getFluentdSpecification())
             .append(fluentbitSpecification, rhs.getFluentbitSpecification())
+            .append(externalSecrets, rhs.getExternalSecrets())
             .append(replaceVariablesInJavaOptions, rhs.replaceVariablesInJavaOptions);
     return builder.isEquals();
   }

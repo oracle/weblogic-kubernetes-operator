@@ -23,6 +23,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `domainHome` | string | The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel. |
 | `domainHomeSourceType` | string | Domain home file system source type: Legal values: `Image`, `PersistentVolume`, `FromModel`. `Image` indicates that the domain home file system is present in the container image specified by the `image` field. `PersistentVolume` indicates that the domain home file system is located on a persistent volume. `FromModel` indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. Defaults to `Image`, unless `configuration.model` is set, in which case the default is `FromModel`. |
 | `domainUID` | string | Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`. |
+| `externalSecrets` | [External Secrets](#external-secrets) | Configure the domain to use external vault for operator managed secrets. |
 | `failureRetryIntervalSeconds` | integer | The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120. |
 | `failureRetryLimitMinutes` | integer | The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440. |
 | `fluentbitSpecification` | [Fluentbit Specification](#fluentbit-specification) | Automatic fluent-bit sidecar injection. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the fluent-bit, Optionally, the introspector job pod can be enabled to deploy with the fluent-bit sidecar container. WebLogic Server instances that are already running when the `fluentbitSpecification` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod  will have the fluent-bit sidecar or not, as appropriate |
@@ -92,6 +93,12 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are `Dynamic`, which means that the operator will distribute updated configuration overrides dynamically to running servers, and `OnRestart`, which means that servers will use updated configuration overrides only after the server's next restart. The selection of `OnRestart` will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to `Dynamic`. |
 | `overridesConfigMap` | string | The name of the ConfigMap for WebLogic configuration overrides. |
 | `secrets` | Array of string | A list of names of the Secrets for WebLogic configuration overrides or model. |
+
+### External Secrets
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `hashiCorpVault` | [Hashi Corp Vault](#hashi-corp-vault) | HashiCorp vault for operator managed secrets. |
 
 ### Fluentbit Specification
 
@@ -273,6 +280,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a key named `walletFile`. Use this to allow a JRF domain to reuse its schemas in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a key named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's schemas in its RCU database. The password must have a minimum length of eight characters and contain alphabetic characters combined with numbers or special characters. |
+
+### Hashi Corp Vault
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `enabled` | Boolean | Use HashiCorp vault for operator managed secrets. |
+| `role` | string | HashiCorp vault Kubernetes Role |
+| `secretPath` | string | HashiCorp vault secret path |
+| `url` | string | HashiCorp vault base URL |
 
 ### Introspector Job Pod
 
