@@ -274,6 +274,10 @@ clusterSizePaddingValidationEnabled: true
 # If not specified, it defaults to the user specified in the operator's container image.
 #runAsUser: 1000
 
+#priority: 100
+
+#priorityClassName: name-of-priority-class
+
 # jvmOptions specifies a value used to control the Java process that runs the operator, such as the maximum heap size
 # that will be allocated.
 #jvmOptions: -XshowSettings:vm -XX:MaxRAMPercentage=70
