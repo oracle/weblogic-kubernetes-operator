@@ -1403,6 +1403,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenMultipleVolumeMountHaveOverlappingMountPath_initPvDomain_reportError() {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withDomainHome("/domain-path1/domains/mydomain")
         .withAdditionalVolumeMount("volume1", "/domain-path1")
         .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
 
@@ -1414,6 +1415,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenMultipleVolumeMountHaveSameMountPath_initPvDomain_reportError() {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withDomainHome("/domain-path1/dir1/dir2/mydomain")
         .withInitializeDomainOnPv(new InitializeDomainOnPV())
         .withAdditionalVolumeMount("volume1", "/domain-path1/dir1")
         .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
