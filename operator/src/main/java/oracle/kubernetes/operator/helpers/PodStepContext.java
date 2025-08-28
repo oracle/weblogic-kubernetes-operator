@@ -93,6 +93,7 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_V
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPFS_SECRETS_PATH;
 import static oracle.kubernetes.common.CommonConstants.TMPFS_SECRETS_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
@@ -764,6 +765,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
+
+    if (isExternalSecrets()) {
+      v1Container.addVolumeMountsItem(
+         new V1VolumeMount().name(TMPFS_SECRETS_VOLUME).mountPath(TMPFS_SECRETS_PATH));
+    }
+
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages -> addVolumeMountIfMissing(v1Container));
     return v1Container;
   }

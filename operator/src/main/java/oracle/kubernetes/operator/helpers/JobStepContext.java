@@ -73,6 +73,8 @@ import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPFS_SECRETS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPFS_SECRETS_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
 import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
@@ -612,6 +614,11 @@ public class JobStepContext extends BasePodStepContext {
                     .name("mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
                     .configMap(getIntrospectMD5VolumeSource(0)));
 
+    if (isExternalSecrets()) {
+      podSpec.addVolumesItem(
+          new V1Volume().name(TMPFS_SECRETS_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
+    }
+
     if (numOfConfigMaps != null && numOfConfigMaps > 1) {
       for (int i = 1; i < numOfConfigMaps; i++) {
         podSpec.addVolumesItem(
@@ -758,6 +765,8 @@ public class JobStepContext extends BasePodStepContext {
 
     if (!isExternalSecrets()) {
       container.addVolumeMountsItem(readOnlyVolumeMount(WEBLOGIC_CREDENTIALS_VOLUME, SECRETS_MOUNT_PATH));
+    } else {
+      container.addVolumeMountsItem(new V1VolumeMount().name(TMPFS_SECRETS_VOLUME).mountPath(TMPFS_SECRETS_PATH));
     }
     if (numOfConfigMaps != null && numOfConfigMaps > 1) {
       for (int i = 1; i < numOfConfigMaps; i++) {

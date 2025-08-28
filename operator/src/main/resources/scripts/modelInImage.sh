@@ -7,7 +7,8 @@
 
 source ${SCRIPTPATH}/utils.sh
 source ${SCRIPTPATH}/wdt_common.sh
-source ${SCRIPTPATH}/secrets_helper.sh
+source ${SCRIPTPATH}/secrets-helper.sh
+
 
 OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
@@ -1080,6 +1081,7 @@ wdtUpdateModelDomain() {
       trace SEVERE "WDT Update Domain command Failed:"
     fi
     cat ${WDT_OUTPUT}
+    cat ${WDT_INSTALL_HOME}/logs/updateDomain.log
     exitOrLoop
   fi
 
@@ -1424,6 +1426,23 @@ prepareMIIServer() {
   # primordial domain contain the basic structures, security and other fmwconfig templated info
   # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
   # Both are needed for the complete domain reconstruction
+
+  if [ ! -z "${HASHICORP_VAULT_URL}" ] ; then
+    HASHICORP_ENABLED="true"
+    USE_EXTERNAL_SECRETS="true"
+  fi
+
+  if [ "true" == "${USE_EXTERNAL_SECRETS}" ] ; then
+    if [ "true" == "${HASHICORP_ENABLED}" ] ; then
+      trace "Using hashicorp secrets"
+      process_hashicorp_runtime_encryption_secret "${HASHICORP_K8S_ROLE}" "${HASHICORP_VAULT_URL}" "${HASHICORP_SECRET_PATH}"
+    fi
+
+    if [ "true" == "${K8S-ENABLED}" ] ; then
+      trace "Using k8s secrets but not mounting it in pod "
+    fi
+  fi
+
 
   if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
     trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"

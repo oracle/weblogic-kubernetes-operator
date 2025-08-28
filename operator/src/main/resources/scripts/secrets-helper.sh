@@ -5,7 +5,7 @@
 source ${SCRIPTPATH}/utils.sh
 
 # Set strict error handling
-set -eo pipefail
+#set -eo pipefail
 
 # Configuration
 JWT_FILE="/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -14,6 +14,7 @@ NS="/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 K8S_API_URL="https://kubernetes.default.svc"
 CURL_TIMEOUT=30
 MAX_RETRIES=3
+
 
 # Read the JWT token
 get_jwt() {
@@ -53,7 +54,7 @@ retry_command() {
             exitOrLoop
         fi
 
-        trace "Attempt $attempt failed, retrying in 2 seconds..."
+        #trace "Attempt $attempt failed, retrying in 2 seconds..."
         sleep 2
         ((attempt++))
     done
@@ -65,7 +66,6 @@ login_hashicorp() {
     local role="$1"
     local vault_url="$2"
     local insecure="${3:-false}"
-
     # Validate inputs
     if [[ -z "$role" ]]; then
         trace SEVERE "Role parameter is required"
@@ -277,20 +277,24 @@ get_wko_domain() {
 
 # json file key value pair
 # output dir
+# secret name
 # base64 decrypt or not
+# keep name in extract dir
 extract_secret_to_dir() {
 
   input_json="$1"
-
-  # Output directory
   output_dir="$2"
-
   secret_name="$3"
-
   base_64_decode="$4"
+  keep_name_as_dir="$5"
+
+  extract_dir="$output_dir/$secret_name"
+  if [ "false" == "${keep_name_as_dir}" ] ; then
+    extract_dir="$output_dir"
+  fi
 
   # Create the output directory if it doesn't exist
-  mkdir -p "$output_dir/$secret_name"
+  mkdir -p "$extract_dir"
   if [ $? -ne 0 ] ; then
     trace SEVERE "Error: Cannot create directory $output_dir"
     exitOrLoop
@@ -307,9 +311,9 @@ extract_secret_to_dir() {
     value=$(echo "$input_json" | jq -r ".\"$key\"")
     if [[ $? -eq 0 ]]; then
       if [ "$base_64_decode" == "true" ] ; then
-        echo "$value" | base64 -d > "$output_dir/$secret_name/$key"
+        printf "%s" "$value" | base64 -d > "$extract_dir/$key"
       else
-        echo "$value" > "$output_dir/$secret_name/$key"
+        printf "%s" "$value" > "$extract_dir/$key"
       fi
       #trace "Created $output_dir/$secret_name/$key with decoded value"
     else
@@ -329,7 +333,7 @@ get_domain_config_secrets() {
 }
 
 get_domain_weblogic_credential_secret() {
-  get_wko_domain "$(get_current_namespace)" "$DOMAIN_UID" | jq -r '.spec.webLogicCredentialsSecret'
+  get_wko_domain "$(get_current_namespace)" "$DOMAIN_UID" | jq -r '.spec.webLogicCredentialsSecret.name'
 }
 
 get_domain_runtime_encryption_secret() {
@@ -365,7 +369,7 @@ process_hashicorp_config_secrets() {
     client_token=$(login_hashicorp "$role" "$vault_url")
     echo $list | jq -r '.[]' | while IFS= read -r item; do
        secret_data=$(get_hashicorp_secrets "$client_token" "$vault_url" "$secret_path" "$item")
-       extract_secret_to_dir "$secret_data" "$output_path" "$item" "false"
+       extract_secret_to_dir "$secret_data" "$output_path" "$item" "false" "true"
     done
   fi
 }
@@ -412,8 +416,9 @@ process_hashicorp_weblogic_credential() {
     role=$1
     vault_url=$2
     secret_path=$3
+    client_token=$(login_hashicorp "$role" "$vault_url")
     secret_data=$(get_hashicorp_secrets "$client_token" "$vault_url" "$secret_path" "$secret_name")
-    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/secrets" "$secret_name" "true"
+    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/secrets" "$secret_name" "false" "false"
   else
     trace SEVERE "Error: spec.webLogicCredentialsSecret not set in domain resource"
     exitOrLoop
@@ -426,8 +431,9 @@ process_hashicorp_runtime_encryption_secret() {
     role=$1
     vault_url=$2
     secret_path=$3
+    client_token=$(login_hashicorp "$role" "$vault_url")
     secret_data=$(get_hashicorp_secrets "$client_token" "$vault_url" "$secret_path" "$secret_name")
-    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/model-runtime-secret" "$secret_name" "true"
+    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/model-runtime-secret" "$secret_name" "false" "false"
   else
     trace SEVERE "Error: spec.configuration.model.runtimeEncryptionSecret not set in domain resource"
     exitOrLoop
@@ -439,14 +445,16 @@ process_hashicorp_opss_secret() {
   role=$1
   vault_url=$2
   secret_path=$3
+  client_token=$(login_hashicorp "$role" "$vault_url")
   if [ "null" != "$secret_name" ] ; then
     secret_data=$(get_hashicorp_secrets "$client_token" "$vault_url" "$secret_path" "$secret_name")
-    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/opss-walletkey-secret" "$secret_name" "true"
+    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/opss-walletkey-secret" "$secret_name" "false" "false"
   fi
   secret_name=$(get_domain_opss_wallet_file_secret)
   if [ "null" != "$secret_name" ] ; then
     secret_data=$(get_hashicorp_secrets "$client_token" "$vault_url" "$secret_path" "$secret_name")
-    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/opss-walletfile-secret" "$secret_name" "true"
+    extract_secret_to_dir "$secret_data" "/weblogic-operator/tmpfs/opss-walletfile-secret" "$secret_name" "false" "false"
   fi
 }
 
+get_jwt

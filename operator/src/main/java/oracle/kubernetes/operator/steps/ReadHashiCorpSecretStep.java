@@ -119,7 +119,7 @@ public class ReadHashiCorpSecretStep extends Step {
                                                     String secretName) {
       LOGGER.finer("Create REST request to service URL: " + url);
       return createHashiCorpReadRequestBuilder(
-              url + secretPath + secretName,
+              String.format("%s/v1/%s/%s", url, secretPath, secretName),
               clientToken,
               HTTP_TIMEOUT_SECONDS)
               .build();
@@ -160,10 +160,10 @@ public class ReadHashiCorpSecretStep extends Step {
         jwt = new String(java.nio.file.Files.readAllBytes(
                 java.nio.file.Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token")));
       } catch (Exception e) {
-        LOGGER.warning("Failed to read service account token: " + e.getMessage());
+        LOGGER.severe("Failed to read service account token: " + e.getMessage());
         jwt = ""; // fallback to empty string if read fails
       }
-      return "{'jwt': '" + jwt + "', 'role': '" + roleName + "'}";
+      return String.format("{ \"jwt\": \"%s\", \"role\": \"%s\" }", jwt, roleName);
     }
 
 
@@ -185,12 +185,12 @@ public class ReadHashiCorpSecretStep extends Step {
           String clientToken = jsonObject.getAsJsonObject("auth").get("client_token").getAsString();
           packet.put("HASHICORP_TOKEN", clientToken);
         } else {
-          LOGGER.warning("Response does not contain 'client_token' in 'auth' object.");
+          LOGGER.severe("Response does not contain 'client_token' in 'auth' object.");
         }
 
         return doNext(packet);
       } catch (Exception e) {
-        LOGGER.warning("Failed to process the response: " + e.getMessage());
+        LOGGER.severe("Failed to process the response: " + e.getMessage());
         return doNext(packet);
       }
     }
