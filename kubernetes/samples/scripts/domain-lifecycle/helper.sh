@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -980,7 +980,7 @@ getClusterResource() {
   for clusterReference in ${clusterReferences}; do
     clusterNameFromReference=$(${kubernetesCli} get cluster.v1.weblogic.oracle "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .spec.clusterName)
     if [ -z "${clusterNameFromReference}" ]; then
-      clusterNameFromReference=$(${kubernetesCli} get cluster.vi.weblogic.oracle "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .metadata.name)
+      clusterNameFromReference=$(${kubernetesCli} get cluster.v1.weblogic.oracle "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .metadata.name)
     fi
     if [ "${clusterNameFromReference}" == "${clusterName}" ]; then
       __clusterResource=$clusterReference
