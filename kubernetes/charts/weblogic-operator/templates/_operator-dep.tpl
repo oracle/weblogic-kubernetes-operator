@@ -52,6 +52,12 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if (hasKey . "priority") }}
+      priority: {{ int .priority }}
+      {{- end }}
+      {{- if (hasKey . "priorityClassName") }}
+      priorityClassName: {{ .priorityClassName | quote }}
+      {{- end }}
       initContainers:
       - name:  "copy-container"
         image: {{ .image | quote }}

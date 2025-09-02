@@ -274,6 +274,14 @@ clusterSizePaddingValidationEnabled: true
 # If not specified, it defaults to the user specified in the operator's container image.
 #runAsUser: 1000
 
+# priority specifies the operator and webhook pod priority. 
+# See https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+#priority: 100
+
+# priorityClassName specifies the operator and webhook priority class name.
+# See https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+#priorityClassName: name-of-priority-class
+
 # jvmOptions specifies a value used to control the Java process that runs the operator, such as the maximum heap size
 # that will be allocated.
 #jvmOptions: -XshowSettings:vm -XX:MaxRAMPercentage=70
