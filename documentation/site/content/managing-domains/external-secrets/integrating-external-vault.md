@@ -27,7 +27,7 @@ Kubernetes platform.
 
 # Prerequiste
 
-Currently, the operator only supports Hashicorp and OCI vault.
+Currently, the operator only supports Hashicorp vault.
 
 In order to integrate with external vault, you must have
 
