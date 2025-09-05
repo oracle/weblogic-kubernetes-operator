@@ -198,6 +198,22 @@ public class DomainStatusUpdater {
 
   }
 
+  public static Step createIncompleteBeforeIntrospectionStep() {
+    return new IncompleteBeforeIntrospectionStep();
+  }
+
+  public static class IncompleteBeforeIntrospectionStep extends DomainStatusUpdaterStep {
+
+    private IncompleteBeforeIntrospectionStep() {
+    }
+
+    @Override
+    void modifyStatus(DomainStatus status) {
+      status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+    }
+
+  }
+
   /**
    * Creates an asynchronous step to initialize the domain status, if needed, to indicate that the operator has
    * seen the domain and is now working on it.

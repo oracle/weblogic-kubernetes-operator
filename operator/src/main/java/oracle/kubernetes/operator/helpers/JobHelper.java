@@ -35,6 +35,7 @@ import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectionStatus;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -423,6 +424,7 @@ public class JobHelper {
     private Step createIntrospectionSteps(Step next) {
       return Step.chain(
               readExistingIntrospectorConfigMap(),
+              DomainStatusUpdater.createIncompleteBeforeIntrospectionStep(),
               createNewJob(),
               processExistingIntrospectorJob(next));
     }
