@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -353,7 +353,7 @@ public class ConfigMapHelper {
         } else if (isOutdated(existingMap)) {
           return doNext(replaceConfigMap(getNext()), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
-          return doNext(patchCurrentMap(existingMap, getNext()), packet);
+          return doNext(patchCurrentMap(existingMap, packet, getNext()), packet);
         } else if (mustPatchImageHashInMap(existingMap, packet)) {
           return doNext(patchImageHashInCurrentMap(existingMap, packet, getNext()), packet);
         } else {
@@ -408,11 +408,19 @@ public class ConfigMapHelper {
         return new PatchResponseStep(next);
       }
 
-      private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
+      private Step patchCurrentMap(V1ConfigMap currentMap, Packet packet, Step next) {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
         if (labelsNotDefined(currentMap)) {
           patchBuilder.add("/metadata/labels", JsonValue.EMPTY_JSON_OBJECT);
+        }
+
+        String introspectionTime = packet.getValue(INTROSPECTION_TIME);
+        if (introspectionTime != null) {
+          if (annotationsNotDefined(currentMap)) {
+            patchBuilder.add("/metadata/annotations", JsonValue.EMPTY_JSON_OBJECT);
+          }
+          patchBuilder.replace("/metadata/annotations/" + INTROSPECTION_TIME, introspectionTime);
         }
         
         KubernetesUtils.addPatches(
@@ -428,6 +436,14 @@ public class ConfigMapHelper {
 
         patchBuilder.add("/data/" + DOMAIN_INPUTS_HASH, (String)packet.get(DOMAIN_INPUTS_HASH));
 
+        String introspectionTime = packet.getValue(INTROSPECTION_TIME);
+        if (introspectionTime != null) {
+          if (annotationsNotDefined(currentMap)) {
+            patchBuilder.add("/metadata/annotations", JsonValue.EMPTY_JSON_OBJECT);
+          }
+          patchBuilder.replace("/metadata/annotations/" + INTROSPECTION_TIME, introspectionTime);
+        }
+
         return RequestBuilder.CM.patch(
             namespace, name, V1Patch.PATCH_FORMAT_JSON_PATCH,
             new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
@@ -435,6 +451,10 @@ public class ConfigMapHelper {
 
       private boolean labelsNotDefined(V1ConfigMap currentMap) {
         return Objects.requireNonNull(currentMap.getMetadata()).getLabels() == null;
+      }
+
+      private boolean annotationsNotDefined(V1ConfigMap currentMap) {
+        return Objects.requireNonNull(currentMap.getMetadata()).getAnnotations() == null;
       }
     }
 
