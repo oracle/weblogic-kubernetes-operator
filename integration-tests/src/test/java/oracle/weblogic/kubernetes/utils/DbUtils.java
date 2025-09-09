@@ -83,6 +83,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
@@ -312,11 +313,12 @@ public class DbUtils {
     // check if DB is ready to be used by searching pod log
     logger.info("Check for DB pod {0} log contains ready message in namespace {1}",
         dbPodName, dbNamespace);
-    String msg = "The database is ready for use";
+    String msg = "DATABASE IS READY TO USE!";
     if (ARM) {
       msg = "DATABASE IS READY TO USE!";
     }
-    checkDbReady(msg, dbPodName, dbNamespace);
+    String[] msgs = {"The database is ready for use", "DATABASE IS READY TO USE!"};
+    checkDbReady(msgs, dbPodName, dbNamespace);
 
     dbMap.put(dbNamespace, dbPodName);
   }
@@ -522,6 +524,21 @@ public class DbUtils {
     return () -> PodUtils.checkPodLogContains(matchStr, podName, dbNamespace);
   }
 
+  private static Callable<Boolean> podLogContainsMultiString(String[] matchStr, String podName, String dbNamespace)
+      throws ApiException {
+
+    return () -> {
+      String podLog = getPodLog(podName, dbNamespace);
+      for (String str : matchStr) {
+        if (str != null && podLog.contains(str)) {
+          return true; // return as soon as one match is found
+        }
+      }
+      return false; // no matches found
+    };
+  }
+
+
   /**
    * Check if the database service is ready.
    * @param matchStr text to be searched in the log
@@ -534,6 +551,26 @@ public class DbUtils {
         withLongRetryPolicy,
         assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
           String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)),
+        logger,
+        "pod {0} log contain message {1} in namespace {2}",
+        podName,
+        matchStr,
+        dbNamespace);
+  }
+    
+  /**
+   * Check if the database service is ready.
+   *
+   * @param matchStr text to be searched in the log
+   * @param podName the name of the pod
+   * @param dbNamespace database namespace where pod exists
+   */
+  public static void checkDbReady(String[] matchStr, String podName, String dbNamespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(
+        withLongRetryPolicy,
+        assertDoesNotThrow(() -> podLogContainsMultiString(matchStr, podName, dbNamespace),
+            String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)),
         logger,
         "pod {0} log contain message {1} in namespace {2}",
         podName,
