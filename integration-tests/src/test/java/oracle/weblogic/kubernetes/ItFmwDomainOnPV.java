@@ -25,6 +25,7 @@ import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.InitializeDomainOnPV;
 import oracle.weblogic.domain.Opss;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -156,12 +157,12 @@ class ItFmwDomainOnPV {
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+    OperatorParams relName = installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
         0, opHelmParams, ELASTICSEARCH_HOST, false, true, null,
         null, false, "INFO", "DomainOnPvSimplification=true", false, domainNamespace);
-    
+
     try {
-      ExecResult result = ExecCommand.exec("helm get values " + OPERATOR_RELEASE_NAME + " --all", true);
+      ExecResult result = ExecCommand.exec("helm get values " + relName + " --all", true);
       dbUrl = result.stdout().trim();
       logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
           result.exitValue(), result.stdout(), result.stderr());
