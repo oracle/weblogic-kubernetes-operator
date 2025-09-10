@@ -925,6 +925,9 @@ public class DbUtils {
       logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
           result.exitValue(), result.stdout(), result.stderr());
       assertEquals(0, result.exitValue(), "Command didn't succeed");
+      command = KUBERNETES_CLI + " get singleinstancedatabases -n "
+          + namespace + " -o yaml";
+      logger.info(result.stdout());
     } catch (IOException | InterruptedException ex) {
       logger.severe(ex.getMessage());
       return null;
