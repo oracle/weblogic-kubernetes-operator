@@ -670,10 +670,6 @@ class ItLargeMiiDomainsClusters {
       opParams.kubernetesPlatform("OpenShift");
     }
 
-    if (featureGates != null) {
-      opParams.featureGates(featureGates);
-    }
-
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),

@@ -60,7 +60,7 @@ public class Helm {
     getLogger().fine("Installing a chart in namespace {0} using chart reference {1}", namespace, chartRef);
 
     // build Helm install command
-    String installCmd = String.format("helm install %1s %2s --namespace %3s ",
+    String installCmd = String.format("helm install %1s %2s --namespace %3s --dry-run --debug ",
         helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
 
     // if we have chart values file

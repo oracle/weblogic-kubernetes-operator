@@ -67,7 +67,6 @@ public class OperatorParams {
   private String domainNamespaceRegExp;
   private int domainPresenceFailureRetryMaxCount = 5;
   private int domainPresenceFailureRetrySeconds = 10;
-  private String featureGates;
   private String kubernetesPlatform;
   private boolean createLogStashConfigMap = true;
   private boolean webhookOnly;
@@ -194,11 +193,6 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams featureGates(String featureGates) {
-    this.featureGates = featureGates;
-    return this;
-  }
-
   public OperatorParams kubernetesPlatform(String kubernetesPlatform) {
     this.kubernetesPlatform = kubernetesPlatform;
     return this;
@@ -242,10 +236,6 @@ public class OperatorParams {
     return helmParams;
   }
 
-  public String getFeatureGates() {
-    return featureGates;
-  }
-
   public String getKubernetesPlatform() {
     return kubernetesPlatform;
   }
@@ -278,7 +268,6 @@ public class OperatorParams {
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
     values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
     values.put(ENABLE_CLUSTER_ROLE_BINDING, Boolean.valueOf(enableClusterRoleBinding));
-    values.put(FEATURE_GATES, featureGates);
 
     if (elasticSearchHost != null) {
       values.put(ELASTICSEARCH_HOST, elasticSearchHost);
