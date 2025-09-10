@@ -145,6 +145,20 @@ class ItFmwDomainOnPV {
     domainNamespace = namespaces.get(2);
 
     DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
+    
+
+    // install operator and verify its running in ready state
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+        0, opHelmParams, ELASTICSEARCH_HOST, false, true, null,
+        null, false, "INFO", "DomainOnPvSimplification=true", false, domainNamespace);
+
+    // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(domainNamespace);    
 
     if (OCNE) {
       logger.info("Start DB in namespace: {0}, dbListenerPort: {1}, dbUrl: {2}, dbImage: {3}",
@@ -160,18 +174,6 @@ class ItFmwDomainOnPV {
 
     }
 
-    // install operator and verify its running in ready state
-    HelmParams opHelmParams =
-        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace)
-            .chartDir(OPERATOR_CHART_DIR);
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
-        0, opHelmParams, ELASTICSEARCH_HOST, false, true, null,
-        null, false, "INFO", "DomainOnPvSimplification=true", false, domainNamespace);
-
-    // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
-    createBaseRepoSecret(domainNamespace);
   }
 
   /**
