@@ -62,7 +62,7 @@ public class Helm {
     // build Helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
         helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
-    if (!helmParams.getNamespace().equals("ns-webhook-sa")) {      
+    if (!helmParams.getNamespace().equals("ns-webhook")) {      
       installCmd = String.format("helm install %1s %2s --namespace %3s --dry-run --debug ",
           helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
     }
