@@ -865,11 +865,22 @@ public class DbUtils {
     
     final String pvName = getUniqueName(dbName + "-pv");
     createPV(pvName);
+    
+    CommandParams params = new CommandParams().defaults();
 
     Path dbYaml = Paths.get(DOWNLOAD_DIR, namespace, "oracledb.yaml");
     Files.createDirectories(dbYaml.getParent());
     Files.deleteIfExists(dbYaml);
     FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "singleinstancedatabase.yaml"), dbYaml);
+    if (OKD) {
+      Path rbacYaml = Paths.get(DOWNLOAD_DIR, namespace, "openshift_rbac.yaml");
+      Files.deleteIfExists(rbacYaml);
+      FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "openshift_rbac.yaml"), rbacYaml);
+      replaceStringInFile(rbacYaml.toString(), "sidb-ns", namespace);
+      params.command(KUBERNETES_CLI + " create -f " + rbacYaml);
+      boolean response = Command.withParams(params).execute();
+      assertTrue(response, "Failed to create RBAC in Openshift");
+    }
 
     String storageClass = "weblogic-domain-storage-class";
 
@@ -885,8 +896,7 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "volumeName: \"\"", "volumeName: \"" + pvName + "\"");
     
 
-    logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
-    CommandParams params = new CommandParams().defaults();
+    logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));    
     params.command(KUBERNETES_CLI + " create -f " + dbYaml);
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
