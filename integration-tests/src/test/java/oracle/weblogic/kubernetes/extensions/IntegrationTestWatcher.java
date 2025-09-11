@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestWatcher;
 
 import static oracle.weblogic.kubernetes.TestConstants.COLLECT_LOGS_ON_SUCCESS;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_OPERATOR_NS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SLEEP_SECONDS_AFTER_FAILURE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_NAMESPACE;
@@ -368,7 +369,9 @@ public class IntegrationTestWatcher implements
     // collect the logs in ns-webhook namespace
     LoggingUtil.collectLogs("ns-webhook", resultDir.toString());
     // collect the logs in global traefik namespace
-    LoggingUtil.collectLogs(TRAEFIK_NAMESPACE, resultDir.toString());    
+    LoggingUtil.collectLogs(TRAEFIK_NAMESPACE, resultDir.toString());
+    // collect the logs in global DB operator namespace
+    LoggingUtil.collectLogs(ORACLE_OPERATOR_NS, resultDir.toString());    
   }
 
   /**
