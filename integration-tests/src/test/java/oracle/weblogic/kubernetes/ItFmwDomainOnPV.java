@@ -157,12 +157,13 @@ class ItFmwDomainOnPV {
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
-    OperatorParams relName = installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+    OperatorParams opParams = installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
         0, opHelmParams, ELASTICSEARCH_HOST, false, true, null,
         null, false, "INFO", "DomainOnPvSimplification=true", false, domainNamespace);
-
+    
     try {
-      ExecResult result = ExecCommand.exec("helm get values " + relName + " --all", true);
+      ExecResult result = ExecCommand.exec("helm get values "
+          + opParams.getHelmParams().getReleaseName() + " --all", true);
       dbUrl = result.stdout().trim();
       logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
           result.exitValue(), result.stdout(), result.stderr());
