@@ -2,7 +2,7 @@
 # Copyright (c) 2023, Oracle and/or its affiliates. 
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-apiVersion: database.oracle.com/v1alpha1
+apiVersion: database.oracle.com/v4
 kind: SingleInstanceDatabase
 metadata:
   name: sidb-sample
@@ -11,36 +11,43 @@ spec:
   
   ## Use only alphanumeric characters for sid up to a maximum of 8 characters
   sid: ORCL1
-  
-  ## Specify a source database ref to copy/clone from any SIDB in current K8s cluster instead of creating a fresh one
-  ## If cloning from an external containerized DB which could be either standalone or in any K8s cluster,
-  ## specify connect string as `<host>:<port>/<service_name>` instead of source database ref
-  cloneFrom: ""
 
-  ## Reference to a source primary database from which
-  ## Format: 1. Intra-cluster: you can give name of the primary database or the database connect string in `<host>:<port>/<service_name>` format
-  ##         2. Inter-cluster: Database connect string in `<host>:<port>/<service_name>` format
+  ## DB edition. N/A for createAs clone or standby
+  ## Valid values for edition are enterprise, standard, express or free
+  edition: enterprise
+
+  ## Type of database. 
+  ## Valid values for createAs are primary, clone, standby or truecache
+  createAs: primary
+
+  ## Specify true to convert this standby to a snapshot standby
+  ## Valid only if createAs is standby
+  convertToSnapshotStandby: false
+
+  ## Reference to a source primary database.
+  ## Valid only when createAs is clone, standby or truecache
+  ## The name of a source primary database resource from the same namespace
   primaryDatabaseRef: ""
 
-  ## Enable this flag for creating Physical Standby Database
-  createAsStandby: false
-
-  ## DB edition. N/A if cloning from a Source DB in current K8s cluster (if cloneFrom is set to a database ref)
-  ## Valid values for edition are enterprise, standard or express
-  edition: enterprise
+  ## Only valid when createAs is set to truecache 
+  ## Accepts a semi colon separated map of `PRIMARY_PDB_SERIVCE_NAME:PRIMARY_SERVICE_NAME:TRUECACHE_SERVICE_NAME`
+  trueCacheServices: 
+  # - "FREEPDB1:sales1:sales1_tc"
+  # - "FREEPDB1:sales2:sales2_tc" 
+  # - "FREEPDB1:sales3:sales3_tc"
   
   ## Secret containing SIDB password mapped to secretKey. secretKey defaults to oracle_pwd
-  ## Should refer to adminPassword of Source DB if cloning from a Source DB (i.e if cloneFrom is set)
+  ## Should refer to adminPassword of Source DB if createAs is clone or standby
   ## This secret will be deleted after creation of the database unless keepSecret is set to true which is the default
   adminPassword:
     secretName: 
     secretKey:
     keepSecret: true
 
-  ## DB character set. N/A if cloning from a Source DB (if cloneFrom is set)
+  ## DB character set. N/A for createAs clone or standby
   charset: AL32UTF8
 
-  ## PDB name. N/A if cloning from a Source DB (if cloneFrom is set)
+  ## PDB name.  N/A for createAs clone or standby
   pdbName: orclpdb1
 
   ## Enable/Disable Flashback
@@ -53,18 +60,23 @@ spec:
   forceLog: false
 
   ## Enable TCPS
-  enableTCPS: false
+  enableTCPS:
 
-  ## TCPS Certificate Renewal Interval: The time after which TCPS certificate will be renewed if TCPS connections are enabled.
+  ## User specified TLS-Cert Secret
+  ## The following specified TLS certs will be used instead of self-signed
+  tcpsTlsSecret:
+
+  ## TCPS Certificate Renewal Interval: (Valid for Self-Signed Certificates)
+  ## The time after which TCPS certificate will be renewed if TCPS connections are enabled.
   ## tcpsCertRenewInterval can be in hours(h), minutes(m) and seconds(s); e.g. 4380h, 8760h etc.
   ## Maximum value is 8760h (1 year), Minimum value is 24h; Default value is 8760h (1 year)
   ## If this field is commented out/removed from the yaml, it will disable the auto-renewal feature for TCPS certificate
   tcpsCertRenewInterval: 8760h
 
-  ## NA if cloning from a SourceDB (cloneFrom is set)
-  ## Specify both sgaSize and pgaSize (in MB) or dont specify both
+  ##  N/A for createAs clone or standby
   ## Specify Non-Zero value to use
-  ## You cannot change these initParams for Oracle Database Express (XE) edition
+  ## sgaTarget and pgaAggregateTarget must be in MB
+  ## You cannot change these initParams for Oracle Database Express (XE) and Oracle Database Free edition
   initParams:
     cpuCount: 0
     processes: 0
@@ -82,16 +94,39 @@ spec:
     pullSecrets:
     prebuiltDB: false
 
+  
+  ## Database storage details
   ## size is the required minimum size of the persistent volume
-  ## storageClass is specified for automatic volume provisioning
-  ## accessMode can only accept one of ReadWriteOnce, ReadWriteMany
-  ## volumeName is optional. Specify for binding to a specific PV and set storageClass to an empty string to disable automatic volume provisioning
+  ## storageClass is specified for dynamic volume provisioning and datafilesVolumeName for static provisioning
   persistence:
+    ## if the storageClass supports volume expansion, patch the size attribute to expand the volume
+    ## Shrinking volumes is not allowed
     size: 100Gi
-    ## oci-bv applies to OCI block volumes. Use "standard" storageClass for dynamic provisioning in Minikube. Update as appropriate for other cloud service providers
+    ## set ownership/permissions for writing to datafiles volume. This is usually needed for NFS volumes. 
+    setWritePermissions: true
+    ## oci-bv applies to OCI block volumes. Use "standard" storageClass for dynamic provisioning in Minikube. Update as appropriate for other cloud services
     storageClass: "oci-bv"
+    ## accessMode can only accept one of ReadWriteOnce, ReadWriteMany
     accessMode: "ReadWriteOnce"
-    volumeName: ""
+    ## datafilesVolumeName is optional. Specify for binding to a specific PV and set storageClass to an empty string to disable automatic volume provisioning
+    datafilesVolumeName: ""
+    ## Optionally specify a volume containing scripts in 'setup' and 'startup' folders to be executed during database setup and startup respectively.
+    scriptsVolumeName: ""
+
+  ## Database pod resource details
+  ## cpu can be expressed in terms of cpu units and can be a plain integer or fractional value
+  ## memory is measured in bytes and can be expressed in plain integer or as a fixed-point number
+  ## using one of these quantity suffixes: E, P, T, G, M, k.
+  ## You can also use the power-of-two equivalents: Ei, Pi, Ti, Gi, Mi, Ki.
+  resources:
+    ## requests denotes minimum node resources required/to be utilized by the database pod
+    requests:
+      cpu: 
+      memory:
+    ## limits specifies the maximum node resources that can be utilized by the database pod
+    limits: 
+      cpu:
+      memory:
 
   ## Type of service . Applicable on cloud enviroments only
   ## if loadBalService : false, service type = "NodePort" else "LoadBalancer"

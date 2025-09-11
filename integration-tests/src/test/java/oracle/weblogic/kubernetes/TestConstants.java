@@ -433,7 +433,7 @@ public interface TestConstants {
   String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.1";
   String ORACLE_DB_OPERATOR_RELEASE =
       getNonEmptySystemProperty("wko.it.oracle.db.operator.release", ORACLE_DB_OPERATOR_RELEASE_LATEST);
-  String DB_OPERATOR_IMAGE = BASE_IMAGES_PREFIX + "test-images/database/operator:0.2.1";
+  String DB_OPERATOR_IMAGE = BASE_IMAGES_PREFIX + "test-images/database/operator:1.2.0";
   String CERT_MANAGER
       = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
   String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"

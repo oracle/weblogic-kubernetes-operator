@@ -789,22 +789,44 @@ public class DbUtils {
     Path operatorYamlSrcFile = Paths.get(RESOURCE_DIR, "dboperator", "oracle-database-operator.yaml");
     Path operatorYamlDestFile = Paths.get(DOWNLOAD_DIR, namespace, "oracle-database-operator.yaml");
 
+    Path operatorRBSrcFile = Paths.get(RESOURCE_DIR, "dboperator", "cluster-role-binding.yaml");
+    Path operatorRBDestFile = Paths.get(DOWNLOAD_DIR, namespace, "cluster-role-binding.yaml");
+    
+    Path operatorNRBSrcFile = Paths.get(RESOURCE_DIR, "dboperator", "node-rbac.yaml");
+    Path operatorNRBDestFile = Paths.get(DOWNLOAD_DIR, namespace, "node-rbac.yaml");    
+
     Files.createDirectories(operatorYamlDestFile.getParent());
     Files.deleteIfExists(operatorYamlDestFile);
+    Files.deleteIfExists(operatorRBDestFile);
+    Files.deleteIfExists(operatorNRBDestFile);
     FileUtils.copy(operatorYamlSrcFile, operatorYamlDestFile);
+    FileUtils.copy(operatorRBSrcFile, operatorRBDestFile);
+    FileUtils.copy(operatorNRBSrcFile, operatorNRBDestFile);
     replaceStringInFile(operatorYamlDestFile.toString(), "replicas: 3", "replicas: 1");    
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
+    replaceStringInFile(operatorRBDestFile.toString(), "oracle-database-operator-system", namespace);
+    replaceStringInFile(operatorNRBDestFile.toString(), "oracle-database-operator-system", namespace);
     replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", TEST_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
-        "container-registry.oracle.com/database/operator:1.0.0", DB_OPERATOR_IMAGE);
+        "container-registry.oracle.com/database/operator:1.2.0", DB_OPERATOR_IMAGE);
     replaceStringInFile(operatorYamlDestFile.toString(), "imagePullPolicy: Always", "imagePullPolicy: IfNotPresent");
     createTestRepoSecret(namespace);
     createBaseRepoSecret(namespace);
 
     CommandParams params = new CommandParams().defaults();
-    params.command(KUBERNETES_CLI + " apply -f " + operatorYamlDestFile);
+    params.command(KUBERNETES_CLI + " apply -f " + operatorRBDestFile);
     boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to install Oracle database operator role binding");
+    
+    params = new CommandParams().defaults();
+    params.command(KUBERNETES_CLI + " apply -f " + operatorYamlDestFile);
+    response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
+    
+    params = new CommandParams().defaults();
+    params.command(KUBERNETES_CLI + " apply -f " + operatorNRBDestFile);
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to install Oracle database operator node rbac");    
 
     // wait for the pod to be ready
     getLogger().info("Wait for the database operator {0} pod to be ready in namespace {1}",
@@ -905,6 +927,9 @@ public class DbUtils {
         "storageClass: \"" + storageClass + "\"");
     replaceStringInFile(dbYaml.toString(), "accessMode: \"ReadWriteOnce\"", "accessMode: \"ReadWriteMany\"");
     replaceStringInFile(dbYaml.toString(), "volumeName: \"\"", "volumeName: \"" + pvName + "\"");
+    if (OKD) {
+      replaceStringInFile(dbYaml.toString(), "serviceAccountName: default", "serviceAccountName: sidb-sa");
+    }
     
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));    
