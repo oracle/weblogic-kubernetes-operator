@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -876,7 +877,11 @@ public class DbUtils {
       Path rbacYaml = Paths.get(DOWNLOAD_DIR, namespace, "openshift_rbac.yaml");
       Files.deleteIfExists(rbacYaml);
       FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "openshift_rbac.yaml"), rbacYaml);
+      String rbac = new String(Files.readAllBytes(rbacYaml), StandardCharsets.UTF_8);
+      logger.info(rbac);
       replaceStringInFile(rbacYaml.toString(), "sidb-ns", namespace);
+      rbac = new String(Files.readAllBytes(rbacYaml), StandardCharsets.UTF_8);
+      logger.info(rbac);
       params.command(KUBERNETES_CLI + " delete -f " + rbacYaml);
       assertDoesNotThrow(() -> Thread.sleep(1000 * 30));
       Command.withParams(params).execute();
