@@ -689,9 +689,15 @@ public class FmwUtils {
             .persistentVolumeReclaimPolicy("Retain"))
         .metadata(new V1ObjectMeta()
             .name(pvName));
-    if (!OKE_CLUSTER) {
+    if (!OKE_CLUSTER && !OKD) {
       pv.getSpec().hostPath(new V1HostPathVolumeSource()
           .path(getHostPath(pvName, testClass)));
+    }
+    if (OKD) {
+      pv.getSpec().nfs(new V1NFSVolumeSource()
+          .path(PV_ROOT)
+          .server(NFS_SERVER)
+          .readOnly(false));
     }
     configuration
         .introspectorJobActiveDeadlineSeconds(3000L)
