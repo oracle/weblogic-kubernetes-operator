@@ -877,12 +877,18 @@ public class DbUtils {
       Files.deleteIfExists(rbacYaml);
       FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "openshift_rbac.yaml"), rbacYaml);
       replaceStringInFile(rbacYaml.toString(), "sidb-ns", namespace);
+      params.command(KUBERNETES_CLI + " delete -f " + rbacYaml);
+      assertDoesNotThrow(() -> Thread.sleep(1000 * 30));
+      Command.withParams(params).execute();
       params.command(KUBERNETES_CLI + " create -f " + rbacYaml);
       boolean response = Command.withParams(params).execute();
       assertTrue(response, "Failed to create RBAC in Openshift");
     }
 
     String storageClass = "weblogic-domain-storage-class";
+    if (OKD) {
+      storageClass = "okd-nfsmnt";
+    }
 
     replaceStringInFile(dbYaml.toString(), "name: sidb-sample", "name: " + dbName);
     replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
