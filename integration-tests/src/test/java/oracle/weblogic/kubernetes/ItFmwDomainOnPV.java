@@ -754,6 +754,7 @@ class ItFmwDomainOnPV {
       // verify that all servers are ready
       verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
     } finally {
+      LoggingUtil.generateLog(this, allnamespaces);
       // delete the domain
       deleteDomainResource(domainNamespace, domainUid);
       // delete the cluster
