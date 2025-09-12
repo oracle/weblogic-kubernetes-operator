@@ -322,7 +322,7 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
 
     testUntil(
-        withLongRetryPolicy,
+        withStandardRetryPolicy,
         assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
           String.format("serviceExists failed with ApiException for service %s in namespace %s",
             serviceName, namespace)),
