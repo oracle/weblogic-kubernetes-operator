@@ -131,7 +131,7 @@ public class BuildApplication {
 
       // copy the application source to WORK_DIR/j2eeapplications/<application_directory_name> for zipping
       logger.info("Copying {0} to {1}", appSrcPath, tempAppPath);
-      if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.startsWith("15.1")) {
+      if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
         JakartaRefactorUtil.copyAndRefactorDirectory(appSrcPath, tempAppPath);
       } else {
         copyDirectory(appSrcPath.toFile(), tempAppPath.toFile());
