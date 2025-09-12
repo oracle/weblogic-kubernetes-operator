@@ -108,6 +108,7 @@ public class JobStepContext extends BasePodStepContext {
   private V1Job jobModel;
   private Step conflict;
   private Packet packet;
+  private static String OPENSHIFT = "OpenShift";
 
   JobStepContext(Packet packet) {
     super((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
@@ -533,7 +534,12 @@ public class JobStepContext extends BasePodStepContext {
   @Override
   V1SecurityContext getInitContainerSecurityContext() {
     if (isInitDomainOnPVRunAsRoot()) {
-      return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
+      if (OPENSHIFT.equalsIgnoreCase(super.getKubernetesPlatform())) {
+        // Cannot set runAsUser(0L) because it will violate SCC.
+        return new V1SecurityContext().runAsGroup(0L);
+      } else {
+        return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
+      }
     }
     if (getServerSpec().getContainerSecurityContext() != null) {
       return getServerSpec().getContainerSecurityContext();
@@ -571,7 +577,7 @@ public class JobStepContext extends BasePodStepContext {
             .map(V1PodSecurityContext::getRunAsGroup)
             .orElse(-1L);
 
-    if ("OpenShift".equals(getKubernetesPlatform())) {
+    if (OPENSHIFT.equals(getKubernetesPlatform())) {
       uid = (uid == -1L) ? 1000L : uid;
       gid = (gid == -1L) ? 0L : gid;
     } else {
@@ -682,14 +688,14 @@ public class JobStepContext extends BasePodStepContext {
           podSpec.securityContext(podSecurityContext.fsGroup(podSecurityContext.getRunAsGroup()));
         } else if (podSecurityContext.getFsGroup() == null) {
           Optional.ofNullable(TuningParameters.getInstance()).ifPresent(instance -> {
-            if (!"OpenShift".equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
+            if (!OPENSHIFT.equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
               podSpec.securityContext(podSecurityContext.fsGroup(0L));
             }
           });
         }
         if (podSpec.getSecurityContext().getFsGroupChangePolicy() == null) {
           Optional.ofNullable(TuningParameters.getInstance()).ifPresent(instance -> {
-            if (!"OpenShift".equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
+            if (!OPENSHIFT.equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
               podSpec.getSecurityContext().fsGroupChangePolicy("OnRootMismatch");
             }
           });
