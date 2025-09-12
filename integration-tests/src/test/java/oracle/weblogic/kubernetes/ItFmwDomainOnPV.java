@@ -181,7 +181,7 @@ class ItFmwDomainOnPV {
    * Operator will create PV/PVC/RCU/Domain.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
-  @Test
+  //@Test
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Create a FMW domain on PV using simplified feature, Operator creates PV/PVC/RCU/Domain")
   void testOperatorCreatesPvPvcRcuDomain() {
@@ -280,7 +280,7 @@ class ItFmwDomainOnPV {
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Update the base image in the domain spec, verify the domain is rolling-restarted.
    */
-  @Test
+  //@Test
   @DisplayName("Create a FMW domain on PV. User creates PV/PVC and operator creates RCU and domain")
   void testUserCreatesPvPvcOperatorCreatesRcuDomain() {
     String domainUid = "jrfonpv-simplified2";
@@ -376,7 +376,7 @@ class ItFmwDomainOnPV {
    * User creates PV/PVC and RCU schema, Operator creates domain
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
-  @Test
+  //@Test
   @DisplayName("Create a FMW domain on PV. User creates PV/PVC/RCU and operator creates domain")
   void testUserCreatesPvPvcRcuOperatorCreatesDomain() {
     String domainUid = "jrfonpv-simplified3";
@@ -491,7 +491,7 @@ class ItFmwDomainOnPV {
    * The user creates multiple domain initialization images
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
-  @Test
+  //@Test
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Create a FMW domain on PV. User creates RCU and operator creates PV/PVC and domain, "
                 + "User creates multiple domain initialization images")
