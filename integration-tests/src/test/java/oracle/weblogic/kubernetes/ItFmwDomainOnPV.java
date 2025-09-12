@@ -29,6 +29,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -116,6 +117,7 @@ class ItFmwDomainOnPV {
   private static final int replicaCount = 2;
 
   private final String fmwModelFilePrefix = "model-fmwdomain-onpv-simplified";
+  static List<String> allnamespaces;
 
   /**
    * Assigns unique namespaces for DB, operator and domain.
@@ -125,6 +127,7 @@ class ItFmwDomainOnPV {
   @BeforeAll
   static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
+    allnamespaces = namespaces;
 
     // get a new unique dbNamespace
     logger.info("Assign a unique namespace for DB");
@@ -736,6 +739,7 @@ class ItFmwDomainOnPV {
 
       // create a domain custom resource and verify domain is created
       createDomainAndVerify(domain, domainNamespace);
+      LoggingUtil.generateLog(this, allnamespaces);
 
       // verify PVC is created
       testUntil(
