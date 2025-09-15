@@ -16,6 +16,7 @@ import java.util.List;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -413,15 +415,21 @@ class ItMiiDynamicUpdatePart1 {
 
     // build the standalone JMS Client on Admin pod after rolling restart
     String destLocation = "/u01/JmsTestClient.java";
-    Files.copy(
-        Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-        Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName() + "jmsclient", "JmsTestClient.java"),
-        StandardCopyOption.REPLACE_EXISTING);
+    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
+      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "tunneling"), 
+          Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName() + "jmsclient"));
+    } else {
+      Files.copy(
+          Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
+          Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName() + "jmsclient", "JmsTestClient.java"),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
     assertDoesNotThrow(() -> copyFileToPod(helper.domainNamespace,
         helper.adminServerPodName, "",
         Paths.get(WORK_DIR,
             ItMiiDynamicUpdatePart1.class.getName() + "jmsclient", "JmsTestClient.java"),
-        Paths.get(destLocation)));
+        Paths.get(destLocation)));    
+    
     runJavacInsidePod(helper.adminServerPodName, helper.domainNamespace, destLocation);
 
     // Scale the cluster using replica count 5, patch cluster should fail as max size is 4
