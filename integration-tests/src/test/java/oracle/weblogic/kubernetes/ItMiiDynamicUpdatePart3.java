@@ -30,6 +30,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
@@ -331,7 +332,7 @@ class ItMiiDynamicUpdatePart3 {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration using REST api
-    if (OKE_CLUSTER || OCNE) {
+    if (OKE_CLUSTER || OCNE || OKD) {
       assertTrue(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
           "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
           "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
