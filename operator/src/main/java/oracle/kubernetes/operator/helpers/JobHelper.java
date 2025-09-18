@@ -255,10 +255,19 @@ public class JobHelper {
         }
 
         if (isInProgressJobOutdated(job)) {
+
+          LOGGER.severe("RJE: Will cleanup and reintrospect");
+
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
+
+          LOGGER.severe("RJE: Will process existing job");
+
           return doNext(processExistingIntrospectorJob(getNext()), packet);
         } else if (isIntrospectionNeeded(packet)) {
+
+          LOGGER.severe("RJE: Will create introspection");
+
           return doNext(createIntrospectionSteps(getNext()), packet);
         } else {
           return doNext(packet);
@@ -623,6 +632,9 @@ public class JobHelper {
         LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
         convertJobLogsToOperatorLogs(result);
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
+
+        LOGGER.severe("RJE: processIntrospectionResult and recording that introspection was run");
+
         MakeRightDomainOperation.recordInspection(packet);
       }
 

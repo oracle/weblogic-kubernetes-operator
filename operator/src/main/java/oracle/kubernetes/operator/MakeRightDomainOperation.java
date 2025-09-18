@@ -10,6 +10,8 @@ import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -26,6 +28,8 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
 public interface MakeRightDomainOperation extends MakeRightOperation<DomainPresenceInfo> {
+  LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   /**
    * Defines the operation as pertaining to the deletion of a domain.
    * @return The make right domain operation for deletion
@@ -95,8 +99,20 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
     fromPacket(packet).ifPresent(MakeRightDomainOperation::setInspectionRun);
   }
 
+  /**
+   * Tests if inspection was required.
+   * @param packet Packet
+   * @return true, if required
+   */
   static boolean isInspectionRequired(Packet packet) {
-    return domainRequiresIntrospectionInCurrentMakeRight(packet) && !wasInspectionRun(packet);
+
+    boolean required = domainRequiresIntrospectionInCurrentMakeRight(packet);
+    boolean run = wasInspectionRun(packet);
+
+    LOGGER.severe("RJE: isInspectionRequired introspectionRequired=" + required
+        + ", introspectionRun=" + run);
+
+    return required && !run;
   }
 
   static boolean isMakeRight(Packet packet) {
