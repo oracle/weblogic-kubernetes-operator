@@ -179,12 +179,14 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         boolean response = Command.withParams(params).execute();
         assertTrue(response, "Failed to install cert manager");
         
-        params.redirect(true);
-        CommandParams op = params.command(KUBERNETES_CLI + " version");
-        logger.info(op.stdout());
-
-        op = params.command(KUBERNETES_CLI + " get clusterversion version -o yaml");
-        logger.info(op.stdout());
+        try {
+          ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " version", true);
+          logger.info(result.stdout());
+          result = ExecCommand.exec(KUBERNETES_CLI + " get clusterversion version -o yaml", true);
+          logger.info(result.stdout());
+        } catch (Exception e) {
+          ;
+        }
 
         // Only the first thread will enter this block.
         logger.info("Building Images before any integration test classes are run");
