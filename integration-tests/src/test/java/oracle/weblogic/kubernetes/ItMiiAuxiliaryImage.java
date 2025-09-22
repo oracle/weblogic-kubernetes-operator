@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
@@ -279,6 +280,8 @@ class ItMiiAuxiliaryImage {
 
     domainCR = createClusterResourceAndAddReferenceToDomain(
         domainUid1 + "-" + clusterName, clusterName, domainNamespace, domainCR, replicaCount);
+    domainCR.spec().logHome("/u01/domains/domain1/jmsmessages");
+    logger.info(Yaml.dump(domainCR));
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
