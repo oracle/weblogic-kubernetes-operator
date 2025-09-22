@@ -280,7 +280,7 @@ class ItMiiAuxiliaryImage {
 
     domainCR = createClusterResourceAndAddReferenceToDomain(
         domainUid1 + "-" + clusterName, clusterName, domainNamespace, domainCR, replicaCount);
-    domainCR.spec().logHome("/u01/domains/domain1/jmsmessages");
+    domainCR.spec().logHome("/u01/domains/jmsmessages");
     logger.info(Yaml.dump(domainCR));
 
     // create domain and verify its running
