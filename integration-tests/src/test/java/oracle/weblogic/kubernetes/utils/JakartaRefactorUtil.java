@@ -74,7 +74,12 @@ public class JakartaRefactorUtil {
       String newPkg = entry.getValue();
 
       // Replace in import or fully-qualified names. Use regex to match word boundaries.
-      updated = updated.replaceAll("\\b" + oldPkg, newPkg);
+      if (oldPkg.equals("javax.transaction")) {
+        // Replace javax.transaction but not javax.transaction.xa.*
+        updated = updated.replaceAll("\\bjavax\\.transaction(?!\\.xa)", newPkg);
+      } else {
+        updated = updated.replaceAll("\\b" + oldPkg, newPkg);
+      }
     }
 
     Files.writeString(targetFile, updated, StandardCharsets.UTF_8,
