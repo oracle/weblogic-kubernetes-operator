@@ -44,7 +44,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -174,7 +173,6 @@ class ItConfigDistributionStrategy {
   static String hostHeader;
 
   private static LoggingFacade logger = null;
-  List<String> namespaces;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -190,7 +188,6 @@ class ItConfigDistributionStrategy {
   @BeforeAll
   void initAll(@Namespaces(3) List<String> namespaces) throws ApiException, IOException {
     logger = getLogger();
-    this.namespaces = namespaces;
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -1038,7 +1035,6 @@ class ItConfigDistributionStrategy {
     
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
-    LoggingUtil.generateLog(this, namespaces);
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, domainNamespace);

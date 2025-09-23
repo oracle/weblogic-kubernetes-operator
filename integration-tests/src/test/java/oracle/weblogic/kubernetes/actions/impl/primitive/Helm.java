@@ -62,10 +62,6 @@ public class Helm {
     // build Helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
         helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
-    if (!helmParams.getNamespace().equals("ns-webhook")) {      
-      installCmd = String.format("helm install %1s %2s --namespace %3s --debug ",
-          helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
-    }
     // if we have chart values file
     String chartValuesFile = helmParams.getChartValuesFile();
     if (chartValuesFile != null) {

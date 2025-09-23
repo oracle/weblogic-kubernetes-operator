@@ -498,8 +498,6 @@ public class PodUtils {
     return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
 
   }
-  
-  
 
   /**
    * Check if the pod log contains the certain text.
