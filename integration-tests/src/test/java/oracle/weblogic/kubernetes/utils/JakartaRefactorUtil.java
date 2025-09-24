@@ -25,6 +25,7 @@ public class JakartaRefactorUtil {
     PACKAGE_MAP.put("javax.jms", "jakarta.jms");
     PACKAGE_MAP.put("javax.ejb", "jakarta.ejb");
     PACKAGE_MAP.put("javax.transaction", "jakarta.transaction");
+    PACKAGE_MAP.put("javax.xml.ws.WebServiceRef", "jakarta.xml.ws.WebServiceRef");
     // add more here if needed
   }
 

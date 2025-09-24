@@ -11,7 +11,9 @@ import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.utils.FileUtils;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
@@ -63,11 +65,16 @@ public class AppBuilder {
       cleanupDirectory(archiveSrcDir);
       checkDirectory(archiveSrcDir);
       for (String item : params.srcDirList()) {
-        copyFolder(
-            APP_DIR + "/" + item, 
-            archiveSrcDir);
+        if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
+          JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(APP_DIR, item),
+              Paths.get(archiveSrcDir));
+        } else {
+          copyFolder(
+              APP_DIR + "/" + item,
+              archiveSrcDir);
+        }
       }
-    } catch (IOException ioe) {    
+    } catch (IOException ioe) {
       getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
       return false;
     }

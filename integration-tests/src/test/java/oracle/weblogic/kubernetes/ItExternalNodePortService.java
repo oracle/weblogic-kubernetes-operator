@@ -3,8 +3,11 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +31,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +56,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -218,7 +224,7 @@ class ItExternalNodePortService {
    */
   @Test
   @DisplayName("Verify RMI access to WLS through NodePort Service")
-  void testExternalRmiAccessThruNodePortService() {
+  void testExternalRmiAccessThruNodePortService() throws IOException {
     // Build the standalone JMS Client locally to send and receive messages
     buildClient();
     // Prepare the Nodeport service yaml file from the template file by
@@ -306,7 +312,7 @@ class ItExternalNodePortService {
   // server on WebLogic cluster.
   // Copy the installed JDK from WebLogic server pod to local filesystem to 
   // build and run  the JMS client outside of K8s Cluster.
-  private void buildClient() {
+  private void buildClient() throws IOException {
 
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
              adminServerPodName, "weblogic-server",
@@ -322,12 +328,23 @@ class ItExternalNodePortService {
         () -> exec(new String(chmodCmd), true));
     logger.info("chmod command {0}", chmodCmd.toString());
     logger.info("chmod command returned {0}", cresult.toString());
+    
+    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
+      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "tunneling"),
+          Paths.get(WORK_DIR, ItExternalNodePortService.class.getName() + "jmsclient"));
+    } else {
+      Files.copy(
+          Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
+          Paths.get(WORK_DIR, ItExternalNodePortService.class.getName() + "jmsclient", "JmsTestClient.java"),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
 
     StringBuffer javacCmd = new StringBuffer("");
     javacCmd.append(Paths.get(RESULTS_ROOT, "/jdk/bin/javac "));
     javacCmd.append(Paths.get(" -cp "));
     javacCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar "));
-    javacCmd.append(Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"));
+    javacCmd.append(Paths.get(WORK_DIR, ItExternalNodePortService.class.getName()
+        + "jmsclient", "JmsTestClient.java"));
     javacCmd.append(Paths.get(" -d "));
     javacCmd.append(Paths.get(RESULTS_ROOT));
     logger.info("javac command {0}", javacCmd.toString());
