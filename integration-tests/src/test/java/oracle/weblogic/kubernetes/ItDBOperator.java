@@ -3,9 +3,11 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +25,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -327,7 +331,7 @@ class ItDBOperator {
    * Create WebLogic domain using model in image and Oracle database used for JMS and JTA migration and service logs.
    */
   @Test
-  void  testWlsModelInImageWithDbOperator() {
+  void  testWlsModelInImageWithDbOperator() throws IOException {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -435,13 +439,23 @@ class ItDBOperator {
   /**
    * Verify JMS/JTA Service is migrated to an available active server.
    */
-  private void testMiiJmsJtaServiceMigration() {
+  private void testMiiJmsJtaServiceMigration() throws IOException {
 
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
+    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
+      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "jms"),
+          Paths.get(WORK_DIR, ItDBOperator.class.getName() + "jmsclient"));
+    } else {
+      Files.copy(
+          Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
+          Paths.get(WORK_DIR, ItDBOperator.class.getName() + "jms", "JmsSendReceiveClient.java"),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
+
     assertDoesNotThrow(() -> copyFileToPod(wlsDomainNamespace,
         wlsAdminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
+        Paths.get(WORK_DIR, ItDBOperator.class.getName() + "jms", "JmsSendReceiveClient.java"),
         Paths.get(destLocation)));
     runJavacInsidePod(wlsAdminServerPodName, wlsDomainNamespace, destLocation);
 
