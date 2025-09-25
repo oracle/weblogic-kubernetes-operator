@@ -15,6 +15,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+
 public class JakartaRefactorUtil {
 
   // Map of old package prefix → new package prefix
@@ -37,6 +39,23 @@ public class JakartaRefactorUtil {
    * @throws IOException throws exception when cannot be copied
    */
   public static void copyAndRefactorDirectory(Path sourceDir, Path targetDir) throws IOException {
+    if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
+      Files.createDirectories(targetDir);
+      Files.walk(sourceDir).forEach(sourcePath -> {
+        try {
+          Path targetPath = targetDir.resolve(sourceDir.relativize(sourcePath));
+          if (Files.isDirectory(sourcePath)) {
+            Files.createDirectories(targetPath);
+          } else {
+            Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+          }
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
+      return;
+    }
+    
     if (!Files.exists(sourceDir) || !Files.isDirectory(sourceDir)) {
       throw new IllegalArgumentException("Source must be a directory: " + sourceDir);
     }

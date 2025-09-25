@@ -4,10 +4,8 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +54,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -329,22 +326,15 @@ class ItExternalNodePortService {
     logger.info("chmod command {0}", chmodCmd.toString());
     logger.info("chmod command returned {0}", cresult.toString());
     
-    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
-      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "tunneling"),
-          Paths.get(WORK_DIR, ItExternalNodePortService.class.getName() + "jmsclient"));
-    } else {
-      Files.copy(
-          Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-          Paths.get(WORK_DIR, ItExternalNodePortService.class.getName() + "jmsclient", "JmsTestClient.java"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItExternalNodePortService.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
 
     StringBuffer javacCmd = new StringBuffer("");
     javacCmd.append(Paths.get(RESULTS_ROOT, "/jdk/bin/javac "));
     javacCmd.append(Paths.get(" -cp "));
     javacCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar "));
-    javacCmd.append(Paths.get(WORK_DIR, ItExternalNodePortService.class.getName()
-        + "jmsclient", "JmsTestClient.java"));
+    javacCmd.append(destFile);
     javacCmd.append(Paths.get(" -d "));
     javacCmd.append(Paths.get(RESULTS_ROOT));
     logger.info("javac command {0}", javacCmd.toString());
