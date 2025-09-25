@@ -4,9 +4,8 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,7 +27,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -201,19 +199,13 @@ class ItMiiCustomSslStore {
 
     // build the standalone Client on Admin pod after rolling restart
     String destLocation = "/u01/SslTestClient.java";
-    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
-      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "ssl"),
-          Paths.get(WORK_DIR, ItMiiCustomSslStore.class.getName()));
-    } else {
-      Files.copy(
-          Paths.get(RESOURCE_DIR, "ssl", "SslTestClient.java"),
-          Paths.get(WORK_DIR, ItMiiCustomSslStore.class.getName(), "SslTestClient.java"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    Path srcFile = Paths.get(RESOURCE_DIR, "ssl", "SslTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItMiiCustomSslStore.class.getName(), "ssl", "SslTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
     
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
-        Paths.get(WORK_DIR, ItMiiCustomSslStore.class.getName(), "SslTestClient.java"),
+        destFile,
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
 

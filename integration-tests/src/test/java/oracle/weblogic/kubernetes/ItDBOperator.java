@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +47,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -443,19 +441,13 @@ class ItDBOperator {
 
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
-    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
-      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "jms"),
-          Paths.get(WORK_DIR, ItDBOperator.class.getName() + "jmsclient"));
-    } else {
-      Files.copy(
-          Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
-          Paths.get(WORK_DIR, ItDBOperator.class.getName() + "jms", "JmsSendReceiveClient.java"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    Path srcFile = Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItDBOperator.class.getName(), "jms", "JmsSendReceiveClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
 
     assertDoesNotThrow(() -> copyFileToPod(wlsDomainNamespace,
         wlsAdminServerPodName, "",
-        Paths.get(WORK_DIR, ItDBOperator.class.getName() + "jms", "JmsSendReceiveClient.java"),
+        destFile,
         Paths.get(destLocation)));
     runJavacInsidePod(wlsAdminServerPodName, wlsDomainNamespace, destLocation);
 

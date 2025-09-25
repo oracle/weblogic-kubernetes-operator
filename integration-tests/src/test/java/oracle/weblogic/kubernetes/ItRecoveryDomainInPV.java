@@ -6,10 +6,8 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -260,18 +258,12 @@ class ItRecoveryDomainInPV  {
 
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
-    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
-      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "jms"),
-          Paths.get(WORK_DIR, ItRecoveryDomainInPV.class.getName() + "jmsclient"));
-    } else {
-      Files.copy(
-          Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
-          Paths.get(WORK_DIR, ItRecoveryDomainInPV.class.getName() + "jms", "JmsSendReceiveClient.java"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    Path srcFile = Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItRecoveryDomainInPV.class.getName(), "jms", "JmsSendReceiveClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
-        Paths.get(WORK_DIR, ItRecoveryDomainInPV.class.getName() + "jms", "JmsSendReceiveClient.java"),
+        destFile,
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
 

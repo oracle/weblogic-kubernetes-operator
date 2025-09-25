@@ -8,7 +8,6 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -515,18 +514,14 @@ class ItWseeSSO {
   // Run standalone client to get initial context using t3s cluster url
   private void buildRunClientOnPod() throws IOException {
     String destLocation1 = "/u01/WseeClient.java";
-    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
-      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "wsee"),
-          Paths.get(WORK_DIR, ItWseeSSO.class.getName() + "wsee"));
-    } else {
-      Files.copy(
-          Paths.get(RESOURCE_DIR, "wsee", "WseeClient.java"),
-          Paths.get(WORK_DIR, ItWseeSSO.class.getName() + "wsee", "WseeClient.java"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    
+    Path srcFile = Paths.get(RESOURCE_DIR, "wsee", "WseeClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItWseeSSO.class.getName(), "wsee", "WseeClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+    
     assertDoesNotThrow(() -> copyFileToPod(domain1Namespace,
         "weblogic-pod-" + domain1Namespace, "",
-        Paths.get(WORK_DIR, ItWseeSSO.class.getName() + "wsee", "WseeClient.java"),
+        destFile,
         Paths.get(destLocation1)));
     String destLocation2 = "/u01/EchoServiceRefStubs.jar";
     assertDoesNotThrow(() -> copyFileToPod(domain1Namespace,

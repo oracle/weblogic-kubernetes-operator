@@ -5,8 +5,8 @@ package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -1128,19 +1127,13 @@ class ItMiiUpdateDomainConfig {
   private void buildClientOnPod() throws IOException {
 
     String destLocation = "/u01/JmsTestClient.java";
-
-    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
-      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "tunneling"),
-          Paths.get(WORK_DIR, ItMiiUpdateDomainConfig.class.getName() + "jmsclient"));
-    } else {
-      Files.copy(
-          Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-          Paths.get(WORK_DIR, ItMiiUpdateDomainConfig.class.getName() + "jmsclient", "JmsTestClient.java"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItMiiUpdateDomainConfig.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+    
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
-        Paths.get(WORK_DIR, ItMiiUpdateDomainConfig.class.getName() + "jmsclient", "JmsTestClient.java"),
+        destFile,
         Paths.get(destLocation)));
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";

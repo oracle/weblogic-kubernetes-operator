@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -415,19 +413,12 @@ class ItMiiDynamicUpdatePart1 {
 
     // build the standalone JMS Client on Admin pod after rolling restart
     String destLocation = "/u01/JmsTestClient.java";
-    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
-      JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(RESOURCE_DIR, "tunneling"), 
-          Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName() + "jmsclient"));
-    } else {
-      Files.copy(
-          Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-          Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName() + "jmsclient", "JmsTestClient.java"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
     assertDoesNotThrow(() -> copyFileToPod(helper.domainNamespace,
         helper.adminServerPodName, "",
-        Paths.get(WORK_DIR,
-            ItMiiDynamicUpdatePart1.class.getName() + "jmsclient", "JmsTestClient.java"),
+        destFile,
         Paths.get(destLocation)));    
     
     runJavacInsidePod(helper.adminServerPodName, helper.domainNamespace, destLocation);
