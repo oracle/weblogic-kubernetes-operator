@@ -727,7 +727,7 @@
     <commons-cli-version>1.10.0</commons-cli-version>
     <networknt-jsonschmema-validator-version>1.5.9</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.5.0</commons-exec-version>
-    <commons-lang3-version>3.18.0</commons-lang3-version>
+    <commons-lang3-version>3.19.0</commons-lang3-version>
     <commons-codec-version>1.19.0</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
     <voyager-client-version>0.1.0</voyager-client-version>
