@@ -256,12 +256,16 @@ public class JobHelper {
 
         if (isInProgressJobOutdated(job)) {
 
-          LOGGER.severe("RJE: Will cleanup and reintrospect");
+          if (job != null) {
+            LOGGER.severe("RJE: Will cleanup and reintrospect, time: " + job.getMetadata().getCreationTimestamp());
+          } else {
+            LOGGER.severe("RJE: Will cleanup and reintrospect");
+          }
 
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
 
-          LOGGER.severe("RJE: Will process existing job");
+          LOGGER.severe("RJE: Will process existing job, time: " + job.getMetadata().getCreationTimestamp());
 
           return doNext(processExistingIntrospectorJob(getNext()), packet);
         } else if (isIntrospectionNeeded(packet)) {

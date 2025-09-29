@@ -8,6 +8,9 @@ import java.util.Collections;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -19,6 +22,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_TIME;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_PRESENCE_INFO;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.FALSE;
@@ -75,6 +79,8 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
   boolean wasInspectionRun();
 
   private static boolean wasInspectionRun(Packet packet) {
+    String time = packet.getValue(INTROSPECTION_TIME);
+
     // check if introspection has run since Completed=False set
     OffsetDateTime lastTransitionTime = Optional.ofNullable((DomainPresenceInfo) packet.get(DOMAIN_PRESENCE_INFO))
         .map(DomainPresenceInfo::getDomain)
@@ -83,7 +89,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
         .map(DomainCondition::getLastTransitionTime).orElse(null);
 
     if (lastTransitionTime != null) {
-      String time = packet.getValue(INTROSPECTION_TIME);
       if (time != null) {
         OffsetDateTime lastIntrospectionTime = OffsetDateTime.parse(time);
         if (lastIntrospectionTime.isAfter(lastTransitionTime.minusSeconds(3))) {
@@ -92,7 +97,25 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
       }
     }
 
-    return fromPacket(packet).map(MakeRightDomainOperation::wasInspectionRun).orElse(false);
+    boolean result = fromPacket(packet).map(MakeRightDomainOperation::wasInspectionRun).orElse(false);
+
+    if (!result) {
+      // RJE: TEST HERE -- not sufficient detection that introspection has been recently run
+      OffsetDateTime podCreationTime = Optional.ofNullable((V1Pod) packet.get(ProcessingConstants.JOB_POD))
+          .map(V1Pod::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+      OffsetDateTime jobCreationTime = Optional.ofNullable((V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB))
+          .map(V1Job::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+      String status = Optional.ofNullable((DomainPresenceInfo) packet.get(DOMAIN_PRESENCE_INFO))
+          .map(DomainPresenceInfo::getDomain)
+          .map(DomainResource::getStatus).map(DomainStatus::getConditions).orElse(Collections.emptyList()).stream()
+          .filter(condition -> COMPLETED.equals(condition.getType())).findFirst()
+          .map(DomainCondition::getStatus).orElse("ABSENT");
+
+      LOGGER.severe("RJE: introspection required, podCreationTime=" + podCreationTime
+          + ", jobCreationTime=" + jobCreationTime + ", time=" + time +  ", status=" + status);
+    }
+
+    return result;
   }
 
   static void recordInspection(Packet packet) {
