@@ -23,6 +23,12 @@ public class JakartaRefactorUtil {
   private static final Map<String, String> PACKAGE_MAP = new LinkedHashMap<>();
 
   static {
+    PACKAGE_MAP.put("javax.annotation","jakarta.annotation");
+    PACKAGE_MAP.put("javax.enterprise", "jakarta.enterprise");
+    PACKAGE_MAP.put("javax.faces", "jakarta.faces");
+    PACKAGE_MAP.put("javax.inject", "jakarta.inject");
+    PACKAGE_MAP.put("javax.persistence", "jakarta.persistence");
+    PACKAGE_MAP.put("javax.resource", "jakarta.resource");
     PACKAGE_MAP.put("javax.servlet", "jakarta.servlet");
     PACKAGE_MAP.put("javax.jms", "jakarta.jms");
     PACKAGE_MAP.put("javax.ejb", "jakarta.ejb");
