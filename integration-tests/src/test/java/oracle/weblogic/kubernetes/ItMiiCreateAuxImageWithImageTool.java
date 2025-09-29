@@ -220,7 +220,6 @@ class ItMiiCreateAuxImageWithImageTool {
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with customized options")
-  @Tag("gate")
   @DisabledIfEnvironmentVariable(named = "ARM", matches = "true")
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
