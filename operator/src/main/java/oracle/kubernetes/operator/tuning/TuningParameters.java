@@ -218,7 +218,7 @@ public class TuningParameters {
    * Returns the value of introspector job active deadline seconds with default value depending on the context.
    */
   public long getActiveJobInitialDeadlineSeconds(boolean isInitializeDomainOnPV, String type) {
-    long defaultValue = 120L;
+    long defaultValue = 600L;
     if (isInitializeDomainOnPV && isWlsOrRestrictedJRFDomain(type)) {
       defaultValue = ProcessingConstants.DEFAULT_WLS_OR_RESTRICTED_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
     } else if (isInitializeDomainOnPV) {
