@@ -33,7 +33,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.verifyNamespaceActive;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -131,7 +130,7 @@ public class BuildApplication {
 
       // copy the application source to WORK_DIR/j2eeapplications/<application_directory_name> for zipping
       logger.info("Copying {0} to {1}", appSrcPath, tempAppPath);
-      copyDirectory(appSrcPath.toFile(), tempAppPath.toFile());
+      JakartaRefactorUtil.copyAndRefactorDirectory(appSrcPath, tempAppPath);
     });
 
     // zip up the application source to be copied to pod for building

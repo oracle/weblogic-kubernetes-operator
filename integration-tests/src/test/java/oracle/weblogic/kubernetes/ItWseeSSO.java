@@ -27,6 +27,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -60,6 +61,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
@@ -510,11 +512,16 @@ class ItWseeSSO {
   }
 
   // Run standalone client to get initial context using t3s cluster url
-  private void buildRunClientOnPod() {
+  private void buildRunClientOnPod() throws IOException {
     String destLocation1 = "/u01/WseeClient.java";
+    
+    Path srcFile = Paths.get(RESOURCE_DIR, "wsee", "WseeClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItWseeSSO.class.getName(), "wsee", "WseeClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+    
     assertDoesNotThrow(() -> copyFileToPod(domain1Namespace,
         "weblogic-pod-" + domain1Namespace, "",
-        Paths.get(RESOURCE_DIR, "wsee", "WseeClient.java"),
+        destFile,
         Paths.get(destLocation1)));
     String destLocation2 = "/u01/EchoServiceRefStubs.jar";
     assertDoesNotThrow(() -> copyFileToPod(domain1Namespace,

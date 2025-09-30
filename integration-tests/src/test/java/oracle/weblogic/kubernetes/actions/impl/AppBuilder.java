@@ -11,6 +11,7 @@ import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.utils.FileUtils;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -63,11 +64,9 @@ public class AppBuilder {
       cleanupDirectory(archiveSrcDir);
       checkDirectory(archiveSrcDir);
       for (String item : params.srcDirList()) {
-        copyFolder(
-            APP_DIR + "/" + item, 
-            archiveSrcDir);
+        JakartaRefactorUtil.copyAndRefactorDirectory(Paths.get(APP_DIR, item), Paths.get(archiveSrcDir));
       }
-    } catch (IOException ioe) {    
+    } catch (IOException ioe) {
       getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
       return false;
     }
