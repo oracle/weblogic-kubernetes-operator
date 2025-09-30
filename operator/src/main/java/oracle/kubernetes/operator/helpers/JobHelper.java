@@ -458,16 +458,25 @@ public class JobHelper {
         V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
         if (JobWatcher.isFailed(domainIntrospectorJob)) {
+
+          LOGGER.severe("RJE: check for failed introspector job -- job failed");
+
           return doNext(
               Step.chain(createIntrospectionFailureSteps(getFailedReason(domainIntrospectorJob), domainIntrospectorJob),
                   cleanUpAndReintrospect(getNext())), packet);
         }
         if (JobWatcher.isComplete(domainIntrospectorJob)) {
+
+          LOGGER.severe("RJE: check for failed introspector job -- job is complete");
+
           if (isOutdated(domainIntrospectorJob)) {
             return doNext(cleanUpAndReintrospect(getNext()), packet);
           }
           return doNext(createRemoveFailuresStep(getNext()), packet);
         }
+
+        LOGGER.severe("RJE: check for failed introspector job -- continuing");
+
         return doNext(packet);
       }
     }
@@ -485,7 +494,15 @@ public class JobHelper {
       @Override
       public @Nonnull Result apply(Packet packet) {
         V1Pod jobPod = (V1Pod) packet.get(ProcessingConstants.JOB_POD);
-        if (!anyTerminatedContainers(jobPod)) {
+
+        boolean anyTerminatedContainers = anyTerminatedContainers(jobPod);
+
+        LOGGER.severe("RJE: check for any terminated containers -- job pod creation: "
+            + Optional.ofNullable(jobPod).map(V1Pod::getMetadata).map(V1ObjectMeta::getCreationTimestamp)
+            .map(OffsetDateTime::toString).orElse("none")
+            + ", anyTerminatedContainers: " + anyTerminatedContainers);
+
+        if (!anyTerminatedContainers) {
           // requeue to wait for the job pod
           return doRequeue();
         }
@@ -869,6 +886,10 @@ public class JobHelper {
               .findFirst()
               .orElse(null);
 
+        LOGGER.severe("RJE: check for job pod -- pod creation time: "
+            + Optional.ofNullable(jobPod).map(V1Pod::getMetadata).map(V1ObjectMeta::getCreationTimestamp)
+            .map(OffsetDateTime::toString).orElse("none"));
+
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, () -> processIntrospectorPodLog(getNext()));
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
@@ -883,6 +904,9 @@ public class JobHelper {
           // terminate current fiber
           return doTerminate(createTerminationException(packet), packet);
         } else {
+
+          // HERE add container terminated marker???
+
           addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
           recordJobPod(packet, jobPod);
           return doNext(processIntrospectorPodLog(getNext()), packet);
