@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +24,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -327,7 +329,7 @@ class ItDBOperator {
    * Create WebLogic domain using model in image and Oracle database used for JMS and JTA migration and service logs.
    */
   @Test
-  void  testWlsModelInImageWithDbOperator() {
+  void  testWlsModelInImageWithDbOperator() throws IOException {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -435,13 +437,17 @@ class ItDBOperator {
   /**
    * Verify JMS/JTA Service is migrated to an available active server.
    */
-  private void testMiiJmsJtaServiceMigration() {
+  private void testMiiJmsJtaServiceMigration() throws IOException {
 
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
+    Path srcFile = Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItDBOperator.class.getName(), "jms", "JmsSendReceiveClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+
     assertDoesNotThrow(() -> copyFileToPod(wlsDomainNamespace,
         wlsAdminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
+        destFile,
         Paths.get(destLocation)));
     runJavacInsidePod(wlsAdminServerPodName, wlsDomainNamespace, destLocation);
 

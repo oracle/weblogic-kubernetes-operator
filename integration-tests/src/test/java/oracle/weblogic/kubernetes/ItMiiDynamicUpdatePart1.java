@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,6 +15,7 @@ import java.util.List;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -347,7 +349,7 @@ class ItMiiDynamicUpdatePart1 {
   @Test
   @Order(5)
   @DisplayName("Test modification to Dynamic cluster size parameters")
-  void testMiiUpdateDynamicClusterSize() {
+  void testMiiUpdateDynamicClusterSize() throws IOException {
     String clusterName = "cluster-1";
     String clusterResName = domainUid + "-" + clusterName;
     // Scale the cluster by updating the replica count to 5
@@ -411,10 +413,14 @@ class ItMiiDynamicUpdatePart1 {
 
     // build the standalone JMS Client on Admin pod after rolling restart
     String destLocation = "/u01/JmsTestClient.java";
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
     assertDoesNotThrow(() -> copyFileToPod(helper.domainNamespace,
         helper.adminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-        Paths.get(destLocation)));
+        destFile,
+        Paths.get(destLocation)));    
+    
     runJavacInsidePod(helper.adminServerPodName, helper.domainNamespace, destLocation);
 
     // Scale the cluster using replica count 5, patch cluster should fail as max size is 4

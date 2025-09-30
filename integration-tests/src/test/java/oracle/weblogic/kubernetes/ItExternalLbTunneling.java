@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -32,6 +33,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,6 +64,7 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
@@ -264,7 +267,7 @@ class ItExternalLbTunneling {
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
-  void testExternalRmiAccessThruTraefik() {
+  void testExternalRmiAccessThruTraefik() throws IOException {
     // Build the standalone JMS Client to send and receive messages
     buildClient();
     buildClientOnPod();
@@ -324,7 +327,7 @@ class ItExternalLbTunneling {
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
-  void testExternalRmiAccessThruTraefikHttpsTunneling() {
+  void testExternalRmiAccessThruTraefikHttpsTunneling() throws IOException {
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -375,7 +378,7 @@ class ItExternalLbTunneling {
   @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify RMI access WLS through Route in OKD ")
-  void testExternalRmiAccessThruRouteHttpTunneling() {
+  void testExternalRmiAccessThruRouteHttpTunneling() throws IOException {
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -404,7 +407,7 @@ class ItExternalLbTunneling {
   @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify tls RMI access WLS through Route in OKD ")
-  void testExternalRmiAccessThruRouteHttpsTunneling() {
+  void testExternalRmiAccessThruRouteHttpsTunneling() throws IOException {
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -500,7 +503,7 @@ class ItExternalLbTunneling {
   // server on WebLogic cluster.
   // Copy the installed JDK from WebLogic server pod to local filesystem 
   // to build and run the JMS client outside of K8s Cluster.
-  private void buildClient() {
+  private void buildClient() throws IOException {
 
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
              adminServerPodName, "weblogic-server",
@@ -517,12 +520,16 @@ class ItExternalLbTunneling {
         () -> exec(new String(chmodCmd), true));
     logger.info("chmod command {0}", chmodCmd.toString());
     logger.info("chmod command returned {0}", cresult.toString());
+    
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItExternalLbTunneling.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
 
     StringBuffer javacCmd = new StringBuffer("");
     javacCmd.append(Paths.get(RESULTS_ROOT, "/jdk/bin/javac "));
     javacCmd.append(Paths.get(" -cp "));
     javacCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar "));
-    javacCmd.append(Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"));
+    javacCmd.append(destFile);
     javacCmd.append(Paths.get(" -d "));
     javacCmd.append(Paths.get(RESULTS_ROOT));
     logger.info("javac command {0}", javacCmd.toString());
@@ -534,12 +541,15 @@ class ItExternalLbTunneling {
   }
 
   // Build JMS Client inside the Admin Server Pod
-  private void buildClientOnPod() {
+  private void buildClientOnPod() throws IOException {
+    
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItExternalLbTunneling.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+    
     String destLocation = "/u01/JmsTestClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
-             adminServerPodName, "weblogic-server",
-             Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-             Paths.get(destLocation)));
+             adminServerPodName, "weblogic-server", destFile, Paths.get(destLocation)));
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
     StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");

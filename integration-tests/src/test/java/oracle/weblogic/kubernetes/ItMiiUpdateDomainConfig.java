@@ -3,7 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -38,6 +40,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,6 +63,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
@@ -776,7 +780,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(10)
   @DisplayName("Test modification to Dynamic cluster size parameters")
-  void testMiiUpdateDynamicClusterSize() {
+  void testMiiUpdateDynamicClusterSize() throws IOException {
 
     // Scale the cluster to replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
@@ -1120,12 +1124,16 @@ class ItMiiUpdateDomainConfig {
   }
 
   // Build JMS Client inside the Admin Server Pod
-  private void buildClientOnPod() {
+  private void buildClientOnPod() throws IOException {
 
     String destLocation = "/u01/JmsTestClient.java";
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItMiiUpdateDomainConfig.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+    
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
+        destFile,
         Paths.get(destLocation)));
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";

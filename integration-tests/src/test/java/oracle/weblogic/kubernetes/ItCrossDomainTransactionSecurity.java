@@ -334,7 +334,7 @@ class ItCrossDomainTransactionSecurity {
         .getAuxiliaryImages().getFirst()
         .image(miiAuxiliaryImage2).sourceModelHome("/auxiliary/models");
 
-    HashMap domain2Map = new HashMap<>();
+    HashMap<String, String> domain2Map = new HashMap<>();
     domain2Map.put("weblogic.domainUID", domain2Uid);
     domainCR.metadata().name(domain2Uid)
         .namespace(domainNamespace).labels(domain2Map);

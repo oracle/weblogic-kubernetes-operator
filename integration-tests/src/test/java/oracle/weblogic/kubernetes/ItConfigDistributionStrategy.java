@@ -67,6 +67,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_12213;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -1024,7 +1025,8 @@ class ItConfigDistributionStrategy {
         uniqueDomainHome,
         2,
         t3ChannelPort,
-        configuration);
+        configuration,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     domain.spec().serverPod().addEnvItem(new V1EnvVar()
         .name("JAVA_OPTIONS")
         .value("-Dweblogic.debug.DebugSituationalConfig=true "
