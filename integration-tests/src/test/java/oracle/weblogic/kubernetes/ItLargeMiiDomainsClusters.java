@@ -127,7 +127,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * -pl integration-tests -P integration-tests verify 2>&1  | tee test.out
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create large domain(s) and rolling the domain.")
 @IntegrationTest
 class ItLargeMiiDomainsClusters {
   private static String opNamespace = null;

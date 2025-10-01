@@ -65,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 4. Verify that Elasticsearch collects data from Operator logs and
  *       stores them in its repository correctly.
  */
-@DisplayName("ELK Stack sample to test to use Elasticsearch API to query Operator logs")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")

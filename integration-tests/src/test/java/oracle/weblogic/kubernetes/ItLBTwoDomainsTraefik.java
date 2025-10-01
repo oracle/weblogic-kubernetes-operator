@@ -65,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Test a single operator can manage multiple WebLogic domains with a single Traefik fronted loadbalancer.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify a single operator manages multiple WebLogic domains with a single Traefik fronted loadbalancer")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

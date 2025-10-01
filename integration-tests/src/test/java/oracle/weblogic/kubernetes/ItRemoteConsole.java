@@ -93,7 +93,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * using routes are added to run only on OKD cluster.
 */
 
-@DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
 @DisabledOnSlimImage
 @Tag("olcne-mrg")

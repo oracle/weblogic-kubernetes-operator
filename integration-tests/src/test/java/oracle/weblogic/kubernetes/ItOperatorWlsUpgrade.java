@@ -126,7 +126,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Restart the entire domain in upgraded environment.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Operator upgrade tests")
 @IntegrationTest
 @Tag("kind-upgrade")
 class ItOperatorWlsUpgrade {

@@ -38,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@DisplayName("Test WLS Session Migration via istio enabled")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-arm")

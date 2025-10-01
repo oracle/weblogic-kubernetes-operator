@@ -95,7 +95,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Cross domain transaction tests.
  */
-@DisplayName("Verify cross domain transaction across K8S and on-premise is successful")
 @IntegrationTest
 @Tag("kind-sequential")
 class ItOnPremCrossDomainTransaction {

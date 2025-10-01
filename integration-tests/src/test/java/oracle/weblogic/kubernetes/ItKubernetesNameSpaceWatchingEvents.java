@@ -49,7 +49,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * The tests checks for the following events in the domain name space.
  * NamespaceWatchingStarted, and NamespaceWatchingStopped.
  */
-@DisplayName("Verify the Kubernetes events for watching namespace")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

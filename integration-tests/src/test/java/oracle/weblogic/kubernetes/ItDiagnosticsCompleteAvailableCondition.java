@@ -56,7 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The tests check for the Completed/Available conditions for multiple usecases.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the domain status conditions for domain lifecycle")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

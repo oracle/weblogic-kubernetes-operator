@@ -145,7 +145,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
  * and finally deletes it to generate all the domain related events.
  */
-@DisplayName("Verify the Kubernetes events for domain lifecycle")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")

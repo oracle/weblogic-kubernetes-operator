@@ -58,7 +58,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test WLS Session Migration via istio enabled using Istio gateway")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")

@@ -84,7 +84,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain after upgrade to 
  * current version.
  */
-@DisplayName("Verify scaling the clusters in the domain with different domain types after operator upgrade")
 @IntegrationTest
 @Tag("kind-upgrade")
 class ItMultiDomainModelsUpgradeAndScale {

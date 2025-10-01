@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * running in istio-system namespace. All the service mesh related operators are installed and running as per this
  * documentation. https://docs.openshift.com/container-platform/4.10/service_mesh/v2x/installing-ossm.html
  */
-@DisplayName("Test Openshift servce mesh istio enabled WebLogic Domain in mii model")
 @Tag("openshift")
 @IntegrationTest
 class ItOpenshiftIstioMiiDomain {

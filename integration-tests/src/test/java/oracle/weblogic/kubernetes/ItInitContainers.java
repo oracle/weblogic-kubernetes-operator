@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Simple JUnit test file used for testing server's pod init containers feature.
  */
-@DisplayName("Test server's pod init container feature")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")

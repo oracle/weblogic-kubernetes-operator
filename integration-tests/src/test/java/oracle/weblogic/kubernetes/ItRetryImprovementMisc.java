@@ -52,7 +52,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Miscellaneous use cases for WKO retry improvements
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Miscellaneous use cases for WKO retry improvements")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")

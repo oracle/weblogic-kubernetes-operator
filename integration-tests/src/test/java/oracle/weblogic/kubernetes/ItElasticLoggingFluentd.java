@@ -108,7 +108,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *    and fluentd container added.
  * 5. Verify that fluentd is used to send WebLogic server log information to Elasticsearch
  */
-@DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

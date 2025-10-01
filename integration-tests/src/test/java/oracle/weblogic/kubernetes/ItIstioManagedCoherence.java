@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 // Test to associate a Coherence Cluster with multiple WebLogic server clusters.
-@DisplayName("Test to associate a Coherence Cluster with multiple WebLogic server clusters")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")

@@ -76,7 +76,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Create two domains using WLST with domain-on-pv type.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify Nginx load balancer handles traffic to two background WebLogic domains")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

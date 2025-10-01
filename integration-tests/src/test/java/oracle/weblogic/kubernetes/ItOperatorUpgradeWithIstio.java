@@ -76,7 +76,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Upgrade operator with current Operator image build from current branch.
  * Make sure the console is accessible thru istio ingress port
  */
-@DisplayName("Operator upgrade tests with Istio")
 @IntegrationTest
 @Tag("kind-upgrade")
 class ItOperatorUpgradeWithIstio {

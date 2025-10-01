@@ -34,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // Test introspector will fail with error msg if the consensus leasing is configured in the cluster or the database
 // leasing is configured but there is no datasource.
-@DisplayName("Test introspector will fail with error msg if the consensus leasing is configured in the cluster")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")

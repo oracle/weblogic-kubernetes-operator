@@ -65,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test and verify model in image WLS domain sample in legacy mode.
  * Test creates the model-in-image domain image and use that image to start the domain.
  */
-@DisplayName("test model in image WLS domain sample in legacy mode")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")

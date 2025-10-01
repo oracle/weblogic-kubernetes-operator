@@ -62,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * This test is not run on OKE as the CPU utilization is not
  * going up intermittently after increasing the load.
  */
-@DisplayName("Test to a create MII domain and test autoscaling using HPA")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("gate")

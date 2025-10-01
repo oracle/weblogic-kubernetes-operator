@@ -49,7 +49,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * 3. Verify that WLS server pods were evicted due to Pod ephemeral local
  *    storage usage exceeds the total limit of containers 25M and replaced.
  */
-@DisplayName("Test WLS server pods were evicted due to Pod ephemeral storage usage exceeds the total limit")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

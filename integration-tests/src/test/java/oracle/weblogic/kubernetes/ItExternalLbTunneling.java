@@ -113,7 +113,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * using routes are added to run only on OKD cluster.
  */
 
-@DisplayName("Test external RMI access through loadbalncer tunneling")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @IntegrationTest

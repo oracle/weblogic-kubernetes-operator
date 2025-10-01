@@ -95,7 +95,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *    2) Users can update logstash configuration by updating the configmap
  *       weblogic-operator-logstash-cm instead of rebuilding operator image
  */
-@DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

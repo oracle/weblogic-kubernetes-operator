@@ -68,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test and verify Domain on PV sample.
  */
-@DisplayName("test domain on pv sample")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")

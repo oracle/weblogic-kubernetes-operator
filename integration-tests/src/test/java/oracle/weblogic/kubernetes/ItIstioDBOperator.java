@@ -102,8 +102,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create Istio enabled FMW model in image domain and WebLogic domain using Oracle "
-    + "database created using Oracle Database Operator")
 @IntegrationTest
 @Tag("oke-sequential")
 @Tag("kind-sequential")

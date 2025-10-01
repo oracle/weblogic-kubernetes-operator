@@ -77,7 +77,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * changes using CommitUpdateAndRoll.
  */
 
-@DisplayName("Test dynamic updates to a model in image domain, part3")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("oke-sequential")

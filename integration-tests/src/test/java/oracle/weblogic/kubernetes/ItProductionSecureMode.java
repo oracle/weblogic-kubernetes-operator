@@ -103,7 +103,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (d) add a SSL Configuration to the server template
  */
 
-@DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

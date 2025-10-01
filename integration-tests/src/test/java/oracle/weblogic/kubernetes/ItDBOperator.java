@@ -107,8 +107,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * database created using Oracle Database Operator.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create FMW model in image domain and WebLogic domain using Oracle "
-    + "database created using Oracle Database Operator")
 @IntegrationTest
 @Tag("oke-weekly-sequential")
 @Tag("kind-parallel")

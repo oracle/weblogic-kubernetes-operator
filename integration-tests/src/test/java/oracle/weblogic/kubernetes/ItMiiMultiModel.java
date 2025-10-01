@@ -68,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *        and the domain resource's ConfigMap. </li>
  * </ul>
  */
-@DisplayName("Test to create model-in-image domain with multiple WDT models")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

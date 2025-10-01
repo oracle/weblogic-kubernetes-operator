@@ -71,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Also verify that an annotation containing a slash in the name propagates
  * to the server pod
  */
-@DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

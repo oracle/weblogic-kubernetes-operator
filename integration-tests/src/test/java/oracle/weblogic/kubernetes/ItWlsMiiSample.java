@@ -66,7 +66,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test and verify model in image WLS domain sample.
  * Test creates the auxiliary image and use the base image and auxiliary image to start the domain.
  */
-@DisplayName("test model in image WLS domain sample")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")

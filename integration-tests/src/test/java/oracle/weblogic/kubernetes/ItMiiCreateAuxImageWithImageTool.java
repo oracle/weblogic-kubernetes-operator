@@ -71,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("toolkits-srg")

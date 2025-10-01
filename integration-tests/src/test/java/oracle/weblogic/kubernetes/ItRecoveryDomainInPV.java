@@ -78,7 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The test verifies the persistent WebLogic data survives server pod restarts in Domain on PV model.
  */
-@DisplayName("Verify istio enabled WebLogic domain in domainhome-on-pv model")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

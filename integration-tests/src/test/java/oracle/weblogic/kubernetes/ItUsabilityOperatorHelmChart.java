@@ -118,7 +118,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Use Helm chart to install operator(s)
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test operator usability using Helm chart installation")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")

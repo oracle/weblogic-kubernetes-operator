@@ -107,7 +107,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test with webservices and SSO with two domains.
  */
-@DisplayName("Verify that client can communicate with webservices with SSO")
 @IntegrationTest
 @Tag("oke-sequential")
 @Tag("kind-parallel")
