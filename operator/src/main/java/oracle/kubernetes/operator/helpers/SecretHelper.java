@@ -99,6 +99,8 @@ public class SecretHelper {
           LOGGER.warning(loggingFilter, SECRET_NOT_FOUND, secretName, namespace, WEBLOGIC_CREDENTIALS);
           return doNext(packet);
         }
+        LOGGER.fine("DEBUG: Secret response failure http code=" + callResponse.getHttpStatusCode()
+            + " secretName=" + secretName + " namespace=" + namespace);
         return super.onFailure(packet, callResponse);
       }
 
