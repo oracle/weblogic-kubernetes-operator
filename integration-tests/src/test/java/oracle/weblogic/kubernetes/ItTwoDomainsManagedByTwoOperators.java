@@ -104,7 +104,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test operator manages multiple domains.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

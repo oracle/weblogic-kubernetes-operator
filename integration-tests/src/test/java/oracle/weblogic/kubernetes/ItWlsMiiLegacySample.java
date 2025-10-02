@@ -18,7 +18,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -65,7 +64,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test and verify model in image WLS domain sample in legacy mode.
  * Test creates the model-in-image domain image and use that image to start the domain.
  */
-@DisplayName("test model in image WLS domain sample in legacy mode")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")

@@ -42,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Verify dataHome override with different dataHome setting in the domain spec.
  */
-@DisplayName("Verify dataHome override with different dataHome setting in the domain spec")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")

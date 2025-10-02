@@ -76,7 +76,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Test to creat a FMW dynamic domain in persistent volume using WLST.
  */
-@DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
 @Tag("oke-weekly-sequential")
 @Tag("kind-sequential")

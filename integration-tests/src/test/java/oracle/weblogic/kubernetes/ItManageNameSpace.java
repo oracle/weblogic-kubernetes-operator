@@ -78,7 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Dedicated usecase is covered by other test class.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test operator namespace management usability using Helm chart")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

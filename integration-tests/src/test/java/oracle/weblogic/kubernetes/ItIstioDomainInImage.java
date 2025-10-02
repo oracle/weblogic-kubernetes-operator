@@ -73,7 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Verify istio enabled WebLogic domain in domainhome-in-image model")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-arm")

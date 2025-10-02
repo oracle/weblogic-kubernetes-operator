@@ -172,7 +172,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests related to introspectVersion attribute.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

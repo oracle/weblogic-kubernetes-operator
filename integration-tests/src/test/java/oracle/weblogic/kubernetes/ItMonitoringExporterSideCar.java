@@ -92,8 +92,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via Traefik ingress controller.
  * Verify WebLogic metrics can be accessed via Prometheus
  */
-@DisplayName("Verify WebLogic Metric is processed as expected by "
-    + "MonitoringExporter Side Car via Prometheus and Grafana")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("oke-weekly-sequential")

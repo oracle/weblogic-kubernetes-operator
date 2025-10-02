@@ -80,7 +80,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * for the duration of a HTTP session using Traefik ingress controllers
  * as well as cluster service.
  */
-@DisplayName("Test sticky sessions management with Traefik and ClusterService")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

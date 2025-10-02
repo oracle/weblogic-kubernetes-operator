@@ -95,7 +95,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test class to test the t3 channel accessibility and using it for deployment.
  */
-@DisplayName("Test T3 channel deployment")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("oke-weekly-sequential")

@@ -68,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create two WebLogic domains in domainhome-in-image model with istio configuration")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")

@@ -132,7 +132,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create model in image domain and start the domain")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

@@ -39,8 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Verify sample-war web application be accessed via OCI LoadBalancer.
  * Verify Load Balancing between two managed servers in the cluster
  */
-@DisplayName("Verify the sample-app app can be accessed from "
-    + "all managed servers in the domain through OCI Load Balancer")
 @IntegrationTest
 @Tag("oke-arm")
 @Tag("oke-gate")

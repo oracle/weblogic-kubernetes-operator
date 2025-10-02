@@ -54,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-arm")

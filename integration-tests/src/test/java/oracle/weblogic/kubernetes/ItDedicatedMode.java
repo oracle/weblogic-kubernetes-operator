@@ -66,7 +66,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * For more detail regarding the feature, please refer to
  * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#weblogic-domain-management
  */
-@DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
 @Tag("kind-sequential")
 @Tag("oke-weekly-sequential")
 @Tag("okd-wls-mrg")

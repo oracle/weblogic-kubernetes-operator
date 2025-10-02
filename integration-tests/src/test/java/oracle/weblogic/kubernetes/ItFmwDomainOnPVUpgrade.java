@@ -117,7 +117,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test to create a FMW domain in persistent volume and upgrade it to 14.1.2.0.
  */
-@DisplayName("Test to create a FMW domain in persistent volume and upgrade to 14.1.2.0")
 @IntegrationTest
 @Tag("kind-sequential")
 @Tag("oke-sequential")

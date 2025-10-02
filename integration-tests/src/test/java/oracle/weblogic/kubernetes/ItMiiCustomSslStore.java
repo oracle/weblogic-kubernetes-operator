@@ -69,7 +69,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test verifies usage of CustomIdentityCustomTrust on PV")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @IntegrationTest

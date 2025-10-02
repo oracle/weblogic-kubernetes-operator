@@ -59,7 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to verify that life cycle operation for standalone servers and domain.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

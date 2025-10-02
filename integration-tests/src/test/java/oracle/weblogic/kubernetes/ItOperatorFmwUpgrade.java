@@ -90,7 +90,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Upgrade operator with current Operator image build from current branch.
  * Verify Domain resource version and image are updated.
  */
-@DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
 @Tag("kind-upgrade")
 class ItOperatorFmwUpgrade {

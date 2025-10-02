@@ -105,7 +105,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests related to Domain status conditions logged by operator.
  * The tests checks for the Failed conditions for multiple usecases.
  */
-@DisplayName("Verify the domain status failed conditions for domain lifecycle")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

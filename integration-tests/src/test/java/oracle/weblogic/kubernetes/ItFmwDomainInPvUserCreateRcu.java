@@ -92,7 +92,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test to create a FMW domain on PV with DomainOnPvSimplification feature when user pre-creates RCU.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test for initializeDomainOnPV when user per-creates RCU")
 @IntegrationTest
 @Tag("kind-sequential")
 @Tag("oke-weekly-sequential")

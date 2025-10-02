@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Verify WebApp can be accessed via NGINX ingress controller if db is installed.
  */
-@DisplayName("Verify WebApp can be accessed via NGINX ingress controller if db is installed")
 @Tag("oke-gate")
 @Tag("kind-parallel")
 @IntegrationTest

@@ -1,7 +1,7 @@
 // Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.kubernetes;
+package oracle.weblogic.kubernetes; 
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +18,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -69,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test and verify Domain on PV FMW domain sample.
  */
-@DisplayName("test domain on pv sample for FMW domain")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")

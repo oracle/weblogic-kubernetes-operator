@@ -96,7 +96,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verify creating a domain from model and application archive files stored in the persistent
  * volume.
  */
-@DisplayName("Verify MII domain can be created from model file in PV location and custom wdtModelHome")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

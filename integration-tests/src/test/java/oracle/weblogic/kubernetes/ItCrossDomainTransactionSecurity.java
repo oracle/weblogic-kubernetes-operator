@@ -62,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to do cross domain transaction in SSL with custom store")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")

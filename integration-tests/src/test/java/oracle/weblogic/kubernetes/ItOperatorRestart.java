@@ -54,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to restart the operator when the server pods roll after changing the WebLogic credentials secret of a
 // domain custom resource that uses model-in-image.
-@DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

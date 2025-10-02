@@ -75,7 +75,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test the monitoring WebLogic Domain via istio provided Prometheus")
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
