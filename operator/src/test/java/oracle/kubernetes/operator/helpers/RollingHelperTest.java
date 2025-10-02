@@ -42,7 +42,6 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
@@ -230,19 +229,6 @@ class RollingHelperTest {
         containsInfo(MANAGED_POD_REPLACED).withParams(SERVER2_NAME),
         containsInfo(MANAGED_POD_REPLACED).withParams(SERVER10_NAME)
     ));
-  }
-
-  @Test
-  @Disabled("Temporarily disable to test if this is affecting later tests")
-  void whenClusterSizeSet_onlyOnePodImmediatelyReplaced() {
-    consoleHandlerMemento.trackMessage(MANAGED_POD_REPLACED);
-    initializeExistingPods();
-    CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
-    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
-
-    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
-
-    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME));
   }
 
   @Test

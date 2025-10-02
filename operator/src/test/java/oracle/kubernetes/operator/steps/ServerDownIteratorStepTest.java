@@ -40,7 +40,6 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -264,57 +263,6 @@ class ServerDownIteratorStepTest {
 
     assertThat(serverPodsDeleted(), hasSize(2));
     testSupport.setTime(5, TimeUnit.SECONDS);
-  }
-
-  @Test
-  @Disabled("Contents of data repository doesn't match expectations of test")
-  void withMultipleClusters_concurrencySettingIsIgnoredForShuttingDownClusterAndHonoredForShrinkingCluster() {
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4, MS5, MS6);
-    configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
-    configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
-    addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3);
-    addWlsCluster(CLUSTER2, PORT, MS4, MS5, MS6);
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
-
-    createShutdownInfos()
-            .forClusteredServers(CLUSTER, MS1, MS2, MS3)
-            .forClusteredServers(CLUSTER2, MS4, MS5, MS6)
-            .shutdown();
-
-    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2, MS3, MS6));
-  }
-
-  @Test
-  @Disabled("Contents of data repository doesn't match expectations of test")
-  void withMultipleClusters_differentClusterScheduleAndShutdownDifferently() {
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4);
-    configureCluster(CLUSTER).withMaxConcurrentShutdown(0).withReplicas(1);
-    configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
-    addWlsCluster(CLUSTER, PORT, MS1, MS2);
-    addWlsCluster(CLUSTER2, PORT, MS3, MS4);
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
-
-    createShutdownInfos()
-            .forClusteredServers(CLUSTER,MS1, MS2)
-            .forClusteredServers(CLUSTER2, MS3, MS4)
-            .shutdown();
-
-    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2, MS4));
-  }
-
-  @Test
-  @Disabled("Contents of data repository doesn't match expectations of test")
-  void maxClusterConcurrentShutdown_doesNotApplyToNonClusteredServers() {
-    domain.getSpec().setMaxClusterConcurrentShutdown(1);
-    addWlsServers(MS3, MS4);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS3,MS4);
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
-
-    createShutdownInfos()
-            .forServers(MS3, MS4)
-            .shutdown();
-
-    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS3, MS4));
   }
 
   private List<String> serverPodsBeingDeleted() {

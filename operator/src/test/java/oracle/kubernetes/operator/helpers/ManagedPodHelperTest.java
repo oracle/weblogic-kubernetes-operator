@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -38,7 +38,6 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
@@ -1059,37 +1058,6 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
     containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
-  }
-
-  @Test
-  @Disabled("Test requires webhook v8 domain to Cluster resource conversion")
-  void whenDomainAndClusterHaveLegacyAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
-    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
-    Map<String, Object> auxiliaryImage2 =
-        createAuxiliaryImage("wdt-image:v2", "IfNotPresent");
-
-    convertDomainWithLegacyAuxImages(
-            createLegacyDomainMap(
-                    createSpecWithClusters(
-                            Collections.singletonList(auxiliaryImageVolume), Collections.singletonList(auxiliaryImage),
-                            createClusterSpecWithAuxImages(Collections.singletonList(auxiliaryImage2), CLUSTER_NAME))));
-    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
-
-    assertThat(getCreatedPodSpecInitContainers(),
-        allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", "IfNotPresent",
-                AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME),
-            Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                "wdt-image:v2", "IfNotPresent",
-                AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME)));
-    assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
-                    new V1EmptyDirVolumeSource())));
-    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
-                    .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
   @Test
