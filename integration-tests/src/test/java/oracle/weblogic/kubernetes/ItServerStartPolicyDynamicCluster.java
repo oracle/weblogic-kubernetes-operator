@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to verify that life cycle operation of dynamic cluster does not impact the state of config cluster.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("ServerStartPolicy attribute in different levels in a MII domain dynamic cluster")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

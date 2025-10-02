@@ -128,7 +128,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to Situational Configuration overrides for system resources.
  */
-@DisplayName("Verify the JMS and WLDF system resources are overridden with values from override files")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")

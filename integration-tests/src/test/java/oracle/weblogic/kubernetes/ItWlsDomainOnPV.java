@@ -61,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Test to create a WLS domain in persistent volume with new simplified feature.
  */
-@DisplayName("Test to create a WLS domain in persistent volume with new simplified feature")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")

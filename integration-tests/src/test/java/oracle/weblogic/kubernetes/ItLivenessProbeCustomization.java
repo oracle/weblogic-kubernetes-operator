@@ -80,7 +80,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * avilable on the pod else it returns failure(1).
  * Note: Livenessprobe is triggered only when the script returns success
  */
-@DisplayName("Verify liveness probe customization")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

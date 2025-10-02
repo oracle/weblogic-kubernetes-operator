@@ -99,7 +99,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * running KUBERNETES_CLI + " apply" the domain resource file.
  */
 
-@DisplayName("Test to validate on-prem to k8s use case")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")

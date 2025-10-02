@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies the dynamic update use cases using data source.
  */
 
-@DisplayName("Test dynamic updates to a model in image domain, part2")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

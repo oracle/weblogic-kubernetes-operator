@@ -67,7 +67,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 6) Configured cluster defined but no managed server associated with it in the Server section.
  * 7) Empty topology (no AdminServerName, Server and Cluster section)
  */
-@DisplayName("Test creating MII domain with different AdminServerName and Server settings in WDT model file")
 @IntegrationTest
 @Tag("kind-parallel")
 class ItWDTModelNoServer {

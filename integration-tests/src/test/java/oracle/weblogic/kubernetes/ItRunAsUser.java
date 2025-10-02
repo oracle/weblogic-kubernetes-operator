@@ -109,7 +109,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Using this custom WebLogic base image to create a mii domain with new user, wlsadm:root
  * Set runAsUser > 10000(12345) and verify mii domain is up and running
  */
-@DisplayName("Verify using custom WebLogic base image with added user, wlsadm: root, wko supports runAsUser > 10000")
 @IntegrationTest
 @Tag("kind-sequential")
 class ItRunAsUser {

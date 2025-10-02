@@ -92,8 +92,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@DisplayName("Verify /tmp is mounted as tmpfs across containers in PV domains and "
-    + "readOnlyRootFilesystem flag enabled in its security context in each container")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")

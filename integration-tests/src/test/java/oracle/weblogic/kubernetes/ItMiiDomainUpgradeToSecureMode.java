@@ -106,7 +106,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify deployed customer applications are accessible in appropriate channels and ports.
  * Verify the mode remains the same before and after the upgrade.
  */
-@DisplayName("Test upgrade to 1412 image for a mii domain")
 @IntegrationTest
 @Tag("kind-parallel")
 class ItMiiDomainUpgradeToSecureMode {

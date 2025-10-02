@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Test to creat a FMW domain in persistent volume using WDT.
  */
-@DisplayName("Test to creat a FMW domain in persistent volume using WDT")
 @IntegrationTest
 @Tag("oke-weekly-sequential")
 @Tag("kind-sequential")

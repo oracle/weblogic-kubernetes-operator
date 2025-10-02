@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.List;
+import java.util.List; 
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
@@ -20,7 +20,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * This test is not run on OKE as the CPU utilization is not
  * going up intermittently after increasing the load.
  */
-@DisplayName("Test to a create MII domain and test autoscaling using HPA")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("gate")

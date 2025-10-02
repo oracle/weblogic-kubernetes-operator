@@ -77,7 +77,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test is to verify shutdown rules when shutdown properties are defined at different levels
  * (domain, cluster, adminServer and managedServer level).
  */
-@DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

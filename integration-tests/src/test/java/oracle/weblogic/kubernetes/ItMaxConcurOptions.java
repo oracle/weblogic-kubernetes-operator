@@ -87,7 +87,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 6. cluster.spec.maxConcurrentStartup.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create model in image domain with Cluster Resourcees")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-sequential")

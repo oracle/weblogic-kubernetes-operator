@@ -100,7 +100,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests to create domain in persistent volume using WLST.
  */
-@DisplayName("Verify istio enabled WebLogic domain in domainhome-on-pv model")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")

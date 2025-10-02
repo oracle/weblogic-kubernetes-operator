@@ -61,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create a WebLogic domain with Coherence, build the Coherence proxy client program
 // which load and verify the cache.
-@DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")

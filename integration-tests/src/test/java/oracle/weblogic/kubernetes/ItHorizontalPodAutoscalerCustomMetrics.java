@@ -40,7 +40,6 @@ import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
@@ -109,8 +108,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to a create MII domain and test autoscaling using HPA and"
-    + "custom metrics provided via use of monitoring exporter and prometheus and prometheus adapter")
 @IntegrationTest
 @Tag("oke-weekly-sequential")
 @Tag("kind-parallel")

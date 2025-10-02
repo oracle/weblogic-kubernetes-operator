@@ -85,7 +85,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Add resources: limits: cpu: "1", resources: requests: cpu: "0.5".
  *
  */
-@DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")

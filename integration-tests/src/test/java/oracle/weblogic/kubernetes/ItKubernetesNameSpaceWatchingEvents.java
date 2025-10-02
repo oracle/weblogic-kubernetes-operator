@@ -17,7 +17,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,7 +48,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * The tests checks for the following events in the domain name space.
  * NamespaceWatchingStarted, and NamespaceWatchingStopped.
  */
-@DisplayName("Verify the Kubernetes events for watching namespace")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")

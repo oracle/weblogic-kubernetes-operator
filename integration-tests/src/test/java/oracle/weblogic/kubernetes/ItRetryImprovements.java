@@ -78,7 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The test class creates WebLogic domains with domain-in-image ( using WDT )
  * Verify that WKO Retry Improvements handles Severe Failures as designed.
  */
-@DisplayName("Verify that WKO Retry Improvements handles Severe Failures as designed.")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("toolkits-srg")

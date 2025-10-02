@@ -58,7 +58,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * This test is used for creating Operator(s) and domain which uses pod templates.
  */
-@DisplayName("Test to verify domain pod templates.")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
