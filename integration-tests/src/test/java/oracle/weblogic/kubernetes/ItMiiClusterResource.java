@@ -98,7 +98,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Start a domain with both domain and cluster defined in single yaml file
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create model in image domain with Cluster Resourcees")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
