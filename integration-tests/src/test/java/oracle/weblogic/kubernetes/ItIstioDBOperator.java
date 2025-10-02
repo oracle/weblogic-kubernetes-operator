@@ -1,7 +1,7 @@
 // Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.kubernetes;
+package oracle.weblogic.kubernetes; 
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
