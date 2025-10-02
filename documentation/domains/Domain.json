@@ -604,8 +604,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
-          "description": "The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
+          "description": "The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -666,8 +666,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
-          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
+          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
           "type": "string"
         },
         "imagePullPolicy": {
