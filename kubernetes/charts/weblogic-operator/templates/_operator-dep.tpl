@@ -63,6 +63,23 @@ spec:
         image: {{ .image | quote }}
         imagePullPolicy: "IfNotPresent"
         command: ["/bin/sh", "-c", "cp /deployment/* /deployment_copy && cp /probes/* /probes_copy"]
+        resources:
+          requests:
+            cpu: {{ .cpuRequests | default "100m" }}
+            memory: {{ .memoryRequests | default "10Mi" }}
+          limits:
+            cpu: {{ .cpuLimits | default "100m" }}
+            memory: {{ .memoryLimits | default "10Mi" }}
+        securityContext:
+          {{- if or (hasKey . "runAsUser") (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+          runAsUser: {{ .runAsUser | default 1000 }}
+          {{- end }}
+          runAsNonRoot: true
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         volumeMounts:
         - name: "deployment-volume"
           mountPath: "/deployment_copy"
