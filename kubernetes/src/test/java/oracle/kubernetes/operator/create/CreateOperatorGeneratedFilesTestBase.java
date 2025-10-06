@@ -238,6 +238,20 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newVolumeMount().name("deployment-volume").mountPath("/deployment_copy"))
                                         .addVolumeMountsItem(
                                             newVolumeMount().name("probes-volume").mountPath("/probes_copy"))
+                                        .resources(
+                                            new V1ResourceRequirements()
+                                                .putRequestsItem("cpu", Quantity.fromString("100m"))
+                                                .putRequestsItem(
+                                                    "memory", Quantity.fromString("10Mi"))
+                                                .putLimitsItem("cpu", Quantity.fromString("100m"))
+                                                .putLimitsItem(
+                                                    "memory", Quantity.fromString("10Mi")))
+                                        .securityContext(
+                                            new V1SecurityContext().runAsUser(1000L)
+                                                .runAsNonRoot(true)
+                                                .readOnlyRootFilesystem(true)
+                                                .privileged(false).allowPrivilegeEscalation(false)
+                                                .capabilities(new V1Capabilities().addDropItem("ALL")))
                                 )
                                 .addContainersItem(
                                     newContainer()
