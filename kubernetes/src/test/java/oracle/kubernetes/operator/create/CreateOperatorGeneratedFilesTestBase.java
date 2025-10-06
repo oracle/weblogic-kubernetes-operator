@@ -333,6 +333,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .mountPath("/deployment"))
                                         .addVolumeMountsItem(
                                             newVolumeMount()
+                                                .name("tmp-volume")
+                                                .mountPath("/tmp"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
                                                 .name("probes-volume")
                                                 .mountPath("/probes")))
                                 .addVolumesItem(
@@ -357,6 +361,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                 .addVolumesItem(
                                     newVolume()
                                         .name("deployment-volume")
+                                        .emptyDir(new V1EmptyDirVolumeSource()))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("tmp-volume")
                                         .emptyDir(new V1EmptyDirVolumeSource()))
                                 .addVolumesItem(
                                     newVolume()

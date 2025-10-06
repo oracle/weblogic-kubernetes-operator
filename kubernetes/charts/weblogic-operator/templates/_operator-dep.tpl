@@ -177,6 +177,8 @@ spec:
           readOnly: true
         - name: "deployment-volume"
           mountPath: "/deployment"
+        - name: "tmp-volume"
+          mountPath: "/tmp"
         {{- if not .elkIntegrationEnabled }}
         - name: "log-volume"
           mountPath: "/logs"
@@ -244,6 +246,8 @@ spec:
         secret:
           secretName: "weblogic-operator-secrets"
       - name: "deployment-volume"
+        emptyDir: {}
+      - name: "tmp-volume"
         emptyDir: {}
       {{- if not .elkIntegrationEnabled }}
       - name: "log-volume"
@@ -446,6 +450,8 @@ spec:
               readOnly: true
             - name: "deployment-volume"
               mountPath: "/deployment"
+            - name: "tmp-volume"
+              mountPath: "/tmp"
             {{- if not .elkIntegrationEnabled }}
             - name: "log-volume"
               mountPath: "/logs"
@@ -508,6 +514,8 @@ spec:
             secret:
               secretName: "weblogic-webhook-secrets"
           - name: "deployment-volume"
+            emptyDir: {}
+          - name: "tmp-volume"
             emptyDir: {}
           {{- if not .elkIntegrationEnabled }}
           - name: "log-volume"
