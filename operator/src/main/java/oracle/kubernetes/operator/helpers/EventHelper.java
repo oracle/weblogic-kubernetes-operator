@@ -90,6 +90,8 @@ import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT
 import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.calls.ResponseStep.isForbidden;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -217,6 +219,11 @@ public class EventHelper {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
+      // Short circuit domain incomplete unavailable events
+      if (existingEvent.getCount() > 5 && (DOMAIN_INCOMPLETE == eventData.eventItem
+              || DOMAIN_UNAVAILABLE == eventData.eventItem)) {
+        return getNext();
+      }
       return RequestBuilder.EVENT.update(existingEvent,
           new ReplaceEventResponseStep(this, existingEvent, getNext()));
     }

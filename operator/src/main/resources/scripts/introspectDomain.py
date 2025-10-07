@@ -194,6 +194,10 @@ class OfflineWlstEnv(object):
     readDomain(self.getDomainHome())
     self.domain = cmo
     self.DOMAIN_NAME = self.getDomain().getName()
+    self.RESTAPI_ENABLED = "true"
+    mgmtsvc = self.getDomain().getRestfulManagementServices()
+    if mgmtsvc != None and not mgmtsvc.isEnabled():
+      self.RESTAPI_ENABLED = "false"
 
     # this should only be done for model in image case
     if self.DOMAIN_SOURCE_TYPE == "FromModel" or self.INIT_DOMAIN_ON_PV is not None:
@@ -816,6 +820,7 @@ class TopologyGenerator(Generator):
     self.indent()
     self.writeln("name: " + self.name(self.env.getDomain()))
     self.writeln("adminServerName: " + self.quote(self.env.getDomain().getAdminServerName()))
+    self.writeln('restfulAPIEnabled: ' + self.env.RESTAPI_ENABLED)
     self.addConfiguredClusters()
     self.addServerTemplates()
     self.addNonClusteredServers()

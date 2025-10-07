@@ -19,6 +19,7 @@ public class WlsDomainConfigSupport {
   public static final Integer DEFAULT_LISTEN_PORT = 7001;
   private final String domain;
   private String adminServerName;
+  private String restfulAPIEnabled;
   private final Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
   private final Map<String, WlsServerConfig> wlsServers = new HashMap<>();
   private final Map<String, WlsServerConfig> templates = new HashMap<>();
@@ -53,6 +54,11 @@ public class WlsDomainConfigSupport {
 
   public WlsDomainConfigSupport withAdminServerName(String adminServerName) {
     setAdminServerName(adminServerName);
+    return this;
+  }
+
+  public WlsDomainConfigSupport withRestfulAPIEnabled(String restfulAPIEnabled) {
+    setAdminServerName(restfulAPIEnabled);
     return this;
   }
 
@@ -209,7 +215,7 @@ public class WlsDomainConfigSupport {
       }
     }
     return new WlsDomainConfig(
-        domain, adminServerName, wlsClusters, wlsServers, templates);
+        domain, adminServerName, restfulAPIEnabled, wlsClusters, wlsServers, templates);
   }
 
   static class ServerConfigBuilder {
