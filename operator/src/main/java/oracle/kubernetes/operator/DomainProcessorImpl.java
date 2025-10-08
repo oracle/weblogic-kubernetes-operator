@@ -18,7 +18,6 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.EventsV1Event;
-import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -342,7 +341,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static String getReadinessStatus(EventsV1Event event) {
-    return Optional.ofNullable(event.getReason())
+    return Optional.ofNullable(event.getNote())
           .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
           .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
           .orElse(null);

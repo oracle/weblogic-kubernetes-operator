@@ -59,7 +59,8 @@ public class PortInuseEventWatcher extends Thread {
             List<EventsV1Event> listNamespacedEvents = Kubernetes.listNamespacedEvents(n);
             for (EventsV1Event event : listNamespacedEvents) {
               if (event != null) {
-                OffsetDateTime eventTime = Optional.ofNullable(event.getSeries()).map(EventsV1EventSeries::getLastObservedTime).orElse(event.getEventTime());
+                OffsetDateTime eventTime = Optional.ofNullable(event.getSeries())
+                    .map(EventsV1EventSeries::getLastObservedTime).orElse(event.getEventTime());
                 if ((eventTime.isEqual(timestamp)
                     || eventTime.isAfter(timestamp))
                     && event.getNote() != null

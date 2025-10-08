@@ -316,11 +316,12 @@ class OperatorEventProcessingTest {
 
   private int getMatchingEventCount(EventsV1Event event) {
     return Optional.ofNullable(getMatchingEvent(event)).map(EventsV1Event::getSeries)
-        .map(EventsV1EventSeries::getCount).orElse(0);
+        .map(EventsV1EventSeries::getCount).orElse(1);
   }
 
   private EventsV1Event getMatchingEvent(EventsV1Event event) {
-    EventsV1Event found = Optional.ofNullable(getEventK8SObjects(event)).map(k -> k.getExistingEvent(event)).orElse(null);
+    EventsV1Event found = Optional.ofNullable(getEventK8SObjects(event))
+        .map(k -> k.getExistingEvent(event)).orElse(null);
     return getEventName(found).equals(getEventName(event)) ? found : null;
   }
 

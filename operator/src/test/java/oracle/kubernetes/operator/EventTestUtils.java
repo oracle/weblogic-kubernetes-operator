@@ -42,7 +42,8 @@ public class EventTestUtils {
    * @param namespace namespace to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithNamespace(@NotNull List<EventsV1Event> events, String reason, String namespace) {
+  public static boolean containsEventWithNamespace(
+      @NotNull List<EventsV1Event> events, String reason, String namespace) {
     return getEventsWithReason(events, reason).stream().anyMatch(e -> namespaceMatches(e, namespace));
   }
 
@@ -262,7 +263,7 @@ public class EventTestUtils {
   }
 
   private static int getCount(@NotNull EventsV1Event event) {
-    return Optional.of(event).map(EventsV1Event::getSeries).map(EventsV1EventSeries::getCount).orElse(0);
+    return Optional.of(event).map(EventsV1Event::getSeries).map(EventsV1EventSeries::getCount).orElse(1);
   }
 
   private static String getInvolvedObjectK8SUID(EventsV1Event event) {
