@@ -23,7 +23,7 @@ rules:
   resources: ["configmaps", "secrets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: [""]
-  resources: ["pods", "events"]
+  resources: ["pods"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
   resources: ["pods/log"]
@@ -31,4 +31,7 @@ rules:
 - apiGroups: [""]
   resources: ["pods/exec"]
   verbs: ["get", "create"]
+- apiGroups: ["events.k8s.io"]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
 {{- end }}

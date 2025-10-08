@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -472,15 +472,15 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
-    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    List<EventsV1Event> events = getEventsWithReason(getEvents(), event.getReason());
     return Optional.ofNullable(events)
         .filter(list -> !list.isEmpty())
         .map(n -> n.get(0))
-        .map(CoreV1Event::getMessage)
+        .map(EventsV1Event::getNote)
         .orElse("Event not found");
   }
 
-  private List<CoreV1Event> getEvents() {
+  private List<EventsV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 

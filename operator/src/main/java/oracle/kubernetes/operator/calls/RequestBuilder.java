@@ -15,8 +15,8 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
@@ -119,8 +119,8 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
       new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class, "", "v1", "configmaps", "configmap");
   public static final RequestBuilder<V1Secret, V1SecretList> SECRET =
       new RequestBuilder<>(V1Secret.class, V1SecretList.class, "", "v1", "secrets", "secret");
-  public static final RequestBuilder<CoreV1Event, CoreV1EventList> EVENT =
-      new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class, "", "v1", "events", "event");
+  public static final RequestBuilder<EventsV1Event, EventsV1EventList> EVENT =
+      new RequestBuilder<>(EventsV1Event.class, EventsV1EventList.class, "events.k8s.io", "v1", "events", "event");
   public static final RequestBuilder<V1PersistentVolume, V1PersistentVolumeList> PV =
       new RequestBuilder<>(V1PersistentVolume.class, V1PersistentVolumeList.class,
           "", "v1", "persistentvolumes", "persistentvolume");

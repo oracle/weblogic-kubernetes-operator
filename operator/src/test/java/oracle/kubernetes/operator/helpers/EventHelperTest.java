@@ -15,7 +15,7 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -663,14 +663,14 @@ class EventHelperTest {
         getCachedNSEvents(NS,NAMESPACE_WATCHING_STARTED_EVENT), equalTo(null));
   }
 
-  public CoreV1Event getCachedNSEvents(String namespace, String reason) {
+  public EventsV1Event getCachedNSEvents(String namespace, String reason) {
     return nsEventObjects.get(namespace).getExistingEvent(createReferenceEvent(namespace, reason));
   }
 
-  private CoreV1Event createReferenceEvent(String namespace, String reason) {
+  private EventsV1Event createReferenceEvent(String namespace, String reason) {
     String msg = "Started watching namespace " + namespace + ".";
-    return new CoreV1Event().reason(reason).message(msg)
-        .involvedObject(new V1ObjectReference().kind("Namespace").name(namespace).namespace(namespace));
+    return new EventsV1Event().reason(reason).note(msg)
+        .regarding(new V1ObjectReference().kind("Namespace").name(namespace).namespace(namespace));
   }
 
   @Test
@@ -699,7 +699,7 @@ class EventHelperTest {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_NOT_FOUND);
 
     testSupport.runSteps(createEventStep(
@@ -723,7 +723,7 @@ class EventHelperTest {
   void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
     testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     dispatchAddedEventWatches();
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
 
@@ -738,7 +738,7 @@ class EventHelperTest {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     dispatchAddedEventWatches();
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
 
@@ -837,7 +837,7 @@ class EventHelperTest {
     testSupport.runSteps(step);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), OP_NS, HTTP_NOT_FOUND);
 
     testSupport.runSteps(step);
@@ -853,7 +853,7 @@ class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
 
     testSupport.runSteps(eventStep);
@@ -870,7 +870,7 @@ class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_CONFLICT);
 
     testSupport.runSteps(eventStep);
@@ -991,7 +991,7 @@ class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_CONFLICT);
 
     testSupport.runSteps(eventStep);
@@ -1002,48 +1002,48 @@ class EventHelperTest {
   }
 
   private void dispatchAddedEventWatches() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
       dispatchAddedEventWatch(event);
     }
   }
 
   private void dispatchAddedEventWatchesWithoutInvolvedObject() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
-      event.setInvolvedObject(null);
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
+      event.regarding(null);
       dispatchAddedEventWatch(event);
     }
   }
 
   private void dispatchAddedEventWatchesWithoutInvolvedObjectName() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
-      Optional.ofNullable(event.getInvolvedObject()).ifPresent(r -> r.setName(null));
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
+      Optional.ofNullable(event.getRegarding()).ifPresent(r -> r.setName(null));
       dispatchAddedEventWatch(event);
     }
   }
 
   private void dispatchAddedEventWatchesWithoutInvolvedObjectKind() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
-      Optional.ofNullable(event.getInvolvedObject()).ifPresent(r -> r.setKind(null));
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
+      Optional.ofNullable(event.getRegarding()).ifPresent(r -> r.setKind(null));
       dispatchAddedEventWatch(event);
     }
   }
 
-  private void dispatchAddedEventWatch(CoreV1Event event) {
+  private void dispatchAddedEventWatch(EventsV1Event event) {
     processor.dispatchEventWatch(WatchEvent.createAddedEvent(event).toWatchResponse());
   }
 
   private void dispatchDeletedEventWatches() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
       dispatchDeletedEventWatch(event);
     }
   }
 
-  private void dispatchDeletedEventWatch(CoreV1Event event) {
+  private void dispatchDeletedEventWatch(EventsV1Event event) {
     processor.dispatchEventWatch(WatchEvent.createDeletedEvent(event).toWatchResponse());
   }
 }

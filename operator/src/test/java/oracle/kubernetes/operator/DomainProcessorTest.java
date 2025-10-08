@@ -29,7 +29,8 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -1136,7 +1137,7 @@ class DomainProcessorTest {
 
   private List<Object> getEventsForSeason(String reason) {
     return testSupport.getResources(EVENT).stream()
-        .filter(e -> ((CoreV1Event)e).getReason().equals(reason)).collect(Collectors.toList());
+        .filter(e -> ((EventsV1Event)e).getReason().equals(reason)).collect(Collectors.toList());
   }
 
   @Test
@@ -2830,7 +2831,7 @@ class DomainProcessorTest {
     newDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
   }
 
-  private List<CoreV1Event> getEvents() {
+  private List<EventsV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 

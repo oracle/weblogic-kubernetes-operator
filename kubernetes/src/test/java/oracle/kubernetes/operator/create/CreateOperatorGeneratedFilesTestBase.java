@@ -655,8 +655,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                     asList(
                         "services",
                         "configmaps",
-                        "pods",
-                        "events"))
+                        "pods"))
                 .verbs(
                     asList(
                         "get",
@@ -687,6 +686,21 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .addApiGroupsItem("")
                 .resources(singletonList("pods/exec"))
                 .verbs(asList("get", "create")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("")
+                .resources(
+                    singletonList("events"))
+                .verbs(
+                    asList(
+                        "get",
+                        "list",
+                        "watch",
+                        "create",
+                        "update",
+                        "patch",
+                        "delete",
+                        "deletecollection")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("batch")
@@ -778,7 +792,21 @@ abstract class CreateOperatorGeneratedFilesTestBase {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(asList("events", "secrets", "configmaps"))
+                .resources(asList("secrets", "configmaps"))
+                .verbs(
+                    asList(
+                        "get",
+                        "list",
+                        "watch",
+                        "create",
+                        "update",
+                        "patch",
+                        "delete",
+                        "deletecollection")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("")
+                .resources(singletonList("events"))
                 .verbs(
                     asList(
                         "get",

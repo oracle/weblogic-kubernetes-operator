@@ -32,56 +32,11 @@ import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.apis.EventsV1Api;
 import io.kubernetes.client.openapi.apis.NetworkingV1Api;
 import io.kubernetes.client.openapi.apis.PolicyV1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
-import io.kubernetes.client.openapi.models.V1ClusterRole;
-import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
-import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
-import io.kubernetes.client.openapi.models.V1ClusterRoleList;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
-import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1DeploymentList;
-import io.kubernetes.client.openapi.models.V1Ingress;
-import io.kubernetes.client.openapi.models.V1IngressList;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobList;
-import io.kubernetes.client.openapi.models.V1Namespace;
-import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
-import io.kubernetes.client.openapi.models.V1NamespaceList;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
-import io.kubernetes.client.openapi.models.V1ObjectReference;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
-import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1ReplicaSet;
-import io.kubernetes.client.openapi.models.V1ReplicaSetList;
-import io.kubernetes.client.openapi.models.V1Role;
-import io.kubernetes.client.openapi.models.V1RoleBinding;
-import io.kubernetes.client.openapi.models.V1RoleBindingList;
-import io.kubernetes.client.openapi.models.V1RoleList;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
-import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
-import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1ServicePort;
-import io.kubernetes.client.openapi.models.V1Status;
-import io.kubernetes.client.openapi.models.V1StorageClass;
-import io.kubernetes.client.openapi.models.V1StorageClassList;
-import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
-import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
+import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.Streams;
@@ -123,6 +78,7 @@ public class Kubernetes {
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
+  private static EventsV1Api eventsV1Api = null;
   private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
@@ -153,6 +109,7 @@ public class Kubernetes {
       apiClient.setConnectTimeout(0);
       apiClient.setReadTimeout(0);
       coreV1Api = new CoreV1Api();
+      eventsV1Api = new EventsV1Api();
       policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
@@ -1146,13 +1103,13 @@ public class Kubernetes {
    * List events in a namespace.
    *
    * @param namespace name of the namespace in which to list events
-   * @return List of {@link CoreV1Event} objects
+   * @return List of {@link EventsV1Event} objects
    * @throws ApiException when listing events fails
    */
-  public static List<CoreV1Event> listNamespacedEvents(String namespace) throws ApiException {
-    List<CoreV1Event> events = null;
+  public static List<EventsV1Event> listNamespacedEvents(String namespace) throws ApiException {
+    List<EventsV1Event> events = null;
     try {
-      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -1166,8 +1123,8 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
-      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+      events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
+      events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
     } catch (ApiException apex) {
@@ -1177,17 +1134,21 @@ public class Kubernetes {
     return events;
   }
 
+  private static OffsetDateTime getEventTime(EventsV1Event event) {
+    return Optional.ofNullable(event.getSeries()).map(EventsV1EventSeries::getLastObservedTime).orElse(event.getEventTime());
+  }
+
   /**
    * List operator generated events in a namespace.
    *
    * @param namespace name of the namespace in which to list events
-   * @return List of {@link CoreV1Event} objects
+   * @return List of {@link EventsV1Event} objects
    * @throws ApiException when listing events fails
    */
-  public static List<CoreV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
-    List<CoreV1Event> events = null;
+  public static List<EventsV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
+    List<EventsV1Event> events = null;
     try {
-      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -1201,8 +1162,8 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
-      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+      events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
+      events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
     } catch (ApiException apex) {

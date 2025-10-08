@@ -20,7 +20,7 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
@@ -672,7 +672,7 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(testSupport, not(hasEvent(DOMAIN_ROLL_COMPLETED_EVENT)));
   }
 
-  private List<CoreV1Event> getEvents() {
+  private List<EventsV1Event> getEvents() {
     return testSupport.getResources(EVENT);
   }
 
@@ -714,7 +714,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withMessageContaining(UID));
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withNoteContaining(UID));
   }
 
   @Test
@@ -738,7 +738,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withMessageContaining(UID));
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withNoteContaining(UID));
   }
 
   @Test
@@ -840,7 +840,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedString(SERVER_POD_EVENT_ERROR)));
+        .withNoteContaining(getLocalizedString(SERVER_POD_EVENT_ERROR)));
   }
 
   private void failPod(String serverName) {
@@ -1543,22 +1543,22 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private void setUniqueCreationTimestamp(Object event) {
-    ((CoreV1Event) event).getMetadata().creationTimestamp(SystemClock.now());
+    ((EventsV1Event) event).getMetadata().creationTimestamp(SystemClock.now());
     SystemClockTestSupport.increment();
   }
 
-  private int compareEventTimes(CoreV1Event event1, CoreV1Event event2) {
+  private int compareEventTimes(EventsV1Event event1, EventsV1Event event2) {
     return getCreationStamp(event1).compareTo(getCreationStamp(event2));
   }
 
-  private OffsetDateTime getCreationStamp(CoreV1Event event) {
+  private OffsetDateTime getCreationStamp(EventsV1Event event) {
     return Optional.ofNullable(event)
-        .map(CoreV1Event::getMetadata)
+        .map(EventsV1Event::getMetadata)
         .map(V1ObjectMeta::getCreationTimestamp)
         .orElse(OffsetDateTime.MIN);
   }
 
-  static class EventMatcher extends TypeSafeDiagnosingMatcher<CoreV1Event> {
+  static class EventMatcher extends TypeSafeDiagnosingMatcher<EventsV1Event> {
     private final String expectedReason;
 
     private EventMatcher(String expectedReason) {
@@ -1570,7 +1570,7 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Override
-    protected boolean matchesSafely(CoreV1Event coreV1Event, Description description) {
+    protected boolean matchesSafely(EventsV1Event coreV1Event, Description description) {
       if (expectedReason.equals(coreV1Event.getReason())) {
         return true;
       } else {

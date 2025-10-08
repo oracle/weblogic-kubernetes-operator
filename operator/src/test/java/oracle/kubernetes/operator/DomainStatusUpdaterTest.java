@@ -136,7 +136,7 @@ class DomainStatusUpdaterTest {
   void whenNeedToReplacePodAndNotRolling_generateRollingStartedEvent() {
     testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
 
-    assertThat(testSupport, hasEvent(DOMAIN_ROLL_STARTING_EVENT).inNamespace(NS).withMessageContaining(UID));
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_STARTING_EVENT).inNamespace(NS).withNoteContaining(UID));
   }
 
   @Test
@@ -175,7 +175,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
+        .withNoteContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -205,7 +205,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withNoteContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -231,7 +231,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withNoteContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -258,7 +258,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createIntrospectionFailureSteps(FATAL_INTROSPECTOR_ERROR, job));
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(ABORTED_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withNoteContaining(getLocalizedString(ABORTED_EVENT_ERROR)));
   }
 
   @Test
