@@ -99,7 +99,6 @@ import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
-import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolvedObject;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
@@ -685,11 +684,11 @@ class EventHelperTest {
   }
 
   @Test
-  void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedInvolvedObject() {
+  void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedRegarding() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
-    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected involvedObject",
-        containsEventWithInvolvedObject(getEvents(testSupport),
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected regarding",
+        EventTestUtils.containsEventWithRegarding(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED_EVENT, NS, NS),
         is(true));
   }
@@ -822,11 +821,11 @@ class EventHelperTest {
   }
 
   @Test
-  void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedInvolvedObject() {
+  void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedRegarding() {
     testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
 
-    assertThat("Found STOP_MANAGING_NAMESPACE event with expected involvedObject",
-        containsEventWithInvolvedObject(getEvents(testSupport),
+    assertThat("Found STOP_MANAGING_NAMESPACE event with expected regarding",
+        EventTestUtils.containsEventWithRegarding(getEvents(testSupport),
             STOP_MANAGING_NAMESPACE_EVENT, OPERATOR_POD_NAME, OP_NS),
         is(true));
   }

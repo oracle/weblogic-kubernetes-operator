@@ -104,13 +104,13 @@ public class EventTestUtils {
    * @param namespace namespace to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithInvolvedObject(
+  public static boolean containsEventWithRegarding(
       @NotNull List<EventsV1Event> events,
       String reason,
       String name,
       String namespace) {
     return getEventsWithReason(events, reason)
-        .stream().anyMatch(e -> involvedObjectMatches(e, name, namespace));
+        .stream().anyMatch(e -> regardingMatches(e, name, namespace));
   }
 
   /**
@@ -123,14 +123,14 @@ public class EventTestUtils {
    * @param k8sUID Kubernetes UID to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithInvolvedObject(
+  public static boolean containsEventWithRegarding(
       @NotNull List<EventsV1Event> events,
       String reason,
       String name,
       String namespace,
       String k8sUID) {
     return getEventsWithReason(events, reason)
-        .stream().anyMatch(e -> involvedObjectMatches(e, name, namespace, k8sUID));
+        .stream().anyMatch(e -> regardingMatches(e, name, namespace, k8sUID));
   }
 
   /**
@@ -227,33 +227,33 @@ public class EventTestUtils {
     return message.equals(event.getNote());
   }
 
-  private static boolean involvedObjectMatches(
+  private static boolean regardingMatches(
       @NotNull EventsV1Event event, String name, String namespace, String k8sUID) {
-    return involvedObjectNameMatches(event, name)
-        && involvedObjectApiVersionMatches(event)
-        && involvedObjectNamespaceMatches(event, namespace)
-        && involvedObjectUIDMatches(event, k8sUID);
+    return regardingNameMatches(event, name)
+        && regardingApiVersionMatches(event)
+        && regardingNamespaceMatches(event, namespace)
+        && regardingUIDMatches(event, k8sUID);
   }
 
-  private static boolean involvedObjectMatches(
+  private static boolean regardingMatches(
       @NotNull EventsV1Event event, String name, String namespace) {
-    return involvedObjectNameMatches(event, name)
-        && involvedObjectNamespaceMatches(event, namespace);
+    return regardingNameMatches(event, name)
+        && regardingNamespaceMatches(event, namespace);
   }
 
-  private static boolean involvedObjectUIDMatches(@NotNull EventsV1Event event, String k8sUID) {
+  private static boolean regardingUIDMatches(@NotNull EventsV1Event event, String k8sUID) {
     return getInvolvedObjectK8SUID(event).equals(k8sUID);
   }
 
-  private static boolean involvedObjectApiVersionMatches(@NotNull EventsV1Event event) {
+  private static boolean regardingApiVersionMatches(@NotNull EventsV1Event event) {
     return getInvolvedObjectApiVersion(event).equals(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE);
   }
 
-  private static boolean involvedObjectNameMatches(@NotNull EventsV1Event event, String name) {
+  private static boolean regardingNameMatches(@NotNull EventsV1Event event, String name) {
     return getInvolvedObjectName(event).equals(name);
   }
 
-  private static boolean involvedObjectNamespaceMatches(@NotNull EventsV1Event event, String namespace) {
+  private static boolean regardingNamespaceMatches(@NotNull EventsV1Event event, String namespace) {
     return getInvolvedObjectNamespace(event).equals(namespace)
         && getNamespace(event).equals(getInvolvedObjectNamespace(event));
   }

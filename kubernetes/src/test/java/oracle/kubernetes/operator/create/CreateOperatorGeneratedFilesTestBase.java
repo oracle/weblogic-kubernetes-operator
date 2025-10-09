@@ -242,10 +242,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             new V1ResourceRequirements()
                                                 .putRequestsItem("cpu", Quantity.fromString("100m"))
                                                 .putRequestsItem(
-                                                    "memory", Quantity.fromString("10Mi"))
+                                                    "memory", Quantity.fromString("20Mi"))
                                                 .putLimitsItem("cpu", Quantity.fromString("100m"))
                                                 .putLimitsItem(
-                                                    "memory", Quantity.fromString("10Mi")))
+                                                    "memory", Quantity.fromString("20Mi")))
                                         .securityContext(
                                             new V1SecurityContext().runAsUser(1000L)
                                                 .runAsNonRoot(true)

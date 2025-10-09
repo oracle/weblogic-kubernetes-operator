@@ -192,6 +192,7 @@ public class EventHelper {
           .reportingInstance(getOperatorPodName())
           .eventTime(eventItem.getCurrentTimestamp())
           .type(eventItem.getType())
+          .action(eventItem.getReason()) // use reason for action and reason
           .reason(eventItem.getReason())
           .note(eventItem.getNote(eventData))
           .regarding(eventItem.createRegarding(eventData));
@@ -951,7 +952,7 @@ public class EventHelper {
     String generateOperatorNSEventName(EventData eventData) {
       return String.format("%s.%s.%s.%h%h",
           getOperatorPodName(),
-          eventData.eventItem.getReason(),
+          eventData.eventItem.getReason().toLowerCase(),
           eventData.getResourceName(),
           System.currentTimeMillis(),
           generateRandomLong());
@@ -1113,6 +1114,7 @@ public class EventHelper {
                 .reportingInstance(getWebhookPodName())
                 .eventTime(eventItem.getCurrentTimestamp())
                 .type(eventItem.getType())
+                .action(eventItem.getReason()) // use reason for action and reason
                 .reason(eventItem.getReason())
                 .note(eventItem.getNote(eventData))
                 .regarding(eventItem.createRegarding(eventData))
@@ -1173,6 +1175,7 @@ public class EventHelper {
           .reportingInstance(getOperatorPodName())
           .eventTime(eventItem.getCurrentTimestamp())
           .type(eventItem.getType())
+          .action(eventItem.getReason()) // use reason for action and reason
           .reason(eventItem.getReason())
           .note(eventItem.getNote(eventData))
           .regarding(eventItem.createRegarding(eventData));
