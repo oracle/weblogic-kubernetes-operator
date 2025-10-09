@@ -54,7 +54,7 @@ class HealthCheckHelperTest {
   private static final List<String> CRUD_RESOURCES =
       Arrays.asList(
           "configmaps",
-          "events",
+          "events//events.k8s.io",
           "jobs//batch",
           "pods",
           "services");

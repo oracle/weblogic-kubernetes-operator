@@ -927,7 +927,7 @@ public class EventHelper {
     protected String generateEventName(EventData eventData) {
       return String.format("%s.%s.%h%h",
           eventData.getResourceName(),
-          eventData.eventItem.getReason(),
+          eventData.eventItem.getReason().toLowerCase(),
           System.currentTimeMillis(),
           generateRandomLong());
     }
