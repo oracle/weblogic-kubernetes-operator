@@ -32,11 +32,13 @@ import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.apis.EventsV1Api;
 import io.kubernetes.client.openapi.apis.NetworkingV1Api;
 import io.kubernetes.client.openapi.apis.PolicyV1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1EventSeries;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
@@ -123,6 +125,7 @@ public class Kubernetes {
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
+  private static EventsV1Api eventsV1Api = null;
   private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
@@ -153,6 +156,7 @@ public class Kubernetes {
       apiClient.setConnectTimeout(0);
       apiClient.setReadTimeout(0);
       coreV1Api = new CoreV1Api();
+      eventsV1Api = new EventsV1Api();
       policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
@@ -1146,13 +1150,13 @@ public class Kubernetes {
    * List events in a namespace.
    *
    * @param namespace name of the namespace in which to list events
-   * @return List of {@link CoreV1Event} objects
+   * @return List of {@link EventsV1Event} objects
    * @throws ApiException when listing events fails
    */
-  public static List<CoreV1Event> listNamespacedEvents(String namespace) throws ApiException {
-    List<CoreV1Event> events = null;
+  public static List<EventsV1Event> listNamespacedEvents(String namespace) throws ApiException {
+    List<EventsV1Event> events = null;
     try {
-      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -1166,8 +1170,8 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
-      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+      events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
+      events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
     } catch (ApiException apex) {
@@ -1177,17 +1181,22 @@ public class Kubernetes {
     return events;
   }
 
+  private static OffsetDateTime getEventTime(EventsV1Event event) {
+    return Optional.ofNullable(event.getSeries())
+        .map(EventsV1EventSeries::getLastObservedTime).orElse(event.getEventTime());
+  }
+
   /**
    * List operator generated events in a namespace.
    *
    * @param namespace name of the namespace in which to list events
-   * @return List of {@link CoreV1Event} objects
+   * @return List of {@link EventsV1Event} objects
    * @throws ApiException when listing events fails
    */
-  public static List<CoreV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
-    List<CoreV1Event> events = null;
+  public static List<EventsV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
+    List<EventsV1Event> events = null;
     try {
-      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -1201,8 +1210,8 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
-      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+      events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
+      events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
     } catch (ApiException apex) {

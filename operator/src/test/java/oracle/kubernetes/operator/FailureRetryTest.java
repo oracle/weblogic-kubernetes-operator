@@ -250,7 +250,7 @@ class FailureRetryTest {
 
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
-            .withMessageContaining("DeadlineExceeded", Long.toString(deadlineSeconds), Long.toString(jobRunningTime)));
+            .withNoteContaining("DeadlineExceeded", Long.toString(deadlineSeconds), Long.toString(jobRunningTime)));
   }
 
   @SuppressWarnings("SameParameterValue")

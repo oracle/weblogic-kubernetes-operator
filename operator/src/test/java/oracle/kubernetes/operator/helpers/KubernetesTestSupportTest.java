@@ -20,8 +20,8 @@ import io.kubernetes.client.common.KubernetesType;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -513,17 +513,17 @@ class KubernetesTestSupportTest {
 
   @Test
   void listEventWithSelector_returnsMatches() {
-    CoreV1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
-    CoreV1Event s2 = createEvent("ns1", "event2", "walk");
-    CoreV1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
-    CoreV1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
-    CoreV1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
-    CoreV1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
+    EventsV1Event s1 = createEvent("ns1", "event1", "walk").regarding(kind("bird"));
+    EventsV1Event s2 = createEvent("ns1", "event2", "walk");
+    EventsV1Event s3 = createEvent("ns1", "event3", "walk").regarding(kind("bird"));
+    EventsV1Event s4 = createEvent("ns1", "event4", "run").regarding(kind("frog"));
+    EventsV1Event s5 = createEvent("ns1", "event5", "run").regarding(kind("bird"));
+    EventsV1Event s6 = createEvent("ns2", "event3", "walk").regarding(kind("bird"));
     testSupport.defineResources(s1, s2, s3, s4, s5, s6);
 
-    TestResponseStep<CoreV1EventList> responseStep = new TestResponseStep<>();
+    TestResponseStep<EventsV1EventList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(RequestBuilder.EVENT.list("ns1",
-        new ListOptions().fieldSelector("action=walk,involvedObject.kind=bird"), responseStep));
+        new ListOptions().fieldSelector("action=walk,regarding.kind=bird"), responseStep));
 
     assertThat(responseStep.callResponse.getObject().getItems(), containsInAnyOrder(s1, s3));
   }
@@ -532,8 +532,8 @@ class KubernetesTestSupportTest {
     return new V1ObjectReference().kind(kind);
   }
 
-  private CoreV1Event createEvent(String namespace, String name, String act) {
-    return new CoreV1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
+  private EventsV1Event createEvent(String namespace, String name, String act) {
+    return new EventsV1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
   }
 
   @Test

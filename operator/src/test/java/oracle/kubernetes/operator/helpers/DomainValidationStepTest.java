@@ -187,7 +187,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(domainValidationSteps);
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withNoteContaining(getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   private String getStatusReason(DomainResource updatedDomain) {

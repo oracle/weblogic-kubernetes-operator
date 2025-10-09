@@ -88,14 +88,14 @@ Each operator-generated event contains the following fields:
     *  `namespace`:  Namespace in which the event is generated.
     *  `labels`:   `weblogic.createdByOperator=true` and, for a domain event, `weblogic.domainUID=<domainUID>`.
  *  `type`:  String that describes the type of the event. Possible values are `Normal` or `Warning`.
- *  `count`: Integer that indicates the number of occurrences of the event. Note that the events are matched by the combination of the `reason`, `involvedObject`, and `message` fields.
+ *  `count`: Integer that indicates the number of occurrences of the event. Note that the events are matched by the combination of the `reason`, `regarding`, and `message` fields.
  *  `reportingComponent`:  String that describes the component that reports the event. The value is `weblogic.operator` for all operator-generated events.
  *  `reportingInstance`:  String that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.
  *  `firstTimestamp`:  `DateTime` field that presents the timestamp of the first occurrence of this event.
  *  `lastTimestamp`:  `DateTime` field that presents the timestamp of the last occurrence of this event.
  *  `reason`:  Short, machine understandable string that gives the reason for the transition to the object's current status.
- *  `message`:  String that describes the details of the event.
- *  `involvedObject`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
+ *  `note`:  String that describes the details of the event.
+ *  `regarding`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
     *  `name`:  String that describes the name of the resource with which the event is associated. It may be the `domainUID`, the name of the namespace that the operator watches, or the name of the operator pod.
     *  `namespace`:  String that describes the namespace of the event, which is either the namespace of the domain resource or the namespace of the operator.
     *  `kind`:  String that describes the kind of resource this object represents. The value is `Domain` for a domain event, `Namespace` for a namespace event in the domain namespace, or `Pod` for the operator pod.

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -203,27 +203,27 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  public static void updateEventK8SObjects(CoreV1Event event) {
+  public static void updateEventK8SObjects(EventsV1Event event) {
     getEventK8SObjects(event).update(event);
   }
 
-  private static void updateClusterEventK8SObjects(CoreV1Event event) {
+  private static void updateClusterEventK8SObjects(EventsV1Event event) {
     getClusterEventK8SObjects(event).update(event);
   }
 
-  private static String getEventNamespace(CoreV1Event event) {
-    return Optional.ofNullable(event).map(CoreV1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
+  private static String getEventNamespace(EventsV1Event event) {
+    return Optional.ofNullable(event).map(EventsV1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
-  private static String getEventDomainUid(CoreV1Event event) {
+  private static String getEventDomainUid(EventsV1Event event) {
     return Optional.ofNullable(event)
-        .map(CoreV1Event::getMetadata)
+        .map(EventsV1Event::getMetadata)
         .map(V1ObjectMeta::getLabels)
         .orElse(Collections.emptyMap())
         .get(LabelConstants.DOMAINUID_LABEL);
   }
 
-  public static KubernetesEventObjects getEventK8SObjects(CoreV1Event event) {
+  public static KubernetesEventObjects getEventK8SObjects(EventsV1Event event) {
     return getEventK8SObjects(getEventNamespace(event), getEventDomainUid(event));
   }
 
@@ -233,7 +233,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         .orElse(getNamespaceEventK8SObjects(ns));
   }
 
-  public static KubernetesEventObjects getClusterEventK8SObjects(CoreV1Event event) {
+  public static KubernetesEventObjects getClusterEventK8SObjects(EventsV1Event event) {
     return getClusterEventK8SObjects(getEventNamespace(event), getClusterName(event));
   }
 
@@ -242,13 +242,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         .computeIfAbsent(clusterResourceName, c -> new KubernetesEventObjects());
   }
 
-  private static String getClusterName(CoreV1Event event) {
-    return Optional.ofNullable(event.getInvolvedObject())
+  private static String getClusterName(EventsV1Event event) {
+    return Optional.ofNullable(event.getRegarding())
         .map(V1ObjectReference::getName)
         .orElse("");
   }
 
-  private static void deleteClusterEventK8SObjects(CoreV1Event event) {
+  private static void deleteClusterEventK8SObjects(EventsV1Event event) {
     getClusterEventK8SObjects(event).remove(event);
   }
 
@@ -261,11 +261,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         .computeIfAbsent(domainUid, d -> new KubernetesEventObjects());
   }
 
-  private static void deleteEventK8SObjects(CoreV1Event event) {
+  private static void deleteEventK8SObjects(EventsV1Event event) {
     getEventK8SObjects(event).remove(event);
   }
 
-  private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
+  private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, EventsV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_POD:
         processPodEvent(name, event);
@@ -281,7 +281,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static void processPodEvent(@Nonnull String name, CoreV1Event event) {
+  private static void processPodEvent(@Nonnull String name, EventsV1Event event) {
     if (name.equals(NamespaceHelper.getOperatorPodName())) {
       updateEventK8SObjects(event);
     } else {
@@ -289,8 +289,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static void processServerEvent(CoreV1Event event) {
-    String[] domainAndServer = Objects.requireNonNull(event.getInvolvedObject().getName()).split("-");
+  private static void processServerEvent(EventsV1Event event) {
+    String[] domainAndServer = Objects.requireNonNull(event.getRegarding().getName()).split("-");
     String domainUid = domainAndServer[0];
     String serverName = domainAndServer[1];
     String status = getReadinessStatus(event);
@@ -322,7 +322,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
+  private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, EventsV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_DOMAIN, EventConstants.EVENT_KIND_NAMESPACE:
         deleteEventK8SObjects(event);
@@ -340,8 +340,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static String getReadinessStatus(CoreV1Event event) {
-    return Optional.ofNullable(event.getMessage())
+  private static String getReadinessStatus(EventsV1Event event) {
+    return Optional.ofNullable(event.getNote())
           .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
           .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
           .orElse(null);
@@ -814,9 +814,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    * Dispatch event watch event.
    * @param item watch event
    */
-  public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
-    CoreV1Event e = item.object;
-    V1ObjectReference ref = e.getInvolvedObject();
+  public void dispatchEventWatch(Watch.Response<EventsV1Event> item) {
+    EventsV1Event e = item.object;
+    V1ObjectReference ref = e.getRegarding();
 
     if (ref == null || ref.getName() == null || ref.getKind() == null) {
       return;

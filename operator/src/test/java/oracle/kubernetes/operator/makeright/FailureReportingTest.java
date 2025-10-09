@@ -288,7 +288,7 @@ class FailureReportingTest {
 
     executeMakeRight();
 
-    assertThat(testSupport, hasEvent("Failed").withMessageContaining(testCase.getExpectedMessage()));
+    assertThat(testSupport, hasEvent("Failed").withNoteContaining(testCase.getExpectedMessage()));
   }
 
   enum TestCase {

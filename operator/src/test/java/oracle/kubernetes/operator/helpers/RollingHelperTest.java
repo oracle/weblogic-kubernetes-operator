@@ -314,7 +314,7 @@ class RollingHelperTest {
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
-    assertThat(testSupport, hasEvent(DOMAIN_ROLL_STARTING_EVENT).inNamespace(NS).withMessageContaining(UID));
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_STARTING_EVENT).inNamespace(NS).withNoteContaining(UID));
   }
 
   @Test
@@ -330,7 +330,7 @@ class RollingHelperTest {
 
     CLUSTERED_SERVER_NAMES.forEach(s ->
           assertThat(testSupport,
-                hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withMessageContaining(getPodName(s))));
+                hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withNoteContaining(getPodName(s))));
   }
 
   private String getPodName(String s) {

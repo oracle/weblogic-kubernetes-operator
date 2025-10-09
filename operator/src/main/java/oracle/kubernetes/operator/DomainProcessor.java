@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -106,7 +106,7 @@ public interface DomainProcessor {
    * Handles a watch event for events in the managed namespaces.
    * @param item a Kubernetes watch event
    */
-  void dispatchEventWatch(Watch.Response<CoreV1Event> item);
+  void dispatchEventWatch(Watch.Response<EventsV1Event> item);
 
   /**
    * If the logging level is high enough, reports on any fibers which may currently be suspended.

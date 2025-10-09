@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainResource;
@@ -198,18 +198,18 @@ class ItEvictedPodsCycling {
   }
   
   private Callable<Boolean> checkEvictionEvent(String adminServerpodName,
-      String reason, String message, String type) {
+      String reason, String note, String type) {
     return (() -> {
       boolean gotEvent = false;
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
-      for (CoreV1Event event : events) {
+      List<EventsV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (EventsV1Event event : events) {
         if (event.getType() != null && event.getType().equals(type)
-            && event.getInvolvedObject().getName() != null
-            && event.getInvolvedObject().getName().equals(adminServerpodName)
+            && event.getRegarding().getName() != null
+            && event.getRegarding().getName().equals(adminServerpodName)
             && event.getReason() != null
             && event.getReason().equals(reason)
-            && event.getMessage() != null
-            && event.getMessage().contains(message)) {
+            && event.getNote() != null
+            && event.getNote().contains(note)) {
           logger.info(Yaml.dump(event));
           gotEvent = true;
         }

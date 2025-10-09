@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -206,7 +206,7 @@ public class OperatorMain extends BaseMain {
     return new InitializeInternalIdentityStep(delegate, next);
   }
 
-  private class EventListResponseStep extends ResponseStep<CoreV1EventList> {
+  private class EventListResponseStep extends ResponseStep<EventsV1EventList> {
     DomainProcessor processor;
 
     EventListResponseStep(DomainProcessor processor) {
@@ -214,8 +214,8 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1EventList> callResponse) {
-      CoreV1EventList list = callResponse.getObject();
+    public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1EventList> callResponse) {
+      EventsV1EventList list = callResponse.getObject();
       operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
       list.getItems().forEach(DomainProcessorImpl::updateEventK8SObjects);
       return doContinueListOrNext(callResponse, packet);

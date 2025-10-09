@@ -486,7 +486,7 @@ class TopologyValidationStepTest {
     assertThat(logRecords, containsWarning(messageKey).withParams(parameters));
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
-            .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
+            .withNoteContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
   }
 
   private void assertMaxReplicasSet() {
@@ -1041,7 +1041,7 @@ class TopologyValidationStepTest {
     runTopologyValidationStep();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-                .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR),
+                .withNoteContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR),
                       getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster"),
                       getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server")));
   }
@@ -1075,7 +1075,7 @@ class TopologyValidationStepTest {
     assertThat(logRecords, containsWarning(TOO_MANY_REPLICAS_FAILURE).withParams(parameters));
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
-            .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR), message));
+            .withNoteContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR), message));
   }
 
   private String getFormattedMessage(String msgId, Object... params) {

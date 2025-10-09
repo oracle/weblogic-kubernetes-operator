@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -136,15 +136,15 @@ class IntrospectionLoggingTest {
 
   @SuppressWarnings("SameParameterValue")
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
-    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    List<EventsV1Event> events = getEventsWithReason(getEvents(), event.getReason());
     return Optional.ofNullable(events)
         .filter(list -> !list.isEmpty())
         .map(n -> n.get(0))
-        .map(CoreV1Event::getMessage)
+        .map(EventsV1Event::getNote)
         .orElse("Event not found");
   }
 
-  private List<CoreV1Event> getEvents() {
+  private List<EventsV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
