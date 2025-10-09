@@ -26,7 +26,7 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
@@ -2397,9 +2397,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(getEvents().stream().anyMatch(this::isKubernetesFailedEvent), is(true));
   }
 
-  private boolean isKubernetesFailedEvent(CoreV1Event e) {
+  private boolean isKubernetesFailedEvent(EventsV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason())
-        && e.getMessage().contains(getLocalizedString(KUBERNETES_EVENT_ERROR));
+        && e.getNote().contains(getLocalizedString(KUBERNETES_EVENT_ERROR));
   }
 
   @Test
@@ -2867,15 +2867,15 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
-    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    List<EventsV1Event> events = getEventsWithReason(getEvents(), event.getReason());
     return Optional.ofNullable(events)
         .filter(list -> !list.isEmpty())
         .map(n -> n.getFirst())
-        .map(CoreV1Event::getMessage)
+        .map(EventsV1Event::getNote)
         .orElse("Event not found");
   }
 
-  List<CoreV1Event> getEvents() {
+  List<EventsV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 

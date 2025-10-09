@@ -12,7 +12,8 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventSeries;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -97,30 +98,30 @@ class OperatorEventProcessingTest {
 
   @Test
   void onNewDomainCreatedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event = createDomainEvent(".acbd1", DOMAIN_CREATED, "", null);
+    EventsV1Event event = createDomainEvent(".acbd1", DOMAIN_CREATED, "", null);
     dispatchAddedEventWatch(event);
     assertThat("Found NO DOMAIN_CREATED event in the map", getMatchingEvent(event), nullValue());
   }
 
   @Test
   void onNewDomainCreatedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd2", DOMAIN_CREATED, "", domainReference);
+    EventsV1Event event = createDomainEvent(".acbd2", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event);
     assertThat("Found DOMAIN_CREATED event in the map", getMatchingEvent(event), notNullValue());
   }
 
   @Test
   void afterOnAddDomainCreatedEvent_onDeleteDomainCreatedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createDomainEvent(".acbd3", DOMAIN_CREATED, "", domainReference);
+    EventsV1Event event1 = createDomainEvent(".acbd3", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd3", DOMAIN_CREATED, "", null);
+    EventsV1Event event2 = createDomainEvent(".acbd3", DOMAIN_CREATED, "", null);
     dispatchDeletedEventWatch(event2);
     assertThat("Found DOMAIN_CREATED event in the map", getMatchingEvent(event1), notNullValue());
   }
 
   @Test
   void afterOnAddDomainCreatedEvent_onDeleteDomainCreatedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd4", DOMAIN_CREATED, "", domainReference);
+    EventsV1Event event = createDomainEvent(".acbd4", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event);
     dispatchDeletedEventWatch(event);
     assertThat("Found NO DOMAIN_CREATED event in the map", getMatchingEvent(event), nullValue());
@@ -128,16 +129,16 @@ class OperatorEventProcessingTest {
 
   @Test
   void afterOnAddDomainCreatedEvent_onModifyDomainCreatedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createDomainEvent(".acbd5", DOMAIN_CREATED, "", domainReference);
+    EventsV1Event event1 = createDomainEvent(".acbd5", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd5", DOMAIN_CREATED, "", null);
+    EventsV1Event event2 = createDomainEvent(".acbd5", DOMAIN_CREATED, "", null);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(1));
   }
 
   @Test
   void afterOnAddDomainCreatedEvent_onModifyDomainDeletedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd6", DOMAIN_CREATED, "", domainReference);
+    EventsV1Event event = createDomainEvent(".acbd6", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event);
     event = createDomainEvent(".acbd6", DOMAIN_CREATED, "", domainReference, 2);
     dispatchModifiedEventWatch(event);
@@ -146,30 +147,30 @@ class OperatorEventProcessingTest {
 
   @Test
   void onNewDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event = createDomainEvent(".acbd7", DOMAIN_FAILED, "failure", null);
+    EventsV1Event event = createDomainEvent(".acbd7", DOMAIN_FAILED, "failure", null);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
   }
 
   @Test
   void onNewProcessingFailedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd8", DOMAIN_FAILED, "failure2", domainReference);
+    EventsV1Event event = createDomainEvent(".acbd8", DOMAIN_FAILED, "failure2", domainReference);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), notNullValue());
   }
 
   @Test
   void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createDomainEvent(".acbd9", DOMAIN_FAILED, "failureOnDelete1", domainReference);
+    EventsV1Event event1 = createDomainEvent(".acbd9", DOMAIN_FAILED, "failureOnDelete1", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd9", DOMAIN_FAILED, "failureOnDelete1", null);
+    EventsV1Event event2 = createDomainEvent(".acbd9", DOMAIN_FAILED, "failureOnDelete1", null);
     dispatchDeletedEventWatch(event2);
     assertThat(getMatchingEvent(event1), notNullValue());
   }
 
   @Test
   void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd10", DOMAIN_FAILED, "failureOnDelete2", domainReference);
+    EventsV1Event event = createDomainEvent(".acbd10", DOMAIN_FAILED, "failureOnDelete2", domainReference);
     dispatchAddedEventWatch(event);
     dispatchDeletedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
@@ -177,109 +178,109 @@ class OperatorEventProcessingTest {
 
   @Test
   void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createDomainEvent(".acbd11", DOMAIN_FAILED, "failureOnModify1", domainReference);
+    EventsV1Event event1 = createDomainEvent(".acbd11", DOMAIN_FAILED, "failureOnModify1", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd11", DOMAIN_FAILED, "failureOnModify1", null);
+    EventsV1Event event2 = createDomainEvent(".acbd11", DOMAIN_FAILED, "failureOnModify1", null);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(1));
   }
 
   @Test
   void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event1 = createDomainEvent(".acbd12", DOMAIN_FAILED, "failureOnModify2", domainReference);
+    EventsV1Event event1 = createDomainEvent(".acbd12", DOMAIN_FAILED, "failureOnModify2", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd12", DOMAIN_FAILED, "failureOnModify2", domainReference, 2);
+    EventsV1Event event2 = createDomainEvent(".acbd12", DOMAIN_FAILED, "failureOnModify2", domainReference, 2);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(2));
   }
 
   @Test
   void afterAddDProcessingFailedEvent_onNewNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event = createDomainEvent(".1234a", NAMESPACE_WATCHING_STOPPED, "", null);
+    EventsV1Event event = createDomainEvent(".1234a", NAMESPACE_WATCHING_STOPPED, "", null);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
   }
 
   @Test
   void onNewNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createNamespaceEvent(".1234b", NAMESPACE_WATCHING_STOPPED, nsReference);
+    EventsV1Event event = createNamespaceEvent(".1234b", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), notNullValue());
   }
 
   @Test
   void afterAddNSWatchingStoppedEvent_onDeleteNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createNamespaceEvent(".1234c", NAMESPACE_WATCHING_STOPPED, nsReference);
+    EventsV1Event event1 = createNamespaceEvent(".1234c", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createNamespaceEvent(".1234c", NAMESPACE_WATCHING_STOPPED,null);
+    EventsV1Event event2 = createNamespaceEvent(".1234c", NAMESPACE_WATCHING_STOPPED,null);
     dispatchDeletedEventWatch(event2);
     assertThat(getMatchingEvent(event1), notNullValue());
   }
 
   @Test
   void afterAddNSWatchingStoppedEvent_onDeleteNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event1 = createNamespaceEvent(".1234d", NAMESPACE_WATCHING_STOPPED, nsReference);
+    EventsV1Event event1 = createNamespaceEvent(".1234d", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createNamespaceEvent(".1234d", NAMESPACE_WATCHING_STOPPED, nsReference);
+    EventsV1Event event2 = createNamespaceEvent(".1234d", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchDeletedEventWatch(event2);
     assertThat(getMatchingEvent(event1), nullValue());
   }
 
   @Test
   void afterAddNSWatchingStoppedEvent_onModifyNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createNamespaceEvent(".1234e", NAMESPACE_WATCHING_STOPPED, nsReference);
+    EventsV1Event event1 = createNamespaceEvent(".1234e", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createNamespaceEvent(".1234e", NAMESPACE_WATCHING_STOPPED,null);
+    EventsV1Event event2 = createNamespaceEvent(".1234e", NAMESPACE_WATCHING_STOPPED,null);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(1));
   }
 
   @Test
   void afterAddNSWatchingStoppedEvent_onModifyNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event1 = createNamespaceEvent(".1234f", NAMESPACE_WATCHING_STOPPED, nsReference);
+    EventsV1Event event1 = createNamespaceEvent(".1234f", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createNamespaceEvent(".1234f", NAMESPACE_WATCHING_STOPPED, nsReference, 2);
+    EventsV1Event event2 = createNamespaceEvent(".1234f", NAMESPACE_WATCHING_STOPPED, nsReference, 2);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(2));
   }
 
   @Test
   void onCreateStartManagingNSEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createNamespaceEvent(".aaaa1", START_MANAGING_NAMESPACE, opReference);
+    EventsV1Event event = createNamespaceEvent(".aaaa1", START_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEventCount(event), equalTo(1));
   }
 
   @Test
   void afterAddStopManagingNSEvent_onModifyStopManagingNamespace_updateKubernetesEventObjectsMap() {
-    CoreV1Event event1 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference);
+    EventsV1Event event1 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference, 2);
+    EventsV1Event event2 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference, 2);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(2));
   }
 
   @Test
   void afterAddStartManagingNSEvent_onDeleteTheEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, opReference);
+    EventsV1Event event1 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, null);
+    EventsV1Event event2 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, null);
     dispatchDeletedEventWatch(event2);
     assertThat(getMatchingEvent(event1), notNullValue());
   }
 
   @Test
   void afterAddStopManagingNSEvent_onDeleteEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event1 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
+    EventsV1Event event1 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
+    EventsV1Event event2 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
     dispatchDeletedEventWatch(event2);
     assertThat(getMatchingEvent(event1), nullValue());
   }
 
   @Test
   void onNewClusterCreatedEvent_updateClusterKubernetesEventObjectsMap() {
-    CoreV1Event event = createClusterEvent(
+    EventsV1Event event = createClusterEvent(
         clusterReference);
     dispatchAddedEventWatch(event);
     assertThat("Found NO CLUSTER_CREATED event in the map", getMatchingClusterEvent(event), notNullValue());
@@ -287,7 +288,7 @@ class OperatorEventProcessingTest {
 
   @Test
   void onNewClusterCreatedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event = createClusterEvent(null);
+    EventsV1Event event = createClusterEvent(null);
     dispatchAddedEventWatch(event);
     assertThat("Found CLUSTER_CREATED event in the map", getMatchingClusterEvent(event), nullValue());
   }
@@ -296,7 +297,7 @@ class OperatorEventProcessingTest {
   void afterOnAddClusterCreatedEvent_onDeleteClusterCreatedEvent_updateClusterKubernetesEventObjectsMap() {
     final V1ObjectReference cluster =
         new V1ObjectReference().name(UID + "-cluster1").kind("Cluster").namespace(NS);
-    CoreV1Event event = createClusterEvent(cluster);
+    EventsV1Event event = createClusterEvent(cluster);
     dispatchAddedEventWatch(event);
     dispatchDeletedEventWatch(event);
     assertThat("Found CLUSTER_CREATED event in the map", getMatchingClusterEvent(event), nullValue());
@@ -306,42 +307,44 @@ class OperatorEventProcessingTest {
   void afterOnAddClusterCreatedEvent_onDeleteClusterCreatedEventWithNoInvolvedObject_doNothing() {
     final V1ObjectReference cluster =
         new V1ObjectReference().name(UID + "-cluster1").kind("Cluster").namespace(NS);
-    CoreV1Event event1 = createClusterEvent(cluster);
+    EventsV1Event event1 = createClusterEvent(cluster);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createClusterEvent(null);
+    EventsV1Event event2 = createClusterEvent(null);
     dispatchDeletedEventWatch(event2);
     assertThat("Found NO CLUSTER_CREATED event1 in the map", getMatchingClusterEvent(event1), notNullValue());
   }
 
-  private int getMatchingEventCount(CoreV1Event event) {
-    return Optional.ofNullable(getMatchingEvent(event)).map(CoreV1Event::getCount).orElse(0);
+  private int getMatchingEventCount(EventsV1Event event) {
+    return Optional.ofNullable(getMatchingEvent(event)).map(EventsV1Event::getSeries)
+        .map(EventsV1EventSeries::getCount).orElse(1);
   }
 
-  private CoreV1Event getMatchingEvent(CoreV1Event event) {
-    CoreV1Event found = Optional.ofNullable(getEventK8SObjects(event)).map(k -> k.getExistingEvent(event)).orElse(null);
+  private EventsV1Event getMatchingEvent(EventsV1Event event) {
+    EventsV1Event found = Optional.ofNullable(getEventK8SObjects(event))
+        .map(k -> k.getExistingEvent(event)).orElse(null);
     return getEventName(found).equals(getEventName(event)) ? found : null;
   }
 
-  private CoreV1Event getMatchingClusterEvent(CoreV1Event event) {
-    CoreV1Event found = Optional.ofNullable(getClusterEventK8SObjects(event))
+  private EventsV1Event getMatchingClusterEvent(EventsV1Event event) {
+    EventsV1Event found = Optional.ofNullable(getClusterEventK8SObjects(event))
         .map(k -> k.getExistingEvent(event)).orElse(null);
     return getEventName(found).equals(getEventName(event)) ? found : null;
   }
 
   @Nonnull
-  private String getEventName(CoreV1Event event) {
-    return Optional.ofNullable(event).map(CoreV1Event::getMetadata).map(V1ObjectMeta::getName).orElse("");
+  private String getEventName(EventsV1Event event) {
+    return Optional.ofNullable(event).map(EventsV1Event::getMetadata).map(V1ObjectMeta::getName).orElse("");
   }
 
-  private void dispatchAddedEventWatch(CoreV1Event event) {
+  private void dispatchAddedEventWatch(EventsV1Event event) {
     processor.dispatchEventWatch(WatchEvent.createAddedEvent(event).toWatchResponse());
   }
 
-  private void dispatchModifiedEventWatch(CoreV1Event event) {
+  private void dispatchModifiedEventWatch(EventsV1Event event) {
     processor.dispatchEventWatch(WatchEvent.createModifiedEvent(event).toWatchResponse());
   }
 
-  private void dispatchDeletedEventWatch(CoreV1Event event) {
+  private void dispatchDeletedEventWatch(EventsV1Event event) {
     processor.dispatchEventWatch(WatchEvent.createDeletedEvent(event).toWatchResponse());
   }
 
@@ -356,55 +359,52 @@ class OperatorEventProcessingTest {
     return metadata;
   }
 
-  private CoreV1Event createClusterEvent(V1ObjectReference involvedObj) {
-    return new CoreV1Event()
+  private EventsV1Event createClusterEvent(V1ObjectReference regarding) {
+    return new EventsV1Event()
       .metadata(createMetadata("uid-cluster1", NS, false))
-      .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+      .reportingController(WEBLOGIC_OPERATOR_COMPONENT)
       .reportingInstance(OPERATOR_POD_NAME)
-      .lastTimestamp(SystemClock.now())
+      .eventTime(SystemClock.now())
       .type(EventConstants.EVENT_NORMAL)
       .reason(EventItem.CLUSTER_CREATED.getReason())
-      .message("")
-      .involvedObject(involvedObj)
-      .count(1);
+      .note("")
+      .regarding(regarding);
   }
 
-  private CoreV1Event createDomainEvent(
+  private EventsV1Event createDomainEvent(
       String nameAppendix, EventItem item, String message, V1ObjectReference involvedObj) {
 
-    return new CoreV1Event()
+    return new EventsV1Event()
         .metadata(createMetadata(createDomainEventName(nameAppendix, item), NS, true))
-        .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+        .reportingController(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(OPERATOR_POD_NAME)
-        .lastTimestamp(SystemClock.now())
+        .eventTime(SystemClock.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
-        .message(item.getMessage(new EventHelper.EventData(item, message)))
-        .involvedObject(involvedObj)
-        .count(1);
+        .note(item.getNote(new EventHelper.EventData(item, message)))
+        .regarding(involvedObj);
   }
 
-  private CoreV1Event createDomainEvent(
+  private EventsV1Event createDomainEvent(
       String name, EventItem item, String message, V1ObjectReference involvedObj, int count) {
-    return createDomainEvent(name, item, message, involvedObj).count(count);
+    return createDomainEvent(name, item, message, involvedObj).series(new EventsV1EventSeries().count(count));
   }
 
-  private CoreV1Event createNamespaceEvent(String nameAppendix, EventItem item, V1ObjectReference involvedObj) {
+  private EventsV1Event createNamespaceEvent(String nameAppendix, EventItem item, V1ObjectReference involvedObj) {
 
-    return new CoreV1Event()
+    return new EventsV1Event()
         .metadata(createMetadata(createNSEventName(nameAppendix, item), OP_NS, false))
-        .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+        .reportingController(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(OPERATOR_POD_NAME)
-        .lastTimestamp(SystemClock.now())
+        .eventTime(SystemClock.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
-        .message(item.getMessage(new EventHelper.EventData(item, "")))
-        .involvedObject(involvedObj)
-        .count(1);
+        .note(item.getNote(new EventHelper.EventData(item, "")))
+        .regarding(involvedObj);
   }
 
-  private CoreV1Event createNamespaceEvent(String name, EventItem item, V1ObjectReference involvedObj, int count) {
-    return createNamespaceEvent(name, item, involvedObj).count(count);
+  private EventsV1Event createNamespaceEvent(String name, EventItem item, V1ObjectReference involvedObj, int count) {
+    return createNamespaceEvent(name, item, involvedObj).series(new EventsV1EventSeries().count(count));
   }
 
   private String createDomainEventName(String nameAppendix, EventItem item) {

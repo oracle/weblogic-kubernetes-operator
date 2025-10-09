@@ -11,7 +11,7 @@ import java.util.Map;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -35,11 +35,11 @@ class EventProcessingTest {
   private static final String ADMIN_NAME = "admin";
   private final V1ObjectReference serverReference =
       new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME)).kind("Pod");
-  private final CoreV1Event event =
-      new CoreV1Event()
+  private final EventsV1Event event =
+      new EventsV1Event()
           .metadata(new V1ObjectMeta().namespace(NS))
-          .involvedObject(serverReference)
-          .message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
+          .regarding(serverReference)
+          .note(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
   private final List<Memento> mementos = new ArrayList<>();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
   private final DomainResource domain = new DomainResource().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
@@ -62,7 +62,7 @@ class EventProcessingTest {
 
   @Test
   void onNewEventWithNoInvolvedObject_doNothing() {
-    event.setInvolvedObject(null);
+    event.setRegarding(null);
 
     dispatchEventWatch();
 
@@ -71,7 +71,7 @@ class EventProcessingTest {
 
   @Test
   void onNewEventWithNoMessage_doNothing() {
-    event.setMessage(null);
+    event.setNote(null);
 
     dispatchEventWatch();
 
@@ -80,7 +80,7 @@ class EventProcessingTest {
 
   @Test
   void onNewEventWithNonReadinessProbeMessage_doNothing() {
-    event.setMessage("ignore this");
+    event.setNote("ignore this");
 
     dispatchEventWatch();
 

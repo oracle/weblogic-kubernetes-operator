@@ -16,7 +16,7 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.util.Yaml;
@@ -392,8 +392,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         logger.info("Executing command " + command);
         result = ExecCommand.exec(command);
         logger.info(" Result output: " + result.stdout());
-        List<CoreV1Event> events = getEvents(domainNamespace,timestamp);
-        for (CoreV1Event event : events) {
+        List<EventsV1Event> events = getEvents(domainNamespace,timestamp);
+        for (EventsV1Event event : events) {
           logger.info("Generated events after HPA scaling " + Yaml.dump(event));
         }
         int numberOfManagedSvs = 3;

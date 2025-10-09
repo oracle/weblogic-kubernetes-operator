@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
@@ -174,7 +174,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(getEvents().stream().anyMatch(this::isDomainRollStartedEvent), is(true));
   }
 
-  private boolean isDomainRollStartedEvent(CoreV1Event e) {
+  private boolean isDomainRollStartedEvent(EventsV1Event e) {
     return DOMAIN_ROLL_STARTING_EVENT.equals(e.getReason());
   }
 
@@ -912,7 +912,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
 
-    assertThat(testSupport, hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withMessageContaining(getPodName()));
+    assertThat(testSupport, hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withNoteContaining(getPodName()));
   }
 
   @Test

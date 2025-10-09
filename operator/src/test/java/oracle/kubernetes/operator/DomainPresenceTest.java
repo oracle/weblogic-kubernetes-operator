@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -527,11 +527,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(createEventResource(uid, serverName, message));
   }
 
-  private CoreV1Event createEventResource(String uid, String serverName, String message) {
-    return new CoreV1Event()
+  private EventsV1Event createEventResource(String uid, String serverName, String note) {
+    return new EventsV1Event()
         .metadata(createNamespacedMetadata(uid, NS))
-        .involvedObject(new V1ObjectReference().name(LegalNames.toEventName(uid, serverName)))
-        .message(message);
+        .regarding(new V1ObjectReference().name(LegalNames.toEventName(uid, serverName)))
+        .note(note);
   }
 
   @Test

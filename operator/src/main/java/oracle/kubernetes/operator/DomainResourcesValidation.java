@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
@@ -77,7 +77,7 @@ class DomainResourcesValidation {
       }
 
       @Override
-      public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+      public Consumer<EventsV1EventList> getOperatorEventListProcessing() {
         return DomainResourcesValidation.this::addOperatorEventList;
       }
 
@@ -145,11 +145,11 @@ class DomainResourcesValidation {
         .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
   }
 
-  private void addEvent(CoreV1Event event) {
+  private void addEvent(EventsV1Event event) {
     DomainProcessorImpl.updateEventK8SObjects(event);
   }
 
-  private void addOperatorEventList(CoreV1EventList list) {
+  private void addOperatorEventList(EventsV1EventList list) {
     list.getItems().forEach(this::addEvent);
   }
 
