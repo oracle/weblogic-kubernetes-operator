@@ -688,7 +688,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .verbs(asList("get", "create")))
         .addRulesItem(
             newPolicyRule()
-                .addApiGroupsItem("")
+                .addApiGroupsItem("events.k8s.io")
                 .resources(
                     singletonList("events"))
                 .verbs(
@@ -805,7 +805,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                         "deletecollection")))
         .addRulesItem(
             newPolicyRule()
-                .addApiGroupsItem("")
+                .addApiGroupsItem("events.k8s.io")
                 .resources(singletonList("events"))
                 .verbs(
                     asList(
