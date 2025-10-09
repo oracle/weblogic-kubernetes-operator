@@ -66,10 +66,10 @@ spec:
         resources:
           requests:
             cpu: {{ .cpuRequests | default "100m" }}
-            memory: {{ .memoryRequests | default "10Mi" }}
+            memory: {{ .memoryRequests | default "20Mi" }}
           limits:
             cpu: {{ .cpuLimits | default "100m" }}
-            memory: {{ .memoryLimits | default "10Mi" }}
+            memory: {{ .memoryLimits | default "20Mi" }}
         securityContext:
           {{- if or (hasKey . "runAsUser") (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
           runAsUser: {{ .runAsUser | default 1000 }}
