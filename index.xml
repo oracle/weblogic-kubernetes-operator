@@ -538,7 +538,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release 4.3.2 :&#xA;Support for Kubernetes 1.32.1+ with Oracle WebLogic Server 12.2.1.4 or 14.1.1.0 requires that the WebLogic container images have patch 37788099. No patch is required when using Oracle WebLogic Server 14.1.2.0.&#xA;Kubernetes 1.26.2+, 1.27.2+, 1.28.2+, 1.29.1+, 1.30.1+, 1.31.1+, 1.32.1+, 1.33.1+ (check with kubectl version).&#xA;Flannel networking v0.26.7 or later (check with docker images | grep flannel), Calico networking v3.29.4 or later, or OpenShift SDN on OpenShift 4.</description>
+      <description>For the current production release 4.3.2 :&#xA;Support for Kubernetes 1.32.1+ with Oracle WebLogic Server 12.2.1.4 or 14.1.1.0 requires that the WebLogic container images have patch 37788099. No patch is required when using Oracle WebLogic Server 14.1.2.0 or later.&#xA;Kubernetes 1.26.2+, 1.27.2+, 1.28.2+, 1.29.1+, 1.30.1+, 1.31.1+, 1.32.1+, 1.33.1+ (check with kubectl version).&#xA;Flannel networking v0.26.7 or later (check with docker images | grep flannel), Calico networking v3.29.4 or later, or OpenShift SDN on OpenShift 4.</description>
     </item>
     <item>
       <title>Under the covers</title>
