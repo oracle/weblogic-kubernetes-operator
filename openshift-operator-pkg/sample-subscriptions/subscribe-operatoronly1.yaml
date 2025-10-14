@@ -1,0 +1,37 @@
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# note:  OperatorGroup controls what can be accessed.  For operator only managing a single/list of namespaces
+# specify
+# spec:
+#  targetNamespaces:
+#  - ns1
+#  - ns2
+#
+# otherwise spec: {} means it can access cluster wide resources
+#
+#  Subscription.name is the bundle name  
+#   weblogic-operator-full
+#   weblogic-operator-webhook-only
+#   weblogic-operator-operator-only
+#
+
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: operator1
+  namespace: wko-operator-only1
+spec: 
+ {}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: operator1
+  namespace: wko-operator-only1
+spec:
+  channel: stable
+  name: weblogic-operator-operator-only
+  source: weblogic-operator-catalog
+  sourceNamespace: openshift-marketplace
+

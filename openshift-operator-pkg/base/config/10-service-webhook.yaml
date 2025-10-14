@@ -1,0 +1,22 @@
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: weblogic-operator-webhook-svc
+  namespace: placeholder
+  labels:
+    app: weblogic-operator-webhook
+spec:
+  type: ClusterIP
+  selector:
+    app: weblogic-operator-webhook
+  ports:
+    - port: 8083
+      name: metrics
+      appProtocol: http
+    - port: 8084
+      name: restwebhook
+      appProtocol: https
+

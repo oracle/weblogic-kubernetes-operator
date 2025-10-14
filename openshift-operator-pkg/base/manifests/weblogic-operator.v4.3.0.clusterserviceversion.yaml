@@ -1,0 +1,324 @@
+# Copyright (c) 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: weblogic-operator.v4.3.31
+  namespace: placeholder
+  annotations:
+    # optional: show an example CR in the console "Create" UI
+    # alm-examples: |
+    #   [ { "apiVersion": "weblogic.oracle/v1", "kind": "Domain", "metadata": { "name": "sample" }, "spec": {} } ]
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/os.linux: supported
+spec:
+  displayName: WebLogic Kubernetes Operator
+  description: |
+    Oracle WebLogic operator packaged for OLM. Includes operator, optional validating webhook,
+    and CRDs for domains and clusters. 
+  provider:
+    name: Oracle
+  maintainers:
+    - name: WKO Team
+      email: ryan.eberhard@oracle.com
+  maturity: stable
+  version: 4.3.31
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: true
+
+  # ---- CRDs ----
+  customresourcedefinitions:
+    owned:
+      - name: domains.weblogic.oracle
+        version: v9        # <-- match your real served version
+        kind: Domain
+        displayName: WebLogic Domain
+        description: WebLogic Domain custom resource.
+      - name: clusters.weblogic.oracle
+        version: v1
+        kind: Cluster
+        displayName: WebLogic Cluster
+        description: WebLogic Cluster custom resource.
+
+  # ---- Webhook (CSV-managed) ----
+  # Adjust webhookPath to your handler. containerPort 8084 matches your Service "restwebhook".
+  webhookdefinitions:
+    - type: ValidatingAdmissionWebhook
+      admissionReviewVersions: ["v1"]
+      deploymentName: weblogic-operator-webhook
+      generateName: weblogic.operator.webhook
+      containerPort: 8084
+      sideEffects: None
+      failurePolicy: Fail
+      webhookPath: /validate   # <-- set your actual path here
+      rules:
+        - operations: ["CREATE","UPDATE"]
+          apiGroups: ["weblogic.oracle"]
+          apiVersions: ["v9"]
+          resources: ["domains"]
+        - operations: ["CREATE","UPDATE"]
+          apiGroups: ["weblogic.oracle"]
+          apiVersions: ["v1"]
+          resources: ["clusters"]
+
+  # ---- Install spec with RBAC + Deployments ----
+  install:
+    strategy: deployment
+    spec:
+      # Namespaced RBAC
+      permissions:
+        - serviceAccountName: weblogic-operator-sa
+          rules:
+            - apiGroups: [""]
+              resources: ["events","secrets","configmaps","services","pods"]
+              verbs: ["get","list","watch","create","update","patch","delete","deletecollection"]
+            - apiGroups: [""]
+              resources: ["pods/log"]
+              verbs: ["get","list"]
+            - apiGroups: [""]
+              resources: ["pods/exec"]
+              verbs: ["get","create"]
+            - apiGroups: [""]
+              resources: ["persistentvolumeclaims"]
+              verbs: ["get","list","create"]
+            - apiGroups: ["batch"]
+              resources: ["jobs"]
+              verbs: ["get","list","watch","create","update","patch","delete","deletecollection"]
+            - apiGroups: ["policy"]
+              resources: ["poddisruptionbudgets"]
+              verbs: ["get","list","watch","create","update","patch","delete","deletecollection"]
+            - apiGroups: ["weblogic.oracle"]
+              resources: ["domains","clusters","domains/status","clusters/status"]
+              verbs: ["get","list","watch","create","update","patch","delete","deletecollection"]
+            - apiGroups: ["admissionregistration.k8s.io"]
+              resources: ["validatingwebhookconfigurations"]
+              verbs: ["get","create","update","patch","delete"]
+            - apiGroups: ["admissionregistration.k8s.io"]
+              resources: ["mutatingwebhookconfigurations"]
+              verbs: ["get","create","update","patch","delete"]
+
+      # Cluster RBAC
+      clusterPermissions:
+        - serviceAccountName: weblogic-operator-sa
+          rules:
+            - apiGroups: [""]
+              resources: ["namespaces"]
+              verbs: ["get","list","watch"]
+            - apiGroups: ["apiextensions.k8s.io"]
+              resources: ["customresourcedefinitions"]
+              verbs: ["get","list","watch","create","update","patch"]
+            - apiGroups: [""]
+              resources: ["persistentvolumes"]
+              verbs: ["get","list","create"]
+            - apiGroups: ["authentication.k8s.io"]
+              resources: ["tokenreviews"]
+              verbs: ["create"]
+            - apiGroups: ["authorization.k8s.io"]
+              resources: ["selfsubjectrulesreviews"]
+              verbs: ["create"]
+            - apiGroups: ["admissionregistration.k8s.io"]
+              resources: ["validatingwebhookconfigurations"]
+              verbs: ["get","create","update","patch","delete"]
+            - apiGroups: ["weblogic.oracle"]
+              resources: ["domains","clusters","domains/status","clusters/status"]
+              verbs: ["get","list","watch","create","update","patch","delete","deletecollection"]
+            - nonResourceURLs: ["/version/*"]
+              verbs: ["get"]
+
+      # Deployments (operator + webhook) — mirrors your dry-run
+      deployments:
+        - name: weblogic-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                weblogic.operatorName: weblogic-operator
+            strategy:
+              type: Recreate
+            template:
+              metadata:
+                labels:
+                  weblogic.operatorName: weblogic-operator
+                  app: weblogic-operator
+                annotations:
+                  prometheus.io/port: "8083"
+                  prometheus.io/scrape: "true"
+              spec:
+                serviceAccountName: weblogic-operator-sa
+                initContainers:
+                  - name: copy-container
+                    image: ghcr.io/oracle/weblogic-kubernetes-operator:4.3.0
+                    imagePullPolicy: IfNotPresent
+                    command: ["/bin/sh","-c","cp /deployment/* /deployment_copy && cp /probes/* /probes_copy"]
+                    volumeMounts:
+                      - name: deployment-volume
+                        mountPath: /deployment_copy
+                      - name: probes-volume
+                        mountPath: /probes_copy
+                containers:
+                  - name: weblogic-operator
+                    image: ghcr.io/oracle/weblogic-kubernetes-operator:4.3.0
+                    imagePullPolicy: IfNotPresent
+                    command: ["/deployment/operator.sh"]
+                    lifecycle:
+                      preStop:
+                        exec: { command: ["/deployment/stop.sh"] }
+                    env:
+                      - name: OPERATOR_NAMESPACE
+                        valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+                      - name: OPERATOR_POD_NAME
+                        valueFrom: { fieldRef: { fieldPath: metadata.name } }
+                      - name: OPERATOR_POD_UID
+                        valueFrom: { fieldRef: { fieldPath: metadata.uid } }
+                      - name: OPERATOR_VERBOSE
+                        value: "false"
+                      - name: KUBERNETES_PLATFORM
+                        value: "OpenShift"
+                      - name: JAVA_LOGGING_LEVEL
+                        value: "FINE"
+                      - name: JAVA_LOGGING_MAXSIZE
+                        value: "30000000"
+                      - name: JAVA_LOGGING_COUNT
+                        value: "10"
+                      - name: JVM_OPTIONS
+                        value: "-XshowSettings:vm -XX:MaxRAMPercentage=70"
+                    resources:
+                      requests: { cpu: "250m", memory: "512Mi" }
+                    securityContext:
+                      runAsNonRoot: true
+                      readOnlyRootFilesystem: true
+                      privileged: false
+                      allowPrivilegeEscalation: false
+                      capabilities: { drop: ["ALL"] }
+                    volumeMounts:
+                      - name: weblogic-operator-cm-volume
+                        mountPath: /deployment/config
+                      - name: weblogic-operator-debug-cm-volume
+                        mountPath: /deployment/debug-config
+                      - name: weblogic-operator-secrets-volume
+                        mountPath: /deployment/secrets
+                        readOnly: true
+                      - name: deployment-volume
+                        mountPath: /deployment
+                      - name: log-volume
+                        mountPath: /logs
+                      - name: probes-volume
+                        mountPath: /probes
+                    livenessProbe:
+                      exec: { command: ["/probes/livenessProbe.sh"] }
+                      initialDelaySeconds: 40
+                      periodSeconds: 10
+                      failureThreshold: 5
+                    readinessProbe:
+                      exec: { command: ["/probes/readinessProbe.sh"] }
+                      initialDelaySeconds: 2
+                      periodSeconds: 10
+                volumes:
+                  - name: weblogic-operator-cm-volume
+                    configMap: { name: weblogic-operator-cm }
+                  - name: weblogic-operator-debug-cm-volume
+                    configMap: { name: weblogic-operator-debug-cm, optional: true }
+                  - name: weblogic-operator-secrets-volume
+                    secret: { secretName: weblogic-operator-secrets }
+                  - name: deployment-volume
+                    emptyDir: {}
+                  - name: log-volume
+                    emptyDir: {}
+                  - name: probes-volume
+                    emptyDir: {}
+        - name: weblogic-operator-webhook
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                weblogic.webhookName: weblogic-operator
+            strategy:
+              type: Recreate
+            template:
+              metadata:
+                labels:
+                  weblogic.webhookName: weblogic-operator
+                  app: weblogic-operator-webhook
+                annotations:
+                  prometheus.io/port: "8083"
+                  prometheus.io/scrape: "true"
+                  sidecar.istio.io/inject: "false"
+              spec:
+                serviceAccountName: weblogic-operator-sa
+                initContainers:
+                  - name: copy-container
+                    image: ghcr.io/oracle/weblogic-kubernetes-operator:4.3.0
+                    imagePullPolicy: IfNotPresent
+                    command: ["/bin/sh","-c","cp /deployment/* /deployment_copy && cp /probes/* /probes_copy"]
+                    volumeMounts:
+                      - name: deployment-volume
+                        mountPath: /deployment_copy
+                      - name: probes-volume
+                        mountPath: /probes_copy
+                containers:
+                  - name: weblogic-operator-webhook
+                    image: ghcr.io/oracle/weblogic-kubernetes-operator:4.3.0
+                    imagePullPolicy: IfNotPresent
+                    command: ["/deployment/webhook.sh"]
+                    lifecycle:
+                      preStop:
+                        exec: { command: ["/deployment/stop.sh"] }
+                    env:
+                      - name: WEBHOOK_NAMESPACE
+                        valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+                      - name: WEBHOOK_POD_NAME
+                        valueFrom: { fieldRef: { fieldPath: metadata.name } }
+                      - name: WEBHOOK_POD_UID
+                        valueFrom: { fieldRef: { fieldPath: metadata.uid } }
+                      - name: JAVA_LOGGING_LEVEL
+                        value: "FINE"
+                      - name: JAVA_LOGGING_MAXSIZE
+                        value: "30000000"
+                      - name: JAVA_LOGGING_COUNT
+                        value: "10"
+                    resources:
+                      requests: { cpu: "100m", memory: "100Mi" }
+                    securityContext:
+                      runAsNonRoot: true
+                      readOnlyRootFilesystem: true
+                      privileged: false
+                      allowPrivilegeEscalation: false
+                      capabilities: { drop: ["ALL"] }
+                    volumeMounts:
+                      - name: weblogic-webhook-cm-volume
+                        mountPath: /deployment/config
+                      - name: weblogic-webhook-secrets-volume
+                        mountPath: /deployment/secrets
+                        readOnly: true
+                      - name: deployment-volume
+                        mountPath: /deployment
+                      - name: log-volume
+                        mountPath: /logs
+                      - name: probes-volume
+                        mountPath: /probes
+                    livenessProbe:
+                      exec: { command: ["/probes/livenessProbe.sh"] }
+                      initialDelaySeconds: 40
+                      periodSeconds: 5
+                    readinessProbe:
+                      exec: { command: ["/probes/readinessProbe.sh"] }
+                      initialDelaySeconds: 2
+                      periodSeconds: 10
+                volumes:
+                  - name: weblogic-webhook-cm-volume
+                    configMap: { name: weblogic-webhook-cm }
+                  - name: weblogic-webhook-secrets-volume
+                    secret: { secretName: weblogic-webhook-secrets }
+                  - name: deployment-volume
+                    emptyDir: {}
+                  - name: log-volume
+                    emptyDir: {}
+                  - name: probes-volume
+                    emptyDir: {}

@@ -1,0 +1,60 @@
+This folder contains everything to build the Openshift Operator Bundles for WebLogic Kubernetes Operator
+
+Directory Structure
+
+./base:
+config			crds			kustomization.yaml	manifests
+
+./base/config:
+00-serviceaccount.yaml		21-configmap-webhook.yaml	kustomization.yaml
+10-service-webhook.yaml		30-secret-operator.yaml
+20-configmap-operator.yaml	31-secret-webhook.yaml
+
+./base/crds:
+crd-weblogic-oracle-clusters.yaml	kustomization.yaml
+crd-weblogic-oracle-domains-v9.yaml
+
+./base/manifests:
+weblogic-operator.v4.3.0.clusterserviceversion.yaml
+
+./overlays/dedicated:
+kustomization.yaml
+
+./overlays/full:
+kustomization.yaml
+
+./overlays/operator-only:
+kustomization.yaml
+
+./overlays/webhook-only:
+kustomization.yaml
+
+./scripts:
+build-push-bundles.sh	generate-bundles.sh
+
+./sample-subscriptions/
+catalogsvc.yaml			subscribe-operatoronly1.yaml
+subscribe-full.yaml		subscribe-webhookonly.yaml
+
+
+
+The main configuration is in base/manfests/weblogic-operator.v4.3.0.clusterserviceversion.yaml
+
+It is structured so that it can be build by kustomize which uses overlay/*/kustomization.yaml to assist generating the bunldes. Shell scripts in scripts/ directory will 
+generate and build/push images to a repo.
+
+General workflow
+
+1) Build operator image.
+2) Modify base/manifests/weblogic-operator.v4.3.0.clusterserviceversion.yaml , update the image and version for the bundles.
+3) Modify base/config/*.yaml version info.
+4) run scripts/generate-bundles.sh ,  it creates different bundle under a sub-directory bundles
+5) run scripts/build-push-bundles.sh to build the individual bundle image and also a final index image containing all the bundles. 
+
+opm, kustomize and podman commands are required to run the scripts.
+
+Administrator Task:
+
+1) Update the catalogsvc.yaml image address for the index image location and apply it.
+2) Apply the appropriate subscription yaml.  
+

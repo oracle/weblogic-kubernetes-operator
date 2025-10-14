@@ -1,0 +1,22 @@
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: weblogic-operators
+  namespace: sample-weblogic-operator-ns
+spec: 
+ {}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: weblogic-operator
+  namespace: sample-weblogic-operator-ns
+spec:
+  channel: stable
+  name: weblogic-operator-full
+  source: weblogic-operator-catalog
+  sourceNamespace: openshift-marketplace
+

@@ -1,0 +1,42 @@
+# Copyright (c) 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: ClusterServiceVersion
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "weblogic-operator-dedicated.v4.3.31"
+      - op: replace
+        path: /spec/displayName
+        value: "WebLogic Kubernetes Operator (Dedicated)"
+      - op: replace
+        path: /spec/customresourcedefinitions/owned
+        value: []
+      - op: remove
+        path: /spec/webhookdefinitions
+      - op: add
+        path: /spec/customresourcedefinitions/required
+        value:
+          - name: domains.weblogic.oracle
+            version: v9
+            kind: Domain
+          - name: clusters.weblogic.oracle
+            version: v1
+            kind: Cluster
+      - op: remove
+        path: /spec/install/spec/clusterPermissions
+      - op: replace
+        path: /spec/installModes
+        value:
+          - type: OwnNamespace
+            supported: true
+          - type: AllNamespaces
+            supported: false
