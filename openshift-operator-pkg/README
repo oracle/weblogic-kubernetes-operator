@@ -57,4 +57,4 @@ Administrator Task:
 
 1) Update the catalogsvc.yaml image address for the index image location and apply it.
 2) Apply the appropriate subscription yaml.  
-
+3) To uninstall oc -n <ns> get csv then oc -n <ns> delete csv <csv>
