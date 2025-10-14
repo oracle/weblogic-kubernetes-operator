@@ -33,7 +33,7 @@ kustomization.yaml
 kustomization.yaml
 
 ./scripts:
-build-push-bundles.sh	generate-bundles.sh
+build-push-bundles.sh	generate-bundles.sh patchcm.sh
 
 ./sample-subscriptions/
 catalogsvc.yaml			subscribe-operatoronly1.yaml
@@ -54,6 +54,7 @@ General workflow
 4) run scripts/generate-bundles.sh ,  it creates different bundle under a sub-directory bundles
 5) run scripts/build-push-bundles.sh to build the individual bundle image and also a final index image containing all the bundles. 
 
+
 opm, kustomize and podman commands are required to run the scripts.
 
 Administrator Task:
@@ -61,3 +62,12 @@ Administrator Task:
 1) Update the catalogsvc.yaml image address for the index image location and apply it.
 2) Apply the appropriate subscription yaml.  
 3) To uninstall oc -n <ns> get csv then oc -n <ns> delete csv <csv>
+4) The default domain selection strategy is Label with label weblogic-operator=enabled, to change it, update the operator configmap, use patchcm.sh as an example and then use rollout restart the deployment. e.g. 
+
+
+oc patch configmap weblogic-operator-cm -n sample-weblogic-operator-ns --type='json' -p='[
+  {"op":"replace","path":"/data/domainNamespaceSelectionStrategy","value":"List"},
+  {"op":"add","path":"/data/domainNamespaces","value":"sample-domain1-ns"}
+]'
+
+oc -n <ns> rollout restart deployment/weblogic-operator 
