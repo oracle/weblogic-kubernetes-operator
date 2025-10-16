@@ -2,19 +2,15 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
-    '0.23.0': [
-        '1.30.0':  'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e',
-        '1.30':    'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e',
-        '1.29.4':  'kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8',
-        '1.29':    'kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8',
-        '1.28.9':  'kindest/node:v1.28.9@sha256:dca54bc6a6079dd34699d53d7d4ffa2e853e46a20cd12d619a09207e35300bd0',
-        '1.28':    'kindest/node:v1.28.9@sha256:dca54bc6a6079dd34699d53d7d4ffa2e853e46a20cd12d619a09207e35300bd0',
-        '1.27.13': 'kindest/node:v1.27.13@sha256:17439fa5b32290e3ead39ead1250dca1d822d94a10d26f1981756cd51b24b9d8',
-        '1.27':    'kindest/node:v1.27.13@sha256:17439fa5b32290e3ead39ead1250dca1d822d94a10d26f1981756cd51b24b9d8',
-        '1.26.15': 'kindest/node:v1.26.15@sha256:84333e26cae1d70361bb7339efb568df1871419f2019c80f9a12b7e2d485fe19',
-        '1.26':    'kindest/node:v1.26.15@sha256:84333e26cae1d70361bb7339efb568df1871419f2019c80f9a12b7e2d485fe19',
-        '1.25.16': 'kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b',
-        '1.25':    'kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b'
+    '0.30.0': [
+        '1.34.0':  'kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a',
+        '1.34':    'kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a',
+        '1.33.4':  'kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2',
+        '1.33':    'kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2',
+        '1.32.8':  'kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1',
+        '1.32':    'kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1',
+        '1.31.12': 'kindest/node:v1.31.12@sha256:0f5cc49c5e73c0c2bb6e2df56e7df189240d83cf94edfa30946482eb08ec57d2',
+        '1.31':    'kindest/node:v1.31.12@sha256:0f5cc49c5e73c0c2bb6e2df56e7df189240d83cf94edfa30946482eb08ec57d2'
     ]
 ]
 def _kind_image = null
@@ -68,29 +64,25 @@ pipeline {
         string(name: 'OPERATOR_LOG_LEVEL',
                description: 'The default log level is not set',
                defaultValue: ''
-	)
+        )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                   '0.23.0'
+                   '0.30.0'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.23.0: 1.30, 1.30.0, 1.29, 1.29.4, 1.28, 1.28.9, 1.27, 1.27.13, 1.26, 1.26.15, 1.25, 1.25.16 ',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.30.0: 1.34.0, 1,34, 1.33.4, 1.33, 1.32.8, 1.32, 1.31.12, 1.31 ',
                choices: [
                     // The first item in the list is the default value...
-                    '1.30.0',
-                    '1.30',
-                    '1.29.4',
-                    '1.29',
-                    '1.28.9',
-                    '1.28',
-                    '1.27.13',
-                    '1.27',
-                    '1.26.15',
-                    '1.26',
-                    '1.25.16',
-                    '1.25'
+                    '1.34.0',
+                    '1.34',
+                    '1.33.4',
+                    '1.33',
+                    '1.32.8',
+                    '1.32',
+                    '1.31.12',
+                    '1.31'
                ]
         )
         string(name: 'HELM_VERSION',
@@ -100,7 +92,7 @@ pipeline {
         choice(name: 'ISTIO_VERSION',
                description: 'Istio version',
                choices: [
-	           '1.23.0',
+                   '1.23.0',
                    '1.17.2',
                    '1.16.1',
                    '1.13.2',
@@ -143,7 +135,7 @@ pipeline {
                defaultValue: "test-images/weblogic"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
-                              description: '14.1.2.0-generic-jdk17-ol8, 14.1.2.0-generic-jdk17-ol9, 14.1.2.0-generic-jdk21-ol8, 14.1.2.0-generic-jdk21-ol9, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
+	       description: '14.1.2.0-generic-jdk17-ol8, 14.1.2.0-generic-jdk17-ol9, 14.1.2.0-generic-jdk21-ol8, 14.1.2.0-generic-jdk21-ol9, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
                defaultValue: '14.1.2.0-generic-jdk17-ol8'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
@@ -160,7 +152,7 @@ pipeline {
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
-               defaultValue: '12.2.0.1-slim'
+               defaultValue: '19.3.0.0'
         )
         string(name: 'MONITORING_EXPORTER_BRANCH',
                description: '',
@@ -234,7 +226,13 @@ pipeline {
                                 error('KIND_VERSION or KUBE_VERSION were null')
                             }
                             echo "Kind Image = ${_kind_image}"
+                            if (env.JOB_NAME == 'wko-kind-k8sversion') {
+                                currentBuild.description = "${GIT_BRANCH} ${KUBE_VERSION}"
+                            } else {
+                                currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME}"
+                            }
                         }
+
                     }
                 }
 
@@ -330,15 +328,16 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+
+                            running="$(podman container inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
                             if [ "${running}" = 'true' ]; then
                               echo "Stopping the registry container ${registry_name}"
-                              docker stop "${registry_name}"
-                              docker rm --force "${registry_name}"
+                              podman stop "${registry_name}"
+                              podman rm --force "${registry_name}"
                             fi
         
-                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
-                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2
+                            podman run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
+                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2.8.2
                             echo "Registry Host: ${registry_host}"
                         '''
                     }
@@ -458,6 +457,10 @@ nodes:
         hostPort: 2224
       - containerPort: 31128
         hostPort: 2228
+      - containerPort: 31132
+        hostPort: 8001
+      - containerPort: 31136
+        hostPort: 2232
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
@@ -476,6 +479,7 @@ EOF
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
                             done
+                            podman exec -it kind-worker bash -c "sysctl vm.max_map_count"
 
                             # Document the local registry
                             # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
@@ -500,6 +504,7 @@ EOF
                     }
                     steps {
                         script {
+
                             def res = 0
                             res = sh(script: '''
                                     if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
@@ -523,12 +528,12 @@ EOF
                                 PARALLEL_RUN='false'
                             elif [ "${MAVEN_PROFILE_NAME}" == "kind-upgrade" ]; then
                                 PARALLEL_RUN='false'
-                            elif [ -n "${IT_TEST}" ]; then
+                            fi
+                            if [ -n "${IT_TEST}" ]; then
                                 echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
                                 MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
-                            echo "-Dmaven.wagon.http.retryHandler.count=3"                                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
@@ -558,11 +563,11 @@ EOF
                             echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
                             echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
+			    echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
-                            kubectl describe node kind-worker
                         '''
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             withCredentials([
@@ -594,10 +599,10 @@ EOF
                                 if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
                                     echo "Failed to export kind logs for kind cluster ${kind_name}"
                                 fi
-                                if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
+                                if ! podman exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
                                     echo "Failed to run journalctl for kind worker"
                                 fi
-                                if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
+                                if ! podman exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
                                     echo "Failed to run journalctl for kind control plane"
                                 fi
                                 if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
@@ -608,7 +613,7 @@ EOF
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                             '''
                             archiveArtifacts(artifacts:
-                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*")
+                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*,integration-tests/target/failsafe-reports/*.xml")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
                         }
                     }
@@ -618,16 +623,17 @@ EOF
                 always {
                     sh '''
                         export PATH="${WORKSPACE}/bin:${PATH}"
-                        running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+                        running="$(podman container inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
                         if [ "${running}" = 'true' ]; then
                             echo "Stopping the registry container ${registry_name}"
-                            docker stop "${registry_name}"
-                            docker rm --force "${registry_name}"
+                            podman stop "${registry_name}"
+                            podman rm --force "${registry_name}"
                         fi
                         echo 'Remove old Kind cluster (if any)...'
                         if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                             echo "Failed to delete kind cluster ${kind_name}"
                         fi
+                        sudo chown -R $(whoami) ${WORKSPACE}
                     '''
                 }
             }
