@@ -234,7 +234,15 @@ public class EventHelper {
 
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
-        DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
+
+        // TEST
+        LOGGER.severe("RJE: Created event, name=" + callResponse.getObject().getMetadata().getName()
+            + ", reason=" + callResponse.getObject().getReason() + ", note=" +  callResponse.getObject().getNote()
+            + ", count=" + Optional.ofNullable(callResponse.getObject().getSeries())
+            .map(EventsV1EventSeries::getCount).orElse(1));
+
+        // RJE, HERE
+        // DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
         if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
           LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
           domainNamespaces.shouldStartNamespace(eventData.getNamespace());
@@ -285,7 +293,15 @@ public class EventHelper {
 
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
-        DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
+
+        // TEST
+        LOGGER.severe("RJE: Updated event, name=" + callResponse.getObject().getMetadata().getName()
+            + ", reason=" + callResponse.getObject().getReason() + ", note=" +  callResponse.getObject().getNote()
+            + ", count=" + Optional.ofNullable(callResponse.getObject().getSeries())
+            .map(EventsV1EventSeries::getCount).orElse(1));
+
+        // RJE, HERE
+        // DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
         return doNext(packet);
       }
 
@@ -1219,6 +1235,13 @@ public class EventHelper {
 
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
+
+        // TEST
+        LOGGER.severe("RJE: Created event, name=" + callResponse.getObject().getMetadata().getName()
+            + ", reason=" + callResponse.getObject().getReason() + ", note=" +  callResponse.getObject().getNote()
+            + ", count=" + Optional.ofNullable(callResponse.getObject().getSeries())
+            .map(EventsV1EventSeries::getCount).orElse(1));
+
         return doNext(packet);
       }
     }
@@ -1236,6 +1259,13 @@ public class EventHelper {
 
       @Override
       public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
+
+        // TEST
+        LOGGER.severe("RJE: Updated event, name=" + callResponse.getObject().getMetadata().getName()
+            + ", reason=" + callResponse.getObject().getReason() + ", note=" +  callResponse.getObject().getNote()
+            + ", count=" + Optional.ofNullable(callResponse.getObject().getSeries())
+            .map(EventsV1EventSeries::getCount).orElse(1));
+
         return doNext(packet);
       }
 
