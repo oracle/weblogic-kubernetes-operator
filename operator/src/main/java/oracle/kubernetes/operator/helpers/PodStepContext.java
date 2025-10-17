@@ -1270,6 +1270,13 @@ public abstract class PodStepContext extends BasePodStepContext {
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
+    private void restoreMetricsExporterSidecarJavaOpts(V1Pod recipe, V1Pod currentPod) {
+      V1PodSpec podSpec = recipe.getSpec();
+      stream(podSpec.getContainers()).filter(c -> "monitoring-exporter".equals(c.getName()))
+          .findFirst().flatMap(c -> stream(c.getEnv()).filter(p -> "JDK_JAVA_OPTIONS".equals(p.getName()))
+              .findFirst()).ifPresent(p -> p.setName("JAVA_OPTS"));
+    }
+
     private void restoreLegacyIstioPortsConfig(V1Pod recipePod,  V1Pod currentPod) {
       V1PodSpec recipePodSpec = recipePod.getSpec();
 
@@ -1416,6 +1423,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       // return true if any adjusted hash matches required hash
       List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments = List.of(
           Pair.of("restoreMetricsExporterSidecarPortTcpMetrics", this::restoreMetricsExporterSidecarPortTcpMetrics),
+          Pair.of("restoreMetricsExporterSidecarJavaOpts", this::restoreMetricsExporterSidecarJavaOpts),
           Pair.of("convertAuxImagesInitContainerVolumeAndMounts",
               this::convertAuxImagesInitContainerVolumeAndMounts),
           Pair.of("restoreLegacyIstioPortsConfig", this::restoreLegacyIstioPortsConfig),
@@ -1662,7 +1670,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
             .resources(getDomain().getMonitoringExporterResources())
             .securityContext(getServerSpec().getContainerSecurityContext())
-            .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
+            .addEnvItem(new V1EnvVar().name("JDK_JAVA_OPTIONS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
                 .name("metrics").protocol("TCP").containerPort(getPort()));
 

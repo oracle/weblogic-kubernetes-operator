@@ -1391,7 +1391,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
       if (getJavaOptions(container).contains(expectedOption)) {
         return true;
       } else {
-        mismatchDescription.appendText("JAVA_OPTS is ").appendValue(getJavaOptEnv(container));
+        mismatchDescription.appendText("JDK_JAVA_OPTIONS is ").appendValue(getJavaOptEnv(container));
         return false;
       }
     }
@@ -1406,7 +1406,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     @Nonnull
     private String getJavaOptEnv(V1Container container) {
       return getEnvironmentVariables(container).stream()
-            .filter(env -> "JAVA_OPTS".equals(env.getName()))
+            .filter(env -> "JDK_JAVA_OPTIONS".equals(env.getName()))
             .map(V1EnvVar::getValue)
             .findFirst()
             .orElse("");
@@ -1419,7 +1419,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     @Override
     public void describeTo(Description description) {
-      description.appendText("JAVA_OPTS containing ").appendValue(expectedOption);
+      description.appendText("JDK_JAVA_OPTIONS containing ").appendValue(expectedOption);
     }
   }
 
