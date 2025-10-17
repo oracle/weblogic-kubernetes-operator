@@ -1361,7 +1361,7 @@ public class MonitoringUtils {
     }
     // access metrics
     final String command = String.format(
-        "%s exec -n %s %s -- curl -k %s://%s:%s@%s:%s/%s",
+        "%s exec -c weblogic-server -n %s %s -- curl -k %s://%s:%s@%s:%s/%s",
         KUBERNETES_CLI,
         domainNS,
         podName,
@@ -1446,7 +1446,8 @@ public class MonitoringUtils {
   public static boolean verifyMonExpAppAccessSideCar(String searchKey,
                                               String domainNS, String podName) {
     // access metrics
-    final String command = String.format("%s exec -n %s %s -- curl -X GET -u %s:%s http://localhost:8080/metrics",
+    final String command = String.format(
+        "%s exec -c weblogic-server -n %s %s -- curl -X GET -u %s:%s http://localhost:8080/metrics",
         KUBERNETES_CLI, domainNS, podName, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     logger.info("accessing managed server exporter via " + command);
