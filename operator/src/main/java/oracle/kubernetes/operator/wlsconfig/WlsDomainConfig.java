@@ -30,6 +30,8 @@ public class WlsDomainConfig implements WlsDomain {
 
   private String adminServerName;
 
+  private String restfulAPIEnabled;
+
   // Contains all configured WLS clusters in the WLS domain
   private List<WlsClusterConfig> configuredClusters = new ArrayList<>();
   // Contains all statically configured WLS servers in the WLS domain
@@ -62,6 +64,7 @@ public class WlsDomainConfig implements WlsDomain {
   public WlsDomainConfig(
       String name,
       String adminServerName,
+      String restfulAPIEnabled,
       Map<String, WlsClusterConfig> wlsClusterConfigs,
       Map<String, WlsServerConfig> wlsServerConfigs,
       Map<String, WlsServerConfig> wlsServerTemplates) {
@@ -72,6 +75,7 @@ public class WlsDomainConfig implements WlsDomain {
         wlsServerTemplates != null ? new ArrayList<>(wlsServerTemplates.values()) : null;
     this.name = name;
     this.adminServerName = adminServerName;
+    this.restfulAPIEnabled = restfulAPIEnabled;
     // set domainConfig for each WlsClusterConfig
     for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
       wlsClusterConfig.setWlsDomainConfig(this);
@@ -111,6 +115,18 @@ public class WlsDomainConfig implements WlsDomain {
 
   public void setAdminServerName(String adminServerName) {
     this.adminServerName = adminServerName;
+  }
+
+  /**
+   * Return whether restful management api is enabled.
+   * @return "true" if enabled, otherwise "false"
+   */
+  public String getRestfulAPIEnabled() {
+    return this.restfulAPIEnabled;
+  }
+
+  public void setRestfulAPIEnabled(String restfulAPIEnabled) {
+    this.restfulAPIEnabled = restfulAPIEnabled;
   }
 
   /**
@@ -354,6 +370,7 @@ public class WlsDomainConfig implements WlsDomain {
     return new ToStringBuilder(this)
         .append("name", name)
         .append("adminServerName", adminServerName)
+        .append("restfulAPIEnabled", restfulAPIEnabled)
         .append("configuredClusters", configuredClusters)
         .append("servers", servers)
         .append("serverTemplates", serverTemplates)
@@ -366,6 +383,7 @@ public class WlsDomainConfig implements WlsDomain {
         new HashCodeBuilder()
             .append(name)
             .append(adminServerName)
+            .append(restfulAPIEnabled)
             .append(configuredClusters)
             .append(servers)
             .append(serverTemplates);
@@ -385,6 +403,7 @@ public class WlsDomainConfig implements WlsDomain {
         new EqualsBuilder()
             .append(name, rhs.name)
             .append(adminServerName, rhs.adminServerName)
+            .append(restfulAPIEnabled, rhs.restfulAPIEnabled)
             .append(configuredClusters, rhs.configuredClusters)
             .append(servers, rhs.servers)
             .append(serverTemplates, rhs.serverTemplates);
