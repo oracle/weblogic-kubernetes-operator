@@ -18,7 +18,7 @@ public class DeploymentReady {
 
   public DeploymentReady(CoreDelegate delegate) {
     this.delegate = delegate;
-    this.readinessFile = new File(delegate.getProbesHome(), ".ready");
+    this.readinessFile = new File(delegate.getDeploymentHome(), ".ready");
   }
 
   /**

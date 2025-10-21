@@ -38,8 +38,6 @@ public interface CoreDelegate {
     return new File(getDeploymentHome(), SHUTDOWN_MARKER_NAME);
   }
 
-  File getProbesHome();
-
   default boolean createNewFile(File file) throws IOException {
     return file.createNewFile();
   }

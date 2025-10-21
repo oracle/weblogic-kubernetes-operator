@@ -18,6 +18,7 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,6 +26,10 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.HelmAccess;
@@ -45,6 +50,46 @@ import oracle.kubernetes.utils.SystemClock;
 
 /** An abstract base main class for the operator and the webhook. */
 public abstract class BaseMain {
+
+  static {
+    try {
+      Map<String, String> env  = System.getenv();
+      String loggingLevel = env.get("JAVA_LOGGING_LEVEL");
+      if (loggingLevel != null) {
+        Level level = Level.parse(loggingLevel);
+
+        Logger rootLogger = Logger.getLogger("");
+        rootLogger.setLevel(Level.WARNING);
+
+        // Console Handler
+        ConsoleHandler consoleHandler = new ConsoleHandler();
+        consoleHandler.setLevel(level);
+        consoleHandler.setFormatter(new oracle.kubernetes.operator.logging.OperatorLoggingFormatter());
+        rootLogger.addHandler(consoleHandler);
+
+        String logDir = env.get("OPERATOR_LOGDIR");
+        if (logDir != null) {
+          Files.createDirectories(PathSupport.getPath(new File(logDir)));
+
+          // File handler
+          String pattern = logDir + "/operator%g.log";
+          int limit = Integer.parseInt(env.getOrDefault("JAVA_LOGGING_MAXSIZE", "20000000"));
+          int count = Integer.parseInt(env.getOrDefault("JAVA_LOGGING_COUNT", "10"));
+          FileHandler fileHandler = new FileHandler(pattern, limit, count);
+          fileHandler.setLevel(level);
+          fileHandler.setFormatter(new oracle.kubernetes.operator.logging.OperatorLoggingFormatter());
+          rootLogger.addHandler(fileHandler);
+        }
+
+        Logger logger = Logger.getLogger("Operator", "Operator");
+        logger.setLevel(level);
+      }
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   static final String GIT_BUILD_VERSION_KEY = "git.build.version";
@@ -59,7 +104,6 @@ public abstract class BaseMain {
   static final Semaphore shutdownSignal = new Semaphore(0);
 
   static final File deploymentHome;
-  static final File probesHome;
   final CoreDelegate delegate;
 
   private final AtomicReference<BaseServer> restServer = new AtomicReference<>();
@@ -81,12 +125,6 @@ public abstract class BaseMain {
         deploymentHomeLoc = System.getProperty("deploymentHome", "/deployment");
       }
       deploymentHome = new File(deploymentHomeLoc);
-
-      String probesHomeLoc = HelmAccess.getHelmVariable("PROBES_HOME");
-      if (probesHomeLoc == null) {
-        probesHomeLoc = System.getProperty("probesHome", "/probes");
-      }
-      probesHome = new File(probesHomeLoc);
 
       TuningParameters.initializeInstance(executor, new File(deploymentHome, "config"));
     } catch (IOException e) {

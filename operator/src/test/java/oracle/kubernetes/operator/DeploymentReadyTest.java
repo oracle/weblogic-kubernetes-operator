@@ -47,7 +47,7 @@ class DeploymentReadyTest {
     mementos.forEach(Memento::revert);
 
     // delete probesHome dir (java requires a dir be empty before deletion)
-    Files.walk(coreDelegate.probesHome.toPath())
+    Files.walk(coreDelegate.deploymentHome.toPath())
         .sorted(Comparator.reverseOrder()) // so files delete before dirs
         .map(Path::toFile)
         .forEach(File::delete);
@@ -58,8 +58,8 @@ class DeploymentReadyTest {
     DeploymentReady deploymentReady = new DeploymentReady(coreDelegate);
     deploymentReady.create();
 
-    File readyFile = new File(coreDelegate.probesHome, ".ready");
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    File readyFile = new File(coreDelegate.deploymentHome, ".ready");
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
     assertThat(readyFile, anExistingFile());
 
     assertThat(logRecords, containsFine("Readiness file created"));
@@ -67,13 +67,13 @@ class DeploymentReadyTest {
 
   @Test
   void whenExistingReadyFile_noLog() throws IOException {
-    File readyFile = new File(coreDelegate.probesHome, ".ready");
+    File readyFile = new File(coreDelegate.deploymentHome, ".ready");
     assertTrue(readyFile.createNewFile());
 
     DeploymentReady deploymentReady = new DeploymentReady(coreDelegate);
     deploymentReady.create();
 
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
     assertThat(readyFile, anExistingFile());
 
     assertThat(logRecords, not(containsFine("Readiness file created")));
@@ -81,23 +81,23 @@ class DeploymentReadyTest {
 
   @Test
   void whenCantCreateReadyFile_throw() {
-    assertTrue(coreDelegate.probesHome.setWritable(false, false));
+    assertTrue(coreDelegate.deploymentHome.setWritable(false, false));
 
     DeploymentReady deploymentReady = new DeploymentReady(coreDelegate);
     assertThrows(IOException.class, deploymentReady::create);
 
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
   }
 
   abstract static class CoreDelegateStub implements CoreDelegate {
-    final File probesHome;
+    final File deploymentHome;
 
     protected CoreDelegateStub() throws IOException {
-      probesHome = Files.createTempDirectory("deploymentReadyTest").toFile();
+      deploymentHome = Files.createTempDirectory("deploymentReadyTest").toFile();
     }
 
-    public File getProbesHome() {
-      return probesHome;
+    public File getDeploymentHome() {
+      return deploymentHome;
     }
   }
 }

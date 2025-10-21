@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # do not turn on 'set -x' since it can print sensitive info, like secrets and private keys, to the operator log
@@ -23,7 +23,7 @@ EXTERNAL_CERT_PEM="${EXTERNAL_IDENTITY_DIR}/${EXTERNAL_CERT}"
 EXTERNAL_KEY_PEM="${EXTERNAL_IDENTITY_DIR}/${EXTERNAL_KEY}"
 EXTERNAL_CERT_SECRET="${OPERATOR_CONFIG_DIR}/externalRestIdentitySecret"
 
-# the legacy helm install mount the ceritificate and private key in the following locations:
+# the legacy helm install mount the certificate and private key in the following locations:
 LEGACY_CERT_BASE64_PEM=${OPERATOR_CONFIG_DIR}/${EXTERNAL_CERT}
 LEGACY_KEY_PEM=${OPERATOR_SECRETS_DIR}/${EXTERNAL_KEY}
 
