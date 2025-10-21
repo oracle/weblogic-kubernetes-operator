@@ -58,42 +58,15 @@ spec:
       {{- if (hasKey . "priorityClassName") }}
       priorityClassName: {{ .priorityClassName | quote }}
       {{- end }}
-      initContainers:
-      - name:  "copy-container"
-        image: {{ .image | quote }}
-        imagePullPolicy: "IfNotPresent"
-        command: ["/bin/sh", "-c", "cp /deployment/* /deployment_copy && cp /probes/* /probes_copy"]
-        resources:
-          requests:
-            cpu: {{ .cpuRequests | default "100m" }}
-            memory: {{ .memoryRequests | default "20Mi" }}
-          limits:
-            cpu: {{ .cpuLimits | default "100m" }}
-            memory: {{ .memoryLimits | default "20Mi" }}
-        securityContext:
-          {{- if or (hasKey . "runAsUser") (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
-          runAsUser: {{ .runAsUser | default 1000 }}
-          {{- end }}
-          runAsNonRoot: true
-          privileged: false
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop: ["ALL"]
-        volumeMounts:
-        - name: "deployment-volume"
-          mountPath: "/deployment_copy"
-        - name: "probes-volume"
-          mountPath: "/probes_copy"
       containers:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
         imagePullPolicy: {{ .imagePullPolicy | quote }}
-        command: ["/deployment/operator.sh"]
+        command: ["/operator/operator.sh"]
         lifecycle:
           preStop:
             exec:
-              command: ["/deployment/stop.sh"]
+              command: ["/operator/stop.sh"]
         env:
         - name: "OPERATOR_NAMESPACE"
           valueFrom:
@@ -118,7 +91,7 @@ spec:
           value: "true"
         {{- end }}
         - name: "JAVA_LOGGING_LEVEL"
-          value: {{ .javaLoggingLevel | quote }}
+          value: {{ .javaLoggingLevel | default "INFO" | quote }}
         - name: "JAVA_LOGGING_MAXSIZE"
           value: {{ int64 .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
@@ -129,9 +102,9 @@ spec:
            {{- if not (hasPrefix (toString .operatorLogMount) (toString .operatorLogDir)) }}
             {{- fail (printf "Error: Invalid Configuration: operatorLogDir %s must start with operatorlogMount %s" .operatorLogDir .operatorLogMount) }}
           {{- end }}
-        - name: "OPERATOR_LOGDIR"
-          value: {{ .operatorLogDir | quote }}
         {{- end }}
+        - name: "OPERATOR_LOGDIR"
+          value: {{ .operatorLogDir | default "/logs" | quote }}
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
@@ -183,8 +156,6 @@ spec:
         - name: "log-volume"
           mountPath: "/logs"
         {{- end }}
-        - name: "probes-volume"
-          mountPath: "/probes"
         {{- if and .elkIntegrationEnabled .operatorLogPVC }}
             {{- fail "Error: elkIntegrationEnabled and opeatorLogPVC cannot be set at the same time."}}
         {{- else if .elkIntegrationEnabled }}
@@ -199,13 +170,13 @@ spec:
         {{- if not .remoteDebugNodePortEnabled }}
         livenessProbe:
           exec:
-            command: ["/probes/livenessProbe.sh"]
+            command: ["/operator/livenessProbe.sh"]
           initialDelaySeconds: 40
           periodSeconds: 10
           failureThreshold: 5
         readinessProbe:
           exec:
-            command: ["/probes/readinessProbe.sh"]
+            command: ["/operator/readinessProbe.sh"]
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}
@@ -253,8 +224,6 @@ spec:
       - name: "log-volume"
         emptyDir: {}
       {{- end }}
-      - name: "probes-volume"
-        emptyDir: {}
       {{- if .elkIntegrationEnabled }}
       - name: "log-dir"
         emptyDir:
@@ -366,25 +335,15 @@ spec:
           tolerations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          initContainers:
-          - name:  "copy-container"
-            image: {{ .image | quote }}
-            imagePullPolicy: "IfNotPresent"
-            command: ["/bin/sh", "-c", "cp /deployment/* /deployment_copy && cp /probes/* /probes_copy"]
-            volumeMounts:
-            - name: "deployment-volume"
-              mountPath: "/deployment_copy"
-            - name: "probes-volume"
-              mountPath: "/probes_copy"
           containers:
           - name: "weblogic-operator-webhook"
             image: {{ .image | quote }}
             imagePullPolicy: {{ .imagePullPolicy | quote }}
-            command: ["/deployment/webhook.sh"]
+            command: ["/operator/webhook.sh"]
             lifecycle:
               preStop:
                 exec:
-                  command: ["/deployment/stop.sh"]
+                  command: ["/operator/stop.sh"]
             env:
             - name: "WEBHOOK_NAMESPACE"
               valueFrom:
@@ -399,7 +358,7 @@ spec:
                 fieldRef:
                   fieldPath: "metadata.uid"
             - name: "JAVA_LOGGING_LEVEL"
-              value: {{ .javaLoggingLevel | quote }}
+              value: {{ .javaLoggingLevel | default "INFO" | quote }}
             - name: "JAVA_LOGGING_MAXSIZE"
               value: {{ int64 .javaLoggingFileSizeLimit | default 20000000 | quote }}
             - name: "JAVA_LOGGING_COUNT"
@@ -408,9 +367,9 @@ spec:
               {{- if not (hasPrefix (toString .operatorLogMount) (toString .operatorLogDir)) }}
                 {{- fail (printf "Error: Invalid Configuration: operatorLogDir %s must start with operatorlogMount %s" .operatorLogDir .operatorLogMount) }}
               {{- end }}
-            - name: "OPERATOR_LOGDIR"
-              value: {{ .operatorLogDir | quote }}
             {{- end }}
+            - name: "OPERATOR_LOGDIR"
+              value: {{ .operatorLogDir | default "/logs" | quote }}
             {{- if .remoteDebugNodePortEnabled }}
             - name: "REMOTE_DEBUG_PORT"
               value: {{ .webhookDebugHttpPort | quote }}
@@ -456,8 +415,6 @@ spec:
             - name: "log-volume"
               mountPath: "/logs"
             {{- end }}
-            - name: "probes-volume"
-              mountPath: "/probes"
             {{- if and .elkIntegrationEnabled .operatorLogPVC }}
                 {{- fail "Error: elkIntegrationEnabled and opeatorLogPVC cannot be set at the same time."}}
             {{- else if .elkIntegrationEnabled }}
@@ -472,12 +429,12 @@ spec:
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
               exec:
-                command: ["/probes/livenessProbe.sh"]
+                command: ["/operator/livenessProbe.sh"]
               initialDelaySeconds: 40
               periodSeconds: 5
             readinessProbe:
               exec:
-                command: ["/probes/readinessProbe.sh"]
+                command: ["/operator/readinessProbe.sh"]
               initialDelaySeconds: 2
               periodSeconds: 10
             {{- end }}
@@ -521,8 +478,6 @@ spec:
           - name: "log-volume"
             emptyDir: {}
           {{- end }}
-          - name: "probes-volume"
-            emptyDir: {}
           {{- if .elkIntegrationEnabled }}
           - name: "log-dir"
             emptyDir:

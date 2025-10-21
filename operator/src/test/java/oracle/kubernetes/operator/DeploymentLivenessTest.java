@@ -49,7 +49,7 @@ class DeploymentLivenessTest {
     mementos.forEach(Memento::revert);
 
     // delete probesHome dir (java requires a dir be empty before deletion)
-    Files.walk(coreDelegate.probesHome.toPath())
+    Files.walk(coreDelegate.deploymentHome.toPath())
         .sorted(Comparator.reverseOrder())
         .map(Path::toFile)
         .forEach(File::delete);
@@ -60,8 +60,8 @@ class DeploymentLivenessTest {
     DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
-    File aliveFile = new File(coreDelegate.probesHome, ".alive");
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    File aliveFile = new File(coreDelegate.deploymentHome, ".alive");
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
     assertThat(aliveFile, anExistingFile());
 
     assertThat(logRecords, containsFine("Liveness file created"));
@@ -70,13 +70,13 @@ class DeploymentLivenessTest {
 
   @Test
   void whenExistingLivenessFile_onlyLogLastModifiedUpdated() throws IOException {
-    File aliveFile = new File(coreDelegate.probesHome, ".alive");
+    File aliveFile = new File(coreDelegate.deploymentHome, ".alive");
     assertTrue(aliveFile.createNewFile());
 
     DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
     assertThat(aliveFile, anExistingFile());
 
     assertThat(logRecords, not(containsFine("Liveness file created")));
@@ -85,25 +85,25 @@ class DeploymentLivenessTest {
 
   @Test
   void whenCantCreateLivenessFile_logWarning() throws IOException {
-    assertTrue(coreDelegate.probesHome.setWritable(false, false));
+    assertTrue(coreDelegate.deploymentHome.setWritable(false, false));
 
     DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
 
     assertThat(logRecords, containsWarning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE));
   }
 
   abstract static class CoreDelegateStub implements CoreDelegate {
-    final File probesHome;
+    final File deploymentHome;
 
     protected CoreDelegateStub() throws IOException {
-      probesHome = Files.createTempDirectory("deploymentLivenessTest").toFile();
+      deploymentHome = Files.createTempDirectory("deploymentLivenessTest").toFile();
     }
 
-    public File getProbesHome() {
-      return probesHome;
+    public File getDeploymentHome() {
+      return deploymentHome;
     }
   }
 }

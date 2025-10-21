@@ -25,7 +25,7 @@ public class DeploymentLiveness implements Runnable {
 
   public DeploymentLiveness(Collection<Cancellable> futures, CoreDelegate delegate) {
     this.futures = futures;
-    livenessFile = new File(delegate.getProbesHome(), ".alive");
+    livenessFile = new File(delegate.getDeploymentHome(), ".alive");
   }
 
   @Override

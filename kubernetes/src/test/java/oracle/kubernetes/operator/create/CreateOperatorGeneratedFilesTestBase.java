@@ -225,44 +225,16 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                 .serviceAccountName(getInputs().getServiceAccount())
                                 .securityContext(new V1PodSecurityContext().seccompProfile(
                                     new V1SeccompProfile().type("RuntimeDefault")))
-                                .addInitContainersItem(
-                                    newContainer()
-                                        .name("copy-container")
-                                        .image(getInputs().getWeblogicOperatorImage())
-                                        .imagePullPolicy("IfNotPresent")
-                                        .addCommandItem("/bin/sh")
-                                        .addCommandItem("-c")
-                                        .addCommandItem(
-                                            "cp /deployment/* /deployment_copy && cp /probes/* /probes_copy")
-                                        .addVolumeMountsItem(
-                                            newVolumeMount().name("deployment-volume").mountPath("/deployment_copy"))
-                                        .addVolumeMountsItem(
-                                            newVolumeMount().name("probes-volume").mountPath("/probes_copy"))
-                                        .resources(
-                                            new V1ResourceRequirements()
-                                                .putRequestsItem("cpu", Quantity.fromString("100m"))
-                                                .putRequestsItem(
-                                                    "memory", Quantity.fromString("20Mi"))
-                                                .putLimitsItem("cpu", Quantity.fromString("100m"))
-                                                .putLimitsItem(
-                                                    "memory", Quantity.fromString("20Mi")))
-                                        .securityContext(
-                                            new V1SecurityContext().runAsUser(1000L)
-                                                .runAsNonRoot(true)
-                                                .readOnlyRootFilesystem(true)
-                                                .privileged(false).allowPrivilegeEscalation(false)
-                                                .capabilities(new V1Capabilities().addDropItem("ALL")))
-                                )
                                 .addContainersItem(
                                     newContainer()
                                         .name("weblogic-operator")
                                         .image(getInputs().getWeblogicOperatorImage())
                                         .imagePullPolicy(
                                             getInputs().getWeblogicOperatorImagePullPolicy())
-                                        .addCommandItem("/deployment/operator.sh")
+                                        .addCommandItem("/operator/operator.sh")
                                         .lifecycle(
                                             new V1Lifecycle().preStop(new V1LifecycleHandler().exec(
-                                                new V1ExecAction().addCommandItem("/deployment/stop.sh"))))
+                                                new V1ExecAction().addCommandItem("/operator/stop.sh"))))
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("OPERATOR_NAMESPACE")
@@ -303,6 +275,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newEnvVar()
                                                 .name("JVM_OPTIONS")
                                                 .value("-XX:MaxRAMPercentage=70"))
+                                        .addEnvItem(
+                                            newEnvVar()
+                                                .name("OPERATOR_LOGDIR")
+                                                .value("/logs"))
                                         .resources(
                                             new V1ResourceRequirements()
                                                 .putRequestsItem("cpu", Quantity.fromString("250m"))
@@ -334,11 +310,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .addVolumeMountsItem(
                                             newVolumeMount()
                                                 .name("tmp-volume")
-                                                .mountPath("/tmp"))
-                                        .addVolumeMountsItem(
-                                            newVolumeMount()
-                                                .name("probes-volume")
-                                                .mountPath("/probes")))
+                                                .mountPath("/tmp")))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("weblogic-operator-cm-volume")
@@ -366,19 +338,15 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                     newVolume()
                                         .name("tmp-volume")
                                         .emptyDir(new V1EmptyDirVolumeSource()))
-                                .addVolumesItem(
-                                    newVolume()
-                                        .name("probes-volume")
-                                        .emptyDir(new V1EmptyDirVolumeSource()))
                         )));
 
     boolean isElkIntegrationEnabled = Boolean.parseBoolean(getInputs().getElkIntegrationEnabled());
     if (!isElkIntegrationEnabled) {
       List<V1VolumeMount> mounts = deployment.getSpec().getTemplate().getSpec()
           .getContainers().get(0).getVolumeMounts();
-      mounts.add(mounts.size() - 1, newVolumeMount().name("log-volume").mountPath("/logs"));
+      mounts.add(mounts.size(), newVolumeMount().name("log-volume").mountPath("/logs"));
       List<V1Volume> volumees = deployment.getSpec().getTemplate().getSpec().getVolumes();
-      volumees.add(volumees.size() - 1, newVolume().name("log-volume").emptyDir(new V1EmptyDirVolumeSource()));
+      volumees.add(volumees.size(), newVolume().name("log-volume").emptyDir(new V1EmptyDirVolumeSource()));
     }
 
     return deployment;
@@ -386,8 +354,8 @@ abstract class CreateOperatorGeneratedFilesTestBase {
 
   void expectProbes(V1Container container) {
     container
-        .livenessProbe(createProbe(40, 10, 5, "/probes/livenessProbe.sh"))
-        .readinessProbe(createProbe(2, 10, null, "/probes/readinessProbe.sh"));
+        .livenessProbe(createProbe(40, 10, 5, "/operator/livenessProbe.sh"))
+        .readinessProbe(createProbe(2, 10, null, "/operator/readinessProbe.sh"));
   }
 
   private V1Probe createProbe(Integer initialDelaySeconds, Integer periodSeconds,
