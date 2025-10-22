@@ -21,8 +21,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.ClusterResource;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import org.apache.commons.collections4.ListUtils;
@@ -128,8 +126,12 @@ public class WlsConfigValidator {
   private void verifyDomainResourceReferences() {
     getManagedServers().stream()
           .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
-    info.getReferencedClusters().stream().map(ClusterResource::getSpec)
-          .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
+    info.getReferencedClusters().stream()
+            .filter(cluster -> isUnknownCluster(cluster.getSpec().getClusterName()))
+            .forEach(cluster -> reportUnknownCluster(
+                    cluster.getSpec().getClusterName(),
+                    cluster.getClusterResourceName()
+            ));
   }
 
   private List<ManagedServer> getManagedServers() {
@@ -155,8 +157,8 @@ public class WlsConfigValidator {
     return !domainConfig.containsCluster(clusterName);
   }
 
-  private void reportUnknownCluster(String clusterName) {
-    reportFailure(NO_CLUSTER_IN_DOMAIN, clusterName);
+  private void reportUnknownCluster(String clusterName, String clusterResourceName) {
+    reportFailure(NO_CLUSTER_IN_DOMAIN, clusterResourceName, clusterName);
   }
 
   // Ensure that generated service names are valid.
