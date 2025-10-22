@@ -462,7 +462,7 @@ class TopologyValidationStepTest {
 
     runTopologyValidationStep();
 
-    assertTopologyMismatchReported(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
+    assertTopologyMismatchReported(NO_CLUSTER_IN_DOMAIN, "no-such-cluster", "no-such-cluster");
   }
 
   @Test
@@ -532,7 +532,7 @@ class TopologyValidationStepTest {
   void preserveTopologyFailuresThatStillExist() {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     final OffsetDateTime initialTime = SystemClock.now();
-    final String message = getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
+    final String message = getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster", "no-such-cluster");
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH)
         .withFailureInfo(domain.getSpec()).withMessage(message));
 
@@ -1026,7 +1026,7 @@ class TopologyValidationStepTest {
 
     runTopologyValidationStep();
 
-    assertTopologyMismatchReported(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
+    assertTopologyMismatchReported(NO_CLUSTER_IN_DOMAIN, "no-such-cluster", "no-such-cluster");
   }
 
   @Test
@@ -1042,7 +1042,7 @@ class TopologyValidationStepTest {
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
                 .withNoteContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR),
-                      getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster"),
+                      getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster", "no-such-cluster"),
                       getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server")));
   }
 
