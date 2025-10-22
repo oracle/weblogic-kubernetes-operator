@@ -23,10 +23,10 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: oracle-actions/setup-java@v1
         with:
-          distribution: 'oracle'
-          java-version: 21
+          website: oracle.com
+          release: 25
 
       - name: Cache Maven packages
         uses: actions/cache@v4
