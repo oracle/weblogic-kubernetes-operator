@@ -368,5 +368,4 @@ $ kubectl get events -n sample-weblogic-operator-ns
 ### See also
 
 If you have set up either of the following, then these documents may be helpful in debugging:
-- [Operator REST HTTPS interface]({{<relref "/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
 - [Elastic Stack (Elasticsearch, Logstash, and Kibana)]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) integration

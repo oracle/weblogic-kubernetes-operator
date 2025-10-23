@@ -17,7 +17,7 @@ You can:
 * Configure deployment of WebLogic domains as Kubernetes resources (using Kubernetes custom resource definitions).
 * Override certain aspects of the WebLogic domain configuration; for example, use a different database password for different deployments.
 * Start and stop servers and clusters in the domain based on declarative startup parameters and desired states.
-* Scale WebLogic domains by starting and stopping Managed Servers on demand, Kubernetes scale commands, setting up a Kubernetes Horizontal Pod Autoscaler, or by integrating with a REST API to initiate scaling based on the WebLogic Diagnostics Framework (WLDF), Prometheus, Grafana, or other rules.
+* Scale WebLogic domains by starting and stopping Managed Servers on demand, Kubernetes scale commands, or setting up a Kubernetes Horizontal Pod Autoscaler.
 * Expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing, and automatically update the load balancer when Managed Servers in the WebLogic domain are started or stopped.
 * Expose the WebLogic Server Administration Console outside the Kubernetes cluster, if desired.
 * Expose T3 channels outside the Kubernetes domain, if desired.

@@ -115,25 +115,6 @@ To recover:
 - Create the domain namespace.
 - `helm upgrade` again.
 
-### REST port conflict
-
-REST port conflict-related mistakes.
-
-#### Installing an operator and assigning it the same external REST port number as another operator
-
-A new `FAILED` Helm release is created.
-```shell
-$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml weblogic-operator/weblogic-operator
-```
-```
-Error: release op2 failed: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
-```
-
-To recover:
-
-- $ `helm delete --purge` the failed release.
-- Change the port number and `helm install` the second operator again.
-
 #### Upgrading an operator and assigning it the same external REST port number as another operator
 
 The `helm upgrade` fails and moves the release to the `FAILED` state.

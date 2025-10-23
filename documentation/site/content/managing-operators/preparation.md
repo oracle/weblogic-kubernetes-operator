@@ -357,7 +357,6 @@ that might apply to your particular use case.
 These include node selectors,
 node affinity,
 Elastic Stack integration,
-the operator REST API,
 setting operator pod labels,
 setting operator pod annotations,
 and Istio.

@@ -101,27 +101,3 @@ alternatively, the image pull secret can be specified on the operator's service 
 For more information, see
 [Customizing operator image name, pull secret, and private registry]({{<relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
 {{% /notice %}}
-
-### Operator external REST interface secret
-
-The operator can expose an external REST HTTPS interface which can be
-accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
-is used to hold the certificates and private key.
-
-{{% notice info %}}
-For more information, see [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
-{{% /notice %}}
-
-### Operator internal REST interface secret
-
-The operator exposes an internal REST HTTPS interface with a self-signed certificate.
-The certificate is kept in a Kubernetes `ConfigMap` with the name `weblogic-operator-cm` using the key `internalOperatorCert`.
-The private key is kept in a Kubernetes `Secret` with the name `weblogic-operator-secrets` using the key `internalOperatorKey`.
-These Kubernetes objects are managed by the operator's Helm chart and are part of the
-namespace where the operator is installed.
-
-For example, to see all the operator's ConfigMaps and secrets when installed into
-the Kubernetes Namespace `weblogic-operator-ns`, use:
-```shell
-$ kubectl -n weblogic-operator-ns get cm,secret
-```

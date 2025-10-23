@@ -47,11 +47,6 @@ Optionally, you can monitor an operator and its log using an [Elastic Stack](htt
 (previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
 For an example, see the operator [Elastic Stack]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) sample.
 
-For advanced users, the operator provides an optional REST server that
-you can use as an alternative method for getting a list of WebLogic domains and clusters that an operator manages,
-and to initiate scaling operations (instead of directly performing such operations using the Kubernetes API or the Kubernetes command line).
-See the operator [REST services]({{<relref "/managing-operators/the-rest-api.md">}}).
-
 References:
 - For a full overview of how an operator runtime and its domain resources work together, see the
   [terms]({{<relref "/introduction/terms.md">}}),
