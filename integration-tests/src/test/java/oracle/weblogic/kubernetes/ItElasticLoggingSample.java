@@ -140,7 +140,7 @@ class ItElasticLoggingSample {
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        false, 0, true, domainNamespace);
+        true, domainNamespace);
 
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()

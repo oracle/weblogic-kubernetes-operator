@@ -118,16 +118,6 @@ public class TestAssertions {
   }
 
   /**
-   * Check if operator REST service is running.
-   *
-   * @param namespace in which the operator REST service exists
-   * @return true if REST service is running otherwise false
-   */
-  public static Callable<Boolean> operatorRestServiceRunning(String namespace) {
-    return () -> Operator.doesExternalRestServiceExists(namespace);
-  }
-
-  /**
    * Check if a WebLogic custom resource domain object exists in specified
    * namespace.
    *

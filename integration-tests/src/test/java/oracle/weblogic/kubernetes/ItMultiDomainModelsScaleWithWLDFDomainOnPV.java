@@ -37,7 +37,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -149,8 +148,8 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
     miiImage = createAndPushMiiImage();
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, true,
-        OPERATOR_EXTERNAL_REST_HTTPSPORT, domainOnPVNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount,
+        domainOnPVNamespace);
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough
@@ -206,7 +205,7 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
     logger.info("Generated curlCmdForWLDFScript = {0}", curlCmdForWLDFScript);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, replicaCount + 1, false, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
+        replicaCount, replicaCount + 1, opNamespace, opServiceAccount,
         true, domainHome, "scaleUp", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 
@@ -216,7 +215,7 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
     managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount + 1);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount + 1, replicaCount, false, 0, opNamespace, opServiceAccount,
+        replicaCount + 1, replicaCount, opNamespace, opServiceAccount,
         true, domainHome, "scaleDown", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 

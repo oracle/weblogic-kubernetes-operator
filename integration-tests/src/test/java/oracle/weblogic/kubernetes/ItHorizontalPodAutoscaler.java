@@ -104,7 +104,7 @@ public class ItHorizontalPodAutoscaler {
     opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

@@ -45,7 +45,6 @@ public interface KubernetesConstants {
 
   String SCRIPT_CONFIG_MAP_NAME = "weblogic-scripts-cm";
   String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";
-  String OPERATOR_ENABLE_REST_ENDPOINT_ENV = "ENABLE_REST_ENDPOINT";
 
   String OPERATOR_NAMESPACE_ENV = "OPERATOR_NAMESPACE";
   String OPERATOR_POD_NAME_ENV = "OPERATOR_POD_NAME";

@@ -51,8 +51,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -65,7 +63,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
@@ -194,7 +191,7 @@ class ItMultiDomainModelsScale {
     miiImage = createAndPushMiiImage();
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, OPERATOR_EXTERNAL_REST_HTTPSPORT,
+    installAndVerifyOperator(opNamespace, opServiceAccount,
         miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace);
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
@@ -313,80 +310,6 @@ class ItMultiDomainModelsScale {
   }
 
   /**
-   * Scale cluster using REST API for three different type of domains.
-   * i.e. domain-on-pv, domain-in-image and model-in-image
-   *
-   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
-   */
-  @ParameterizedTest
-  @DisplayName("scale cluster using REST API for three different type of domains")
-  @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
-  @DisabledOnSlimImage
-  void testScaleClustersWithRestApi(String domainType) {
-
-    DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
-
-    // get domain properties
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-    int numClusters = domain.getSpec().getClusters().size();
-    String clusterName = domain.getSpec().getClusters().get(0).getName();
-    String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
-    int numberOfServers = 3;
-    String operatorPodName = null;
-    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-
-    if (OKE_CLUSTER) {
-      // get operator pod name
-      operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-      assertNotNull(operatorPodName, "Operator pod name returned is null");
-      logger.info("Operator pod name {0}", operatorPodName);
-      curlCmd = domainType.contains("modelInImage")
-          ? generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT) : null;
-    }
-
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-    List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, numberOfServers, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "",
-        curlCmd, managedServersBeforeScale, operatorPodName);
-
-    // then scale cluster back to 2 servers
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-    managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        numberOfServers, replicaCount, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "",
-        curlCmd, managedServersBeforeScale, operatorPodName);
-
-    // verify admin console login
-    if (OKE_CLUSTER) {
-      String resourcePath = "/console/login/LoginForm.jsp";
-      final String adminServerPodName = domainUid + "-admin-server";
-      ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName,ADMIN_SERVER_PORT, resourcePath);
-      logger.info("result in OKE_CLUSTER is {0}", result.toString());
-      assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
-
-      // verify admin console login using ingress controller
-      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
-    } else if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
-      assertDoesNotThrow(()
-          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
-    } else {
-      verifyReadyAppUsingAdminNodePort(domainUid, domainNamespace);
-      // verify admin console login using ingress controller
-      verifyReadyAppUsingIngressController(domainUid, domainNamespace);
-    }
-
-    // shutdown domain and verify the domain is shutdown
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-  }
-
-  /**
    * Scale cluster using WLDF policy for three different type of domains.
    * i.e. domain-on-pv, domain-in-image and model-in-image
    *
@@ -431,7 +354,7 @@ class ItMultiDomainModelsScale {
     logger.info("Generated curlCmdForWLDFScript = {0}", curlCmdForWLDFScript);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, replicaCount + 1, false, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
+        replicaCount, replicaCount + 1, opNamespace, opServiceAccount,
         true, domainHome, "scaleUp", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 
@@ -441,7 +364,7 @@ class ItMultiDomainModelsScale {
     managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount + 1);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount + 1, replicaCount, false, 0, opNamespace, opServiceAccount,
+        replicaCount + 1, replicaCount, opNamespace, opServiceAccount,
         true, domainHome, "scaleDown", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 

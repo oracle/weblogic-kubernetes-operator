@@ -102,8 +102,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiInOpPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
@@ -421,7 +419,7 @@ public class CommonTestUtils {
                                            List<String> expectedServerNames) {
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, manageServerPodNamePrefix, replicasBeforeScale,
-        replicasAfterScale, false, 0, "", "",
+        replicasAfterScale, "", "",
         false, "", "", 0, "", "", curlCmd, expectedServerNames);
   }
 
@@ -435,8 +433,6 @@ public class CommonTestUtils {
    * @param manageServerPodNamePrefix managed server pod name prefix
    * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
    * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
-   * @param withRestApi whether to use REST API to scale the cluster
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opNamespace the namespace of WebLogic operator
    * @param opServiceAccount the service account for operator
    * @param withWLDF whether to use WLDF to scale cluster
@@ -457,8 +453,6 @@ public class CommonTestUtils {
                                            String manageServerPodNamePrefix,
                                            int replicasBeforeScale,
                                            int replicasAfterScale,
-                                           boolean withRestApi,
-                                           int externalRestHttpsPort,
                                            String opNamespace,
                                            String opServiceAccount,
                                            boolean withWLDF,
@@ -486,27 +480,7 @@ public class CommonTestUtils {
     // scale the cluster in the domain
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
         clusterName, domainUid, domainNamespace, replicasAfterScale);
-    if (withRestApi) {
-      if (OKE_CLUSTER && args != null && args.length > 0) {
-        String operatorPodName = args[0];
-        int opExtPort = 8081;
-        assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApiInOpPod(domainUid, clusterName,
-            replicasAfterScale, operatorPodName, opExtPort, opNamespace, opServiceAccount)))
-            .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
-                clusterName, domainUid, domainNamespace))
-            .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
-                clusterName, domainUid, domainNamespace))
-            .isTrue();
-      } else {
-        assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
-            replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
-            .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
-                clusterName, domainUid, domainNamespace))
-            .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
-                clusterName, domainUid, domainNamespace))
-            .isTrue();
-      }
-    } else if (withWLDF) {
+    if (withWLDF) {
       // scale the cluster using WLDF policy
       assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
           domainHomeLocation, scalingAction, scalingSize, opNamespace, opServiceAccount, myWebAppName,

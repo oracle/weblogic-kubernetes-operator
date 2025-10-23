@@ -3,12 +3,7 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
-
-import io.kubernetes.client.openapi.ApiException;
-
 
 public class Operator {
 
@@ -33,18 +28,5 @@ public class Operator {
       return Kubernetes.isWebhookPodReady(namespace);
     };
   }  
-
-  /**
-   * Checks if the operator external service exists.
-   * @param namespace in which to check for the operator external service
-   * @return true if service is found otherwise false
-   * @throws ApiException when there is error in querying the cluster
-   */
-  public static boolean doesExternalRestServiceExists(String namespace) throws ApiException {
-    Map<String, String> label = new HashMap<>();
-    label.put("weblogic.operatorName", namespace);
-    String serviceName = "external-weblogic-operator-svc";
-    return Kubernetes.doesServiceExist(serviceName, label, namespace);
-  }
 
 }

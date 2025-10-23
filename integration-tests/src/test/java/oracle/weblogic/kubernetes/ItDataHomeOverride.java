@@ -87,7 +87,7 @@ class ItDataHomeOverride {
     String opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, false, 0, miiDomainNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount, miiDomainNamespace);
   }
 
   /**

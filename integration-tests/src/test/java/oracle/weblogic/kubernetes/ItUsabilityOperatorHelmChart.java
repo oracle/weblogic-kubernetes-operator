@@ -51,7 +51,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -80,7 +79,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -102,7 +100,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIdentitySecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -342,8 +339,8 @@ class ItUsabilityOperatorHelmChart {
     String opServiceAccount = opNamespace + "-sa";
     try {
       // install operator
-      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
-          0, op1HelmParams, domain1Namespace).getHelmParams();
+      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount,
+          op1HelmParams, domain1Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
 
       if (!isDomain1Running) {
@@ -358,8 +355,8 @@ class ItUsabilityOperatorHelmChart {
       uninstallOperatorAndVerify(opHelmParams, opNamespace);
 
       //install second time
-      opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, false, true, false,
-          null,"deployed", 0, opHelmParams, LIST_STRATEGY, domain1Namespace);
+      opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
+          null,"deployed", opHelmParams, LIST_STRATEGY, domain1Namespace);
 
       assertNotNull(opHelmParams, "Can't install operator");
       setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
@@ -409,13 +406,9 @@ class ItUsabilityOperatorHelmChart {
     try {
       // install operator
       String opServiceAccount = op2Namespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
-          0, op1HelmParams, domain2Namespace).getHelmParams();
+      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount,
+          op1HelmParams, domain2Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
-      int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-      assertNotEquals(-1, externalRestHttpsPort,
-          "Could not get the Operator external service node port");
-      logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
       if (!isDomain2Running) {
         logger.info("Installing and verifying domain");
         assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
@@ -426,10 +419,7 @@ class ItUsabilityOperatorHelmChart {
       // operator chart values
       OperatorParams opParams = new OperatorParams()
           .helmParams(opHelmParams)
-          .externalRestEnabled(true)
-          .externalRestHttpsPort(externalRestHttpsPort)
           .serviceAccount(opServiceAccount)
-          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
           .domainNamespaces(java.util.Arrays.asList(domain3Namespace, domain2Namespace));
 
       // upgrade operator
@@ -465,10 +455,7 @@ class ItUsabilityOperatorHelmChart {
       // operator chart values for upgrade
       opParams = new OperatorParams()
           .helmParams(opHelmParams)
-          .externalRestEnabled(true)
-          .externalRestHttpsPort(externalRestHttpsPort)
           .serviceAccount(opServiceAccount)
-          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
           .domainNamespaces(List.of(domain2Namespace));
       assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
@@ -534,8 +521,8 @@ class ItUsabilityOperatorHelmChart {
     try {
       String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
-      HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
-          false, expectedError,"failed", 0,
+      HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, false,
+          false, expectedError,"failed",
           op2HelmParams, LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
@@ -581,8 +568,8 @@ class ItUsabilityOperatorHelmChart {
     try {
       String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
-      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
-          expectedError,"failed", 0, op2HelmParams,  LIST_STRATEGY, domain2Namespace);
+      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
+          expectedError,"failed", op2HelmParams,  LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
       uninstallOperatorAndVerify(opHelmParams, opNamespace);
@@ -611,13 +598,9 @@ class ItUsabilityOperatorHelmChart {
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
-    HelmParams opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, true, true,
-        true,null,"deployed", 0, op1HelmParams,
+    HelmParams opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, true,
+        true,null,"deployed", op1HelmParams,
         LIST_STRATEGY, domain1Namespace);
-    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-    assertNotEquals(-1, externalRestHttpsPort,
-        "Could not get the Operator external service node port");
-    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
     String op2ReleaseName = OPERATOR_RELEASE_NAME + "2";
     HelmParams op2HelmParams = new HelmParams().releaseName(op2ReleaseName)
         .namespace(op2Namespace)
@@ -629,9 +612,9 @@ class ItUsabilityOperatorHelmChart {
       String expectedError = "Service \"external-weblogic-operator-svc\" "
           + "is invalid: spec.ports[0].nodePort: Invalid value";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, op2ServiceAccount,
-          true, true, true,
+          true, true,
           expectedError,"failed",
-          externalRestHttpsPort, op2HelmParams, LIST_STRATEGY, domain2Namespace);
+          op2HelmParams, LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
       uninstallOperatorAndVerify(op2HelmParams, op2Namespace);
     } finally {
@@ -662,8 +645,8 @@ class ItUsabilityOperatorHelmChart {
     String opServiceAccount = op2Namespace + "-sa2";
     try {
       String expectedError = "create: failed to create: namespaces \"" + nonExistingNamespace + "\" not found";
-      HelmParams opHelmParam2 = installOperatorHelmChart(nonExistingNamespace, opServiceAccount, false, false,
-          false, expectedError,"failed", 0, op2HelmParams,
+      HelmParams opHelmParam2 = installOperatorHelmChart(nonExistingNamespace, opServiceAccount, false,
+          false, expectedError,"failed", op2HelmParams,
           LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
@@ -688,26 +671,15 @@ class ItUsabilityOperatorHelmChart {
     try {
       // install and verify operator
       logger.info("Installing and verifying operator");
-      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, true,
-          true,null, "deployed", 0, op2HelmParams,
+      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true,
+          true,null, "deployed", op2HelmParams,
           LIST_STRATEGY, "");
       assertNotNull(opHelmParam2, "FAILURE: Helm can't install operator with empty set for target domain namespaces");
-
-      int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-      assertNotEquals(-1, externalRestHttpsPort,
-          "Could not get the Operator external service node port");
-      logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-
-      createRouteForOKD("external-weblogic-operator-svc", op2Namespace);
-      setTlsTerminationForRoute("external-weblogic-operator-svc", op2Namespace);
 
       //upgrade operator to add domain
       OperatorParams opParams = new OperatorParams()
           .helmParams(opHelmParam2)
-          .externalRestEnabled(true)
-          .externalRestHttpsPort(externalRestHttpsPort)
           .serviceAccount(opServiceAccount)
-          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
           .domainNamespaces(List.of(domain2Namespace));
 
       assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
@@ -766,8 +738,8 @@ class ItUsabilityOperatorHelmChart {
         // install and verify operator will not start
         logger.info("Installing  operator %s in namespace %s", opReleaseName, op2Namespace);
         errorMsg = String.format("ServiceAccount %s not found in namespace %s", opServiceAccount, op2Namespace);
-        HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
-            true, errorMsg,"failed", 0, opHelmParams,
+        HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false,
+            true, errorMsg,"failed", opHelmParams,
             LIST_STRATEGY, domain2Namespace);
         assertNull(opHelmParam2, "FAILURE: Helm installs operator with not preexisted service account ");
       } catch (AssertionError ex) {
@@ -783,8 +755,8 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Created service account: {0}", opServiceAccount);
 
       logger.info("Installing operator %s in namespace %s again", opReleaseName, op2Namespace);
-      installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
-          false,null,"deployed", 0, opHelmParams,
+      installOperatorHelmChart(op2Namespace, opServiceAccount, false,
+          false,null,"deployed", opHelmParams,
           LIST_STRATEGY, domain2Namespace);
 
       // list Helm releases matching operator release name in operator namespace
@@ -832,16 +804,9 @@ class ItUsabilityOperatorHelmChart {
     try {
       // install operator
       String opServiceAccount = op3Namespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount, true,
-          0, op1HelmParams, domain4Namespace).getHelmParams();
+      HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount,
+          op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
-
-      createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
-      setTlsTerminationForRoute("external-weblogic-operator-svc", op3Namespace);
-      int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
-      assertNotEquals(-1, externalRestHttpsPort,
-          "Could not get the Operator external service node port");
-      logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
       logger.info("Installing and verifying domain4");
       assertTrue(createVerifyDomain(domain4Namespace, domain4Uid),
@@ -1055,11 +1020,9 @@ class ItUsabilityOperatorHelmChart {
    * @param operNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
    * @param createOpSA option to create the service account for operator
-   * @param withRestAPI whether to use REST API
    * @param createSecret option to create secret
    * @param errMsg   expected helm chart error message for negative scenario, null for positive testcases
    * @param helmStatus expected helm status
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param domainNamespaceSelectionStrategy Domain namespace selection strategy
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
@@ -1068,11 +1031,9 @@ class ItUsabilityOperatorHelmChart {
   private static HelmParams installOperatorHelmChart(String operNamespace,
                                                      String opServiceAccount,
                                                      boolean createOpSA,
-                                                     boolean withRestAPI,
                                                      boolean createSecret,
                                                      String errMsg,
                                                      String helmStatus,
-                                                     int externalRestHttpsPort,
                                                      HelmParams opHelmParams,
                                                      String domainNamespaceSelectionStrategy,
                                                      String... domainNamespace) {
@@ -1117,18 +1078,6 @@ class ItUsabilityOperatorHelmChart {
       opParams.image(operatorImage);
     }
 
-    if (withRestAPI) {
-      // create externalRestIdentitySecret
-      assertTrue(createExternalRestIdentitySecret(operNamespace,
-          DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace),
-          "failed to create external REST identity secret");
-      opParams
-          .restEnabled(true)
-          .externalRestEnabled(true)
-          .externalRestHttpsPort(externalRestHttpsPort)
-          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace);
-    }
-
     // install operator
     logger.info("Installing operator in namespace {0}", operNamespace);
     if (errMsg != null) {
@@ -1155,15 +1104,6 @@ class ItUsabilityOperatorHelmChart {
           "operator to be running in namespace {0}",
           operNamespace);
 
-      if (withRestAPI) {
-        logger.info("Wait for the operator external service in namespace {0}", operNamespace);
-        testUntil(
-            assertDoesNotThrow(() -> operatorRestServiceRunning(operNamespace),
-              "operator external service is not running"),
-            logger,
-            "operator external service in namespace {0}",
-            operNamespace);
-      }
       return opHelmParams;
     }
     return null;

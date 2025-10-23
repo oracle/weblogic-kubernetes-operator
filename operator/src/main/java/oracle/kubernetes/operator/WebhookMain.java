@@ -3,12 +3,20 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
@@ -23,6 +31,7 @@ import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.WebhookHelper;
+import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestConfigImpl;
@@ -57,6 +66,8 @@ public class WebhookMain extends BaseMain {
   private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
+
+  private final AtomicReference<BaseServer> restServer = new AtomicReference<>();
 
   static class WebhookMainDelegateImpl extends CoreDelegateImpl implements WebhookMainDelegate {
     public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService executor) {
@@ -245,9 +256,25 @@ public class WebhookMain extends BaseMain {
     }
   }
 
-  @Override
   protected BaseRestServer createRestServer() {
     return WebhookRestServer.create(restConfig);
+  }
+
+  void startRestServer()
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
+    BaseRestServer value = createRestServer();
+    restServer.set(value);
+    value.start();
+  }
+
+  // For test
+  AtomicReference<BaseServer> getRestServer() {
+    return restServer;
+  }
+
+  void stopRestServer() {
+    Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseServer::stop);
   }
 
   @Override

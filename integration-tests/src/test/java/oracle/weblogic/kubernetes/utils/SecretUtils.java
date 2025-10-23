@@ -18,8 +18,6 @@ import io.kubernetes.client.openapi.models.V1NamespaceStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -29,8 +27,6 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -169,45 +165,6 @@ public class SecretUtils {
             .namespace(namespace))
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
-  }
-
-  /**
-   * Create an external REST Identity secret in the specified namespace.
-   *
-   * @param namespace the namespace in which the secret to be created
-   * @param secretName name of the secret to be created
-   * @return true if the command to create secret succeeds, false otherwise
-   */
-  public static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
-
-    StringBuffer command = new StringBuffer()
-        .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
-    if (K8S_NODEPORT_HOST != null && !K8S_NODEPORT_HOST.equals("<none>")) {
-      if (K8S_NODEPORT_HOST.contains(":") || Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
-        command.append(" -a \"IP:");
-      } else {
-        command.append(" -a \"DNS:");
-      }
-      command.append(K8S_NODEPORT_HOST);
-    } else {
-      command.append(" -a \"DNS:")
-          .append("external-weblogic-operator-svc.")
-          .append(namespace)
-          .append(".svc.cluster.local");
-    }
-    command.append(",DNS:localhost,IP:127.0.0.1\"")
-        .append(" -n ")
-        .append(namespace)
-        .append(" -s ")
-        .append(secretName);
-
-    CommandParams params = Command
-        .defaultCommandParams()
-        .command(command.toString())
-        .saveResults(true)
-        .redirect(true);
-
-    return Command.withParams(params).execute();
   }
 
   /**

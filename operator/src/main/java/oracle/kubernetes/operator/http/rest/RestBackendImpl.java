@@ -52,8 +52,6 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
-import oracle.kubernetes.operator.http.rest.model.DomainAction;
-import oracle.kubernetes.operator.http.rest.model.DomainActionType;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -226,60 +224,10 @@ public class RestBackendImpl implements RestBackend {
     return getDomain(domainUid).isPresent();
   }
 
-  @Override
-  public void performDomainAction(String domainUid, DomainAction params) {
-    verifyDomain(domainUid);
-    authorize(domainUid, Operation.UPDATE);
-
-    switch (Optional.ofNullable(params.action()).orElse(DomainActionType.UNKNOWN)) {
-      case INTROSPECT:
-        introspect(domainUid);
-        break;
-      case RESTART:
-        restartDomain(domainUid);
-        break;
-      default:
-        throw new WebApplicationException(Status.BAD_REQUEST);
-    }
-  }
-
   private void verifyDomain(String domainUid) {
     if (!isDomainUid(domainUid)) {
       throw new WebApplicationException(LOGGER.formatMessage(INVALID_DOMAIN_UID, domainUid), Status.BAD_REQUEST);
     }
-  }
-
-  private void introspect(String domainUid) {
-    forDomainDo(domainUid, this::markForIntrospection);
-  }
-
-  private void markForIntrospection(DomainResource domain) {
-    updateVersionField(domain, domain.getIntrospectVersion(), "/spec/introspectVersion");
-  }
-
-  private String nextVersion(String version) {
-    try {
-      return Integer.toString(Integer.parseInt(version) + 1);
-    } catch (NumberFormatException e) {
-      return INITIAL_VERSION;
-    }
-  }
-
-  private void restartDomain(String domainUid) {
-    forDomainDo(domainUid, this::markDomainForRestart);
-  }
-
-  private void markDomainForRestart(DomainResource domain) {
-    updateVersionField(domain, domain.getRestartVersion(), "/spec/restartVersion");
-  }
-
-  private void updateVersionField(DomainResource domain, String version, String fieldPath) {
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    Optional.ofNullable(version).ifPresentOrElse(
-        v -> patchBuilder.replace(fieldPath, nextVersion(v)),
-        () -> patchBuilder.add(fieldPath, INITIAL_VERSION));
-
-    patchDomain(domain, patchBuilder);
   }
 
   private void forDomainDo(String domainUid, Consumer<DomainResource> consumer) {

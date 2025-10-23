@@ -50,7 +50,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
@@ -228,15 +227,12 @@ class ItManageNameSpace {
     checkSecondOperatorFailedToShareSameNS(manageByExp1NS);
 
     //upgrade operator to manage domains with Labeled namespaces
-    int externalRestHttpsPort = getServiceNodePort(opNamespaces[1], "external-weblogic-operator-svc");
     assertDoesNotThrow(() -> createNamespace(manageByLabelNS));
     Map<String, String> labels = new HashMap<>();
     labels.put("mytest", "weblogic2");
     setLabelToNamespace(manageByLabelNS, labels);
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams[1])
-        .externalRestEnabled(true)
-        .externalRestHttpsPort(externalRestHttpsPort)
         .domainNamespaceLabelSelector("mytest")
         .domainNamespaceSelectionStrategy("LabelSelector");
 
@@ -303,12 +299,9 @@ class ItManageNameSpace {
     //upgrade operator1 to replace managing domains using RegExp namespaces
     assertDoesNotThrow(() -> createNamespace(manageByExpDomainNS));
     namespacesToClean.add(manageByExpDomainNS);
-    int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams[0])
-        .externalRestEnabled(true)
-        .externalRestHttpsPort(externalRestHttpsPort)
         .domainNamespaceSelectionStrategy("RegExp")
         .domainNamespaceRegExp("^" + "weblogic2");
 
@@ -354,11 +347,8 @@ class ItManageNameSpace {
     checkPodNotCreated(manageByLabelDomainUid + adminServerPrefix, manageByLabelDomainUid, manageByLabelDomainNS);
     deleteDomainResource(manageByLabelDomainNS, manageByLabelDomainUid);
     //upgrade operator and start domain
-    int externalRestHttpsPort = getServiceNodePort(opNamespaces[3], "external-weblogic-operator-svc");
 
     OperatorParams opParams = new OperatorParams()
-        .externalRestEnabled(true)
-        .externalRestHttpsPort(externalRestHttpsPort)
         .helmParams(opHelmParams[2]);
 
     assertTrue(upgradeAndVerifyOperator(opNamespaces[3], opParams));
@@ -370,12 +360,9 @@ class ItManageNameSpace {
     //upgrade operator1 to replace managing domains using RegExp namespaces
     // for ns names starting from weblogic, there one of domains
     //in namespace weblogic* is managed by operator2
-    int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams[0])
-        .externalRestEnabled(true)
-        .externalRestHttpsPort(externalRestHttpsPort)
         .domainNamespaceSelectionStrategy("RegExp")
         .domainNamespaceRegExp("^" + "weblogic");
 

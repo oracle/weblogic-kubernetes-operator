@@ -99,7 +99,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
-    opParams = installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
+    opParams = installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace1);
     opParamsOriginal = opParams;
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough

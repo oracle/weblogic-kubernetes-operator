@@ -131,7 +131,7 @@ class ItMultiDomainModels {
     String opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, opServiceAccount, false, 0,
+    installAndVerifyOperator(opNamespace, opServiceAccount,
         miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace, auxiliaryImageDomainNamespace);
   }
 

@@ -66,7 +66,6 @@ public interface TestConstants {
   String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
   String OPERATOR_GITHUB_CHART_REPO_URL =
       "https://oracle.github.io/weblogic-kubernetes-operator/charts";
-  int OPERATOR_EXTERNAL_REST_HTTPSPORT = 30511;
 
   // kind constants
   String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
@@ -353,11 +352,7 @@ public interface TestConstants {
   String ENCRYPION_USERNAME_DEFAULT = "weblogicenc";
   String ENCRYPION_PASSWORD_DEFAULT = "weblogicenc";
 
-  // REST API
   String PROJECT_ROOT = System.getProperty("user.dir");
-  String GEN_EXTERNAL_REST_IDENTITY_FILE =
-      PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
-  String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
   String ISTIO_VERSION =
       getNonEmptySystemProperty("wko.it.istio.version", "1.23.0");

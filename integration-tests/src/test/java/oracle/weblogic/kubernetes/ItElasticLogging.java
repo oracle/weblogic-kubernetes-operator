@@ -180,7 +180,7 @@ class ItElasticLogging {
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        false, 0, true, domainNamespace);
+        true, domainNamespace);
 
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
@@ -376,7 +376,7 @@ class ItElasticLogging {
 
     // install and verify Operator2 up and running with createLogStashConfigMap = false
     installAndVerifyOperator(opNamespace2, opNamespace2 + "-sa",
-        false, 0, elasticSearchHost, elkIntegrationEnabled,
+        elasticSearchHost, elkIntegrationEnabled,
         createLogStashConfigMap, defaultNamespace);
   }
 

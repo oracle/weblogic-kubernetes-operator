@@ -31,20 +31,16 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATEDMODE_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.IT_DEDICATEDMODE_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.impl.Domain.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -87,7 +83,6 @@ class ItDedicatedMode {
        domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private final String managedServerPodPrefix =
        domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static int externalRestHttpsPort = IT_DEDICATEDMODE_NODEPORT;
 
   // operator constants
   private static HelmParams opHelmParams;
@@ -145,7 +140,7 @@ class ItDedicatedMode {
     // domainNamespaces parameter to something other than Operator ns (say wls)
     logger.info("Installing and verifying operator");
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        true, externalRestHttpsPort, opHelmParams, domainNamespaceSelectionStrategy,
+        opHelmParams, domainNamespaceSelectionStrategy,
         false, domain2Namespace);
     logger.info("Operator installed on namespace {0} and domainNamespaces set to {1} ", opNamespace, domain2Namespace);
 
@@ -196,25 +191,10 @@ class ItDedicatedMode {
       listOfPodCreationTimestamp.add(originalCreationTimestamp);
     }
     // Scale up cluster-1 in domain1Namespace and verify it succeeds
-    String externalRestHttpshost;
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      externalRestHttpshost = "localhost";
-      externalRestHttpsPort = IT_DEDICATEDMODE_HOSTPORT;
-      logger.info("Running in podman using Operator hostport {0}:{1}", externalRestHttpshost, externalRestHttpsPort);
-    } else {
-      logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-      externalRestHttpshost = null;
-    }
 
     logger.info("scaling the cluster from {0} servers to {1} servers", replicaCount, replicaCount + 1);
-    if (OKE_CLUSTER) {
-      scaleAndVerifyCluster(clusterResName, domainUid, domain1Namespace, managedServerPodPrefix,
-          replicaCount, replicaCount + 1, null, null);
-    } else {
-      scaleClusterWithRestApi(domainUid, clusterName, replicaCount + 1,
-          externalRestHttpshost, externalRestHttpsPort, opNamespace, opServiceAccount);
-    }
+    scaleAndVerifyCluster(clusterResName, domainUid, domain1Namespace, managedServerPodPrefix,
+        replicaCount, replicaCount + 1, null, null);
 
     verifyClusterAfterScaling(domainUid, domain1Namespace, managedServerPodPrefix,
         replicaCount, replicaCount + 1, null, null, listOfPodCreationTimestamp);

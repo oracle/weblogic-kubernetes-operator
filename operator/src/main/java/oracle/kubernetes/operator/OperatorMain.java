@@ -3,13 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,17 +30,11 @@ import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.calls.ResponseStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.http.rest.BaseRestServer;
-import oracle.kubernetes.operator.http.rest.OperatorRestServer;
-import oracle.kubernetes.operator.http.rest.RestConfigImpl;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
-import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.watcher.NamespaceWatcher;
 import oracle.kubernetes.operator.watcher.OperatorEventWatcher;
 import oracle.kubernetes.operator.work.Cancellable;
@@ -56,7 +43,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
-import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_ENABLE_REST_ENDPOINT_ENV;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
@@ -67,8 +53,6 @@ public class OperatorMain extends BaseMain {
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static NextStepFactory nextStepFactory = OperatorMain::createInitializeInternalIdentityStep;
 
   /**
    * The interval in sec that the operator will check the CRD presence and log a message if CRD not installed.
@@ -197,13 +181,7 @@ public class OperatorMain extends BaseMain {
 
   @Override
   Step createStartupSteps() {
-
-    return nextStepFactory.createInternalInitializationStep(
-        mainDelegate, Namespaces.getSelection(new StartupStepsVisitor()));
-  }
-
-  private static Step createInitializeInternalIdentityStep(MainDelegate delegate, Step next) {
-    return new InitializeInternalIdentityStep(delegate, next);
+    return Namespaces.getSelection(new StartupStepsVisitor());
   }
 
   private class EventListResponseStep extends ResponseStep<EventsV1EventList> {
@@ -272,7 +250,6 @@ public class OperatorMain extends BaseMain {
       // Register metrics collectors
       new NamespaceCollector(mainDelegate).register();
       startMetricsServer();
-      startRestServer();
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
@@ -288,18 +265,7 @@ public class OperatorMain extends BaseMain {
     }
   }
 
-  @Override
-  void startRestServer()
-      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
-      KeyStoreException, InvalidKeySpecException, KeyManagementException {
-    if (Optional.ofNullable(HelmAccess.getHelmVariable(OPERATOR_ENABLE_REST_ENDPOINT_ENV))
-        .map(Boolean::valueOf).orElse(Boolean.FALSE)) {
-      super.startRestServer();
-    }
-  }
-
   void completeStop() {
-    stopRestServer();
     stopMetricsServer();
   }
 
@@ -415,13 +381,6 @@ public class OperatorMain extends BaseMain {
     return Namespaces.SelectionStrategy.DEDICATED.equals(Namespaces.getSelectionStrategy());
   }
 
-  @Override
-  protected BaseRestServer createRestServer() {
-    return OperatorRestServer.create(
-        new RestConfigImpl(mainDelegate.getPrincipal(), mainDelegate.getDomainNamespaces()::getNamespaces,
-                new Certificates(mainDelegate)));
-  }
-
   // -----------------------------------------------------------------------------
   //
   // Below this point are methods that are called primarily from watch handlers,
@@ -467,10 +426,5 @@ public class OperatorMain extends BaseMain {
       case "MODIFIED", "ERROR":
       default:
     }
-  }
-
-  // an interface to provide a hook for unit testing.
-  interface NextStepFactory {
-    Step createInternalInitializationStep(MainDelegate delegate, Step next);
   }
 }

@@ -73,31 +73,6 @@ imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 # - name: "my-operator-secret"
 
-# enableRest specifies whether the operator's REST interface is enabled. Beginning with version 4.0.5,
-# the REST interface will be disabled by default.
-# enableRest: true
-
-# externalRestEnabled specifies whether the operator's REST interface is exposed
-# outside the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
-# property. Ignored if 'enableRest' is not true.
-#
-# If set to true, then the customer must provide the SSL certificate and private key for
-# the operator's external REST interface by specifying the 'externalOperatorCert' and
-# 'externalOperatorKey' properties.
-externalRestEnabled: false
-
-# externalRestHttpsPort specifies the node port that should be allocated for the external operator REST HTTPS interface.
-# This parameter is required if 'externalRestEnabled' is true.
-# Otherwise, it is ignored.
-externalRestHttpsPort: 31001
-
-# The name of the Secret used to store the certificate and private key to use for the external operator REST HTTPS interface.
-# The Secret has to be created in the same namespace of the WebLogic operator.
-# This parameter is required if 'externalRestEnabled' is true. Otherwise, it is ignored.
-# As example, an external REST identity can be created using the following sample script
-# kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
-# externalRestIdentitySecret:
-
 # elkIntegrationEnabled specifies whether ELK integration is enabled.
 elkIntegrationEnabled: false
 

@@ -222,7 +222,7 @@ class ItKubernetesDomainEvents {
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount,
-            true, 0, domainNamespace1, domainNamespace2, domainNamespace3,
+            domainNamespace1, domainNamespace2, domainNamespace3,
             domainNamespace4, domainNamespace5);
 
     createDomain(domainNamespace3, domainUid, pvName3, pvcName3);

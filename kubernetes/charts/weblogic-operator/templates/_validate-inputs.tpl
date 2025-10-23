@@ -13,18 +13,6 @@
 {{- $ignore := include "utils.verifyEnum" (list $scope "imagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
 {{- $ignore := include "utils.verifyOptionalDictionaryList" (list $scope "imagePullSecrets") -}}
 {{- $ignore := include "utils.verifyEnum" (list $scope "javaLoggingLevel" (list "SEVERE" "WARNING" "INFO" "CONFIG" "FINE" "FINER" "FINEST")) -}}
-{{- if include "utils.verifyBoolean" (list $scope "externalRestEnabled") -}}
-{{-   if $scope.externalRestEnabled -}}
-{{-     $ignore := include "utils.verifyInteger" (list $scope "externalRestHttpsPort") -}}
-{{-     $ignore := include "utils.mutexString" (list $scope "externalRestIdentitySecret" (list "externalOperatorKey" "externalOperatorCert")) -}}
-{{-     if (or (hasKey $scope "externalOperatorCert") (hasKey $scope "externalOperatorKey")) -}}
-{{-       $ignore := include "utils.verifyString"  (list $scope "externalOperatorCert") -}}
-{{-       $ignore := include "utils.verifyString"  (list $scope "externalOperatorKey") -}}
-{{-     else }}
-{{-       $ignore := include "utils.verifyString"  (list $scope "externalRestIdentitySecret") -}}
-{{-     end -}}
-{{-   end -}}
-{{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "remoteDebugNodePortEnabled") -}}
 {{-   if $scope.remoteDebugNodePortEnabled -}}
 {{-     $ignore := include "utils.verifyBoolean" (list $scope "suspendOnDebugStartup") -}}

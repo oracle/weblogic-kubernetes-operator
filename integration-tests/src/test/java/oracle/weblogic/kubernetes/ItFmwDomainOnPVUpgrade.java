@@ -195,8 +195,8 @@ class ItFmwDomainOnPVUpgrade {
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
-        0, opHelmParams, ELASTICSEARCH_HOST, false, true, null,
+    installAndVerifyOperator(opNamespace, opNamespace + "-sa",
+        opHelmParams, ELASTICSEARCH_HOST, false, true, null,
         null, false, "INFO", "DomainOnPvSimplification=true", false, domainNamespace);
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster

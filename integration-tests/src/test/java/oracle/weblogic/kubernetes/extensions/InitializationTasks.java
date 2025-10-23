@@ -661,8 +661,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     return installAndVerifyOperator(
         webhookNamespace, // webhook namespace
         webhookSa, //webhook service account
-        false, // with REST api enabled
-        0, // externalRestHttpPort
         opHelmParams, // operator helm parameters
         null, // elasticsearchHost
         false, // ElkintegrationEnabled

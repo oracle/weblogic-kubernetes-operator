@@ -133,7 +133,7 @@ class ItPodsShutdownOption {
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, "FINE",
+    installAndVerifyOperator(opNamespace, opNamespace + "-sa", "FINE",
         opHelmParams, domainNamespace);
 
     // get the pre-built image created by IntegrationTestWatcher

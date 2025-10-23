@@ -121,7 +121,7 @@ class ItRetryImprovements {
     String opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, opServiceAccount, false, 0, domainNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace);
 
     // get operator pod name
     operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));

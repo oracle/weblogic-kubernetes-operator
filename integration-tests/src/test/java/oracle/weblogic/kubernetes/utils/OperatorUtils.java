@@ -18,7 +18,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.ARM;
-import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
@@ -40,15 +39,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorWebhookIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIdentitySecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -70,8 +65,8 @@ public class OperatorUtils {
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
-        0, opHelmParams, false, null,
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa",
+        opHelmParams, false, null,
         null, false, domainNamespace);
   }
 
@@ -85,8 +80,8 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace, HelmParams opHelmParams,
                                                         String... domainNamespace) {
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
-        0, opHelmParams, domainNamespace);
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa",
+        opHelmParams, domainNamespace);
   }
 
   /**
@@ -94,40 +89,12 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
-   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
-   * @return the operator Helm installation parameters
-   */
-  public static OperatorParams installAndVerifyOperator(String opNamespace,
-                                                        String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
-                                                        String... domainNamespace) {
-    HelmParams opHelmParams =
-        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace)
-            .chartDir(OPERATOR_CHART_DIR);
-    return installAndVerifyOperator(opNamespace, opServiceAccount,
-        withExternalRestAPI, externalRestHttpsPort, opHelmParams, domainNamespace);
-
-  }
-
-  /**
-   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
-   *
-   * @param opNamespace the operator namespace in which the operator will be installed
-   * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param elkIntegrationEnabled boolean value indicating elk enabled or not
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         boolean elkIntegrationEnabled,
                                                         String... domainNamespace) {
     HelmParams opHelmParams =
@@ -136,7 +103,7 @@ public class OperatorUtils {
             .chartDir(OPERATOR_CHART_DIR);
 
     return installAndVerifyOperator(opNamespace, opServiceAccount,
-        withExternalRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled, domainNamespace);
+        opHelmParams, elkIntegrationEnabled, domainNamespace);
   }
 
   /**
@@ -144,20 +111,16 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
-        withExternalRestAPI, externalRestHttpsPort, opHelmParams, false, domainNamespace);
+        opHelmParams, false, domainNamespace);
   }
 
   /**
@@ -165,8 +128,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param loggingLevel operator logging level
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
@@ -174,16 +135,12 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         String loggingLevel,
                                                         HelmParams opHelmParams,
                                                         String... domainNamespace) {
 
     return installAndVerifyOperator(opNamespace,
             opServiceAccount,
-            withExternalRestAPI,
-            externalRestHttpsPort,
             opHelmParams,
             false,
             null,
@@ -198,8 +155,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
@@ -207,13 +162,11 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         boolean elkIntegrationEnabled,
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
-        withExternalRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
+        opHelmParams, elkIntegrationEnabled,
         null, null, false, domainNamespace);
   }
 
@@ -222,8 +175,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
    * @param domainNamespaceSelectionStrategy value to tell the operator
@@ -233,14 +184,12 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         String domainNamespaceSelectionStrategy,
                                                         boolean elkIntegrationEnabled,
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
-        withExternalRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
+        opHelmParams, elkIntegrationEnabled,
         domainNamespaceSelectionStrategy, null, false, domainNamespace);
   }
 
@@ -249,16 +198,12 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param elkIntegrationEnabled boolean value indicating elk enabled or not
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         String elasticSearchHost,
                                                         boolean elkIntegrationEnabled,
                                                         boolean createLogStashConfigMap,
@@ -268,8 +213,8 @@ public class OperatorUtils {
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
 
-    return installAndVerifyOperator(opNamespace, opServiceAccount, withExternalRestAPI,
-        externalRestHttpsPort, opHelmParams, elasticSearchHost,
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        opHelmParams, elasticSearchHost,
         elkIntegrationEnabled, createLogStashConfigMap,
         null,
         null,
@@ -284,8 +229,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
    * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
@@ -297,8 +240,6 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         boolean elkIntegrationEnabled,
                                                         String domainNamespaceSelectionStrategy,
@@ -307,8 +248,6 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace,
         opServiceAccount,
-        withExternalRestAPI,
-        externalRestHttpsPort,
         opHelmParams,
         elkIntegrationEnabled,
         domainNamespaceSelectionStrategy,
@@ -323,8 +262,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
    * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
@@ -337,8 +274,6 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         boolean elkIntegrationEnabled,
                                                         String domainNamespaceSelectionStrategy,
@@ -348,8 +283,6 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace,
         opServiceAccount,
-        withExternalRestAPI,
-        externalRestHttpsPort,
         opHelmParams,
         ELASTICSEARCH_HOST,
         elkIntegrationEnabled,
@@ -367,8 +300,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elasticSearchHost Elasticsearchhost
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
@@ -384,8 +315,6 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         String elasticSearchHost,
                                                         boolean elkIntegrationEnabled,
@@ -396,7 +325,7 @@ public class OperatorUtils {
                                                         String loggingLevel,
                                                         boolean webhookOnly,
                                                         String... domainNamespace) {
-    return installAndVerifyOperator(opNamespace, opServiceAccount, withExternalRestAPI, externalRestHttpsPort,
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
         opHelmParams, elasticSearchHost, elkIntegrationEnabled, createLogStashConfigMap,
         domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding, loggingLevel, null,
         webhookOnly, domainNamespace);
@@ -407,8 +336,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elasticSearchHost Elasticsearchhost 
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
@@ -425,8 +352,6 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         String elasticSearchHost,
                                                         boolean elkIntegrationEnabled,
@@ -507,16 +432,6 @@ public class OperatorUtils {
       opParams.logStashImage(LOGSTASH_IMAGE);
     }
 
-    if (withExternalRestAPI) {
-      // create externalRestIdentitySecret
-      assertTrue(createExternalRestIdentitySecret(opNamespace, DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME),
-          "failed to create external REST identity secret");
-      opParams
-          .restEnabled(true)
-          .externalRestEnabled(true)
-          .externalRestHttpsPort(externalRestHttpsPort)
-          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
-    }
     // operator chart values to override
     if (enableClusterRoleBinding) {
       opParams.enableClusterRoleBinding(enableClusterRoleBinding);
@@ -575,18 +490,6 @@ public class OperatorUtils {
           opNamespace);
     }
 
-    if (withExternalRestAPI) {
-      logger.info("Wait for the operator external service in namespace {0}", opNamespace);
-      testUntil(
-          withLongRetryPolicy,
-          assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
-            "operator external service is not running"),
-          logger,
-          "operator external service in namespace {0}",
-          opNamespace);
-      createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-      setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
-    }
     return opParams;
   }
 
@@ -612,7 +515,7 @@ public class OperatorUtils {
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
     return installAndVerifyOperator(opNamespace, opReleaseName + "-sa",
-        true, 0, opHelmParams, false,
+        opHelmParams, false,
         domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding, domainNamespace);
   }
 
@@ -621,8 +524,6 @@ public class OperatorUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opServiceAccount the service account name for operator
-   * @param withExternalRestAPI whether to use REST API
-   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
    * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
@@ -638,8 +539,6 @@ public class OperatorUtils {
    */
   public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                         String opServiceAccount,
-                                                        boolean withExternalRestAPI,
-                                                        int externalRestHttpsPort,
                                                         HelmParams opHelmParams,
                                                         boolean elkIntegrationEnabled,
                                                         String domainNamespaceSelectionStrategy,
@@ -712,15 +611,6 @@ public class OperatorUtils {
           .logStashImage(LOGSTASH_IMAGE);
     }
 
-    if (withExternalRestAPI) {
-      // create externalRestIdentitySecret
-      assertTrue(createExternalRestIdentitySecret(opNamespace, DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME),
-          "failed to create external REST identity secret");
-      opParams
-          .externalRestEnabled(true)
-          .externalRestHttpsPort(externalRestHttpsPort)
-          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
-    }
     // operator chart values to override
     if (enableClusterRoleBinding) {
       opParams.enableClusterRoleBinding(enableClusterRoleBinding);
@@ -792,18 +682,6 @@ public class OperatorUtils {
         .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
             "operatorIsReady failed with ApiException"));
 
-    if (withExternalRestAPI) {
-      logger.info("Wait for the operator external service in namespace {0}", opNamespace);
-      CommonTestUtils.withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for operator external service in namespace {0} "
-                      + "(elapsed time {1}ms, remaining time {2}ms)",
-                  opNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
-              "operator external service is not running"));
-    }
     return opParams;
   }
 

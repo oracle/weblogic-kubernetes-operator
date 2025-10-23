@@ -35,7 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -45,32 +44,26 @@ import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_MAX_CLUSTER_SIZE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
-import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiAndReturnResult;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
@@ -115,7 +108,6 @@ class ItValidateWebhookReplicas {
   private static int domain2NumCluster = 2;
   private static int replicaCountToPatch = 10;
   private static String opServiceAccount = null;
-  private static int externalRestHttpsPort = 0;
 
   private String clusterName = "cluster-1";
 
@@ -149,15 +141,8 @@ class ItValidateWebhookReplicas {
     // install and verify operator with REST API
     logger.info("Install an operator in namespace {0}, managing namespace {1} and {2}",
         opNamespace, domainNamespace, domainNamespace2);
-    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
-      installAndVerifyOperator(opNamespace, opServiceAccount, true, OPERATOR_EXTERNAL_REST_HTTPSPORT,
-          domainNamespace, domainNamespace2);
-      externalRestHttpsPort = OPERATOR_EXTERNAL_REST_HTTPSPORT;
-    } else {
-      installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
-          domainNamespace, domainNamespace2);
-      externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-    }
+    installAndVerifyOperator(opNamespace, opServiceAccount,
+        domainNamespace, domainNamespace2);
 
     // create a mii domain resource with one cluster
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
@@ -223,28 +208,6 @@ class ItValidateWebhookReplicas {
             + domainNamespace;
     assertTrue(responseMsg.contains(expectedErrorMsg),
         "Patching cluster replicas did not return the expected error msg: " + expectedErrorMsg);
-  }
-
-  /**
-   * Verify that when a domain and its clusters are running, use the operator's REST call that attempts to increase
-   * the cluster level replicas to a value more than the max WebLogic cluster size will be rejected
-   * with a clear error message.
-   */
-  @Test
-  @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic cluster size will be rejected")
-  @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
-  void testScaleClusterReplicasTooHighUsingRest() {
-    // scale the cluster with replicas value more than max cluster size using REST
-    ExecResult execResult = scaleClusterWithRestApiAndReturnResult(domainUid, clusterName, replicaCountToPatch,
-        externalRestHttpsPort, opNamespace, opServiceAccount);
-    logger.info("execResult.exitValue={0}", execResult.exitValue());
-    logger.info("execResult.stdout={0}", execResult.stdout());
-    logger.info("execResult.stderr={0}", execResult.stderr());
-    String expectedErrorMsg = "HTTP/1.1 400 Requested scaling count of " + replicaCountToPatch
-        + " is greater than configured cluster size of 5 for WebLogic cluster cluster-1.";
-    assertTrue(execResult.stderr().contains(expectedErrorMsg),
-        "scale cluster with replicas more than max cluster size did not return the expected error msg: "
-            + expectedErrorMsg);
   }
 
   /**

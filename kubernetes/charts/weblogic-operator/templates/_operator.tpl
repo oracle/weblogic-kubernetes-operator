@@ -25,8 +25,6 @@
 {{- end }}
 {{- include "operator.operatorSecrets" . }}
 {{- include "operator.operatorDeployment" . }}
-{{- include "operator.operatorInternalService" . }}
-{{- include "operator.operatorExternalService" . }}
 {{- include "operator.operatorWebhookExternalService" . }}
 {{- $useClusterRole := and (or .enableClusterRoleBinding (not (hasKey . "enableClusterRoleBinding"))) (not (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
 {{- if $useClusterRole }}

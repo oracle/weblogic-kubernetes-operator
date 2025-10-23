@@ -133,8 +133,6 @@ class ItOpenshiftIstioMiiDomain {
     
     installAndVerifyOperator(opNamespace,
         opSa, // operator service account
-        false, // with REST api enabled
-        0, // externalRestHttpPort
         opHelmParams, // operator helm parameters
         false, // ElkintegrationEnabled
         null, // domainspaceSelectionStrategy

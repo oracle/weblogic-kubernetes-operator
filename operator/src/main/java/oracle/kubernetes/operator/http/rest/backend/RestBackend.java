@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import oracle.kubernetes.operator.http.rest.model.DomainAction;
-
 /**
  * The RestBackend interface is to implement all of the WebLogic Operator REST resources that need
  * to talk to Kubernetes and WebLogic to get their work done. It separates the jaxrs part of the
@@ -31,13 +29,6 @@ public interface RestBackend {
    * @return whether or not this domainUID has been registered with the WebLogic operator.
    */
   boolean isDomainUid(String domainUid);
-
-  /**
-   * Applies the specified command to the specified domain.
-   * @param domainUid the unique ID of a domain
-   * @param params an update command with optional parameters
-   */
-  void performDomainAction(String domainUid, DomainAction params);
 
   /**
    * Get the names of the clusters in a WebLogic domain.

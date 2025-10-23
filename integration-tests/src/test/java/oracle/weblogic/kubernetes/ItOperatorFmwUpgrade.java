@@ -280,8 +280,8 @@ class ItOperatorFmwUpgrade {
 
     // install operator with passed version
     String opServiceAccount = opNamespace + "-sa";
-    installAndVerifyOperator(opNamespace, opServiceAccount, true,
-        0, opHelmParams, domainNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount,
+        opHelmParams, domainNamespace);
 
     return opHelmParams;
   }
@@ -335,8 +335,7 @@ class ItOperatorFmwUpgrade {
       // build operator chart values
       OperatorParams opParams = new OperatorParams()
             .helmParams(upgradeHelmParams)
-            .image(latestOperatorImageName)
-            .externalRestEnabled(true);
+            .image(latestOperatorImageName);
 
       assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
             String.format("Failed to upgrade operator in namespace %s", opNamespace));

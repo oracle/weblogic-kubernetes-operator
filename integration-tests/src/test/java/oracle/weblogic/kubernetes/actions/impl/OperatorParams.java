@@ -18,10 +18,6 @@ public class OperatorParams {
   private static final String DOMAIN_NAMESPACES = "domainNamespaces";
   private static final String IMAGE = "image";
   private static final String SERVICE_ACCOUNT = "serviceAccount";
-  private static final String ENABLE_REST = "enableRest";
-  private static final String EXTERNAL_REST_ENABLED = "externalRestEnabled";
-  private static final String EXTERNAL_REST_IDENTITY_SECRET = "externalRestIdentitySecret";
-  private static final String EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
   private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
   private static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
   private static final String ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
@@ -49,10 +45,6 @@ public class OperatorParams {
   private List<String> domainNamespaces;
   private String image;
   private String serviceAccount;
-  private boolean enableRest;
-  private boolean externalRestEnabled;
-  private String externalRestIdentitySecret;
-  private int externalRestHttpsPort = 0;
   private String imagePullPolicy;
   private Map<String, Object> imagePullSecrets;
   private HelmParams helmParams;
@@ -94,21 +86,6 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams restEnabled(boolean restEnabled) {
-    this.enableRest = restEnabled;
-    return this;
-  }
-
-  public OperatorParams externalRestEnabled(boolean externalRestEnabled) {
-    this.externalRestEnabled = externalRestEnabled;
-    return this;
-  }
-
-  public OperatorParams externalRestHttpsPort(int externalRestHttpsPort) {
-    this.externalRestHttpsPort = externalRestHttpsPort;
-    return this;
-  }
-
   public OperatorParams imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
@@ -121,11 +98,6 @@ public class OperatorParams {
 
   public OperatorParams imagePullSecrets(Map<String, Object> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
-    return this;
-  }
-
-  public OperatorParams externalRestIdentitySecret(String externalRestIdentitySecret) {
-    this.externalRestIdentitySecret = externalRestIdentitySecret;
     return this;
   }
 
@@ -265,14 +237,6 @@ public class OperatorParams {
         ? domainNamespaces.toString().replace(" ", "") : domainNamespaces);
     values.put(IMAGE, image);
     values.put(SERVICE_ACCOUNT, serviceAccount);
-
-    values.put(ENABLE_REST, Boolean.valueOf(enableRest));
-    values.put(EXTERNAL_REST_ENABLED, Boolean.valueOf(externalRestEnabled));
-    values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
-
-    if (externalRestHttpsPort >= 0) {
-      values.put(EXTERNAL_REST_HTTPS_PORT, Integer.valueOf(externalRestHttpsPort));
-    }
 
     values.put(IMAGE_PULL_POLICY, Optional.ofNullable(imagePullPolicy).map(Object::toString).orElse(null));
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);

@@ -94,7 +94,7 @@ class ItRetryImprovementMisc {
 
     // install and verify operator with REST API
     logger.info("Install an operator in namespace {0}, managing namespace {1}", opNamespace, domainNamespace);
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace);
   }
 
   /**

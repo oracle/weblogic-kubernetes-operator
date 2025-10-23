@@ -179,7 +179,7 @@ class ItElasticLoggingFluentd {
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        false, 0, true, domainNamespace);
+        true, domainNamespace);
 
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc";
 

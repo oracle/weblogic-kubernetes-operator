@@ -35,7 +35,6 @@ import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.http.metrics.MetricsServer;
-import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -106,7 +105,6 @@ public abstract class BaseMain {
   static final File deploymentHome;
   final CoreDelegate delegate;
 
-  private final AtomicReference<BaseServer> restServer = new AtomicReference<>();
   private final AtomicReference<BaseServer> metricsServer = new AtomicReference<>();
 
   static {
@@ -199,25 +197,6 @@ public abstract class BaseMain {
     } catch (IOException io) {
       LOGGER.severe(MessageKeys.EXCEPTION, io);
     }
-  }
-
-  void startRestServer()
-      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
-      KeyStoreException, InvalidKeySpecException, KeyManagementException {
-    BaseRestServer value = createRestServer();
-    restServer.set(value);
-    value.start();
-  }
-
-  abstract BaseRestServer createRestServer();
-
-  // For test
-  AtomicReference<BaseServer> getRestServer() {
-    return restServer;
-  }
-
-  void stopRestServer() {
-    Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseServer::stop);
   }
 
   void startMetricsServer() throws UnrecoverableKeyException, CertificateException, IOException,
