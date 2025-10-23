@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.Namespaces;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -72,7 +71,7 @@ class CrdHelperTest extends CrdHelperTestBase {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(
         consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, CREATING_CRD, REPLACE_CRD_FAILED, CREATE_CRD_FAILED)
@@ -85,7 +84,7 @@ class CrdHelperTest extends CrdHelperTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);
@@ -217,10 +216,6 @@ class CrdHelperTest extends CrdHelperTestBase {
     testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
-  }
-
-  private void defineSelectionStrategy(Namespaces.SelectionStrategy selectionStrategy) {
-    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
   }
 
   @ParameterizedTest
@@ -519,7 +514,7 @@ class CrdHelperTest extends CrdHelperTestBase {
   }
 
   @Test
-  void testCrdCreationExceptionWhenWritingCrd() throws NoSuchFieldException {
+  void testCrdCreationExceptionWhenWritingCrd() {
     fileSystem.throwExceptionOnGetPath("/crd.yaml");
 
     Assertions.assertThrows(CrdHelper.CrdCreationException.class, () -> CrdHelper.main("crd.yaml", "cluster.yaml"));
@@ -543,9 +538,6 @@ class CrdHelperTest extends CrdHelperTestBase {
     assertThat(getPropertiesType(crd, "status", "minimumReplicas"), equalTo("integer"));
     assertThat(getPropertiesType(crd, "status", "maximumReplicas"), equalTo("integer"));
   }
-
-  // todo check additional arguments: if second arg not present: error or skip cluster resource ?
-
 
   private V1CustomResourceDefinition defineDomainCrd() {
     return new CrdHelper.DomainCrdContext().createModel(PRODUCT_VERSION, getCertificates());

@@ -1,15 +1,17 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventSeries;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import jakarta.validation.constraints.NotNull;
@@ -27,8 +29,9 @@ public class EventTestUtils {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  public static List<CoreV1Event> getEventsWithReason(@NotNull List<CoreV1Event> events, String reason) {
-    return events.stream().filter(event -> reasonMatches(event, reason)).collect(Collectors.toList());
+  public static List<EventsV1Event> getEventsWithReason(@NotNull List<EventsV1Event> events, String reason) {
+    return events.stream().filter(event -> reasonMatches(event, reason))
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   /**
@@ -39,7 +42,8 @@ public class EventTestUtils {
    * @param namespace namespace to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithNamespace(@NotNull List<CoreV1Event> events, String reason, String namespace) {
+  public static boolean containsEventWithNamespace(
+      @NotNull List<EventsV1Event> events, String reason, String namespace) {
     return getEventsWithReason(events, reason).stream().anyMatch(e -> namespaceMatches(e, namespace));
   }
 
@@ -52,7 +56,7 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithLabels(
-      @NotNull List<CoreV1Event> events, String reason, Map<String, String> labels) {
+      @NotNull List<EventsV1Event> events, String reason, Map<String, String> labels) {
     return getEventsWithReason(events, reason).stream().anyMatch(e -> labelsMatches(e, labels));
   }
 
@@ -64,7 +68,7 @@ public class EventTestUtils {
    * @param message message to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithMessage(@NotNull List<CoreV1Event> events, String reason, String message) {
+  public static boolean containsEventWithMessage(@NotNull List<EventsV1Event> events, String reason, String message) {
     return getEventsWithReason(events, reason).stream().anyMatch(e -> messageMatches(e, message));
   }
 
@@ -75,7 +79,7 @@ public class EventTestUtils {
    * @param reason reason to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithComponent(@NotNull List<CoreV1Event> events, String reason) {
+  public static boolean containsEventWithComponent(@NotNull List<EventsV1Event> events, String reason) {
     return getEventsWithReason(events, reason).stream().anyMatch(EventTestUtils::reportingComponentMatches);
   }
 
@@ -87,7 +91,7 @@ public class EventTestUtils {
    * @param opName pod name of the operator to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithInstance(@NotNull List<CoreV1Event> events, String reason, String opName) {
+  public static boolean containsEventWithInstance(@NotNull List<EventsV1Event> events, String reason, String opName) {
     return getEventsWithReason(events, reason).stream().anyMatch(e -> reportingInstanceMatches(e, opName));
   }
 
@@ -100,13 +104,13 @@ public class EventTestUtils {
    * @param namespace namespace to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithInvolvedObject(
-      @NotNull List<CoreV1Event> events,
+  public static boolean containsEventWithRegarding(
+      @NotNull List<EventsV1Event> events,
       String reason,
       String name,
       String namespace) {
     return getEventsWithReason(events, reason)
-        .stream().anyMatch(e -> involvedObjectMatches(e, name, namespace));
+        .stream().anyMatch(e -> regardingMatches(e, name, namespace));
   }
 
   /**
@@ -119,14 +123,14 @@ public class EventTestUtils {
    * @param k8sUID Kubernetes UID to match
    * @return true if there is a matching event
    */
-  public static boolean containsEventWithInvolvedObject(
-      @NotNull List<CoreV1Event> events,
+  public static boolean containsEventWithRegarding(
+      @NotNull List<EventsV1Event> events,
       String reason,
       String name,
       String namespace,
       String k8sUID) {
     return getEventsWithReason(events, reason)
-        .stream().anyMatch(e -> involvedObjectMatches(e, name, namespace, k8sUID));
+        .stream().anyMatch(e -> regardingMatches(e, name, namespace, k8sUID));
   }
 
   /**
@@ -139,10 +143,10 @@ public class EventTestUtils {
    * @return true if there is a matching event for each namespace
    */
   static boolean containsEventWithMessageForNamespaces(
-      List<CoreV1Event> events, EventItem eventItem, List<String> namespaces) {
+      List<EventsV1Event> events, EventItem eventItem, List<String> namespaces) {
     for (String ns : namespaces) {
       if (!EventTestUtils.containsEventWithMessage(events, eventItem.getReason(),
-          eventItem.getMessage(new EventHelper.EventData(eventItem).resourceName(ns)))) {
+          eventItem.getNote(new EventHelper.EventData(eventItem).resourceName(ns)))) {
         return false;
       }
     }
@@ -157,8 +161,8 @@ public class EventTestUtils {
    * @param count count to match
    * @return true if there is a matching event
    */
-  public static boolean containsOneEventWithCount(List<CoreV1Event> events, String reason, int count) {
-    List<CoreV1Event> eventsMatchReason = getEventsWithReason(events, reason);
+  public static boolean containsOneEventWithCount(List<EventsV1Event> events, String reason, int count) {
+    List<EventsV1Event> eventsMatchReason = getEventsWithReason(events, reason);
     return eventsMatchReason.size() == 1 && eventsMatchReason.stream().anyMatch(e -> countMatches(e, count));
   }
 
@@ -170,8 +174,8 @@ public class EventTestUtils {
    * @param eventsCount number of events that was expected to match
    * @return true if the expected condition met
    */
-  public static boolean containsEventsWithCountOne(List<CoreV1Event> events, String reason, int eventsCount) {
-    List<CoreV1Event> eventsMatchReason = getEventsWithReason(events, reason);
+  public static boolean containsEventsWithCountOne(List<EventsV1Event> events, String reason, int eventsCount) {
+    List<EventsV1Event> eventsMatchReason = getEventsWithReason(events, reason);
     return eventsMatchReason.stream().allMatch(e -> countMatches(e, 1)) && eventsMatchReason.size() == eventsCount;
   }
 
@@ -183,120 +187,120 @@ public class EventTestUtils {
    * @return message 
    */
   public static String getExpectedEventMessage(KubernetesTestSupport testSupport, EventHelper.EventItem event) {
-    List<CoreV1Event> events = getEventsWithReason(getEvents(testSupport), event.getReason());
+    List<EventsV1Event> events = getEventsWithReason(getEvents(testSupport), event.getReason());
     return Optional.ofNullable(events)
         .filter(list -> !list.isEmpty())
         .map(n -> n.get(0))
-        .map(CoreV1Event::getMessage)
+        .map(EventsV1Event::getNote)
         .orElse("Event not found");
   }
 
-  public static List<CoreV1Event> getEvents(KubernetesTestSupport testSupport) {
+  public static List<EventsV1Event> getEvents(KubernetesTestSupport testSupport) {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
-  public static boolean containsEvent(List<CoreV1Event> events, String reason) {
+  public static boolean containsEvent(List<EventsV1Event> events, String reason) {
     return !getEventsWithReason(events, reason).isEmpty();
   }
 
-  private static boolean reasonMatches(CoreV1Event event, String eventReason) {
+  private static boolean reasonMatches(EventsV1Event event, String eventReason) {
     return eventReason.equals(event.getReason());
   }
 
-  private static boolean namespaceMatches(CoreV1Event event, String namespace) {
+  private static boolean namespaceMatches(EventsV1Event event, String namespace) {
     return namespace.equals(getNamespace(event));
   }
 
-  private static boolean labelsMatches(CoreV1Event e, Map<String, String> labels) {
+  private static boolean labelsMatches(EventsV1Event e, Map<String, String> labels) {
     return labels.equals(e.getMetadata().getLabels());
   }
 
-  private static boolean reportingInstanceMatches(CoreV1Event event, String instance) {
+  private static boolean reportingInstanceMatches(EventsV1Event event, String instance) {
     return instance.equals(event.getReportingInstance());
   }
 
-  private static boolean reportingComponentMatches(CoreV1Event event) {
-    return WEBLOGIC_OPERATOR_COMPONENT.equals(event.getReportingComponent());
+  private static boolean reportingComponentMatches(EventsV1Event event) {
+    return WEBLOGIC_OPERATOR_COMPONENT.equals(event.getReportingController());
   }
 
-  private static boolean messageMatches(CoreV1Event event, String message) {
-    return message.equals(event.getMessage());
+  private static boolean messageMatches(EventsV1Event event, String message) {
+    return message.equals(event.getNote());
   }
 
-  private static boolean involvedObjectMatches(
-      @NotNull CoreV1Event event, String name, String namespace, String k8sUID) {
-    return involvedObjectNameMatches(event, name)
-        && involvedObjectApiVersionMatches(event)
-        && involvedObjectNamespaceMatches(event, namespace)
-        && involvedObjectUIDMatches(event, k8sUID);
+  private static boolean regardingMatches(
+      @NotNull EventsV1Event event, String name, String namespace, String k8sUID) {
+    return regardingNameMatches(event, name)
+        && regardingApiVersionMatches(event)
+        && regardingNamespaceMatches(event, namespace)
+        && regardingUIDMatches(event, k8sUID);
   }
 
-  private static boolean involvedObjectMatches(
-      @NotNull CoreV1Event event, String name, String namespace) {
-    return involvedObjectNameMatches(event, name)
-        && involvedObjectNamespaceMatches(event, namespace);
+  private static boolean regardingMatches(
+      @NotNull EventsV1Event event, String name, String namespace) {
+    return regardingNameMatches(event, name)
+        && regardingNamespaceMatches(event, namespace);
   }
 
-  private static boolean involvedObjectUIDMatches(@NotNull CoreV1Event event, String k8sUID) {
+  private static boolean regardingUIDMatches(@NotNull EventsV1Event event, String k8sUID) {
     return getInvolvedObjectK8SUID(event).equals(k8sUID);
   }
 
-  private static boolean involvedObjectApiVersionMatches(@NotNull CoreV1Event event) {
+  private static boolean regardingApiVersionMatches(@NotNull EventsV1Event event) {
     return getInvolvedObjectApiVersion(event).equals(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE);
   }
 
-  private static boolean involvedObjectNameMatches(@NotNull CoreV1Event event, String name) {
+  private static boolean regardingNameMatches(@NotNull EventsV1Event event, String name) {
     return getInvolvedObjectName(event).equals(name);
   }
 
-  private static boolean involvedObjectNamespaceMatches(@NotNull CoreV1Event event, String namespace) {
+  private static boolean regardingNamespaceMatches(@NotNull EventsV1Event event, String namespace) {
     return getInvolvedObjectNamespace(event).equals(namespace)
         && getNamespace(event).equals(getInvolvedObjectNamespace(event));
   }
 
-  private static boolean countMatches(@NotNull CoreV1Event event, int count) {
+  private static boolean countMatches(@NotNull EventsV1Event event, int count) {
     return getCount(event) == count;
   }
 
-  private static int getCount(@NotNull CoreV1Event event) {
-    return Optional.of(event).map(CoreV1Event::getCount).orElse(0);
+  private static int getCount(@NotNull EventsV1Event event) {
+    return Optional.of(event).map(EventsV1Event::getSeries).map(EventsV1EventSeries::getCount).orElse(1);
   }
 
-  private static String getInvolvedObjectK8SUID(CoreV1Event event) {
-    return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getUid).orElse("");
+  private static String getInvolvedObjectK8SUID(EventsV1Event event) {
+    return Optional.ofNullable(event.getRegarding()).map(V1ObjectReference::getUid).orElse("");
   }
 
-  private static String getInvolvedObjectApiVersion(CoreV1Event event) {
-    return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getApiVersion).orElse("");
+  private static String getInvolvedObjectApiVersion(EventsV1Event event) {
+    return Optional.ofNullable(event.getRegarding()).map(V1ObjectReference::getApiVersion).orElse("");
   }
 
-  public static String getName(CoreV1Event event) {
-    return Optional.ofNullable(event).map(CoreV1Event::getMetadata).map(V1ObjectMeta::getName).orElse("");
+  public static String getName(EventsV1Event event) {
+    return Optional.ofNullable(event).map(EventsV1Event::getMetadata).map(V1ObjectMeta::getName).orElse("");
   }
 
-  private static String getNamespace(@NotNull CoreV1Event event) {
+  private static String getNamespace(@NotNull EventsV1Event event) {
     return Optional.ofNullable(event.getMetadata()).map(V1ObjectMeta::getNamespace).orElse("");
   }
 
-  private static String getInvolvedObjectNamespace(@NotNull CoreV1Event event) {
-    return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getNamespace).orElse("");
+  private static String getInvolvedObjectNamespace(@NotNull EventsV1Event event) {
+    return Optional.ofNullable(event.getRegarding()).map(V1ObjectReference::getNamespace).orElse("");
   }
 
-  private static String getInvolvedObjectName(@NotNull CoreV1Event event) {
-    return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getName).orElse("");
+  private static String getInvolvedObjectName(@NotNull EventsV1Event event) {
+    return Optional.ofNullable(event.getRegarding()).map(V1ObjectReference::getName).orElse("");
   }
 
-  public static CoreV1Event getEventWithReason(List<CoreV1Event> events, String reason) {
+  public static EventsV1Event getEventWithReason(List<EventsV1Event> events, String reason) {
     return !getEventsWithReason(events, reason).isEmpty() ? getEventsWithReason(events, reason).get(0) : null;
   }
 
-  public static int getNumberOfEvents(List<CoreV1Event> events, String reason) {
+  public static int getNumberOfEvents(List<EventsV1Event> events, String reason) {
     return getEventsWithReason(events, reason).size();
   }
 
-  public static boolean isDomainFailedAbortedEvent(CoreV1Event e) {
+  public static boolean isDomainFailedAbortedEvent(EventsV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason())
-        && Objects.requireNonNull(e.getMessage()).contains(getLocalizedString(ABORTED_EVENT_ERROR));
+        && Objects.requireNonNull(e.getNote()).contains(getLocalizedString(ABORTED_EVENT_ERROR));
   }
 
   public static String getLocalizedString(String msgId) {

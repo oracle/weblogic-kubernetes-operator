@@ -12,7 +12,7 @@ Closely examine the JSON output from this command. Save the value of the `loginS
 "loginServer": "contosoresourcegroup1610068510.azurecr.io",
 ```
 
-Use this value to sign in to the ACR instance. Note that because you are signing in with the `az` cli, you do not need a password because your identity is already conveyed by having done `az login` previously.
+Use this value to sign in to the ACR instance. Note that because you are signing in with the `az` CLI, you do not need a password because your identity is already conveyed by having done `az login` previously.
 
 ```shell
 $ export LOGIN_SERVER=$(az acr show -n $ACR_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --query "loginServer" -o tsv)

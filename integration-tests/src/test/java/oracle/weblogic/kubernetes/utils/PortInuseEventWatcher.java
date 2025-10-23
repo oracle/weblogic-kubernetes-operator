@@ -11,12 +11,14 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventSeries;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -54,17 +56,20 @@ public class PortInuseEventWatcher extends Thread {
         List<String> ns = Kubernetes.listNamespaces();
         for (String n : ns) {
           if (n.startsWith("ns-") || n.equals("default")) {
-            List<CoreV1Event> listNamespacedEvents = Kubernetes.listNamespacedEvents(n);
-            for (CoreV1Event event : listNamespacedEvents) {
-              if (event != null && event.getLastTimestamp() != null
-                  && (event.getLastTimestamp().isEqual(timestamp)
-                  || event.getLastTimestamp().isAfter(timestamp))
-                  && event.getMessage() != null
-                  && event.getMessage().matches(regex)) {
-                logger.info("Port in use issue found in namespace {0}, "
-                    + "collecting services objects across all namespaces....", n);
-                logger.info(Yaml.dump(event));
-                collectLogs(ns);
+            List<EventsV1Event> listNamespacedEvents = Kubernetes.listNamespacedEvents(n);
+            for (EventsV1Event event : listNamespacedEvents) {
+              if (event != null) {
+                OffsetDateTime eventTime = Optional.ofNullable(event.getSeries())
+                    .map(EventsV1EventSeries::getLastObservedTime).orElse(event.getEventTime());
+                if ((eventTime.isEqual(timestamp)
+                    || eventTime.isAfter(timestamp))
+                    && event.getNote() != null
+                    && event.getNote().matches(regex)) {
+                  logger.info("Port in use issue found in namespace {0}, "
+                      + "collecting services objects across all namespaces....", n);
+                  logger.info(Yaml.dump(event));
+                  collectLogs(ns);
+                }
               }
             }
           }

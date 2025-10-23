@@ -1,4 +1,4 @@
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Important: Functions defined in this file can work with unknown shells,
@@ -47,6 +47,7 @@
 #
 #   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
 #
+umask 027
 export AUXILIARY_IMAGE_COMMAND_LOGS_DIR="${AUXILIARY_IMAGE_COMMAND_LOGS_DIR:-compatibilityModeInitContainerLogs}"
 
 trace() {

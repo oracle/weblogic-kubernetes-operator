@@ -1,7 +1,7 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.kubernetes;
+package oracle.weblogic.kubernetes; 
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -38,7 +37,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -74,6 +72,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
@@ -81,8 +80,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
-import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -104,8 +101,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create Istio enabled FMW model in image domain and WebLogic domain using Oracle "
-    + "database created using Oracle Database Operator")
 @IntegrationTest
 @Tag("oke-sequential")
 @Tag("kind-sequential")
@@ -121,7 +116,6 @@ class ItIstioDBOperator {
   private static String dbName = "istio-oracle-sidb";
   private static LoggingFacade logger = null;
 
-  private String clusterName = "cluster-1";
   private int replicaCount = 2;
 
   private static final String wlsDomainUid = "mii-jms-istio-db";
@@ -136,10 +130,10 @@ class ItIstioDBOperator {
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
-  private static String testWebAppWarLoc = null;
-
-  private static String hostHeader;
   Map<String, String> httpHeaders;
+
+  private static final String istioNamespace = "istio-system";
+  private static final String istioIngressServiceName = "istio-ingressgateway";
 
   /**
    * Start DB service and create RCU schema.
@@ -149,7 +143,7 @@ class ItIstioDBOperator {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for DB and RCU");
@@ -180,15 +174,13 @@ class ItIstioDBOperator {
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(wlsDomainNamespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace, labelMap));
-
-    //install Oracle Database Operator
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
-
+    
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
     
     // create testwebapp.war
-    testWebAppWarLoc = createTestWebAppWarFile(wlsDomainNamespace);
+    createTestWebAppWarFile(wlsDomainNamespace);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, wlsDomainNamespace);
@@ -262,8 +254,6 @@ class ItIstioDBOperator {
 
     wlDomainIstioIngressPort = enableIstio("cluster-1", wlsDomainUid, wlsDomainNamespace, wlsAdminServerPodName);
     logger.info("Istio Ingress Port is {0}", wlDomainIstioIngressPort);
-
-    hostHeader = wlsDomainNamespace + ".org";
 
     //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
@@ -382,10 +372,9 @@ class ItIstioDBOperator {
    * Deletes Oracle database instance, operator and storageclass.
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() {
     if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
-      uninstallDBOperator(dbNamespace);
     }
   }
 
@@ -397,7 +386,7 @@ class ItIstioDBOperator {
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
     params.command("sh "
-        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to execute script " + script);
@@ -423,7 +412,11 @@ class ItIstioDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJmsServerRuntime(String jmsServer, String managedServer) throws UnknownHostException {
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+            : getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
+
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + ISTIO_HTTP_HOSTPORT;
     }
@@ -442,7 +435,10 @@ class ItIstioDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkStoreRuntime(String storeName, String managedServer) throws UnknownHostException {
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+            : getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
+
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + ISTIO_HTTP_HOSTPORT;
     }
@@ -463,9 +459,13 @@ class ItIstioDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJtaRecoveryServiceRuntime(String managedServer,
-      String recoveryService, String active) throws UnknownHostException {
-    
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
+                                                 String recoveryService,
+                                                 String active) throws UnknownHostException {
+
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+            : getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
+
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + ISTIO_HTTP_HOSTPORT;
     }
@@ -478,7 +478,7 @@ class ItIstioDBOperator {
 
   /**
    * Create leasing Table (ACTIVE) on an Oracle DB Instance. Uses the WebLogic utility utils.Schema to add the table So
-   * the command MUST be run inside a Weblogic Server pod.
+   * the command MUST be run inside a WebLogic Server pod.
    *
    * @param wlPodName the pod name
    * @param namespace the namespace in which WebLogic pod exists
@@ -529,6 +529,7 @@ class ItIstioDBOperator {
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE", adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("MANAGED_SERVER_PORT", "7001");
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
@@ -610,7 +611,7 @@ class ItIstioDBOperator {
                 .runtimeEncryptionSecret(encryptionSecretName)
                 .onlineUpdate(new OnlineUpdate()
                     .enabled(onlineUpdateEnabled)))
-            .introspectorJobActiveDeadlineSeconds(300L));
+            .introspectorJobActiveDeadlineSeconds(3000L));
 
     if (setDataHome) {
       domainSpec.dataHome("/shared/data");

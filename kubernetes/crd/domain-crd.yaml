@@ -1,11 +1,11 @@
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: ee0c6f79288b000cd61aa9438ab7f24f63b6334072e3520f25ee454f8bff6175
+    weblogic.sha256: 68317b3e7f2cc05c004dcf48eb7f2b83a8c6747f54d7a6929d6ba664df0594db
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -47,9 +47,9 @@ spec:
                   appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.
                 properties:
                   image:
-                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.2.0
+                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.3.7
                     description: The WebLogic Monitoring Exporter sidecar container
-                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.2.0
+                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.7
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the WebLogic Monitoring
@@ -81,6 +81,8 @@ spec:
                         items:
                           type: object
                           properties:
+                            request:
+                              type: string
                             name:
                               type: string
                           required:
@@ -481,15 +483,6 @@ spec:
                                   ResourceRequirements describes the compute resource
                                   requirements.
                                 properties:
-                                  claims:
-                                    items:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
-                                      required:
-                                      - name
-                                    type: array
                                   requests:
                                     additionalProperties:
                                       type: string
@@ -501,6 +494,14 @@ spec:
                                 type: object
                             type: object
                         type: object
+                      modelEncryptionPassphraseSecret:
+                        description: Specifies the secret name of the WebLogic Deployment
+                          Tool encryption passphrase if the WDT models provided in
+                          the 'domainCreationImages' or 'domainCreationConfigMap'
+                          are encrypted using the WebLogic Deployment Tool 'encryptModel'
+                          command. The secret must use the key 'passphrase' containing
+                          the actual passphrase for encryption.
+                        type: string
                       setDefaultSecurityContextFsGroup:
                         description: Specifies whether the operator will set the default
                           'fsGroup' in the introspector job pod security context.
@@ -771,8 +772,8 @@ spec:
                   pod  will have the fluentd sidecar or not, as appropriate
                 properties:
                   image:
-                    default: fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2
-                    description: The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2
+                    default: fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1
+                    description: The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the Fluentd sidecar container
@@ -799,6 +800,8 @@ spec:
                         items:
                           type: object
                           properties:
+                            request:
+                              type: string
                             name:
                               type: string
                           required:
@@ -901,6 +904,8 @@ spec:
                           type: boolean
                         subPath:
                           type: string
+                        recursiveReadOnly:
+                          type: string
                         subPathExpr:
                           type: string
                       required:
@@ -997,8 +1002,8 @@ spec:
                   pod  will have the fluent-bit sidecar or not, as appropriate
                 properties:
                   image:
-                    default: fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2
-                    description: The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2
+                    default: fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1
+                    description: The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the Fluentbit sidecar container
@@ -1025,6 +1030,8 @@ spec:
                         items:
                           type: object
                           properties:
+                            request:
+                              type: string
                             name:
                               type: string
                           required:
@@ -1131,6 +1138,8 @@ spec:
                           type: boolean
                         subPath:
                           type: string
+                        recursiveReadOnly:
+                          type: string
                         subPathExpr:
                           type: string
                       required:
@@ -1210,13 +1219,10 @@ spec:
                         type: string
                       podSecurityContext:
                         description: 'Pod-level security attributes. See `kubectl
-                          explain pods.spec.securityContext`. Beginning with operator
-                          version 4.0.5, if no value is specified for this field,
-                          the operator will use default content for the pod-level
-                          `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                          explain pods.spec.securityContext`. If no value is specified
+                          for this field, the operator will use default content for
+                          the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                         properties:
-                          runAsUser:
-                            type: integer
                           seLinuxOptions:
                             properties:
                               role:
@@ -1228,7 +1234,38 @@ spec:
                               user:
                                 type: string
                             type: object
+                          appArmorProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
                           fsGroup:
+                            type: integer
+                          fsGroupChangePolicy:
+                            type: string
+                          seLinuxChangePolicy:
+                            type: string
+                          runAsGroup:
+                            type: integer
+                          runAsNonRoot:
+                            type: boolean
+                          sysctls:
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                            type: array
+                          runAsUser:
                             type: integer
                           seccompProfile:
                             properties:
@@ -1250,28 +1287,12 @@ spec:
                               gmsaCredentialSpecName:
                                 type: string
                             type: object
-                          fsGroupChangePolicy:
-                            type: string
                           supplementalGroups:
                             items:
                               type: integer
                             type: array
-                          runAsGroup:
-                            type: integer
-                          runAsNonRoot:
-                            type: boolean
-                          sysctls:
-                            items:
-                              type: object
-                              properties:
-                                name:
-                                  type: string
-                                value:
-                                  type: string
-                              required:
-                              - name
-                              - value
-                            type: array
+                          supplementalGroupsPolicy:
+                            type: string
                         type: object
                       priorityClassName:
                         description: If specified, indicates the Pod's priority. "system-node-critical"
@@ -1300,7 +1321,77 @@ spec:
                               type: array
                               items:
                                 type: string
+                          required:
+                          - ip
                         type: array
+                      startupProbe:
+                        description: Settings for the startup probe associated with
+                          a WebLogic Server instance. If not specified, the operator
+                          will not create a default startup probe.
+                        properties:
+                          terminationGracePeriodSeconds:
+                            type: integer
+                          failureThreshold:
+                            type: integer
+                          periodSeconds:
+                            type: integer
+                          tcpSocket:
+                            properties:
+                              port:
+                                x-kubernetes-int-or-string: true
+                              host:
+                                type: string
+                            required:
+                            - port
+                            type: object
+                          timeoutSeconds:
+                            type: integer
+                          successThreshold:
+                            type: integer
+                          initialDelaySeconds:
+                            type: integer
+                          exec:
+                            properties:
+                              command:
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          grpc:
+                            properties:
+                              port:
+                                type: integer
+                              service:
+                                type: string
+                            required:
+                            - port
+                            type: object
+                          httpGet:
+                            properties:
+                              path:
+                                type: string
+                              scheme:
+                                type: string
+                              port:
+                                x-kubernetes-int-or-string: true
+                              host:
+                                type: string
+                              httpHeaders:
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - name
+                                  - value
+                                type: array
+                            required:
+                            - port
+                            type: object
+                        type: object
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -1323,6 +1414,8 @@ spec:
                             readOnly:
                               type: boolean
                             subPath:
+                              type: string
+                            recursiveReadOnly:
                               type: string
                             subPathExpr:
                               type: string
@@ -1358,6 +1451,11 @@ spec:
                             operator:
                               type: string
                         type: array
+                      automountServiceAccountToken:
+                        description: Indicates whether a service account token should
+                          be automatically mounted on the pod. Defaults to true if
+                          not set. See `kubectl explain pods.spec.automountServiceAccountToken`.
+                        type: boolean
                       readinessProbe:
                         description: Settings for the readiness probe associated with
                           a WebLogic Server instance. If not specified, the operator
@@ -1436,10 +1534,9 @@ spec:
                       containerSecurityContext:
                         description: 'Container-level security attributes. Will override
                           any matching Pod-level attributes. See `kubectl explain
-                          pods.spec.containers.securityContext`. Beginning with operator
-                          version 4.0.5, if no value is specified for this field,
-                          the operator will use default content for container-level
-                          `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                          pods.spec.containers.securityContext`. If no value is specified
+                          for this field, the operator will use default content for
+                          container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                         properties:
                           privileged:
                             type: boolean
@@ -1466,6 +1563,15 @@ spec:
                                 type: string
                               user:
                                 type: string
+                            type: object
+                          appArmorProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
                             type: object
                           seccompProfile:
                             properties:
@@ -1822,18 +1928,11 @@ spec:
                                           - name
                                         volumeName:
                                           type: string
+                                        volumeAttributesClassName:
+                                          type: string
                                         resources:
                                           type: object
                                           properties:
-                                            claims:
-                                              type: array
-                                              items:
-                                                type: object
-                                                properties:
-                                                  name:
-                                                    type: string
-                                                required:
-                                                - name
                                             requests:
                                               additionalProperties:
                                                 type: string
@@ -2003,6 +2102,42 @@ spec:
                                             type: integer
                                         required:
                                         - path
+                                      clusterTrustBundle:
+                                        type: object
+                                        properties:
+                                          path:
+                                            type: string
+                                          labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                  - key
+                                                  - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                          signerName:
+                                            type: string
+                                        required:
+                                        - path
                                 defaultMode:
                                   type: integer
                             cephfs:
@@ -2089,6 +2224,13 @@ spec:
                                   type: string
                               required:
                               - pdName
+                            image:
+                              type: object
+                              properties:
+                                reference:
+                                  type: string
+                                pullPolicy:
+                                  type: string
                             photonPersistentDisk:
                               type: object
                               properties:
@@ -2403,6 +2545,8 @@ spec:
                             items:
                               type: object
                               properties:
+                                request:
+                                  type: string
                                 name:
                                   type: string
                               required:
@@ -2597,6 +2741,8 @@ spec:
                                   items:
                                     type: object
                                     properties:
+                                      request:
+                                        type: string
                                       name:
                                         type: string
                                     required:
@@ -2638,6 +2784,15 @@ spec:
                                       type: string
                                     user:
                                       type: string
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                  required:
+                                  - type
                                 seccompProfile:
                                   type: object
                                   properties:
@@ -2806,6 +2961,8 @@ spec:
                                     type: integer
                                 required:
                                 - containerPort
+                            restartPolicy:
+                              type: string
                             command:
                               type: array
                               items:
@@ -2825,6 +2982,8 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
+                                  recursiveReadOnly:
+                                    type: string
                                   subPathExpr:
                                     type: string
                                 required:
@@ -2840,6 +2999,13 @@ spec:
                                 postStart:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -2884,6 +3050,13 @@ spec:
                                 preStop:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -2925,6 +3098,8 @@ spec:
                                             - value
                                       required:
                                       - port
+                                stopSignal:
+                                  type: string
                             name:
                               type: string
                             tty:
@@ -3135,6 +3310,8 @@ spec:
                                   items:
                                     type: object
                                     properties:
+                                      request:
+                                        type: string
                                       name:
                                         type: string
                                     required:
@@ -3176,6 +3353,15 @@ spec:
                                       type: string
                                     user:
                                       type: string
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                  required:
+                                  - type
                                 seccompProfile:
                                   type: object
                                   properties:
@@ -3344,6 +3530,8 @@ spec:
                                     type: integer
                                 required:
                                 - containerPort
+                            restartPolicy:
+                              type: string
                             command:
                               type: array
                               items:
@@ -3363,6 +3551,8 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
+                                  recursiveReadOnly:
+                                    type: string
                                   subPathExpr:
                                     type: string
                                 required:
@@ -3378,6 +3568,13 @@ spec:
                                 postStart:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -3422,6 +3619,13 @@ spec:
                                 preStop:
                                   type: object
                                   properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
                                     tcpSocket:
                                       type: object
                                       properties:
@@ -3463,6 +3667,8 @@ spec:
                                             - value
                                       required:
                                       - port
+                                stopSignal:
+                                  type: string
                             name:
                               type: string
                             tty:
@@ -3760,6 +3966,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -3822,6 +4036,14 @@ spec:
                                               type: object
                                         topologyKey:
                                           type: string
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaces:
                                           type: array
                                           items:
@@ -3889,6 +4111,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -3951,6 +4181,14 @@ spec:
                                               type: object
                                         topologyKey:
                                           type: string
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaces:
                                           type: array
                                           items:
@@ -4076,13 +4314,10 @@ spec:
                     properties:
                       podSecurityContext:
                         description: 'Pod-level security attributes. See `kubectl
-                          explain pods.spec.securityContext`. Beginning with operator
-                          version 4.0.5, if no value is specified for this field,
-                          the operator will use default content for the pod-level
-                          `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                          explain pods.spec.securityContext`. If no value is specified
+                          for this field, the operator will use default content for
+                          the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                         properties:
-                          runAsUser:
-                            type: integer
                           seLinuxOptions:
                             properties:
                               role:
@@ -4094,7 +4329,38 @@ spec:
                               user:
                                 type: string
                             type: object
+                          appArmorProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
                           fsGroup:
+                            type: integer
+                          fsGroupChangePolicy:
+                            type: string
+                          seLinuxChangePolicy:
+                            type: string
+                          runAsGroup:
+                            type: integer
+                          runAsNonRoot:
+                            type: boolean
+                          sysctls:
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                            type: array
+                          runAsUser:
                             type: integer
                           seccompProfile:
                             properties:
@@ -4116,28 +4382,12 @@ spec:
                               gmsaCredentialSpecName:
                                 type: string
                             type: object
-                          fsGroupChangePolicy:
-                            type: string
                           supplementalGroups:
                             items:
                               type: integer
                             type: array
-                          runAsGroup:
-                            type: integer
-                          runAsNonRoot:
-                            type: boolean
-                          sysctls:
-                            items:
-                              type: object
-                              properties:
-                                name:
-                                  type: string
-                                value:
-                                  type: string
-                              required:
-                              - name
-                              - value
-                            type: array
+                          supplementalGroupsPolicy:
+                            type: string
                         type: object
                       resources:
                         description: Memory and CPU minimum requirements and limits
@@ -4147,6 +4397,8 @@ spec:
                             items:
                               type: object
                               properties:
+                                request:
+                                  type: string
                                 name:
                                   type: string
                               required:
@@ -4247,6 +4499,576 @@ spec:
                                 optional:
                                   type: boolean
                         type: array
+                      initContainers:
+                        description: List of init containers for the introspector
+                          Job Pod. These containers run after the auxiliary image
+                          init container. See `kubectl explain pods.spec.initContainers`.
+                        items:
+                          type: object
+                          properties:
+                            volumeDevices:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  devicePath:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                - devicePath
+                                - name
+                            image:
+                              type: string
+                            imagePullPolicy:
+                              type: string
+                            livenessProbe:
+                              type: object
+                              properties:
+                                terminationGracePeriodSeconds:
+                                  type: integer
+                                failureThreshold:
+                                  type: integer
+                                periodSeconds:
+                                  type: integer
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      x-kubernetes-int-or-string: true
+                                    host:
+                                      type: string
+                                  required:
+                                  - port
+                                timeoutSeconds:
+                                  type: integer
+                                successThreshold:
+                                  type: integer
+                                initialDelaySeconds:
+                                  type: integer
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: integer
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                    port:
+                                      x-kubernetes-int-or-string: true
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                  required:
+                                  - port
+                            stdin:
+                              type: boolean
+                            terminationMessagePolicy:
+                              type: string
+                            terminationMessagePath:
+                              type: string
+                            workingDir:
+                              type: string
+                            resources:
+                              type: object
+                              properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      request:
+                                        type: string
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                requests:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                limits:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                            securityContext:
+                              type: object
+                              properties:
+                                privileged:
+                                  type: boolean
+                                runAsUser:
+                                  type: integer
+                                capabilities:
+                                  type: object
+                                  properties:
+                                    add:
+                                      type: array
+                                      items:
+                                        type: string
+                                    drop:
+                                      type: array
+                                      items:
+                                        type: string
+                                seLinuxOptions:
+                                  type: object
+                                  properties:
+                                    role:
+                                      type: string
+                                    level:
+                                      type: string
+                                    type:
+                                      type: string
+                                    user:
+                                      type: string
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                  required:
+                                  - type
+                                seccompProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                  required:
+                                  - type
+                                windowsOptions:
+                                  type: object
+                                  properties:
+                                    gmsaCredentialSpec:
+                                      type: string
+                                    runAsUserName:
+                                      type: string
+                                    hostProcess:
+                                      type: boolean
+                                    gmsaCredentialSpecName:
+                                      type: string
+                                procMount:
+                                  type: string
+                                allowPrivilegeEscalation:
+                                  type: boolean
+                                runAsGroup:
+                                  type: integer
+                                runAsNonRoot:
+                                  type: boolean
+                                readOnlyRootFilesystem:
+                                  type: boolean
+                            startupProbe:
+                              type: object
+                              properties:
+                                terminationGracePeriodSeconds:
+                                  type: integer
+                                failureThreshold:
+                                  type: integer
+                                periodSeconds:
+                                  type: integer
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      x-kubernetes-int-or-string: true
+                                    host:
+                                      type: string
+                                  required:
+                                  - port
+                                timeoutSeconds:
+                                  type: integer
+                                successThreshold:
+                                  type: integer
+                                initialDelaySeconds:
+                                  type: integer
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: integer
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                    port:
+                                      x-kubernetes-int-or-string: true
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                  required:
+                                  - port
+                            env:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                  valueFrom:
+                                    type: object
+                                    properties:
+                                      secretKeyRef:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                          key:
+                                            type: string
+                                        required:
+                                        - key
+                                      resourceFieldRef:
+                                        type: object
+                                        properties:
+                                          divisor:
+                                            type: string
+                                          resource:
+                                            type: string
+                                          containerName:
+                                            type: string
+                                        required:
+                                        - resource
+                                      configMapKeyRef:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                          key:
+                                            type: string
+                                        required:
+                                        - key
+                                      fieldRef:
+                                        type: object
+                                        properties:
+                                          apiVersion:
+                                            type: string
+                                          fieldPath:
+                                            type: string
+                                        required:
+                                        - fieldPath
+                                required:
+                                - name
+                            ports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  protocol:
+                                    type: string
+                                  hostIP:
+                                    type: string
+                                  name:
+                                    type: string
+                                  containerPort:
+                                    type: integer
+                                  hostPort:
+                                    type: integer
+                                required:
+                                - containerPort
+                            restartPolicy:
+                              type: string
+                            command:
+                              type: array
+                              items:
+                                type: string
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  subPath:
+                                    type: string
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                                required:
+                                - mountPath
+                                - name
+                            args:
+                              type: array
+                              items:
+                                type: string
+                            lifecycle:
+                              type: object
+                              properties:
+                                postStart:
+                                  type: object
+                                  properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
+                                    tcpSocket:
+                                      type: object
+                                      properties:
+                                        port:
+                                          x-kubernetes-int-or-string: true
+                                        host:
+                                          type: string
+                                      required:
+                                      - port
+                                    exec:
+                                      type: object
+                                      properties:
+                                        command:
+                                          type: array
+                                          items:
+                                            type: string
+                                    httpGet:
+                                      type: object
+                                      properties:
+                                        path:
+                                          type: string
+                                        scheme:
+                                          type: string
+                                        port:
+                                          x-kubernetes-int-or-string: true
+                                        host:
+                                          type: string
+                                        httpHeaders:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              name:
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            - value
+                                      required:
+                                      - port
+                                preStop:
+                                  type: object
+                                  properties:
+                                    sleep:
+                                      type: object
+                                      properties:
+                                        seconds:
+                                          type: integer
+                                      required:
+                                      - seconds
+                                    tcpSocket:
+                                      type: object
+                                      properties:
+                                        port:
+                                          x-kubernetes-int-or-string: true
+                                        host:
+                                          type: string
+                                      required:
+                                      - port
+                                    exec:
+                                      type: object
+                                      properties:
+                                        command:
+                                          type: array
+                                          items:
+                                            type: string
+                                    httpGet:
+                                      type: object
+                                      properties:
+                                        path:
+                                          type: string
+                                        scheme:
+                                          type: string
+                                        port:
+                                          x-kubernetes-int-or-string: true
+                                        host:
+                                          type: string
+                                        httpHeaders:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              name:
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            - value
+                                      required:
+                                      - port
+                                stopSignal:
+                                  type: string
+                            name:
+                              type: string
+                            tty:
+                              type: boolean
+                            readinessProbe:
+                              type: object
+                              properties:
+                                terminationGracePeriodSeconds:
+                                  type: integer
+                                failureThreshold:
+                                  type: integer
+                                periodSeconds:
+                                  type: integer
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      x-kubernetes-int-or-string: true
+                                    host:
+                                      type: string
+                                  required:
+                                  - port
+                                timeoutSeconds:
+                                  type: integer
+                                successThreshold:
+                                  type: integer
+                                initialDelaySeconds:
+                                  type: integer
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: integer
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                    port:
+                                      x-kubernetes-int-or-string: true
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                  required:
+                                  - port
+                            resizePolicy:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  resourceName:
+                                    type: string
+                                  restartPolicy:
+                                    type: string
+                                required:
+                                - resourceName
+                                - restartPolicy
+                            stdinOnce:
+                              type: boolean
+                            envFrom:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  configMapRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                  prefix:
+                                    type: string
+                                  secretRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                          required:
+                          - name
+                        type: array
                     type: object
                 type: object
               clusters:
@@ -4264,7 +5086,7 @@ spec:
                 type: array
               image:
                 description: The WebLogic Server image; required when `domainHomeSourceType`
-                  is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
+                  is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.
                 type: string
               imagePullPolicy:
                 description: The image pull policy for the WebLogic Server image.
@@ -4391,13 +5213,10 @@ spec:
                     type: string
                   podSecurityContext:
                     description: 'Pod-level security attributes. See `kubectl explain
-                      pods.spec.securityContext`. Beginning with operator version
-                      4.0.5, if no value is specified for this field, the operator
-                      will use default content for the pod-level `securityContext`.
-                      More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                      pods.spec.securityContext`. If no value is specified for this
+                      field, the operator will use default content for the pod-level
+                      `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                     properties:
-                      runAsUser:
-                        type: integer
                       seLinuxOptions:
                         properties:
                           role:
@@ -4409,7 +5228,38 @@ spec:
                           user:
                             type: string
                         type: object
+                      appArmorProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
                       fsGroup:
+                        type: integer
+                      fsGroupChangePolicy:
+                        type: string
+                      seLinuxChangePolicy:
+                        type: string
+                      runAsGroup:
+                        type: integer
+                      runAsNonRoot:
+                        type: boolean
+                      sysctls:
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                          required:
+                          - name
+                          - value
+                        type: array
+                      runAsUser:
                         type: integer
                       seccompProfile:
                         properties:
@@ -4431,28 +5281,12 @@ spec:
                           gmsaCredentialSpecName:
                             type: string
                         type: object
-                      fsGroupChangePolicy:
-                        type: string
                       supplementalGroups:
                         items:
                           type: integer
                         type: array
-                      runAsGroup:
-                        type: integer
-                      runAsNonRoot:
-                        type: boolean
-                      sysctls:
-                        items:
-                          type: object
-                          properties:
-                            name:
-                              type: string
-                            value:
-                              type: string
-                          required:
-                          - name
-                          - value
-                        type: array
+                      supplementalGroupsPolicy:
+                        type: string
                     type: object
                   priorityClassName:
                     description: If specified, indicates the Pod's priority. "system-node-critical"
@@ -4481,7 +5315,77 @@ spec:
                           type: array
                           items:
                             type: string
+                      required:
+                      - ip
                     type: array
+                  startupProbe:
+                    description: Settings for the startup probe associated with a
+                      WebLogic Server instance. If not specified, the operator will
+                      not create a default startup probe.
+                    properties:
+                      terminationGracePeriodSeconds:
+                        type: integer
+                      failureThreshold:
+                        type: integer
+                      periodSeconds:
+                        type: integer
+                      tcpSocket:
+                        properties:
+                          port:
+                            x-kubernetes-int-or-string: true
+                          host:
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      timeoutSeconds:
+                        type: integer
+                      successThreshold:
+                        type: integer
+                      initialDelaySeconds:
+                        type: integer
+                      exec:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      grpc:
+                        properties:
+                          port:
+                            type: integer
+                          service:
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      httpGet:
+                        properties:
+                          path:
+                            type: string
+                          scheme:
+                            type: string
+                          port:
+                            x-kubernetes-int-or-string: true
+                          host:
+                            type: string
+                          httpHeaders:
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                            type: array
+                        required:
+                        - port
+                        type: object
+                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -4503,6 +5407,8 @@ spec:
                         readOnly:
                           type: boolean
                         subPath:
+                          type: string
+                        recursiveReadOnly:
                           type: string
                         subPathExpr:
                           type: string
@@ -4537,6 +5443,11 @@ spec:
                         operator:
                           type: string
                     type: array
+                  automountServiceAccountToken:
+                    description: Indicates whether a service account token should
+                      be automatically mounted on the pod. Defaults to true if not
+                      set. See `kubectl explain pods.spec.automountServiceAccountToken`.
+                    type: boolean
                   readinessProbe:
                     description: Settings for the readiness probe associated with
                       a WebLogic Server instance. If not specified, the operator will
@@ -4614,9 +5525,9 @@ spec:
                   containerSecurityContext:
                     description: 'Container-level security attributes. Will override
                       any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
-                      Beginning with operator version 4.0.5, if no value is specified
-                      for this field, the operator will use default content for container-level
-                      `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                      If no value is specified for this field, the operator will use
+                      default content for container-level `securityContext`. More
+                      info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                     properties:
                       privileged:
                         type: boolean
@@ -4643,6 +5554,15 @@ spec:
                             type: string
                           user:
                             type: string
+                        type: object
+                      appArmorProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
                         type: object
                       seccompProfile:
                         properties:
@@ -4998,18 +5918,11 @@ spec:
                                       - name
                                     volumeName:
                                       type: string
+                                    volumeAttributesClassName:
+                                      type: string
                                     resources:
                                       type: object
                                       properties:
-                                        claims:
-                                          type: array
-                                          items:
-                                            type: object
-                                            properties:
-                                              name:
-                                                type: string
-                                            required:
-                                            - name
                                         requests:
                                           additionalProperties:
                                             type: string
@@ -5179,6 +6092,42 @@ spec:
                                         type: integer
                                     required:
                                     - path
+                                  clusterTrustBundle:
+                                    type: object
+                                    properties:
+                                      path:
+                                        type: string
+                                      labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                              - key
+                                              - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      signerName:
+                                        type: string
+                                    required:
+                                    - path
                             defaultMode:
                               type: integer
                         cephfs:
@@ -5265,6 +6214,13 @@ spec:
                               type: string
                           required:
                           - pdName
+                        image:
+                          type: object
+                          properties:
+                            reference:
+                              type: string
+                            pullPolicy:
+                              type: string
                         photonPersistentDisk:
                           type: object
                           properties:
@@ -5579,6 +6535,8 @@ spec:
                         items:
                           type: object
                           properties:
+                            request:
+                              type: string
                             name:
                               type: string
                           required:
@@ -5772,6 +6730,8 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  request:
+                                    type: string
                                   name:
                                     type: string
                                 required:
@@ -5813,6 +6773,15 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             seccompProfile:
                               type: object
                               properties:
@@ -5981,6 +6950,8 @@ spec:
                                 type: integer
                             required:
                             - containerPort
+                        restartPolicy:
+                          type: string
                         command:
                           type: array
                           items:
@@ -6000,6 +6971,8 @@ spec:
                                 type: boolean
                               subPath:
                                 type: string
+                              recursiveReadOnly:
+                                type: string
                               subPathExpr:
                                 type: string
                             required:
@@ -6015,6 +6988,13 @@ spec:
                             postStart:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -6059,6 +7039,13 @@ spec:
                             preStop:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -6100,6 +7087,8 @@ spec:
                                         - value
                                   required:
                                   - port
+                            stopSignal:
+                              type: string
                         name:
                           type: string
                         tty:
@@ -6310,6 +7299,8 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  request:
+                                    type: string
                                   name:
                                     type: string
                                 required:
@@ -6351,6 +7342,15 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             seccompProfile:
                               type: object
                               properties:
@@ -6519,6 +7519,8 @@ spec:
                                 type: integer
                             required:
                             - containerPort
+                        restartPolicy:
+                          type: string
                         command:
                           type: array
                           items:
@@ -6538,6 +7540,8 @@ spec:
                                 type: boolean
                               subPath:
                                 type: string
+                              recursiveReadOnly:
+                                type: string
                               subPathExpr:
                                 type: string
                             required:
@@ -6553,6 +7557,13 @@ spec:
                             postStart:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -6597,6 +7608,13 @@ spec:
                             preStop:
                               type: object
                               properties:
+                                sleep:
+                                  type: object
+                                  properties:
+                                    seconds:
+                                      type: integer
+                                  required:
+                                  - seconds
                                 tcpSocket:
                                   type: object
                                   properties:
@@ -6638,6 +7656,8 @@ spec:
                                         - value
                                   required:
                                   - port
+                            stopSignal:
+                              type: string
                         name:
                           type: string
                         tty:
@@ -6934,6 +7954,14 @@ spec:
                                       type: object
                                 topologyKey:
                                   type: string
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
+                                mismatchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 namespaces:
                                   type: array
                                   items:
@@ -6996,6 +8024,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -7063,6 +8099,14 @@ spec:
                                       type: object
                                 topologyKey:
                                   type: string
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
+                                mismatchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 namespaces:
                                   type: array
                                   items:
@@ -7125,6 +8169,14 @@ spec:
                                           type: object
                                     topologyKey:
                                       type: string
+                                    matchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
+                                    mismatchLabelKeys:
+                                      type: array
+                                      items:
+                                        type: string
                                     namespaces:
                                       type: array
                                       items:
@@ -7211,14 +8263,11 @@ spec:
                           type: string
                         podSecurityContext:
                           description: 'Pod-level security attributes. See `kubectl
-                            explain pods.spec.securityContext`. Beginning with operator
-                            version 4.0.5, if no value is specified for this field,
-                            the operator will use default content for the pod-level
-                            `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                            explain pods.spec.securityContext`. If no value is specified
+                            for this field, the operator will use default content
+                            for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                           type: object
                           properties:
-                            runAsUser:
-                              type: integer
                             seLinuxOptions:
                               type: object
                               properties:
@@ -7230,7 +8279,38 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             fsGroup:
+                              type: integer
+                            fsGroupChangePolicy:
+                              type: string
+                            seLinuxChangePolicy:
+                              type: string
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            sysctls:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - name
+                                - value
+                            runAsUser:
                               type: integer
                             seccompProfile:
                               type: object
@@ -7252,28 +8332,12 @@ spec:
                                   type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
-                            fsGroupChangePolicy:
-                              type: string
                             supplementalGroups:
                               type: array
                               items:
                                 type: integer
-                            runAsGroup:
-                              type: integer
-                            runAsNonRoot:
-                              type: boolean
-                            sysctls:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  name:
-                                    type: string
-                                  value:
-                                    type: string
-                                required:
-                                - name
-                                - value
+                            supplementalGroupsPolicy:
+                              type: string
                         priorityClassName:
                           description: If specified, indicates the Pod's priority.
                             "system-node-critical" and "system-cluster-critical" are
@@ -7303,6 +8367,76 @@ spec:
                                 type: array
                                 items:
                                   type: string
+                            required:
+                            - ip
+                        startupProbe:
+                          description: Settings for the startup probe associated with
+                            a WebLogic Server instance. If not specified, the operator
+                            will not create a default startup probe.
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: integer
+                            failureThreshold:
+                              type: integer
+                            periodSeconds:
+                              type: integer
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  x-kubernetes-int-or-string: true
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: integer
+                            successThreshold:
+                              type: integer
+                            initialDelaySeconds:
+                              type: integer
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: integer
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                port:
+                                  x-kubernetes-int-or-string: true
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
                         nodeSelector:
                           description: Selector which must match a Node's labels for
                             the Pod to be scheduled on that Node. See `kubectl explain
@@ -7327,6 +8461,8 @@ spec:
                               readOnly:
                                 type: boolean
                               subPath:
+                                type: string
+                              recursiveReadOnly:
                                 type: string
                               subPathExpr:
                                 type: string
@@ -7361,6 +8497,11 @@ spec:
                                 type: string
                               operator:
                                 type: string
+                        automountServiceAccountToken:
+                          description: Indicates whether a service account token should
+                            be automatically mounted on the pod. Defaults to true
+                            if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.
+                          type: boolean
                         readinessProbe:
                           description: Settings for the readiness probe associated
                             with a WebLogic Server instance. If not specified, the
@@ -7439,10 +8580,10 @@ spec:
                         containerSecurityContext:
                           description: 'Container-level security attributes. Will
                             override any matching Pod-level attributes. See `kubectl
-                            explain pods.spec.containers.securityContext`. Beginning
-                            with operator version 4.0.5, if no value is specified
-                            for this field, the operator will use default content
-                            for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                            explain pods.spec.containers.securityContext`. If no value
+                            is specified for this field, the operator will use default
+                            content for container-level `securityContext`. More info:
+                            https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                           type: object
                           properties:
                             privileged:
@@ -7471,6 +8612,15 @@ spec:
                                   type: string
                                 user:
                                   type: string
+                            appArmorProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
                             seccompProfile:
                               type: object
                               properties:
@@ -7827,18 +8977,11 @@ spec:
                                             - name
                                           volumeName:
                                             type: string
+                                          volumeAttributesClassName:
+                                            type: string
                                           resources:
                                             type: object
                                             properties:
-                                              claims:
-                                                type: array
-                                                items:
-                                                  type: object
-                                                  properties:
-                                                    name:
-                                                      type: string
-                                                  required:
-                                                  - name
                                               requests:
                                                 additionalProperties:
                                                   type: string
@@ -8008,6 +9151,42 @@ spec:
                                               type: integer
                                           required:
                                           - path
+                                        clusterTrustBundle:
+                                          type: object
+                                          properties:
+                                            path:
+                                              type: string
+                                            labelSelector:
+                                              type: object
+                                              properties:
+                                                matchExpressions:
+                                                  type: array
+                                                  items:
+                                                    type: object
+                                                    properties:
+                                                      values:
+                                                        type: array
+                                                        items:
+                                                          type: string
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                    required:
+                                                    - key
+                                                    - operator
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                            name:
+                                              type: string
+                                            optional:
+                                              type: boolean
+                                            signerName:
+                                              type: string
+                                          required:
+                                          - path
                                   defaultMode:
                                     type: integer
                               cephfs:
@@ -8094,6 +9273,13 @@ spec:
                                     type: string
                                 required:
                                 - pdName
+                              image:
+                                type: object
+                                properties:
+                                  reference:
+                                    type: string
+                                  pullPolicy:
+                                    type: string
                               photonPersistentDisk:
                                 type: object
                                 properties:
@@ -8410,6 +9596,8 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  request:
+                                    type: string
                                   name:
                                     type: string
                                 required:
@@ -8603,6 +9791,8 @@ spec:
                                     items:
                                       type: object
                                       properties:
+                                        request:
+                                          type: string
                                         name:
                                           type: string
                                       required:
@@ -8644,6 +9834,15 @@ spec:
                                         type: string
                                       user:
                                         type: string
+                                  appArmorProfile:
+                                    type: object
+                                    properties:
+                                      localhostProfile:
+                                        type: string
+                                      type:
+                                        type: string
+                                    required:
+                                    - type
                                   seccompProfile:
                                     type: object
                                     properties:
@@ -8812,6 +10011,8 @@ spec:
                                       type: integer
                                   required:
                                   - containerPort
+                              restartPolicy:
+                                type: string
                               command:
                                 type: array
                                 items:
@@ -8831,6 +10032,8 @@ spec:
                                       type: boolean
                                     subPath:
                                       type: string
+                                    recursiveReadOnly:
+                                      type: string
                                     subPathExpr:
                                       type: string
                                   required:
@@ -8846,6 +10049,13 @@ spec:
                                   postStart:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -8890,6 +10100,13 @@ spec:
                                   preStop:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -8931,6 +10148,8 @@ spec:
                                               - value
                                         required:
                                         - port
+                                  stopSignal:
+                                    type: string
                               name:
                                 type: string
                               tty:
@@ -9141,6 +10360,8 @@ spec:
                                     items:
                                       type: object
                                       properties:
+                                        request:
+                                          type: string
                                         name:
                                           type: string
                                       required:
@@ -9182,6 +10403,15 @@ spec:
                                         type: string
                                       user:
                                         type: string
+                                  appArmorProfile:
+                                    type: object
+                                    properties:
+                                      localhostProfile:
+                                        type: string
+                                      type:
+                                        type: string
+                                    required:
+                                    - type
                                   seccompProfile:
                                     type: object
                                     properties:
@@ -9350,6 +10580,8 @@ spec:
                                       type: integer
                                   required:
                                   - containerPort
+                              restartPolicy:
+                                type: string
                               command:
                                 type: array
                                 items:
@@ -9369,6 +10601,8 @@ spec:
                                       type: boolean
                                     subPath:
                                       type: string
+                                    recursiveReadOnly:
+                                      type: string
                                     subPathExpr:
                                       type: string
                                   required:
@@ -9384,6 +10618,13 @@ spec:
                                   postStart:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -9428,6 +10669,13 @@ spec:
                                   preStop:
                                     type: object
                                     properties:
+                                      sleep:
+                                        type: object
+                                        properties:
+                                          seconds:
+                                            type: integer
+                                        required:
+                                        - seconds
                                       tcpSocket:
                                         type: object
                                         properties:
@@ -9469,6 +10717,8 @@ spec:
                                               - value
                                         required:
                                         - port
+                                  stopSignal:
+                                    type: string
                               name:
                                 type: string
                               tty:
@@ -9768,6 +11018,14 @@ spec:
                                             type: object
                                       topologyKey:
                                         type: string
+                                      matchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
+                                      mismatchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
                                       namespaces:
                                         type: array
                                         items:
@@ -9830,6 +11088,14 @@ spec:
                                                 type: object
                                           topologyKey:
                                             type: string
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaces:
                                             type: array
                                             items:
@@ -9897,6 +11163,14 @@ spec:
                                             type: object
                                       topologyKey:
                                         type: string
+                                      matchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
+                                      mismatchLabelKeys:
+                                        type: array
+                                        items:
+                                          type: string
                                       namespaces:
                                         type: array
                                         items:
@@ -9959,6 +11233,14 @@ spec:
                                                 type: object
                                           topologyKey:
                                             type: string
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaces:
                                             type: array
                                             items:
@@ -10123,6 +11405,7 @@ spec:
                       - DomainInvalid
                       - Introspection
                       - Kubernetes
+                      - KubernetesNetworkException
                       - ServerPod
                       - PersistentVolumeClaim
                       - ReplicasTooHigh
@@ -16150,7 +17433,7 @@ spec:
                 type: string
               image:
                 description: The WebLogic Server image; required when `domainHomeSourceType`
-                  is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
+                  is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.
                 type: string
               imagePullPolicy:
                 description: The image pull policy for the WebLogic Server image.

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -17,7 +17,9 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -84,7 +86,6 @@ class ShutdownManagedServerStepTest {
   private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
   private static final String DYNAMIC_MANAGED_SERVER1 = "dyn-managed-server1";
   private static final String DYNAMIC_MANAGED_SERVER2 = "dyn-managed-server2";
-  private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
 
   private final V1Pod configuredManagedServer1 = defineManagedPod(CONFIGURED_MANAGED_SERVER1);
   private final V1Pod standaloneManagedServer1 = defineManagedPod(MANAGED_SERVER1);
@@ -184,7 +185,13 @@ class ShutdownManagedServerStepTest {
     List<V1EnvVar> env = addShutdownEnvVars();
     List<V1Container> containers = addEnvToWLSContainer(env);
     V1PodSpec podSpec = new V1PodSpec().containers(containers);
-    return new V1Pod().metadata(createManagedPodMetadata(serverName)).spec(podSpec);
+    return new V1Pod().metadata(createManagedPodMetadata(serverName)).spec(podSpec).status(createPodReadyStatus());
+  }
+
+  private V1PodStatus createPodReadyStatus() {
+    return new V1PodStatus()
+        .phase("Running")
+        .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
   }
 
   @Nonnull
@@ -330,9 +337,9 @@ class ShutdownManagedServerStepTest {
     V1Pod serverPod = info.getServerPod(serverName);
     List<V1EnvVar> vars = Objects.requireNonNull(serverPod.getSpec()).getContainers().stream()
         .filter(this::isK8sContainer).findFirst().map(V1Container::getEnv).get();
-    for (V1EnvVar var : vars) {
-      if (var.getName().equals("SHUTDOWN_TYPE")) {
-        var.setValue(ShutdownType.FORCED.toString());
+    for (V1EnvVar v : vars) {
+      if (v.getName().equals("SHUTDOWN_TYPE")) {
+        v.setValue(ShutdownType.FORCED.toString());
       }
     }
   }
@@ -349,7 +356,8 @@ class ShutdownManagedServerStepTest {
     return createPodMetadata(name)
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL,"true")
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, UID)
-        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, name);
+        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, name)
+        .putAnnotationsItem("Placeholder", "At-Least-One-Annotation");
   }
 
   private V1ObjectMeta createPodMetadata(String name) {

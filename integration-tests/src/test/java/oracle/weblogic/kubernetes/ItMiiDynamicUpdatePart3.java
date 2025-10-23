@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
@@ -75,10 +77,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * changes using CommitUpdateAndRoll.
  */
 
-@DisplayName("Test dynamic updates to a model in image domain, part3")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
@@ -99,7 +100,7 @@ class ItMiiDynamicUpdatePart3 {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
     logger = helper.logger;
 
@@ -123,7 +124,7 @@ class ItMiiDynamicUpdatePart3 {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     helper.beforeEach();
   }
 
@@ -330,7 +331,7 @@ class ItMiiDynamicUpdatePart3 {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration using REST api
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE || OKD) {
       assertTrue(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
           "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
           "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
@@ -406,7 +407,7 @@ class ItMiiDynamicUpdatePart3 {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration is deleted using REST api
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OKD) {
       assertFalse(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
           "JDBCSystemResources",
           "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");

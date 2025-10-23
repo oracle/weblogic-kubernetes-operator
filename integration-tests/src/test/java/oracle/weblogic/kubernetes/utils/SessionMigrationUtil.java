@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -69,7 +69,6 @@ public class SessionMigrationUtil {
    *
    * @param domainNamespace namespace in which the domain will be created
    * @param adminServerPodName admin server pod name
-   * @param serverName server name in the cluster on which the web app is running
    * @param hostName host name to access the web app
    * @param port port number to access the web app
    * @param webServiceUrl fully qualified URL to the server on which the web app is running
@@ -79,7 +78,6 @@ public class SessionMigrationUtil {
    */
   public static Map<String, String> getServerAndSessionInfoAndVerify(String domainNamespace,
                                                                      String adminServerPodName,
-                                                                     String serverName,
                                                                      String hostName,
                                                                      int port,
                                                                      String webServiceUrl,
@@ -91,7 +89,7 @@ public class SessionMigrationUtil {
     LoggingFacade logger = getLogger();
 
     // send a HTTP request to set http session state(count number) and save HTTP session cookie info
-    // or get http session state(count number usind saved HTTP session cookie info
+    // or get http session state(count number using saved HTTP session cookie info
     logger.info("Process HTTP request with web service URL {0}", webServiceUrl);
     Map<String, String> httpAttrInfo =
         processHttpRequest(domainNamespace, adminServerPodName, hostName, port, webServiceUrl, headerOption);

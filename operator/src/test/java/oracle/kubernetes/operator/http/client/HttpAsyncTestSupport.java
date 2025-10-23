@@ -1,9 +1,8 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.client;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -29,16 +28,17 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
  */
 public class HttpAsyncTestSupport {
   public static final String OK_RESPONSE =
-      "{\n"
-          + "    \"overallHealthState\": {\n"
-          + "        \"state\": \"ok\",\n"
-          + "        \"subsystemName\": null,\n"
-          + "        \"partitionName\": null,\n"
-          + "        \"symptoms\": []\n"
-          + "    },\n"
-          + "    \"state\": \"RUNNING\",\n"
-          + "    \"activationTime\": 1556759105378\n"
-          + "}";
+          """
+                  {
+                      "overallHealthState": {
+                          "state": "ok",
+                          "subsystemName": null,
+                          "partitionName": null,
+                          "symptoms": []
+                      },
+                      "state": "RUNNING",
+                      "activationTime": 1556759105378
+                  }""";
   private static final HttpResponseStub NOT_FOUND = createStub(HttpResponseStub.class, HTTP_NOT_FOUND);
   private static final RequestHandler NO_SUCH_HANDLER = new RequestHandler(null, NOT_FOUND);
 
@@ -124,7 +124,7 @@ public class HttpAsyncTestSupport {
     return handlers.stream().filter(h -> h.matches(request)).findFirst().orElse(null);
   }
 
-  public HttpResponse<String> send(HttpRequest request) throws IOException, InterruptedException {
+  public HttpResponse<String> send(HttpRequest request) {
     return getHandler(request).getResponse();
   }
 
@@ -184,12 +184,12 @@ public class HttpAsyncTestSupport {
 
     @Override
     public void onError(Throwable throwable) {
-
+      // no-op
     }
 
     @Override
     public void onComplete() {
-
+      // no-op
     }
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentStrategy;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
@@ -31,6 +32,8 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
 import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
 import oracle.kubernetes.operator.utils.OperatorValues;
@@ -80,7 +83,7 @@ import static org.hamcrest.Matchers.not;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
- * generates
+ * generates.
  */
 abstract class CreateOperatorGeneratedFilesTestBase {
 
@@ -196,7 +199,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   protected V1Deployment getExpectedWeblogicOperatorDeployment() {
-    return newDeployment()
+    V1Deployment deployment = newDeployment()
         .metadata(
             newObjectMeta()
                 .name("weblogic-operator")
@@ -228,10 +231,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .image(getInputs().getWeblogicOperatorImage())
                                         .imagePullPolicy(
                                             getInputs().getWeblogicOperatorImagePullPolicy())
-                                        .addCommandItem("/deployment/operator.sh")
+                                        .addCommandItem("/operator/operator.sh")
                                         .lifecycle(
                                             new V1Lifecycle().preStop(new V1LifecycleHandler().exec(
-                                                new V1ExecAction().addCommandItem("/deployment/stop.sh"))))
+                                                new V1ExecAction().addCommandItem("/operator/stop.sh"))))
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("OPERATOR_NAMESPACE")
@@ -272,6 +275,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newEnvVar()
                                                 .name("JVM_OPTIONS")
                                                 .value("-XX:MaxRAMPercentage=70"))
+                                        .addEnvItem(
+                                            newEnvVar()
+                                                .name("OPERATOR_LOGDIR")
+                                                .value("/logs"))
                                         .resources(
                                             new V1ResourceRequirements()
                                                 .putRequestsItem("cpu", Quantity.fromString("250m"))
@@ -280,6 +287,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .securityContext(
                                             new V1SecurityContext().runAsUser(1000L)
                                                 .runAsNonRoot(true)
+                                                .readOnlyRootFilesystem(true)
                                                 .privileged(false).allowPrivilegeEscalation(false)
                                                 .capabilities(new V1Capabilities().addDropItem("ALL")))
                                         .addVolumeMountsItem(
@@ -294,7 +302,15 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newVolumeMount()
                                                 .name("weblogic-operator-secrets-volume")
                                                 .mountPath("/deployment/secrets")
-                                                .readOnly(true)))
+                                                .readOnly(true))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("deployment-volume")
+                                                .mountPath("/deployment"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("tmp-volume")
+                                                .mountPath("/tmp")))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("weblogic-operator-cm-volume")
@@ -313,13 +329,33 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .name("weblogic-operator-secrets-volume")
                                         .secret(
                                             newSecretVolumeSource()
-                                                .secretName("weblogic-operator-secrets"))))));
+                                                .secretName("weblogic-operator-secrets")))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("deployment-volume")
+                                        .emptyDir(new V1EmptyDirVolumeSource()))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("tmp-volume")
+                                        .emptyDir(new V1EmptyDirVolumeSource()))
+                        )));
+
+    boolean isElkIntegrationEnabled = Boolean.parseBoolean(getInputs().getElkIntegrationEnabled());
+    if (!isElkIntegrationEnabled) {
+      List<V1VolumeMount> mounts = deployment.getSpec().getTemplate().getSpec()
+          .getContainers().get(0).getVolumeMounts();
+      mounts.add(mounts.size(), newVolumeMount().name("log-volume").mountPath("/logs"));
+      List<V1Volume> volumees = deployment.getSpec().getTemplate().getSpec().getVolumes();
+      volumees.add(volumees.size(), newVolume().name("log-volume").emptyDir(new V1EmptyDirVolumeSource()));
+    }
+
+    return deployment;
   }
 
   void expectProbes(V1Container container) {
     container
-        .livenessProbe(createProbe(40, 10, 5, "/probes/livenessProbe.sh"))
-        .readinessProbe(createProbe(2, 10, null, "/probes/readinessProbe.sh"));
+        .livenessProbe(createProbe(40, 10, 5, "/operator/livenessProbe.sh"))
+        .readinessProbe(createProbe(2, 10, null, "/operator/readinessProbe.sh"));
   }
 
   private V1Probe createProbe(Integer initialDelaySeconds, Integer periodSeconds,
@@ -587,8 +623,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                     asList(
                         "services",
                         "configmaps",
-                        "pods",
-                        "events"))
+                        "pods"))
                 .verbs(
                     asList(
                         "get",
@@ -621,6 +656,21 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .verbs(asList("get", "create")))
         .addRulesItem(
             newPolicyRule()
+                .addApiGroupsItem("events.k8s.io")
+                .resources(
+                    singletonList("events"))
+                .verbs(
+                    asList(
+                        "get",
+                        "list",
+                        "watch",
+                        "create",
+                        "update",
+                        "patch",
+                        "delete",
+                        "deletecollection")))
+        .addRulesItem(
+            newPolicyRule()
                 .addApiGroupsItem("batch")
                 .resources(singletonList("jobs"))
                 .verbs(
@@ -651,20 +701,16 @@ abstract class CreateOperatorGeneratedFilesTestBase {
 
   @Test
   void generatesCorrect_domainNamespaces_weblogicOperatorRoleBindings() {
-    for (String domainNamespace : getInputs().getDomainNamespaces().split(",")) {
-      String namespace = domainNamespace.trim();
-      assertThat(
-          getGeneratedFiles().getWeblogicOperatorRoleBinding(namespace),
-          equalTo(getExpectedWeblogicOperatorRoleBinding(namespace)));
-    }
+    assertThat(
+        getGeneratedFiles().getWeblogicOperatorClusterRoleBinding(),
+        equalTo(getExpectedWeblogicOperatorClusterRoleBinding()));
   }
 
-  private V1RoleBinding getExpectedWeblogicOperatorRoleBinding(String namespace) {
-    return newRoleBinding()
+  private V1ClusterRoleBinding getExpectedWeblogicOperatorClusterRoleBinding() {
+    return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
-                .name("weblogic-operator-rolebinding-namespace")
-                .namespace(namespace)
+                .name(getInputs().getNamespace() + "-weblogic-operator-clusterrolebinding-namespace")
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(
             newSubject()
@@ -714,7 +760,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(asList("events", "secrets", "configmaps"))
+                .resources(asList("secrets", "configmaps"))
                 .verbs(
                     asList(
                         "get",
@@ -726,7 +772,35 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                         "delete",
                         "deletecollection")))
         .addRulesItem(
-            newPolicyRuleForValidatingWebhookConfiguration());
+            newPolicyRule()
+                .addApiGroupsItem("events.k8s.io")
+                .resources(singletonList("events"))
+                .verbs(
+                    asList(
+                        "get",
+                        "list",
+                        "watch",
+                        "create",
+                        "update",
+                        "patch",
+                        "delete",
+                        "deletecollection")))
+        .addRulesItem(
+            newPolicyRuleForValidatingWebhookConfiguration())
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("weblogic.oracle")
+                .resources(asList("domains", "clusters"))
+                .verbs(
+                   asList(
+                      "get",
+                      "list",
+                      "watch",
+                      "create",
+                      "update",
+                      "patch",
+                      "delete",
+                      "deletecollection")));
   }
 
   private V1PolicyRule newPolicyRuleForValidatingWebhookConfiguration() {

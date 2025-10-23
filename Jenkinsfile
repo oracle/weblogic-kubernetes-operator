@@ -1,28 +1,22 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
-    '0.19.0': [
-        '1.27.1':  'kindest/node:v1.27.1@sha256:b7d12ed662b873bd8510879c1846e87c7e676a79fefc93e17b2a52989d3ff42b',
-        '1.27':    'kindest/node:v1.27.1@sha256:b7d12ed662b873bd8510879c1846e87c7e676a79fefc93e17b2a52989d3ff42b',
-        '1.26.4':  'kindest/node:v1.26.4@sha256:f4c0d87be03d6bea69f5e5dc0adb678bb498a190ee5c38422bf751541cebe92e',
-        '1.26':    'kindest/node:v1.26.4@sha256:f4c0d87be03d6bea69f5e5dc0adb678bb498a190ee5c38422bf751541cebe92e',
-        '1.25.9':  'kindest/node:v1.25.9@sha256:c08d6c52820aa42e533b70bce0c2901183326d86dcdcbedecc9343681db45161',
-        '1.25':    'kindest/node:v1.25.9@sha256:c08d6c52820aa42e533b70bce0c2901183326d86dcdcbedecc9343681db45161',
-        '1.24.13': 'kindest/node:v1.24.13@sha256:cea86276e698af043af20143f4bf0509e730ec34ed3b7fa790cc0bea091bc5dd',
-        '1.24':    'kindest/node:v1.24.13@sha256:cea86276e698af043af20143f4bf0509e730ec34ed3b7fa790cc0bea091bc5dd',
-        '1.23.17': 'kindest/node:v1.23.17@sha256:f77f8cf0b30430ca4128cc7cfafece0c274a118cd0cdb251049664ace0dee4ff',
-        '1.23':    'kindest/node:v1.23.17@sha256:f77f8cf0b30430ca4128cc7cfafece0c274a118cd0cdb251049664ace0dee4ff',
-        '1.22.17': 'kindest/node:v1.22.17@sha256:9af784f45a584f6b28bce2af84c494d947a05bd709151466489008f80a9ce9d5',
-        '1.22':    'kindest/node:v1.22.17@sha256:9af784f45a584f6b28bce2af84c494d947a05bd709151466489008f80a9ce9d5',
-        '1.21.14': 'kindest/node:v1.21.14@sha256:220cfafdf6e3915fbce50e13d1655425558cb98872c53f802605aa2fb2d569cf',
-        '1.21':    'kindest/node:v1.21.14@sha256:220cfafdf6e3915fbce50e13d1655425558cb98872c53f802605aa2fb2d569cf'
+    '0.30.0': [
+        '1.34.0':  'kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a',
+        '1.34':    'kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a',
+        '1.33.4':  'kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2',
+        '1.33':    'kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2',
+        '1.32.8':  'kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1',
+        '1.32':    'kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1',
+        '1.31.12': 'kindest/node:v1.31.12@sha256:0f5cc49c5e73c0c2bb6e2df56e7df189240d83cf94edfa30946482eb08ec57d2',
+        '1.31':    'kindest/node:v1.31.12@sha256:0f5cc49c5e73c0c2bb6e2df56e7df189240d83cf94edfa30946482eb08ec57d2'
     ]
 ]
 def _kind_image = null
 
 pipeline {
-    agent { label 'large' }
+    agent { label 'large-ol9u4' }
     options {
         timeout(time: 800, unit: 'MINUTES')
     }
@@ -67,30 +61,28 @@ pipeline {
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
+        string(name: 'OPERATOR_LOG_LEVEL',
+               description: 'The default log level is not set',
+               defaultValue: ''
+        )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                   '0.19.0'
+                   '0.30.0'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.18.0: 1.26, 1.26.3, 1.25, 1.25.8, 1.24, 1.24.12, 1.23, 1.23.17, 1.22, 1.22.17, 1.21, and 1.21.14. Kind 0.17.0: 1.25, 1.25.3, 1.24, 1.24.7, 1.23, 1.23.13, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15 ',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.30.0: 1.34.0, 1,34, 1.33.4, 1.33, 1.32.8, 1.32, 1.31.12, 1.31 ',
                choices: [
                     // The first item in the list is the default value...
-                    '1.27.1',
-                    '1.27',
-                    '1.26.4',
-                    '1.26',
-                    '1.25.9',
-                    '1.25',
-                    '1.24.13',
-                    '1.24',
-                    '1.23.17',
-                    '1.23',
-                    '1.22.17',
-                    '1.22',
-                    '1.21.14',
-                    '1.21'
+                    '1.34.0',
+                    '1.34',
+                    '1.33.4',
+                    '1.33',
+                    '1.32.8',
+                    '1.32',
+                    '1.31.12',
+                    '1.31'
                ]
         )
         string(name: 'HELM_VERSION',
@@ -100,13 +92,14 @@ pipeline {
         choice(name: 'ISTIO_VERSION',
                description: 'Istio version',
                choices: [
+                   '1.27.2',
+                   '1.27.0',
+                   '1.23.0',
                    '1.17.2',
                    '1.16.1',
                    '1.13.2',
                    '1.12.6',
-                   '1.11.1',
-                   '1.10.4',
-                   '1.9.9'
+                   '1.11.1'
                ]
         )
         booleanParam(name: 'PARALLEL_RUN',
@@ -142,16 +135,16 @@ pipeline {
                defaultValue: "test-images/weblogic"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
-               description: '12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
-               defaultValue: '12.2.1.4'
+	       description: '14.1.2.0-generic-jdk17-ol8, 14.1.2.0-generic-jdk17-ol9, 14.1.2.0-generic-jdk21-ol8, 14.1.2.0-generic-jdk21-ol9, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
+               defaultValue: '14.1.2.0-generic-jdk17-ol8'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
                description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
                defaultValue: "test-images/fmw-infrastructure"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
-               description: 'FWM Infra image tag',
-               defaultValue: '12.2.1.4'
+               description: '14.1.2.0-jdk17-ol8, 14.1.2.0-jdk17-ol9, 14.1.2.0-jdk21-ol8, 14.1.2.0-jdk21-ol9',
+               defaultValue: '14.1.2.0-jdk17-ol8'
         )
         string(name: 'DB_IMAGE_NAME',
                description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
@@ -159,7 +152,7 @@ pipeline {
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
-               defaultValue: '12.2.0.1-slim'
+               defaultValue: '19.3.0.0'
         )
         string(name: 'MONITORING_EXPORTER_BRANCH',
                description: '',
@@ -167,11 +160,11 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.7'
+               defaultValue: '2.3.0'
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
-               defaultValue: '15.2.0'
+               defaultValue: '17.0.0'
         )
         string(name: 'GRAFANA_CHART_VERSION',
                description: '',
@@ -211,7 +204,7 @@ pipeline {
                             java -version
                             mvn --version
                             python --version
-                            docker version
+                            podman version
                             ulimit -a
                             ulimit -aH
                         '''
@@ -233,7 +226,13 @@ pipeline {
                                 error('KIND_VERSION or KUBE_VERSION were null')
                             }
                             echo "Kind Image = ${_kind_image}"
+                            if (env.JOB_NAME == 'wko-kind-k8sversion') {
+                                currentBuild.description = "${GIT_BRANCH} ${KUBE_VERSION}"
+                            } else {
+                                currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME}"
+                            }
                         }
+
                     }
                 }
 
@@ -329,15 +328,16 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+
+                            running="$(podman container inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
                             if [ "${running}" = 'true' ]; then
                               echo "Stopping the registry container ${registry_name}"
-                              docker stop "${registry_name}"
-                              docker rm --force "${registry_name}"
+                              podman stop "${registry_name}"
+                              podman rm --force "${registry_name}"
                             fi
         
-                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
-                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2
+                            podman run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
+                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2.8.2
                             echo "Registry Host: ${registry_host}"
                         '''
                     }
@@ -351,14 +351,22 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
+                            export KIND_EXPERIMENTAL_PROVIDER=podman
+
+                            podman version
+                            cat /etc/systemd/system/user@.service.d/delegate.conf
+                            cat /etc/modules-load.d/iptables.conf
+                            lsmod|grep -E "^ip_tables|^iptable_filter|^iptable_nat|^ip6"
+
                             if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                                 echo "Deleted orphaned kind cluster ${kind_name}"
                             fi
+                            # settings needed by elastic logging tests
+                            echo "running sudo sysctl -w vm.max_map_count=262144"
+                            sudo sysctl -w vm.max_map_count=262144
                             cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-networking:
-  podSubnet: 192.168.0.0/16
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${registry_port}"]
@@ -368,30 +376,110 @@ nodes:
     image: ${kind_image}
   - role: worker
     image: ${kind_image}
+    extraPortMappings:
+      - containerPort: 30511
+        hostPort: 1511    
+      - containerPort: 32480
+        hostPort: 2480
+      - containerPort: 32490
+        hostPort: 2490    
+      - containerPort: 30080
+        hostPort: 2080
+      - containerPort: 30443
+        hostPort: 2043
+      - containerPort: 30180
+        hostPort: 2090
+      - containerPort: 30143
+        hostPort: 2053
+      - containerPort: 31000
+        hostPort: 2100
+      - containerPort: 31004
+        hostPort: 2104
+      - containerPort: 31008
+        hostPort: 2108
+      - containerPort: 31012
+        hostPort: 2112
+      - containerPort: 31016
+        hostPort: 2116
+      - containerPort: 31020
+        hostPort: 2120
+      - containerPort: 31024
+        hostPort: 2124
+      - containerPort: 31028
+        hostPort: 2128
+      - containerPort: 31032
+        hostPort: 2132
+      - containerPort: 31036
+        hostPort: 2136
+      - containerPort: 31040
+        hostPort: 2140
+      - containerPort: 31044
+        hostPort: 2144
+      - containerPort: 31048
+        hostPort: 2148
+      - containerPort: 31052
+        hostPort: 2152
+      - containerPort: 31056
+        hostPort: 2156
+      - containerPort: 31060
+        hostPort: 2160
+      - containerPort: 31064
+        hostPort: 2164
+      - containerPort: 31068
+        hostPort: 2168
+      - containerPort: 31072
+        hostPort: 2172
+      - containerPort: 31076
+        hostPort: 2176
+      - containerPort: 31080
+        hostPort: 2180
+      - containerPort: 31084
+        hostPort: 2184
+      - containerPort: 31088
+        hostPort: 2188
+      - containerPort: 31092
+        hostPort: 2192
+      - containerPort: 31096 
+        hostPort: 2196
+      - containerPort: 31100
+        hostPort: 2200
+      - containerPort: 31104 
+        hostPort: 2204
+      - containerPort: 31108
+        hostPort: 2208
+      - containerPort: 31112
+        hostPort: 2212
+      - containerPort: 31116
+        hostPort: 2216
+      - containerPort: 31120
+        hostPort: 2220
+      - containerPort: 31124
+        hostPort: 2224
+      - containerPort: 31128
+        hostPort: 2228
+      - containerPort: 31132
+        hostPort: 8001
+      - containerPort: 31136
+        hostPort: 2232
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
+kubeadmConfigPatches:
+- |
+  kind: KubeletConfiguration
+  localStorageCapacityIsolation: true
 EOF
 
                             export KUBECONFIG=${kubeconfig_file}
                             kubectl cluster-info --context "kind-${kind_name}"
 
+                            podman info
+                            kubectl describe node
+
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
                             done
-
-                            if [ "${kind_network}" != "bridge" ]; then
-                                containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
-                                needs_connect="true"
-                                for c in ${containers}; do
-                                    if [ "$c" = "${registry_name}" ]; then
-                                        needs_connect="false"
-                                    fi
-                                done
-                                if [ "${needs_connect}" = "true" ]; then
-                                    docker network connect "${kind_network}" "${registry_name}" || true
-                                fi
-                            fi
+                            podman exec -it kind-worker bash -c "sysctl vm.max_map_count"
 
                             # Document the local registry
                             # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
@@ -416,6 +504,7 @@ EOF
                     }
                     steps {
                         script {
+
                             def res = 0
                             res = sh(script: '''
                                     if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
@@ -439,7 +528,8 @@ EOF
                                 PARALLEL_RUN='false'
                             elif [ "${MAVEN_PROFILE_NAME}" == "kind-upgrade" ]; then
                                 PARALLEL_RUN='false'
-                            elif [ -n "${IT_TEST}" ]; then
+                            fi
+                            if [ -n "${IT_TEST}" ]; then
                                 echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
                                 MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
@@ -469,9 +559,11 @@ EOF
                             echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
-			    echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
-
+                            echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
+			    echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
@@ -507,10 +599,10 @@ EOF
                                 if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
                                     echo "Failed to export kind logs for kind cluster ${kind_name}"
                                 fi
-                                if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
+                                if ! podman exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
                                     echo "Failed to run journalctl for kind worker"
                                 fi
-                                if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
+                                if ! podman exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
                                     echo "Failed to run journalctl for kind control plane"
                                 fi
                                 if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
@@ -521,7 +613,7 @@ EOF
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                             '''
                             archiveArtifacts(artifacts:
-                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*")
+                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*,integration-tests/target/failsafe-reports/*.xml")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
                         }
                     }
@@ -531,16 +623,17 @@ EOF
                 always {
                     sh '''
                         export PATH="${WORKSPACE}/bin:${PATH}"
-                        running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+                        running="$(podman container inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
                         if [ "${running}" = 'true' ]; then
                             echo "Stopping the registry container ${registry_name}"
-                            docker stop "${registry_name}"
-                            docker rm --force "${registry_name}"
+                            podman stop "${registry_name}"
+                            podman rm --force "${registry_name}"
                         fi
                         echo 'Remove old Kind cluster (if any)...'
                         if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                             echo "Failed to delete kind cluster ${kind_name}"
                         fi
+                        sudo chown -R $(whoami) ${WORKSPACE}
                     '''
                 }
             }

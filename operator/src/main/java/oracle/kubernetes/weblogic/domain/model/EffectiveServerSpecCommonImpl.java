@@ -163,6 +163,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
     return server.getReadinessProbe();
   }
 
+  @Override
+  public V1Probe getStartupProbe() {
+    return server.getStartupProbe();
+  }
+
   @Nonnull
   @Override
   public Shutdown getShutdown() {
@@ -213,6 +218,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   @Override
   public String getServiceAccountName() {
     return server.getServiceAccountName();
+  }
+
+  @Override
+  public Boolean getAutomountServiceAccountToken() {
+    return server.getAutomountServiceAccountToken();
   }
 
   @Override

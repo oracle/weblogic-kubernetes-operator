@@ -1,0 +1,66 @@
+apiVersion: "weblogic.oracle/API_VERSION"
+kind: Domain
+metadata:
+  name: DOMAIN_UID
+  namespace: DOMAIN_NS
+  labels:
+    weblogic.domainUID: DOMAIN_UID
+spec:
+  domainHomeSourceType: FromModel
+  image: "BASE_IMAGE"
+  imagePullPolicy: IfNotPresent
+  webLogicCredentialsSecret: 
+    name: weblogic-credentials
+  includeServerOutInPodLog: true
+  dataHome: ""
+  serverStartPolicy: "IfNeeded"
+  serverPod:
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.security.TrustKeyStore=DemoTrust -Dweblogic.security.SSL.ignoreHostnameVerification=true"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+  adminServer:
+    adminService:
+      channels:
+       - channelName: default
+         nodePort: 0
+       - channelName: T3Channel
+  clusters:
+  - name: cluster-1
+  configuration:
+      model:
+        domainType: WLS
+        auxiliaryImages:
+        - image:  "AUX_IMAGE"
+          sourceModelHome: "/auxiliary/models"
+          sourceWDTInstallHome: "/auxiliary/weblogic-deploy"
+        runtimeEncryptionSecret: encryptionsecret
+
+---
+
+apiVersion: "weblogic.oracle/CLUSTER_VERSION"
+kind: Cluster
+metadata:
+  name: cluster-1
+  namespace: DOMAIN_NS
+spec:
+# The desired behavior for starting a specific cluster's member servers
+  clusterName: cluster-1
+  serverPod:
+    # Instructs Kubernetes scheduler to prefer nodes for new cluster members 
+    # where there are not already members of the same cluster.
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: "weblogic.clusterName"
+                    operator: In
+                    values:
+                      - $(CLUSTER_NAME)
+              topologyKey: "kubernetes.io/hostname"
+  # The number of managed servers to start for this cluster
+  replicas: 2

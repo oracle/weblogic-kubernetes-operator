@@ -124,7 +124,7 @@ The Domain `spec` section contains elements for configuring the domain operation
 Elements related to domain identification, container image, and domain home:
 
 * `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
-* `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel (when not specifying an auxiliary image); otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. **WARNING**: The default image is unpatched and therefore, should always be specified to use an image with the latest patches installed (for example, `container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-slim-jdk8-ol8`). For more information, see [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}}).
+* `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel (when not specifying an auxiliary image); otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8`. **WARNING**: The default image is unpatched and therefore, should always be specified to use an image with the latest patches installed (for example, `container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-slim-jdk8-ol8`). For more information, see [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}}).
 * `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if the image ends in `:latest`; IfNotPresent, otherwise. To ensure that all nodes have the same image, any images that are updated without changing the tag should be set to Always.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.
 * `domainHome`: The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel.
@@ -242,6 +242,14 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tooling commands during Model in Image introspector jobs or WebLogic Server instance containers.
 * `PRE_CLASSPATH`: Path(s) that are *prepended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 * `CLASSPATH`: Path(s) that are *appended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
+
+### Node Manager environment variables
+
+You can use the following environment variables to specify the logging files limit. 
+
+* `NODEMGR_LOG_FILE_MAX`: Maximum size of the Node Manager Log specified as an integer. When this limit is reached, a new log file is started. Default: 0, no limit.
+* `NODEMGR_LOG_LEVEL`: Severity level of logging used for the Node Manager log. Node Manager uses the standard logging levels from the java.util.logging.level package. Default: FINEST.
+* `NODEMGR_LOG_COUNT`: Maximum number of log files to create when LogLimit is exceeded. Default: 1.
 
 **NOTES**:
 

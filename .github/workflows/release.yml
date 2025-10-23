@@ -20,10 +20,10 @@ jobs:
           echo "IMAGE_NAME=${{ env.BASE_IMAGE_NAME }}:$VERSION" >> $GITHUB_ENV
 
       - name: Checkout branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'oracle'
           java-version: 21
@@ -37,8 +37,12 @@ jobs:
 
       - name: Build
         env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_SECRET }}
-        run: mvn clean package -Dtag=${{ env.VERSION }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mvn clean package -Dtag=${{ env.VERSION }}
+          cd kubernetes/samples/scripts
+          zip -r ../../../target/sample-scripts.zip *
+          cd ../../..
 
       - name: Create Draft Release
         id: draft-release
@@ -47,10 +51,11 @@ jobs:
           gh release create ${{ github.ref_name }} \
             --draft \
             --generate-notes \
-            --target release/4.2 \
+            --target main \
             --title 'Operator ${{ env.VERSION }}' \
             --repo https://github.com/oracle/weblogic-kubernetes-operator \
-            domain-upgrader/target/domain-upgrader.jar
+            domain-upgrader/target/domain-upgrader.jar \
+            target/sample-scripts.zip
           echo 'EOF' >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,7 +74,7 @@ jobs:
           password: ${{ secrets.PUBLISH_SECRET }}
 
       - name: Build and push container image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -78,11 +83,11 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: gh-pages
           path: gh-pages
-          token: ${{ secrets.PUBLISH_SECRET }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate and publish Helm chart
         run: |

@@ -1,9 +1,8 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -17,7 +16,7 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.util.Yaml;
@@ -41,7 +40,6 @@ import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
@@ -100,6 +98,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.isPodDeleted;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -109,10 +108,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to a create MII domain and test autoscaling using HPA and"
-    + "custom metrics provided via use of monitoring exporter and prometheus and prometheus adapter")
 @IntegrationTest
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 @Tag("kind-parallel")
 public class ItHorizontalPodAutoscalerCustomMetrics {
   private static final String MONEXP_MODEL_FILE = "model.monexp.custommetrics.yaml";
@@ -139,7 +136,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String prometheusAdapterReleaseName = "prometheus-adapter" + releaseSuffix;
   private static String prometheusDomainRegexValue = null;
-  private static int nodeportPrometheus;
   private Path targetHPAFile;
   private HelmParams prometheusAdapterHelmParams = null;
 
@@ -151,7 +147,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     int replicaCount = 2;
     String className = ItHorizontalPodAutoscalerCustomMetrics.class.getSimpleName();
@@ -224,6 +220,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, IT_HPACUSTOMNGINX_INGRESS_HTTP_NODEPORT,
         IT_HPACUSTOMNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, (OKE_CLUSTER ? null : "NodePort"));
+
     String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
@@ -317,15 +314,46 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       hostPort = host + ":" + nodeportshttp;
     }
     String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s/" + SESSMIGT_APP_URL,
+        String.format("curl -g --silent --show-error -v --noproxy '*' -H 'host: %s' http://%s:%s@%s/" + SESSMIGT_APP_URL,
             ingressHostList.get(0),
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
             hostPort);
 
     logger.info("Executing curl command " + curlCmd);
+    assertDoesNotThrow(() -> {
+      ExecResult result = ExecCommand.exec(curlCmd, true);
+      String response = result.stdout().trim();
+      getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      if (!response.contains("cluster-1-managed")) {
+        logger.info("Can't invoke application");
+
+        if (OKE_CLUSTER) {
+          LoggingFacade loggingFacade = getLogger();
+          try {
+
+            result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
+            loggingFacade.info(result.stdout());
+            //restart core-dns service
+            result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
+            loggingFacade.info(result.stdout());
+            checkPodReady("coredns", null, "kube-system");
+
+          } catch (Exception ex) {
+            loggingFacade.warning(ex.getLocalizedMessage());
+          }
+        }
+      }
+    });
     for (int i = 0; i < 50; i++) {
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd));
+      assertDoesNotThrow(() -> {
+        ExecResult result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        assertTrue(response.contains("cluster-1-managed"), "Can't invoke application");
+      });
     }
     //check hpa scaled up to one more server
     checkPodReadyAndServiceExists(managedServerPrefix + 3, domainUid, domainNamespace);
@@ -364,8 +392,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         logger.info("Executing command " + command);
         result = ExecCommand.exec(command);
         logger.info(" Result output: " + result.stdout());
-        List<CoreV1Event> events = getEvents(domainNamespace,timestamp);
-        for (CoreV1Event event : events) {
+        List<EventsV1Event> events = getEvents(domainNamespace,timestamp);
+        for (EventsV1Event event : events) {
           logger.info("Generated events after HPA scaling " + Yaml.dump(event));
         }
         int numberOfManagedSvs = 3;
@@ -452,9 +480,9 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   }
 
   private void installPrometheus(String promChartVersion,
-                                        String domainNS,
-                                        String domainUid
-  ) throws IOException, ApiException {
+                                 String domainNS,
+                                 String domainUid
+  ) throws ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, null);
@@ -466,7 +494,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
           prometheusRegexValue, promHelmValuesFileDir);
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
-      nodeportPrometheus = promHelmParams.getNodePortServer();
       String ingressClassName = nginxHelmParams.getIngressClassName();
       createIngressPathRouting(monitoringNS, "/",
           prometheusReleaseName + "-server", 80, ingressClassName);
@@ -485,7 +512,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    * Delete created resources.
    */
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");

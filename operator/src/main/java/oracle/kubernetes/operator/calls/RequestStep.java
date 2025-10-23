@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -32,6 +32,7 @@ import io.kubernetes.client.util.generic.options.PatchOptions;
 import io.kubernetes.client.util.generic.options.UpdateOptions;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Step driven by a call to the Kubernetes API.
@@ -64,6 +65,7 @@ public abstract class RequestStep<
    * @param resourceSingular Resource singular
    * @param clientSelector Client selector
    */
+  @SuppressWarnings("this-escape")
   protected RequestStep(
           ResponseStep<R> next,
           Class<A> apiTypeClass,
@@ -170,6 +172,7 @@ public abstract class RequestStep<
       this.getOptions = getOptions;
     }
 
+    @Override
     String getName() {
       return name;
     }
@@ -220,6 +223,7 @@ public abstract class RequestStep<
       this.getOptions = getOptions;
     }
 
+    @Override
     String getName() {
       return name;
     }
@@ -265,11 +269,13 @@ public abstract class RequestStep<
       this.updateOptions = updateOptions;
     }
 
+    @Override
     String getName() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getName).orElse(super.getName());
     }
 
+    @Override
     String getNamespace() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getNamespace).orElse(super.getNamespace());
@@ -325,6 +331,7 @@ public abstract class RequestStep<
       this.patchOptions = patchOptions;
     }
 
+    @Override
     String getName() {
       return name;
     }
@@ -382,10 +389,12 @@ public abstract class RequestStep<
       this.patchOptions = patchOptions;
     }
 
+    @Override
     String getName() {
       return name;
     }
 
+    @Override
     String getNamespace() {
       return namespace;
     }
@@ -431,6 +440,7 @@ public abstract class RequestStep<
       this.deleteOptions = deleteOptions;
     }
 
+    @Override
     String getName() {
       return name;
     }
@@ -480,10 +490,18 @@ public abstract class RequestStep<
       this.deleteOptions = deleteOptions;
     }
 
+    @Override
     String getName() {
       return name;
     }
 
+    @Override
+    @NotNull
+    public Result apply(Packet packet) {
+      return super.apply(packet);
+    }
+
+    @Override
     String getNamespace() {
       return namespace;
     }
@@ -567,6 +585,7 @@ public abstract class RequestStep<
       this.listOptions = listOptions;
     }
 
+    @Override
     String getNamespace() {
       return namespace;
     }
@@ -617,11 +636,13 @@ public abstract class RequestStep<
       this.createOptions = createOptions;
     }
 
+    @Override
     String getName() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getName).orElse(super.getName());
     }
 
+    @Override
     String getNamespace() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getNamespace).orElse(super.getNamespace());
@@ -672,11 +693,13 @@ public abstract class RequestStep<
       this.updateOptions = updateOptions;
     }
 
+    @Override
     String getName() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getName).orElse(super.getName());
     }
 
+    @Override
     String getNamespace() {
       return Optional.ofNullable(object)
               .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getNamespace).orElse(super.getNamespace());
@@ -748,10 +771,12 @@ public abstract class RequestStep<
       this.container = container;
     }
 
+    @Override
     String getName() {
       return name;
     }
 
+    @Override
     String getNamespace() {
       return namespace;
     }
@@ -801,6 +826,7 @@ public abstract class RequestStep<
       this.deleteOptions = deleteOptions;
     }
 
+    @Override
     String getNamespace() {
       return namespace;
     }

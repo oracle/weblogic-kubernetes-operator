@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -95,6 +95,8 @@ public class FileGroupReader {
 
   interface ScriptPath extends AutoCloseable {
     Path getScriptsDir();
+
+    void close() throws IOException;
   }
 
   static class FileScriptPath implements ScriptPath {
@@ -128,7 +130,7 @@ public class FileGroupReader {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
       fileSystem.close();
     }
   }

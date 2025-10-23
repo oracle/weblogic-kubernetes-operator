@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -15,8 +15,8 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
@@ -77,7 +77,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   private static final WatchApiFactory DEFAULT_WATCH_API_FACTORY = new WatchApiFactory() {
   };
 
-  protected static final UnaryOperator<ApiClient> CLIENT_SELECTOR = (client) -> client;
+  protected static final UnaryOperator<ApiClient> CLIENT_SELECTOR = client -> client;
 
   public static <X extends KubernetesObject, Y extends KubernetesListObject>
       WatchApi<X> createWatchApi(Class<X> apiTypeClass, Class<Y> apiListTypeClass,
@@ -119,8 +119,8 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
       new RequestBuilder<>(V1ConfigMap.class, V1ConfigMapList.class, "", "v1", "configmaps", "configmap");
   public static final RequestBuilder<V1Secret, V1SecretList> SECRET =
       new RequestBuilder<>(V1Secret.class, V1SecretList.class, "", "v1", "secrets", "secret");
-  public static final RequestBuilder<CoreV1Event, CoreV1EventList> EVENT =
-      new RequestBuilder<>(CoreV1Event.class, CoreV1EventList.class, "", "v1", "events", "event");
+  public static final RequestBuilder<EventsV1Event, EventsV1EventList> EVENT =
+      new RequestBuilder<>(EventsV1Event.class, EventsV1EventList.class, "events.k8s.io", "v1", "events", "event");
   public static final RequestBuilder<V1PersistentVolume, V1PersistentVolumeList> PV =
       new RequestBuilder<>(V1PersistentVolume.class, V1PersistentVolumeList.class,
           "", "v1", "persistentvolumes", "persistentvolume");
@@ -1090,14 +1090,16 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   private static class DirectResponseStep<R extends KubernetesType> extends ResponseStep<R> {
     private KubernetesApiResponse<R> callResponse;
 
+    @Override
     public Result onFailure(Packet packet, KubernetesApiResponse<R> callResponse) {
       this.callResponse = callResponse;
-      return doEnd(packet);
+      return doEnd();
     }
 
+    @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<R> callResponse) {
       this.callResponse = callResponse;
-      return doEnd(packet);
+      return doEnd();
     }
 
     public R get() throws ApiException {

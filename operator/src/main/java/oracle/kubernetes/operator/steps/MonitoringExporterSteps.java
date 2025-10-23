@@ -197,7 +197,6 @@ public class MonitoringExporterSteps {
       return getExporterConfiguration(packet).equals(getReportedConfiguration(response));
     }
 
-    // todo REG-> refactor for clarity
     private String getReportedConfiguration(HttpResponse<String> response) {
       return MonitoringExporterConfiguration.createFromYaml(withoutHtml(response.body())).asJsonString();
     }
@@ -287,7 +286,7 @@ public class MonitoringExporterSteps {
     }
 
     private HttpRequest createConfigurationQueryRequest() {
-      return createRequestBuilder(getConfigurationQueryUrl()).GET().build();
+      return createRequestBuilder(getConfigurationQueryUrl(), HTTP_TIMEOUT_SECONDS).GET().build();
     }
 
     private String getConfigurationQueryUrl() {
@@ -295,7 +294,7 @@ public class MonitoringExporterSteps {
     }
 
     private HttpRequest createConfigurationUpdateRequest(Packet packet) {
-      return createRequestBuilder(getConfigurationUpdateUrl())
+      return createRequestBuilder(getConfigurationUpdateUrl(), HTTP_TIMEOUT_SECONDS)
             .PUT(HttpRequest.BodyPublishers.ofString(getExporterConfiguration(packet)))
             .build();
     }

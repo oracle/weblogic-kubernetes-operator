@@ -1,0 +1,103 @@
+dn: dc=@domain@
+objectclass: top
+objectclass: domain
+dc: @domain@
+
+dn: ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: organizationalUnit
+ou: @realm@
+
+dn: ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: organizationalUnit
+ou: ERole
+
+dn: ou=EResource,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: organizationalUnit
+ou: EResource
+
+dn: ou=EPredicate,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: organizationalUnit
+ou: EPredicate
+
+dn: ou=EProfile,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: organizationalUnit
+ou: EProfile
+
+dn: ou=EProfileDefinition,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: organizationalUnit
+ou: EProfileDefinition
+
+dn: ou=EProfileInstance,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: organizationalUnit
+ou: EProfileInstance
+
+dn: cn=::Admin,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::Admin
+EExpr:: cHdlYmxvZ2ljLmVudGl0bGVtZW50LnJ1bGVzLkFkbWluaXN0cmF0aXZlR3JvdXAKAUFkbWluaXN0cmF0b3JzCg==
+
+dn: cn=::AdminChannelUser,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::AdminChannelUser
+EExpr:: cHdlYmxvZ2ljLmVudGl0bGVtZW50LnJ1bGVzLk93bmVySURER3JvdXAKAUFkbWluQ2hhbm5lbFVzZXJzCg==
+
+dn: cn=::Anonymous,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::Anonymous
+EExpr:: Z2V2ZXJ5b25lCg==
+
+dn: cn=::AppTester,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::AppTester
+EExpr:: cHdlYmxvZ2ljLmVudGl0bGVtZW50LnJ1bGVzLk93bmVySURER3JvdXAKAUFwcFRlc3RlcnMK
+
+dn: cn=::CrossDomainConnector,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::CrossDomainConnector
+EExpr:: cHdlYmxvZ2ljLmVudGl0bGVtZW50LnJ1bGVzLk93bmVySURER3JvdXAKAUNyb3NzRG9tYWluQ29ubmVjdG9ycwo=
+
+dn: cn=::Deployer,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::Deployer
+EExpr:: cHdlYmxvZ2ljLmVudGl0bGVtZW50LnJ1bGVzLkFkbWluaXN0cmF0aXZlR3JvdXAKAURlcGxveWVycwo=
+
+dn: cn=::Monitor,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::Monitor
+EExpr:: cHdlYmxvZ2ljLmVudGl0bGVtZW50LnJ1bGVzLkFkbWluaXN0cmF0aXZlR3JvdXAKAU1vbml0b3JzCg==
+
+dn: cn=::Operator,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::Operator
+EExpr:: cHdlYmxvZ2ljLmVudGl0bGVtZW50LnJ1bGVzLkFkbWluaXN0cmF0aXZlR3JvdXAKAU9wZXJhdG9ycwo=
+
+dn: cn=::OracleSystemRole,ou=ERole,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: ERole
+cn: ::OracleSystemRole
+EExpr:: Z09yYWNsZVN5c3RlbUdyb3VwCg==
+
+dn: cn=weblogic.entitlement.rules.InDevelopmentMode,ou=EPredicate,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: EPredicate
+cn: weblogic.entitlement.rules.InDevelopmentMode
+
+dn: cn=weblogic.entitlement.rules.TimePredicate,ou=EPredicate,ou=@realm@,dc=@domain@
+objectclass: top
+objectclass: EPredicate
+cn: weblogic.entitlement.rules.TimePredicate

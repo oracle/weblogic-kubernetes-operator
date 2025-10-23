@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -139,11 +139,14 @@ public class DomainValidationSteps {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       DomainResource domain = info.getDomain();
       List<String> fatalValidationFailures = domain.getFatalValidationFailures();
-      List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
-      String errorMsg = getErrorMessage(fatalValidationFailures, validationFailures);
-      if (validationFailures.isEmpty()) {
+      DomainResource.ValidationResult validationResult
+          = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
+      if (validationResult.isDelay()) {
+        return doRequeue();
+      } else if (validationResult.failures().isEmpty()) {
         return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet);
       } else {
+        String errorMsg = getErrorMessage(fatalValidationFailures, validationResult.failures());
         LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), errorMsg);
         return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(errorMsg), packet);
       }

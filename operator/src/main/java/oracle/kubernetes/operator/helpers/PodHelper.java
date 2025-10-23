@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,6 +52,8 @@ import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.POD_SCHEDULED;
+import static oracle.kubernetes.operator.KubernetesConstants.UNSCHEDULABLE_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -113,6 +116,19 @@ public class PodHelper {
     return ready;
   }
 
+  /**
+   * Is the pod waiting to roll.
+   * @param pod pod
+   * @return true if the pod is waiting to roll
+   */
+  public static boolean isWaitingToRoll(V1Pod pod) {
+    return Optional.ofNullable(pod)
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getAnnotations)
+            .map(labels -> "true".equalsIgnoreCase(labels.get(LabelConstants.TO_BE_ROLLED_LABEL)))
+            .orElse(false);
+  }
+
   static boolean hasReadyServer(V1Pod pod) {
     return Optional.ofNullable(pod).map(PodHelper::hasReadyStatus).orElse(false);
   }
@@ -142,7 +158,7 @@ public class PodHelper {
     return Optional.ofNullable(getServerName(pod)).map(s -> !s.equals(adminServerName)).orElse(true);
   }
 
-  private static String getServerName(@Nullable V1Pod pod) {
+  static String getServerName(@Nullable V1Pod pod) {
     return Optional.ofNullable(pod)
             .map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getLabels)
@@ -150,8 +166,20 @@ public class PodHelper {
             .orElse(null);
   }
 
+
   private static String getServerName(@Nonnull Map<String,String> labels) {
     return labels.get(SERVERNAME_LABEL);
+  }
+
+  private static V1SecurityContext getEffectiveSecurityContext(V1PodSecurityContext ctx) {
+    return new V1SecurityContext()
+            .runAsUser(ctx.getRunAsUser())
+            .runAsGroup(ctx.getRunAsGroup())
+            .runAsNonRoot(ctx.getRunAsNonRoot())
+            .seccompProfile(ctx.getSeccompProfile())
+            .seLinuxOptions(ctx.getSeLinuxOptions())
+            .windowsOptions(ctx.getWindowsOptions());
+
   }
 
   /**
@@ -212,6 +240,11 @@ public class PodHelper {
 
   private static boolean isReadyCondition(V1PodCondition condition) {
     return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
+  }
+
+  private static boolean isUnSchedulableTheReason(V1PodCondition condition) {
+    return POD_SCHEDULED.equals(condition.getType()) && "False".equals(condition.getStatus())
+            && UNSCHEDULABLE_REASON.equals(condition.getReason());
   }
 
   private static boolean isReadyNotTrueCondition(V1PodCondition condition) {
@@ -300,6 +333,21 @@ public class PodHelper {
   }
 
   /**
+   * Return true if the pod has unschedulable condition.
+   * @param pod  Kubernetes Pod
+   * @return true if the pod is unschedulable
+   */
+  public static boolean hasUnSchedulableCondition(V1Pod pod) {
+    return Optional.ofNullable(pod)
+            .filter(PodHelper::isPending)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getConditions)
+            .orElse(Collections.emptyList())
+            .stream()
+            .anyMatch(PodHelper::isUnSchedulableTheReason);
+  }
+
+  /**
    * Returns the domain UID associated with the specified pod.
    * @param pod the pod
    */
@@ -347,15 +395,33 @@ public class PodHelper {
         .orElse(null);
   }
 
-  private static boolean hasLabel(V1Pod pod, String label) {
-    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getLabels)
-        .map(l -> l.containsKey(label)).orElse(false);
+  /**
+   * get pod's annotation value for a annotation name.
+   * @param pod pod
+   * @param annotationName annotation name
+   * @return annotation value
+   */
+  public static String getPodAnnotation(V1Pod pod, String annotationName) {
+    return Optional.ofNullable(pod)
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getAnnotations)
+            .map(m -> m.get(annotationName))
+            .orElse(null);
   }
 
-  private static Step patchPod(V1Pod pod, String label, Step next) {
-    if (!hasLabel(pod, label)) {
+  private static boolean hasAnnotation(V1Pod pod, String annotation) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getAnnotations)
+            .map(l -> l.containsKey(annotation)).orElse(false);
+  }
+
+  private static Step patchPodAnnotation(V1Pod pod, String annotation, Step next) {
+    return patchPodAnnotation(pod, annotation, "true", next);
+  }
+
+  private static Step patchPodAnnotation(V1Pod pod, String annotation, String value, Step next) {
+    if (!hasAnnotation(pod, annotation)) {
       JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-      patchBuilder.add("/metadata/labels/" + label, "true");
+      patchBuilder.add("/metadata/annotations/" + annotation, value);
       V1ObjectMeta meta = pod.getMetadata();
       return RequestBuilder.POD.patch(meta.getNamespace(), meta.getName(),
               V1Patch.PATCH_FORMAT_JSON_PATCH,
@@ -391,22 +457,26 @@ public class PodHelper {
   }
 
   /**
-   * Label pod as needing to shut down.
+   * Annotate pod as needing to shut down.
    * @param pod Pod
    * @param next Next step
-   * @return Step that will check for existing label and add if it is missing
+   * @return Step that will check for existing annotation and add if it is missing
    */
-  public static Step labelPodAsNeedingToShutdown(V1Pod pod, Step next) {
-    return patchPod(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL, next);
+  public static Step annotatePodAsNeedingToShutdown(V1Pod pod, String value, Step next) {
+    return patchPodAnnotation(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL, value, next);
   }
 
   /**
-   * Check if the pod is already labeld for shut down.
+   * Check if the pod is already annotated for shut down.
    * @param pod Pod
-   * @return true, if the pod is already labeled.
+   * @return true, if the pod is already annotated.
    */
-  public static boolean isPodAlreadyLabeledForShutdown(V1Pod pod) {
-    return hasLabel(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL);
+  public static boolean isPodAlreadyAnnotatedForShutdown(V1Pod pod) {
+    return !Objects.isNull(getPodShutdownAnnotation(pod));
+  }
+
+  public static String getPodShutdownAnnotation(V1Pod pod) {
+    return getPodAnnotation(pod, LabelConstants.TO_BE_SHUTDOWN_LABEL);
   }
 
   /**
@@ -500,7 +570,13 @@ public class PodHelper {
 
     @Override
     V1SecurityContext getInitContainerSecurityContext() {
-      return PodSecurityHelper.getDefaultContainerSecurityContext();
+      if (getServerSpec().getContainerSecurityContext() != null) {
+        return getServerSpec().getContainerSecurityContext();
+      }
+      if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
+        return PodSecurityHelper.getDefaultContainerSecurityContext();
+      }
+      return getEffectiveSecurityContext(getPodSecurityContext());
     }
 
     @Override
@@ -627,7 +703,7 @@ public class PodHelper {
 
       if (adminPod == null || !isPodReady(adminPod)) {
         // requeue to wait for admin pod to be ready
-        return doRequeue(packet);
+        return doRequeue();
       }
 
       return doNext(packet);
@@ -689,7 +765,7 @@ public class PodHelper {
     @Override
     // let the pod rolling step update the pod
     Step replaceCurrentPod(V1Pod pod, Step next) {
-      return labelPodAsNeedingToRoll(pod, new DeferProcessing(pod, next));
+      return annotatePodAsNeedingToRoll(pod, new DeferProcessing(pod, next));
     }
 
     private class DeferProcessing extends Step {
@@ -704,7 +780,7 @@ public class PodHelper {
       @Override
       public Result apply(Packet packet) {
         deferProcessing(createCyclePodStep(pod, getNext()));
-        return doEnd(packet);
+        return doEnd();
       }
     }
 
@@ -745,8 +821,8 @@ public class PodHelper {
     }
 
     // Patch the pod to indicate a pending roll.
-    private Step labelPodAsNeedingToRoll(V1Pod pod, Step next) {
-      return patchPod(pod, LabelConstants.TO_BE_ROLLED_LABEL, next);
+    private Step annotatePodAsNeedingToRoll(V1Pod pod, Step next) {
+      return patchPodAnnotation(pod, LabelConstants.TO_BE_ROLLED_LABEL, next);
     }
 
     private Fiber.StepAndPacket createRollRequest(Step deferredStep) {
@@ -805,7 +881,13 @@ public class PodHelper {
 
     @Override
     V1SecurityContext getInitContainerSecurityContext() {
-      return PodSecurityHelper.getDefaultContainerSecurityContext();
+      if (getServerSpec().getContainerSecurityContext() != null) {
+        return getServerSpec().getContainerSecurityContext();
+      }
+      if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
+        return PodSecurityHelper.getDefaultContainerSecurityContext();
+      }
+      return getEffectiveSecurityContext(getPodSecurityContext());
     }
 
     @Override
@@ -917,6 +999,7 @@ public class PodHelper {
       DeleteOptions deleteOptions = (DeleteOptions) new DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       return RequestBuilder.POD.delete(namespace, name, deleteOptions,
               new DefaultResponseStep<V1Pod>(conflictStep, next) {
+          @Override
           public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
             DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
             if (callResponse.getHttpStatusCode() == HTTP_NOT_FOUND) {
@@ -924,7 +1007,7 @@ public class PodHelper {
             } else if (isMustWait) {
               info.setServerPod(serverName, callResponse.getObject());
               // requeue to wait for pod to be deleted and gone
-              return doRequeue(packet);
+              return doRequeue();
             }
             return doNext(packet);
           }

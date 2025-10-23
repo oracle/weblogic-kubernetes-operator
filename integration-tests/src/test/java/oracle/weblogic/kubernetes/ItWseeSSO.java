@@ -1,18 +1,16 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -22,13 +20,14 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_H
 import static oracle.weblogic.kubernetes.TestConstants.IT_WSEESSONGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
@@ -90,6 +91,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -105,9 +107,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test with webservices and SSO with two domains.
  */
-@DisplayName("Verify that client can communicate with webservices with SSO")
 @IntegrationTest
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 class ItWseeSSO {
 
@@ -150,7 +151,7 @@ class ItWseeSSO {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(4) List<String> namespaces) {
+  void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -244,7 +245,7 @@ class ItWseeSSO {
 
   private String checkWSDLAccess(String domainNamespace, String domainUid,
       String adminSvcExtHost,
-      String appURI) throws UnknownHostException, IOException, InterruptedException {
+      String appURI) throws IOException, InterruptedException {
 
     String adminServerPodName = domainUid + "-" + adminServerName;
     String hostAndPort;
@@ -266,6 +267,20 @@ class ItWseeSSO {
       hostAndPort = ingressIP + ":80";
     }
     String url = "http://" + hostAndPort + appURI;
+    if (OKE_CLUSTER) {
+      try {
+        if (OracleHttpClient.get(url, true).statusCode() != 200) {
+          ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
+          logger.info(result.stdout());
+          //restart core-dns service
+          result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
+          logger.info(result.stdout());
+          checkPodReady("coredns", null, "kube-system");
+        }
+      } catch (Exception ex) {
+        logger.warning(ex.getLocalizedMessage());
+      }
+    }
     assertEquals(200, OracleHttpClient.get(url, true).statusCode());
     return url;
   }
@@ -362,12 +377,12 @@ class ItWseeSSO {
             + "      -Dweblogic.wsee.verbose=*,weblogic.wsee.security.wssp.handlers.*=FINER"
             + "      -Dweblogic.debug.DebugSecuritySAML2Lib=true",
         false, false);
-    DomainSpec spec = domain.getSpec().replicas(replicaCount);
+    domain.getSpec().replicas(replicaCount);
 
     // wait for the domain to exist
     createDomainAndVerify(domain, domainNamespace);
-    String adminServerName = "admin-server";
-    String adminServerPodName = domainUid + "-" + adminServerName;
+    String adminName = "admin-server";
+    String adminServerPodName = domainUid + "-" + adminName;
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -388,6 +403,8 @@ class ItWseeSSO {
 
     logger.info("Setting up WebLogic pod to access PV");
     V1Pod pvPod = setupWebLogicPod(domainNamespace, pvName, pvcName, "/shared");
+    assertNotNull(pvPod, "pvPod is null");
+    assertNotNull(pvPod.getMetadata(), "pvpod metadata is null");
 
     logger.info("Creating directory {0} in PV", jksMountPath);
     execInPod(pvPod, null, true, "mkdir -p " + jksMountPath);
@@ -395,27 +412,27 @@ class ItWseeSSO {
     //copy the jks files to PV using the temp pod - we don't have access to PVROOT in Jenkins env
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "Identity1KeyStore.jks"),
+            Paths.get(keyStoresPath, "Identity1KeyStore.jks"),
             Paths.get(jksMountPath, "/Identity1KeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "Identity2KeyStore.jks"),
+            Paths.get(keyStoresPath, "Identity2KeyStore.jks"),
             Paths.get(jksMountPath, "/Identity2KeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "TrustKeyStore.jks"),
+            Paths.get(keyStoresPath, "TrustKeyStore.jks"),
             Paths.get(jksMountPath, "/TrustKeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "PkiKeyStore.jks"),
+            Paths.get(keyStoresPath, "PkiKeyStore.jks"),
             Paths.get(jksMountPath, "/PkiKeyStore.jks")),
         "Copying file to pod failed");
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
             pvPod.getMetadata().getName(), "",
-            Paths.get(keyStoresPath.toString(), "certrec.pem"),
+            Paths.get(keyStoresPath, "certrec.pem"),
             Paths.get(jksMountPath, "/certrec.pem")),
         "Copying file to pod failed");
 
@@ -479,8 +496,8 @@ class ItWseeSSO {
   //deploy application wsee.war to domain
   private void deployApplication(String targets, String domainNamespace, String domainUid, Path appPath) {
     logger.info("Getting port for default channel");
-    String adminServerName = "admin-server";
-    String adminServerPodName = domainUid + "-" + adminServerName;
+    String adminName = "admin-server";
+    String adminServerPodName = domainUid + "-" + adminName;
     int defaultChannelPort = assertDoesNotThrow(()
             -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server default port failed");
@@ -494,11 +511,16 @@ class ItWseeSSO {
   }
 
   // Run standalone client to get initial context using t3s cluster url
-  private void buildRunClientOnPod() {
+  private void buildRunClientOnPod() throws IOException {
     String destLocation1 = "/u01/WseeClient.java";
+    
+    Path srcFile = Paths.get(RESOURCE_DIR, "wsee", "WseeClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItWseeSSO.class.getName(), "wsee", "WseeClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+    
     assertDoesNotThrow(() -> copyFileToPod(domain1Namespace,
         "weblogic-pod-" + domain1Namespace, "",
-        Paths.get(RESOURCE_DIR, "wsee", "WseeClient.java"),
+        destFile,
         Paths.get(destLocation1)));
     String destLocation2 = "/u01/EchoServiceRefStubs.jar";
     assertDoesNotThrow(() -> copyFileToPod(domain1Namespace,
@@ -542,21 +564,13 @@ class ItWseeSSO {
     }
 
     logger.info("Copying " + scriptName + " and callpyscript.sh to admin server pod");
-    try {
-      Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "python-scripts", scriptName),
-          Paths.get("/u01/" + scriptName));
+    Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "python-scripts", scriptName),
+        Paths.get("/u01/" + scriptName));
 
-      Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/callpyscript.sh"));
-    } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file to admin pod {0}", (Object) ioex.getStackTrace());
-      return false;
-    }
+    Kubernetes.copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+        Paths.get("/u01/callpyscript.sh"));
 
     logger.info("Adding execute mode for callpyscript.sh");
     ExecResult result = exec(adminPod, null, true,
@@ -654,11 +668,11 @@ class ItWseeSSO {
 
     // DOMAIN_NAME in model.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
-            destModelYamlFile.toString(), "DOMAIN_NAME", domainUid),
+            destModelYamlFile, "DOMAIN_NAME", domainUid),
         "Could not modify DOMAIN_NAME in " + destModelYamlFile);
     // NAMESPACE in model.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
-            destModelYamlFile.toString(), "NAMESPACE", namespace),
+            destModelYamlFile, "NAMESPACE", namespace),
         "Could not modify NAMESPACE in " + destModelYamlFile);
 
     return destModelYamlFile;

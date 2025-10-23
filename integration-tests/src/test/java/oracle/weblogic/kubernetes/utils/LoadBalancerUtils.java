@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
@@ -21,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1IngressBackend;
 import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1IngressTLS;
+import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
@@ -29,10 +31,14 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.jetbrains.annotations.Nullable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.COMPARTMENT_OCID;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
@@ -40,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
@@ -53,16 +60,18 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeTraefikImage;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOCILoadBalancerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -87,7 +96,7 @@ public class LoadBalancerUtils {
       int portshttp,
       String clusterName,
       String domainUID,
-      String loadBalancerName) throws ApiException {
+      String loadBalancerName) {
     Map<String, String> annotations = new HashMap<>();
     annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
     Map<String, String> selectors = new HashMap<>();
@@ -121,11 +130,19 @@ public class LoadBalancerUtils {
     // wait until the external IP is generated.
     testUntil(
         assertDoesNotThrow(() -> isOCILoadBalancerReady(
-          loadBalancerName,
-          labels, namespace), "isOCILoadBalancerReady failed with ApiException"),
+            loadBalancerName,
+            labels, namespace), "isOCILoadBalancerReady failed with ApiException"),
         logger,
         "external IP to be generated in {0}",
         namespace);
+    if (OKE_CLUSTER) {
+      testUntil(
+          assertDoesNotThrow(() -> isLoadBalancerHealthy(namespace, loadBalancerName),
+              "isLoadBalancerHealthy failed with ApiException"),
+          logger,
+          "OCI LB to be healthy in namespace {0}",
+          namespace);
+    }
   }
 
   /**
@@ -137,8 +154,8 @@ public class LoadBalancerUtils {
    * @return the NGINX Helm installation parameters
    */
   public static NginxParams installAndVerifyNginx(String nginxNamespace,
-                                                 int nodeportshttp,
-                                                 int nodeportshttps) {
+                                                  int nodeportshttp,
+                                                  int nodeportshttps) {
     return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION, null);
   }
 
@@ -153,10 +170,10 @@ public class LoadBalancerUtils {
    * @return the NGINX Helm installation parameters
    */
   public static NginxParams installAndVerifyNginx(String nginxNamespace,
-                                                 int nodeportshttp,
-                                                 int nodeportshttps,
-                                                 String chartVersion,
-                                                 String type) {
+                                                  int nodeportshttp,
+                                                  int nodeportshttps,
+                                                  String chartVersion,
+                                                  String type) {
     LoggingFacade logger = getLogger();
     createTestRepoSecret(nginxNamespace);
 
@@ -174,7 +191,7 @@ public class LoadBalancerUtils {
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
-        .helmParams(nginxHelmParams);    
+        .helmParams(nginxHelmParams);
     // set secret to pull images from private registry
     nginxParams.imageRepoSecret(TEST_IMAGES_REPO_SECRET_NAME);
     if (nodeportshttp != 0 && nodeportshttps != 0) {
@@ -212,6 +229,22 @@ public class LoadBalancerUtils {
         logger,
         "NGINX to be ready in namespace {0}",
         nginxNamespace);
+    if (OKE_CLUSTER) {
+      testUntil(
+          assertDoesNotThrow(() -> isOCILoadBalancerReady(
+              nginxHelmParams.getReleaseName() + "-ingress-nginx-controller",
+              null, nginxNamespace), "isOCILoadBalancerReady failed with ApiException"),
+          logger,
+          "external IP to be generated in {0}",
+          nginxNamespace);
+      testUntil(
+          assertDoesNotThrow(() -> isLoadBalancerHealthy(nginxNamespace,
+                  nginxHelmParams.getReleaseName() + "-ingress-nginx-controller"),
+              "isLoadBalancerHealthy failed with ApiException"),
+          logger,
+          "NGINX LB to be healthy in namespace {0}",
+          nginxNamespace);
+    }
 
     return nginxParams;
   }
@@ -224,11 +257,11 @@ public class LoadBalancerUtils {
    * @return the Traefik Helm installation parameters
    */
   public static TraefikParams installAndVerifyTraefik(String traefikNamespace,
-      int nodeportshttp,
-      int nodeportshttps) {
+                                                      int nodeportshttp,
+                                                      int nodeportshttps) {
     return installAndVerifyTraefik(traefikNamespace, nodeportshttp, nodeportshttps, null);
   }
-  
+
   /** Install Traefik and wait for up to five minutes for the Traefik pod to be ready.
    *
    * @param traefikNamespace the namespace in which the Traefik ingress controller is installed
@@ -238,9 +271,9 @@ public class LoadBalancerUtils {
    * @return the Traefik Helm installation parameters
    */
   public static TraefikParams installAndVerifyTraefik(String traefikNamespace,
-                                                   int nodeportshttp,
-                                                   int nodeportshttps,
-                                                   String type) {
+                                                      int nodeportshttp,
+                                                      int nodeportshttps,
+                                                      String type) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams traefikHelmParams = new HelmParams()
@@ -282,8 +315,230 @@ public class LoadBalancerUtils {
         logger,
         "Traefik to be ready in namespace {0}",
         traefikNamespace);
-
+    if (OKE_CLUSTER) {
+      testUntil(
+          assertDoesNotThrow(() -> isOCILoadBalancerReady(
+              traefikHelmParams.getReleaseName(),
+              null, traefikNamespace), "isOCILoadBalancerReady failed with ApiException"),
+          logger,
+          "external IP to be generated in {0}",
+          traefikNamespace);
+      testUntil(
+          assertDoesNotThrow(() -> isLoadBalancerHealthy(traefikNamespace, traefikHelmParams.getReleaseName()),
+              "isLoadBalancerHealthy failed with ApiException"),
+          logger,
+          "Traefik to be healthy in namespace {0}",
+          traefikNamespace);
+    }
     return traefikParams;
+  }
+
+  /**
+   * Check lb has healty status.
+   *
+   * @param namespace in which to check for lb controller
+   * @name service name of lb controller
+   * @return true if healthy, false otherwise
+   */
+  public static Callable<Boolean> isLoadBalancerHealthy(String namespace, String name) {
+    return () -> checkLoadBalancerHealthy(namespace, name);
+  }
+
+  /**
+   * Retreive external IP from OCI LoadBalancer.
+   *
+   * @param namespace - namespace
+   * @param lbName -loadbalancer service name
+   */
+  public static String getLoadBalancerIP(String namespace, String lbName) throws Exception {
+    return getLoadBalancerIP(namespace, lbName, false);
+  }
+
+  /**
+   * Retreive external IP from OCI LoadBalancer.
+   *
+   * @param namespace - namespace
+   * @param lbName -loadbalancer service name
+   * @param addLabel search service with label
+   */
+  public static String getLoadBalancerIP(String namespace, String lbName, boolean addLabel) throws Exception {
+    Map<String, String> labels = null;
+    if (addLabel) {
+      labels = new HashMap<>();
+      labels.put("loadbalancer", lbName);
+    }
+    V1Service service = getService(lbName, labels, namespace);
+    assertNotNull(service, "Can't find service with name " + lbName);
+    LoggingFacade logger = getLogger();
+    logger.info("Found service with name {0} in {1} namespace ", lbName, namespace);
+    assertNotNull(service.getStatus(), "service status is null");
+    assertNotNull(service.getStatus().getLoadBalancer(), "service loadbalancer is null");
+    List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
+    if (ingress != null) {
+      logger.info("LoadBalancer Ingress " + ingress);
+      V1LoadBalancerIngress lbIng =
+          ingress.stream().filter(c -> c.getIp() != null && !c.getIp().equals("pending")).findAny().orElse(null);
+      if (lbIng != null) {
+        logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
+        return lbIng.getIp();
+      }
+    }
+    return null;
+  }
+
+  /**
+   *  Update NO_PROXY var with Load Balancer IP address.
+   *
+   * @param newEntry value to add for NO_PROXY
+   * @throws Exception throws exception if failed to update
+   */
+  public static void addNoProxyEntry(String newEntry) {
+    String currentNoProxy = System.getenv("NO_PROXY");
+    getLogger().info("Current NO_PROXY value is :" + currentNoProxy);
+
+    String updatedNoProxy = (currentNoProxy == null || currentNoProxy.isEmpty())
+        ? newEntry
+        : currentNoProxy + ",10.196.0.0/24,10.196.1.0/24," + newEntry;
+
+    System.setProperty("NO_PROXY", updatedNoProxy);
+    getLogger().info("Updated NO_PROXY: " + System.getProperty("NO_PROXY"));
+  }
+
+  private static synchronized boolean checkLoadBalancerHealthy(String namespace, String lbServiceName) {
+
+    String lbPublicIP = assertDoesNotThrow(() -> getLoadBalancerIP(namespace, lbServiceName));
+    InitializationTasks.registerLoadBalancerExternalIP(lbPublicIP);
+    assertDoesNotThrow(() -> addNoProxyEntry(lbPublicIP));
+    LoggingFacade logger = getLogger();
+    String testcompartmentid = System.getProperty("wko.it.oci.compartment.ocid");
+    logger.info("wko.it.oci.compartment.ocid property " + testcompartmentid);
+
+
+    final String command = "oci lb load-balancer list --compartment-id "
+        + testcompartmentid + " --query \"data[?contains(\\\"ip-addresses\\\"[0].\\\"ip-address\\\", '"
+        + lbPublicIP + "')].id | [0]\" --raw-output --all";
+
+    logger.info("Command to retrieve Load Balancer OCID  is: {0} ", command);
+
+    ExecResult result = assertDoesNotThrow(() -> exec(command, true));
+    logger.info("The command returned exit value: " + result.exitValue()
+        + " command output: " + result.stderr() + "\n" + result.stdout());
+
+    if (result.exitValue() != 0 || result.stdout() == null) {
+      return false;
+    }
+
+    // Clean up the string to extract the Load Balancer ID
+    String lbOCID = result.stdout().trim();
+
+    boolean isFlexible = isLoadBalancerShapeFlexible(lbOCID);
+
+    if (!isFlexible) {
+      logger.info("Updating load balancer shape to flexible");
+
+      final String command2 = "oci lb load-balancer update-load-balancer-shape --load-balancer-id "
+          + lbOCID + "  --shape-name flexible  --shape-details"
+          + " '{\"minimumBandwidthInMbps\": 10, \"maximumBandwidthInMbps\": 400}'   --force";
+
+      result = assertDoesNotThrow(() -> exec(command2, true));
+      logger.info("Command: {}, Exit value: {}, Stdout: {}, Stderr: {}",
+          command2, result.exitValue(), result.stdout(), result.stderr());
+
+      if (result.stdout() == null
+          || (result.exitValue() != 0 && !result.stdout().contains("is currently being modified"))) {
+        return false;
+      }
+
+      testUntil(
+          assertDoesNotThrow(() -> checkWorkRequestUpdateShapeSucceeded(
+              lbOCID), "isOCILoadBalancer work request to update shape is not ready"),
+          logger,
+          "load balancer shape is updating ");
+      testUntil(
+          assertDoesNotThrow(() -> checkLoadBalancerShapeFlexible(
+              lbOCID), "checkLoadBalancerShape is not flexible "),
+          logger,
+          "load balancer shape can't be checked, retrying ");
+    }
+
+    //check health status
+    final String command1 = "oci lb load-balancer-health get --load-balancer-id " + lbOCID;
+    logger.info("Command to retrieve Load Balancer health status  is: {0} ", command1);
+    result = assertDoesNotThrow(() -> exec(command1, true));
+    logger.info("The command returned exit value: " + result.exitValue()
+        + " command output: " + result.stderr() + "\n" + result.stdout());
+    logger.info("result.stderr: \n{0}", result.stderr());
+    if (result == null || result.exitValue() != 0 || result.stdout() == null) {
+      return false;
+    }
+    return (result.stdout().contains("OK") && isBackendHealthy(result.stdout()));
+  }
+
+  private static boolean isBackendHealthy(String jsonResponse) {
+    LoggingFacade logger = getLogger();
+    // Check for any non-empty backend set names indicating a failure
+    if (jsonResponse.contains("\"critical-state-backend-set-names\": []")
+        && jsonResponse.contains("\"unknown-state-backend-set-names\": []")
+        && jsonResponse.contains("\"warning-state-backend-set-names\": []")) {
+      logger.info("All backends are healthy.");
+      return true;  // Healthy
+    } else {
+      logger.severe("Failure: There are issues with the backend(s)." + jsonResponse);
+      return false;  // Unhealthy
+    }
+  }
+
+  @Nullable
+  private static boolean isLoadBalancerShapeFlexible(String lbOCID) {
+    LoggingFacade logger = getLogger();
+
+    final String checkShapeCommand = "oci lb load-balancer get --load-balancer-id "
+        + lbOCID + " | jq '.data[\"shape-name\"], .data[\"shape-details\"]'";
+    ExecResult result = assertDoesNotThrow(() -> exec(checkShapeCommand, true));
+    logger.info("The command " + checkShapeCommand + " returned exit value: " + result.exitValue()
+        + " command output: " + result.stderr() + "\n" + result.stdout());
+    logger.info("result.stderr: \n{0}", result.stderr());
+    if (result == null || result.exitValue() != 0 || result.stdout() == null || !result.stdout().contains("flexible")) {
+      return false;
+    }
+    return true;
+  }
+
+  private static Callable<Boolean> checkLoadBalancerShapeFlexible(String loadBalancerOCID) {
+    return () -> isLoadBalancerShapeFlexible(loadBalancerOCID);
+  }
+
+  /**
+   * Check work request status for load balancer.
+   * @param loadBalancerOCID - load balancer OCID
+   * @return true if succeeded , false over vise.
+   */
+  public static boolean isWorkRequestUpdateShapeSucceeded(String loadBalancerOCID) {
+
+    LoggingFacade logger = getLogger();
+    final String command = "oci lb work-request list --load-balancer-id "
+        +  loadBalancerOCID
+        + "  --query 'data[?type == `UpdateShape`].{id:id, lifecycleState:\"lifecycle-state\", "
+        + "message:message, timeFinished:\"time-finished\"}' "
+        + "| jq '.[] | select(.lifecycleState == \"SUCCEEDED\")'";
+    ExecResult result = assertDoesNotThrow(() -> exec(command, true));
+    logger.info("The command " + command + " returned exit value: " + result.exitValue()
+        + " command output: " + result.stderr() + "\n" + result.stdout());
+    logger.info("result.stderr: \n{0}", result.stderr());
+    if (result == null || result.exitValue() != 0 || result.stdout() == null || result.stderr().contains("ERROR")) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Check if lb work request status is succeeded.
+   *
+   * @param loadBalancerOCID lb ocid
+   * @return true if succeeded, false otherwise
+   */
+  public static Callable<Boolean> checkWorkRequestUpdateShapeSucceeded(String loadBalancerOCID) {
+    return () -> isWorkRequestUpdateShapeSucceeded(loadBalancerOCID);
   }
 
   /** Upgrade Traefik and wait for up to five minutes for the Traefik pod to be ready.
@@ -450,7 +705,8 @@ public class LoadBalancerUtils {
         if (host.contains(":")) {
           host = "[" + host + "]";
         }
-        String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+        String curlCmd = "curl -g --silent --show-error --noproxy '*' "
+            + " -v --max-time 60 -H 'host: " + ingressHost
             + "' http://" + getHostAndPort(host, nodeport)
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
@@ -514,11 +770,15 @@ public class LoadBalancerUtils {
     logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
-
     String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
+    testUntil(
+        withLongRetryPolicy,
+        callWebAppAndWaitTillReady(curlCmd),
+        logger,
+        "Waiting until Web App available");
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
   }
 
@@ -574,7 +834,8 @@ public class LoadBalancerUtils {
         if (host.contains(":")) {
           host = "[" + host + "]";
         }
-        String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+        String curlCmd = "curl -g --silent --show-error --noproxy '*' "
+            + " -v --max-time 60 -H 'host: " + ingressHost
             + "' http://" + host + ":" + nodeport
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
@@ -713,12 +974,11 @@ public class LoadBalancerUtils {
    * @throws Exception fails if not generated after MaxIterations number is reached.
    */
   public static String getLbExternalIp(String lbrelname, String lbns) throws Exception {
-    int i = 0;
     LoggingFacade logger = getLogger();
 
     String cmdip = KUBERNETES_CLI + " get svc --namespace " + lbns
-          + " -o jsonpath='{.items[?(@.metadata.name == \"" + lbrelname + "\")]"
-          + ".status.loadBalancer.ingress[0].ip}'";
+        + " -o jsonpath='{.items[?(@.metadata.name == \"" + lbrelname + "\")]"
+        + ".status.loadBalancer.ingress[0].ip}'";
 
     logger.info("Command to retrieve external IP is: {0} ", cmdip);
 
@@ -733,5 +993,40 @@ public class LoadBalancerUtils {
     logger.info("LB_PUBLIC_IP is " + result.stdout().trim());
 
     return result.stdout().trim();
+  }
+
+  /**
+   * Delete Load Balancer , created in OCI by using provided public IP.
+   *
+   * @param lbPublicIP public Load Balancer IP
+   */
+  public static void deleteLoadBalancer(String lbPublicIP) {
+    if (lbPublicIP != null && !lbPublicIP.isEmpty()) {
+      if (lbPublicIP.startsWith("[") && lbPublicIP.endsWith("]")) {
+        // Remove the brackets and return the content inside
+        lbPublicIP = lbPublicIP.substring(1, lbPublicIP.length() - 1);
+      }
+      LoggingFacade logger = getLogger();
+      Path deleteLBPath =
+          Paths.get(RESOURCE_DIR, "bash-scripts", "delete_loadbalancer.sh");
+      String deleteLBScript = deleteLBPath.toString();
+      String command =
+          String.format("chmod 777 %s ", deleteLBScript);
+      logger.info("Delete Load Balancer command {0}", command);
+      assertTrue(() -> Command.withParams(
+              defaultCommandParams()
+                  .command(command)
+                  .redirect(true))
+          .execute());
+
+      String command1 =
+          String.format("%s %s %s ", deleteLBScript, lbPublicIP, COMPARTMENT_OCID);
+      logger.info("Delete Load Balancer command {0}", command);
+      assertTrue(() -> Command.withParams(
+              defaultCommandParams()
+                  .command(command1)
+                  .redirect(true))
+          .execute());
+    }
   }
 }

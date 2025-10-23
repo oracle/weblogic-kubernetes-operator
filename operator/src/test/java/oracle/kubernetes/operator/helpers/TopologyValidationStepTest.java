@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -123,7 +123,7 @@ class TopologyValidationStepTest {
   private String createdName;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords,
         ILLEGAL_SERVER_SERVICE_NAME_LENGTH, ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH, ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH,
         NO_AVAILABLE_PORT_TO_USE_FOR_REST, NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN,
@@ -142,10 +142,9 @@ class TopologyValidationStepTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
-
 
   enum ServerPort {
     PLAIN_PORT {
@@ -487,7 +486,7 @@ class TopologyValidationStepTest {
     assertThat(logRecords, containsWarning(messageKey).withParams(parameters));
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
-            .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
+            .withNoteContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
   }
 
   private void assertMaxReplicasSet() {
@@ -1042,7 +1041,7 @@ class TopologyValidationStepTest {
     runTopologyValidationStep();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-                .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR),
+                .withNoteContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR),
                       getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster"),
                       getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server")));
   }
@@ -1076,26 +1075,8 @@ class TopologyValidationStepTest {
     assertThat(logRecords, containsWarning(TOO_MANY_REPLICAS_FAILURE).withParams(parameters));
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
-            .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR), message));
+            .withNoteContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR), message));
   }
-
-  // todo compute ReplicasTooHigh
-  // todo remove ReplicasTooHigh
-
-  /*
-
-  @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
-    info.setReplicaCount("cluster1", 5);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), hasCondition(FAILED)
-        .withReason(REPLICAS_TOO_HIGH).withMessageContaining("cluster1"));
-    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
-  }
-   */
 
   private String getFormattedMessage(String msgId, Object... params) {
     LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");

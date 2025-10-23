@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -186,7 +186,6 @@ public class Matchers {
                                                                      String serverName,
                                                                      V1ResourceRequirements resources) {
     List<V1EnvVar> env = PodHelperTestBase.getLegacyAuxiliaryImageEnvVariables(image, name, command);
-    //Optional.ofNullable(serverName).ifPresent(s -> env.addAll(PodHelperTestBase.getPredefinedEnvVariables(s)));
     return new V1Container().name(COMPATIBILITY_MODE + name).image(image).imagePullPolicy(imagePullPolicy)
             .command(List.of(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .args(null)
@@ -217,8 +216,8 @@ public class Matchers {
   }
 
   protected static boolean listHasEnvVar(List<V1EnvVar> vars, String name) {
-    for (V1EnvVar var : vars) {
-      if (name.equals(var.getName())) {
+    for (V1EnvVar v : vars) {
+      if (name.equals(v.getName())) {
         return true;
       }
     }

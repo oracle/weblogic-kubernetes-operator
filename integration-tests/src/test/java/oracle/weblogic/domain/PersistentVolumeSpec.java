@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -19,18 +19,20 @@ public class PersistentVolumeSpec {
       + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity")
   private Map<String, Quantity> capacity;
 
-  @ApiModelProperty("HostPath represents a directory on the host. Provisioned by a developer or tester."
-      + " This is useful for single-node development and testing only! On-host storage is not supported in any way"
-      + " and WILL NOT WORK in a multi-node cluster. More info:\n"
-      + " https://kubernetes.io/docs/concepts/storage/volumes#hostpath\n"
-      + "Represents a host path mapped into a pod. Host path volumes do not support ownership management"
-      + " or SELinux relabeling.")
+  @ApiModelProperty("""
+          HostPath represents a directory on the host. Provisioned by a developer or tester.\
+           This is useful for single-node development and testing only! On-host storage is not supported in any way\
+           and WILL NOT WORK in a multi-node cluster. More info:
+           https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+          Represents a host path mapped into a pod. Host path volumes do not support ownership management\
+           or SELinux relabeling.""")
   private V1HostPathVolumeSource hostPath;
 
-  @ApiModelProperty("nfs represents an NFS mount on the host. Provisioned by an admin. More info:\n"
-      + "https://kubernetes.io/docs/concepts/storage/volumes#nfs\n"
-      + "Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do"
-      + " not support ownership management or SELinux relabeling.")
+  @ApiModelProperty("""
+          nfs represents an NFS mount on the host. Provisioned by an admin. More info:
+          https://kubernetes.io/docs/concepts/storage/volumes#nfs
+          Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do\
+           not support ownership management or SELinux relabeling.""")
   private V1NFSVolumeSource nfs;
 
   @ApiModelProperty("PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from"

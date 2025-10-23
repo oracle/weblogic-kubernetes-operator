@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -18,9 +18,12 @@ import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.FluentbitSpecification;
 
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIG_DATA_NAME;
@@ -33,13 +36,15 @@ public class FluentbitHelper {
 
   /**
    * Add sidecar container for fluentbit.
+   * @param serverSpec Server specification
    * @param fluentbitSpecification  FluentbitSpecification.
    * @param containers  List of containers.
    * @param isJobPod  whether it belongs to the introspector job pod.
    * @param domain  Domain.
    */
-  public static void addFluentbitContainer(FluentbitSpecification fluentbitSpecification, List<V1Container> containers,
-                                           DomainResource domain, boolean isJobPod) {
+  public static void addFluentbitContainer(EffectiveServerSpec serverSpec,
+                                           FluentbitSpecification fluentbitSpecification, List<V1Container> containers,
+                                           DomainResource domain, boolean isJobPod, boolean isReadOnlyRootFileSystem) {
     V1Container fluentbitContainer = new V1Container();
 
     fluentbitContainer.name(FLUENTBIT_CONTAINER_NAME);
@@ -55,7 +60,7 @@ public class FluentbitHelper {
     fluentbitContainer.setImage(fluentbitSpecification.getImage());
     fluentbitContainer.setImagePullPolicy(fluentbitSpecification.getImagePullPolicy());
     fluentbitContainer.setResources(fluentbitSpecification.getResources());
-    fluentbitContainer.setSecurityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
+    fluentbitContainer.setSecurityContext(serverSpec.getContainerSecurityContext());
 
     if (fluentbitSpecification.getContainerCommand() != null) {
       fluentbitContainer.setCommand(fluentbitSpecification.getContainerCommand());
@@ -66,6 +71,11 @@ public class FluentbitHelper {
     fluentbitSpecification.getVolumeMounts().forEach(fluentbitContainer::addVolumeMountsItem);
 
     fluentbitContainer.addVolumeMountsItem(createFluentbitConfigmapVolumeMount());
+
+    if (isReadOnlyRootFileSystem) {
+      fluentbitContainer.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+    }
+
     containers.add(fluentbitContainer);
   }
 

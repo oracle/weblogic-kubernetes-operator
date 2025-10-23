@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -132,12 +132,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create model in image domain and start the domain")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
-@Tag("oke-parallel")
+@Tag("oke-weekly-sequential")
 class ItMiiDomain {
 
   private static String opNamespace = null;
@@ -160,7 +159,7 @@ class ItMiiDomain {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -711,7 +710,7 @@ class ItMiiDomain {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
     // delete the domain images created in the test class
     if (miiImagePatchAppV2 != null) {
       deleteImage(miiImagePatchAppV2);
@@ -729,7 +728,7 @@ class ItMiiDomain {
     // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info(WLSIMG_BUILDER + " push image {0} to registry", image);
-      assertTrue(imagePush(image), String.format(WLSIMG_BUILDER + " push failed for image %s", image));
+      assertTrue(imagePush(image), String.format("%s push failed for image %s", WLSIMG_BUILDER, image));
     }
   }
 
@@ -828,8 +827,7 @@ class ItMiiDomain {
       String image
   ) {
     String patch =
-        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n",
-            image);
+        String.format("[%n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}%n]%n", image);
     logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
         domainResourceName, namespace, patch);
 
@@ -933,7 +931,7 @@ class ItMiiDomain {
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return domain;
   }

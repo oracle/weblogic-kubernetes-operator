@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -18,7 +18,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -68,7 +67,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test and verify Domain on PV sample.
  */
-@DisplayName("test domain on pv sample")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")
@@ -91,7 +89,7 @@ class ItWlsDomainOnPVSample {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -183,7 +181,7 @@ class ItWlsDomainOnPVSample {
    */
   @Test
   @Order(1)
-  public void testInstallOperator() {
+  void testInstallOperator() {
     String backupReports = backupReports(UniqueName.uniqueName(this.getClass().getSimpleName()));
     execTestScriptAndAssertSuccess("-oper", "Failed to run -oper");
     restoreReports(backupReports);
@@ -194,7 +192,7 @@ class ItWlsDomainOnPVSample {
    */
   @Test
   @Order(2)
-  public void testInstallTraefik() {
+  void testInstallTraefik() {
     if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("skip installing  Traefik in KIND and podman environment");
       logger.info("Traefik is already installed in InitialTask in namespace %s", TRAEFIK_NAMESPACE);
@@ -208,7 +206,7 @@ class ItWlsDomainOnPVSample {
    */
   @Test
   @Order(3)
-  public void testInitialImage() {
+  void testInitialImage() {
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
     execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image");
@@ -231,7 +229,7 @@ class ItWlsDomainOnPVSample {
    */
   @Test
   @Order(4)
-  public void testInitialMain() {
+  void testInitialMain() {
     // load the base image to kind if using kind cluster
     if (KIND_REPO != null) {
       logger.info("loading image {0} to kind", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
@@ -284,7 +282,7 @@ class ItWlsDomainOnPVSample {
    * Uninstall Traefik.
    */
   @AfterAll
-  public static void tearDownAll() {
+  static void tearDownAll() {
     logger = getLogger();
     // uninstall traefik
     if (traefikNamespace != null) {

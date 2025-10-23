@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -145,20 +145,23 @@ public class ManagedServerUpIteratorStep extends Step {
     @Override
     public @Nonnull Result apply(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-      WlsDomainConfig domainTopology =
-              (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       V1Pod managedPod = info.getServerPod(serverName);
-
-      if (managedPod == null || !isPodReady(managedPod)) {
+      boolean isWaitingToRoll = PodHelper.isWaitingToRoll(managedPod);
+      if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)
+              && !isWaitingToRoll)) {
         // requeue to wait for managed pod to be ready
-        return doRequeue(packet);
+        return doRequeue();
       }
 
       return doNext(packet);
     }
 
     protected boolean isPodReady(V1Pod result) {
-      return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
+      return PodHelper.isReady(result);
+    }
+
+    protected boolean isPodMarkedForShutdown(V1Pod result) {
+      return PodHelper.isDeleting(result) || PodHelper.isPodAlreadyAnnotatedForShutdown(result);
     }
   }
 

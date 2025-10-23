@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -477,6 +477,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withInitializeDomainOnPVModelEncryptionSecret(String secret) {
+    getOrCreateInitializeDomainOnPVModelSecret(secret);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withInitializeDomainOnPVType(String type) {
     getOrCreateInitializeDomainOnPVDomain().domainType(type);
     return this;
@@ -568,6 +574,13 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       domain.opss(new Opss());
     }
     return domain.getOpss();
+  }
+
+  private void getOrCreateInitializeDomainOnPVModelSecret(String secretName) {
+    InitializeDomainOnPV initializeDomainOnPV = getOrCreateInitializeDomainOnPV();
+    if (initializeDomainOnPV.getModelEncryptionPassphraseSecret() == null) {
+      initializeDomainOnPV.modelEncryptionPassphraseSecret(secretName);
+    }
   }
 
   @Override

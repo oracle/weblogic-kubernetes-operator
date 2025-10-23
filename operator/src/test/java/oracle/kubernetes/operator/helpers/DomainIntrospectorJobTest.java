@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -50,7 +50,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.FluentdUtils;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.http.rest.ScanCacheStub;
@@ -58,11 +57,9 @@ import oracle.kubernetes.operator.introspection.IntrospectionTestUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
-import oracle.kubernetes.operator.watcher.JobWatcher;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -84,7 +81,6 @@ import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.Opss;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -92,7 +88,6 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
@@ -115,8 +110,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTIO
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -137,6 +130,8 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLE
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SECRETS_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.WDTCONFIGMAP_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -162,7 +157,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest extends DomainTestUtils {
 
-  private static final int MAX_RETRY_COUNT = 2;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String NODEMGR_HOME = "/u01/nodemanager";
@@ -203,15 +197,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   private boolean jobDeleted;
 
-  public DomainIntrospectorJobTest() {
-  }
-
   private static String getJobName() {
     return LegalNames.toJobIntrospectorName(UID);
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
@@ -246,7 +237,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
     }
@@ -497,6 +488,24 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .mountPath(OPSS_KEY_MOUNT_PATH).readOnly(true)));
   }
 
+  @Test
+  void whenJobCreatedWithInitDomainOnPVWithModelEncryption_hasSecretsVolumeAndMounts() {
+    getConfigurator().withInitializeDomainOnPVModelEncryptionSecret("encryptedSecret");
+    testSupport.defineResources(createSecret("encryptedSecret"));
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+    V1Job job = jobs.get(0);
+
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME).secret(
+                    new V1SecretVolumeSource().secretName("encryptedSecret").optional(true).defaultMode(420))));
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME)
+                    .mountPath(WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH).readOnly(true)));
+
+  }
+
+
   private V1Secret createSecret(String name) {
     return new V1Secret().metadata(new V1ObjectMeta().name(name).namespace(NS));
   }
@@ -525,25 +534,19 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   @Test
   void whenJobCreatedWithInitializeDomainOnPVCreateDomainCMDefined_hasConfigMapVolumeAndMounts() {
-    V1ConfigMap cm = new V1ConfigMap().metadata(new V1ObjectMeta().name("initPvDomainCM").namespace(NS));
+    V1ConfigMap cm = new V1ConfigMap().metadata(new V1ObjectMeta().name("initpvdomaincm").namespace(NS));
     testSupport.defineResources(cm);
-    getConfigurator().withDomainCreationConfigMap("initPvDomainCM");
+    getConfigurator().withDomainCreationConfigMap("initpvdomaincm");
 
     List<V1Job> jobs = runStepsAndGetJobs();
     V1Job job = jobs.get(0);
 
     assertThat(getJobPodSpec(job).getVolumes(),
-        hasItem(new V1Volume().name("initPvDomainCM-volume").configMap(
-            new V1ConfigMapVolumeSource().name("initPvDomainCM").defaultMode(365))));
+        hasItem(new V1Volume().name("initpvdomaincm-volume").configMap(
+            new V1ConfigMapVolumeSource().name("initpvdomaincm").defaultMode(365))));
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
-        hasItem(new V1VolumeMount().name("initPvDomainCM-volume")
+        hasItem(new V1VolumeMount().name("initpvdomaincm-volume")
             .mountPath(WDTCONFIGMAP_MOUNT_PATH).readOnly(true)));
-  }
-
-  private DomainOnPV getInitDomain() {
-    DomainOnPV initDomain = new DomainOnPV();
-    initDomain.opss(getOpss());
-    return initDomain;
   }
 
   private Opss getOpss() {
@@ -771,47 +774,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  @Disabled("Test expectations don't match repository contents")
-  void whenJobCreatedWithFluentdTerminatedDuringIntrospection_checkExpectedMessage() {
-    String jobName = UID + "-introspector";
-    DomainConfiguratorFactory.forDomain(domain).withFluentdConfiguration(true,
-        "elastic-cred", null, null, null);
-    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, true);
-    testSupport.defineResources(jobPod);
-    defineFailedFluentdContainerInIntrospection();
-
-    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
-    logRecords.clear();
-    String expectedDetail = LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED,
-            jobPod.getMetadata().getName(),
-            jobPod.getMetadata().getNamespace(), 1, null, null);
-
-    assertThat(getUpdatedDomain().getStatus().getMessage(), containsString(expectedDetail));
-  }
-
-  @Test
-  @Disabled("Contents of data repository doesn't match expectations of test")
-  void whenJobCreatedWithFluentdAndSuccessIntrospection_JobIsTerminatedAndJobTerminatedMarkerInserted() {
-    String jobName = UID + "-introspector";
-    DomainConfiguratorFactory.forDomain(domain)
-        .withFluentdConfiguration(true, "elastic-cred", null, null,
-            null);
-    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, false);
-    testSupport.defineResources(jobPod);
-    defineNormalFluentdContainerInIntrospection();
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-
-    Packet packet = testSupport.runSteps(JobHelper.createIntrospectionStartStep(), terminalStep);
-    logRecords.clear();
-    assertThat(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED),
-            equalTo(JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER));
-    assertThat(terminalStep.wasRun(), is(true));
-
-  }
-
-  @Test
   void whenJobCreatedWithFluentdAndSuccessIntrospection_containerShouldNotHaveTheseEnvEntriesIfElsCredisNull() {
     DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, null, null, null, null);
@@ -844,7 +806,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithFluentdAndSuccessIntrospection_containerShouldMatchUserSpecifiedArgsCommand() {
     List<String> args = new ArrayList<>(List.of("line1", "line2"));
     List<String> command = new ArrayList<>(List.of("line1", "line2"));
-    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain)
+    DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, null, null, args, command);
 
     List<V1Job> jobs = runStepsAndGetJobs();
@@ -887,30 +849,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineResources(asCompletedJob(createIntrospectorJob()));
     testSupport.defineResources(createJobPod());
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INFO_MESSAGE);
-  }
-
-  @Test
-  @Disabled("Unexpected call to delete job log message")
-  void whenNewFailedJobExists_readPodLogAndReportFailure() {
-    ignoreIntrospectorFailureLogs();
-
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-    defineFailedIntrospection();
-    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
-
-    assertThat(getUpdatedDomain(), hasCondition(FAILED));
-  }
-
-  @Test
-  @Disabled("Unexpected delete job log message")
-  void whenNewFailedJobExistsAndUnableToReadContainerLogs_reportFailure() {
-    ignoreIntrospectorFailureLogs();
-
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-    defineFailedIntrospectionWithUnableToReadContainerLogs();
-    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
-
-    assertThat(getUpdatedDomain(), hasCondition(FAILED));
   }
 
   @Test
@@ -1354,13 +1292,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     return job;
   }
 
-  private V1Job asFailedJobWithDeadlineExceeded(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(
-        new V1JobCondition().status("True").type("Failed")
-            .reason("DeadlineExceeded")));
-    return job;
-  }
-
   @Test
   void whenPreviousFailedJobWithImagePullBackoffErrorExistsAndMakeRightContinued_createNewJob() {
     ignoreIntrospectorFailureLogs();
@@ -1373,21 +1304,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.runSteps(JobHelper.createIntrospectionStartStep());
 
     assertThat(affectedJob, notNullValue());
-  }
-
-  @Test
-  @Disabled("Contents of data repository doesn't match expectations of test")
-  void whenPreviousFailedJobWithDeadlineExceeded_terminateWithException() {
-    ignoreIntrospectorFailureLogs();
-    ignoreJobCreatedAndDeletedLogs();
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-    defineFailedIntrospectionWithDeadlineExceeded();
-    testSupport.doOnCreate(JOB, this::recordJob);
-    testSupport.doAfterCall(JOB, "delete", this::replaceFailedJobPodWithSuccess);
-
-    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
-
-    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
   }
 
   private V1Job affectedJob;
@@ -1613,7 +1529,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(null));
 
-    assertThat(getUpdatedDomain(), hasCondition(FAILED).withReason(ABORTED));  // todo check updated status message
+    assertThat(getUpdatedDomain(), hasCondition(FAILED).withReason(ABORTED));
   }
 
   private DomainCondition createFailedCondition(String message) {

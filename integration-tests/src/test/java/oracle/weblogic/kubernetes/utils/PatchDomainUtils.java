@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -39,7 +39,7 @@ public class PatchDomainUtils {
   ) {
     LoggingFacade logger = getLogger();
     String patch = String.format(
-        "[\n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}\n]\n",
+        "[%n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}%n]%n",
         "webLogicCredentialsSecret/name", secretName);
     logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
         domainResourceName, namespace, patch);
@@ -59,7 +59,7 @@ public class PatchDomainUtils {
     logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
         domainResourceName, namespace, oldVersion, newVersion);
     patch =
-        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}\n]\n",
+        String.format("[%n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}%n]%n",
             newVersion);
 
     logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
@@ -200,7 +200,7 @@ public class PatchDomainUtils {
       String patchPath, String policy) {
     LoggingFacade logger = getLogger();
     logger.info("Updating the for domain {0} in namespace {1} using patch string: {2}",
-        domainUid, domainNamespace, patchPath.toString());
+        domainUid, domainNamespace, patchPath);
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")

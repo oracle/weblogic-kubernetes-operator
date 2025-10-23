@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -81,6 +81,8 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_REPLACED;
@@ -90,6 +92,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_OR_RESTRICTED_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -110,6 +113,8 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultContainerSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultPodSecurityContext;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_VOLUME;
@@ -208,7 +213,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @BeforeEach
-  public void setup() throws Exception {
+  void setup() throws Exception {
     consoleHandlerMemento = TestUtils.silenceOperatorLogger()
         .collectLogMessages(logRecords, FLUENTD_CONFIGMAP_CREATED, FLUENTD_CONFIGMAP_REPLACED)
         .withLogLevel(Level.FINE);
@@ -223,7 +228,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -1252,6 +1257,22 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenDomainHasReadOnlyRootFileSystem_verifyVolumesAndMounts() {
+
+    configureDomain()
+            .withContainerSecurityContext(new V1SecurityContext().readOnlyRootFilesystem(true))
+            .configureCluster(domainPresenceInfo, CLUSTER_NAME);
+
+    runCreateJob();
+    assertThat(getJobVolumeMounts(),
+            hasItem(new V1VolumeMount().name(TMPDIR_VOLUME)
+                    .mountPath(TMPDIR_MOUNTS_PATH)));
+    assertThat(getJobVolumes(),
+            hasItem(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory"))));
+
+  }
+
+  @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_domain_overrides_values() {
     configureDomain().withIntrospectorJobActiveDeadlineSeconds(600L);
 
@@ -1419,7 +1440,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .findFirst()
             .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
             .map(V1EnvVar::getName)
-            .collect(Collectors.toList()),
+            .toList(),
         hasItems("INIT_DOMAIN_ON_PV", "DOMAIN_HOME", "OPSS_KEY_SECRET_NAME", "OPSS_WALLETFILE_SECRET_NAME"));
 
   }
@@ -1444,7 +1465,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1471,7 +1492,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1499,7 +1520,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1528,7 +1549,7 @@ class JobHelperTest extends DomainValidationTestBase {
                     .findFirst()
                     .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
                     .map(V1EnvVar::getName)
-                    .collect(Collectors.toList()),
+                    .toList(),
             hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
 
     assertThat(podSpec.getInitContainers().get(0).getEnv(),
@@ -1582,7 +1603,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .findFirst()
             .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
             .map(V1VolumeMount::getMountPath)
-            .collect(Collectors.toList()),
+            .toList(),
           hasItems(SCRIPTS_MOUNTS_PATH, "/share"));
 
   }
@@ -1774,10 +1795,11 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenNotConfigured_introspectorPodContainers_hasEmptySecurityContext() {
+  void whenNotConfigured_introspectorPodContainers_hasDefaultSecurityContext() {
     V1JobSpec jobSpec = createJobSpec();
 
-    getContainerStream(jobSpec).forEach(c -> assertThat(c.getSecurityContext(), is(new V1SecurityContext())));
+    getContainerStream(jobSpec)
+        .forEach(c -> assertThat(c.getSecurityContext(), is(getDefaultContainerSecurityContext())));
   }
 
   @Test
@@ -1791,12 +1813,12 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenNotConfigured_introspectorPodSpec_hasEmptySecurityContext() {
+  void whenNotConfigured_introspectorPodSpec_hasDefaultSecurityContext() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
           getPodSpec(jobSpec).getSecurityContext(),
-          is(new V1PodSecurityContext()));
+          is(getDefaultPodSecurityContext()));
   }
 
   @Test
@@ -2049,7 +2071,7 @@ class JobHelperTest extends DomainValidationTestBase {
           .map(this::getFirst)
           .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
           .map(V1EnvVar::getName)
-          .collect(Collectors.toList());
+          .toList();
   }
 
   @Nullable
@@ -2128,8 +2150,8 @@ class JobHelperTest extends DomainValidationTestBase {
     final String INTROSPECT_VERSION = "v123";
     configureDomain().withIntrospectVersion(INTROSPECT_VERSION);
 
-    V1Job job = createJob();
-    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
+    V1Job introJob = createJob();
+    assertThat(introJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
         is(INTROSPECT_VERSION));
   }
 
@@ -2137,8 +2159,8 @@ class JobHelperTest extends DomainValidationTestBase {
   void whenDomainHasNoIntrospectVersion_jobMetatadataCreatedWithoutNoLabel() {
     configureDomain().withIntrospectVersion(null);
 
-    V1Job job = createJob();
-    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
+    V1Job introJob = createJob();
+    assertThat(introJob.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
   }
 
   private V1Job job;
@@ -2254,7 +2276,4 @@ class JobHelperTest extends DomainValidationTestBase {
     // OEVN env var contains a comma separated list of env var names
     return hasEnvVarRegEx(OEVN, "(^|.*,)" + val + "($|,.*)");
   }
-
-  // todo add domain uid and created by operator labels to pod template so that they can be watched
-  // todo have pod processor able to recognize job-created pods to update domain status
 }

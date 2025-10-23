@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
@@ -55,7 +54,7 @@ class HealthCheckHelperTest {
   private static final List<String> CRUD_RESOURCES =
       Arrays.asList(
           "configmaps",
-          "events",
+          "events//events.k8s.io",
           "jobs//batch",
           "pods",
           "services");
@@ -100,14 +99,14 @@ class HealthCheckHelperTest {
   private final AccessChecks accessChecks = new AccessChecks();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -212,11 +211,11 @@ class HealthCheckHelperTest {
       return resourceStrings.stream()
           .map(AccessChecks::getApiGroup)
           .distinct()
-          .collect(Collectors.toList());
+          .toList();
     }
 
     private List<String> getResources(List<String> resourceStrings) {
-      return resourceStrings.stream().map(this::getFullResource).collect(Collectors.toList());
+      return resourceStrings.stream().map(this::getFullResource).toList();
     }
 
     private String getFullResource(String resourceString) {
@@ -226,7 +225,7 @@ class HealthCheckHelperTest {
     }
 
     private List<String> toVerbs(List<Operation> operations) {
-      return operations.stream().map(Operation::toString).collect(Collectors.toList());
+      return operations.stream().map(Operation::toString).toList();
     }
   }
 }

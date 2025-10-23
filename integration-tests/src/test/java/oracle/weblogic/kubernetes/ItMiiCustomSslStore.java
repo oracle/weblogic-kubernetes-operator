@@ -1,8 +1,10 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -11,6 +13,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -23,8 +26,10 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -64,7 +69,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test verifies usage of CustomIdentityCustomTrust on PV")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @IntegrationTest
@@ -82,7 +86,6 @@ class ItMiiCustomSslStore {
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-managed-server";
   private static LoggingFacade logger = null;
-  private static String cpUrl;
 
   /**
    * Install Operator.
@@ -91,7 +94,7 @@ class ItMiiCustomSslStore {
    *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -191,13 +194,17 @@ class ItMiiCustomSslStore {
    */
   @Test
   @DisplayName("Verify JNDI Context can be accessed using t3s cluster URL")
-  void testMiiGetCustomSSLContext() {
+  void testMiiGetCustomSSLContext() throws IOException {
 
     // build the standalone Client on Admin pod after rolling restart
     String destLocation = "/u01/SslTestClient.java";
+    Path srcFile = Paths.get(RESOURCE_DIR, "ssl", "SslTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItMiiCustomSslStore.class.getName(), "ssl", "SslTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
+    
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "ssl", "SslTestClient.java"),
+        destFile,
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
 
@@ -217,12 +224,18 @@ class ItMiiCustomSslStore {
     StringBuffer extOpts = new StringBuffer("");
     extOpts.append("-Dweblogic.security.SSL.ignoreHostnameVerification=true ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStore=/shared/"
-            + domainNamespace + "/" + domainUid + "/TrustKeyStore.jks ");
+        + domainNamespace + "/" + domainUid + "/TrustKeyStore.jks ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStorePassPhrase=changeit ");
+    String managedServerPort;
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      managedServerPort = "8100";
+    } else {
+      managedServerPort = "7002";
+    }
     testUntil(
         runClientInsidePod(adminServerPodName, domainNamespace,
-          "/u01", extOpts.toString() + " SslTestClient", "t3s://"
-                + domainUid + "-cluster-cluster-1:8100"),
+            "/u01", extOpts + " SslTestClient", "t3s://"
+            + domainUid + "-cluster-cluster-1:" + managedServerPort),
         logger,
         "Wait for client to get Initial context");
   }

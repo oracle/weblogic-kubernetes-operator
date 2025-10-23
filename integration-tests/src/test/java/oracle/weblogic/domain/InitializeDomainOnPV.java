@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -52,6 +52,12 @@ public class InitializeDomainOnPV {
       + " will use that 'fsGroup' instead of the default 'fsGroup'. Defaults to true.")
   public Boolean setDefaultSecurityContextFsGroup;
 
+  @ApiModelProperty("Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models "
+      + "provided in the 'domainCreationImages' or 'domainCreationConfigMap' are encrypted using the "
+      + "WebLogic Deployment Tool 'encryptModel' command. "
+      + "The secret must use the key 'passphrase' containing the actual passphrase for encryption.")
+  public String modelEncryptionPassphraseSecret;
+  
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
   }
@@ -106,6 +112,15 @@ public class InitializeDomainOnPV {
     return this;
   }
 
+  public String getModelEncryptionPassphraseSecret() {
+    return modelEncryptionPassphraseSecret;
+  }
+
+  public InitializeDomainOnPV modelEncryptionPassphraseSecret(String modelEncryptionPassphraseSecret) {
+    this.modelEncryptionPassphraseSecret = modelEncryptionPassphraseSecret;
+    return this;
+  }  
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -113,7 +128,8 @@ public class InitializeDomainOnPV {
             .append("persistentVolume", persistentVolume)
             .append("persistentVolumeClaim", persistentVolumeClaim)
             .append("domain", domain)
-            .append("waitForPvcToBind", waitForPvcToBind);
+            .append("waitForPvcToBind", waitForPvcToBind)
+            .append("modelEncryptionPassphraseSecret", modelEncryptionPassphraseSecret);
 
     return builder.toString();
   }
@@ -124,7 +140,8 @@ public class InitializeDomainOnPV {
         .append(persistentVolume)
         .append(persistentVolumeClaim)
         .append(domain)
-        .append(waitForPvcToBind);
+        .append(waitForPvcToBind)
+        .append(modelEncryptionPassphraseSecret);
 
     return builder.toHashCode();
   }
@@ -138,12 +155,13 @@ public class InitializeDomainOnPV {
     }
 
     InitializeDomainOnPV rhs = ((InitializeDomainOnPV) other);
-    EqualsBuilder builder =
-        new EqualsBuilder()
+    EqualsBuilder builder
+        = new EqualsBuilder()
             .append(persistentVolume, rhs.persistentVolume)
             .append(persistentVolumeClaim, rhs.persistentVolumeClaim)
             .append(domain, rhs.domain)
-            .append(waitForPvcToBind, rhs.waitForPvcToBind);
+            .append(waitForPvcToBind, rhs.waitForPvcToBind)
+            .append(modelEncryptionPassphraseSecret, rhs.modelEncryptionPassphraseSecret);
 
     return builder.isEquals();
   }

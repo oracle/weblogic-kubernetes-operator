@@ -87,8 +87,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain
  * Also verify the sample application can be accessed via NGINX ingress controller.
  */
-@DisplayName("Verify scaling the clusters in the domain with the domain type, domain-on-pv"
-    + "and the sample application can be accessed via NGINX ingress controller")
 @Tag("kind-parallel")
 @Tag("oke-gate")
 @IntegrationTest
@@ -126,7 +124,7 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace

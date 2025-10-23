@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -63,7 +63,7 @@ class BeforeAdminServiceStepTest {
   }
 
   @BeforeEach
-  public void setUp()  {
+  void setUp()  {
     mementos.add(TestUtils.silenceOperatorLogger());
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_NAME, ADMIN_PORT_NUM);
@@ -79,7 +79,7 @@ class BeforeAdminServiceStepTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();
     }

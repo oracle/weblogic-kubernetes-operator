@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -46,7 +45,7 @@ class WlsDomainConfigTest {
   private final WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, LOG_KEYS)
@@ -55,7 +54,7 @@ class WlsDomainConfigTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
     }
@@ -124,28 +123,8 @@ class WlsDomainConfigTest {
     assertThat(
           support.createDomainConfig().getAllServers().stream()
                 .map(WlsServerConfig::getName)
-                .collect(Collectors.toList()),
+                .toList(),
           containsInAnyOrder("standalone", "st1", "st2", "ds1", "ds2", "ds3"));
-  }
-
-  private boolean containsServer(WlsClusterConfig wlsClusterConfig, String serverName) {
-    List<WlsServerConfig> serverConfigs = wlsClusterConfig.getServerConfigs();
-    for (WlsServerConfig serverConfig : serverConfigs) {
-      if (serverName.equals(serverConfig.getName())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean containsNetworkAccessPoint(WlsServerConfig wlsServerConfig, String channelName) {
-    List<NetworkAccessPoint> networkAccessPoints = wlsServerConfig.getNetworkAccessPoints();
-    for (NetworkAccessPoint networkAccessPoint : networkAccessPoints) {
-      if (channelName.equals(networkAccessPoint.getName())) {
-        return true;
-      }
-    }
-    return false;
   }
 
   @Test

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -561,7 +561,7 @@ public class SchemaConversionUtils {
   }
 
   Map<String, Object> getMetadata(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get(METADATA);
+    return (Map<String, Object>) domain.computeIfAbsent(METADATA, k -> new LinkedHashMap<>());
   }
 
   @SuppressWarnings("unchecked")
@@ -1054,10 +1054,6 @@ public class SchemaConversionUtils {
     }
   }
 
-  public static String toDns1123LegalName(String value) {
-    return value.toLowerCase().replace('_', '-');
-  }
-
   private Map<String, Object> generateCluster(Map<String, Object> domainMeta,
                                               Map<String, Object> existingCluster) {
     Map<String, Object> cluster = new LinkedHashMap<>();
@@ -1065,7 +1061,7 @@ public class SchemaConversionUtils {
     cluster.put("kind", "Cluster");
     Map<String, Object> clusterMeta = new LinkedHashMap<>();
     clusterMeta.put("name", domainMeta.get("name") + "-"
-        + toDns1123LegalName((String) existingCluster.get(CLUSTER_NAME)));
+        + CommonUtils.toDns1123LegalName((String) existingCluster.get(CLUSTER_NAME)));
     clusterMeta.put(NAMESPACE, domainMeta.get(NAMESPACE));
     Map<String, Object> labels = new LinkedHashMap<>();
     labels.put("weblogic.createdByOperator", "true");

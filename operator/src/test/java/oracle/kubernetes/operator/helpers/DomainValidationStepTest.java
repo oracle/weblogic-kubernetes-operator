@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
@@ -93,7 +94,7 @@ class DomainValidationStepTest {
   private Step domainValidationSteps;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords);
     mementos.add(consoleControl);
     mementos.add(testSupport.install());
@@ -110,7 +111,7 @@ class DomainValidationStepTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -186,7 +187,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(domainValidationSteps);
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withNoteContaining(getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   private String getStatusReason(DomainResource updatedDomain) {
@@ -231,6 +232,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToUnknownSecret_updateStatus() {
     domain.getSpec().withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"));
+    domain.getMetadata().setCreationTimestamp(SystemClock.now().minusSeconds(20));
 
     testSupport.runSteps(domainValidationSteps);
 
@@ -415,11 +417,11 @@ class DomainValidationStepTest {
     String wlsClusterName2 = "c2";
     String wlsClusterName3 = "c3";
     DomainResource domain2 = createTestDomain(UID2);
-    DomainPresenceInfo info = new DomainPresenceInfo(domain2);
+    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain2);
     if (withNoDomain) {
-      info.setDomain(null);
+      domainPresenceInfo.setDomain(null);
     }
-    domains.get(NS).put(UID2, info);
+    domains.get(NS).put(UID2, domainPresenceInfo);
     ClusterResource cluster1 = createTestCluster(CLUSTER_1);
     cluster1.getSpec().setClusterName(wlsClusterName1);
     ClusterResource cluster2 = createTestCluster(CLUSTER_2);

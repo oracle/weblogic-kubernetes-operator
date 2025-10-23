@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
@@ -92,7 +91,7 @@ public class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResourc
   }
 
   private List<String> getMissingMessageStrings(String message) {
-    return expectedMessageStrings.stream().filter(s -> !message.contains(s)).collect(Collectors.toList());
+    return expectedMessageStrings.stream().filter(s -> !message.contains(s)).toList();
   }
 
   @Override
@@ -114,7 +113,7 @@ public class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResourc
   }
 
   private String joinListGrammaticallyWithQuotes(List<String> strings) {
-    return joinListGrammatically(strings.stream().map(this::quote).collect(Collectors.toList()));
+    return joinListGrammatically(strings.stream().map(this::quote).toList());
   }
 
   private String quote(String s) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -10,18 +10,30 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Ingress;
+import io.kubernetes.client.openapi.models.V1IngressList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
+import io.kubernetes.client.openapi.models.V1ReplicaSetList;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
+import io.kubernetes.client.openapi.models.V1RoleBindingList;
+import io.kubernetes.client.openapi.models.V1RoleList;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
+import io.kubernetes.client.openapi.models.V1ServiceList;
+import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -30,7 +42,32 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteConfigMap;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDeployment;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteJob;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespacedRole;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespacedRoleBinding;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deletePv;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deletePvc;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteReplicaSet;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteService;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteServiceAccount;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDomains;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listJobs;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listNamespacedIngresses;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listNamespacedRoleBinding;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listNamespacedRoles;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listNamespaces;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumeClaims;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumes;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listReplicaSets;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listServiceAccounts;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listServices;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
@@ -133,9 +170,9 @@ public class CleanupUtil {
   private static void deleteDomains(String namespace) {
     LoggingFacade logger = getLogger();
     try {
-      for (var item : Kubernetes.listDomains(namespace).getItems()) {
+      for (var item : listDomains(namespace).getItems()) {
         String domainUid = item.getMetadata().getName();
-        Kubernetes.deleteDomainCustomResource(domainUid, namespace);
+        deleteDomainCustomResource(domainUid, namespace);
       }
     } catch (Exception ex) {
       logger.severe(ex.getMessage());
@@ -182,13 +219,18 @@ public class CleanupUtil {
 
       // Check if any domains exist
       try {
-        if (!Kubernetes.listDomains(namespace).getItems().isEmpty()) {
-          logger.info("Domain still exists !!!");
-          List<DomainResource> items = Kubernetes.listDomains(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        DomainList domainList = listDomains(namespace);
+        if (domainList != null) {
+          List<DomainResource> items = domainList.getItems();
+          if (!items.isEmpty()) {
+            logger.info("Domain still exists !!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -197,13 +239,18 @@ public class CleanupUtil {
 
       // Check if any replica sets exist
       try {
-        if (!Kubernetes.listReplicaSets(namespace).getItems().isEmpty()) {
-          logger.info("ReplicaSets still exists!!!");
-          List<V1ReplicaSet> items = Kubernetes.listReplicaSets(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1ReplicaSetList replicaSetList = listReplicaSets(namespace);
+        if (replicaSetList != null) {
+          List<V1ReplicaSet> items = listReplicaSets(namespace).getItems();
+          if (!items.isEmpty()) {
+            logger.info("ReplicaSets still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -232,13 +279,18 @@ public class CleanupUtil {
 
       // check if any configmaps exist
       try {
-        if (!Kubernetes.listConfigMaps(namespace).getItems().isEmpty()) {
-          logger.info("Config Maps still exists!!!");
-          List<V1ConfigMap> items = Kubernetes.listConfigMaps(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1ConfigMapList configMapList = listConfigMaps(namespace);
+        if (configMapList != null) {
+          List<V1ConfigMap> items = configMapList.getItems();
+          if (!items.isEmpty()) {
+            logger.info("Config Maps still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -247,13 +299,17 @@ public class CleanupUtil {
 
       // check if any secrets exist
       try {
-        if (!Kubernetes.listSecrets(namespace).getItems().isEmpty()) {
-          logger.info("Secrets still exists!!!");
-          List<V1Secret> items = Kubernetes.listSecrets(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1SecretList secretList = listSecrets(namespace);
+        if (secretList != null) {
+          List<V1Secret> items = secretList.getItems();
+          if (!items.isEmpty()) {
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -262,13 +318,18 @@ public class CleanupUtil {
 
       // check if any persistent volume claims exist
       try {
-        if (!Kubernetes.listPersistentVolumeClaims(namespace).getItems().isEmpty()) {
-          logger.info("Persistent Volumes Claims still exists!!!");
-          List<V1PersistentVolumeClaim> items = Kubernetes.listPersistentVolumeClaims(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1PersistentVolumeClaimList pvcList = listPersistentVolumeClaims(namespace);
+        if (pvcList != null) {
+          List<V1PersistentVolumeClaim> items = pvcList.getItems();
+          if (!items.isEmpty()) {
+            logger.info("Persistent Volumes Claims still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -277,23 +338,28 @@ public class CleanupUtil {
 
       // check if any persistent volumes exist
       try {
-        for (var item : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
-          String label = Optional.ofNullable(item)
-              .map(pvc -> pvc.getMetadata())
-              .map(metadata -> metadata.getLabels())
-              .map(labels -> labels.get("weblogic.domainUid")).get();
+        V1PersistentVolumeClaimList persistentVolumeClaimList = listPersistentVolumeClaims(namespace);
+        if (persistentVolumeClaimList != null) {
+          for (var item : persistentVolumeClaimList.getItems()) {
+            String label = Optional.ofNullable(item)
+                .map(pvc -> pvc.getMetadata())
+                .map(V1ObjectMeta::getLabels)
+                .map(labels -> labels.get("weblogic.domainUid")).get();
 
-          if (!Kubernetes.listPersistentVolumes(
-              String.format("weblogic.domainUid = %s", label))
-              .getItems().isEmpty()) {
-            logger.info("Persistent Volumes still exists!!!");
-            List<V1PersistentVolume> pvs = Kubernetes.listPersistentVolumes(
+            if (!listPersistentVolumes(
                 String.format("weblogic.domainUid = %s", label))
-                .getItems();
-            for (var pv : pvs) {
-              logger.info(pv.getMetadata().getName());
+                .getItems().isEmpty()) {
+              logger.info("Persistent Volumes still exists!!!");
+              List<V1PersistentVolume> pvs = listPersistentVolumes(
+                  String.format("weblogic.domainUid = %s", label))
+                  .getItems();
+              for (var pv : pvs) {
+                if (pv.getMetadata() != null) {
+                  logger.info(pv.getMetadata().getName());
+                }
+              }
+              nothingFound = false;
             }
-            nothingFound = false;
           }
         }
       } catch (Exception ex) {
@@ -303,13 +369,18 @@ public class CleanupUtil {
 
       // check if any deployments exist
       try {
-        if (!Kubernetes.listDeployments(namespace).getItems().isEmpty()) {
-          logger.info("Deployments still exists!!!");
-          List<V1Deployment> items = Kubernetes.listDeployments(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1DeploymentList deploymentList = listDeployments(namespace);
+        if (deploymentList != null) {
+          List<V1Deployment> items = listDeployments(namespace).getItems();
+          if (!items.isEmpty()) {
+            logger.info("Deployments still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -318,13 +389,18 @@ public class CleanupUtil {
 
       // check if any services exist
       try {
-        if (!Kubernetes.listServices(namespace).getItems().isEmpty()) {
-          logger.info("Services still exists!!!");
-          List<V1Service> items = Kubernetes.listServices(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1ServiceList serviceList = listServices(namespace);
+        if (serviceList != null) {
+          List<V1Service> items = serviceList.getItems();
+          if (!items.isEmpty()) {
+            logger.info("Services still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -333,13 +409,18 @@ public class CleanupUtil {
 
       // check if any service accounts exist
       try {
-        if (!Kubernetes.listServiceAccounts(namespace).getItems().isEmpty()) {
-          logger.info("Service Accounts still exists!!!");
-          List<V1ServiceAccount> items = Kubernetes.listServiceAccounts(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1ServiceAccountList serviceAccountList = listServiceAccounts(namespace);
+        if (serviceAccountList != null) {
+          List<V1ServiceAccount> items = serviceAccountList.getItems();
+          if (!items.isEmpty()) {
+            logger.info("Service Accounts still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -348,13 +429,17 @@ public class CleanupUtil {
 
       // check if any ingress exist
       try {
-        if (!Kubernetes.listNamespacedIngresses(namespace).getItems().isEmpty()) {
-          logger.info("Ingresses still exists!!!");
-          List<V1Ingress> items = Kubernetes.listNamespacedIngresses(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1IngressList ingressList = listNamespacedIngresses(namespace);
+        if (ingressList != null) {
+          List<V1Ingress> items = listNamespacedIngresses(namespace).getItems();
+          if (!items.isEmpty()) {
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -363,13 +448,18 @@ public class CleanupUtil {
 
       // check if any namespaced roles exist
       try {
-        if (!Kubernetes.listNamespacedRoles(namespace).getItems().isEmpty()) {
-          logger.info("Namespaced roles still exists!!!");
-          List<V1Role> items = Kubernetes.listNamespacedRoles(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1RoleList roleList = listNamespacedRoles(namespace);
+        if (roleList != null) {
+          List<V1Role> items = roleList.getItems();
+          if (!items.isEmpty()) {
+            logger.info("Namespaced roles still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -378,13 +468,18 @@ public class CleanupUtil {
 
       // check if any namespaced role bindings exist
       try {
-        if (!Kubernetes.listNamespacedRoleBinding(namespace).getItems().isEmpty()) {
-          logger.info("Namespaced role bindings still exists!!!");
-          List<V1RoleBinding> items = Kubernetes.listNamespacedRoleBinding(namespace).getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
+        V1RoleBindingList roleBindingList = listNamespacedRoleBinding(namespace);
+        if (roleBindingList != null) {
+          List<V1RoleBinding> items = roleBindingList.getItems();
+          if (!items.isEmpty()) {
+            logger.info("Namespaced role bindings still exists!!!");
+            for (var item : items) {
+              if (item.getMetadata() != null) {
+                logger.info(item.getMetadata().getName());
+              }
+            }
+            nothingFound = false;
           }
-          nothingFound = false;
         }
       } catch (Exception ex) {
         logger.warning(ex.getMessage());
@@ -408,7 +503,7 @@ public class CleanupUtil {
       boolean notFound = true;
       // get namespaces
       try {
-        List<String> namespaceList = Kubernetes.listNamespaces();
+        List<String> namespaceList = listNamespaces();
         if (namespaceList.contains(namespace)) {
           logger.info("Namespace still exists!!!");
           logger.info(namespace);
@@ -433,8 +528,8 @@ public class CleanupUtil {
 
     // Delete all Domain objects in the given namespace
     try {
-      for (var item : Kubernetes.listDomains(namespace).getItems()) {
-        Kubernetes.deleteDomainCustomResource(item.getMetadata().getName(), namespace);
+      for (var item : listDomains(namespace).getItems()) {
+        deleteDomainCustomResource(item.getMetadata().getName(), namespace);
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -443,8 +538,10 @@ public class CleanupUtil {
 
     // Delete deployments
     try {
-      for (var item : Kubernetes.listDeployments(namespace).getItems()) {
-        Kubernetes.deleteDeployment(namespace, item.getMetadata().getName());
+      for (var item : listDeployments(namespace).getItems()) {
+        if (item.getMetadata() != null) {
+          deleteDeployment(namespace, item.getMetadata().getName());
+        }
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -453,8 +550,10 @@ public class CleanupUtil {
 
     // Delete replicasets
     try {
-      for (var item : Kubernetes.listReplicaSets(namespace).getItems()) {
-        Kubernetes.deleteReplicaSet(namespace, item.getMetadata().getName());
+      for (var item : listReplicaSets(namespace).getItems()) {
+        if (item.getMetadata() != null) {
+          deleteReplicaSet(namespace, item.getMetadata().getName());
+        }
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -467,7 +566,7 @@ public class CleanupUtil {
       if (jobList != null) {
         for (var item : jobList.getItems()) {
           if (item.getMetadata() != null) {
-            Kubernetes.deleteJob(namespace, item.getMetadata().getName());
+            deleteJob(namespace, item.getMetadata().getName());
           }
         }
       }
@@ -478,8 +577,15 @@ public class CleanupUtil {
 
     // Delete configmaps
     try {
-      for (var item : Kubernetes.listConfigMaps(namespace).getItems()) {
-        Kubernetes.deleteConfigMap(item.getMetadata().getName(), namespace);
+      V1ConfigMapList configMapList = listConfigMaps(namespace);
+      if (configMapList != null) {
+        List<V1ConfigMap> items = configMapList.getItems();
+        for (var item : items) {
+          if (item.getMetadata() != null) {
+            deleteConfigMap(item.getMetadata().getName(), namespace);
+          }
+        }
+
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -488,8 +594,14 @@ public class CleanupUtil {
 
     // Delete secrets
     try {
-      for (var item : Kubernetes.listSecrets(namespace).getItems()) {
-        Kubernetes.deleteSecret(item.getMetadata().getName(), namespace);
+      V1SecretList secretList = listSecrets(namespace);
+      if (secretList != null) {
+        List<V1Secret> items = secretList.getItems();
+        for (var item : items) {
+          if (item.getMetadata() != null) {
+            deleteSecret(item.getMetadata().getName(), namespace);
+          }
+        }
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -497,43 +609,57 @@ public class CleanupUtil {
     }
 
     // Delete pvc
-    List<V1PersistentVolume> pvs = new ArrayList<V1PersistentVolume>();
+    List<V1PersistentVolume> pvs = new ArrayList<>();
 
-    for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
-      String label = null;
-      if (pvc.getMetadata().getLabels() != null) {
-        label = pvc.getMetadata().getLabels().get("weblogic.domainUid");
-      }
-      // get a list of pvs used by the pvcs in this namespace
-      try {
-        if (null != label) {
-          List<V1PersistentVolume> items = Kubernetes.listPersistentVolumes(
-              String.format("weblogic.domainUid = %s", label)).getItems();
-          pvs.addAll(items);
+    V1PersistentVolumeClaimList persistentVolumeClaimList = listPersistentVolumeClaims(namespace);
+    if (persistentVolumeClaimList != null) {
+      List<V1PersistentVolumeClaim> pvcItems = persistentVolumeClaimList.getItems();
+      for (var pvc : pvcItems) {
+        String label = null;
+        if (pvc.getMetadata() != null && pvc.getMetadata().getLabels() != null) {
+          label = pvc.getMetadata().getLabels().get("weblogic.domainUid");
         }
-        // delete the pvc
-        Kubernetes.deletePvc(pvc.getMetadata().getName(), namespace);
-      } catch (ApiException ex) {
-        logger.warning(ex.getResponseBody());
+        // get a list of pvs used by the pvcs in this namespace
+        try {
+          if (null != label) {
+            List<V1PersistentVolume> items = listPersistentVolumes(
+                String.format("weblogic.domainUid = %s", label)).getItems();
+            pvs.addAll(items);
+          }
+          // delete the pvc
+          if (pvc.getMetadata() != null) {
+            deletePvc(pvc.getMetadata().getName(), namespace);
+          }
+        } catch (ApiException ex) {
+          logger.warning(ex.getResponseBody());
+        }
       }
     }
 
     // Delete pv
     if (!pvs.isEmpty()) {
       for (var item : pvs) {
-        try {
-          logger.info("Deleting persistent volume {0}", item.getMetadata().getName());
-          Kubernetes.deletePv(item.getMetadata().getName());
-        } catch (Exception ex) {
-          logger.warning("Failed to delete persistent volumes");
+        if (item.getMetadata() != null) {
+          try {
+            logger.info("Deleting persistent volume {0}", item.getMetadata().getName());
+            deletePv(item.getMetadata().getName());
+          } catch (Exception ex) {
+            logger.warning("Failed to delete persistent volumes");
+          }
         }
       }
     }
 
     // Delete services
     try {
-      for (var item : Kubernetes.listServices(namespace).getItems()) {
-        Kubernetes.deleteService(item.getMetadata().getName(), namespace);
+      V1ServiceList serviceList = listServices(namespace);
+      if (serviceList != null) {
+        List<V1Service> items = serviceList.getItems();
+        for (var item : items) {
+          if (item.getMetadata() != null) {
+            deleteService(item.getMetadata().getName(), namespace);
+          }
+        }
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -542,8 +668,10 @@ public class CleanupUtil {
 
     // Delete namespaced roles
     try {
-      for (var item : Kubernetes.listNamespacedRoles(namespace).getItems()) {
-        Kubernetes.deleteNamespacedRole(namespace, item.getMetadata().getName());
+      for (var item : listNamespacedRoles(namespace).getItems()) {
+        if (item.getMetadata() != null) {
+          deleteNamespacedRole(namespace, item.getMetadata().getName());
+        }
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -552,8 +680,10 @@ public class CleanupUtil {
 
     // Delete namespaced role bindings
     try {
-      for (var item : Kubernetes.listNamespacedRoleBinding(namespace).getItems()) {
-        Kubernetes.deleteNamespacedRoleBinding(namespace, item.getMetadata().getName());
+      for (var item : listNamespacedRoleBinding(namespace).getItems()) {
+        if (item.getMetadata() != null) {
+          deleteNamespacedRoleBinding(namespace, item.getMetadata().getName());
+        }
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -562,8 +692,14 @@ public class CleanupUtil {
 
     // Delete service accounts
     try {
-      for (var item : Kubernetes.listServiceAccounts(namespace).getItems()) {
-        Kubernetes.deleteServiceAccount(item.getMetadata().getName(), namespace);
+      V1ServiceAccountList serviceAccountList = listServiceAccounts(namespace);
+      if (serviceAccountList != null) {
+        List<V1ServiceAccount> items = serviceAccountList.getItems();
+        for (var item : items) {
+          if (item.getMetadata() != null) {
+            deleteServiceAccount(item.getMetadata().getName(), namespace);
+          }
+        }
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -583,7 +719,7 @@ public class CleanupUtil {
       Kubernetes.deleteNamespace(namespace);
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
-      logger.warning("Failed to delete namespace");
+      logger.warning("Failed to delete namespace {0}", namespace);
     }
   }
 

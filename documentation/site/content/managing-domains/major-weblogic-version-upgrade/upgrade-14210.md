@@ -225,7 +225,7 @@ STB.cleartextSchemaPassword = <TODO: provides the clear text password>
 STB.dbaUserName = <TODO: provide dba user name, e.g. sys as sysdba>
 STB.cleartextDbaPassword = <TODO: provides clear text dba password>
 
-# This secion is not needed for pure JRF domain.
+# This section is not needed for pure JRF domain.
 
 # The next section contains the information for performing a schema
 # upgrade on Oracle WebLogicServer, as described in the Upgrade
@@ -443,7 +443,7 @@ serverPod:
 
 ### Sample WDT model for secured production mode and SSL
 
-If you are upgrading an existing domain to 14.1.2.0 and your existing domain does not have secured production mode enabled, the operator, by default, will _disable_ secured production mode. If you want to override this behavior, you must enable it explicitly. Optionally, you can delete the existing domain and let the operator completely rebuild the domain and, by default, secured production mode will be enabled; you do not have to enable it explicitly. 
+If you are upgrading an existing domain to 14.1.2.0 and your existing domain does not have secured production mode enabled, the operator, by default, will _disable_ secured production mode. If you want to override this behavior, you must enable it explicitly. Optionally, you can delete the existing domain and let the operator completely rebuild the domain and, by default, secured production mode will be enabled; you do not have to enable it explicitly.
 
 The following is a code snippet of a WDT model for setting up secured production mode and SSL.
 

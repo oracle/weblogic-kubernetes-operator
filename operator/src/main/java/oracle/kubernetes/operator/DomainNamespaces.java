@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -14,8 +14,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -54,8 +54,6 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
  */
 @SuppressWarnings("SameParameterValue")
 public class DomainNamespaces {
-  private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
-
   private final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
 
@@ -65,12 +63,12 @@ public class DomainNamespaces {
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
   private final WatcherControl<DomainResource, DomainWatcher> domainWatchers
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
-  private final WatcherControl<CoreV1Event, EventWatcher> eventWatchers
+  private final WatcherControl<EventsV1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
-  private final WatcherControl<CoreV1Event, OperatorEventWatcher> operatorEventWatchers
+  private final WatcherControl<EventsV1Event, OperatorEventWatcher> operatorEventWatchers
       = new WatcherControl<>(OperatorEventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
-        = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
+        = new WatcherControl<>(JobWatcher::create, d -> d::dispatchJobWatch);
   private final WatcherControl<V1Pod, PodWatcher> podWatchers
         = new WatcherControl<>(PodWatcher::create, d -> d::dispatchPodWatch);
   private final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
@@ -273,12 +271,12 @@ public class DomainNamespaces {
     }
 
     @Override
-    public Consumer<CoreV1EventList> getEventListProcessing() {
+    public Consumer<EventsV1EventList> getEventListProcessing() {
       return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+    public Consumer<EventsV1EventList> getOperatorEventListProcessing() {
       return l -> operatorEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
@@ -331,13 +329,13 @@ public class DomainNamespaces {
     }
 
     @Override
-    public Consumer<CoreV1EventList> getEventListProcessing() {
+    public Consumer<EventsV1EventList> getEventListProcessing() {
       return l -> Optional.ofNullable(eventWatchers.getWatcher(ns))
           .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
     }
 
     @Override
-    public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+    public Consumer<EventsV1EventList> getOperatorEventListProcessing() {
       return l -> Optional.ofNullable(operatorEventWatchers.getWatcher(ns))
           .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -9,7 +9,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -67,7 +66,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test to create a WebLogic domain with Coherence, build the Coherence proxy client program
  * which load and verify the cache.
  */
-@DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
@@ -91,7 +89,6 @@ class ItCoherenceTests {
   private static final String COHERENCE_IMAGE_NAME = "coherence-image";
 
   private static String domainUid = "coherence-domain";
-  private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
   private static String containerName = "weblogic-server";
@@ -99,7 +96,6 @@ class ItCoherenceTests {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
 
   /**
@@ -109,7 +105,7 @@ class ItCoherenceTests {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -197,7 +193,7 @@ class ItCoherenceTests {
           () -> deleteDirectories(domainNamespace, serverName,
               null, true, dirsToMake),
           String.format("Failed to delete dir %s in pod %s in namespace %s ",
-              dirsToMake.toString(), serverName, domainNamespace));
+              dirsToMake, serverName, domainNamespace));
       logger.info("Deleted dir {0} in Pod {1} in namespace {2} ",
           dirsToMake.toString(), serverName, domainNamespace);
 
@@ -205,7 +201,7 @@ class ItCoherenceTests {
           () -> makeDirectories(domainNamespace, serverName,
               null, true, dirsToMake),
           String.format("Failed to create dir %s in pod %s in namespace %s ",
-              dirsToMake.toString(), serverName, domainNamespace));
+              dirsToMake, serverName, domainNamespace));
       logger.info("Created dir {0} in Pod {1} in namespace {2} ",
           dirsToMake.toString(), serverName, domainNamespace);
 

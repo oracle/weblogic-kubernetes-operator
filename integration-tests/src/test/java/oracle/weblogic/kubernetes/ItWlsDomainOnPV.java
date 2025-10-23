@@ -61,11 +61,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Test to create a WLS domain in persistent volume with new simplified feature.
  */
-@DisplayName("Test to create a WLS domain in persistent volume with new simplified feature")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
 @Tag("oke-parallel")
+@Tag("okd-wls-mrg")
 class ItWlsDomainOnPV {
 
   private static String domainNamespace = null;
@@ -81,7 +81,7 @@ class ItWlsDomainOnPV {
    * Assigns unique namespaces for operator and domain.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -117,7 +117,6 @@ class ItWlsDomainOnPV {
    */
   @Test
   @DisplayName("Create a WLS domain on PV using simplified feature, Operator creates PV/PVC and WLS Domain")
-  @Tag("gate")
   void testOperatorCreatesPvPvcWlsDomain() {
     String domainUid = "wlsonpv-simplified";
     final String pvName = getUniqueName(domainUid + "-pv-");

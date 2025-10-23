@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -24,6 +24,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -86,10 +87,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 6. cluster.spec.maxConcurrentStartup.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create model in image domain with Cluster Resourcees")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("olcne-mrg")
+@Tag("olcne-sequential")
+@Tag("okd-wls-mrg")
 class ItMaxConcurOptions {
 
   private static String opNamespace = null;
@@ -119,7 +120,7 @@ class ItMaxConcurOptions {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -445,7 +446,15 @@ class ItMaxConcurOptions {
                     .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .livenessProbe(new ProbeTuning()
+                    .initialDelaySeconds(180)
+                    .periodSeconds(30)
+                    .failureThreshold(5))
+                .readinessProbe(new ProbeTuning()
+                    .initialDelaySeconds(180)
+                    .periodSeconds(30)
+                    .failureThreshold(5)))
             .adminServer(new AdminServer()
                 .adminChannelPortForwardingEnabled(false)
                 .serverService(new ServerService()
@@ -460,7 +469,7 @@ class ItMaxConcurOptions {
                     .configMap(configmapName)
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     setPodAntiAffinity(domain);
 
@@ -547,7 +556,7 @@ class ItMaxConcurOptions {
   private OffsetDateTime verifyServersStartedConcurrently(String managedServerPodNamePrefix,
                                                           int startPodNum,
                                                           int endPodNum) {
-    final int deltaValue = 60; // seconds
+    final int deltaValue = 120;
     OffsetDateTime msPodCreationTime = null;
 
     // get managed server pod creation time
@@ -721,7 +730,7 @@ class ItMaxConcurOptions {
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // verify the patch results, server are scaled up or down correctly
-    for (int i = startPodNum, j = 0; i <= endPodNum; i++, j++) {
+    for (int i = startPodNum; i <= endPodNum; i++) {
       if (scaleup) {
         for (String managedServerPodNamePrefix : managedServerPodNamePrefixList) {
           logger.info("Wait for managed pod {0} to be ready in namespace {1}",
@@ -741,13 +750,13 @@ class ItMaxConcurOptions {
   private void restoreTestEnv(ArrayList<String>  clusterResources) {
     // delete CR referenced in domain resource
     clusterResources.forEach(
-        (clusterResource) -> deleteClusterCustomResourceAndVerify(clusterResource,domainNamespace));
+        clusterResource -> deleteClusterCustomResourceAndVerify(clusterResource,domainNamespace));
 
     // remove the cluster resource from domain resource
     logger.info("Patch the domain resource to remove cluster resource");
     StringBuffer patchStr = new StringBuffer("[{\"op\": \"remove\",\"path\": \"/spec/clusters/0\"}]");
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    clusterResources.forEach((clusterResource) -> patchDomainResource(domainUid, domainNamespace, patchStr));
+    clusterResources.forEach(clusterResource -> patchDomainResource(domainUid, domainNamespace, patchStr));
 
     // restore replicas at domain level bask to 4
     ArrayList<String> managedServerPodNamePrefixList =

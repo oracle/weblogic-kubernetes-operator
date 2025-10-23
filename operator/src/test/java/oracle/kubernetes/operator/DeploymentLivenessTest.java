@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
@@ -36,7 +37,7 @@ class DeploymentLivenessTest {
   private final CoreDelegateStub coreDelegate = createStrictStub(CoreDelegateStub.class);
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectAllLogMessages(logRecords)
@@ -44,11 +45,11 @@ class DeploymentLivenessTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     // delete probesHome dir (java requires a dir be empty before deletion)
-    Files.walk(coreDelegate.probesHome.toPath())
+    Files.walk(coreDelegate.deploymentHome.toPath())
         .sorted(Comparator.reverseOrder())
         .map(Path::toFile)
         .forEach(File::delete);
@@ -56,11 +57,11 @@ class DeploymentLivenessTest {
 
   @Test
   void whenNoExistingLivenessFile_fileCreated() {
-    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(coreDelegate);
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
-    File aliveFile = new File(coreDelegate.probesHome, ".alive");
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    File aliveFile = new File(coreDelegate.deploymentHome, ".alive");
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
     assertThat(aliveFile, anExistingFile());
 
     assertThat(logRecords, containsFine("Liveness file created"));
@@ -69,13 +70,13 @@ class DeploymentLivenessTest {
 
   @Test
   void whenExistingLivenessFile_onlyLogLastModifiedUpdated() throws IOException {
-    File aliveFile = new File(coreDelegate.probesHome, ".alive");
+    File aliveFile = new File(coreDelegate.deploymentHome, ".alive");
     assertTrue(aliveFile.createNewFile());
 
-    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(coreDelegate);
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
     assertThat(aliveFile, anExistingFile());
 
     assertThat(logRecords, not(containsFine("Liveness file created")));
@@ -84,25 +85,25 @@ class DeploymentLivenessTest {
 
   @Test
   void whenCantCreateLivenessFile_logWarning() throws IOException {
-    assertTrue(coreDelegate.probesHome.setWritable(false, false));
+    assertTrue(coreDelegate.deploymentHome.setWritable(false, false));
 
-    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(coreDelegate);
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
     deploymentLiveness.run();
 
-    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    assertThat(coreDelegate.deploymentHome, anExistingDirectory());
 
     assertThat(logRecords, containsWarning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE));
   }
 
   abstract static class CoreDelegateStub implements CoreDelegate {
-    final File probesHome;
+    final File deploymentHome;
 
     protected CoreDelegateStub() throws IOException {
-      probesHome = Files.createTempDirectory("deploymentLivenessTest").toFile();
+      deploymentHome = Files.createTempDirectory("deploymentLivenessTest").toFile();
     }
 
-    public File getProbesHome() {
-      return probesHome;
+    public File getDeploymentHome() {
+      return deploymentHome;
     }
   }
 }

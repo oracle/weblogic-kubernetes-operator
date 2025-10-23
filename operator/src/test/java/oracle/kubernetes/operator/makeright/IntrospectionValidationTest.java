@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
@@ -30,9 +30,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -45,10 +42,7 @@ import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.D
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.DomainType.TWO_CLUSTER_REFS;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.TopologyType.ONE_CLUSTER;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.TopologyType.TWO_CLUSTERS;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
 
 class IntrospectionValidationTest {
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
@@ -74,24 +68,6 @@ class IntrospectionValidationTest {
   @AfterEach
   void tearDown() {
     mementos.forEach(Memento::revert);
-  }
-
-  @ParameterizedTest
-  @EnumSource(Scenario.class)
-  @Disabled("Contents of data repository doesn't match expectations of test")
-  void introspectionRespondsToNewConditions(Scenario scenario) throws JsonProcessingException {
-    info.setServerPod("admin", new V1Pod());
-    scenario.initializeScenario(info, testSupport);
-
-    testSupport.runSteps(MakeRightDomainOperationImpl.domainIntrospectionSteps());
-
-    final DomainResource result = testSupport.<DomainResource>getResources(KubernetesTestSupport.DOMAIN).get(0);
-    if (scenario.finalDomain.isCompatibleWith(scenario.finalTopology)) {
-      assertThat(result, not(hasCondition(FAILED)));
-    } else {
-      assertThat(result, hasCondition(FAILED).withReason(DomainFailureReason.TOPOLOGY_MISMATCH));
-    }
-
   }
 
   enum TopologyType {

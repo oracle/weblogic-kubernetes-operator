@@ -30,6 +30,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -70,8 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain.
  * Also verify admin console login using admin node port.
  */
-@DisplayName("Verify the basic lifecycle operations of the WebLogic server pods by scaling the clusters in the domain"
-    + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -79,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
 @Tag("oke-parallelnew")
+@Tag("gate")
 class ItMultiDomainModels {
 
   // domain constants
@@ -108,7 +108,7 @@ class ItMultiDomainModels {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -146,62 +146,64 @@ class ItMultiDomainModels {
   @DisplayName("scale cluster by patching domain resource with four different type of domains and "
       + "verify admin server is accessible via REST interface.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV", "auxiliaryImageDomain"})
-  @Tag("gate")
   void testScaleClustersAndAdminRESTAccess(String domainType) {
-    DomainResource domain = createDomainBasedOnDomainType(domainType);
+    // workaround OWLS-122679
+    if (!(OCNE && domainType.equals("domainInImage"))) {
+      DomainResource domain = createDomainBasedOnDomainType(domainType);
 
-    // get the domain properties
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
+      // get the domain properties
+      String domainUid = domain.getSpec().getDomainUid();
+      String domainNamespace = domain.getMetadata().getNamespace();
 
-    String dynamicServerPodName = domainUid + "-managed-server1";
-    OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
-    final String managedServerPrefix = domainUid + "-managed-server";
-    int numberOfServers = 3;
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domainUid, domainNamespace, numberOfServers);
-    assertDoesNotThrow(() -> scaleCluster(clusterName,domainNamespace,
-        numberOfServers), "Could not scale up the cluster");
-    // check managed server pods are ready
-    for (int i = 1; i <= numberOfServers; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    Callable<Boolean> isDynRestarted =
-        assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName, domainNamespace, dynTs));
-    assertFalse(assertDoesNotThrow(isDynRestarted::call),
-        "Dynamic managed server pod must not be restated");
-
-    // then scale cluster back to 1 server
-    logger.info("Scaling back cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace,numberOfServers,replicaCount);
-    assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace,
-        replicaCount), "Could not scale down the cluster");
-
-    for (int i = numberOfServers; i > replicaCount; i--) {
-      logger.info("Wait for managed server pod {0} to be deleted in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Validating WebLogic admin server access by REST");
-    if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-      hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, 7001);
-      assertDoesNotThrow(()
-          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
-    } else {
-      String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-      try {
-        verifyAdminServerRESTAccessInAdminPod(adminServerPodName, "7001",
-            domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-      } catch (IOException ex) {
-        logger.severe(ex.getMessage());
+      String dynamicServerPodName = domainUid + "-managed-server1";
+      OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+      final String managedServerPrefix = domainUid + "-managed-server";
+      int numberOfServers = 3;
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers);
+      assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace,
+          numberOfServers), "Could not scale up the cluster");
+      // check managed server pods are ready
+      for (int i = 1; i <= numberOfServers; i++) {
+        logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
       }
+
+      Callable<Boolean> isDynRestarted =
+          assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName, domainNamespace, dynTs));
+      assertFalse(assertDoesNotThrow(isDynRestarted::call),
+          "Dynamic managed server pod must not be restated");
+
+      // then scale cluster back to 1 server
+      logger.info("Scaling back cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+      assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace,
+          replicaCount), "Could not scale down the cluster");
+
+      for (int i = numberOfServers; i > replicaCount; i--) {
+        logger.info("Wait for managed server pod {0} to be deleted in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+      }
+
+      logger.info("Validating WebLogic admin server access by REST");
+      if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, 7001);
+        assertDoesNotThrow(()
+            -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+      } else {
+        String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+        try {
+          verifyAdminServerRESTAccessInAdminPod(adminServerPodName, "7001",
+              domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        } catch (IOException ex) {
+          logger.severe(ex.getMessage());
+        }
+      }
+      // shutdown domain and verify the domain is shutdown
+      shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     }
-    // shutdown domain and verify the domain is shutdown
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**

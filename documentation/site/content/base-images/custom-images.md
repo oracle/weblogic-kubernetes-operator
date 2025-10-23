@@ -239,7 +239,7 @@ see [Container image protection]({{<relref "/security/domain-security/image-prot
 
 {{% notice warning %}}
 The sample scripts in this section reference base image
-`container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
+`container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8`.
 This is an OCR General Availability (GA) image
 which **does not include** the latest security patches for WebLogic Server.
 GA images are intended for single desktop demonstration and development purposes _only_.
@@ -312,7 +312,7 @@ to create the domain home in Domain in Image.
 
   # Define base image and final image
 
-  fromImage=container-registry.oracle.com/middleware/weblogic:12.2.1.4
+  fromImage=container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8
   finalImage=my-dii-wdt:v1
 
   # Init staging directory
@@ -414,7 +414,7 @@ to create the domain home in Domain in Image.
 
   # Define base image and final image
 
-  fromImage=container-registry.oracle.com/middleware/weblogic:12.2.1.4
+  fromImage=container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8
   finalImage=my-dii-wlst:v1
 
   # Copy sample WLST, Docker commands, and setup scripts
@@ -489,7 +489,7 @@ to create the domain home in Domain in Image.
 
 {{% notice warning %}}
 The example in this section references a base image,
-`container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
+`container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8`.
 This is an OCR General Availability (GA) image
 which **does not include** the latest security patches for WebLogic Server.
 GA images are intended for single desktop demonstration and development purposes _only_.
@@ -524,7 +524,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    See [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
    or [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
 
-   In the following step, you will use the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` GA image.
+   In the following step, you will use the `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8` GA image.
 
 1. Build the final image using WIT while specifying the base image, target image tag, WDT installation location,
    and WDT model file locations. For example:
@@ -550,7 +550,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    ```shell
    $ ./imagetool/bin/imagetool.sh update \
      --tag wdt-domain-image:WLS-LEGACY-v1 \
-     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
+     --fromImage container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8 \
      --wdtModel      ./model.10.yaml \
      --wdtVariables  ./model.10.properties \
      --wdtArchive    ./archive.zip \

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -100,16 +99,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  * running KUBERNETES_CLI + " apply" the domain resource file.
  */
 
-@DisplayName("Test to validate on-prem to k8s use case")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
 @Tag("olcne-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 
 @IntegrationTest
 class ItLiftAndShiftFromOnPremDomain {
-  private static String opNamespace = null;
   private static String traefikNamespace = null;
   private static String domainNamespace = null;
   private static final String LIFT_AND_SHIFT_WORK_DIR = WORK_DIR + "/liftandshiftworkdir";
@@ -124,10 +121,8 @@ class ItLiftAndShiftFromOnPremDomain {
   private static final Path BUILD_SCRIPT_SOURCE_PATH = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
   private static final String domainUid = "onprem-domain";
   private static final String adminServerName = "admin-server";
-  private static final String appPath = "opdemo/index.jsp";
   private static String imageName = null;
   private static LoggingFacade logger = null;
-  private Path zipFile;
 
   private static HelmParams traefikHelmParams = null;
   private int traefikNodePort = 0;
@@ -139,13 +134,13 @@ class ItLiftAndShiftFromOnPremDomain {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     // get a unique traefik namespace
     logger.info("Get a unique namespace for traefik");
@@ -190,6 +185,7 @@ class ItLiftAndShiftFromOnPremDomain {
     });
 
     // Copy the on-prem domain files to a temporary directory
+    logger.info("on-prem domain source dir is: " + DOMAIN_SRC_DIR + " target dir is: " + DOMAIN_TEMP_DIR);
     try {
       copyFolder(DOMAIN_SRC_DIR, DOMAIN_TEMP_DIR);
     } catch (IOException  ioex) {
@@ -220,29 +216,25 @@ class ItLiftAndShiftFromOnPremDomain {
     }
 
     Path tempDomainDir = Paths.get(DOMAIN_TEMP_DIR);
-    zipFile = Paths.get(createZipFile(tempDomainDir));
+    String tmpDomainDirZip = createZipFile(tempDomainDir);
+    assertNotNull(tmpDomainDirZip);
+    Path zipFile = Paths.get(tmpDomainDirZip);
     logger.info("zipfile is in {0}", zipFile.toString());
 
     // Call WDT DiscoverDomain tool with wko target to get the required file to create a
     // Mii domain image. Since WDT requires weblogic installation, we start a pod and run
     // wdt discoverDomain tool in the pod
     V1Pod webLogicPod = callSetupWebLogicPod(domainNamespace);
+    assertNotNull(webLogicPod, "webLogicPod is null");
+    assertNotNull(webLogicPod.getMetadata(), "webLogicPod metadata is null");
 
     // copy the onprem domain zip file to /u01 location inside pod
-    try {
-      Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
-          null, zipFile, Paths.get("/u01/", zipFile.getFileName().toString()));
-    } catch (ApiException | IOException ioex) {
-      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
-    }
+    Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
+        null, zipFile, Paths.get("/u01/", zipFile.getFileName().toString()));
 
     //copy the build script discover_domain.sh to /u01 location inside pod
-    try {
-      Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
-          null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
-    } catch (ApiException | IOException  ioex) {
-      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
-    }
+    Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(),
+        null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
     logger.info(KUBERNETES_CLI + " copied " + BUILD_SCRIPT + " into the pod");
 
     // Check that all the required files have been copied into the pod
@@ -272,7 +264,7 @@ class ItLiftAndShiftFromOnPremDomain {
       // Copy the directory that contains the files to workdir
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get("/u01", DISCOVER_DOMAIN_OUTPUT_DIR).toString(), Paths.get(LIFT_AND_SHIFT_WORK_DIR));
-    } catch (ApiException | IOException | InterruptedException | CopyNotSupportedException ioex) {
+    } catch (ApiException | IOException | InterruptedException ioex) {
       logger.info("Exception while copying file "
           + Paths.get("/u01", DISCOVER_DOMAIN_OUTPUT_DIR) + " from pod", ioex);
     }
@@ -301,7 +293,7 @@ class ItLiftAndShiftFromOnPremDomain {
     // run create_k8s_secrets.sh that discoverDomain created to create necessary secrets
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
-        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR, "/create_k8s_secrets.sh").toString());
+        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR, "/create_k8s_secrets.sh"));
 
     logger.info("Run create_k8s_secrets.sh to create secrets");
     boolean result = Command.withParams(params).execute();
@@ -310,7 +302,7 @@ class ItLiftAndShiftFromOnPremDomain {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML).toString());
+        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML));
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -351,7 +343,7 @@ class ItLiftAndShiftFromOnPremDomain {
       }
     }
 
-    String hostAndPort = null;
+    String hostAndPort;
     if (OKD) {
       hostAndPort = getHostAndPort(hostName, traefikNodePort);
     } else {
@@ -378,7 +370,7 @@ class ItLiftAndShiftFromOnPremDomain {
         "opdemo/index.jsp",
         "WebLogic on prem to wko App");
 
-    ExecResult execResult = null;
+    ExecResult execResult;
     logger.info("curl command {0}", curlString);
 
     execResult = assertDoesNotThrow(

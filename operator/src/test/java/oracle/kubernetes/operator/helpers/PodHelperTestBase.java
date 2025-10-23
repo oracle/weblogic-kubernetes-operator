@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -26,7 +26,7 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
@@ -76,6 +76,7 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -109,6 +110,8 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME;
@@ -117,7 +120,6 @@ import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_I
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
@@ -140,6 +142,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_N
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.ENVVARS;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -250,6 +253,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private final DomainResource domain = createDomain();
   protected final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   protected final List<Memento> mementos = new ArrayList<>();
   protected final List<LogRecord> logRecords = new ArrayList<>();
   final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
@@ -352,8 +356,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(testSupport.install());
+    mementos.add(httpSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(hashMemento = UnitTestHash.install());
     mementos.add(InMemoryCertificates.install());
@@ -433,7 +438,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -811,21 +816,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
-  // Returns the YAML for a 3.0 domain-in-image pod with only the plain port enabled.
-  abstract String getReferencePlainPortPodYaml_3_0();
-
-  // Returns the YAML for a 3.1 domain-in-image pod with only the plain port enabled.
-  abstract String getReferencePlainPortPodYaml_3_1();
-
-  // Returns the YAML for a 3.0 domain-in-image pod with the SSL port enabled.
-  abstract String getReferenceSslPortPodYaml_3_0();
-
-  // Returns the YAML for a 3.1 domain-in-image pod with the SSL port enabled.
-  abstract String getReferenceSslPortPodYaml_3_1();
-
-  // Returns the YAML for a 3.1 Mii Pod.
-  abstract String getReferenceMiiPodYaml();
-
   // Returns the YAML for a 3.3 Mii pod with aux image.
   abstract String getReferenceMiiAuxImagePodYaml_3_3();
 
@@ -839,18 +829,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4_1();
 
   abstract String getReferenceIstioMonitoringExporterTcpProtocol();
-
-  @Test
-  void afterUpgradingPlainPortPodFrom30_patchIt() {
-    useProductionHash();
-    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_0()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
 
   @Test
   void afterUpgradingMiiDomainWith3_3_AuxImages_patchIt() {
@@ -938,61 +916,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
-  @Test
-  void afterUpgradingPlainPortPodFrom31_patchIt() {
-    useProductionHash();
-    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_1()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
-  @Test
-  void afterUpgradingSslPortPodFrom30_patchIt() {
-    useProductionHash();
-    getServerTopology().setSslListenPort(7002);
-    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_0()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
-  @Test
-  void afterUpgradingSslPortPodFrom31_patchIt() {
-    useProductionHash();
-    getServerTopology().setSslListenPort(7002);
-    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_1()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
   void useProductionHash() {
     hashMemento.revert();
-  }
-
-  @Test
-  void afterUpgradingMiiPodFrom31_patchIt() {
-    useProductionHash();
-    testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
-    testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
-    disableAutoIntrospectOnNewMiiPods();
-    initializeExistingPod(loadPodModel(getReferenceMiiPodYaml()));
-
-    verifyPodPatched();
-
-    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   private V1Pod loadPodModel(String podYaml) {
@@ -1243,6 +1168,29 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   protected String getLegacyAuxiliaryImageVolumeName(String testVolumeName) {
     return COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
   }
+
+  @Test
+  void whenDomainSetReadOnlyRootFileSystem_verifyVolumesAndMounts() {
+    getConfigurator()
+            .withContainerSecurityContext(new V1SecurityContext().readOnlyRootFilesystem(true))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"))
+            .configureCluster(domainPresenceInfo, CLUSTER_NAME);
+
+    testSupport.addToPacket(CLUSTER_NAME, CLUSTER_NAME);
+
+    List<V1Container> containers = getCreatedPodSpecContainers();
+    for (V1Container container : containers) {
+      assertThat(container.getVolumeMounts(),
+              hasItem(new V1VolumeMount().name(TMPDIR_VOLUME)
+                      .mountPath(TMPDIR_MOUNTS_PATH)));
+
+    }
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory"))));
+
+  }
+
 
   @Test
   void whenDomainHasLegacyAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
@@ -1621,6 +1569,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenPodCreated_startupProbeHasLivenessCommand() {
+    assertThat(
+        getCreatedPodSpecContainer().getStartupProbe().getExec().getCommand(),
+        contains("/weblogic-operator/scripts/livenessProbe.sh"));
+  }
+
+  @Test
   void whenPodCreated_livenessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
@@ -1792,7 +1747,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
-  // todo set property to indicate dynamic/on_restart copying
   protected abstract void verifyPodReplaced();
 
   protected void verifyPodPatched() {
@@ -2194,7 +2148,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenExistingPodSpecHasK8sVolume_ignoreIt() {
     verifyPodNotReplacedWhen(
-        (pod) -> {
+        pod -> {
           pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
           getSpecContainer(pod)
               .addVolumeMountsItem(
@@ -2207,7 +2161,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenExistingPodSpecHasK8sVolumeMount_ignoreIt() {
     verifyPodNotReplacedWhen(
-        (pod) ->
+        pod ->
             getSpecContainer(pod)
                 .addVolumeMountsItem(
                     new V1VolumeMount()
@@ -2279,7 +2233,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void whenServerConfigurationAddsIntrospectionVersion_patchPod() {
+  void whenServerConfigurationAddsIntrospectionVersion_patchPodLabel() {
     initializeExistingPod();
 
     configurator.withIntrospectVersion("123");
@@ -2291,7 +2245,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPod() {
+  void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPodLabel() {
     initializeExistingPodWithIntrospectVersion("123");
 
     configurator.withIntrospectVersion("123");
@@ -2443,9 +2397,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(getEvents().stream().anyMatch(this::isKubernetesFailedEvent), is(true));
   }
 
-  private boolean isKubernetesFailedEvent(CoreV1Event e) {
+  private boolean isKubernetesFailedEvent(EventsV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason())
-        && e.getMessage().contains(getLocalizedString(KUBERNETES_EVENT_ERROR));
+        && e.getNote().contains(getLocalizedString(KUBERNETES_EVENT_ERROR));
   }
 
   @Test
@@ -2913,16 +2867,15 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
-    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
-    //System.out.println(events);
+    List<EventsV1Event> events = getEventsWithReason(getEvents(), event.getReason());
     return Optional.ofNullable(events)
-        .filter(list -> list.size() != 0)
-        .map(n -> n.get(0))
-        .map(CoreV1Event::getMessage)
+        .filter(list -> !list.isEmpty())
+        .map(n -> n.getFirst())
+        .map(EventsV1Event::getNote)
         .orElse("Event not found");
   }
 
-  List<CoreV1Event> getEvents() {
+  List<EventsV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 

@@ -228,7 +228,7 @@ Spec:
   Failure Retry Interval Seconds:    120
   Failure Retry Limit Minutes:       1440
   Http Access Log In Log Home:       true
-  Image:                             container-registry.oracle.com/middleware/weblogic:12.2.1.4
+  Image:                             container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8
   Image Pull Policy:                 IfNotPresent
   Include Server Out In Pod Log:     true
   Introspect Version:                1

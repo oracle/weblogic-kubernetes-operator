@@ -1,8 +1,9 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,6 +15,7 @@ import java.util.List;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,12 +63,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * in a running WebLogic domain.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test dynamic updates to a model in image domain, part1")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("oke-arm")
 @Tag("olcne-srg")
 class ItMiiDynamicUpdatePart1 {
@@ -86,7 +87,7 @@ class ItMiiDynamicUpdatePart1 {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
     logger = helper.logger;
 
@@ -124,7 +125,7 @@ class ItMiiDynamicUpdatePart1 {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     helper.beforeEach();
   }
 
@@ -140,8 +141,6 @@ class ItMiiDynamicUpdatePart1 {
   @Test
   @Order(1)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
-  @Tag("gate")
-  @Tag("crio")
   void testMiiAddWorkManager() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -304,8 +303,6 @@ class ItMiiDynamicUpdatePart1 {
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(helper.domainNamespace, helper.adminServerPodName);
     pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= helper.replicaCount; i++) {
@@ -351,7 +348,7 @@ class ItMiiDynamicUpdatePart1 {
   @Test
   @Order(5)
   @DisplayName("Test modification to Dynamic cluster size parameters")
-  void testMiiUpdateDynamicClusterSize() {
+  void testMiiUpdateDynamicClusterSize() throws IOException {
     String clusterName = "cluster-1";
     String clusterResName = domainUid + "-" + clusterName;
     // Scale the cluster by updating the replica count to 5
@@ -415,10 +412,14 @@ class ItMiiDynamicUpdatePart1 {
 
     // build the standalone JMS Client on Admin pod after rolling restart
     String destLocation = "/u01/JmsTestClient.java";
+    Path srcFile = Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItMiiDynamicUpdatePart1.class.getName(), "jmsclient", "JmsTestClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
     assertDoesNotThrow(() -> copyFileToPod(helper.domainNamespace,
         helper.adminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-        Paths.get(destLocation)));
+        destFile,
+        Paths.get(destLocation)));    
+    
     runJavacInsidePod(helper.adminServerPodName, helper.domainNamespace, destLocation);
 
     // Scale the cluster using replica count 5, patch cluster should fail as max size is 4
@@ -456,8 +457,6 @@ class ItMiiDynamicUpdatePart1 {
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(helper.domainNamespace, helper.adminServerPodName);
     pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= helper.replicaCount; i++) {
@@ -529,8 +528,8 @@ class ItMiiDynamicUpdatePart1 {
         helper.domainNamespace, helper.adminServerPodName,
         MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
-      logger.info("readMinThreadsConstraintRuntime read " + result.toString());
-      return (result != null && result.contains("\"count\": " + count));
+      logger.info("readMinThreadsConstraintRuntime read " + result);
+      return result.contains("\"count\": " + count);
     }
     logger.info("readMinThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;
@@ -581,8 +580,8 @@ class ItMiiDynamicUpdatePart1 {
         helper.domainNamespace, helper.adminServerPodName,
         MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
-      logger.info("readMaxThreadsConstraintRuntime read " + result.toString());
-      return (result != null && result.contains("\"count\": " + count));
+      logger.info("readMaxThreadsConstraintRuntime read " + result);
+      return (result.contains("\"count\": " + count));
     }
     logger.info("readMaxThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;

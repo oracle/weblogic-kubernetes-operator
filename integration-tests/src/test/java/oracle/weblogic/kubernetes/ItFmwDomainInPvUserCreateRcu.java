@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.ClusterResource;
@@ -42,7 +41,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
@@ -56,7 +54,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createCustomConditionFactory;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -66,12 +63,9 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
-import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceSimplifyJrfPv;
-import static oracle.weblogic.kubernetes.utils.FmwUtils.createSimplifyJrfPvDomainAndRCU;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.saveAndRestoreOpssWalletfileSecret;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -79,6 +73,8 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodLogContains;
@@ -96,10 +92,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test to create a FMW domain on PV with DomainOnPvSimplification feature when user pre-creates RCU.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test for initializeDomainOnPV when user per-creates RCU")
 @IntegrationTest
 @Tag("kind-sequential")
-@Tag("oke-sequential")
+@Tag("oke-weekly-sequential")
 public class ItFmwDomainInPvUserCreateRcu {
 
   private static String opNamespace = null;
@@ -107,19 +102,15 @@ public class ItFmwDomainInPvUserCreateRcu {
   private static String dbNamespace = null;
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainpv";
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
 
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
-  private static String DOMAINHOMEPREFIX = null;
   private static final String domainUid1 = "jrfdomainonpv-userrcu1";
   private static final String domainUid3 = "jrfdomainonpv-userrcu3";
   private static final String domainUid4 = "jrfdomainonpv-userrcu4";
 
-  private static final String miiAuxiliaryImage1Tag = "jrf1" + MII_BASIC_IMAGE_TAG;
   private final String adminSecretName1 = domainUid1 + "-weblogic-credentials";
   private final String adminSecretName3 = domainUid3 + "-weblogic-credentials";
   private final String adminSecretName4 = domainUid4 + "-weblogic-credentials";
@@ -131,7 +122,6 @@ public class ItFmwDomainInPvUserCreateRcu {
   private final String opsswalletpassSecretName4 = domainUid4 + "-opss-wallet-password-secret";
   private final String opsswalletfileSecretName1 = domainUid1 + "-opss-wallet-file-secret";
   private final String opsswalletfileSecretName3 = domainUid3 + "-opss-wallet-file-secret";
-  private final String opsswalletfileSecretName4 = domainUid4 + "-opss-wallet-file-secret";
   private static final int replicaCount = 1;
 
   private final String fmwModelFilePrefix = "model-fmwdomainonpv-rcu-wdt";
@@ -147,7 +137,7 @@ public class ItFmwDomainInPvUserCreateRcu {
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique dbNamespace
@@ -167,9 +157,8 @@ public class ItFmwDomainInPvUserCreateRcu {
     
     //install Oracle Database Operator
     String dbName = "fmwdomainonpv2" + "my-oracle-db";
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
-
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     // install operator with DomainOnPvSimplification=true"
@@ -193,7 +182,6 @@ public class ItFmwDomainInPvUserCreateRcu {
   @Test
   @Order(1)
   @DisplayName("Create a FMW domain on PV when user per-creates RCU")
-  @Tag("gate")
   void testFmwDomainOnPvUserCreatesRCU() {
 
     final String pvName = getUniqueName(domainUid1 + "-pv-");
@@ -593,34 +581,18 @@ public class ItFmwDomainInPvUserCreateRcu {
   /**
    * Export the OPSS wallet file secret of Fmw domain from the previous run
    * CrateIfNotExists set to DomainAndRCU
-   * Use this OPSS wallet file secret to create Fmw domain on PV to connect to the same database
+   * Use this OPSS wallet file secret to restart Fmw domain on PV to connect to the same database
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
   @Test
   @Order(6)
-  @DisplayName("Create a FMW domain on PV with provided OPSS wallet file secret")
-  void testFmwDomainOnPVwithProvidedOpss() {
-
-    final String pvName = getUniqueName(domainUid3 + "-pv-");
-    final String pvcName = getUniqueName(domainUid3 + "-pvc-");
+  @DisplayName("Restart a FMW domain on PV with provided OPSS wallet file secret")
+  void testReuseRCUschemaToRestartFmwDomain() {
 
     saveAndRestoreOpssWalletfileSecret(domainNamespace, domainUid3, opsswalletfileSecretName3);
-    logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid3);
-    deleteDomainResource(domainNamespace, domainUid3);
-    try {
-      deleteDirectory(Paths.get("/shared").toFile());
-    } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /shared", ioe);
-    }
-    logger.info("Creating domain custom resource with pvName: {0}", pvName);
-    DomainResource domain = createSimplifyJrfPvDomainAndRCU(
-        domainUid3, domainNamespace, adminSecretName3,
-        TEST_IMAGES_REPO_SECRET_NAME,
-        rcuaccessSecretName3,
-        opsswalletpassSecretName3, opsswalletfileSecretName3,
-        pvName, pvcName, domainCreationImages3, null);
-
-    createDomainAndVerify(domain, domainNamespace);
+    shutdownDomain(domainUid3);
+    patchDomainWithWalletFileSecret(opsswalletfileSecretName3, domainUid3);
+    startupDomain(domainUid3);
 
     // verify that all servers are ready
     verifyDomainReady(domainNamespace, domainUid3, replicaCount, "nosuffix");
@@ -803,31 +775,6 @@ public class ItFmwDomainInPvUserCreateRcu {
   }
 
   /**
-   * Start Oracle DB instance in the specified namespace.
-   *
-   * @param dbImage image name of database
-   * @param dbNamespace namespace where DB and RCU schema are going to start
-   * @param dbPort NodePort of DB
-   * @param dbListenerPort TCP listener port of DB
-   * @throws ApiException if any error occurs when setting up database
-   */
-  private static synchronized void setupDB(String dbImage, String dbNamespace, int dbPort, int dbListenerPort)
-      throws ApiException {
-    LoggingFacade logger = getLogger();
-    // create pull secrets when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
-    createBaseRepoSecret(dbNamespace);
-
-    if (OKD) {
-      addSccToDBSvcAccount("default", dbNamespace);
-    }
-
-    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
-        dbImage, dbPort, dbNamespace, dbListenerPort);
-    startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
-  }
-
-  /**
    * Check Configured JMS Resource.
    *
    * @param domainNamespace domain namespace
@@ -890,5 +837,55 @@ public class ItFmwDomainInPvUserCreateRcu {
     assertTrue(cmCreated, String.format("createConfigMap failed %s", cfgMapName));
   }
 
-  
+  /**
+   * Shutdown the domain by setting serverStartPolicy as "Never".
+   */
+  private void shutdownDomain(String domainUid) {
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "Never", domainNamespace, domainUid);
+    logger.info("Domain is patched to stop entire WebLogic domain");
+
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
+
+    // make sure all the server pods are removed after patch
+    checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Domain shutdown success");
+
+  }
+
+  /**
+   * Startup the domain by setting serverStartPolicy as "IfNeeded".
+   */
+  private void startupDomain(String domainUid) {
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IfNeeded", domainNamespace,
+        domainUid);
+    logger.info("Domain is patched to start all servers in the domain");
+  }
+
+  /**
+   * Patch the domain with opss wallet file secret.
+   * @param opssWalletFileSecretName the name of opps wallet file secret
+   * @return true if patching succeeds, false otherwise
+   */
+  private boolean patchDomainWithWalletFileSecret(String opssWalletFileSecretName, String domainUid) {
+    // construct the patch string for adding server pod resources
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/configuration/opss/walletFileSecret\", ")
+        .append("\"value\": \"")
+        .append(opssWalletFileSecretName)
+        .append("\"}]");
+
+    logger.info("Adding opssWalletPasswordSecretName for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, domainNamespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
 }

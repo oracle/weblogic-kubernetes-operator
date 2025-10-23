@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -65,9 +65,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 4. Verify that Elasticsearch collects data from Operator logs and
  *       stores them in its repository correctly.
  */
-@DisplayName("ELK Stack sample to test to use Elasticsearch API to query Operator logs")
 @IntegrationTest
 @Tag("kind-parallel")
+@Tag("oke-parallel")
 class ItElasticLoggingSample {
   // constants for namespaces
   private static String domainNamespace = null;
@@ -93,7 +93,7 @@ class ItElasticLoggingSample {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace

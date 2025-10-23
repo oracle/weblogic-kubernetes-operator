@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -11,6 +11,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -69,10 +70,20 @@ class IntrospectorJobPod {
    *
    */
   @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. "
-      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "If no value is specified for this field, the operator will use default "
       + "content for the pod-level `securityContext`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
-  private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+  private V1PodSecurityContext podSecurityContext = null;
+
+  /**
+   * InitContainers holds a list of initialization containers that run after the auxiliary image init
+   * container for the introspector job pod.
+   *
+   */
+  @Valid
+  @Description("List of init containers for the introspector Job Pod. These containers run after the auxiliary image "
+         + "init container. See `kubectl explain pods.spec.initContainers`.")
+  private List<V1Container> initContainers = null;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -85,27 +96,50 @@ class IntrospectorJobPod {
     }
   }
 
-  void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getFsGroup() == null) {
-      to.fsGroup(from.getFsGroup());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
-    }
-    if (to.getSupplementalGroups() == null) {
-      to.supplementalGroups(from.getSupplementalGroups());
-    }
-    if (to.getSysctls() == null) {
-      to.sysctls(from.getSysctls());
+  private void copyValues(V1PodSecurityContext from) {
+    if (from != null) {
+      if (podSecurityContext == null) {
+        podSecurityContext = new V1PodSecurityContext();
+      }
+      if (podSecurityContext.getRunAsNonRoot() == null) {
+        podSecurityContext.runAsNonRoot(from.getRunAsNonRoot());
+      }
+      if (podSecurityContext.getFsGroup() == null) {
+        podSecurityContext.fsGroup(from.getFsGroup());
+      }
+      if (podSecurityContext.getRunAsGroup() == null) {
+        podSecurityContext.runAsGroup(from.getRunAsGroup());
+      }
+      if (podSecurityContext.getRunAsUser() == null) {
+        podSecurityContext.runAsUser(from.getRunAsUser());
+      }
+      if (podSecurityContext.getSeLinuxOptions() == null) {
+        podSecurityContext.seLinuxOptions(from.getSeLinuxOptions());
+      }
+      if (podSecurityContext.getSeLinuxChangePolicy() == null) {
+        podSecurityContext.seLinuxChangePolicy(from.getSeLinuxChangePolicy());
+      }
+      if (podSecurityContext.getSupplementalGroups() == null) {
+        podSecurityContext.supplementalGroups(from.getSupplementalGroups());
+      }
+      if (podSecurityContext.getSupplementalGroupsPolicy() == null) {
+        podSecurityContext.supplementalGroupsPolicy(from.getSupplementalGroupsPolicy());
+      }
+      if (podSecurityContext.getSysctls() == null) {
+        podSecurityContext.sysctls(from.getSysctls());
+      }
+      if (podSecurityContext.getFsGroupChangePolicy() == null) {
+        podSecurityContext.fsGroupChangePolicy(from.getFsGroupChangePolicy());
+      }
+      if (podSecurityContext.getSeccompProfile() == null) {
+        podSecurityContext.seccompProfile(from.getSeccompProfile());
+      }
+      if (podSecurityContext.getWindowsOptions() == null) {
+        podSecurityContext.windowsOptions(from.getWindowsOptions());
+      }
+      if (podSecurityContext.getAppArmorProfile() == null) {
+        podSecurityContext.appArmorProfile(from.getAppArmorProfile());
+      }
     }
   }
 
@@ -119,8 +153,14 @@ class IntrospectorJobPod {
       }
       envFrom.addAll(serverPod1.envFrom);
     }
+    if (serverPod1.initContainers != null) {
+      if (initContainers == null) {
+        initContainers = new ArrayList<>();
+      }
+      initContainers.addAll(serverPod1.initContainers);
+    }
     copyValues(resources, serverPod1.resources);
-    copyValues(podSecurityContext, serverPod1.podSecurityContext);
+    copyValues(serverPod1.podSecurityContext);
   }
 
   private void addIfMissing(V1EnvVar envVar) {
@@ -131,6 +171,14 @@ class IntrospectorJobPod {
 
   private List<V1EnvVar> getV1EnvVars() {
     return Optional.ofNullable(getEnv()).orElse(emptyList());
+  }
+
+  List<V1Container> getInitContainers() {
+    return Optional.ofNullable(initContainers).orElse(emptyList());
+  }
+
+  void setInitContainers(@Nullable List<V1Container> initContainers) {
+    this.initContainers = initContainers;
   }
 
   private boolean hasEnvVar(String name) {
@@ -196,6 +244,7 @@ class IntrospectorJobPod {
         .append("resources", resources)
         .append("envFrom", envFrom)
         .append("podSecurityContext", podSecurityContext)
+        .append("initContainers", initContainers)
         .toString();
   }
 
@@ -218,6 +267,7 @@ class IntrospectorJobPod {
         .append(resources, that.resources)
         .append(envFrom, that.envFrom)
         .append(podSecurityContext, that.podSecurityContext)
+        .append(initContainers, that.initContainers)
         .isEquals();
   }
 
@@ -229,6 +279,7 @@ class IntrospectorJobPod {
         .append(resources)
         .append(envFrom)
         .append(podSecurityContext)
+        .append(initContainers)
         .toHashCode();
   }
 }

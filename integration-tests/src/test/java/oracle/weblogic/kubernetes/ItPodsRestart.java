@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -85,13 +85,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Add resources: limits: cpu: "1", resources: requests: cpu: "0.5".
  *
  */
-@DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
-@Tag("oke-parallel")
+@Tag("oke-weekly-sequential")
 class ItPodsRestart {
 
   private static String miiImage;
@@ -101,7 +100,6 @@ class ItPodsRestart {
 
   // domain constants
   private static final String domainUid = "domain1";
-  private static final String clusterName = "cluster-1";
   private static final int replicaCount = 1;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
@@ -115,7 +113,7 @@ class ItPodsRestart {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -375,7 +373,8 @@ class ItPodsRestart {
     envList = domain1.getSpec().getServerPod().getEnv();
     String envValue = envList.get(0).getValue();
     logger.info("In the new patched domain envValue is: {0}", envValue);
-    assertTrue(envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
+    assertTrue(envValue != null
+        && envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
         + " in the new patched domain");
 
     // verify the server pods are rolling restarted and back to ready state
@@ -686,7 +685,7 @@ class ItPodsRestart {
             .serverStartPolicy("IfNeeded")
             .serverPod(srvrPod)
             .configuration(new Configuration()
-                .introspectorJobActiveDeadlineSeconds(300L)
+                .introspectorJobActiveDeadlineSeconds(3000L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));

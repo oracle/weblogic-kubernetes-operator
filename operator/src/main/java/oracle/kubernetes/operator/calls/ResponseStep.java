@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesType;
@@ -22,6 +23,7 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,6 +45,7 @@ import static oracle.kubernetes.operator.calls.RequestStep.RESPONSE_COMPONENT_NA
 import static oracle.kubernetes.operator.calls.RequestStep.accessContinue;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES_NETWORK_EXCEPTION;
 
 /**
  * Step to receive response of Kubernetes API server call.
@@ -54,8 +57,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERN
 public abstract class ResponseStep<T extends KubernetesType> extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final RetryStrategyFactory DEFAULT_RETRY_STRATEGY_FACTORY =
-          (maxRetryCount, retryStep) -> new DefaultRetryStrategy(maxRetryCount, retryStep);
+  private static final RetryStrategyFactory DEFAULT_RETRY_STRATEGY_FACTORY = DefaultRetryStrategy::new;
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static RetryStrategyFactory retryStrategyFactory = DEFAULT_RETRY_STRATEGY_FACTORY;
@@ -93,6 +95,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
   }
 
   private final Step conflictStep;
+  @SuppressWarnings("rawtypes")
   private RequestStep previousStep = null;
 
   /** Constructor specifying no next step. */
@@ -135,7 +138,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
     }
   }
 
-  public final void setPrevious(RequestStep previousStep) {
+  public final void setPrevious(@SuppressWarnings("rawtypes") RequestStep previousStep) {
     this.previousStep = previousStep;
   }
 
@@ -159,7 +162,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
    * @return Next action for list continue
    */
   protected final Result doContinueListOrNext(KubernetesApiResponse<T> callResponse, Packet packet) {
-    return doContinueListOrNext(callResponse, packet, getNext());
+    return doContinueListOrNext(callResponse, packet, this::getNext);
   }
 
   /**
@@ -168,10 +171,11 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
    *
    * @param callResponse Call response
    * @param packet Packet
-   * @param next Next step, if no continuation
+   * @param next Supplier of next step, if no continuation
    * @return Next action for list continue
    */
-  protected final Result doContinueListOrNext(KubernetesApiResponse<T> callResponse, Packet packet, Step next) {
+  protected final Result doContinueListOrNext(
+      KubernetesApiResponse<T> callResponse, Packet packet, Supplier<Step> next) {
     String cont = accessContinue(callResponse.getObject());
     if (cont != null) {
       packet.put(CONTINUE, cont);
@@ -179,7 +183,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
       // the next window of data.
       return resetRetryStrategyAndReinvokeRequest(packet);
     }
-    return doNext(next, packet);
+    return doNext(next.get(), packet);
   }
 
   private void addDomainFailureStatus(Packet packet, V1Status status) {
@@ -190,7 +194,14 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
 
   private void updateFailureStatus(
       @Nonnull DomainResource domain, V1Status status) {
-    DomainCondition condition = new DomainCondition(FAILED).withReason(KUBERNETES)
+    DomainFailureReason reason = KUBERNETES;
+    if (status != null) {
+      LOGGER.fine("updateFailureStatus: " + status);
+      if (Integer.valueOf(HTTP_UNAVAILABLE).equals(status.getCode())) {
+        reason = KUBERNETES_NETWORK_EXCEPTION;
+      }
+    }
+    DomainCondition condition = new DomainCondition(FAILED).withReason(reason)
         .withMessage(status.toString());
     addFailureStatus(domain, condition);
   }
@@ -289,7 +300,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
     } catch (ApiException ae) {
       return doTerminate(ae, packet);
     }
-    return doEnd(packet);
+    return doEnd();
   }
 
   /**
@@ -324,6 +335,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
       return null;
     }
 
+    @Override
     public void reset() {
       this.retryCount = 0;
     }

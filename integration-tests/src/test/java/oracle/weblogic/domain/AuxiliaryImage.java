@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -80,7 +80,7 @@ public class AuxiliaryImage {
             .orElse(AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
   }
 
-  public void setSourceWDTInstallHome() {
+  public void setSourceWDTInstallHome(String sourceWDTInstallHome) {
     this.sourceWDTInstallHome = sourceWDTInstallHome;
   }
 

@@ -54,12 +54,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-arm")
 @Tag("olcne-mrg")
 @Tag("oke-parallel")
+@Tag("gate")
 class ItIstioProductionSecureMode {
 
   private static String opNamespace = null;
@@ -78,7 +78,7 @@ class ItIstioProductionSecureMode {
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
   */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -249,7 +249,7 @@ class ItIstioProductionSecureMode {
                          .configMap(configmapName)
                          .onlineUpdate(new OnlineUpdate().enabled(true))
                          .runtimeEncryptionSecret(encryptionSecretName))
-            .introspectorJobActiveDeadlineSeconds(300L)));
+            .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return domain;
   }

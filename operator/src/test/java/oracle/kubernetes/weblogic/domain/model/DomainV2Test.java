@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
@@ -76,7 +77,7 @@ class DomainV2Test extends DomainTestBase {
   public static final String LIVENESS_PROBE_CUSTOM_SCRIPT = "/u01/customLiveness.sh";
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     configureDomain(domain);
   }
 
@@ -629,6 +630,26 @@ class DomainV2Test extends DomainTestBase {
                 .seLinuxOptions(new V1SELinuxOptions().level("server").role("slave")));
 
     configureAdminServer().withPodSecurityContext(new V1PodSecurityContext().runAsNonRoot(false));
+  }
+
+  @Test
+  void whenDefaultContainerSecurityContextConfiguredOnManagedServer() {
+    V1SecurityContext ms1ContainerSecSpec =
+            info.getServer(SERVER1, CLUSTER_NAME).getContainerSecurityContext();
+
+    assertThat(ms1ContainerSecSpec.getRunAsNonRoot(), is(true));
+    assertThat(ms1ContainerSecSpec.getPrivileged(), is(false));
+    assertThat(ms1ContainerSecSpec.getAllowPrivilegeEscalation(), is(false));
+    assertThat(ms1ContainerSecSpec.getCapabilities().getDrop(), contains("ALL"));
+  }
+
+  @Test
+  void whenPodSecurityContextConfiguredNoDefaultContainerSecurityContextOnManagedServer() {
+    configureDomainWithPodSecurityContext(domain);
+    V1SecurityContext ms1ContainerSecSpec =
+            info.getServer(SERVER1, CLUSTER_NAME).getContainerSecurityContext();
+
+    assertThat(ms1ContainerSecSpec, nullValue());
   }
 
   @Test
@@ -1389,9 +1410,7 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
-    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
-    DomainResource domain = (DomainResource) resources.get(0);
+  void whenDomain3ReadFromYaml_NoRestartVersion() {
     final EffectiveServerSpec clusteredServer = info.getServer("anyServer", "anyCluster");
     final EffectiveServerSpec nonClusteredServer = info.getServer("anyServer", null);
     assertThat(clusteredServer.getDomainRestartVersion(), nullValue());
@@ -1788,7 +1807,7 @@ class DomainV2Test extends DomainTestBase {
         .spec(new PersistentVolumeClaimSpec()
             .volumeName("test-pv")
             .storageClassName("oke-pv")
-            .resources(new V1ResourceRequirements()
+            .resources(new V1VolumeResourceRequirements()
                 .requests(Collections.singletonMap("storage", new Quantity("50Gi")))));
   }
 

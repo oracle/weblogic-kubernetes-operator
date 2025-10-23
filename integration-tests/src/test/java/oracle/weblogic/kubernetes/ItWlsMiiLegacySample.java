@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import oracle.weblogic.kubernetes.actions.impl.UniqueName;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -17,7 +18,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -50,7 +50,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.backupReports;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.restoreReports;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -62,7 +64,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test and verify model in image WLS domain sample in legacy mode.
  * Test creates the model-in-image domain image and use that image to start the domain.
  */
-@DisplayName("test model in image WLS domain sample in legacy mode")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")
@@ -85,7 +86,7 @@ class ItWlsMiiLegacySample {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -173,8 +174,10 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(1)
-  public void testInstallOperator() {
+  void testInstallOperator() {
+    String backupReports = backupReports(UniqueName.uniqueName(this.getClass().getSimpleName()));
     execTestScriptAndAssertSuccess("-oper", "Failed to run -oper");
+    restoreReports(backupReports);
   }
 
   /**
@@ -182,7 +185,7 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(2)
-  public void testInstallTraefik() {
+  void testInstallTraefik() {
     
     if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("skip installing  Traefik in KIND and podman environment");
@@ -197,7 +200,7 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(3)
-  public void testInitialImage() {
+  void testInitialImage() {
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
     execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image");
@@ -215,7 +218,7 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(4)
-  public void testInitialMain() {
+  void testInitialMain() {
     // load the base image to kind if using kind cluster
     if (KIND_REPO != null) {
       logger.info("loading image {0} to kind", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
@@ -230,7 +233,7 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(5)
-  public void testUpate1() {
+  void testUpdate1() {
     execTestScriptAndAssertSuccess("-update1", "Failed to run -update1");
   }
 
@@ -239,7 +242,7 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(6)
-  public void testUpate2() {
+  void testUpdate2() {
     execTestScriptAndAssertSuccess("-update2", "Failed to run -update2");
   }
 
@@ -248,7 +251,7 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(7)
-  public void testUpate3() {
+  void testUpdate3() {
     execTestScriptAndAssertSuccess("-update3-image", "Failed to run -update3-image");
 
     // load the image to kind if using kind cluster
@@ -266,7 +269,7 @@ class ItWlsMiiLegacySample {
    */
   @Test
   @Order(8)
-  public void testUpate4() {
+  void testUpdate4() {
     execTestScriptAndAssertSuccess("-update4", "Failed to run -update4");
   }
 
@@ -312,7 +315,7 @@ class ItWlsMiiLegacySample {
    * Uninstall Traefik.
    */
   @AfterAll
-  public static void tearDownAll() {
+  static void tearDownAll() {
     logger = getLogger();
     // uninstall traefik
     if (traefikNamespace != null) {

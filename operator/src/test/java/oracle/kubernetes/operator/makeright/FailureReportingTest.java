@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
@@ -191,6 +191,11 @@ class FailureReportingTest {
     executeMakeRight((String) null);
   }
 
+  private void updateDomain() {
+    removeCredentialsSecret();
+    domain.getMetadata().setCreationTimestamp(SystemClock.now().minusSeconds(20));
+  }
+
   private void removeCredentialsSecret() {
     DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
     commonConfigurator.withWebLogicCredentialsSecret("no-such-secret");
@@ -255,7 +260,7 @@ class FailureReportingTest {
   }
 
   @ParameterizedTest
-  @EnumSource(TestCase.class)   // todo ensure no retry message for fatal introspection error
+  @EnumSource(TestCase.class)
   void whenFailureReported_domainSummaryMessageIncludesRetryTime(TestCase testCase) {
     final OffsetDateTime makeRightTime = SystemClock.now();
     testCase.getMutator().accept(this);
@@ -283,16 +288,14 @@ class FailureReportingTest {
 
     executeMakeRight();
 
-    assertThat(testSupport, hasEvent("Failed").withMessageContaining(testCase.getExpectedMessage()));
+    assertThat(testSupport, hasEvent("Failed").withNoteContaining(testCase.getExpectedMessage()));
   }
-
-  // todo what about the retry message for two retryable failures, after the first is fixed, and the second remains?
 
   enum TestCase {
     DOMAIN_VALIDATION_FAILURE {
       @Override
       Consumer<FailureReportingTest> getMutator() {
-        return FailureReportingTest::removeCredentialsSecret;
+        return FailureReportingTest::updateDomain;
       }
 
       @Override

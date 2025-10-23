@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -34,8 +34,8 @@ import io.kubernetes.client.common.KubernetesType;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.JSON;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
@@ -155,7 +155,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(CLUSTER, ClusterResource.class, this::createClusterList).withStatusSubresource();
     supportNamespaced(DOMAIN, DomainResource.class, this::createDomainList).withStatusSubresource();
-    supportNamespaced(EVENT, CoreV1Event.class, this::createEventList);
+    supportNamespaced(EVENT, EventsV1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, RequestBuilder.StringObject.class);
@@ -215,8 +215,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new DomainList().withMetadata(createListMeta()).withItems(items);
   }
 
-  private CoreV1EventList createEventList(List<CoreV1Event> items) {
-    return new CoreV1EventList().metadata(createListMeta()).items(items);
+  private EventsV1EventList createEventList(List<EventsV1Event> items) {
+    return new EventsV1EventList().metadata(createListMeta()).items(items);
   }
 
   private V1PersistentVolumeList createPvList(List<V1PersistentVolume> items) {
@@ -389,7 +389,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public void deleteNamespace(String namespaceName) {
     repositories.get(NAMESPACE).data.remove(namespaceName);
     repositories.values().stream()
-          .filter(r -> r instanceof NamespacedDataRepository)
+          .filter(NamespacedDataRepository.class::isInstance)
           .forEach(r -> ((NamespacedDataRepository<?>) r).deleteNamespace(namespaceName));
   }
 
@@ -1031,7 +1031,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return data.values().stream()
           .filter(withFields(fieldSelector))
           .filter(withLabels(labelSelectors))
-          .collect(Collectors.toList());
+          .collect(Collectors.toCollection(ArrayList::new));
     }
 
     List<T> getResources() {
@@ -1278,6 +1278,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       super(resourceType);
     }
 
+    @Override
     T createResource(String namespace, T resource) {
       T existing = data.putIfAbsent(NAME, resource);
       if (existing != null) {
@@ -1416,17 +1417,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return null;
     }
 
-    private boolean isDeleteCollection() {
-      return resourceType.endsWith("Collection");
-    }
-
     private VersionInfo getVersionInfo() {
       return versionInfo;
-    }
-
-    private void selectDeleteCollectionOperation() {
-      resourceType = resourceType.substring(0, resourceType.indexOf("Collection"));
-      operation = Operation.deleteCollection;
     }
 
     private KubernetesApiResponse<D> execute() {

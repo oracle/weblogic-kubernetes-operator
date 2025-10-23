@@ -53,11 +53,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The test class verifies that a new dynamic cluster added by using an online WLST script
  * is not considered as a configured cluster and server in the newly added dynamic cluster is started successfully.
  */
-@DisplayName("Verify that server in newly added dynamic cluster is started successfully")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
-@Tag("oke-gate")
+@Tag("oke-parallel")
 
 class ItAddNewDynamicClusterUsingWlst {
 
@@ -84,7 +83,7 @@ class ItAddNewDynamicClusterUsingWlst {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace

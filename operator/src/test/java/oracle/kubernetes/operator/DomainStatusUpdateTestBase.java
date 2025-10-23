@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -20,7 +20,7 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
@@ -236,6 +236,22 @@ abstract class DomainStatusUpdateTestBase {
 
   private V1Pod getPod(String serverName) {
     return info.getServerPod(serverName);
+  }
+
+  private void setPodUnschedulable(String serverName) {
+    V1Pod pod = getPod(serverName);
+    V1PodStatus status = pod.getStatus();
+    if (status == null) {
+      status = new V1PodStatus();
+    }
+    pod.setStatus(status
+            .startTime(SystemClock.now())
+            .phase("Pending")
+            .addConditionsItem(new V1PodCondition().type("PodScheduled").status("False").reason("Unschedulable")
+                    .message("0/1 nodes are available: 1 node(s) didn't match pod topology"
+                            + " spread constraints (missing required label). preemption: 0/1 nodes are available: "
+                            + "1 Preemption is not helpful for scheduling.."))
+    );
   }
 
   @Test
@@ -580,8 +596,8 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenAnyServerHasRollNeededLabel_establishCompletedConditionFalse() {
     defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
-    addRollNeededLabel("ms1");
-    addRollNeededLabel("ms2");
+    addRollNeededAnnotation("ms1");
+    addRollNeededAnnotation("ms2");
 
     updateDomainStatus();
 
@@ -592,8 +608,8 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @SuppressWarnings("ConstantConditions")
-  private void addRollNeededLabel(String serverName) {
-    info.getServerPod(serverName).getMetadata().getLabels().put(LabelConstants.TO_BE_ROLLED_LABEL, "true");
+  private void addRollNeededAnnotation(String serverName) {
+    info.getServerPod(serverName).getMetadata().putAnnotationsItem(LabelConstants.TO_BE_ROLLED_LABEL, "true");
   }
 
   @Test
@@ -656,7 +672,7 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(testSupport, not(hasEvent(DOMAIN_ROLL_COMPLETED_EVENT)));
   }
 
-  private List<CoreV1Event> getEvents() {
+  private List<EventsV1Event> getEvents() {
     return testSupport.getResources(EVENT);
   }
 
@@ -698,7 +714,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withMessageContaining(UID));
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withNoteContaining(UID));
   }
 
   @Test
@@ -722,7 +738,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withMessageContaining(UID));
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withNoteContaining(UID));
   }
 
   @Test
@@ -824,7 +840,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedString(SERVER_POD_EVENT_ERROR)));
+        .withNoteContaining(getLocalizedString(SERVER_POD_EVENT_ERROR)));
   }
 
   private void failPod(String serverName) {
@@ -1032,7 +1048,19 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
   }
 
-  // todo remove server pod failures when OK
+  @Test
+  void whenPodIsUnschedulable_reportServerPodFailure() {
+    defineScenario()
+            .withServerState("server1", new V1ContainerStateWaiting().reason(null))
+            .build();
+    setPodUnschedulable("server1");
+
+    SystemClockTestSupport.increment(21);
+    updateDomainStatus();
+    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(SERVER_POD)
+            .withMessageContaining("One or more pods in the domain cannot be scheduled."));
+  }
+
 
   @Test
   void whenNoDynamicClusters_doNotAddReplicasTooHighFailure() {
@@ -1100,8 +1128,6 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE)
         .withMessageContaining(LOGGER.formatMessage(CLUSTER_NOT_READY, "cluster1", 19, 4)));
   }
-
-  // todo add hasCondition matcher for cluster status
 
   @Test
   void whenReplicaCountWithinMaxUnavailableOfReplicas_establishClusterAvailableConditionTrue() {
@@ -1485,7 +1511,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().sorted(this::compareEventTimes).collect(Collectors.toList()),
+    assertThat(getEvents().stream().sorted(this::compareEventTimes).toList(),
         containsInRelativeOrder(List.of(
               eventWithReason(DOMAIN_AVAILABLE_EVENT),
               eventWithReason(DOMAIN_ROLL_COMPLETED_EVENT),
@@ -1517,22 +1543,22 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private void setUniqueCreationTimestamp(Object event) {
-    ((CoreV1Event) event).getMetadata().creationTimestamp(SystemClock.now());
+    ((EventsV1Event) event).getMetadata().creationTimestamp(SystemClock.now());
     SystemClockTestSupport.increment();
   }
 
-  private int compareEventTimes(CoreV1Event event1, CoreV1Event event2) {
+  private int compareEventTimes(EventsV1Event event1, EventsV1Event event2) {
     return getCreationStamp(event1).compareTo(getCreationStamp(event2));
   }
 
-  private OffsetDateTime getCreationStamp(CoreV1Event event) {
+  private OffsetDateTime getCreationStamp(EventsV1Event event) {
     return Optional.ofNullable(event)
-        .map(CoreV1Event::getMetadata)
+        .map(EventsV1Event::getMetadata)
         .map(V1ObjectMeta::getCreationTimestamp)
         .orElse(OffsetDateTime.MIN);
   }
 
-  static class EventMatcher extends TypeSafeDiagnosingMatcher<CoreV1Event> {
+  static class EventMatcher extends TypeSafeDiagnosingMatcher<EventsV1Event> {
     private final String expectedReason;
 
     private EventMatcher(String expectedReason) {
@@ -1544,7 +1570,7 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Override
-    protected boolean matchesSafely(CoreV1Event coreV1Event, Description description) {
+    protected boolean matchesSafely(EventsV1Event coreV1Event, Description description) {
       if (expectedReason.equals(coreV1Event.getReason())) {
         return true;
       } else {
@@ -1943,6 +1969,7 @@ abstract class DomainStatusUpdateTestBase {
 
       @Override
       public void setInspectionRun() {
+        // no-op
       }
 
       @Override
@@ -1952,11 +1979,12 @@ abstract class DomainStatusUpdateTestBase {
 
       @Override
       public void setLiveInfo(@NotNull DomainPresenceInfo info) {
-
+        // no-op
       }
 
       @Override
       public void clear() {
+        // no-op
       }
 
       @Override
@@ -1966,6 +1994,7 @@ abstract class DomainStatusUpdateTestBase {
 
       @Override
       public void execute() {
+        // no-op
       }
 
       @NotNull
@@ -2196,7 +2225,7 @@ abstract class DomainStatusUpdateTestBase {
             .filter(c -> !isAdminServer(c))
             .filter(this::isLive)
             .map(config -> new DomainPresenceInfo.ServerStartupInfo(config, "", null))
-            .collect(Collectors.toList());
+            .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private boolean isLive(WlsServerConfig serverConfig) {

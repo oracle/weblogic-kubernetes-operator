@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -17,7 +17,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,12 +48,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * The tests checks for the following events in the domain name space.
  * NamespaceWatchingStarted, and NamespaceWatchingStopped.
  */
-@DisplayName("Verify the Kubernetes events for watching namespace")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("oke-arm")
 @Tag("oke-parallel")
+@Tag("okd-wls-mrg")
 class ItKubernetesNameSpaceWatchingEvents {
 
   private static final String newNSWithoutLabels = "ns-newnamespace1";
@@ -79,7 +78,7 @@ class ItKubernetesNameSpaceWatchingEvents {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -105,7 +104,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
-    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
@@ -347,7 +346,7 @@ class ItKubernetesNameSpaceWatchingEvents {
    * @throws ApiException if Kubernetes API calls fail
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       if (Namespace.exists(newNSWithLabels)) {
         deleteNamespace(newNSWithLabels);

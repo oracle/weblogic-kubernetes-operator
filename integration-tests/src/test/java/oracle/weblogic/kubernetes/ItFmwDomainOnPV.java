@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
@@ -66,7 +67,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
+import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
@@ -91,10 +92,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test to create a FMW domain in persistent volume with new simplified feature.
  */
-@DisplayName("Test to create a FMW domain in persistent volume with new simplified feature")
 @IntegrationTest
-@Tag("kind-parallel")
-@Tag("oke-sequential")
+@Tag("kind-sequential")
+@Tag("oke-weekly-sequential")
 @Tag("okd-fmw-cert")
 @Tag("olcne-sequential")
 class ItFmwDomainOnPV {
@@ -102,8 +102,8 @@ class ItFmwDomainOnPV {
   private static String domainNamespace = null;
   private static String dbNamespace = null;
 
-  private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
+  private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static final String storageClassName = "fmw-domain-storage-class";
@@ -115,7 +115,6 @@ class ItFmwDomainOnPV {
   private static final int replicaCount = 2;
 
   private final String fmwModelFilePrefix = "model-fmwdomain-onpv-simplified";
-  private final String wlsModelFilePrefix = "model-wlsdomain-onpv-simplified";
 
   /**
    * Assigns unique namespaces for DB, operator and domain.
@@ -123,13 +122,16 @@ class ItFmwDomainOnPV {
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique dbNamespace
     logger.info("Assign a unique namespace for DB");
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
+    final int dbListenerPort = getNextFreePort();
+    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
+
 
     // get a new unique opNamespace
     logger.info("Assign a unique namespace for operator");
@@ -143,12 +145,19 @@ class ItFmwDomainOnPV {
 
     DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
 
-    //install Oracle Database Operator
-    String dbName = "fmwdomainonpv1" + "my-oracle-db";
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
+    if (OKD || OCNE) {
+      logger.info("Start DB in namespace: {0}, dbListenerPort: {1}, dbUrl: {2}, dbImage: {3}",
+          dbNamespace, dbListenerPort, dbUrl, DB_IMAGE_TO_USE_IN_SPEC);
+      assertDoesNotThrow(() -> startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), dbNamespace, dbListenerPort),
+          String.format("Failed to start Oracle DB in the namespace %s with dbUrl %s, dbListenerPost %s",
+              dbNamespace, dbUrl, dbListenerPort));
+    } else {
+      String dbName = "fmwdomainonpv1" + "my-oracle-db";
+      logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+      createBaseRepoSecret(dbNamespace);
+      dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
-    logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
-    dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
+    }
 
     // install operator and verify its running in ready state
     HelmParams opHelmParams =
@@ -172,7 +181,6 @@ class ItFmwDomainOnPV {
   @Test
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Create a FMW domain on PV using simplified feature, Operator creates PV/PVC/RCU/Domain")
-  @Tag("gate")
   void testOperatorCreatesPvPvcRcuDomain() {
     String domainUid = "jrfonpv-simplified";
     final String pvName = getUniqueName(domainUid + "-pv-");

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -30,7 +30,6 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -48,9 +47,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -104,7 +100,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests to create domain in persistent volume using WLST.
  */
-@DisplayName("Verify istio enabled WebLogic domain in domainhome-on-pv model")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
@@ -137,7 +132,7 @@ class ItIstioDomainInPV  {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
@@ -233,17 +228,8 @@ class ItIstioDomainInPV  {
     // Use the WebLogic(12.2.1.4) Base Image with Japanese Locale
     // Add the LANG environment variable to ja_JP.utf8
     // Currently LOCALE testing is disabled till we have 1412 image with 
-    // Japanease Locale 
-    String imageLocation;
-    if (KIND_REPO != null) {
-      imageLocation = KIND_REPO + "test-images/weblogic:" + LOCALE_IMAGE_TAG;
-    } else {
-      imageLocation = LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG;
-    }
-    // remove the below line when 141200 lacale image is available 
-    // and modify serverPod env value("en_US.UTF-8")) to ja_JP.utf8
-    // uncomment assertTrue(matchPodLog(),"LANG is not set to ja_JP.utf8");
-    imageLocation = WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+    // Japanese Locale
+    String imageLocation = WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 
     // Enable istio in domain custom resource configuration object.
     // Add T3Channel Service with port assigned to Istio TCP ingress port.
@@ -309,8 +295,6 @@ class ItIstioDomainInPV  {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
-    // Make sure Japanese character is found in server pod log
-    // assertTrue(matchPodLog(),"LANG is not set to ja_JP.utf8");
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
@@ -319,6 +303,7 @@ class ItIstioDomainInPV  {
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("MANAGED_SERVER_PORT", "8001");    
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
@@ -329,9 +314,6 @@ class ItIstioDomainInPV  {
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
-    
     String host;
     int istioIngressPort;
     if (TestConstants.KIND_CLUSTER
@@ -463,7 +445,7 @@ class ItIstioDomainInPV  {
    * @throws ApiException if Kubernetes API call fails
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
+  void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       if (assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace).call())) {
         // delete pvc
@@ -475,28 +457,6 @@ class ItIstioDomainInPV  {
       }
     }
   }
-
-  // Looks for some Japanese Character in Server Pod Logs
-  private boolean matchPodLog() {
-    String toMatch = "起動しました";
-    // toMatch = "起起起モードで起動しました"; test fails
-    String podLog = null;
-    try {
-      podLog = Kubernetes.getPodLog("istio-dpv-managed-1", domainNamespace, "weblogic-server");
-      logger.info("{0}", podLog);
-      logger.info("Looking for string [{0}] in Pod log", toMatch);
-      if (podLog.contains(toMatch))  {
-        logger.info("Found the string [{0}] in Pod log", toMatch);
-        return true;
-      } else {
-        logger.info("Matching string  [{0}] Not found in Pod log", toMatch);
-        return false;
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      return false;
-    }
-  } 
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.

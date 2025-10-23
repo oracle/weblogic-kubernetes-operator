@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.logging;
@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
-import io.kubernetes.client.openapi.JSON;
-
 /**
  * A factory to create a Logger based on the LoggingFacade.
  * */
@@ -17,8 +15,6 @@ public class LoggingFactory {
 
   // map from resourceBundleName to facade
   private static final Map<String, LoggingFacade> facade = new HashMap<String, LoggingFacade>();
-
-  private static JSON json = new JSON();
 
   private LoggingFactory() {
     // hide implicit public constructor

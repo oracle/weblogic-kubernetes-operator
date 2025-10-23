@@ -1,14 +1,16 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.WDTArchiveHelper;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -43,7 +45,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
@@ -70,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
@@ -99,7 +99,7 @@ class ItMiiCreateAuxImageWithImageTool {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -126,10 +126,18 @@ class ItMiiCreateAuxImageWithImageTool {
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
 
     // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-            .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+    try {
+      // createArchive app
+      assertTrue(WDTArchiveHelper
+          .withParams(defaultAppParams()
+              .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
+              .appName(MII_BASIC_APP_NAME))
+          .createArchive(),
+          String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+    } catch (IOException ex) {
+      getLogger().severe(ex.getLocalizedMessage());
+    }
+
   }
 
   /**
@@ -211,7 +219,6 @@ class ItMiiCreateAuxImageWithImageTool {
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with customized options")
-  @Tag("gate")
   @DisabledIfEnvironmentVariable(named = "ARM", matches = "true")
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
@@ -500,7 +507,7 @@ class ItMiiCreateAuxImageWithImageTool {
   /**
    * Cleanup images.
    */
-  public void tearDownAll() {
+  void tearDownAll() {
     if (!SKIP_CLEANUP) {
       // delete images
       for (int i = 1; i < 4; i++) {

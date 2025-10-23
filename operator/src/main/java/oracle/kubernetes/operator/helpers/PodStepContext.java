@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -38,12 +38,14 @@ import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ProbeBuilder;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
@@ -58,6 +60,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
+import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.RequestBuilder;
@@ -66,6 +69,7 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
+import oracle.kubernetes.operator.steps.ShutdownManagedServerStep;
 import oracle.kubernetes.operator.tuning.PodTuning;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -86,6 +90,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_OLD_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
@@ -94,7 +100,6 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFai
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTER_OBSERVED_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAIN_OBSERVED_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -498,14 +503,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private void addLegacyPrometheusAnnotationsFrom31(V1Pod pod) {
-    AnnotationHelper.annotateForPrometheus(pod.getMetadata(), WLS_EXPORTER, getMetricsPort());
-  }
-
-  private Integer getMetricsPort() {
-    return getListenPort() != null ? getListenPort() : getSslListenPort();
-  }
-
   private String getLabel(V1Pod currentPod, String key) {
     return currentPod.getMetadata().getLabels().get(key);
   }
@@ -736,16 +733,21 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
 
+    if (isReadOnlyRootFileSystem()) {
+      volumes.add(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
+    }
     return volumes;
   }
 
   @Override
   protected V1Container createPrimaryContainer() {
     final PodTuning podTuning = TuningParameters.getInstance().getPodTuning();
+    Pair<V1Probe, V1Probe> probes = createLivenessAndStartupProbe(podTuning);
     V1Container v1Container = super.createPrimaryContainer()
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
-            .livenessProbe(createLivenessProbe(podTuning));
+            .livenessProbe(probes.left())
+            .startupProbe(probes.right());
 
     if (!mockWls()) {
       v1Container.readinessProbe(createReadinessProbe(podTuning));
@@ -774,10 +776,13 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
+    boolean isReadOnlyRootFileSystem = isReadOnlyRootFileSystem();
     Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false));
+        .ifPresent(fluentd -> addFluentdContainer(getServerSpec(), fluentd, containers, getDomain(), false,
+                isReadOnlyRootFileSystem));
     Optional.ofNullable(getDomain().getFluentbitSpecification())
-            .ifPresent(fluentbit -> addFluentbitContainer(fluentbit, containers, getDomain(), false));
+            .ifPresent(fluentbit -> addFluentbitContainer(getServerSpec(), fluentbit, containers, getDomain(),
+                    false, isReadOnlyRootFileSystem));
     return containers;
   }
 
@@ -824,7 +829,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   /**
-   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
+   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh.
    * @param vars a list to which new variables are to be added
    */
   void addStartupEnvVars(List<V1EnvVar> vars) {
@@ -836,7 +841,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVarIfTrue(isAdminServerProtocolChannelSecure(), vars, ServerEnvVars.ADMIN_SERVER_PORT_SECURE);
     addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
-    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
+    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
     if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
       addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());
@@ -867,6 +872,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     });
   }
 
+  String getNodeManagerHome() {
+    if (isReadOnlyRootFileSystem()) {
+      return NODEMGR_HOME_READONLY_ROOT;
+    }
+    return NODEMGR_HOME;
+  }
 
   private String getDomainHome() {
     return getDomain().getDomainHome();
@@ -951,6 +962,11 @@ public abstract class PodStepContext extends BasePodStepContext {
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
   }
 
+  private Pair<V1Probe, V1Probe> createLivenessAndStartupProbe(PodTuning tuning) {
+    V1Probe livenessProbe = createLivenessProbe(tuning);
+    return new Pair<>(livenessProbe, createStartupProbe(livenessProbe, tuning));
+  }
+
   private V1Probe createLivenessProbe(PodTuning tuning) {
     V1Probe livenessProbe = getLivenessProbe();
 
@@ -971,21 +987,12 @@ public abstract class PodStepContext extends BasePodStepContext {
       livenessProbe.setSuccessThreshold(tuning.getLivenessProbeSuccessThreshold());
     }
 
-    try {
-      V1HTTPGetAction httpGetAction = livenessProbe.getHttpGet();
-      if (httpGetAction != null) {
-        if (httpGetAction.getPort() == null) {
-          httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
-        }
-        if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
-          httpGetAction.setScheme("HTTPS");
-        }
-      } else if (livenessProbe.getExec() == null
-              && livenessProbe.getTcpSocket() == null && livenessProbe.getGrpc() == null) {
-        livenessProbe.setExec(execAction(LIVENESS_PROBE));
-      }
-    } catch (Exception e) {
-      // do nothing
+    V1HTTPGetAction httpGetAction = livenessProbe.getHttpGet();
+    if (httpGetAction != null) {
+      initializeHttpGetAction(httpGetAction);
+    } else if (livenessProbe.getExec() == null
+            && livenessProbe.getTcpSocket() == null && livenessProbe.getGrpc() == null) {
+      livenessProbe.setExec(execAction(LIVENESS_PROBE));
     }
 
     return livenessProbe;
@@ -994,6 +1001,54 @@ public abstract class PodStepContext extends BasePodStepContext {
   private V1Probe getLivenessProbe() {
     return Optional.ofNullable(getServerSpec().getLivenessProbe())
         .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
+  }
+
+  private V1Probe createStartupProbe(V1Probe livenessProbe, PodTuning tuning) {
+    V1Probe startupProbe = getStartupProbe();
+
+    if (startupProbe.getInitialDelaySeconds() == null && tuning.getStartupProbeInitialDelaySeconds() > 0) {
+      startupProbe.setInitialDelaySeconds(tuning.getStartupProbeInitialDelaySeconds());
+    }
+    if (startupProbe.getTimeoutSeconds() == null) {
+      startupProbe.setTimeoutSeconds(tuning.getStartupProbeTimeoutSeconds());
+    }
+    if (startupProbe.getPeriodSeconds() == null) {
+      startupProbe.setPeriodSeconds(tuning.getStartupProbePeriodSeconds());
+    }
+    if (startupProbe.getFailureThreshold() == null) {
+      startupProbe.setFailureThreshold(tuning.getStartupProbeFailureThreshold());
+    }
+    if (startupProbe.getSuccessThreshold() == null
+            && tuning.getStartupProbeSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+      startupProbe.setSuccessThreshold(tuning.getStartupProbeSuccessThreshold());
+    }
+
+    V1HTTPGetAction httpGetAction = startupProbe.getHttpGet();
+    if (httpGetAction != null) {
+      initializeHttpGetAction(httpGetAction);
+    } else if (startupProbe.getExec() == null
+            && startupProbe.getTcpSocket() == null && startupProbe.getGrpc() == null) {
+      startupProbe.setHttpGet(livenessProbe.getHttpGet());
+      startupProbe.setExec(livenessProbe.getExec());
+      startupProbe.setTcpSocket(livenessProbe.getTcpSocket());
+      startupProbe.setGrpc(livenessProbe.getGrpc());
+    }
+
+    return startupProbe;
+  }
+
+  private V1Probe getStartupProbe() {
+    return Optional.ofNullable(getServerSpec().getStartupProbe())
+        .map(V1ProbeBuilder::new).map(V1ProbeBuilder::build).orElse(new V1Probe());
+  }
+
+  private void initializeHttpGetAction(@Nonnull V1HTTPGetAction httpGetAction) {
+    if (httpGetAction.getPort() == null) {
+      httpGetAction.setPort(new IntOrString(getLocalAdminProtocolChannelPort()));
+    }
+    if (httpGetAction.getScheme() == null && isLocalAdminProtocolChannelSecure()) {
+      httpGetAction.setScheme("HTTPS");
+    }
   }
 
   private boolean mockWls() {
@@ -1058,24 +1113,26 @@ public abstract class PodStepContext extends BasePodStepContext {
       this.message = message;
     }
 
-    private ResponseStep<V1Pod> deleteResponse(V1Pod pod, Step next) {
-      return new DeleteResponseStep(pod, next);
+    private ResponseStep<V1Pod> replaceResponse(Step next) {
+      return new ReplacePodResponseStep(next);
     }
 
     /**
-     * Deletes the specified pod.
+     * Creates the specified replacement pod and records it.
      *
-     * @param pod the existing pod
-     * @param next the next step to perform after the pod deletion is complete.
+     * @param next the next step to perform after the pod creation is complete.
      * @return a step to be scheduled.
      */
-    private Step deletePod(V1Pod pod, Step next) {
-      return RequestBuilder.POD.delete(getNamespace(), getPodName(), deleteResponse(pod, next));
+    private Step replacePod(Step next) {
+      return createPodAsync(replaceResponse(next));
     }
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      return doNext(createCyclePodEventStep(deletePod(pod, getNext())), packet);
+      String serverName = PodHelper.getServerName(pod);
+      return doNext(createCyclePodEventStep(
+          ShutdownManagedServerStep.createShutdownManagedServerStep(
+              PodHelper.deletePodStep(serverName, true, replacePod(getNext())), serverName, pod)), packet);
     }
 
     private Step createCyclePodEventStep(Step next) {
@@ -1109,9 +1166,13 @@ public abstract class PodStepContext extends BasePodStepContext {
           patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
       KubernetesUtils.addPatches(
           patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getNonHashedPodAnnotations());
+
+      String patch = patchBuilder.build().toString();
+      patch = updateForDeepSubstitution(currentPod.getSpec(), patch);
+
       return RequestBuilder.POD.patch(getNamespace(), getPodName(),
           V1Patch.PATCH_FORMAT_JSON_PATCH,
-          new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+          new V1Patch(patch), patchResponse(next));
     }
 
     private Step patchCurrentPod(V1Pod currentPod, Step next) {
@@ -1127,61 +1188,17 @@ public abstract class PodStepContext extends BasePodStepContext {
       LOGGER.fine(getPodExistsMessageKey(), getDomainUid(), getServerName());
     }
 
-    private boolean hasLabel(V1Pod pod, String key) {
-      return pod.getMetadata().getLabels().containsKey(key);
-    }
-
-    private boolean isLegacyPod(V1Pod currentPod) {
-      return !hasLabel(currentPod, OPERATOR_VERSION);
-    }
-
     private boolean isPodFromRecentOperator(V1Pod currentPod) {
       return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
           .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isRecentOperator).orElse(false);
     }
 
-    private boolean isLegacyMiiPod(V1Pod currentPod) {
-      return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH);
-    }
-
-    private void setLabel(V1Pod currentPod, String key, String value) {
-      currentPod.getMetadata().putLabelsItem(key, value);
-    }
-
     @SuppressWarnings("SameParameterValue")
-    private void copyLabel(V1Pod fromPod, V1Pod toPod, String key) {
-      setLabel(toPod, key, getLabel(fromPod, key));
-    }
-
-    private String adjustedLegacyHash(V1Pod currentPod, Consumer<V1Pod> adjustment) {
+    private String adjustedHash(V1Pod currentPod, List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments) {
       V1Pod recipe = createPodRecipe();
-      adjustment.accept(recipe);
-
-      if (isLegacyMiiPod(currentPod)) {
-        copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
-      }
-
-      restoreAffinityContent(recipe, currentPod);
+      adjustments.forEach(adjustment -> adjustment.right().accept(recipe, currentPod));
 
       return AnnotationHelper.createHash(recipe);
-    }
-
-    private String adjustedHash(V1Pod currentPod, List<BiConsumer<V1Pod, V1Pod>> adjustments) {
-      V1Pod recipe = createPodRecipe();
-      adjustments.forEach(adjustment -> adjustment.accept(recipe, currentPod));
-
-      return AnnotationHelper.createHash(recipe);
-    }
-
-    private void addLegacyPrometheusAnnotationsFrom30(V1Pod pod) {
-      AnnotationHelper.annotateForPrometheus(pod.getMetadata(), WLS_EXPORTER, getOldMetricsPort());
-    }
-
-    private boolean canAdjustLegacyHashToMatch(V1Pod currentPod, String requiredHash) {
-      // Legacy pods could be created by operator version 3.0 or 3.1
-      return requiredHash.equals(adjustedLegacyHash(currentPod, this::addLegacyPrometheusAnnotationsFrom30))
-          || requiredHash.equals(
-              adjustedLegacyHash(currentPod, PodStepContext.this::addLegacyPrometheusAnnotationsFrom31));
     }
 
     private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
@@ -1251,6 +1268,13 @@ public abstract class PodStepContext extends BasePodStepContext {
       stream(podSpec.getContainers()).filter(c -> "monitoring-exporter".equals(c.getName()))
           .findFirst().flatMap(c -> stream(c.getPorts()).filter(p -> "metrics".equals(p.getName()))
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
+    }
+
+    private void restoreMetricsExporterSidecarJavaOpts(V1Pod recipe, V1Pod currentPod) {
+      V1PodSpec podSpec = recipe.getSpec();
+      stream(podSpec.getContainers()).filter(c -> "monitoring-exporter".equals(c.getName()))
+          .findFirst().flatMap(c -> stream(c.getEnv()).filter(p -> "JDK_JAVA_OPTIONS".equals(p.getName()))
+              .findFirst()).ifPresent(p -> p.setName("JAVA_OPTS"));
     }
 
     private void restoreLegacyIstioPortsConfig(V1Pod recipePod,  V1Pod currentPod) {
@@ -1361,31 +1385,64 @@ public abstract class PodStepContext extends BasePodStepContext {
           }));
     }
 
+    private void restoreSecurityContextEmpty(V1Pod recipe, V1Pod currentPod) {
+      if (PodSecurityHelper.getDefaultPodSecurityContext().equals(recipe.getSpec().getSecurityContext())) {
+        recipe.getSpec().setSecurityContext(new V1PodSecurityContext());
+      }
+      Optional.ofNullable(recipe.getSpec().getContainers())
+          .ifPresent(containers -> containers.forEach(container -> {
+            if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(container.getSecurityContext())) {
+              container.setSecurityContext(
+                  getContainerName().equals(container.getName()) ? new V1SecurityContext() : null);
+            }
+          }));
+    }
+
+    private void restoreSecurityContextEmptyInitContainer(V1Pod recipe, V1Pod currentPod) {
+      Optional.ofNullable(recipe.getSpec().getInitContainers())
+          .ifPresent(initContainers -> initContainers.forEach(initContainer -> {
+            if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(initContainer.getSecurityContext())) {
+              initContainer.setSecurityContext(isAuxiliaryContainer(initContainer) ? null : new V1SecurityContext());
+            }
+          }));
+    }
+
+    private void restoreNoStartupProbe(V1Pod recipe, V1Pod currentPod) {
+      Optional.ofNullable(recipe.getSpec().getContainers())
+          .ifPresent(containers ->
+            containers.forEach(container -> Optional.ofNullable(currentPod.getSpec().getContainers())
+              .flatMap(currentContainers -> currentContainers.stream()
+              .filter(cc -> cc.getName().equals(container.getName())).findFirst())
+                .ifPresent(match -> container.setStartupProbe(match.getStartupProbe()))));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
       // for each combination, start with pod recipe, apply all adjustments, and generate hash
       // return true if any adjusted hash matches required hash
-      List<BiConsumer<V1Pod, V1Pod>> adjustments = List.of(
-          this::restoreMetricsExporterSidecarPortTcpMetrics,
-          this::convertAuxImagesInitContainerVolumeAndMounts,
-          this::restoreLegacyIstioPortsConfig,
-          this::restoreAffinityContent,
-          this::restoreLogHomeLayoutEnvVar,
-          this::restoreFluentdVolume,
-          this::restoreSecurityContext);
+      List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments = List.of(
+          Pair.of("restoreMetricsExporterSidecarPortTcpMetrics", this::restoreMetricsExporterSidecarPortTcpMetrics),
+          Pair.of("restoreMetricsExporterSidecarJavaOpts", this::restoreMetricsExporterSidecarJavaOpts),
+          Pair.of("convertAuxImagesInitContainerVolumeAndMounts",
+              this::convertAuxImagesInitContainerVolumeAndMounts),
+          Pair.of("restoreLegacyIstioPortsConfig", this::restoreLegacyIstioPortsConfig),
+          Pair.of("restoreAffinityContent", this::restoreAffinityContent),
+          Pair.of("restoreLogHomeLayoutEnvVar", this::restoreLogHomeLayoutEnvVar),
+          Pair.of("restoreFluentdVolume", this::restoreFluentdVolume),
+          Pair.of("restoreSecurityContext", this::restoreSecurityContext),
+          Pair.of("restoreSecurityContextEmpty", this::restoreSecurityContextEmpty),
+          Pair.of("restoreSecurityContextEmptyInitContainer", this::restoreSecurityContextEmptyInitContainer),
+          Pair.of("restoreNoStartupProbe", this::restoreNoStartupProbe));
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-
-      return (isLegacyPod(currentPod)
-              && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
+      return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
           || (isPodFromRecentOperator(currentPod)
-              && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
-          || AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+            && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)));
     }
 
     private boolean canUseCurrentPod(V1Pod currentPod) {
@@ -1477,53 +1534,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class DeleteResponseStep extends ResponseStep<V1Pod> {
-    private final V1Pod pod;
-
-    DeleteResponseStep(V1Pod pod, Step next) {
-      super(next);
-      this.pod = pod;
-    }
-
-    @Override
-    protected String getDetail() {
-      return getServerName();
-    }
-
-    @Override
-    public Result onFailure(Packet packet, KubernetesApiResponse<V1Pod> callResponses) {
-      if (callResponses.getHttpStatusCode() == HTTP_NOT_FOUND) {
-        return onSuccess(packet, callResponses);
-      }
-      return super.onFailure(getConflictStep(), packet, callResponses);
-    }
-
-    private ResponseStep<V1Pod> replaceResponse(Step next) {
-      return new ReplacePodResponseStep(next);
-    }
-
-    /**
-     * Creates the specified replacement pod and records it.
-     *
-     * @param next the next step to perform after the pod creation is complete.
-     * @return a step to be scheduled.
-     */
-    private Step replacePod(Step next) {
-      return createPodAsync(replaceResponse(next));
-    }
-
-    @Override
-    public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponses) {
-      if (callResponses.getHttpStatusCode() == HTTP_NOT_FOUND) {
-        setRecordedPod(null);
-        return doNext(replacePod(getNext()), packet);
-      }
-
-      // requeue to wait for the pod to be deleted
-      return doRequeue(packet);
-    }
-  }
-
   private class ReplacePodResponseStep extends PatchPodResponseStep {
 
     ReplacePodResponseStep(Step next) {
@@ -1542,9 +1552,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1Pod> callResponse) {
       V1Pod pod = callResponse.getObject();
-      if (pod == null || !isPodReady(pod)) {
+      if (!isPodReady(pod)) {
         // requeue to wait for the pod to be ready
-        return doRequeue(packet);
+        return doRequeue();
       }
       processResponse(callResponse);
       return doNext(packet);
@@ -1654,15 +1664,21 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private V1Container createMonitoringExporterContainer() {
-      return new V1Container()
+      V1Container container = new V1Container()
             .name(EXPORTER_CONTAINER_NAME)
             .image(getDomain().getMonitoringExporterImage())
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
             .resources(getDomain().getMonitoringExporterResources())
-            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
-            .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
+            .securityContext(getServerSpec().getContainerSecurityContext())
+            .addEnvItem(new V1EnvVar().name("JDK_JAVA_OPTIONS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
                 .name("metrics").protocol("TCP").containerPort(getPort()));
+
+      if (isReadOnlyRootFileSystem()) {
+        container.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+      }
+
+      return container;
     }
 
     private String createJavaOptions() {

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -83,15 +83,21 @@ public abstract class Validator {
       return;
     }
 
-    List<String> list1 = getTokensWithCollection(mount1.getMountPath());
-    List<String> list2 = getTokensWithCollection(mount2.getMountPath());
-    for (int i = 0; i < Math.min(list1.size(), list2.size()); i++) {
-      if (!list1.get(i).equals(list2.get(i))) {
-        return;
+    if (spec.getDomainHome() != null) {
+      List<String> domainHomeTokens = getTokensWithCollection(spec.getDomainHome());
+      List<String> list1 = getTokensWithCollection(mount1.getMountPath());
+      List<String> list2 = getTokensWithCollection(mount2.getMountPath());
+      for (int i = 0; i < Math.min(list1.size(), list2.size()); i++) {
+        if (!list1.get(i).equals(list2.get(i))) {
+          return;
+        }
+      }
+      if (list1.getFirst().equals(domainHomeTokens.getFirst())
+          && list2.getFirst().equals(domainHomeTokens.getFirst())) {
+        failures.add(DomainValidationMessages.overlappingVolumeMountPath(mount1, mount2));
       }
     }
 
-    failures.add(DomainValidationMessages.overlappingVolumeMountPath(mount1, mount2));
   }
 
   private List<String> getTokensWithCollection(String str) {

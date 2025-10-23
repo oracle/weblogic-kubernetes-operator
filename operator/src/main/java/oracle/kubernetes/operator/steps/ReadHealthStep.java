@@ -106,7 +106,7 @@ public class ReadHealthStep extends Step {
 
     private HttpRequest createRequest() {
       LOGGER.finer("Create REST request to service URL: " + getRequestUrl());
-      return createRequestBuilder(getRequestUrl())
+      return createRequestBuilder(getRequestUrl(), HTTP_TIMEOUT_SECONDS)
             .POST(HttpRequest.BodyPublishers.ofString(getRetrieveHealthSearchPayload()))
             .build();
     }
@@ -191,7 +191,10 @@ public class ReadHealthStep extends Step {
     @Override
     public @Nonnull Result apply(Packet packet) {
       ReadHealthProcessing processing = new ReadHealthProcessing(packet, service, pod);
-      if (processing.getWlsServerConfig() == null) {
+
+      if (processing.getWlsServerConfig() == null
+              || "false".equalsIgnoreCase(processing.getWlsDomainConfig().getRestfulAPIEnabled())) {
+        LOGGER.fine("Skipping read health request because wls server config is null or restful API is disabled");
         return doNext(packet);
       }
       return doNext(createRequestStep(processing.createRequest(), new RecordHealthStep(getNext())), packet);

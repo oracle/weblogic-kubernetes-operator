@@ -1,8 +1,9 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -117,11 +118,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * triggering rolling ( in case of mii domain )
  * Also verify the sample application can be accessed via NGINX ingress controller.
  */
-@DisplayName("Verify scaling the clusters in the domain with different domain types, "
-    + "rolling restart behavior in a multi-cluster MII domain and "
-    + "the sample application can be accessed via NGINX ingress controller")
 @Tag("kind-sequential")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @IntegrationTest
 class ItMultiDomainModelsScale {
 
@@ -167,7 +165,7 @@ class ItMultiDomainModelsScale {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -349,7 +347,6 @@ class ItMultiDomainModelsScale {
 
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-    //curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, numberOfServers, true, OPERATOR_EXTERNAL_REST_HTTPSPORT, opNamespace, opServiceAccount,
@@ -461,7 +458,8 @@ class ItMultiDomainModelsScale {
     } else if (!WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRoutingIfNotExists(domainNamespace, domainUid);
       assertDoesNotThrow(()
-          -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+          -> verifyAdminServerRESTAccess(InetAddress.getLocalHost().getHostAddress(),
+              TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
     } else {
       verifyReadyAppUsingAdminNodePort(domainUid, domainNamespace);
       // verify admin console login using ingress controller

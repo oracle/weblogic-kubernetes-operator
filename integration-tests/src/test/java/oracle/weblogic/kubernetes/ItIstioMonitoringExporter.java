@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -75,30 +75,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test the monitoring WebLogic Domain via istio provided Prometheus")
 @IntegrationTest
-@Tag("oke-gate")
+@Tag("oke-parallel")
 @Tag("kind-parallel")
-@Tag("olcne-mrg")
 class ItIstioMonitoringExporter {
 
   private static String opNamespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
-  private static String nginxNamespace = null;
 
   private String domain1Uid = "istio1-mii";
   private String domain2Uid = "istio2-mii";
   private String configMapName = "dynamicupdate-istio-configmap";
   private final String clusterName = "cluster-1"; // do not modify
-  private final String workManagerName = "newWM";
   private final int replicaCount = 2;
   private static int prometheusPort;
   private static final String istioNamespace = "istio-system";
   private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private boolean isPrometheusDeployed = false;
-  private boolean isPrometheusPortForward = false;
   private static LoggingFacade logger = null;
   private static String oldRegex;
   private static String miiImageSideCar = null;
@@ -108,7 +103,6 @@ class ItIstioMonitoringExporter {
       "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
 
   private static String testWebAppWarLoc = null;
-  private static String ingressIP = null;
   private static String hostPortPrometheus = null;
 
   /**
@@ -116,7 +110,7 @@ class ItIstioMonitoringExporter {
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -245,7 +239,6 @@ class ItIstioMonitoringExporter {
         assertNotNull(forwardPort, "port-forward fails to assign local port");
         logger.info("Forwarded local port is {0}", forwardPort);
         hostPortPrometheus = localhost + ":" + forwardPort;
-        isPrometheusPortForward = true;
       }
     } else {
       String newRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
@@ -253,12 +246,11 @@ class ItIstioMonitoringExporter {
           "Can't modify Prometheus CM, not possible to monitor " + domainUid);
     }
 
-    checkMetricsViaPrometheus(searchKey, "sessmigr",
-                              hostPortPrometheus);
+    checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // delete mii domain images created for parameterized test
     if (miiImageWebApp != null) {
@@ -380,6 +372,7 @@ class ItIstioMonitoringExporter {
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("MANAGED_SERVER_PORT", "7001");    
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(

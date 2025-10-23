@@ -172,7 +172,7 @@ buildWDTParams_MD5() {
 
   model_list=""
   archive_list=""
-  variable_list="/u01/_k8s_generated_props.properties"
+  variable_list="/tmp/_k8s_generated_props.properties"
 
   #
   # First build the command line parameters for WDT
@@ -396,16 +396,15 @@ createWLDomain() {
   # create domain again
 
   DISABLE_SM_FOR_12214_NONSM_UPG=0
-  if [  -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+  if [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] && { [ -z "${MII_USE_ONLINE_UPDATE}" ] || [ "${MII_USE_ONLINE_UPDATE}" != "true" ]; }; then
     checkSecureModeForUpgrade
   fi
-
   if  [ ${WDT_ARTIFACTS_CHANGED} -ne 0 ] || [ ${jdk_changed} -eq 1 ] \
     || [ ${SECRETS_AND_ENV_CHANGED} -ne 0 ] || [ ${DISABLE_SM_FOR_12214_NONSM_UPG} -eq 1 ] ; then
-
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     createModelDomain
-    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
+    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] || [ ${DISABLE_SM_FOR_12214_NONSM_UPG} -eq 1 ] ; then
+      # Make sure it will run the introspectDomain.py
       DOMAIN_CREATED=1
     fi
   else
@@ -500,7 +499,8 @@ createModelDomain() {
   trace "Entering createModelDomain"
   createPrimordialDomain
 
-  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
+  # If model changes or upgrade image scenario, run update domain.
+  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] || [ $DISABLE_SM_FOR_12214_NONSM_UPG -eq 1 ] ; then
     # if there is a new primordial domain created then use newly created primordial domain otherwise
     # if the primordial domain already in the configmap, restore it
     #
@@ -613,8 +613,8 @@ diff_model() {
   trace "Entering diff_model"
   # wdt shell script or logFileRotate may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
-  stop_trap
 
+  stop_trap
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
 
@@ -646,19 +646,42 @@ diff_model() {
     fi
   fi
 
+  #  Checking whether domain, rcu credentials have been changed - needed for offline
+  #  and also incompatible changes for online update.
+
   if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
-    # Generate diffed model update compatibility result
+    # Generate diffed model update compatibility result, use partial model to avoid loading large model
     local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
     local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
     local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
     local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
     local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
-    ${JAVA_HOME}/bin/java -cp ${CP} \
-      ${JAVA_PROPS} \
-      org.python.util.jython \
-      ${SCRIPTPATH}/model-diff.py $2 > ${WDT_OUTPUT} 2>&1
+    # Get partial models for sanity check for forbidden attribute change
+    local SERVER_OR_SERVERTEMPLATES_NAMES
+    SERVER_OR_SERVERTEMPLATES_NAMES=$(jq '{ topology: { Server: (.topology.Server | with_entries(.value = {})),
+     ServerTemplate: (if .topology.ServerTemplate then (.topology.ServerTemplate | with_entries(.value = {})) else {} end)
+       }} | if .topology.ServerTemplate == {} then del(.topology.ServerTemplate) else . end' $2)
+    rc=$?
+    if [ $rc -ne 0 ] ; then
+      trace SEVERE "Failed to extract server names from original model using jq "$rc
+      exitOrLoop
+    fi
+    local PARTIAL_DIFFED_MODEL
+    if [ -f /tmp/diffed_model.json ] ; then
+      PARTIAL_DIFFED_MODEL=$(jq '{domainInfo: .domainInfo, topology: .topology} | with_entries(select(.value != null))' /tmp/diffed_model.json)
+      rc=$?
+      if [ $rc -ne 0 ] ; then
+        trace SEVERE "Failed to extract domainInfo and topology from delta model using jq "$rc
+        exitOrLoop
+      fi
+    else
+      PARTIAL_DIFFED_MODEL="{}"
+    fi
+    # Use the real wlst.sh and not the operator wrap script, calling jypthon directory has problem understanding WLST boolean false, true etc..
+    # eval will fail
+    ${ORACLE_HOME}/oracle_common/common/bin/wlst.sh ${SCRIPTPATH}/model-diff.py "${SERVER_OR_SERVERTEMPLATES_NAMES}" "${PARTIAL_DIFFED_MODEL}" > ${WDT_OUTPUT} 2>&1
     if [ $? -ne 0 ] ; then
-      trace SEVERE "Failed to compare models. Error output:"
+      trace SEVERE "Failed to interpret models results . Error output:"
       cat ${WDT_OUTPUT}
       exitOrLoop
     fi
@@ -666,7 +689,6 @@ diff_model() {
 
   wdtRotateAndCopyLogFile "${WDT_COMPARE_MODEL_LOG}"
 
-  # restore trap
   start_trap
 
   trace "Exiting diff_model"
@@ -777,7 +799,7 @@ createPrimordialDomain() {
 
   # If there is no primordial domain or needs to recreate one due to security changes
   trace "recreate domain "${recreate_domain}
-#  if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
+  #if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
   if [ "true" == "$MII_USE_ONLINE_UPDATE" ] \
      && [ "true" == "${security_info_updated}" ] \
@@ -838,11 +860,6 @@ checkSecureModeForUpgrade() {
     local cur_wl_ver="`getWebLogicVersion`"
     local exp_wl_ver="14.1.2.0.0"
     trace "Current pod version " $cur_wl_ver
-
-    if [ "${cur_wl_ver}" == "9999.9999.9999.9999" ] ; then
-      trace "Cannot determine weblogic version ignore upgrade check"
-      return
-    fi
     # Only do this if the wls version in the pod is >= 14.1.2.0
     if versionGE "${cur_wl_ver}" "${exp_wl_ver}" ; then
       trace "Checking if upgrade to 14.1.2.0 or higher needs model patch"
@@ -851,9 +868,7 @@ checkSecureModeForUpgrade() {
       createFolder "/tmp/miiupgdomain${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
       local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
       encrypt_decrypt_domain_secret "decrypt" /tmp/miiupgdomain${DOMAIN_HOME} ${MII_PASSPHRASE}
-      if [ -f ${WLSDOMAIN_CONFIG_ZIPPED} ] ; then
-        cd /tmp/miiupgdomain && base64 -d ${WLSDOMAIN_CONFIG_ZIPPED} > ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp && tar -pxzf ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp
-      fi
+      cd /tmp/miiupgdomain && base64 -d ${WLSDOMAIN_CONFIG_ZIPPED} > ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp && tar -pxzf ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp
       # reading existing domain to determine what the secure mode should be whether it is set or by default.
       # a file is written to a /tmp/mii_domain_upgrade.txt containing the status of SecureModeEnabled.
       ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/mii-domain-upgrade.py /tmp/miiupgdomain$DOMAIN_HOME || exitOrLoop
@@ -862,6 +877,7 @@ checkSecureModeForUpgrade() {
       if [ -f /tmp/mii_domain_upgrade.txt ] && [ $(grep -i False /tmp/mii_domain_upgrade.txt | wc -l ) -gt 0 ] ; then
         if [ -f /tmp/mii_domain_before14120.txt ] && [ $(grep -i True /tmp/mii_domain_before14120.txt | wc -l ) -gt 0 ] ; then
           # Set this so that the upgrade image only scenario 12.2.1.4 to 14.1.2 will recreate the domain
+          trace "Domain version is earlier than 14.1.2, upgrade only image to 14.1.2 detected"
           DISABLE_SM_FOR_12214_NONSM_UPG=1
         fi
       fi
@@ -1139,7 +1155,7 @@ wdtUpdateModelDomain() {
 captureBinLibAdded() {
   local BINLIBDIR_NAME="/tmp/binlibdir.txt"
   find $DOMAIN_HOME/bin -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/bin|wlsdeploy/domainBin|g" > $BINLIBDIR_NAME
-  find $DOMAIN_HOME/lib -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/bin|wlsdeploy/domainLibraries|g" >> $BINLIBDIR_NAME
+  find $DOMAIN_HOME/lib -maxdepth 1 -type f | sed  "s|$DOMAIN_HOME/lib|wlsdeploy/domainLibraries|g" >> $BINLIBDIR_NAME
 }
 
 wdtHandleOnlineUpdate() {
@@ -1365,14 +1381,17 @@ restoreAppAndLibs() {
 
   createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
   local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
-
+  local TMP_EXTRACT_LIST=""
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
 
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         if [ -f $DOMAIN_BIN_LIB_LIST ] ; then
-          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $(awk '{print $0}' <<< $(grep "wlsdeploy/domainLibraries" $DOMAIN_BIN_LIB_LIST))
+          TMP_EXTRACT_LIST=$(awk '{print $0}' <<< $(grep "wlsdeploy/domainLibraries" $DOMAIN_BIN_LIB_LIST))
+          if [ -n "$TMP_EXTRACT_LIST" ] ; then
+            unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $TMP_EXTRACT_LIST
+          fi
         else
           unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
         fi
@@ -1387,7 +1406,10 @@ restoreAppAndLibs() {
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         if [ -f $DOMAIN_BIN_LIB_LIST ] ; then
-          unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $(awk '{print $0}' <<< $(grep "wlsdeploy/domainBin" $DOMAIN_BIN_LIB_LIST))
+          TMP_EXTRACT_LIST=$(awk '{print $0}' <<< $(grep "wlsdeploy/domainBin" $DOMAIN_BIN_LIB_LIST))
+          if [ -n "$TMP_EXTRACT_LIST" ] ; then
+            unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} $TMP_EXTRACT_LIST
+          fi
         else
           unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
         fi
@@ -1407,7 +1429,8 @@ restoreAppAndLibs() {
         #   zip, the original xml in the archive may have wdt tokenized notations.
         cd ${DOMAIN_HOME} || return 1
         unzip -o ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/domainBin/*" "wlsdeploy/domainLibraries/*"  "config/*"
-        if [ $? -ne 0 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi

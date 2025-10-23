@@ -74,6 +74,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.NO_APPLICATION_SERVER
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
+import static oracle.kubernetes.common.logging.MessageKeys.POD_UNSCHEDULABLE_MESSAGE;
 import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.MINIMUM_CLUSTER_COUNT;
@@ -84,6 +85,7 @@ import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDAT
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -193,6 +195,22 @@ public class DomainStatusUpdater {
       }
     }
 
+
+  }
+
+  public static Step createIncompleteBeforeIntrospectionStep() {
+    return new IncompleteBeforeIntrospectionStep();
+  }
+
+  public static class IncompleteBeforeIntrospectionStep extends DomainStatusUpdaterStep {
+
+    private IncompleteBeforeIntrospectionStep() {
+    }
+
+    @Override
+    void modifyStatus(DomainStatus status) {
+      status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+    }
 
   }
 
@@ -423,10 +441,12 @@ public class DomainStatusUpdater {
     private DomainStatus newStatus;
     private final List<EventData> newEvents = new ArrayList<>();
     final boolean endOfProcessing;
+    private Packet packet;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
+      this.packet = packet;
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
       endOfProcessing = (Boolean) packet.getOrDefault(ProcessingConstants.END_OF_PROCESSING, Boolean.FALSE);
     }
@@ -537,7 +557,10 @@ public class DomainStatusUpdater {
       if (!isStatusUnchanged()) {
         result.add(createDomainStatusReplaceStep());
       } else {
-        if (endOfProcessing && isMakeRight) {
+        boolean successFullDynamicUpdate = MII_DYNAMIC_UPDATE_SUCCESS.equals(packet.get(MII_DYNAMIC_UPDATE))
+                || MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(packet.get(MII_DYNAMIC_UPDATE));
+
+        if ((endOfProcessing && isMakeRight) || successFullDynamicUpdate) {
           Optional.ofNullable(createDomainStatusObservedGenerationReplaceStep()).ifPresent(result::add);
         }
       }
@@ -580,7 +603,7 @@ public class DomainStatusUpdater {
     }
 
     private boolean hasReachedRetryLimit(DomainStatus status, DomainCondition condition) {
-      return condition.getSeverity() == SEVERE
+      return (condition.getSeverity() == null || condition.getSeverity() == SEVERE)
           && status.getInitialFailureTime() != null
           && status.getMinutesFromInitialToLastFailure() >= getDomain().getFailureRetryLimitMinutes();
     }
@@ -744,6 +767,11 @@ public class DomainStatusUpdater {
         if (isHasFailedPod()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
               .withFailureInfo(getDomain().getSpec()).withMessage(getPodFailedMessage()));
+        } else if (isPodUnSchedulable()) {
+          if (!alreadyReportedPodUnSchedulableCondition(status)) {
+            addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
+                    .withFailureInfo(getDomain().getSpec()).withMessage(getPodUnSchedulableMessage()));
+          }
         } else if (hasPodNotRunningInTime()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD)
               .withFailureInfo(getDomain().getSpec()).withMessage(getPodNotRunningMessage()));
@@ -768,6 +796,10 @@ public class DomainStatusUpdater {
 
       private String getPodNotReadyMessage() {
         return LOGGER.formatMessage(PODS_NOT_READY);
+      }
+
+      private String getPodUnSchedulableMessage() {
+        return LOGGER.formatMessage(POD_UNSCHEDULABLE_MESSAGE);
       }
 
       private String getPodFailedMessage() {
@@ -1251,6 +1283,11 @@ public class DomainStatusUpdater {
             .anyMatch(m -> m.containsKey(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL));
       }
 
+      private boolean alreadyReportedPodUnSchedulableCondition(DomainStatus status) {
+        return status.getConditions().stream().anyMatch(
+                condition -> getPodUnSchedulableMessage().equals(condition.getMessage()));
+      }
+
       private V1Pod getServerPod(ServerStatus serverStatus) {
         return getInfo().getServerPod(serverStatus.getServerName());
       }
@@ -1282,11 +1319,11 @@ public class DomainStatusUpdater {
             && isNotMarkedForRoll(serverName);
       }
 
-      // returns true if the server pod does not have a label indicating that it needs to be rolled
+      // returns true if the server pod does not have an annotation indicating that it needs to be rolled
       private boolean isNotMarkedForRoll(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName))
             .map(V1Pod::getMetadata)
-            .map(V1ObjectMeta::getLabels)
+            .map(V1ObjectMeta::getAnnotations)
             .map(Map::keySet).orElse(Collections.emptySet()).stream()
             .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
       }
@@ -1316,6 +1353,14 @@ public class DomainStatusUpdater {
 
       private boolean hasPodNotRunningInTime() {
         return getInfo().getServerPodsNotBeingDeleted().anyMatch(this::isNotRunningInTime);
+      }
+
+      private boolean isPodUnSchedulable() {
+        return getInfo().getServerPodsNotBeingDeleted().anyMatch(this::isPodUnSchedulable);
+      }
+
+      private boolean isPodUnSchedulable(V1Pod pod) {
+        return PodHelper.isPending(pod) && PodHelper.hasUnSchedulableCondition(pod);
       }
 
       private boolean isNotRunningInTime(V1Pod pod) {

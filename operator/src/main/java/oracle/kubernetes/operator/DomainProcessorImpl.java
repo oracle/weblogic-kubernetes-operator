@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,14 +17,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.logging.LoggingFilter;
@@ -49,6 +52,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.watcher.JobWatcher;
 import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -64,9 +68,12 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.POD_UNSCHEDULABLE;
 import static oracle.kubernetes.common.logging.MessageKeys.PVC_NOT_BOUND_ERROR;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
+import static oracle.kubernetes.operator.KubernetesConstants.POD_SCHEDULED;
+import static oracle.kubernetes.operator.KubernetesConstants.UNSCHEDULABLE_REASON;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
@@ -196,27 +203,27 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  public static void updateEventK8SObjects(CoreV1Event event) {
+  public static void updateEventK8SObjects(EventsV1Event event) {
     getEventK8SObjects(event).update(event);
   }
 
-  private static void updateClusterEventK8SObjects(CoreV1Event event) {
+  private static void updateClusterEventK8SObjects(EventsV1Event event) {
     getClusterEventK8SObjects(event).update(event);
   }
 
-  private static String getEventNamespace(CoreV1Event event) {
-    return Optional.ofNullable(event).map(CoreV1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
+  private static String getEventNamespace(EventsV1Event event) {
+    return Optional.ofNullable(event).map(EventsV1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
-  private static String getEventDomainUid(CoreV1Event event) {
+  private static String getEventDomainUid(EventsV1Event event) {
     return Optional.ofNullable(event)
-        .map(CoreV1Event::getMetadata)
+        .map(EventsV1Event::getMetadata)
         .map(V1ObjectMeta::getLabels)
         .orElse(Collections.emptyMap())
         .get(LabelConstants.DOMAINUID_LABEL);
   }
 
-  public static KubernetesEventObjects getEventK8SObjects(CoreV1Event event) {
+  public static KubernetesEventObjects getEventK8SObjects(EventsV1Event event) {
     return getEventK8SObjects(getEventNamespace(event), getEventDomainUid(event));
   }
 
@@ -226,7 +233,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         .orElse(getNamespaceEventK8SObjects(ns));
   }
 
-  public static KubernetesEventObjects getClusterEventK8SObjects(CoreV1Event event) {
+  public static KubernetesEventObjects getClusterEventK8SObjects(EventsV1Event event) {
     return getClusterEventK8SObjects(getEventNamespace(event), getClusterName(event));
   }
 
@@ -235,13 +242,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         .computeIfAbsent(clusterResourceName, c -> new KubernetesEventObjects());
   }
 
-  private static String getClusterName(CoreV1Event event) {
-    return Optional.ofNullable(event.getInvolvedObject())
+  private static String getClusterName(EventsV1Event event) {
+    return Optional.ofNullable(event.getRegarding())
         .map(V1ObjectReference::getName)
         .orElse("");
   }
 
-  private static void deleteClusterEventK8SObjects(CoreV1Event event) {
+  private static void deleteClusterEventK8SObjects(EventsV1Event event) {
     getClusterEventK8SObjects(event).remove(event);
   }
 
@@ -254,11 +261,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         .computeIfAbsent(domainUid, d -> new KubernetesEventObjects());
   }
 
-  private static void deleteEventK8SObjects(CoreV1Event event) {
+  private static void deleteEventK8SObjects(EventsV1Event event) {
     getEventK8SObjects(event).remove(event);
   }
 
-  private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
+  private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, EventsV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_POD:
         processPodEvent(name, event);
@@ -274,7 +281,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static void processPodEvent(@Nonnull String name, CoreV1Event event) {
+  private static void processPodEvent(@Nonnull String name, EventsV1Event event) {
     if (name.equals(NamespaceHelper.getOperatorPodName())) {
       updateEventK8SObjects(event);
     } else {
@@ -282,8 +289,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static void processServerEvent(CoreV1Event event) {
-    String[] domainAndServer = Objects.requireNonNull(event.getInvolvedObject().getName()).split("-");
+  private static void processServerEvent(EventsV1Event event) {
+    String[] domainAndServer = Objects.requireNonNull(event.getRegarding().getName()).split("-");
     String domainUid = domainAndServer[0];
     String serverName = domainAndServer[1];
     String status = getReadinessStatus(event);
@@ -315,7 +322,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
+  private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, EventsV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_DOMAIN, EventConstants.EVENT_KIND_NAMESPACE:
         deleteEventK8SObjects(event);
@@ -333,8 +340,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static String getReadinessStatus(CoreV1Event event) {
-    return Optional.ofNullable(event.getMessage())
+  private static String getReadinessStatus(EventsV1Event event) {
+    return Optional.ofNullable(event.getNote())
           .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
           .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
           .orElse(null);
@@ -531,12 +538,41 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return Step.chain(steps.toArray(new Step[0]));
   }
 
-  private String getDomainUid(Fiber fiber) {
-    return Optional.ofNullable(fiber)
-          .map(Fiber::getPacket)
-          .map(p -> (DomainPresenceInfo) p.get(ProcessingConstants.DOMAIN_PRESENCE_INFO))
-          .map(DomainPresenceInfo::getDomainUid).orElse("");
+  /**
+   * Dispatch job watch event.
+   * @param item watch event
+   */
+  public void dispatchJobWatch(Watch.Response<V1Job> item) {
+    V1Job job = item.object;
+    String domainUid = getJobDomainUid(job);
+    String namespace = Optional.ofNullable(job.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null);
+    if (domainUid == null || namespace == null) {
+      return;
+    }
+
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(namespace, domainUid);
+    if (info == null) {
+      return;
+    }
+
+    switch (item.type) {
+      case MODIFIED:
+        if (JobWatcher.isComplete(job) || JobWatcher.isFailed(job)) {
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        }
+        break;
+      default:
+    }
   }
+
+  private static String getJobDomainUid(V1Job job) {
+    return Optional.ofNullable(job)
+            .map(V1Job::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .orElse(Collections.emptyMap())
+            .get(LabelConstants.DOMAINUID_LABEL);
+  }
+
 
   /**
    * Dispatch pod watch event.
@@ -565,16 +601,27 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     String serverName = getPodLabel(pod, LabelConstants.SERVERNAME_LABEL);
     switch (watchType) {
       case ADDED:
+        info.setServerPodFromEvent(serverName, pod);
+        break;
       case MODIFIED:
         boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
-        if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
+        boolean isEvicted = PodHelper.isEvicted(pod);
+        if (isEvicted && !podPreviouslyEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
             LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
           } else {
             LOGGER.info(MessageKeys.POD_EVICTED_NO_RESTART, getPodName(pod), getPodStatusMessage(pod));
           }
         }
-        createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        boolean isReady = PodHelper.isReady(pod);
+        boolean isLabeledForShutdown = PodHelper.isPodAlreadyAnnotatedForShutdown(pod);
+        if ((isEvicted || isReady != isLabeledForShutdown || PodHelper.isFailed(pod)) && !PodHelper.isDeleting(pod)) {
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        }
+        boolean isUnschedulable = PodHelper.hasUnSchedulableCondition(pod);
+        if (isUnschedulable) {
+          LOGGER.info(POD_UNSCHEDULABLE,  getPodName(pod), getUnSchedulableConditionMessage(pod));
+        }
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
@@ -588,6 +635,25 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       default:
     }
   }
+
+  /**
+   * If a pod is unschedulable, return the condition's message.
+   * @param pod Kubernetes V1Pod
+   * @return message for the unschedulable pod condition
+   */
+  public static String getUnSchedulableConditionMessage(V1Pod pod) {
+    return Optional.ofNullable(pod)
+            .filter(PodHelper::isPending)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getConditions)
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(condition -> POD_SCHEDULED.equals(condition.getType())
+                    && UNSCHEDULABLE_REASON.equals(condition.getReason()))
+            .map(V1PodCondition::getMessage)
+            .findFirst().orElse(null);
+  }
+
 
   private String getPodLabel(V1Pod pod, String labelName) {
     return Optional.ofNullable(pod)
@@ -748,9 +814,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    * Dispatch event watch event.
    * @param item watch event
    */
-  public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
-    CoreV1Event e = item.object;
-    V1ObjectReference ref = e.getInvolvedObject();
+  public void dispatchEventWatch(Watch.Response<EventsV1Event> item) {
+    EventsV1Event e = item.object;
+    V1ObjectReference ref = e.getRegarding();
 
     if (ref == null || ref.getName() == null || ref.getKind() == null) {
       return;
@@ -800,10 +866,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
         info.addClusterResource(cluster);
-        createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, info.getDomainUid()).execute();
-        createMakeRightOperation(info)
-            .interrupt()
-            .withExplicitRecheck()
+        createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, info.getDomainUid())
+            .andThen(createMakeRightOperation(info)
+                .interrupt()
+                .withExplicitRecheck())
             .execute();
       });
     }
@@ -817,16 +883,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, null).execute();
     } else {
       hostingDomains.forEach(info -> {
-        ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
-        if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
+        if (!cluster.isGenerationLaterThanObservedGeneration()) {
           return;
         }
 
         LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
-        createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, info.getDomainUid()).execute();
-        createMakeRightOperation(info)
-            .interrupt()
-            .withExplicitRecheck()
+        createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, info.getDomainUid())
+            .andThen(createMakeRightOperation(info)
+                .interrupt()
+                .withExplicitRecheck())
             .execute();
       });
     }
@@ -841,11 +906,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getMetadata().getName(), info.getDomainUid());
-        createMakeRightOperationForClusterEvent(EventItem.CLUSTER_DELETED, cluster, info.getDomainUid()).execute();
         info.removeClusterResource(cluster.getClusterName());
-        createMakeRightOperation(info)
-            .interrupt()
-            .withExplicitRecheck()
+        createMakeRightOperationForClusterEvent(EventItem.CLUSTER_DELETED, cluster, info.getDomainUid())
+            .andThen(createMakeRightOperation(info)
+                .interrupt()
+                .withExplicitRecheck())
             .execute();
       });
     }
@@ -909,6 +974,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleModifiedDomain(DomainResource domain) {
+    if (!domain.isGenerationLaterThanObservedGeneration()) {
+      return;
+    }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
@@ -924,8 +992,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void logThrowable(Throwable throwable) {
-    if (throwable instanceof Fiber.MultiThrowable) {
-      for (Throwable t : ((Fiber.MultiThrowable) throwable).getThrowables()) {
+    if (throwable instanceof Fiber.MultiThrowable multiThrowable) {
+      for (Throwable t : multiThrowable.getThrowables()) {
         logThrowable(t);
       }
     } else {
@@ -1020,7 +1088,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         gate.startFiber(
             ((DomainPresenceInfo)presenceInfo).getDomainUid(),
             () -> getFailureSteps(throwable),
-            () -> operation.createPacket(),
+                operation::createPacket,
             new FailureReportCompletionCallback());
       }
 
@@ -1081,14 +1149,22 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     @Override
     public CompletionCallback createCompletionCallback() {
-      return new ClusterPlanCompletionCallback();
+      return new ClusterPlanCompletionCallback(operation.getAndThen());
     }
 
     static class ClusterPlanCompletionCallback implements CompletionCallback {
 
+      private final MakeRightDomainOperation domainOperation;
+
+      public ClusterPlanCompletionCallback(MakeRightDomainOperation domainOperation) {
+        this.domainOperation = domainOperation;
+      }
+
       @Override
       public void onCompletion(Packet packet) {
-        // no op
+        if (domainOperation != null) {
+          domainOperation.execute();
+        }
       }
 
       @Override
@@ -1122,7 +1198,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     void execute() {
-      gate.startFiber(presenceInfo.getResourceName(), () -> operation.createSteps(), () -> operation.createPacket(),
+      gate.startFiber(presenceInfo.getResourceName(), operation::createSteps, operation::createPacket,
           createCompletionCallback());
     }
 
@@ -1151,7 +1227,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       try {
         Step strategy = Step.chain(new DomainPresenceInfoStep(), ServerStatusReader.createStatusStep(timeoutSeconds));
         getStatusFiberGate(getNamespace())
-            .startFiber(getDomainUid(), () -> strategy, () -> createPacket(), new CompletionCallbackImpl());
+            .startFiber(getDomainUid(), () -> strategy, this::createPacket, new CompletionCallbackImpl());
       } catch (Exception t) {
         try (ThreadLoggingContext ignored
                  = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {

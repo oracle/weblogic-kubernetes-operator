@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -102,7 +103,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (d) add a SSL Configuration to the server template
  */
 
-@DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -129,7 +129,7 @@ class ItProductionSecureMode {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -193,7 +193,7 @@ class ItProductionSecureMode {
   }
 
   @AfterAll
-  public static void cleanup() {
+  static void cleanup() {
     Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules-tcp.yaml");
     assertDoesNotThrow(() -> {
       String command = KUBERNETES_CLI + " delete -f " + dstFile;
@@ -216,7 +216,7 @@ class ItProductionSecureMode {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -358,9 +358,9 @@ class ItProductionSecureMode {
         + MANAGED_SERVER_NAME_BASE + "1"
         + "/applicationRuntimes/" + MII_BASIC_APP_DEPLOYMENT_NAME
         + "/workManagerRuntimes/newWM";
-    if (OKE_CLUSTER) {
+    if (OKE_CLUSTER || OCNE) {
       ExecResult result = exeAppInServerPod(domainNamespace, managedServerPrefix + "1",9002, resourcePath);
-      logger.info("result in OKE_CLUSTER is {0}", result.toString());
+      logger.info("result in OKE_CLUSTER or OCNE cluster is {0}", result.toString());
       assertEquals(0, result.exitValue(), "Failed to access WebLogic rest endpoint");
     } else {
       testUntil(
@@ -429,7 +429,7 @@ class ItProductionSecureMode {
                                     .runtimeEncryptionSecret(encryptionSecretName)
                                     .onlineUpdate(new OnlineUpdate()
                                             .enabled(true)))
-                            .introspectorJobActiveDeadlineSeconds(300L)));
+                            .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             domainUid, domNamespace);

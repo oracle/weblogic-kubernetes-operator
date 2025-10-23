@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
@@ -88,7 +88,7 @@ class DomainUpPlanTest {
   }
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(InMemoryCertificates.install());
@@ -116,7 +116,7 @@ class DomainUpPlanTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -229,8 +229,10 @@ class DomainUpPlanTest {
 
   private void establishExistingPodsAndServices() {
     Map<String, String> labels = getLabels();
-    V1Pod pod = new V1Pod().metadata(new V1ObjectMeta().name(ADMIN_SERVER_NAME).namespace(NS).labels(labels)).spec(
-        new V1PodSpec().addContainersItem(new V1Container().name("weblogic-server")
+    V1Pod pod = new V1Pod()
+        .metadata(new V1ObjectMeta().name(ADMIN_SERVER_NAME).namespace(NS).labels(labels)
+            .putAnnotationsItem("Placeholder", "At-Least-One-Annotation"))
+        .spec(new V1PodSpec().addContainersItem(new V1Container().name("weblogic-server")
                 .addPortsItem(new V1ContainerPort().name(NAP_NAME_1).containerPort(NAP_PORT_1))
                 .addPortsItem(new V1ContainerPort().name(NAP_NAME_2).containerPort(NAP_PORT_2))
                 .addPortsItem(new V1ContainerPort().name(DEFAULT_PORT_NAME).containerPort(DEFAULT_PORT)))
@@ -248,7 +250,8 @@ class DomainUpPlanTest {
   }
 
   private List<V1Service> getServiceByName(List<V1Service> resources, String name) {
-    return resources.stream().filter(s -> s.getMetadata().getName().equals(name)).collect(Collectors.toList());
+    return resources.stream().filter(s -> s.getMetadata().getName().equals(name))
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @NotNull

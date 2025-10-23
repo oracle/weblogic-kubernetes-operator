@@ -35,7 +35,7 @@ public class RestTestBase extends JerseyTest {
   String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
 
   @BeforeEach
-  public void setupRestTest() throws Exception {
+  void setupRestTest() throws Exception {
     setUp();
     mementos.add(testSupport.install());
     mementos.add(BaseTestUtils.silenceJsonPathLogger());
@@ -43,7 +43,7 @@ public class RestTestBase extends JerseyTest {
   }
 
   @AfterEach
-  public void restore() throws Exception {
+  void restore() throws Exception {
     tearDown();
     mementos.forEach(Memento::revert);
   }

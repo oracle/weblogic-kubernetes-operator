@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -31,15 +31,21 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyAdminServerAccess;
@@ -50,6 +56,7 @@ import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerif
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -58,11 +65,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Test a single operator can manage multiple WebLogic domains with a single Traefik fronted loadbalancer.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify a single operator manages multiple WebLogic domains with a single Traefik fronted loadbalancer")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 class ItLBTwoDomainsTraefik {
 
   private static final int numberOfDomains = 2;
@@ -79,7 +85,16 @@ class ItLBTwoDomainsTraefik {
 
   // domain constants
   private static final int replicaCount = 2;
-  private static final int MANAGED_SERVER_PORT = 7100;
+  private static int MANAGED_SERVER_PORT;
+  
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      MANAGED_SERVER_PORT = 7100;
+    } else {
+      MANAGED_SERVER_PORT = 7001;
+    }
+  }
+
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String clusterName = "cluster-1";
 
@@ -93,7 +108,7 @@ class ItLBTwoDomainsTraefik {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -207,14 +222,19 @@ class ItLBTwoDomainsTraefik {
    * @throws ApiException if Kubernetes API call fails
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
-    if (!SKIP_CLEANUP) {
-      if (pvPvcNamePair != null) {
-        // delete pvc
-        deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
-        // delete pv
-        deletePersistentVolume(pvPvcNamePair.get(0));
-      }
+  void tearDownAll() throws ApiException {
+    if (!SKIP_CLEANUP && pvPvcNamePair != null) {
+      // delete pvc
+      deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
+      // delete pv
+      deletePersistentVolume(pvPvcNamePair.get(0));
+    }
+    if (traefikHelmParams != null && OKE_CLUSTER) {
+
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstallTraefik returns true")
+          .withFailMessage("uninstallTraefik did not return true")
+          .isTrue();
     }
   }
 
@@ -254,9 +274,16 @@ class ItLBTwoDomainsTraefik {
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);
       Files.createDirectories(dstFile.getParent());
+      String msPort;
+      if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+        msPort = "7100";
+      } else {
+        msPort = "7001";
+      }
       Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
           .replaceAll("@domain1uid@", domainUids.get(0))
           .replaceAll("@domain2uid@", domainUids.get(1))
+          .replaceAll("7100", msPort)
           .getBytes(StandardCharsets.UTF_8));
     });
     String command = KUBERNETES_CLI + " create -f " + dstFile;
@@ -276,6 +303,8 @@ class ItLBTwoDomainsTraefik {
   private int getTraefikLbNodePort(boolean isHttps) {
     if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       return isHttps ? TRAEFIK_INGRESS_HTTPS_HOSTPORT : TRAEFIK_INGRESS_HTTP_HOSTPORT;
+    } else if (OCNE && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      return isHttps ? TRAEFIK_INGRESS_HTTPS_NODEPORT : TRAEFIK_INGRESS_HTTP_NODEPORT;
     } else if (traefikHelmParams != null) {
       logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
       return assertDoesNotThrow(() ->

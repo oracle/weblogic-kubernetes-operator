@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -27,7 +27,11 @@
 #                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.out
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
-#   NODEMGR_LOG_FILE_MAX = max NM .log and .out files to keep around (default=11)
+#   NODEMGR_LOG_FILE_MAX = Maximum size of the Node Manager Log specified as an integer.
+#      When this limit is reached, a new log file is started. default 0, no limit.
+#   NODEMGR_LOG_LEVEL =Severity level of logging used for the Node Manager log. Node Manager uses the standard
+#      logging levels from the java.util.logging.level package. default FINEST.
+#   NODEMGR_LOG_COUNT = Maximum number of log files to create when LogLimit is exceeded. default 1.
 #
 #   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false
 #
@@ -64,6 +68,9 @@ stm_script=${WL_HOME}/server/bin/startNodeManager.sh
 
 SERVER_NAME=${SERVER_NAME:-introspector}
 ADMIN_PORT_SECURE=${ADMIN_PORT_SECURE:-false}
+NM_LOG_LIMIT=${NODEMGR_LOG_FILE_MAX:-0}
+NM_LOG_LEVEL=${NODEMGR_LOG_LEVEL:-FINEST}
+NM_LOG_COUNT=${NODEMGR_LOG_COUNT:-1}
 
 trace "Starting node manager for domain-uid='$DOMAIN_UID' and server='$SERVER_NAME'."
 
@@ -133,7 +140,7 @@ if [ "${SERVER_NAME}" = "introspector" ]; then
 else
   # setup ".out" location for a WL server
   serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
-  if [ -z ${LOG_HOME} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
+  if [ -z ${LOG_HOME_LAYOUT} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
     serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
   fi
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
@@ -170,7 +177,7 @@ nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
 nodemgr_lck_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log.lck
 
-if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
+if [ -z ${LOG_HOME_LAYOUT} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
   nodemgr_log_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs/${SERVER_NAME}_nodemanager.log
   nodemgr_out_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.out
   nodemgr_lck_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.log.lck
@@ -241,9 +248,9 @@ cat <<EOF > ${nm_props_file}
   LogToStderr=true
   LogFormatter=weblogic.nodemanager.server.LogFormatter
   LogAppend=true
-  LogLimit=0
-  LogLevel=FINEST
-  LogCount=1
+  LogLimit=${NM_LOG_LIMIT}
+  LogLevel=${NM_LOG_LEVEL}
+  LogCount=${NM_LOG_COUNT}
 
 EOF
 
@@ -322,7 +329,7 @@ export NODEMGR_HOME="${NODEMGR_HOME?}"
 export DOMAIN_HOME="${DOMAIN_HOME?}"
 
 # Apply JAVA_OPTIONS to Node Manager if NODEMGR_JAVA_OPTIONS not specified
-if [ -z ${NODEMGR_JAVA_OPTIONS} ]; then
+if [ -z "${NODEMGR_JAVA_OPTIONS}" ]; then
   NODEMGR_JAVA_OPTIONS="${JAVA_OPTIONS}"
 fi
 

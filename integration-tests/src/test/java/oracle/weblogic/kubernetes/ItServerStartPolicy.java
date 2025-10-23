@@ -59,7 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to verify that life cycle operation for standalone servers and domain.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -78,7 +77,6 @@ class ItServerStartPolicy {
   private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
   private static LoggingFacade logger = null;
   private static String samplePath = "sample-testing";
-  private static String ingressHost = null; //only used for OKD
 
   /**
    * Install Operator.
@@ -87,7 +85,7 @@ class ItServerStartPolicy {
   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -101,7 +99,7 @@ class ItServerStartPolicy {
 
     prepare(domainNamespace, domainUid, opNamespace, samplePath);
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
-    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
   }
 
   /**
@@ -109,7 +107,7 @@ class ItServerStartPolicy {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, adminServerPodName))) {
       executeLifecycleScript(domainUid, domainNamespace, samplePath,
               START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
@@ -137,12 +135,17 @@ class ItServerStartPolicy {
         "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
+    logger.info("Check standalone managed service/pod {0} is created in namespace {1}",
+        domainUid + "-standalone-managed", domainNamespace);
+    checkPodReadyAndServiceExists(domainUid + "-standalone-managed",
+        domainUid, domainNamespace);
+
     // Check standalone server configuration is available
-    boolean isStandaloneServerConfigured =
+    /* boolean isStandaloneServerConfigured =
         checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
     assertTrue(isStandaloneServerConfigured,
-        "Could not find standalone managed server from configured cluster");
-    logger.info("Found standalone managed server configuration");
+        "Could not find standalone managed server");
+    logger.info("Found standalone managed server configuration"); */
   }
 
   /**
@@ -320,7 +323,7 @@ class ItServerStartPolicy {
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    logger.info("Configured managed server shutdown success");
+    logger.info("Standalone managed server shutdown success");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
         "/spec/managedServers/0/serverStartPolicy", "Always"),

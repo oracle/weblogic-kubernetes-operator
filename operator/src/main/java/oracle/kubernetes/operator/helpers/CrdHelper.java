@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -65,6 +65,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -105,7 +106,7 @@ public class CrdHelper {
   }
 
   /**
-   * Used by build to generate crd-validation.yaml
+   * Used by build to generate crd-validation.yaml.
    * @param args Arguments that must be one value giving file name to create
    */
   public static void main(String... args) throws URISyntaxException {
@@ -137,7 +138,7 @@ public class CrdHelper {
     try (Writer writer = Files.newBufferedWriter(PathSupport.getPath(outputFileName))) {
       writer.write(
               """
-              # Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+              # Copyright (c) 2020, 2025, Oracle and/or its affiliates.
               # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
               """);
       writer.write("\n");
@@ -357,7 +358,8 @@ public class CrdHelper {
     private static org.yaml.snakeyaml.Yaml getSnakeYaml() {
       LoaderOptions loaderOptions = new LoaderOptions();
       loaderOptions.setEnumCaseSensitive(false);
-      return new org.yaml.snakeyaml.Yaml(new SafeConstructor(new LoaderOptions()), new Yaml.CustomRepresenter());
+      return new org.yaml.snakeyaml.Yaml(
+          new SafeConstructor(new LoaderOptions()), new Yaml.CustomRepresenter(), new DumperOptions());
     }
 
     static V1CustomResourceSubresources createSubresources() {
@@ -753,64 +755,24 @@ public class CrdHelper {
   }
 
   static class CrdComparatorImpl implements CrdComparator {
-    private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
-      List<ResourceVersion> versions = new ArrayList<>();
-      List<V1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
-      if (vs != null) {
-        for (V1CustomResourceDefinitionVersion vi : vs) {
-          versions.add(new ResourceVersion(vi.getName()));
-        }
-      }
-
-      return versions;
-    }
-
     @Override
     public boolean isOutdatedCrd(SemanticVersion productVersion, String resourceVersionString,
                                  V1CustomResourceDefinition actual, V1CustomResourceDefinition expected) {
-      ResourceVersion current = new ResourceVersion(resourceVersionString);
-      List<ResourceVersion> actualVersions = getVersions(actual);
-
-      for (ResourceVersion v : actualVersions) {
-        if (!isLaterOrEqual(v, current)) {
-          return false;
-        }
-      }
-
       // Check product version label
       if (productVersion != null) {
         SemanticVersion currentCrdVersion = KubernetesUtils.getProductVersionFromMetadata(actual.getMetadata());
-        if (currentCrdVersion == null || productVersion.compareTo(currentCrdVersion) < 0) {
+        if (currentCrdVersion == null) {
           return false;
+        }
+        int compareToResult = productVersion.compareTo(currentCrdVersion);
+        if (compareToResult < 0) {
+          return false;
+        } else if (compareToResult > 0) {
+          return true;
         }
       }
 
       return !AnnotationHelper.getHash(expected).equals(AnnotationHelper.getHash(actual));
-    }
-
-    // true, if version is later than base
-    private boolean isLaterOrEqual(ResourceVersion base, ResourceVersion version) {
-      if (!version.getVersion().equals(base.getVersion())) {
-        return version.getVersion().compareTo(base.getVersion()) >= 0;
-      }
-
-      if (version.getPrerelease() == null) {
-        if (base.getPrerelease() != null) {
-          return true;
-        }
-      } else if (!version.getPrerelease().equals(base.getPrerelease())) {
-        if (base.getPrerelease() == null) {
-          return false;
-        }
-        return "alpha".equals(base.getPrerelease());
-      }
-
-      if (version.getPrereleaseVersion() == null) {
-        return base.getPrereleaseVersion() == null;
-      } else if (base.getPrereleaseVersion() == null) {
-        return true;
-      }
-      return version.getPrereleaseVersion() >= base.getPrereleaseVersion();
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainResource;
@@ -50,18 +49,18 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * 3. Verify that WLS server pods were evicted due to Pod ephemeral local
  *    storage usage exceeds the total limit of containers 25M and replaced.
  */
-@DisplayName("Test WLS server pods were evicted due to Pod ephemeral storage usage exceeds the total limit")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("oke-parallel")
+@Tag("gate")
+@Tag("okd-wls-mrg")
 class ItEvictedPodsCycling {
 
   // constants for Domain
   private static String domainUid = "domain1";
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPodPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
-  private static String clusterName = "cluster-1";
   private static int replicaCount = 2;
 
   private static String opNamespace = null;
@@ -82,7 +81,7 @@ class ItEvictedPodsCycling {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -109,7 +108,7 @@ class ItEvictedPodsCycling {
    */
   @Test
   @DisplayName("Use Operator log to verify that WLS server pods were evicted and replaced")
-  void testEvictedPodReplaced() throws ApiException {
+  void testEvictedPodReplaced() {
     resourceLimit.put("ephemeral-storage", ephemeralStorage);
     resourceRequest.put("cpu", "250m");
     resourceRequest.put("memory", "768Mi");
@@ -199,15 +198,18 @@ class ItEvictedPodsCycling {
   }
   
   private Callable<Boolean> checkEvictionEvent(String adminServerpodName,
-      String reason, String message, String type) throws ApiException {
+      String reason, String note, String type) {
     return (() -> {
       boolean gotEvent = false;
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
-      for (CoreV1Event event : events) {
-        if (event.getType().equals(type)
-            && event.getInvolvedObject().getName().equals(adminServerpodName)
+      List<EventsV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (EventsV1Event event : events) {
+        if (event.getType() != null && event.getType().equals(type)
+            && event.getRegarding().getName() != null
+            && event.getRegarding().getName().equals(adminServerpodName)
+            && event.getReason() != null
             && event.getReason().equals(reason)
-            && event.getMessage().contains(message)) {
+            && event.getNote() != null
+            && event.getNote().contains(note)) {
           logger.info(Yaml.dump(event));
           gotEvent = true;
         }

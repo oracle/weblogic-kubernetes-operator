@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -15,7 +15,7 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -99,7 +99,6 @@ import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
-import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolvedObject;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
@@ -663,14 +662,14 @@ class EventHelperTest {
         getCachedNSEvents(NS,NAMESPACE_WATCHING_STARTED_EVENT), equalTo(null));
   }
 
-  public CoreV1Event getCachedNSEvents(String namespace, String reason) {
+  public EventsV1Event getCachedNSEvents(String namespace, String reason) {
     return nsEventObjects.get(namespace).getExistingEvent(createReferenceEvent(namespace, reason));
   }
 
-  private CoreV1Event createReferenceEvent(String namespace, String reason) {
+  private EventsV1Event createReferenceEvent(String namespace, String reason) {
     String msg = "Started watching namespace " + namespace + ".";
-    return new CoreV1Event().reason(reason).message(msg)
-        .involvedObject(new V1ObjectReference().kind("Namespace").name(namespace).namespace(namespace));
+    return new EventsV1Event().reason(reason).note(msg)
+        .regarding(new V1ObjectReference().kind("Namespace").name(namespace).namespace(namespace));
   }
 
   @Test
@@ -685,11 +684,11 @@ class EventHelperTest {
   }
 
   @Test
-  void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedInvolvedObject() {
+  void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedRegarding() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
-    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected involvedObject",
-        containsEventWithInvolvedObject(getEvents(testSupport),
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected regarding",
+        EventTestUtils.containsEventWithRegarding(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED_EVENT, NS, NS),
         is(true));
   }
@@ -699,7 +698,7 @@ class EventHelperTest {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_NOT_FOUND);
 
     testSupport.runSteps(createEventStep(
@@ -723,7 +722,7 @@ class EventHelperTest {
   void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
     testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     dispatchAddedEventWatches();
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
 
@@ -738,7 +737,7 @@ class EventHelperTest {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     dispatchAddedEventWatches();
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
 
@@ -822,11 +821,11 @@ class EventHelperTest {
   }
 
   @Test
-  void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedInvolvedObject() {
+  void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedRegarding() {
     testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
 
-    assertThat("Found STOP_MANAGING_NAMESPACE event with expected involvedObject",
-        containsEventWithInvolvedObject(getEvents(testSupport),
+    assertThat("Found STOP_MANAGING_NAMESPACE event with expected regarding",
+        EventTestUtils.containsEventWithRegarding(getEvents(testSupport),
             STOP_MANAGING_NAMESPACE_EVENT, OPERATOR_POD_NAME, OP_NS),
         is(true));
   }
@@ -837,7 +836,7 @@ class EventHelperTest {
     testSupport.runSteps(step);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), OP_NS, HTTP_NOT_FOUND);
 
     testSupport.runSteps(step);
@@ -853,7 +852,7 @@ class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
 
     testSupport.runSteps(eventStep);
@@ -870,7 +869,7 @@ class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_CONFLICT);
 
     testSupport.runSteps(eventStep);
@@ -918,11 +917,11 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreated() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
-    processor.registerClusterPresenceInfo(info);
+    ClusterPresenceInfo clusterPresenceInfo = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(clusterPresenceInfo);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
-    processor.unregisterClusterPresenceInfo(info);
+    processor.unregisterClusterPresenceInfo(clusterPresenceInfo);
 
     assertThat("Found CLUSTER_DELETED event",
         containsEvent(getEvents(testSupport), CLUSTER_DELETED_EVENT), is(true));
@@ -930,11 +929,11 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedMessage() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
-    processor.registerClusterPresenceInfo(info);
+    ClusterPresenceInfo clusterPresenceInfo = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(clusterPresenceInfo);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
-    processor.unregisterClusterPresenceInfo(info);
+    processor.unregisterClusterPresenceInfo(clusterPresenceInfo);
 
     assertThat("Found CLUSTER_DELETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -944,11 +943,11 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedNamespace() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
-    processor.registerClusterPresenceInfo(info);
+    ClusterPresenceInfo clusterPresenceInfo = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(clusterPresenceInfo);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
-    processor.unregisterClusterPresenceInfo(info);
+    processor.unregisterClusterPresenceInfo(clusterPresenceInfo);
 
     assertThat("Found CLUSTER_DELETED event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
@@ -991,7 +990,7 @@ class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT);
+    EventsV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT);
     testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_CONFLICT);
 
     testSupport.runSteps(eventStep);
@@ -1002,48 +1001,48 @@ class EventHelperTest {
   }
 
   private void dispatchAddedEventWatches() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
       dispatchAddedEventWatch(event);
     }
   }
 
   private void dispatchAddedEventWatchesWithoutInvolvedObject() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
-      event.setInvolvedObject(null);
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
+      event.regarding(null);
       dispatchAddedEventWatch(event);
     }
   }
 
   private void dispatchAddedEventWatchesWithoutInvolvedObjectName() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
-      Optional.ofNullable(event.getInvolvedObject()).ifPresent(r -> r.setName(null));
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
+      Optional.ofNullable(event.getRegarding()).ifPresent(r -> r.setName(null));
       dispatchAddedEventWatch(event);
     }
   }
 
   private void dispatchAddedEventWatchesWithoutInvolvedObjectKind() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
-      Optional.ofNullable(event.getInvolvedObject()).ifPresent(r -> r.setKind(null));
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
+      Optional.ofNullable(event.getRegarding()).ifPresent(r -> r.setKind(null));
       dispatchAddedEventWatch(event);
     }
   }
 
-  private void dispatchAddedEventWatch(CoreV1Event event) {
+  private void dispatchAddedEventWatch(EventsV1Event event) {
     processor.dispatchEventWatch(WatchEvent.createAddedEvent(event).toWatchResponse());
   }
 
   private void dispatchDeletedEventWatches() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
+    List<EventsV1Event> events = getEvents(testSupport);
+    for (EventsV1Event event : events) {
       dispatchDeletedEventWatch(event);
     }
   }
 
-  private void dispatchDeletedEventWatch(CoreV1Event event) {
+  private void dispatchDeletedEventWatch(EventsV1Event event) {
     processor.dispatchEventWatch(WatchEvent.createDeletedEvent(event).toWatchResponse());
   }
 }

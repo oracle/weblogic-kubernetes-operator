@@ -593,14 +593,32 @@ public class DomainStatus {
    * Returns the time that the current domain started automatic retries in response to a severe failure.
    */
   public OffsetDateTime getInitialFailureTime() {
-    return initialFailureTime;
+    OffsetDateTime minConditionTime = Optional.ofNullable(getConditions()).orElse(Collections.emptyList()).stream()
+            .filter(DomainCondition::isRetriableFailure).map(DomainCondition::getLastTransitionTime)
+            .min(OffsetDateTime::compareTo).orElse(null);
+    if (minConditionTime == null) {
+      return initialFailureTime;
+    } else if (initialFailureTime == null) {
+      return minConditionTime;
+    }
+
+    return initialFailureTime.isBefore(minConditionTime) ? initialFailureTime : minConditionTime;
   }
 
   /**
    * Returns the time that the last severe failure was reported.
    */
   public OffsetDateTime getLastFailureTime() {
-    return lastFailureTime;
+    OffsetDateTime maxConditionTime = Optional.ofNullable(getConditions()).orElse(Collections.emptyList()).stream()
+        .filter(DomainCondition::isRetriableFailure).map(DomainCondition::getLastTransitionTime)
+        .max(OffsetDateTime::compareTo).orElse(null);
+    if (maxConditionTime == null) {
+      return lastFailureTime;
+    } else if (lastFailureTime == null) {
+      return maxConditionTime;
+    }
+
+    return lastFailureTime.isAfter(maxConditionTime) ? lastFailureTime : maxConditionTime;
   }
 
   /**
@@ -609,10 +627,13 @@ public class DomainStatus {
    * @param retrySeconds the number of seconds between retries.
    */
   public int getNumDeadlineIncreases(long retrySeconds) {
-    if (initialFailureTime == null || lastFailureTime == null) {
+    OffsetDateTime initial = getInitialFailureTime();
+    OffsetDateTime last = getLastFailureTime();
+    if (initial == null || last == null) {
       return 0;
     } else {
-      return (int) (1 + divideRoundingUp(getSecondsFromInitialToLastFailure(), retrySeconds));
+      long duration = Duration.between(initial, last).getSeconds();
+      return (int) (1 + divideRoundingUp(duration, retrySeconds));
     }
   }
 
@@ -623,8 +644,14 @@ public class DomainStatus {
   /**
    * Returns the number of seconds between the first failure reported and the most recent one.
    */
-  public Long getSecondsFromInitialToLastFailure() {
-    return Duration.between(initialFailureTime, lastFailureTime).getSeconds();
+  public long getSecondsFromInitialToLastFailure() {
+    OffsetDateTime initial = getInitialFailureTime();
+    OffsetDateTime last = getLastFailureTime();
+    if (initial == null || last == null) {
+      return 0;
+    } else {
+      return Duration.between(initial, last).getSeconds();
+    }
   }
 
   public long getMinutesFromInitialToLastFailure() {
@@ -733,7 +760,7 @@ public class DomainStatus {
   public DomainCondition createAdjustedFailedCondition(DomainFailureReason reason, String message,
                                                        boolean isInitDomainOnPV, DomainSpec spec) {
     DomainFailureReason effectiveReason = reason;
-    String effectiveMessage = message;
+    String effectiveMessage = Optional.ofNullable(message).orElse("");
     if (hasJustGotFatalIntrospectorError(effectiveMessage)
         || initDomainOnPVIntropsectionFailure(reason, isInitDomainOnPV)) {
       effectiveReason = ABORTED;

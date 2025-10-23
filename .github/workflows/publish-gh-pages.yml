@@ -1,4 +1,4 @@
-# Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -9,6 +9,11 @@ name: "PublishGitHubPages"
 on:
   schedule:
     - cron: '15 3 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'documentation/**'
 
 defaults:
   run:
@@ -20,80 +25,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
+      - name: Checkout main branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 32
+          ref: main
+          path: branch-main
+
+      - name: Checkout 4.2 branch
+        uses: actions/checkout@v5
         with:
           fetch-depth: 32
           ref: release/4.2
           path: branch-4.2
 
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 32
-          ref: release/4.1
-          path: branch-4.1
-
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 32
-          ref: release/4.0
-          path: branch-4.0
-
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 32
-          ref: release/3.4
-          path: branch-3.4
-
       - name: Checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: gh-pages
           path: gh-pages
-          token: ${{ secrets.PUBLISH_SECRET }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and publish site
         run: |
-          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.108.0/hugo_0.108.0_Linux-64bit.tar.gz"
+          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.133.0/hugo_0.133.0_Linux-64bit.tar.gz"
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
           
           cp -R $GITHUB_WORKSPACE/gh-pages/charts $GITHUB_WORKSPACE/WORK
           
-          cd $GITHUB_WORKSPACE/branch-4.2/documentation
-          echo "Building documentation for 4.2 minor version..."
-          latest_42_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | tail -1 | cut -c12-)
-          echo "Latest tag is $latest_42_tag..."
-          echo $latest_41_tag >| $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
+          cd $GITHUB_WORKSPACE/branch-main/documentation
+          echo "Building main documentation..."
+          latest_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.3 | cut -c12- | sort --version-sort | tail -1)
+          echo "Latest tag is $latest_tag..."
+          echo $latest_tag >| $GITHUB_WORKSPACE/branch-main/documentation/site/layouts/shortcodes/latestVersion.html
+          cat $GITHUB_WORKSPACE/branch-main/documentation/site/layouts/shortcodes/latestVersion.html
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
+          
+          cd $GITHUB_WORKSPACE/branch-4.2/documentation
+          echo "Building 4.2 documentation..."
+          latest_42_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | cut -c12- | sort --version-sort | tail -1)
+          echo "Latest 4.2 tag is $latest_42_tag..."
+          echo $latest_42_tag >| $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
+          cat $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
+          hugo -s site -d "$GITHUB_WORKSPACE/WORK/4.2" -b https://oracle.github.io/weblogic-kubernetes-operator/4.2
+
           echo "Copying static files into place..."
           cp -R domains "$GITHUB_WORKSPACE/WORK"
           
-          cd $GITHUB_WORKSPACE/branch-4.1/documentation
-          echo "Building documentation for 4.1 minor version..."
-          latest_41_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.1 | tail -1 | cut -c12-)
-          echo "Latest tag is $latest_41_tag..."
-          echo $latest_41_tag >| $GITHUB_WORKSPACE/branch-4.1/documentation/site/layouts/shortcodes/latestVersion.html
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK/4.1" -b https://oracle.github.io/weblogic-kubernetes-operator/4.1
-
-          cd $GITHUB_WORKSPACE/branch-4.0/documentation
-          echo "Building documentation for 4.0 minor version..."
-          latest_40_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.0 | tail -1 | cut -c12-)
-          echo "Latest tag is $latest_40_tag..."
-          echo $latest_40_tag >| $GITHUB_WORKSPACE/branch-4.0/documentation/site/layouts/shortcodes/latestVersion.html
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK/4.0" -b https://oracle.github.io/weblogic-kubernetes-operator/4.0
-
-          cd $GITHUB_WORKSPACE/branch-3.4/documentation
-          echo "Building documentation for 3.4 minor version..."
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK/3.4" -b https://oracle.github.io/weblogic-kubernetes-operator/3.4
-
           cd $GITHUB_WORKSPACE/gh-pages
           find . -maxdepth 1 -mindepth 1 -not -name '[0-9]*' -not -name '.git*' -exec rm -Rf {} \;
-          rm -Rf 3.4 4.0 4.1
+          rm -Rf 4.2
 
           cp -R $GITHUB_WORKSPACE/WORK/* .
           git config --global user.name "github-actions[bot]"

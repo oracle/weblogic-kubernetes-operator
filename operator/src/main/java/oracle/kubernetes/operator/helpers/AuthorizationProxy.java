@@ -205,7 +205,7 @@ public class AuthorizationProxy {
     PODS("pods", ""),
     LOGS("pods", "log", ""),
     EXEC("pods", "exec", ""),
-    EVENTS("events", ""),
+    EVENTS("events", "events.k8s.io"),
     SERVICES("services", ""),
     NAMESPACES("namespaces", ""),
     JOBS("jobs", "batch"),

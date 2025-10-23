@@ -7,29 +7,23 @@ description: "Sample for creating a WebLogic cluster on the Azure Kubernetes Ser
 
 This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image domain home source type. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
 
-#### Contents
+{{< table_of_contents >}}
 
- - [Prerequisites](#prerequisites)
- - [Create an AKS cluster](#create-the-aks-cluster)
- - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator)
- - [Create Docker image](#create-docker-image)
- - [Create WebLogic domain](#create-weblogic-domain)
- - [Invoke the web application](#invoke-the-web-application)
- - [Rolling updates](#rolling-updates)
- - [Clean up resource](#clean-up-resources)
- - [Troubleshooting](#troubleshooting)
- - [Useful links](#useful-links)
+### Prerequisites
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-02.txt" >}}
 
 #### Prepare parameters
 
-Set parameters.
+Set required parameters by running the following commands.
 
 ```shell
 # Change these parameters as needed for your own environment
 export ORACLE_SSO_EMAIL=<replace with your oracle account email>
 export ORACLE_SSO_PASSWORD="<replace with your oracle password.>"
+
+export BASE_DIR=~
+export NAME_PREFIX=wls
 
 # Used to generate resource names.
 export TIMESTAMP=`date +%s`
@@ -38,39 +32,57 @@ export AKS_CLUSTER_NAME="aks${TIMESTAMP}"
 export AKS_PERS_RESOURCE_GROUP="resourcegroup${TIMESTAMP}"
 export AKS_PERS_LOCATION=eastus
 
+export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 export WEBLOGIC_USERNAME=weblogic
 export WEBLOGIC_PASSWORD=Secret123456
 export WEBLOGIC_WDT_PASSWORD=Secret123456
-
-export BASE_DIR=~
 ```
+
+#### Oracle Container Registry
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
+#### Sign in with Azure CLI
+
+{{< readfile file="/samples/azure-kubernetes-service/includes/sign-in-azure.txt" >}}
+
+#### Download the WebLogic Kubernetes Operator sample
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
 
+### Create Resource Group
+
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
+
+### Create the AKS cluster
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
 **NOTE**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 
-#### Install WebLogic Kubernetes Operator
+### Install WebLogic Kubernetes Operator
 
-The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
+The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as container infrastructure hosting WLS instances. The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
 Create a namespace and service account for the operator.
 
 ```shell
 $ kubectl create namespace sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 namespace/sample-weblogic-operator-ns created
 ```
+
 ```shell
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
+
+The output will show something similar to the following:
+
 ```
 serviceaccount/sample-weblogic-operator-sa created
 ```
@@ -80,13 +92,16 @@ Validate the service account was created with this command.
 ```shell
 $ kubectl -n sample-weblogic-operator-ns get serviceaccount
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                          SECRETS   AGE
 default                       1         9m24s
 sample-weblogic-operator-sa   1         9m5s
 ```
 
-Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from Github. It may take you several minutes to install the operator.
+Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from GitHub. It may take you several minutes to install the operator.
 
 ```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
@@ -99,7 +114,7 @@ Update the repo to get the latest Helm charts. It is a best practice to do this 
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --version 4.1.8 \
+  --version 4.2.8 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --wait
 ```
@@ -115,7 +130,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.1.8` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.2.8` in the preceding command with the other version number. To see the list of versions, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -124,13 +139,20 @@ Verify the operator with the following commands; the status will be `Running`.
 ```shell
 $ helm list -A
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
-weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.1.8  4.1.8
+weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.2.8  4.2.8
 ```
+
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME                                         READY   STATUS    RESTARTS   AGE
 weblogic-operator-54b5c8df46-g4rcm           1/1     Running   0          86s
@@ -145,22 +167,15 @@ You can specify the operator image by changing value of `--set image`. If you ru
 If you have an image built with domain models following [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
 {{% /notice %}}
 
-#### Create Docker image
+### Create Docker image
 
-  - [Image creation prerequisites](#image-creation-prerequisites)
-  - [Image creation - Introduction](#image-creation---introduction)
-  - [Understanding your first archive](#understanding-your-first-archive)
-  - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
-  - [Staging model files](#staging-model-files)
-  - [Creating the image with WIT](#creating-the-image-with-wit)
-  - [Pushing the image to Azure Container Registry](#pushing-the-image-to-azure-container-registry)
-
-##### Image creation prerequisites
+#### Image creation prerequisites
 
 - The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 - Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`. In the directory name, `mii` is short for "model in image". Model in image is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
    ```shell
+   $ rm /tmp/mii-sample -f -r
    $ mkdir /tmp/mii-sample
    ```
 
@@ -179,33 +194,16 @@ If you have an image built with domain models following [Model in Image]({{< rel
 {{< readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" >}}
 
 
-##### Image creation - Introduction
+#### Image creation - Introduction
 
-The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image tagged as `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/wdt-model-files/WLS-v1/`.
-The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
+{{< readfile file="/samples/azure-kubernetes-service/includes/auxiliary-image-directory.txt" >}}
 
-A "Model in Image" image contains the following elements:
-* A WebLogic Server installation (including operating system and JDK) and a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory.
-* If you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory.
-* If you have WDT model YAML file and properties files, then they go in in the same `/u01/wdt/models` directory. If you do not specify a WDT model YAML file in your `/u01/wdt/models` directory, then the model YAML file must be supplied dynamically using a Kubernetes `ConfigMap` that is referenced by your Domain `spec.model.configMap` field.
+#### Understanding your first archive
 
-We provide an example of using a model `ConfigMap` later in this sample.
-
-The following sections contain the steps for creating the image `model-in-image:WLS-v1`.
-
-##### Understanding your first archive
-
-The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that you will use to create an archive ZIP file for the image.
-
-The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an ‘exploded’ sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
-  - A model image can contain multiple WDT archives.
-  - WDT archives can contain multiple applications, libraries, and other components.
-  - WDT archives have a [well defined directory structure](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/), which always has `wlsdeploy` as the top directory.
-
-The application displays important details about the WebLogic Server instance that it’s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server.
+See [Understanding your first archive]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation#understand-your-first-archive" >}}).
 
 
-##### Staging a ZIP file of the archive
+#### Staging a ZIP file of the archive
 
 When you create the image, you will use the files in the staging directory, `${WDT_MODEL_FILES_PATH}/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
@@ -223,82 +221,41 @@ $ cd /tmp/mii-sample/archives/archive-v1
 $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 ```
 
-##### Staging model files
+#### Staging model files
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
-##### Creating the image with WIT
+#### Creating the image with WIT
 
-At this point, you have staged all of the files needed for the image `model-in-image:WLS-v1`; they include:
+{{< readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" >}}
 
-  - `/tmp/mii-sample/wdt-model-files/weblogic-deploy.zip`
-  - `/tmp/mii-sample/wdt-model-files/WLS-v1/model.10.yaml`
-  - `/tmp/mii-sample/wdt-model-files/WLS-v1/model.10.properties`
-  - `/tmp/mii-sample/wdt-model-files/WLS-v1/archive.zip`
-
-If you don’t see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites](#image-creation-prerequisites).
-
-Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` with a `FROM` clause that references a base WebLogic image. You’ve already set up this tool during the prerequisite steps.
-
-Run the following commands to create the model image and verify that it worked:
-
-```shell
-$ ${WDT_MODEL_FILES_PATH}/imagetool/bin/imagetool.sh update \
-  --tag model-in-image:WLS-v1 \
-  --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-  --wdtModel      ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.yaml \
-  --wdtVariables  ${WDT_MODEL_FILES_PATH}/WLS-v1/model.10.properties \
-  --wdtArchive    ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip \
-  --wdtModelOnly \
-  --wdtDomainType WLS \
-  --chown oracle:root
-```
-
-If you don’t see the `imagetool` directory, then you missed a step in the prerequisites.
-
-The preceding command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
-
-  - Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
-  - Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
-      - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
-      - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.
-  - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
-
-When the command succeeds, you should see output like the following:
-
-```
-[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
-```
-
-Verify the image is available in the local Docker server with the following command.
-
-```shell
-$ docker images | grep WLS-v1
-```
-```
-model-in-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
-```
+{{% notice note %}}
+The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).
+{{% /notice %}}
 
 {{% notice note %}}
 You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
 {{% /notice %}}
 
-##### Pushing the image to Azure Container Registry
+#### Pushing the image to Azure Container Registry
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" >}}
 
 Ensure Docker is running on your local machine.  Run the following commands to tag and push the image to your ACR.
 
 ```shell
-$ docker tag model-in-image:WLS-v1 $LOGIN_SERVER/model-in-image-aks:1.0
+$ docker tag wdt-domain-image:WLS-v1 $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```
 ```shell
-$ docker push $LOGIN_SERVER/model-in-image-aks:1.0
+$ docker push $LOGIN_SERVER/mii-aks-auxiliary-image:1.0
 ```
+
+The output will show something similar to the following:
+
 ```
-The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/model-in-image-aks]
+The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/mii-aks-auxiliary-image]
 1.0: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
 ```
 
@@ -306,7 +263,7 @@ The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/model
 
 If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
 
-#### Create WebLogic domain
+### Create WebLogic domain
 
 In this section, you will deploy the new image to the namespace `sample-domain1-ns`, including the following steps:
 
@@ -320,7 +277,7 @@ In this section, you will deploy the new image to the namespace `sample-domain1-
 - Deploy a domain YAML file that references the new image.
 - Wait for the domain’s pods to start and reach their ready state.
 
-##### Namespace
+#### Namespace
 
 Create a namespace that can host one or more domains:
 
@@ -334,7 +291,27 @@ Label the domain namespace so that the operator can autodetect and create WebLog
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
 
-##### Kubernetes Secrets for WebLogic
+#### Kubernetes Secrets for WebLogic image
+
+You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret to pull image from OCR. Please run:
+
+``` shell
+$ $BASE_DIR/sample-scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh \
+  -n sample-domain1-ns \
+  -s ${SECRET_NAME_DOCKER} \
+  -e ${ORACLE_SSO_EMAIL} \
+  -p ${ORACLE_SSO_PASSWORD} \
+  -u ${ORACLE_SSO_EMAIL}
+```
+
+The output will show something similar to the following:
+
+```
+secret/wlsregcred created
+The secret wlsregcred has been successfully created in the sample-domain1-ns namespace.
+```
+
+#### Kubernetes Secrets for WebLogic
 
 First, create the secrets needed by the WLS type model domain. For more on secrets in the context of running domains, see [Prepare to run a domain]({{< relref "/managing-domains/prepare" >}}). In this case, you have two secrets.
 
@@ -376,7 +353,7 @@ $ kubectl -n sample-domain1-ns label  secret \
       - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain resource YAML file.  For complete details about the `Domain` resource, see the [Domain resource reference](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#domain-spec).
       - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your `model.10.yaml` file.
 
-   - The Model WDT runtime encrytion secret:
+   - The Model WDT runtime encryption secret:
       - This is a special secret required by Model in Image.
       - It must contain a `password` field.
       - It must be referenced using the `spec.model.runtimeEncryptionSecret` field in your Domain resource YAML file.
@@ -391,32 +368,44 @@ $ kubectl -n sample-domain1-ns label  secret \
       - To make it obvious which secrets belong to which domains.
       - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-##### Domain resource
+Now, you can verify the secrets with command:
+
+```shell
+kubectl get secrets -n sample-domain1-ns
+```
+
+The output looks similar to the following content.
+
+```txt
+NAME                                       TYPE                             DATA   AGE
+sample-domain1-runtime-encryption-secret   Opaque                           1      19s
+sample-domain1-weblogic-credentials        Opaque                           2      28s
+wlsregcred                                 kubernetes.io/dockerconfigjson   1      47s
+```
+
+#### Domain resource
 
 Now, you create a domain YAML file. Think of the domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
-We provide a sample file at `$BASE_DIR/sample-scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
+We provide a script at `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-mii-generate-yaml.sh` to generate a domain resource description.
+
+Run the following command to generate resource files.
 
 ```shell
-$ cp $BASE_DIR/sample-scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml /tmp/mii-sample/mii-initial.yaml
+export Domain_Creation_Image_tag="$LOGIN_SERVER/mii-aks-auxiliary-image:1.0"
 ```
-
-Print the image path. Copy the output to your clipboard and paste it to value of `spec.image` in `/tmp/mii-sample/mii-initial.yaml`.
 
 ```shell
-echo $LOGIN_SERVER/model-in-image-aks:1.0
+$ cd $BASE_DIR
+$ bash $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-mii-generate-yaml.sh
 ```
 
-Modify the Domain YAML with your values.
-
-| Name in YAML file | Example value | Notes |
-|-------------------|---------------|-------|
-|`spec.image`|`$LOGIN_SERVER/model-in-image-aks:1.0`|Must be the same as the value to which you pushed the image to by running the command `docker push $LOGIN_SERVER/model-in-image-aks:1.0`.|
+After running above commands, you will get three files: `mii-initial.yaml`, `admin-lb.yaml` and `cluster-lb.yaml`.
 
 Run the following command to create the domain custom resource:
 
 ```shell
-$ kubectl apply -f /tmp/mii-sample/mii-initial.yaml
+$ kubectl apply -f mii-initial.yaml
 ```
 
 Successful output will look like:
@@ -471,13 +460,13 @@ It may take you up to 10 minutes to deploy all pods, please wait and make sure e
 
 If the system does not reach this state, troubleshoot and resolve the problem before continuing. See [Troubleshooting](#troubleshooting) for hints.
 
-#### Invoke the web application
+### Invoke the web application
 
-##### Create Azure load balancer
+#### Create Azure load balancer
 
-Create the Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed in the cluster.
+Create an Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed to the cluster.
 
-Use the configuration file in `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with you domain values.
+Use the file `admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created a new one with customized values, then substitute the following content with your domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -500,7 +489,7 @@ spec:
 ```
 {{% /expand %}}
 
-Use the configuration file in `$BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
+Use the file `cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.
 
 {{%expand "Click here to view YAML content." %}}
 ```yaml
@@ -524,17 +513,24 @@ spec:
 ```
 {{% /expand %}}
 
-Create the load balancer services using the following command:
+Create the load balancer services using the following commands:
 
 ```shell
-$ kubectl apply -f $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/admin-lb.yaml
+$ kubectl apply -f admin-lb.yaml
 ```
+
+Successful output will look like:
+
 ```
 service/sample-domain1-admin-server-external-lb created
 ```
+
 ```shell
-$ kubectl  apply -f $BASE_DIR/sample-scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/cluster-lb.yaml
+$ kubectl  apply -f cluster-lb.yaml
 ```
+
+Successful output will look like:
+
 ```
 service/sample-domain1-cluster-1-external-lb created
 ```
@@ -544,6 +540,9 @@ Get the external IP addresses of the Administration Server and cluster load bala
 ```shell
 $ kubectl get svc -n sample-domain1-ns --watch
 ```
+
+Successful output will look like:
+
 ```
 NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)          AGE
 sample-domain1-admin-server               ClusterIP      None           <none>           7001/TCP         8m33s
@@ -567,7 +566,7 @@ $ kubectl describe domain domain1
 
 Make sure the status of cluster-1 is `ServersReady` and `Available`.
 
-{{%expand "Click here to view the example domain status." %}}
+{{%expand "Click here to view example domain status." %}}
 ```yaml
 Name:         sample-domain1
 Namespace:    sample-domain1-ns
@@ -691,12 +690,12 @@ Events:             <none>
 ```
 {{% /expand %}}
 
-##### Access the application
+#### Access the application
 
 Access the Administration Console using the admin load balancer IP address.
 
 ```shell
-$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
+$ ADMIN_SERVER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
 $ echo "Administration Console Address: http://${ADMIN_SERVER_IP}:7001/console/"
 ```
 
@@ -704,12 +703,14 @@ Access the sample application using the cluster load balancer IP address.
 
 ```shell
 ## Access the sample application using the cluster load balancer IP.
-$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress\[0\].ip}')
+$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
 ```shell
 $ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
+
+Successful output will look like:
 
 ```
 <html><body><pre>
@@ -735,25 +736,25 @@ Found 0 local data sources:
 </pre></body></html>
 ```
 
-#### Rolling updates
+### Rolling updates
 
 Naturally, you will want to deploy newer versions of the EAR application, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`. To learn how to do this, follow the steps in [Update 3]({{< relref "/samples/domains/model-in-image/update3" >}}).
 
-#### Database connection
+### Database connection
 
 For guidance on how to connect a database to your AKS with WebLogic Server application, see [Deploy a Java application with WebLogic Server on an Azure Kubernetes Service (AKS) cluster](https://learn.microsoft.com/en-us/azure/aks/howto-deploy-java-wls-app).
 
-#### Clean up resources
+### Clean up resources
 
 Run the following commands to clean up resources.
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
-#### Troubleshooting
+### Troubleshooting
 
 For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
 
-#### Useful links
+### Useful links
 
 - [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation
 - [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample

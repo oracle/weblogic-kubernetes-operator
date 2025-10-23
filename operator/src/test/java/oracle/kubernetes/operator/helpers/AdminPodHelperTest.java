@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,8 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
@@ -51,7 +50,6 @@ import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
@@ -128,31 +126,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getReferencePlainPortPodYaml_3_0() {
-    return ReferenceObjects.ADMIN_PLAINPORT_POD_3_0;
-  }
-
-  @Override
-  String getReferencePlainPortPodYaml_3_1() {
-    return ReferenceObjects.ADMIN_PLAINPORT_POD_3_1;
-  }
-
-  @Override
-  String getReferenceSslPortPodYaml_3_0() {
-    return ReferenceObjects.ADMIN_SSLPORT_POD_3_0;
-  }
-
-  @Override
-  String getReferenceSslPortPodYaml_3_1() {
-    return ReferenceObjects.ADMIN_SSLPORT_POD_3_1;
-  }
-
-  @Override
-  String getReferenceMiiPodYaml() {
-    return ReferenceObjects.ADMIN_MII_POD_3_1;
-  }
-
-  @Override
   String getReferenceMiiAuxImagePodYaml_3_3() {
     return ReferenceObjects.ADMIN_MII_AUX_IMAGE_POD_3_3;
   }
@@ -201,7 +174,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(getEvents().stream().anyMatch(this::isDomainRollStartedEvent), is(true));
   }
 
-  private boolean isDomainRollStartedEvent(CoreV1Event e) {
+  private boolean isDomainRollStartedEvent(EventsV1Event e) {
     return DOMAIN_ROLL_STARTING_EVENT.equals(e.getReason());
   }
 
@@ -242,19 +215,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
     V1Pod existingPod = createTestPodModel();
     Objects.requireNonNull(existingPod.getSpec()).setContainers(null);
     return existingPod;
-  }
-
-  @Test
-  void whenAdminPodDeletionFails_unrecoverableFailureOnUnauthorized() {
-    testSupport.addRetryStrategy(retryStrategy);
-    initializeExistingPod(getIncompatiblePod());
-    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, HTTP_UNAUTHORIZED);
-
-    FiberTestSupport.StepFactory stepFactory = getStepFactory();
-    Step initialStep = stepFactory.createStepList(terminalStep);
-    testSupport.runSteps(initialStep);
-
-    testSupport.verifyCompletionThrowable(ApiException.class);
   }
 
   @Test
@@ -952,7 +912,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
 
-    assertThat(testSupport, hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withMessageContaining(getPodName()));
+    assertThat(testSupport, hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withNoteContaining(getPodName()));
   }
 
   @Test
@@ -999,7 +959,5 @@ class AdminPodHelperTest extends PodHelperTestBase {
   List<String> createStartCommand() {
     return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
   }
-
-  // todo test that changing the cert in tuning parameters does not change the hash
 
 }

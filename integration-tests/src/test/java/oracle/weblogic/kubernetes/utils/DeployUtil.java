@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -72,7 +72,25 @@ public class DeployUtil {
    * @param namespace name of the namespace in which WebLogic server pods running
    */
   public static void deployUsingWlst(String host, String port, String userName,
-                                     String password, String targets, Path archivePath, String namespace) {
+      String password, String targets, Path archivePath, String namespace) {
+    deployUsingWlst(host, port, userName, password, targets, archivePath, namespace, false);
+  }
+
+  /**
+   * Deploy application.
+   *
+   * @param host name of the admin server host
+   * @param port default channel node port of admin server
+   * @param userName admin server user name
+   * @param password admin server password
+   * @param targets comma separated list of targets to deploy applications
+   * @param archivePath local path of the application archive
+   * @param namespace name of the namespace in which WebLogic server pods running
+   * @param secure admin server running in secure mode or not
+   */
+  public static void deployUsingWlst(String host, String port, String userName, String password,
+      String targets, Path archivePath, String namespace, boolean secure) {
+
     final LoggingFacade logger = getLogger();
 
     // this secret is used only for non-kind cluster
@@ -89,6 +107,12 @@ public class DeployUtil {
     p.setProperty("admin_username", userName);
     p.setProperty("admin_password", password);
     p.setProperty("targets", targets);
+    if (secure) {
+      p.setProperty("protocol", "t3s");
+    } else {
+      p.setProperty("protocol", "t3");
+    }
+
     assertDoesNotThrow(() -> p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file"),
         "Failed to write the domain properties to file");
 
@@ -202,7 +226,7 @@ public class DeployUtil {
 
     // check job status and fail test if the job failed to deploy
     V1Job job = getJob(jobName, namespace);
-    if (job != null) {
+    if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
           v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
@@ -211,12 +235,14 @@ public class DeployUtil {
         logger.severe("Job {0} failed to do deployment", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
         if (!pods.isEmpty()) {
-          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          V1Pod pod = pods.get(0);
+          if (pod != null && pod.getMetadata() != null) {
+            logger.severe(getPodLog(pod.getMetadata().getName(), namespace));
+          }
           fail("Deployment job failed");
         }
       }
     }
-
   }
 
   /**
@@ -277,7 +303,7 @@ public class DeployUtil {
   public static ExecResult deployUsingRest(String host, String port,
             String userName, String password, String targets, 
             Path archivePath, String hostHeader, String appName) {
-    ExecResult result = null;
+    ExecResult result;
     host = formatIPv6Host(host);
     result = deployUsingRest(host + ":" + port, userName, password, targets, archivePath,
            hostHeader, appName);
@@ -305,19 +331,19 @@ public class DeployUtil {
             String userName, String password, String targets, 
             Path archivePath, String hostHeader, String appName) {
     final LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer headerString = null;
+    ExecResult result;
+    StringBuffer headerString;
     if (hostHeader != null) {
       headerString = new StringBuffer("-H 'host: ");
       headerString.append(hostHeader)
                   .append(" ' ");
     } else {
-      headerString = new StringBuffer("");
+      headerString = new StringBuffer();
     }
     StringBuffer curlString = new StringBuffer("status=$(curl -g --noproxy '*' ");
     curlString.append(" --user " + userName + ":" + password);
     curlString.append(" -w %{http_code} --show-error -o /dev/null ")
-        .append(headerString.toString())
+        .append(headerString)
         .append("-H X-Requested-By:MyClient ")
         .append("-H Accept:application/json  ")
         .append("-H Content-Type:multipart/form-data ")

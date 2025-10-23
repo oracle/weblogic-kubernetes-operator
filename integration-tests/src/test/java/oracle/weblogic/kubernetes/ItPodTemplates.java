@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -58,7 +58,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * This test is used for creating Operator(s) and domain which uses pod templates.
  */
-@DisplayName("Test to verify domain pod templates.")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
@@ -81,7 +80,7 @@ class ItPodTemplates {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Get a unique namespace for operator");
@@ -104,7 +103,7 @@ class ItPodTemplates {
    */
   @Test
   @DisplayName("Test pod templates using all supported variables in serverPod")
-  void testPodTemplateUsingVariablesDomainInImage() throws Exception {
+  void testPodTemplateUsingVariablesDomainInImage() {
     String wdtImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
     logger.info("Add annotations to serverPod in Domain Spec as $(DOMAIN_HOME) and $(LOG_HOME)");
     logger.info("Add labels to serverPod in Domain Spec as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");
@@ -139,6 +138,8 @@ class ItPodTemplates {
     //check that managed server pod is up and all applicable variable values are initialized.
     assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNamespace);
     V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
+    assertNotNull(managedServerMetadata, "managed server pod metadata is null");
+    assertNotNull(managedServerMetadata.getLabels(), "managed server metadata label is null");
     String serverName = managedServerMetadata.getLabels().get("servername");
     logger.info("Checking that variables used in the labels and annotations "
         + "in the serverPod for servername, domainname, clustername are initialized");
@@ -170,6 +171,7 @@ class ItPodTemplates {
 
     logger.info("Checking that applicable variables used "
         + "in the annotations for domainhome and loghome are initialized");
+    assertNotNull(managedServerMetadata.getAnnotations(), "managed server metadata annotation is null");
     String loghome = managedServerMetadata.getAnnotations().get("loghome");
     //check that annotation contains loghome in the pod
     assertNotNull(loghome, "Can't find annotation loghome");
@@ -288,7 +290,7 @@ class ItPodTemplates {
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
 
     ClusterSpec clusterSpec = new ClusterSpec()

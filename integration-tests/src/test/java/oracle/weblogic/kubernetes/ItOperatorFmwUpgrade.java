@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -90,7 +90,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Upgrade operator with current Operator image build from current branch.
  * Verify Domain resource version and image are updated.
  */
-@DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
 @Tag("kind-upgrade")
 class ItOperatorFmwUpgrade {
@@ -130,7 +129,7 @@ class ItOperatorFmwUpgrade {
    * Initialization of logger, conditionfactory and current Operator image to all test methods.
    */
   @BeforeAll
-  public static void initAll() {
+  static void initAll() {
     logger = getLogger();
 
     latestOperatorImageName = getOperatorImageName();
@@ -145,7 +144,7 @@ class ItOperatorFmwUpgrade {
    * @param namespaces injected by JUnit
    */
   @BeforeEach
-  public void beforeEach(@Namespaces(4) List<String> namespaces) {
+  void beforeEach(@Namespaces(4) List<String> namespaces) {
     this.namespaces = namespaces;
 
     logger.info("Assign a unique namespace for DB and RCU");
@@ -179,9 +178,7 @@ class ItOperatorFmwUpgrade {
    * Cleanup Kubernetes artifacts in the namespaces used by the test and delete CRD.
    */
   @AfterEach
-  public void tearDown() {
-    //assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
-
+  void tearDown() {
     if (!SKIP_CLEANUP) {
 
       assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
@@ -259,7 +256,7 @@ class ItOperatorFmwUpgrade {
          String externalServiceNameSuffix) {
 
     // install operator with older release
-    HelmParams opHelmParams = installOperator(operatorVersion);
+    installOperator(operatorVersion);
 
     // create FMW domain and verify
     createFmwDomainAndVerify(domainVersion);
@@ -347,7 +344,7 @@ class ItOperatorFmwUpgrade {
       // check operator image name after upgrade
       logger.info("Checking image name in operator container ");
       testUntil(
-            assertDoesNotThrow(() -> getOpContainerImageName(),
+            assertDoesNotThrow(this::getOpContainerImageName,
               "Exception while getting the operator image name"),
             logger,
             "Checking operator image name in namespace {0} after upgrade",

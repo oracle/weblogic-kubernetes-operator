@@ -24,6 +24,7 @@ import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.SemanticVersion.Compatibility;
 
@@ -35,9 +36,9 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SE
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
@@ -51,9 +52,13 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultC
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.isLoadBalancerHealthy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -77,26 +82,29 @@ public class IstioUtils {
     // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
     // can be (un)installed manually when SKIP_CLEANUP is set to true
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
-        Paths.get(RESULTS_ROOT, "install-istio.sh"),
-        StandardCopyOption.REPLACE_EXISTING),
+            Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
+            Paths.get(RESULTS_ROOT, "install-istio.sh"),
+            StandardCopyOption.REPLACE_EXISTING),
         String.format("Copy install-istio.sh to %s failed", RESULTS_ROOT));
 
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
-        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"),
-        StandardCopyOption.REPLACE_EXISTING),
+            Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
+            Paths.get(RESULTS_ROOT, "uninstall-istio.sh"),
+            StandardCopyOption.REPLACE_EXISTING),
         String.format("Copy uninstall-istio.sh to %s failed", RESULTS_ROOT));
 
     Path istioInstallPath =
         Paths.get(RESULTS_ROOT, "install-istio.sh");
     String installScript = istioInstallPath.toString();
-    String ocneIstioRepo = BASE_IMAGES_REPO + "/" +  BASE_IMAGES_TENANCY; 
-    // When install istio in OCNE environment, 
+
+    // When install istio in OCNE environment,
     // use BASE_IMAGES_REPO/devweblogic/istio-release instead of gcr.io/istio-release
     if (OCNE) {
-      logger.info("replace istio installation hub in File {0}", ocneIstioRepo);
+      String ocneIstioRepo = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY;
+      logger.info("replace istio installation hub in File {0}", installScript);
       assertDoesNotThrow(() -> replaceStringInFile(installScript, "gcr.io", ocneIstioRepo),
+          String.format("Failed to replace string in File %s", installScript));
+      assertDoesNotThrow(() -> replaceStringInFile(installScript, "--auth=instance_principal", " "),
           String.format("Failed to replace string in File %s", installScript));
     }
     String arch = "linux-amd64";
@@ -108,10 +116,20 @@ public class IstioUtils {
         String.format("%s %s %s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT, TEST_IMAGES_TENANCY, arch);
     logger.info("Istio installation command {0}", command);
     assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command)
-            .redirect(false))
+            defaultCommandParams()
+                .command(command)
+                .redirect(false))
         .execute());
+    if (OKE_CLUSTER) {
+      String loadBalancerIP = getServiceExtIPAddrtOke("istio-ingressgateway", "istio-system");
+      testUntil(
+          assertDoesNotThrow(() -> isLoadBalancerHealthy("istio-system", "istio-ingressgateway"),
+              "isLoadBalancerHealthy failed with ApiException"),
+          logger,
+          "Istio LoadBalancer to be healthy in namespace {0}",
+          "istio-system");
+      InitializationTasks.registerLoadBalancerExternalIP(loadBalancerIP);
+    }
   }
 
   /**
@@ -119,16 +137,16 @@ public class IstioUtils {
    */
   public static void uninstallIstio() {
     LoggingFacade logger = getLogger();
-    Path istioInstallPath = 
+    Path istioInstallPath =
         Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
         String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
     logger.info("Istio uninstallation command {0}", command);
     assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command)
-            .redirect(false))
+            defaultCommandParams()
+                .command(command)
+                .redirect(false))
         .execute());
   }
 
@@ -138,11 +156,21 @@ public class IstioUtils {
    * @return ingress port for istio-ingressgateway
    */
   public static int getIstioHttpIngressPort() {
+    return getIstioHttpIngressPort("http2");
+  }
+
+  /**
+   * Get the http ingress port of istio installation.
+   *
+   * @param portName name of port to get
+   * @return ingress port for istio-ingressgateway
+   */
+  public static int getIstioHttpIngressPort(String portName) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer getIngressPort = null;
+    ExecResult result;
+    StringBuffer getIngressPort;
     getIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
-    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
+    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"" + portName.trim() + "\")].nodePort}'");
     logger.info("getIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getIngressPort));
     try {
       result = exec(new String(getIngressPort), true);
@@ -165,8 +193,8 @@ public class IstioUtils {
    */
   public static int getIstioSecureIngressPort() {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer getSecureIngressPort = null;
+    ExecResult result;
+    StringBuffer getSecureIngressPort;
     getSecureIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getSecureIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"https\")].nodePort}'");
     logger.info("getSecureIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getSecureIngressPort));
@@ -191,8 +219,8 @@ public class IstioUtils {
    */
   public static int getIstioTcpIngressPort() {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer getTcpIngressPort = null;
+    ExecResult result;
+    StringBuffer getTcpIngressPort;
     getTcpIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getTcpIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"tcp\")].nodePort}'");
     logger.info("getTcpIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getTcpIngressPort));
@@ -218,8 +246,8 @@ public class IstioUtils {
    */
   public static boolean deployHttpIstioGatewayAndVirtualservice(Path configPath) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
+    ExecResult result;
+    StringBuffer deployIstioGateway;
     deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioGateway: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
@@ -242,8 +270,8 @@ public class IstioUtils {
   public static boolean deployTcpIstioGatewayAndVirtualservice(
       Path configPath) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
+    ExecResult result;
+    StringBuffer deployIstioGateway;
     deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioGateway: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
@@ -266,8 +294,8 @@ public class IstioUtils {
   public static boolean deployIstioDestinationRule(
       Path configPath) {
     LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
+    ExecResult result;
+    StringBuffer deployIstioGateway;
     deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioDestinationRule: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
@@ -322,10 +350,10 @@ public class IstioUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "prometheus_tag",
         PROMETHEUS_IMAGE_TAG));
-    ExecResult result = null;
-    StringBuffer deployIstioPrometheus = null;
+    ExecResult result;
+    StringBuffer deployIstioPrometheus;
     deployIstioPrometheus = new StringBuffer(KUBERNETES_CLI + " apply -f ");
-    deployIstioPrometheus.append(targetPromFile.toString());
+    deployIstioPrometheus.append(targetPromFile);
     logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " command {0}", new String(deployIstioPrometheus));
     try {
       result = exec(new String(deployIstioPrometheus), true);
@@ -336,13 +364,12 @@ public class IstioUtils {
     logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " returned {0}", result.toString());
     try {
       for (var item : listPods("istio-system", null).getItems()) {
-        if (item.getMetadata() != null) {
-          if (item.getMetadata().getName().contains("prometheus")) {
-            logger.info("Waiting for pod {0} to be ready in namespace {1}",
-                item.getMetadata().getName(), "istio-system");
-            checkPodReady(item.getMetadata().getName(), null, "istio-system");
-            checkServiceExists("prometheus", "istio-system");
-          }
+        if (item.getMetadata() != null && item.getMetadata().getName() != null
+            && item.getMetadata().getName().contains("prometheus")) {
+          logger.info("Waiting for pod {0} to be ready in namespace {1}",
+              item.getMetadata().getName(), "istio-system");
+          checkPodReady(item.getMetadata().getName(), null, "istio-system");
+          checkServiceExists("prometheus", "istio-system");
         }
       }
     } catch (ApiException e) {
@@ -433,7 +460,7 @@ public class IstioUtils {
                     .configMap(configmapName)
                     .onlineUpdate(new OnlineUpdate().enabled(true))
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource
     domain = createClusterResourceAndAddReferenceToDomain(domainUid + "-" + clusterName,
@@ -487,21 +514,19 @@ public class IstioUtils {
     return adminServer;
   }
 
-  
+
   /**
-   * Check WebLogic console thru Istio Ingress Port.
+   * Check WebLogic access through Istio Ingress Port.
+   * @param istioHost Host
    * @param istioIngressPort Istio Ingress Port
    * @param domainNamespace Domain namespace that the domain is hosted
    */
-  public static void checkIstioService(int istioIngressPort, String domainNamespace) {
+  public static void checkIstioService(String istioHost, int istioIngressPort, String domainNamespace) {
     // We can not verify Rest Management console thru Administration NodePort
     // in istio, as we can not enable Administration NodePort
     LoggingFacade logger = getLogger();
     logger.info("Verifying Istio Service @IngressPort [{0}]", istioIngressPort);
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    String host = formatIPv6Host(istioHost);
     String readyAppUrl = "http://" + host + ":" + istioIngressPort + "/weblogic/ready";
     boolean checlReadyApp =
         checkAppUsingHostHeader(readyAppUrl, domainNamespace + ".org");
@@ -520,8 +545,8 @@ public class IstioUtils {
    * @return istioIngressPort
    */
   public static int createIstioService(
-       String domainUid, String clusterName, 
-       String adminServerPodName, String domainNamespace) {
+      String domainUid, String clusterName,
+      String adminServerPodName, String domainNamespace) {
     LoggingFacade logger = getLogger();
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
@@ -530,6 +555,7 @@ public class IstioUtils {
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("MANAGED_SERVER_PORT", "8001");    
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
@@ -552,7 +578,8 @@ public class IstioUtils {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
     return istioIngressPort;
-    
+
   }
 
 }
+

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
@@ -70,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Also verify that an annotation containing a slash in the name propagates
  * to the server pod
  */
-@DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -93,11 +93,17 @@ class ItSessionMigration {
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static String finalPrimaryServerName = null;
   // Since the ServerTemplate section of the model file model.sessmigr.yaml
   // does not explicitly specify ListenPort, the introspector/wdt generated
   // default ListenPort for each dynamic server is set to 7100
   private static int managedServerPort = 7100;
+  
+  static {
+    if (!WEBLOGIC_IMAGE_TAG.startsWith("12")) {
+      managedServerPort = 7001;
+    }
+  }
+
   private static int replicaCount = 2;
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -118,7 +124,7 @@ class ItSessionMigration {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -152,6 +158,7 @@ class ItSessionMigration {
 
   @AfterAll
   void tearDown() {
+    // no-op
   }
 
   /**
@@ -171,12 +178,11 @@ class ItSessionMigration {
     final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + SESSION_STATE;
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
     final String clusterAddress = domainUid + "-cluster-" + clusterName;
-    String serverName = managedServerPrefix + "1";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
     Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
-        serverName, clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
+        clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
 
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
@@ -191,9 +197,8 @@ class ItSessionMigration {
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
     // send a HTTP request to get server and session info after shutting down the primary server
-    serverName = domainUid + "-" + origSecondaryServerName;
     httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
-        serverName, clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
+        clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
     // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
@@ -217,8 +222,6 @@ class ItSessionMigration {
         () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
-
-    finalPrimaryServerName = primaryServerName;
 
     logger.info("Done testSessionMigration \nThe new primary server is {0}, it was {1}. "
             + "\nThe session state was set to {2}, it is migrated to the new primary server.",
@@ -246,6 +249,8 @@ class ItSessionMigration {
     assertNotNull(managedServerPod,
         "The managed server pod does not exist in namespace " + domainNamespace);
     V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
+    assertNotNull(managedServerMetadata, "managed server metadata is null");
+    assertNotNull(managedServerMetadata.getAnnotations(), "managed server metadata annotation is null");
     String myAnnotationValue = managedServerMetadata.getAnnotations().get(annotationKey);
     String myAnnotationValue2 = managedServerMetadata.getAnnotations().get(annotationKey2);
     String myAnnotationValue3 = managedServerMetadata.getAnnotations().get(annotationKey3);
@@ -380,7 +385,7 @@ class ItSessionMigration {
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource
     domain = createClusterResourceAndAddReferenceToDomain(

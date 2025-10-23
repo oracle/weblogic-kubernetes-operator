@@ -1,5 +1,4 @@
-
-#### Create Resource Group
+Create the resource group by issuing the following commands.
 
 ```shell
 $ az extension add --name resource-graph

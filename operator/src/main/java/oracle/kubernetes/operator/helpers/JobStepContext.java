@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -70,6 +71,8 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
 import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
@@ -105,6 +108,7 @@ public class JobStepContext extends BasePodStepContext {
   private V1Job jobModel;
   private Step conflict;
   private Packet packet;
+  private static String OPENSHIFT = "OpenShift";
 
   JobStepContext(Packet packet) {
     super((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
@@ -190,6 +194,11 @@ public class JobStepContext extends BasePodStepContext {
         .map(EffectiveIntrospectorJobPodSpec::getEnv).orElse(new ArrayList<>());
   }
 
+  private List<V1Container> getIntrospectorInitContainers() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+            .map(EffectiveIntrospectorJobPodSpec::getInitContainers).orElse(new ArrayList<>());
+  }
+
   private List<V1EnvVar> getAdminServerEnvVariables() {
     return Optional.ofNullable(getDomain().getAdminServerSpec()).map(EffectiveServerSpec::getEnvironmentVariables)
         .orElse(new ArrayList<>());
@@ -234,6 +243,9 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
+  String getModelEncryptionSecretName() {
+    return getDomain().getModelEncryptionSecret();
+  }
 
   // ----------------------- step methods ------------------------------
 
@@ -293,6 +305,9 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   String getNodeManagerHome() {
+    if (isReadOnlyRootFileSystem()) {
+      return NODEMGR_HOME_READONLY_ROOT;
+    }
     return NODEMGR_HOME;
   }
 
@@ -460,17 +475,28 @@ public class JobStepContext extends BasePodStepContext {
     getInitializeDomainOnPV().ifPresent(initializeDomainOnPV -> addInitDomainOnPVInitContainer(initContainers));
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
-    initContainers.addAll(getAdditionalInitContainers().stream()
-            .filter(container -> isAllowedInIntrospector(container.getName()))
-            .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
-            .toList());
+    List<V1Container> introspectorInitContainers = getIntrospectorInitContainers();
+    if (introspectorInitContainers.isEmpty()) {
+      initContainers.addAll(getAdditionalInitContainers().stream()
+              .filter(container -> isAllowedInIntrospector(container.getName()))
+              .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
+              .toList());
+    } else {
+      for (V1Container initContainer : introspectorInitContainers) {
+        if (initContainers.stream().noneMatch(
+                container -> container.getName().equals(initContainer.getName()))) {
+          initContainer.securityContext(getInitContainerSecurityContext());
+          initContainers.add(initContainer);
+        }
+      }
+    }
     podSpec.initContainers(initContainers);
   }
 
   private void addInitContainers(List<V1Container> initContainers, List<? extends DeploymentImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
-        initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx,
-                isInitializeDomainOnPV())));
+            initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx,
+                    isInitializeDomainOnPV())));
   }
 
   private Optional<InitializeDomainOnPV> getInitializeDomainOnPV() {
@@ -480,31 +506,45 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addInitDomainOnPVInitContainer(List<V1Container> initContainers) {
-    initContainers.add(new V1Container()
-        .name(INIT_DOMAIN_ON_PV_CONTAINER)
-        .image(getDomain().getSpec().getImage())
-        .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
-        .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
-        .addVolumeMountsItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
-            .mountPath(AUXILIARY_IMAGE_TARGET_PATH))
-        .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
-        .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
-        .addEnvItem(new V1EnvVar().name(ServerEnvVars.LOG_HOME).value(getEffectiveLogHome()))
-        .addEnvItem(new V1EnvVar().name(ServerEnvVars.DOMAIN_HOME_ON_PV_DEFAULT_UGID)
-                .value(getDomainHomeOnPVHomeOwnership()))
-        .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
-            .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
-        .securityContext(getInitContainerSecurityContext())
-        .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
-    );
+    V1Container container = new V1Container()
+            .name(INIT_DOMAIN_ON_PV_CONTAINER)
+            .image(getDomain().getSpec().getImage())
+            .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
+            .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
+            .addVolumeMountsItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+                    .mountPath(AUXILIARY_IMAGE_TARGET_PATH))
+            .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
+            .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
+            .addEnvItem(new V1EnvVar().name(ServerEnvVars.LOG_HOME).value(getEffectiveLogHome()))
+            .addEnvItem(new V1EnvVar().name(ServerEnvVars.DOMAIN_HOME_ON_PV_DEFAULT_UGID)
+                    .value(getDomainHomeOnPVHomeOwnership()))
+            .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
+                    .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
+            .securityContext(getInitContainerSecurityContext())
+            .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT));
+
+    if (isReadOnlyRootFileSystem()) {
+      container.addVolumeMountsItem(volumeMount(TMPDIR_VOLUME, TMPDIR_MOUNTS_PATH));
+    }
+
+    initContainers.add(container);
+
   }
 
   @Override
   V1SecurityContext getInitContainerSecurityContext() {
     if (isInitDomainOnPVRunAsRoot()) {
-      return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
+      if (OPENSHIFT.equalsIgnoreCase(super.getKubernetesPlatform())) {
+        // Cannot set runAsUser(0L) because it will violate SCC.
+        return new V1SecurityContext().runAsGroup(0L);
+      } else {
+        return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
+      }
     }
-    if (getPodSecurityContext().equals(new V1PodSecurityContext())) {
+    if (getServerSpec().getContainerSecurityContext() != null) {
+      return getServerSpec().getContainerSecurityContext();
+    }
+    if (getPodSecurityContext().equals(PodSecurityHelper.getDefaultPodSecurityContext())) {
       return PodSecurityHelper.getDefaultContainerSecurityContext();
     }
     return creatSecurityContextFromPodSecurityContext(getPodSecurityContext());
@@ -537,7 +577,7 @@ public class JobStepContext extends BasePodStepContext {
             .map(V1PodSecurityContext::getRunAsGroup)
             .orElse(-1L);
 
-    if ("OpenShift".equals(getKubernetesPlatform())) {
+    if (OPENSHIFT.equals(getKubernetesPlatform())) {
       uid = (uid == -1L) ? 1000L : uid;
       gid = (gid == -1L) ? 0L : gid;
     } else {
@@ -569,6 +609,7 @@ public class JobStepContext extends BasePodStepContext {
             .activeDeadlineSeconds(getActiveDeadlineSeconds())
             .restartPolicy("Never")
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
+            .automountServiceAccountToken(info.getDomain().getSpec().getAutomountServiceAccountToken())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
@@ -595,6 +636,12 @@ public class JobStepContext extends BasePodStepContext {
               getOpssWalletFileSecretVolume()));
     }
 
+    if (getModelEncryptionSecretVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME).secret(
+              getModelEncryptionSecretVolume()
+      ));
+    }
+
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
@@ -608,6 +655,14 @@ public class JobStepContext extends BasePodStepContext {
           volumes.add(additionalVolume);
         }
       }
+    }
+
+    if (isReadOnlyRootFileSystem()) {
+      List<V1Volume> volumes = podSpec.getVolumes();
+      if (volumes == null) {
+        volumes = new ArrayList<>();
+      }
+      volumes.add(new V1Volume().name(TMPDIR_VOLUME).emptyDir(new V1EmptyDirVolumeSource().medium("Memory")));
     }
 
     getConfigOverrideSecrets().forEach(secretName -> addConfigOverrideSecretVolume(podSpec, secretName));
@@ -633,14 +688,14 @@ public class JobStepContext extends BasePodStepContext {
           podSpec.securityContext(podSecurityContext.fsGroup(podSecurityContext.getRunAsGroup()));
         } else if (podSecurityContext.getFsGroup() == null) {
           Optional.ofNullable(TuningParameters.getInstance()).ifPresent(instance -> {
-            if (!"OpenShift".equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
+            if (!OPENSHIFT.equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
               podSpec.securityContext(podSecurityContext.fsGroup(0L));
             }
           });
         }
         if (podSpec.getSecurityContext().getFsGroupChangePolicy() == null) {
           Optional.ofNullable(TuningParameters.getInstance()).ifPresent(instance -> {
-            if (!"OpenShift".equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
+            if (!OPENSHIFT.equalsIgnoreCase(instance.getKubernetesPlatform()) && !isInitDomainOnPVRunAsRoot()) {
               podSpec.getSecurityContext().fsGroupChangePolicy("OnRootMismatch");
             }
           });
@@ -717,7 +772,12 @@ public class JobStepContext extends BasePodStepContext {
     if (getOpssWalletFileSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
     }
-    
+
+    if (getModelEncryptionSecretVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME,
+              WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH));
+    }
+
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
     }
@@ -758,10 +818,10 @@ public class JobStepContext extends BasePodStepContext {
 
   private String getVolumeName(String resourceName, String type) {
     try {
-      return getLegalVolumeName(resourceName, type);
+      return CommonUtils.toDns1123LegalName(getLegalVolumeName(resourceName, type));
     } catch (Exception ex) {
       LOGGER.severe(MessageKeys.EXCEPTION, ex);
-      return resourceName;
+      return CommonUtils.toDns1123LegalName(resourceName);
     }
   }
 
@@ -793,16 +853,16 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getFluentdSpecification())
         .ifPresent(fluentd -> {
           if (Boolean.TRUE.equals(fluentd.getWatchIntrospectorLogs())) {
-            FluentdHelper.addFluentdContainer(fluentd,
-                    containers, getDomain(), true);
+            FluentdHelper.addFluentdContainer(getServerSpec(), fluentd,
+                    containers, getDomain(), true, isReadOnlyRootFileSystem());
           }
         });
 
     Optional.ofNullable(getDomain().getFluentbitSpecification())
             .ifPresent(fluentbit -> {
               if (Boolean.TRUE.equals(fluentbit.getWatchIntrospectorLogs())) {
-                FluentbitHelper.addFluentbitContainer(fluentbit,
-                        containers, getDomain(), true);
+                FluentbitHelper.addFluentbitContainer(getServerSpec(), fluentbit,
+                        containers, getDomain(), true, isReadOnlyRootFileSystem());
               }
             });
 
@@ -866,6 +926,17 @@ public class JobStepContext extends BasePodStepContext {
     if (getOpssWalletFileSecretName() != null) {
       V1SecretVolumeSource result =  new V1SecretVolumeSource()
               .secretName(getOpssWalletFileSecretName())
+              .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
+  }
+
+  private V1SecretVolumeSource getModelEncryptionSecretVolume() {
+    if (getModelEncryptionSecretName() != null) {
+      V1SecretVolumeSource result =  new V1SecretVolumeSource()
+              .secretName(getModelEncryptionSecretName())
               .defaultMode(420);
       result.setOptional(true);
       return result;

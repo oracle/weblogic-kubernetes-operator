@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -113,6 +113,7 @@ import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOO
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.tuning.TuningParameters.CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -192,7 +193,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(loggerControl.withLogLevel(Level.INFO)
         .collectLogMessages(logRecords,
             VALIDATING_WEBHOOK_CONFIGURATION_CREATED, VALIDATING_WEBHOOK_CONFIGURATION_REPLACED,
@@ -220,7 +221,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);
@@ -373,7 +374,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
         .map(V1CustomResourceDefinition::getMetadata)
         .filter(Objects::nonNull)
         .map(V1ObjectMeta::getName)
-        .collect(Collectors.toList());
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @Test
@@ -726,7 +727,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
 
   @Nonnull
   private List<V1RuleWithOperations> getMatchRules(V1ValidatingWebhookConfiguration configuration, String resource) {
-    return getRules(configuration).stream().filter(r -> isResourceEquals(resource, r)).collect(Collectors.toList());
+    return getRules(configuration).stream().filter(r -> isResourceEquals(resource, r)).toList();
   }
 
   private boolean areOperationsMatch(List<String> operations, V1RuleWithOperations r) {
@@ -813,7 +814,7 @@ public class WebhookMainTest extends CrdHelperTestBase {
     @Override
     public Cancellable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
       ScheduledFuture<?> future = testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-      return () -> future.cancel(true);
+      return createCancellable(future);
     }
 
     @Override

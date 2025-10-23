@@ -98,18 +98,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Start a domain with both domain and cluster defined in single yaml file
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create model in image domain with Cluster Resourcees")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 class ItMiiClusterResource {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private String miiImage = null;
   private static LoggingFacade logger = null;
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
@@ -121,7 +119,7 @@ class ItMiiClusterResource {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -300,7 +298,6 @@ class ItMiiClusterResource {
   void testDomainStatusMatchesClusterResourceStatus() {
 
     String domainUid = "domain10";
-    String adminServerPodName = domainUid + "-admin-server";
     String managedServer1Prefix = domainUid +  "-c1-managed-server";
     String managedServer2Prefix = domainUid + "-c2-managed-server";
 
@@ -659,8 +656,7 @@ class ItMiiClusterResource {
     String domainUid = "domain4"; 
     String cluster1Name = "cluster-1"; 
     String cluster1Res = domainUid + "-cluster-1"; 
-    String cluster2Name = "cluster-2"; 
-    String cluster2Res = domainUid + "-cluster-2"; 
+    String cluster2Res = domainUid + "-cluster-2";
 
     String configMapName = domainUid + "-configmap"; 
    
@@ -791,7 +787,6 @@ class ItMiiClusterResource {
     String cluster1Res     = domainUid + "-cluster-1";
     String cluster2Res     = domainUid + "-cluster-2";
     String config1MapName  = domainUid + "-configmap";
-    String config2MapName  = domainUid + "-configmap2";
 
     String adminPodName      = domainUid + "-admin-server";
     String managedPod1Prefix = domainUid + "-c1-managed-server";
@@ -917,7 +912,6 @@ class ItMiiClusterResource {
     String cluster1Res     = domainUid + "-cluster-1";
     String cluster2Res     = domainUid + "-cluster-2";
     String config1MapName  = domainUid + "-configmap";
-    String config2MapName  = domainUid + "-configmap2";
 
     String adminPodName      = domainUid + "-admin-server";
     String managedPod1Prefix = domainUid + "-c1-managed-server";
@@ -1083,7 +1077,7 @@ class ItMiiClusterResource {
                     .configMap(configmapName)
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return domain;
   }

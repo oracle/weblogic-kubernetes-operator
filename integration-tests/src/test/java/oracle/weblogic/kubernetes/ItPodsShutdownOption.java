@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -76,13 +77,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test is to verify shutdown rules when shutdown properties are defined at different levels
  * (domain, cluster, adminServer and managedServer level).
  */
-@DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-arm")
-@Tag("oke-parallel")
+@Tag("oke-weekly-sequential")
 class ItPodsShutdownOption {
 
   private static String domainNamespace = null;
@@ -116,7 +116,7 @@ class ItPodsShutdownOption {
    * @param namespaces list of namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -168,7 +168,7 @@ class ItPodsShutdownOption {
    * Delete the domain created by each test for the next test to start over.
    */
   @AfterEach
-  public void afterEach() {
+  void afterEach() {
     logger.info("Deleting the domain resource");
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
@@ -480,7 +480,7 @@ class ItPodsShutdownOption {
                     .configMap(cmName)
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(600L))
+                .introspectorJobActiveDeadlineSeconds(3000L))
             .addManagedServersItem(new ManagedServer()
                 .serverStartPolicy("Always")
                 .serverName(indManagedServerName1)
@@ -544,12 +544,21 @@ class ItPodsShutdownOption {
 
   // get pod log which includes the server.out logs and verify the messages contain the set shutdown properties
   private void verifyServerLog(String namespace, String podName, String[] envVars) {
-    String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(podName, namespace));
-    for (String envVar : envVars) {
-      logger.info("Checking Pod {0} for server startup property {1}", podName, envVar);
-      assertTrue(podLog.contains(envVar), "Server log doesn't contain the " + envVar);
-      logger.info("Pod {0} contains the property {1} in server startup env", podName, envVar);
-    }
+    testUntil(
+        () -> {
+          boolean result = true;
+          String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(podName, namespace));
+          for (String envVar : envVars) {
+            logger.info("Checking Pod {0} for server startup property {1}", podName, envVar);
+            result = result && podLog.contains(envVar);
+          }
+          return result;
+        },
+        logger,
+        "server log for pod {0} contains environment variables {1}",
+        podName,
+        envVars
+    );
   }
 
   // Crate a ConfigMap with a model to add a 2 independent managed servers
@@ -570,6 +579,5 @@ class ItPodsShutdownOption {
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
-
 }
 

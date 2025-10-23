@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -34,10 +33,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.verifyNamespaceActive;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Utility class to build application.
@@ -117,7 +115,7 @@ public class BuildApplication {
     Path destArchiveBaseDir = 
          targetPath == null  ? Paths.get(WORK_DIR, appSrcPath.getFileName().toString()) : targetPath;
     logger.info("DestArchiveBaseDir set to {0}", destArchiveBaseDir.toString());
-    Path destDir = null;
+
 
     assertDoesNotThrow(() -> {
       // recreate WORK_DIR/j2eeapplications/<application_directory_name>
@@ -132,12 +130,11 @@ public class BuildApplication {
 
       // copy the application source to WORK_DIR/j2eeapplications/<application_directory_name> for zipping
       logger.info("Copying {0} to {1}", appSrcPath, tempAppPath);
-      copyDirectory(appSrcPath.toFile(), tempAppPath.toFile());
+      JakartaRefactorUtil.copyAndRefactorDirectory(appSrcPath, tempAppPath);
     });
 
     // zip up the application source to be copied to pod for building
     Path zipFile = Paths.get(FileUtils.createZipFile(tempAppPath));
-
 
     // add ant properties as env variable in pod
     V1Container buildContainer = new V1Container();
@@ -150,7 +147,7 @@ public class BuildApplication {
     // set ant parameteres as env variable in pod
     if (antParams != null) {
       StringBuilder params = new StringBuilder();
-      antParams.entrySet().forEach((parameter) -> {
+      antParams.entrySet().forEach(parameter -> {
         params.append("-D").append(parameter.getKey()).append("=").append(parameter.getValue()).append(" ");
       });
       buildContainer = buildContainer
@@ -165,22 +162,16 @@ public class BuildApplication {
 
     //setup temporary WebLogic pod to build application
     V1Pod webLogicPod = setupWebLogicPod(namespace, buildContainer);
+    assertNotNull(webLogicPod, "webLogicPod is null");
+    assertNotNull(webLogicPod.getMetadata(), "webLogicPod metadata is null");
 
-    try {
-      //copy the zip file to /u01 location inside pod
-      Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
-          null, zipFile, Paths.get("/u01", zipFile.getFileName().toString()));
-    } catch (ApiException | IOException  ioex) {
-      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
-    }
+    //copy the zip file to /u01 location inside pod
+    Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
+        null, zipFile, Paths.get("/u01", zipFile.getFileName().toString()));
 
-    try {
-      //copy the build script to /u01 location inside pod
-      Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
-          null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
-    } catch (ApiException | IOException  ioex) {
-      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
-    }
+    //copy the build script to /u01 location inside pod
+    Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
+        null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
     logger.info(KUBERNETES_CLI + " copied " + BUILD_SCRIPT + " into the pod");
 
     // One of the test is failing in running the BUILD_SCRIPT (build_application.sh) - reason: the script does not exist
@@ -198,7 +189,6 @@ public class BuildApplication {
     }
 
     try {
-      //Kubernetes.exec(webLogicPod, new String[]{"/bin/sh", "/u01/" + BUILD_SCRIPT});
       ExecResult exec = Exec.exec(webLogicPod, null, false, "/bin/sh", "/u01/" + BUILD_SCRIPT);
       if (exec.stdout() != null) {
         logger.info("Exec stdout {0}", exec.stdout());
@@ -212,19 +202,14 @@ public class BuildApplication {
       // this assertion for now. it is now the responsibility of the It test class
       // to assert the application exists before continuing with the test.
 
-      //assertEquals(0, exec.exitValue(), "Exec into " + webLogicPod.getMetadata().getName()
-      //    + " to build an application failed with exit value " + exec.exitValue());
-
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
-    } catch (ApiException | IOException | InterruptedException | CopyNotSupportedException ioex) {
+    } catch (ApiException | IOException | InterruptedException ioex) {
       logger.info("Exception while copying file " + Paths.get(APPLICATIONS_PATH, archiveDistDir) + " from pod", ioex);
     }
 
-    return destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
+    return Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
   }
-
-
 
   /**
    * Create a temporary WebLogic pod to build j2ee applications.
@@ -243,7 +228,6 @@ public class BuildApplication {
     //unique name for the pod.
     String uniqueName = Namespace.uniqueName();
     final String podName = "weblogic-build-pod-" + uniqueName;
-    //final String podName = "weblogic-build-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
             .containers(Arrays.asList(container

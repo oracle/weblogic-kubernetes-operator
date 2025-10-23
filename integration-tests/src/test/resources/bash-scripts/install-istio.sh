@@ -5,7 +5,7 @@
 # Description:
 #
 #  This script install a given version of istio using Helm v3.x
-#  Default istio version is 1.13.2
+#  Default istio version is 1.23.0
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
 #  https://github.com/istio/istio/releases
@@ -33,12 +33,21 @@ ${KUBERNETES_CLI} delete namespace istio-system --ignore-not-found
 # create the namespace 'istio-system' 
 ${KUBERNETES_CLI} create namespace istio-system
 
-( cd $workdir;
-  oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
-                                --name=istio/istio-${version}-${arch}.tar.gz --file=istio.tar.gz \
-                                --auth=instance_principal
+( cd $workdir
+  if [ -z "$JENKINS_HOME" ]; then
+    # Not in Jenkins, download using curl
+    echo "Detected local environment. Downloading Istio using curl."
+    curl -Lo istio.tar.gz https://github.com/istio/istio/releases/download/${version}/istio-${version}-${arch}.tar.gz
+  else
+    # Running in Jenkins, download using OCI CLI
+    echo "Detected Jenkins environment. Downloading Istio using OCI CLI."
+    oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                      --name=istio/istio-${version}-${arch}.tar.gz --file=istio.tar.gz \
+                      --auth=instance_principal
+  fi
   tar zxf istio.tar.gz
 )
+
 
 ( ${KUBERNETES_CLI} create secret generic docker-istio-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=$HOME/.docker/config.json -n istio-system )
 
@@ -56,7 +65,7 @@ ${KUBERNETES_CLI} create namespace istio-system
 }
 
 # MAIN
-version=${1:-1.13.2}
+version=${1:-1.23.0}
 workdir=${2:-`pwd`}
 wko_tenancy=${3:-devweblogic}
 arch=${4:-linux-amd64}

@@ -299,7 +299,7 @@ Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`:
   which the operator itself is deployed, which is the namespace of the Helm release.
 
 **NOTES**:
-- Defaults to `List`.
+- Defaults to `LabelSelector`.
 - For more information, see [Choose a domain namespace section strategy]({{<relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
 
 {{% notice note %}}

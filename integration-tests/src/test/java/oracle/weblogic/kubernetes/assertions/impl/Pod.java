@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import org.awaitility.core.ConditionFactory;
 
@@ -80,8 +81,8 @@ public class Pod {
       for (Map.Entry<String, OffsetDateTime> entry : pods.entrySet()) {
         V1Pod pod = Kubernetes.getPod(namespace, null, entry.getKey());
         OffsetDateTime deletionTimeStamp = Optional.ofNullable(pod)
-            .map(metadata -> metadata.getMetadata())
-            .map(timeStamp -> timeStamp.getDeletionTimestamp()).orElse(null);
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getDeletionTimestamp).orElse(null);
         if (deletionTimeStamp != null) {
           getLogger().info("Pod {0} is getting replaced", entry.getKey());
           if (++terminatingPods > maxUnavailable) {
@@ -89,15 +90,13 @@ public class Pod {
             throw new Exception("more than maxUnavailable pods are restarting");
           }
         }
-        if (podName.equals(entry.getKey())) {
-          if (pod != null && pod.getMetadata().getCreationTimestamp() != null) {
-            OffsetDateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
-            getLogger().info("Comparing creation timestamps old: {0} new {1}",
-                entry.getValue(), newCreationTimeStamp);
-            if (newCreationTimeStamp.isAfter(entry.getValue())) {
-              getLogger().info("Pod {0} is restarted", entry.getKey());
-              podRestartStatus = true;
-            }
+        if (podName.equals(entry.getKey()) && pod != null && pod.getMetadata().getCreationTimestamp() != null) {
+          OffsetDateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
+          getLogger().info("Comparing creation timestamps old: {0} new {1}",
+              entry.getValue(), newCreationTimeStamp);
+          if (newCreationTimeStamp.isAfter(entry.getValue())) {
+            getLogger().info("Pod {0} is restarted", entry.getKey());
+            podRestartStatus = true;
           }
         }
       }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -171,7 +171,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {
-        if ("Failed".equals(cond.getType()) && "True".equals(cond.getStatus())) {
+        if (("FailureTarget".equals(cond.getType()) || "Failed".equals(cond.getType()))
+              && "True".equals(cond.getStatus())) {
           return cond.getReason();
         }
       }
@@ -208,10 +209,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return item.object.getMetadata().getName();
   }
 
-  public static boolean isJobTimedOut(V1Job job) {
-    return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job)));
-  }
-
   public static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
     @Serial
     private static final long serialVersionUID  = 1L;
@@ -234,7 +231,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
           Optional.ofNullable(job).map(V1Job::getMetadata).map(V1ObjectMeta::getName).orElse(""),
           Optional.ofNullable(job).map(V1Job::getSpec)
-                  .map(V1JobSpec::getActiveDeadlineSeconds).map(l -> l.toString()).orElse(""),
+                  .map(V1JobSpec::getActiveDeadlineSeconds).map(Object::toString).orElse(""),
           getJobStartedSeconds());
     }
 

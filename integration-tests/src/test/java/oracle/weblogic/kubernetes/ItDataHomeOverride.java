@@ -42,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Verify dataHome override with different dataHome setting in the domain spec.
  */
-@DisplayName("Verify dataHome override with different dataHome setting in the domain spec")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
@@ -68,7 +67,7 @@ class ItDataHomeOverride {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -239,7 +238,7 @@ class ItDataHomeOverride {
   }
 
   @AfterEach
-  public void deleteClusterResource() {
+  void deleteClusterResource() {
     // delete cluster resource
     deleteClusterCustomResourceAndVerify(clusterName, miiDomainNamespace);
   }

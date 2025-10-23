@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -76,7 +76,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test implicit upgrade of auximage domain resource with api version v8")
 @IntegrationTest
 @Tag("kind-upgrade")
 class ItAuxV8DomainImplicitUpgrade {
@@ -99,7 +98,7 @@ class ItAuxV8DomainImplicitUpgrade {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -226,7 +225,7 @@ class ItAuxV8DomainImplicitUpgrade {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+            + Paths.get(WORK_DIR + "/domain.yaml"));
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
@@ -300,9 +299,6 @@ class ItAuxV8DomainImplicitUpgrade {
       deleteDomainResource(domainNamespace, domainUid);
     }
 
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
-
     String missingWdtTag = "missing-wdtbinary-image";
     String missingWdtImage = MII_AUXILIARY_IMAGE_NAME + ":" +  missingWdtTag;
 
@@ -336,7 +332,7 @@ class ItAuxV8DomainImplicitUpgrade {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+            + Paths.get(WORK_DIR + "/domain.yaml"));
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
@@ -366,9 +362,6 @@ class ItAuxV8DomainImplicitUpgrade {
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
       deleteDomainResource(domainNamespace, domainUid);
     }
-
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
 
     String missingModelTag = "missing-model-image";
     String missingModelImage = MII_AUXILIARY_IMAGE_NAME + ":" + missingModelTag;
@@ -402,7 +395,7 @@ class ItAuxV8DomainImplicitUpgrade {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+            + Paths.get(WORK_DIR + "/domain.yaml"));
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
@@ -429,9 +422,6 @@ class ItAuxV8DomainImplicitUpgrade {
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
       deleteDomainResource(domainNamespace, domainUid);
     }
-
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
 
     String permModelTag = "perm-model-image";
     String permModelImage = MII_AUXILIARY_IMAGE_NAME + ":" + permModelTag;
@@ -472,7 +462,7 @@ class ItAuxV8DomainImplicitUpgrade {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+            + Paths.get(WORK_DIR + "/domain.yaml"));
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
@@ -545,12 +535,11 @@ class ItAuxV8DomainImplicitUpgrade {
     logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+            + Paths.get(WORK_DIR + "/domain.yaml"));
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);

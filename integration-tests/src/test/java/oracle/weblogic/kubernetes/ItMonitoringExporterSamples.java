@@ -56,13 +56,16 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSAMPLES_ALERT_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSAMPLES_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSAMPLES_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
@@ -71,6 +74,8 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -102,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushI
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkPrometheusAlert;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyDomain;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyMiiImage;
@@ -129,8 +135,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via NGINX ingress controller.
  * Verify WebLogic metrics can be accessed via Prometheus
  */
-@DisplayName("Verify end to end sample, provided in the Monitoring Exporter github project")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @IntegrationTest
@@ -147,7 +152,6 @@ class ItMonitoringExporterSamples {
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
-  private static List<String> ingressHost1List = null;
   private static List<String> ingressHost2List = null;
   private static String dbService = null;
 
@@ -172,7 +176,6 @@ class ItMonitoringExporterSamples {
   private static String miiImage = null;
   private static String wdtImage = null;
   private static String webhookImage = null;
-  private static String exporterImage = null;
   private static String  coordinatorImage = null;
   private static int managedServerPort = 8001;
   private static int nodeportPrometheus;
@@ -199,8 +202,7 @@ class ItMonitoringExporterSamples {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  static void initAll(@Namespaces(6) List<String> namespaces) {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
@@ -247,21 +249,20 @@ class ItMonitoringExporterSamples {
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     if (!OKD) {
       // install and verify NGINX
-      if (!OKE_CLUSTER_PRIVATEIP) {
-        nginxHelmParams = installAndVerifyNginx(nginxNamespace,
-            NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+      if (OKE_CLUSTER_PRIVATEIP) {
+        nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
       } else {
         nginxHelmParams = installAndVerifyNginx(nginxNamespace,
-            0,0);
+            IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTP_NODEPORT,
+            IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTPS_NODEPORT);
       }
       String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
           ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST;
       logger.info("NGINX service name: {0}", nginxServiceName);
-      if (TestConstants.KIND_CLUSTER
-          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        nodeportshttp = NGINX_INGRESS_HTTP_HOSTPORT;
-        nodeportshttps = NGINX_INGRESS_HTTPS_HOSTPORT;
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        nodeportshttp = IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTP_HOSTPORT;
+        nodeportshttps = IT_MONITORINGEXPORTERSAMPLES_NGINX_HTTPS_HOSTPORT;
       } else {
         nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
         nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
@@ -291,6 +292,8 @@ class ItMonitoringExporterSamples {
       dbService = createMySQLDB("mysql", "root", "root123", domain2Namespace, null);
       assertNotNull(dbService, "Failed to create database");
       V1Pod pod = getPod(domain2Namespace, null, "mysql");
+      assertNotNull(pod, "pod is null");
+      assertNotNull(pod.getMetadata(), "pod metadata is null");
       createFileInPod(pod.getMetadata().getName(), domain2Namespace, "root123");
       runMysqlInsidePod(pod.getMetadata().getName(), domain2Namespace, "root123", "/tmp/grant.sql");
       runMysqlInsidePod(pod.getMetadata().getName(), domain2Namespace, "root123", "/tmp/create.sql");
@@ -373,7 +376,7 @@ class ItMonitoringExporterSamples {
     }
   }
 
-  private void fireAlert() throws ApiException {
+  private void fireAlert() throws Exception {
     // scale domain2
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         cluster1Name, domain2Uid, domain2Namespace, 1);
@@ -382,14 +385,22 @@ class ItMonitoringExporterSamples {
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, managedServersCount,
         null, null);
 
+    logger.info("Wait for the prometheus  to create alert ");
+    checkPrometheusAlert("ClusterWarning", hostPortPrometheus,
+        prometheusReleaseName
+            + "." + monitoringNS);
+
+    logger.info("Wait for the prometheus  to fire alert ");
+    checkPrometheusAlert("firing", hostPortPrometheus,
+        prometheusReleaseName
+            + "." + monitoringNS);
+
     //check webhook log for firing alert
     List<V1Pod> pods = listPods(webhookNS, "app=webhook").getItems();
     assertNotNull((pods), "No pods are running in namespace : " + webhookNS);
     V1Pod pod = pods.stream()
-        .filter(testpod -> testpod
-            .getMetadata()
-            .getName()
-            .contains("webhook"))
+        .filter(testpod -> testpod.getMetadata() != null && testpod.getMetadata().getName() != null
+            && testpod.getMetadata().getName().contains("webhook"))
         .findAny()
         .orElse(null);
 
@@ -398,7 +409,7 @@ class ItMonitoringExporterSamples {
 
     testUntil(withLongRetryPolicy,
         assertDoesNotThrow(() -> searchPodLogForKey(pod,
-            "Some WLS cluster has only one running server for more than 1 minutes"),
+            "Some WLS cluster has only one running server for more than 15 secs"),
             "webhook failed to fire alert"),
         logger,
         "webhook to fire alert");
@@ -418,18 +429,23 @@ class ItMonitoringExporterSamples {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
       String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
               "prometheus" + releaseSuffix).toString();
-      promHelmParams = installAndVerifyPrometheus(releaseSuffix,
-          monitoringNS,
-          promChartVersion,
-          prometheusRegexValue,
-          promHelmValuesFileDir,
-          webhookNS);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir, webhookNS,
+            IT_MONITORINGEXPORTERSAMPLES_PROMETHEUS_HTTP_NODEPORT, IT_MONITORINGEXPORTERSAMPLES_ALERT_HTTP_NODEPORT);
+      } else {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir, webhookNS);
+      }    
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       String host = formatIPv6Host(K8S_NODEPORT_HOST);
-      if (TestConstants.KIND_CLUSTER
-          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        nodeportPrometheus = IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        nodeportPrometheus = IT_MONITORINGEXPORTERSAMPLES_PROMETHEUS_HTTP_HOSTPORT;
         host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
       }      
       prometheusDomainRegexValue = prometheusRegexValue;
@@ -464,13 +480,6 @@ class ItMonitoringExporterSamples {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = formatIPv6Host(K8S_NODEPORT_HOST);
-
-      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
-      if (OKD) {
-        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
-      }
-      // installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
@@ -524,7 +533,7 @@ class ItMonitoringExporterSamples {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // delete mii domain images created for parameterized test
     if (miiImage != null) {
@@ -613,7 +622,7 @@ class ItMonitoringExporterSamples {
   private static void createWebHook(String image,
                                     String imagePullPolicy,
                                     String namespace,
-                                    String secretName) throws ApiException {
+                                    String secretName) {
     Map<String, String> labels = new HashMap<>();
     labels.put("app", "webhook");
 
@@ -697,7 +706,7 @@ class ItMonitoringExporterSamples {
     String serviceName = null;
     String deploymentName = null;
     try {
-      if (service != null) {
+      if (service != null && service.getMetadata() != null) {
         serviceName = service.getMetadata().getName();
         namespace = service.getMetadata().getNamespace();
         Kubernetes.deleteService(serviceName, namespace);
@@ -708,7 +717,7 @@ class ItMonitoringExporterSamples {
           serviceName, namespace);
     }
     try {
-      if (deployment != null) {
+      if (deployment != null && deployment.getMetadata() != null) {
         deploymentName = deployment.getMetadata().getName();
         namespace = deployment.getMetadata().getNamespace();
         Kubernetes.deleteDeployment(namespace, deploymentName);
@@ -734,7 +743,7 @@ class ItMonitoringExporterSamples {
   private static void createCoordinator(String image,
                                         String imagePullPolicy,
                                         String namespace,
-                                        String secretName) throws ApiException {
+                                        String secretName) {
     if (coordinatorDepl == null) {
       Map<String, String> labels = new HashMap<>();
       labels.put("app", "coordinator");

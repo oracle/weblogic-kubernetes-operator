@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -12,7 +12,7 @@ import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 
-/** Parses a generated weblogic-operator-security.yaml file into a set of typed k8s java objects */
+/** Parses a generated weblogic-operator-security.yaml file into a set of typed k8s java objects. */
 public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
 
   private OperatorValues inputs;
@@ -60,8 +60,9 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
         .find(inputs.getNamespace() + "-weblogic-operator-clusterrole-namespace");
   }
 
-  public V1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
-    return getRoleBindings().find("weblogic-operator-rolebinding-namespace", namespace);
+  public V1ClusterRoleBinding getWeblogicOperatorClusterRoleBinding() {
+    return getClusterRoleBindings()
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-namespace");
   }
 
   public V1RoleBinding getWeblogicOperatorRoleBinding() {
@@ -73,7 +74,7 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   }
 
   /**
-   * Get exected object count.
+   * Get expected object count.
    * @return object count
    */
   public int getExpectedObjectCount() {

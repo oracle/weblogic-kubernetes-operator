@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.processing;
@@ -93,6 +93,8 @@ public interface EffectiveServerSpec {
   @Nonnull
   V1Probe getReadinessProbe();
 
+  V1Probe getStartupProbe();
+
   @Nonnull
   Shutdown getShutdown();
 
@@ -159,6 +161,8 @@ public interface EffectiveServerSpec {
   String getNodeName();
 
   String getServiceAccountName();
+
+  Boolean getAutomountServiceAccountToken();
 
   String getSchedulerName();
 

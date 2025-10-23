@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +21,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
-import com.google.gson.Gson;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
@@ -33,28 +31,33 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.yaml.snakeyaml.Yaml;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_ALERT_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -99,12 +102,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via NGINX ingress controller.
  * Verify WebLogic metrics can be accessed via Prometheus
  */
-@DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter WebApp via Prometheus and Grafana")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 @Tag("kind-sequential")
 @Tag("okd-wls-mrg")
+@Tag("gate")
 class ItMonitoringExporterWebApp {
 
   // domain constants
@@ -124,8 +127,6 @@ class ItMonitoringExporterWebApp {
   private static String monitoringNS = null;
   PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
-  private static String monitoringExporterEndToEndDir = null;
-  private static String monitoringExporterSrcDir = null;
   private static String monitoringExporterAppDir = null;
   // constants for creating domain image using model in image
   private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
@@ -147,6 +148,7 @@ class ItMonitoringExporterWebApp {
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
   private static String hostPortPrometheus = null;
+  private static List<String> ns;
 
 
   /**
@@ -158,13 +160,12 @@ class ItMonitoringExporterWebApp {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(6) List<String> namespaces) throws UnknownHostException {
+  static void initAll(@Namespaces(6) List<String> namespaces) throws UnknownHostException {
 
     logger = getLogger();
+    ns = namespaces;
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterWebApp", "monitoringexp").toString();
-    monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
-    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
     monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -205,7 +206,8 @@ class ItMonitoringExporterWebApp {
       // install and verify NGINX
       if (!OKE_CLUSTER_PRIVATEIP) {
         nginxHelmParams = installAndVerifyNginx(nginxNamespace,
-            NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+            IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_NODEPORT, 
+            IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_NODEPORT);
       } else {
         nginxHelmParams = installAndVerifyNginx(nginxNamespace,
             0,0);
@@ -215,10 +217,9 @@ class ItMonitoringExporterWebApp {
       ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
           ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST;
       logger.info("NGINX service name: {0}", nginxServiceName);
-      if (TestConstants.KIND_CLUSTER
-          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        nodeportshttp = NGINX_INGRESS_HTTP_HOSTPORT;
-        nodeportshttps = NGINX_INGRESS_HTTPS_HOSTPORT;
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        nodeportshttp = IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTP_HOSTPORT;
+        nodeportshttps = IT_MONITORINGEXPORTERWEBAPP_NGINX_HTTPS_HOSTPORT;
         host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
       } else {
         nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
@@ -269,7 +270,6 @@ class ItMonitoringExporterWebApp {
 
       // create ingress for the domain
       logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-      String adminServerPodName = domain1Uid + "-admin-server";
       String clusterService = domain1Uid + "-cluster-cluster-1";
       if (!OKD) {
         String ingressClassName = nginxHelmParams.getIngressClassName();
@@ -344,7 +344,7 @@ class ItMonitoringExporterWebApp {
    */
   @Test
   @DisplayName("Test Accessibility of Monitoring Exporter dashboard and metrics if admin port is enabled.")
-  void testAdminPortEnabled() throws Exception {
+  void testAdminPortEnabled() {
     try {
       // create and verify one cluster mii domain with admin port enabled
       logger.info("Create domain and verify that it's running");
@@ -384,6 +384,7 @@ class ItMonitoringExporterWebApp {
   @DisplayName("Test Monitoring Exporter access to metrics via https.")
   void testAccessExporterViaHttps() throws Exception {
     String miiImage1 = null;
+    boolean collectLogs = true;
 
     try {
       logger.info("create and verify WebLogic domain image using model in image with model files for norestport");
@@ -398,7 +399,7 @@ class ItMonitoringExporterWebApp {
       //verify access to Monitoring Exporter
       logger.info("checking access to wls metrics via http connection");
 
-      clusterNames.stream().forEach((clusterName) -> {
+      clusterNames.stream().forEach(clusterName -> {
         assertFalse(verifyMonExpAppAccess("wls-exporter",
             "restPort",
             domain3Uid,
@@ -412,8 +413,8 @@ class ItMonitoringExporterWebApp {
       });
       logger.info("checking access to wl metrics via https connection");
       //set to listen only ssl
-      changeListenPort(domain3Uid, domain3Namespace,"False");
-      clusterNames.stream().forEach((clusterName) -> {
+      changeListenPort(domain3Uid, domain3Namespace, "False");
+      clusterNames.stream().forEach(clusterName -> {
         assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
             "wls_servlet_invocation_total_count",
             domain3Uid,
@@ -421,11 +422,10 @@ class ItMonitoringExporterWebApp {
             true, clusterName),
             "monitoring exporter metrics page can't be accessed via https");
       });
+      collectLogs = false;
     } finally {
-      logger.info("Shutting down domain3");
-      shutdownDomain(domain3Uid, domain3Namespace);
-      if (miiImage1 != null) {
-        deleteImage(miiImage1);
+      if (collectLogs) {
+        LoggingUtil.generateLog(this, ns);
       }
     }
   }
@@ -444,17 +444,24 @@ class ItMonitoringExporterWebApp {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
       String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
               "prometheus" + releaseSuffix).toString();
-      promHelmParams = installAndVerifyPrometheus(releaseSuffix,
-              monitoringNS,
-              promChartVersion,
-              prometheusRegexValue, promHelmValuesFileDir);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir, null,
+            IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_NODEPORT, IT_MONITORINGEXPORTERWEBAPP_ALERT_HTTP_NODEPORT);
+      } else {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir);
+      }
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
       String host = formatIPv6Host(K8S_NODEPORT_HOST);
       nodeportPrometheus = promHelmParams.getNodePortServer();
-      if (TestConstants.KIND_CLUSTER
-          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        nodeportPrometheus = IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        nodeportPrometheus = IT_MONITORINGEXPORTERWEBAPP_PROMETHEUS_HTTP_HOSTPORT;
         host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
       }
 
@@ -489,19 +496,13 @@ class ItMonitoringExporterWebApp {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = formatIPv6Host(K8S_NODEPORT_HOST);
-
-      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
-      if (OKD) {
-        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
-      }
     }
     logger.info("Grafana is running");
   }
 
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");
@@ -532,7 +533,6 @@ class ItMonitoringExporterWebApp {
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
           throws Exception {
     final WebClient webClient = new WebClient();
-    //webClient.addRequestHeader("Host", ingressHost1List.get(0));
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
@@ -546,7 +546,7 @@ class ItMonitoringExporterWebApp {
     try {
       final WebClient webClient = new WebClient();
       setCredentials(webClient, username, password);
-      HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, webClient);
+      submitConfigureForm(exporterUrl, effect, configFile, webClient);
       throw new RuntimeException("Expected exception was not thrown ");
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
@@ -710,17 +710,6 @@ class ItMonitoringExporterWebApp {
   }
 
   /**
-   * Replace monitoring exporter configuration with empty configuration.
-   *
-   * @throws Exception if test fails
-   */
-  private void replaceWithEmptyConfiguration() throws Exception {
-    submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertFalse(verifyMonExpAppAccess("wls-exporter","values", domain1Uid, domain1Namespace,false, cluster1Name));
-    assertTrue(verifyMonExpAppAccess("wls-exporter","queries", domain1Uid, domain1Namespace,false, cluster1Name));
-  }
-
-  /**
    * Try to append monitoring exporter configuration with empty configuration.
    *
    * @throws Exception if failed to apply configuration or check the expected values.
@@ -877,9 +866,8 @@ class ItMonitoringExporterWebApp {
     WebClient webClient = new WebClient();
     String expectedErrorMsg = "401 Unauthorized for " + exporterUrl;
     try {
-      HtmlPage page =
-              submitConfigureForm(
-                      exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_snakecasetrue.yaml", webClient);
+      submitConfigureForm(
+          exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_snakecasetrue.yaml", webClient);
       throw new RuntimeException("Form was submitted successfully with no credentials");
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
@@ -952,21 +940,13 @@ class ItMonitoringExporterWebApp {
     }
 
     logger.info("Copying changeListenPort.py and callpyscript.sh to admin server pod");
-    try {
-      copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
-          Paths.get("/u01/changeListenPort.py"));
+    copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
+        Paths.get("/u01/changeListenPort.py"));
 
-      copyFileToPod(domainNS, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/callpyscript.sh"));
-    } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file to admin pod {0}", (Object) ioex.getStackTrace());
-      return false;
-    }
+    copyFileToPod(domainNS, adminServerPodName, null,
+        Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+        Paths.get("/u01/callpyscript.sh"));
 
     logger.info("Adding execute mode for callpyscript.sh");
     ExecResult result = exec(adminPod, null, true,
@@ -993,10 +973,4 @@ class ItMonitoringExporterWebApp {
     }
     return true;
   }
-
-  private static String convertToJson(String yaml) {
-    final Object loadedYaml = new Yaml().load(yaml);
-    return new Gson().toJson(loadedYaml, LinkedHashMap.class);
-  }
-
 }

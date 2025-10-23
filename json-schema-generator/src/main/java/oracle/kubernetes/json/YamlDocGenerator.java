@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -196,17 +196,14 @@ public class YamlDocGenerator {
     }
 
     String getString() {
-      switch (specifiedType) {
-        case "number":
-        case "boolean":
-        case "string":
-          return specifiedType;
-        case "array":
+      return switch (specifiedType) {
+        case "number", "boolean", "string" -> specifiedType;
+        case "array" -> {
           Type subType = getItems();
-          return "Array of " + subType.getString();
-        default:
-          return Optional.ofNullable(getReference()).orElse(specifiedType);
-      }
+          yield "Array of " + subType.getString();
+        }
+        default -> Optional.ofNullable(getReference()).orElse(specifiedType);
+      };
     }
 
     @SuppressWarnings("unchecked")
@@ -233,7 +230,7 @@ public class YamlDocGenerator {
     }
   }
 
-  private abstract class Reference {
+  private abstract static class Reference {
     private final String typeName;
 
     private Reference(String typeName) {

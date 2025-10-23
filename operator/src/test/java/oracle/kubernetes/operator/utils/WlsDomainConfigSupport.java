@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
@@ -20,6 +19,7 @@ public class WlsDomainConfigSupport {
   public static final Integer DEFAULT_LISTEN_PORT = 7001;
   private final String domain;
   private String adminServerName;
+  private String restfulAPIEnabled;
   private final Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
   private final Map<String, WlsServerConfig> wlsServers = new HashMap<>();
   private final Map<String, WlsServerConfig> templates = new HashMap<>();
@@ -54,6 +54,11 @@ public class WlsDomainConfigSupport {
 
   public WlsDomainConfigSupport withAdminServerName(String adminServerName) {
     setAdminServerName(adminServerName);
+    return this;
+  }
+
+  public WlsDomainConfigSupport withRestfulAPIEnabled(String restfulAPIEnabled) {
+    setAdminServerName(restfulAPIEnabled);
     return this;
   }
 
@@ -210,22 +215,16 @@ public class WlsDomainConfigSupport {
       }
     }
     return new WlsDomainConfig(
-        domain, adminServerName, wlsClusters, wlsServers, templates);
+        domain, adminServerName, restfulAPIEnabled, wlsClusters, wlsServers, templates);
   }
 
   static class ServerConfigBuilder {
     private final String name;
     private final Integer listenPort;
-    private List<NetworkAccessPoint> naps;
 
     ServerConfigBuilder(String name, Integer listenPort) {
       this.name = name;
       this.listenPort = listenPort;
-    }
-
-    public ServerConfigBuilder withNetworkAccessPoints(List<NetworkAccessPoint> naps) {
-      this.naps = naps;
-      return this;
     }
 
     WlsServerConfig build() {
@@ -292,6 +291,7 @@ public class WlsDomainConfigSupport {
       return this;
     }
 
+    @Override
     WlsClusterConfig build() {
       WlsDynamicServersConfig wlsDynamicServersConfig = new WlsDynamicServersConfig();
       wlsDynamicServersConfig.setServerConfigs(serverConfigs);

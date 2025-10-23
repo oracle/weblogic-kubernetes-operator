@@ -19,6 +19,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -96,6 +97,8 @@ public class MonitoringExporterConfiguration {
     @Description("The attributes for which metrics are to be output. If not specified and a prefix is defined, "
                + "all values on the MBean will be selected.")
     private String[] values;
+
+    private Map<String,String[]> stringValues;
   }
 
   // This class controls serialization of the exporter configuration.
@@ -136,6 +139,7 @@ public class MonitoringExporterConfiguration {
       writeOptionalStringField(out, "type", src.type);
       writeOptionalStringField(out, "prefix", src.prefix);
       writeOptionalValueArray(out, src.values);
+      writeOptionalStringValues(out, src.stringValues);
 
       for (Map.Entry<String, ExporterQuery> entry : src.entrySet()) {
         out.name(entry.getKey());
@@ -153,12 +157,27 @@ public class MonitoringExporterConfiguration {
 
     private void writeOptionalValueArray(JsonWriter out, @Nullable String[] values) throws IOException {
       if (values != null && values.length > 0) {
-        out.name("values");
-        out.beginArray();
-        for (String value : values) {
-          out.value(value);
+        writeArray(out, "values", values);
+      }
+    }
+
+    private static void writeArray(JsonWriter out, String name, @NotNull String [] values) throws IOException {
+      out.name(name);
+      out.beginArray();
+      for (String value : values) {
+        out.value(value);
+      }
+      out.endArray();
+    }
+
+    private void writeOptionalStringValues(JsonWriter out, Map<String, String[]> stringValues) throws IOException {
+      if (stringValues != null && !stringValues.isEmpty()) {
+        out.name("stringValues");
+        out.beginObject();
+        for (String key: stringValues.keySet()) {
+          writeArray(out, key, stringValues.get(key));
         }
-        out.endArray();
+        out.endObject();
       }
     }
 
@@ -202,23 +221,13 @@ public class MonitoringExporterConfiguration {
       while (in.hasNext()) {
         String name = in.nextName();
         switch (name) {
-          case "key":
-            query.key = in.nextString();
-            break;
-          case "keyName":
-            query.keyName = in.nextString();
-            break;
-          case "type":
-            query.type = in.nextString();
-            break;
-          case "prefix":
-            query.prefix = in.nextString();
-            break;
-          case "values":
-            query.values = readArrayValue(in);
-            break;
-          default:
-            query.put(name, readQuery(in));
+          case "key" -> query.key = in.nextString();
+          case "keyName" -> query.keyName = in.nextString();
+          case "type" -> query.type = in.nextString();
+          case "prefix" -> query.prefix = in.nextString();
+          case "values" -> query.values = readArrayValue(in);
+          case "stringValues" -> query.stringValues = readStringValues(in);
+          default -> query.put(name, readQuery(in));
         }
       }
       in.endObject();
@@ -241,6 +250,17 @@ public class MonitoringExporterConfiguration {
         result.add(in.nextString());
       }
       in.endArray();
+    }
+
+    private Map<String,String[]> readStringValues(JsonReader in) throws IOException {
+      Map<String,String[]> result = new HashMap<>();
+      in.beginObject();
+      while (in.hasNext()) {
+        String name = in.nextName();
+        result.put(name, readArrayValue(in));
+      }
+      in.endObject();
+      return result;
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -50,8 +50,7 @@ public class UpgradeUtils {
     assertNotNull(opNamespace, "Domain Namespace is null");
 
     // install operator with older release
-    HelmParams opHelmParams = installOperator(operatorVersion,
-                 opNamespace, domainNamespace);
+    installOperator(operatorVersion, opNamespace, domainNamespace);
   }
 
   private static HelmParams installOperator(String operatorVersion,

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -82,7 +82,7 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "The WebLogic Server image; required when domainHomeSourceType is Image or FromModel; "
-          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
+          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.")
   private String image;
 
   @ApiModelProperty(

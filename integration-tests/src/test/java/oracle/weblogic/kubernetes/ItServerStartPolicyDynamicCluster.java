@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to verify that life cycle operation of dynamic cluster does not impact the state of config cluster.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("ServerStartPolicy attribute in different levels in a MII domain dynamic cluster")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -78,7 +77,6 @@ class ItServerStartPolicyDynamicCluster {
   private static final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
   private static LoggingFacade logger = null;
-  private static String ingressHost = null; //only used for OKD
   private static final String samplePath = "sample-testing-dynamic-cluster";
   private static final String dynamicClusterResourceName = DYNAMIC_CLUSTER;
   private static final String configuredClusterResourceName = CONFIG_CLUSTER;
@@ -90,7 +88,7 @@ class ItServerStartPolicyDynamicCluster {
   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -105,7 +103,7 @@ class ItServerStartPolicyDynamicCluster {
     prepare(domainNamespace, domainUid, opNamespace, samplePath);
 
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
-    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
   }
 
   /**
@@ -113,7 +111,7 @@ class ItServerStartPolicyDynamicCluster {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
 
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -132,12 +130,11 @@ class ItServerStartPolicyDynamicCluster {
         "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
-    // Check standalone server configuration is available
-    boolean isStandaloneServerConfigured =
-        checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
-    assertTrue(isStandaloneServerConfigured,
-        "Could not find standalone managed server from configured cluster");
-    logger.info("Found standalone managed server configuration");
+    logger.info("Check standalone managed service/pod {0} is created in namespace {1}",
+        domainUid + "-standalone-managed", domainNamespace);
+    checkPodReadyAndServiceExists(domainUid + "-standalone-managed",
+        domainUid, domainNamespace);
+
   }
 
   /**
@@ -331,7 +328,6 @@ class ItServerStartPolicyDynamicCluster {
   @DisplayName("Manage dynamic cluster server in absence of Administration Server")
   void testDynamicServerLifeCycleWithoutAdmin() {
     String serverName = "managed-server1";
-    // domainUid + "-" + serverName;
     String serverPodName = managedServerPrefix + "1";
     // Here managed server can be stopped without admin server
     // but can not be started to RUNNING state.

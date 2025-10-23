@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -185,12 +185,9 @@ public class Installer {
               .redirect(params.redirect()))
           .execute();
     }
-    if (params.unzip()) {
-      // only unzip WIT once
-      if ((params.type().equalsIgnoreCase(WIT) && !(doesFileExist(IMAGE_TOOL)))
-          || (params.type().equalsIgnoreCase(REMOTECONSOLE) && !(doesFileExist(REMOTECONSOLE_FILE)))) {
-        unzipSucceeded = unzip(downloadDir);
-      }
+    if (params.unzip() && (params.type().equalsIgnoreCase(WIT) && !(doesFileExist(IMAGE_TOOL)))
+        || (params.type().equalsIgnoreCase(REMOTECONSOLE) && !(doesFileExist(REMOTECONSOLE_FILE)))) {
+      unzipSucceeded = unzip(downloadDir);
     }
     return downloadSucceeded && unzipSucceeded;
   }
@@ -222,12 +219,11 @@ public class Installer {
   }
 
   private String buildDownloadCommand(String downloadDir) {
-    String command = String.format(
+    return String.format(
         "curl -fL %s -o %s/%s",
         params.location(),
         downloadDir,
         getInstallerFileName(params.type()));
-    return command;
   }
 
 }

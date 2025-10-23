@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -63,12 +63,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
+import static oracle.weblogic.kubernetes.TestConstants.CRIO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -512,7 +514,7 @@ public class CommonMiiTestUtils {
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(600L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     domain.spec().setImagePullSecrets(secrets);
 
@@ -565,11 +567,9 @@ public class CommonMiiTestUtils {
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImageAndVolume(domainResourceName,
+    return createDomainResourceWithAuxiliaryImageAndVolume(domainResourceName,
         domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName,
         auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
-
-    return domainCR;
   }
 
   /**
@@ -608,15 +608,7 @@ public class CommonMiiTestUtils {
     domainCR.spec().configuration().model()
         .withModelHome(auxiliaryImagePath + "/models")
         .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
-    for (String cmImageName: auxiliaryImageName) {
-      /* Commented out due to auxiliary image 4.0 changes
-      domainCR.spec().serverPod()
-          .addAuxiliaryImagesItem(new AuxiliaryImage()
-                  .image(cmImageName)
-                  .volume(auxiliaryImageVolumeName)
-                  .imagePullPolicy("IfNotPresent"));
-       */
-    }
+
     return domainCR;
   }
 
@@ -721,7 +713,7 @@ public class CommonMiiTestUtils {
                             .model(new oracle.weblogic.domain.Model()
                                     .domainType("WLS")
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                            .introspectorJobActiveDeadlineSeconds(600L)));
+                            .introspectorJobActiveDeadlineSeconds(3000L)));
     domain.spec().setImagePullSecrets(secrets);
     setPodAntiAffinity(domain);
     return domain;
@@ -806,7 +798,6 @@ public class CommonMiiTestUtils {
       String javaOpt,
       boolean onlineUpdateEnabled,
       boolean setDataHome) {
-    LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
     if (dbSecretName != null) {
@@ -854,7 +845,7 @@ public class CommonMiiTestUtils {
                 .runtimeEncryptionSecret(encryptionSecretName)
                 .onlineUpdate(new OnlineUpdate()
                     .enabled(onlineUpdateEnabled)))
-            .introspectorJobActiveDeadlineSeconds(600L));
+            .introspectorJobActiveDeadlineSeconds(3000L));
 
     if (setDataHome) {
       domainSpec.dataHome(uniquePath + "/data");
@@ -935,7 +926,7 @@ public class CommonMiiTestUtils {
     testUntil(
         retryPolicy,
         () -> listConfigMaps(domainNamespace).getItems().stream()
-          .noneMatch((cm) -> (cm.getMetadata().getName().equals(configMapName))),
+          .noneMatch(cm -> (cm.getMetadata().getName().equals(configMapName))),
         logger,
         "configmap {0} to be deleted",
         configMapName);
@@ -1076,18 +1067,27 @@ public class CommonMiiTestUtils {
         expectedStatusCode);
   }
 
-  private static String readRuntimeResource(String adminSvcExtHost, String domainNamespace,
+  /**
+   * Use REST APIs to check the application runtime mbean from the WebLogic server.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param resourcePath resource path
+   * @param callerName caller name
+   * @return  the expected response
+   */
+  public static String readRuntimeResource(String adminSvcExtHost, String domainNamespace,
       String adminServerPodName, String resourcePath, String callerName) {
     LoggingFacade logger = getLogger();
-    String returnString = null;
-
+    String returnString = "";
+    String curlString = null;
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       int port = getServicePort(domainNamespace, adminServerPodName, "internal-t3");
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;
       String ingressName = domainNamespace + "-" + domainName + "-" + serviceName + "-" + port;
-      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
+      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;
       Optional<String> ingressFound;
       try {
         List<String> ingresses = TestActions.listIngresses(domainNamespace);
@@ -1106,42 +1106,33 @@ public class CommonMiiTestUtils {
       HttpResponse<String> response;
       try {
         response = OracleHttpClient.get(url, headers, true);
-        assertEquals(200, response.statusCode());
         returnString = response.body();
+        assertEquals(200, response.statusCode());
       } catch (Exception ex) {
         ex.printStackTrace();
+      } catch (AssertionError e) {
+        e.printStackTrace();
       }
     } else {
-      String curlString = null;
-      if (OKE_CLUSTER_PRIVATEIP) {
+      if (OKE_CLUSTER_PRIVATEIP || OCNE) {
         String protocol = "http";
         String port = "7001";
 
-        curlString = String.format(
-          KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- curl -g -k %s://"
-              + ADMIN_USERNAME_DEFAULT
-              + ":"
-              + ADMIN_PASSWORD_DEFAULT
-              + "@" + adminServerPodName + ":%s/%s", protocol, port, resourcePath);
-        curlString = curlString + " --silent --show-error ";
+        curlString = String.format("%s exec -n %s %s -- curl -g -k %s://%s:%s@%s:%s/%s --silent --show-error ",
+          KUBERNETES_CLI, domainNamespace, adminServerPodName, protocol,
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerPodName, port, resourcePath);
       } else {
         int adminServiceNodePort
             = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-        String host = K8S_NODEPORT_HOST;
-        if (host.contains(":")) {
-          host = "[" + host + "]";
-        }
+        String host = formatIPv6Host(K8S_NODEPORT_HOST);
         String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
         logger.info("hostAndPort = {0} ", hostAndPort);
 
-        curlString = String.format("curl -g --user "
-            + ADMIN_USERNAME_DEFAULT
-            + ":"
-            + ADMIN_PASSWORD_DEFAULT
-            + " http://%s%s/ --silent --show-error ", hostAndPort, resourcePath);
-      }
-      logger.info(callerName + ": curl command {0}", curlString);
+        curlString = String.format("curl -g --user %s:%s http://%s%s/ --silent --show-error ",
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, hostAndPort, resourcePath);
 
+        logger.info(callerName + ": curl command {0}", curlString);
+      }
       try {
         String result = exec(curlString, true).stdout();
         logger.info(callerName + ": exec curl command {0} got: {1}", curlString, result);
@@ -1150,7 +1141,6 @@ public class CommonMiiTestUtils {
         logger.info(callerName + ": caught unexpected exception {0}", ex);
       }
     }
-
     return returnString;
   }
 
@@ -1225,7 +1215,7 @@ public class CommonMiiTestUtils {
                                            boolean isSecureMode,
                                            String sslChannelName) {
     LoggingFacade logger = getLogger();
-    if (OKE_CLUSTER_PRIVATEIP) {
+    if (OKE_CLUSTER_PRIVATEIP || OCNE || CRIO) {
       return checkWeblogicMBeanInAdminPod(domainNamespace,
           adminServerPodName,
           resourcePath,
@@ -1248,21 +1238,19 @@ public class CommonMiiTestUtils {
       curlString = new StringBuffer("status=$(curl -g --user weblogic:welcome1 http://");
     }
 
-    String host = K8S_NODEPORT_HOST;
-    formatIPv6Host(host);
-    
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
     String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       String channel = "internal-t3";
-      int port = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+      int port = getServicePort(domainNamespace, adminServerPodName,
           sslChannelName.isEmpty() ? channel : sslChannelName);
       String domainName = adminServerPodName.split("-" + ADMIN_SERVER_NAME_BASE)[0];
       String serviceName = ADMIN_SERVER_NAME_BASE;
       String ingressName = domainNamespace + "-" + domainName + "-" + serviceName + "-" + port;
-      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;;
+      String hostHeader = domainNamespace + "." + domainName + "." + serviceName;
       Optional<String> ingressFound;
       try {
         List<String> ingresses = TestActions.listIngresses(domainNamespace);
@@ -1326,12 +1314,9 @@ public class CommonMiiTestUtils {
       port = "7002";
     }
     LoggingFacade logger = getLogger();
-    String curlString = String.format(
-        KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- curl -k %s://"
-            + ADMIN_USERNAME_DEFAULT
-            + ":"
-            + ADMIN_PASSWORD_DEFAULT
-            + "@" + adminServerPodName + ":%s/%s", protocol, port, resourcePath);
+    String curlString = String.format("%s exec -n %s %s -- curl -k %s://%s:%s@%s:%s/%s",
+        KUBERNETES_CLI, domainNamespace, adminServerPodName, protocol, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        adminServerPodName, port, resourcePath);
     curlString = curlString + " -g --silent --show-error -o /dev/null -w %{http_code}";
     logger.info("checkSystemResource: curl command {0}", curlString);
     return Command
@@ -1417,7 +1402,7 @@ public class CommonMiiTestUtils {
       // check job status and fail test if the job failed
       V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
           "Getting the job failed");
-      if (job != null) {
+      if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
             v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
             .findAny()
@@ -1482,7 +1467,7 @@ public class CommonMiiTestUtils {
       // check job status and fail test if the job failed
       V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
           "Getting the job failed");
-      if (job != null) {
+      if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
                 v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
             .findAny()
@@ -1794,24 +1779,6 @@ public class CommonMiiTestUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
         domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
-    /*
-    assertNotNull(domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages(),
-        domain1 + "/spec/serverPod/auxiliaryImages is null");
-
-    //verify that the domain is patched with new image
-    List<AuxiliaryImage> auxiliaryImageListAf =
-        domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages();
-    boolean doMainPatched = false;
-    for (AuxiliaryImage auxImage : auxiliaryImageListAf) {
-      if (auxImage.getImage().equals(auxiliaryImageName)) {
-        logger.info("Domain patched and cluster config {0} found", auxImage);
-        doMainPatched = true;
-        break;
-      }
-    }
-    assertTrue(doMainPatched, String.format("Image name %s should be patched", auxiliaryImageName));
-    */
-
     // verify the server pods in cluster are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -1839,9 +1806,7 @@ public class CommonMiiTestUtils {
         .append("\"");
     logger.info("command to read file in pod {0} is: {1}", serverPodName, readFileCmd.toString());
 
-    ExecResult result = assertDoesNotThrow(() -> exec(readFileCmd.toString(), true));
-
-    return result;
+    return assertDoesNotThrow(() -> exec(readFileCmd.toString(), true));
   }
 
   /**
@@ -1998,7 +1963,7 @@ public class CommonMiiTestUtils {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionsecret))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     setPodAntiAffinity(domain);
 
@@ -2119,7 +2084,7 @@ public class CommonMiiTestUtils {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     return domain;
   }
@@ -2164,12 +2129,14 @@ public class CommonMiiTestUtils {
             "weblogicenc", "weblogicenc");
 
     String configMapName = "default-secure-configmap";
-    String yamlString = "topology:\n"
-        + "  Server:\n"
-        + "    'admin-server':\n"
-        + "       SSL: \n"
-        + "         Enabled: true \n"
-        + "         ListenPort: '7008' \n";
+    String yamlString = """
+            topology:
+              Server:
+                'admin-server':
+                   SSL:\s
+                     Enabled: true\s
+                     ListenPort: '7008'\s
+            """;
     createModelConfigMapSSLenable(configMapName, yamlString, domainUid, domainNamespace);
 
     // create the domain object

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -209,14 +209,15 @@ public class ImageUtils {
   }
 
   /**
-   * Create an image with modelfile, application archive and property file. If the property file
-   * is needed to be updated with a property that has been created by the framework, it is copied
-   * onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
+   * Create an image with modelfile, application archive and property file.If the property file
+ is needed to be updated with a property that has been created by the framework, it is copied
+ onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
    * @param imageNameBase - base image name used in local or to construct image name in repository
    * @param wdtModelList - model file used to build the image
    * @param appSrcDirList - application to be added to the image
    * @param modelPropFile - property file to be used with the model file above
    * @param altModelDir - directory where the property file is found if not in the default MODEL_DIR
+   * @param domainUid domain uid
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
@@ -224,13 +225,13 @@ public class ImageUtils {
                                             List<String> appSrcDirList,
                                             String modelPropFile,
                                             String altModelDir,
-                                            String domainHome) {
+                                            String domainUid) {
 
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
         imageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
-        WEBLOGIC_IMAGE_TAG, WLS, false, domainHome, false);
+        WEBLOGIC_IMAGE_TAG, WLS, false, domainUid, false);
   }
 
   /**
@@ -334,7 +335,7 @@ public class ImageUtils {
     }
 
     List<String> archiveList = new ArrayList<>();
-    if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
+    if (appSrcDirList != null && !appSrcDirList.isEmpty() && appSrcDirList.get(0) != null) {
       List<String> archiveAppsList = new ArrayList<>();
       List<String> buildAppDirList = new ArrayList<>(appSrcDirList);
       boolean buildCoherence = false;
@@ -353,9 +354,9 @@ public class ImageUtils {
 
       AppParams appParams = defaultAppParams().appArchiveDir(ARCHIVE_DIR + cacheSfx);
 
-      if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
+      if (!archiveAppsList.isEmpty() && archiveAppsList.getFirst() != null) {
         assertTrue(archiveApp(appParams.srcDirList(archiveAppsList)));
-        String appPath = archiveAppsList.get(0);
+        String appPath = archiveAppsList.getFirst();
 
         //archive provided ear or war file
         String appName = appPath.substring(appPath.lastIndexOf("/") + 1,
@@ -366,9 +367,9 @@ public class ImageUtils {
         archiveList.add(zipAppFile);
       }
 
-      if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
+      if (!buildAppDirList.isEmpty() && buildAppDirList.getFirst() != null) {
         // build an application archive using what is in resources/apps/APP_NAME
-        String zipFile = "";
+        String zipFile;
         if (oneArchiveContainsMultiApps) {
           for (String buildAppDirs : buildAppDirList) {
             assertTrue(buildAppArchive(appParams
@@ -549,7 +550,8 @@ public class ImageUtils {
     V1SecretList listSecrets = listSecrets(namespace);
     if (listSecrets != null) {
       for (V1Secret item : listSecrets.getItems()) {
-        if (item.getMetadata().getName().equals(secretName)) {
+        if (item.getMetadata() != null && item.getMetadata().getName() != null
+            && item.getMetadata().getName().equals(secretName)) {
           logger.info("Secret {0} already exists in namespace {1}, skipping secret creation", secretName, namespace);
           return;
         }

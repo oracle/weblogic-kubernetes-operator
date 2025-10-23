@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -9,7 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -25,6 +27,7 @@ import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -40,22 +43,25 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Image.getImageEnvVar;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -70,9 +76,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Test to creat a FMW dynamic domain in persistent volume using WLST.
  */
-@DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
-@Tag("oke-sequential")
+@Tag("oke-weekly-sequential")
 @Tag("kind-sequential")
 @Tag("okd-fmw-cert")
 class ItFmwDynamicDomainInPV {
@@ -84,8 +89,6 @@ class ItFmwDynamicDomainInPV {
   private static String java_home = null;
 
   private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -99,7 +102,6 @@ class ItFmwDynamicDomainInPV {
   private static final String adminServerName = "admin-server";
   private static final String managedServerNameBase = "managed-server";
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
@@ -108,6 +110,13 @@ class ItFmwDynamicDomainInPV {
   private static String hostHeader;
   private static int adminPort = 7001;
   private static String dbName = domainUid + "my-oracle-db";
+  private static String nginxNamespace = null;
+  private static List<String> ingressHostList = null;
+  private static String ingressIP = null;
+  private static NginxParams nginxHelmParams = null;
+
+
+
 
   /**
    * Assigns unique namespaces for DB, operator and domains.
@@ -115,7 +124,7 @@ class ItFmwDynamicDomainInPV {
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for DB and RCU");
@@ -130,10 +139,13 @@ class ItFmwDynamicDomainInPV {
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace = namespaces.get(2);
 
-    //install Oracle Database Operator
-    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
+    // get a unique Nginx namespace
+    logger.info("Assign a unique namespace for Nginx");
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    nginxNamespace = namespaces.get(3);
 
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    createBaseRepoSecret(dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
@@ -144,6 +156,13 @@ class ItFmwDynamicDomainInPV {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
+    if (OKE_CLUSTER_PRIVATEIP) {
+      // install Nginx ingress controller for all test cases using Nginx
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+      ingressIP = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace);
+    }
+
   }
 
   /**
@@ -159,10 +178,21 @@ class ItFmwDynamicDomainInPV {
     verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    if (OKE_CLUSTER_PRIVATEIP) {
+      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+      clusterNameMsPortMap.put(clusterName, managedServerPort);
+      ingressHostList
+          = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
+          false, nginxHelmParams.getIngressClassName(), true, 7001);
+    }
+
     if (TestConstants.KIND_CLUSTER
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, adminPort);
       verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost, hostHeader);
+    } else if (OKE_CLUSTER_PRIVATEIP) {
+      hostHeader = " -H 'host: " + ingressHostList.get(0) + "' ";
+      verifyEMconsoleAccess(domainNamespace, domainUid, ingressIP, hostHeader);
     } else {
       verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost);
     }
@@ -327,12 +357,12 @@ class ItFmwDynamicDomainInPV {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
-        File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
+            File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
         "Failed to create domain properties file");
 
     // create the property file
     assertDoesNotThrow(() ->
-        p.store(new FileOutputStream(domainPropertiesFile), "FMW wlst properties file"),
+            p.store(new FileOutputStream(domainPropertiesFile), "FMW wlst properties file"),
         "Failed to write domain properties file");
 
     return domainPropertiesFile;

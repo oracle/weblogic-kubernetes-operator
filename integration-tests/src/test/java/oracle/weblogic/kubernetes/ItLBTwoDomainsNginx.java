@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -42,8 +42,10 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
@@ -51,6 +53,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.checkIngressReady;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
@@ -73,11 +76,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Create two domains using WLST with domain-on-pv type.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify Nginx load balancer handles traffic to two background WebLogic domains")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 class ItLBTwoDomainsNginx {
 
   private static final int numberOfDomains = 2;
@@ -94,7 +96,16 @@ class ItLBTwoDomainsNginx {
 
   // domain constants
   private static final int replicaCount = 2;
-  private static final int MANAGED_SERVER_PORT = 7100;
+  private static int MANAGED_SERVER_PORT;
+
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      MANAGED_SERVER_PORT = 7100;
+    } else {
+      MANAGED_SERVER_PORT = 7001;
+    }
+  }
+
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String clusterName = "cluster-1";
 
@@ -108,7 +119,7 @@ class ItLBTwoDomainsNginx {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -121,7 +132,7 @@ class ItLBTwoDomainsNginx {
 
     // get a unique Nginx namespace
     logger.info("Assign a unique namespace for Nginx");
-    assertNotNull(namespaces.get(1), "Namespace list is null");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
     nginxNamespace = namespaces.get(2);
 
     // set the service account name for the operator
@@ -256,14 +267,18 @@ class ItLBTwoDomainsNginx {
    * @throws ApiException if Kubernetes API call fails
    */
   @AfterAll
-  public void tearDownAll() throws ApiException {
-    if (!SKIP_CLEANUP) {
-      if (pvPvcNamePair != null) {
-        // delete pvc
-        deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
-        // delete pv
-        deletePersistentVolume(pvPvcNamePair.get(0));
-      }
+  void tearDownAll() throws ApiException {
+    if (!SKIP_CLEANUP && pvPvcNamePair != null) {
+      // delete pvc
+      deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
+      // delete pv
+      deletePersistentVolume(pvPvcNamePair.get(0));
+    }
+    if (nginxHelmParams != null && OKE_CLUSTER) {
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
     }
   }
 
@@ -530,8 +545,14 @@ class ItLBTwoDomainsNginx {
       nodePortValue = "NodePort";
     }
 
-    NginxParams params = installAndVerifyNginx(nginxNamespace, IT_LBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT,
-        IT_LBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, nodePortValue);
+    NginxParams params = null;
+    if (OKE_CLUSTER_PRIVATEIP) {
+      params = installAndVerifyNginx(nginxNamespace, 0,
+          0, NGINX_CHART_VERSION, nodePortValue);
+    } else {
+      params = installAndVerifyNginx(nginxNamespace, IT_LBTWODOMAINSNGINX_INGRESS_HTTP_NODEPORT,
+          IT_LBTWODOMAINSNGINX_INGRESS_HTTPS_NODEPORT, NGINX_CHART_VERSION, nodePortValue);
+    }
 
     return params;
   }

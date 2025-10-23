@@ -184,7 +184,7 @@
           "type": "string"
         },
         "podSecurityContext": {
-          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. If no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "priorityClassName": {
@@ -204,6 +204,10 @@
           "items": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.HostAlias"
           }
+        },
+        "startupProbe": {
+          "description": "Settings for the startup probe associated with a WebLogic Server instance. If not specified, the operator will not create a default startup probe.",
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "nodeSelector": {
           "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.",
@@ -230,12 +234,16 @@
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
           }
         },
+        "automountServiceAccountToken": {
+          "description": "Indicates whether a service account token should be automatically mounted on the pod. Defaults to true if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.",
+          "type": "boolean"
+        },
         "readinessProbe": {
           "description": "Settings for the readiness probe associated with a WebLogic Server instance. If not specified, the operator will create an HTTP probe accessing the /weblogic/ready path. If an HTTP probe is specified then the operator will fill in `path`, `port`, and `scheme`, if they are missing. The operator will also fill in any missing tuning-related fields if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different HTTP path to access.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "containerSecurityContext": {
-          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. If no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "envFrom": {

@@ -1,10 +1,10 @@
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: dev
 topology:
     Name: sample-domain1
     AdminServerName: admin-server
-    DomainVersion: 12.2.1.4.0
     Cluster:
         cluster-1:
             DynamicServers:

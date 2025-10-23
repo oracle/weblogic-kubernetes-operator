@@ -56,7 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to verify that life cycle operation of configured cluster does not impact the state of dynamic cluster.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -84,7 +83,7 @@ class ItServerStartPolicyConfigCluster {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -104,7 +103,7 @@ class ItServerStartPolicyConfigCluster {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
 
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -116,19 +115,16 @@ class ItServerStartPolicyConfigCluster {
                 domainUid, domainNamespace);
     }
 
-    // Check configured cluster configuration is available 
-    boolean isServerConfigured = 
-         checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
-    assertTrue(isServerConfigured, 
-        "Could not find managed server from configured cluster");
-    logger.info("Found managed server from configured cluster");
-
-    // Check standalone server configuration is available 
-    boolean isStandaloneServerConfigured = 
+    // Check standalone server configuration is available
+    boolean isStandaloneServerConfigured =
          checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
-    assertTrue(isStandaloneServerConfigured, 
+    assertTrue(isStandaloneServerConfigured,
         "Could not find standalone managed server from configured cluster");
-    logger.info("Found standalone managed server configuration");
+    logger.info("Found standalone managed server configuratio");
+
+    // Check configured server pod is ready
+    String configServerPodName = domainUid + "-config-cluster-server1";
+    checkPodReadyAndServiceExists(configServerPodName, domainUid, domainNamespace);
   }
 
   /**
@@ -143,7 +139,6 @@ class ItServerStartPolicyConfigCluster {
   @Order(1)
   @Test
   @DisplayName("Restart the configured cluster with serverStartPolicy")
-  @Tag("gate")
   void testConfigClusterRestart() {
 
     String configServerPodName = domainUid + "-config-cluster-server1";
@@ -303,7 +298,7 @@ class ItServerStartPolicyConfigCluster {
 
     // use rollCluster.sh to rolling-restart a configured cluster
     logger.info("Rolling restart the configured cluster with rollCluster.sh script");
-    String result =  assertDoesNotThrow(() ->
+    assertDoesNotThrow(() ->
         executeLifecycleScript(domainUid, domainNamespace, samplePath,
             ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CONFIG_CLUSTER),
         String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
@@ -354,7 +349,7 @@ class ItServerStartPolicyConfigCluster {
 
     // use rollDomain.sh to rolling-restart a configured cluster
     logger.info("Rolling restart the domain with rollDomain.sh script");
-    String result =  assertDoesNotThrow(() ->
+    assertDoesNotThrow(() ->
         executeLifecycleScript(domainUid, domainNamespace, samplePath,ROLLING_DOMAIN_SCRIPT, DOMAIN, ""),
         String.format("Failed to run %s", ROLLING_DOMAIN_SCRIPT));
 

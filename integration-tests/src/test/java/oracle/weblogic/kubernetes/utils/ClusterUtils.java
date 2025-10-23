@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -295,13 +295,7 @@ public class ClusterUtils {
     logger.info("Calling curl to scale the cluster");
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
-    if (result != null) {
-      logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
-      if (result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg)) {
-        return true;
-      }
-    }
-    return false;
+    return result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg);
   }
 
   /**
@@ -362,18 +356,17 @@ public class ClusterUtils {
         .append(clusterName)
         .append("/scale");
 
-    ExecResult result = null;
+    ExecResult result;
     try {
       logger.info("Calling curl to scale the cluster");
       result = ExecCommand.exec(command.toString(), true);
       logger.info("result is: {0}", result.toString());
       logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
-      if (result != null) {
-        logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
-        if (result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg)) {
-          return true;
-        }
+
+      if (result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg)) {
+        return true;
       }
+
     } catch (IOException | InterruptedException ex) {
       logger.severe(ex.getMessage());
     }

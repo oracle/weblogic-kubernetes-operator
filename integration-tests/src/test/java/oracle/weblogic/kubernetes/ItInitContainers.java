@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Simple JUnit test file used for testing server's pod init containers feature.
  */
-@DisplayName("Test server's pod init container feature")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
@@ -110,11 +109,11 @@ class ItInitContainers {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
+    assertNotNull(namespaces.getFirst(), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
     // get a unique domain1 namespace
@@ -212,7 +211,6 @@ class ItInitContainers {
     String adminServerPodName = domain1Uid + adminServerPrefix;
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
-    String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domain1Uid + "-managed-server";
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPodNamePrefix + i,
@@ -354,6 +352,7 @@ class ItInitContainers {
                         .channelName("default")
                         .nodePort(0))))
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(3000L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));

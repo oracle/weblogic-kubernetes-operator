@@ -24,6 +24,7 @@ public interface LabelConstants {
   String INTROSPECTION_STATE_LABEL = "weblogic.introspectVersion";
   String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configChangesPendingRestart";
   String INTROSPECTION_DOMAIN_SPEC_GENERATION = "weblogic.domainSpecGeneration";
+  String INTROSPECTION_TIME = "weblogic.introspectionTime";
   String TO_BE_ROLLED_LABEL = "weblogic.awaitingPodRoll";
   String TO_BE_SHUTDOWN_LABEL = "weblogic.awaitingShutdown";
   String DOMAIN_OBSERVED_GENERATION_LABEL = "weblogic.domainObservedGeneration";

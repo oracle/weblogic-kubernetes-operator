@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -68,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create two WebLogic domains in domainhome-in-image model with istio configuration")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-parallel")
@@ -89,7 +88,6 @@ class ItIstioTwoDomainsInImage {
   private static final String istioNamespace = "istio-system";
   private static final String istioIngressServiceName = "istio-ingressgateway";
 
-  private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
 
   /**
@@ -98,7 +96,7 @@ class ItIstioTwoDomainsInImage {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -233,6 +231,7 @@ class ItIstioTwoDomainsInImage {
     templateMap.put("DUID", domainUid1);
     templateMap.put("ADMIN_SERVICE",adminServerPodName1);
     templateMap.put("CLUSTER_SERVICE", clusterService1);
+    templateMap.put("MANAGED_SERVER_PORT", "8001");    
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
@@ -392,7 +391,7 @@ class ItIstioTwoDomainsInImage {
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS"))
-                        .introspectorJobActiveDeadlineSeconds(300L)));
+                        .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             domainUid, domNamespace);

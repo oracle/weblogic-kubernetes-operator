@@ -4,10 +4,10 @@
 package oracle.kubernetes.operator.helm;
 
 import java.util.List;
+import java.util.Random;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Assume;
 import org.junit.jupiter.api.Test;
@@ -30,8 +30,10 @@ class HelmOperatorValuesTest {
   private final String stringValue = Integer.toString(intValue);
   private final HelmOperatorValues operatorValues = new HelmOperatorValues();
 
+  private static final Random random = new Random();
+
   private static int getRandomInt() {
-    return (int) (1000000 * Math.random());
+    return 1000000 * random.nextInt();
   }
 
 
@@ -289,7 +291,7 @@ class HelmOperatorValuesTest {
   @Test
   void whenCreatedFromMapWithSingleNamespace_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1")));
+        new HelmOperatorValues(ImmutableMap.of("domainNamespaces", List.of("namespace1")));
 
     assertThat(values.getDomainNamespaces(), equalTo("namespace1"));
   }
@@ -298,7 +300,7 @@ class HelmOperatorValuesTest {
   void whenCreatedFromMapWithMultipleNamespaces_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(
-            ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1", "namespace2")));
+            ImmutableMap.of("domainNamespaces", List.of("namespace1", "namespace2")));
 
     assertThat(values.getDomainNamespaces(), equalTo("namespace1,namespace2"));
   }

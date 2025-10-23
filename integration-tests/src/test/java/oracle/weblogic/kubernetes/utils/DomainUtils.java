@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -373,16 +373,14 @@ public class DomainUtils {
    * Check the domain status condition type exists.
    * @param domainUid uid of the domain
    * @param namespace namespace of the domain
-   * @param serverName name of the server
    * @param podPhase phase of the server pod
    * @param podReady status of the pod Ready condition
    */
   public static void checkServerStatusPodPhaseAndPodReady(String domainUid,
                                                           String namespace,
-                                                          String serverName,
                                                           String podPhase,
                                                           String podReady) {
-    domainStatusServerStatusHasExpectedPodStatus(domainUid, namespace, serverName, podPhase, podReady);
+    domainStatusServerStatusHasExpectedPodStatus(domainUid, namespace, podPhase, podReady);
   }
 
   /**
@@ -467,7 +465,7 @@ public class DomainUtils {
     logger.info("Removing the cluster {0} from domain resource {1}", clusterName, domainUid);
     DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
     Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
-        .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
+        .getClusters().stream().filter(o -> o.getName() != null && o.getName().equals(clusterName)).findAny();
     int clusterIndex = -1;
     if (cluster.isPresent()) {
       clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster.get());
@@ -482,8 +480,8 @@ public class DomainUtils {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, namespace).getSpec()
-          .getClusters().stream().anyMatch(c -> c.getName().equals(clusterName));
+      Callable<Boolean> clusterNotFound = () -> getDomainCustomResource(domainUid, namespace).getSpec()
+          .getClusters().stream().noneMatch(c -> c.getName() != null && c.getName().equals(clusterName));
       testUntil(clusterNotFound, logger, "cluster {0} to be removed from domain resource in namespace {1}",
           clusterName, namespace);
     } else {
@@ -533,7 +531,7 @@ public class DomainUtils {
     assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
 
     String searchString;
-    int index = 0;
+    int index;
 
     AuxiliaryImage ai = auxiliaryImageList.stream()
         .filter(auxiliaryImage -> oldImageName.equals(auxiliaryImage.getImage()))
@@ -968,7 +966,7 @@ public class DomainUtils {
   }
 
   /**
-   *  Utility to create domain resource on pv with confiiguration.
+   *  Utility to create domain resource on pv with configuration.
    * @param domainUid domain uid
    * @param domNamespace  domain namespace
    * @param adminSecretName wls admin secret name
@@ -983,16 +981,58 @@ public class DomainUtils {
    * @return oracle.weblogic.domain.Domain object
    */
   public static DomainResource createDomainResourceOnPv(String domainUid,
-                                                  String domNamespace,
-                                                  String adminSecretName,
-                                                  String clusterName,
-                                                  String pvName,
-                                                  String pvcName,
-                                                  String[] repoSecretName,
-                                                  String domainInHomePrefix,
-                                                  int replicaCount,
-                                                  int t3ChannelPort,
-                                                  Configuration configuration) {
+                                                        String domNamespace,
+                                                        String adminSecretName,
+                                                        String clusterName,
+                                                        String pvName,
+                                                        String pvcName,
+                                                        String[] repoSecretName,
+                                                        String domainInHomePrefix,
+                                                        int replicaCount,
+                                                        int t3ChannelPort,
+                                                        Configuration configuration) {
+    return createDomainResourceOnPv(domainUid,
+        domNamespace,
+        adminSecretName,
+        clusterName,
+        pvName,
+        pvcName,
+        repoSecretName,
+        domainInHomePrefix,
+        replicaCount,
+        t3ChannelPort,
+        configuration,
+        FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+  }
+
+  /**
+   *  Utility to create domain resource on pv with configuration.
+   * @param domainUid domain uid
+   * @param domNamespace  domain namespace
+   * @param adminSecretName wls admin secret name
+   * @param clusterName cluster name
+   * @param pvName PV name
+   * @param pvcName PVC name
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param domainInHomePrefix domain in home prefix
+   * @param replicaCount repica count of the clsuter
+   * @param t3ChannelPort t3 chanel
+   * @param configuration domain configuratioin object
+   * @param imageToUse  base image to use
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static DomainResource createDomainResourceOnPv(String domainUid,
+                                                        String domNamespace,
+                                                        String adminSecretName,
+                                                        String clusterName,
+                                                        String pvName,
+                                                        String pvcName,
+                                                        String[] repoSecretName,
+                                                        String domainInHomePrefix,
+                                                        int replicaCount,
+                                                        int t3ChannelPort,
+                                                        Configuration configuration,
+                                                        String imageToUse) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -1011,7 +1051,7 @@ public class DomainUtils {
             .domainUid(domainUid)
             .domainHome(domainInHomePrefix + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
+            .image(imageToUse)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))
@@ -1025,7 +1065,8 @@ public class DomainUtils {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom"))
@@ -1460,7 +1501,7 @@ public class DomainUtils {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterResName, CLUSTER_VERSION, domainNamespace)) {
@@ -1578,7 +1619,7 @@ public class DomainUtils {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-            .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
+            .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 3000L)));
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
@@ -1658,7 +1699,7 @@ public class DomainUtils {
                   .model(new Model()
                       .domainType(WLS_DOMAIN_TYPE)
                       .configMap(configmapName))
-            .introspectorJobActiveDeadlineSeconds(300L)));
+            .introspectorJobActiveDeadlineSeconds(3000L)));
 
     // create cluster resource for the domain
     if (!doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {

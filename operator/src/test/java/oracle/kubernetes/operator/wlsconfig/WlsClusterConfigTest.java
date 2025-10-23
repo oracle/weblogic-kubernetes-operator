@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -51,7 +51,7 @@ class WlsClusterConfigTest {
   }
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     consoleControl =
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, LOG_KEYS)
@@ -59,7 +59,7 @@ class WlsClusterConfigTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     consoleControl.revert();
   }
 

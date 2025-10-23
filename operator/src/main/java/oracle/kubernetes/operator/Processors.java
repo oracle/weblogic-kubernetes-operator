@@ -5,7 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.function.Consumer;
 
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
@@ -30,14 +30,14 @@ public interface Processors {
   /**
    * Return the processing to be performed on a list of events found in Kubernetes. May be null.
    */
-  default Consumer<CoreV1EventList> getEventListProcessing() {
+  default Consumer<EventsV1EventList> getEventListProcessing() {
     return null;
   }
 
   /**
    * Return the processing to be performed on a list of domain events found in Kubernetes. May be null.
    */
-  default Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+  default Consumer<EventsV1EventList> getOperatorEventListProcessing() {
     return null;
   }
 

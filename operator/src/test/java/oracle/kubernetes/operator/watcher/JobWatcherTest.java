@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -51,7 +51,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Override
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     super.setUp();
     addMemento(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
@@ -60,7 +60,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Override
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     super.tearDown();
 
     testSupport.throwOnCompletionFailure();
@@ -68,8 +68,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private DomainPresenceInfo createDomainPresenceInfo(
       DomainResource domain) {
-    DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
-    return dpi;
+    return new DomainPresenceInfo(domain);
   }
 
   private DomainResource createDomain() {
@@ -197,10 +196,6 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     return setFailedConditionWithReason(job, null);
   }
 
-  private V1Job markJobTimedOut(V1Job job) {
-    return markJobTimedOut(job, "DeadlineExceeded");
-  }
-
   @SuppressWarnings("SameParameterValue")
   private V1Job markJobTimedOut(V1Job job, String reason) {
     return setFailedWithReason(job, reason);
@@ -263,10 +258,12 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     return markJobCompleted(createJob());
   }
 
+  @Override
   public void receivedEvents_areSentToListeners() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }
 
+  @Override
   public void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }

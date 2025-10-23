@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -105,7 +105,8 @@ public class ManagedServersUpStep extends Step {
   private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {
     return (info.getServerPod(ssi.getServerName()) != null
             && !info.isServerPodDeleted(ssi.getServerName()))
-            || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
+            || (ssi.isServiceOnly() && (info.getServerService(ssi.getServerName()) == null)
+            || (!ssi.isServiceOnly() && (info.getServerService(ssi.getServerName()) != null)));
   }
 
   private static void insert(List<Step> steps, Step step) {
@@ -135,13 +136,6 @@ public class ManagedServersUpStep extends Step {
         nextStepFactory.createServerStep(
             info, config, factory, factory.createNextStep(getNext())),
         packet);
-  }
-
-  private static Collection<String> getServerNames(Collection<? extends DomainPresenceInfo.ServerInfo> serverInfos) {
-    if (serverInfos != null) {
-      return serverInfos.stream().map(DomainPresenceInfo.ServerInfo::getServerName).toList();
-    }
-    return Collections.emptyList();
   }
 
   private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig,

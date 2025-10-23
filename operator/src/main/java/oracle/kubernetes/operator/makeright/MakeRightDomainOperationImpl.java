@@ -293,8 +293,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     Step domainUpStrategy =
         Step.chain(
             ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
-            domainIntrospectionSteps(),
             ConfigMapHelper.createOrReplaceFluentbitConfigMapStep(),
+            domainIntrospectionSteps(),
             new DomainStatusStep(),
             DomainProcessorImpl.bringAdminServerUp(info),
             managedServerStrategy);

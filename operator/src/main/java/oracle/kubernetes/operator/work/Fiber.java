@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -19,6 +19,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
 import static oracle.kubernetes.operator.work.Step.THROWABLE;
 import static oracle.kubernetes.operator.work.Step.adapt;
 
@@ -97,7 +98,7 @@ public final class Fiber implements Runnable {
   private boolean invokeAndPotentiallyRequeue(Step stepline, Packet packet) {
     Result result = stepline.apply(packet);
 
-    if (result == null || result.isRequeue()) {
+    if (result.isRequeue()) {
       addBreadcrumb("[" + result.getRequeueAfter() + "]");
       fiberExecutor.schedule(this, result.getRequeueAfter());
       return false;
@@ -259,7 +260,7 @@ public final class Fiber implements Runnable {
       public Cancellable schedule(Fiber fiber, Duration duration) {
         ScheduledFuture<?> future = scheduledExecutorService.schedule(fiber,
                 TimeUnit.MILLISECONDS.convert(duration), TimeUnit.MILLISECONDS);
-        return () -> future.cancel(true);
+        return createCancellable(future);
       }
 
       @Override

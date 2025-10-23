@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * running in istio-system namespace. All the service mesh related operators are installed and running as per this
  * documentation. https://docs.openshift.com/container-platform/4.10/service_mesh/v2x/installing-ossm.html
  */
-@DisplayName("Test Openshift servce mesh istio enabled WebLogic Domain in mii model")
 @Tag("openshift")
 @IntegrationTest
 class ItOpenshiftIstioMiiDomain {
@@ -85,7 +84,6 @@ class ItOpenshiftIstioMiiDomain {
   private final String clusterName = "cluster-1"; // do not modify
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
-  private final String workManagerName = "newWM";
   private final int replicaCount = 2;
 
   private static LoggingFacade logger = null;
@@ -95,7 +93,7 @@ class ItOpenshiftIstioMiiDomain {
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
   */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -122,7 +120,7 @@ class ItOpenshiftIstioMiiDomain {
     });
     logger.info("Run " + KUBERNETES_CLI + " to create the service member roll");
     CommandParams params = new CommandParams().defaults();
-    params.command(KUBERNETES_CLI + " apply -f " + smrYaml.toString());
+    params.command(KUBERNETES_CLI + " apply -f " + smrYaml);
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create service member roll");
 
@@ -227,6 +225,7 @@ class ItOpenshiftIstioMiiDomain {
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
     templateMap.put("testwebapp", "sample-war");
+    templateMap.put("MANAGED_SERVER_PORT", "7001");    
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(

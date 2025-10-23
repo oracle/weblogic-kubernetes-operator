@@ -118,7 +118,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Use Helm chart to install operator(s)
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test operator usability using Helm chart installation")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
@@ -160,7 +159,7 @@ class ItUsabilityOperatorHelmChart {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(7) List<String> namespaces) {
+  static void initAll(@Namespaces(7) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -203,7 +202,7 @@ class ItUsabilityOperatorHelmChart {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // Delete domain custom resource
     logger.info("Delete domain1 custom resource in namespace {0}", domain1Namespace);
@@ -784,7 +783,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Created service account: {0}", opServiceAccount);
 
       logger.info("Installing operator %s in namespace %s again", opReleaseName, op2Namespace);
-      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
+      installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
           false,null,"deployed", 0, opHelmParams,
           LIST_STRATEGY, domain2Namespace);
 
@@ -837,7 +836,7 @@ class ItUsabilityOperatorHelmChart {
           0, op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
 
-      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
+      createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", op3Namespace);
       int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
       assertNotEquals(-1, externalRestHttpsPort,
@@ -1246,6 +1245,7 @@ class ItUsabilityOperatorHelmChart {
         return result.stderr();
       }
     } catch (Exception e) {
+      assertNotNull(result, "result is null");
       getLogger().info("Got exception, command failed with errors " + e.getMessage());
       return result.stderr();
     }
@@ -1256,9 +1256,11 @@ class ItUsabilityOperatorHelmChart {
     V1ServiceAccountList sas = Kubernetes.listServiceAccounts(namespace);
     if (sas != null) {
       for (V1ServiceAccount sa : sas.getItems()) {
-        String saName = sa.getMetadata().getName();
-        deleteServiceAccount(saName, namespace);
-        checkServiceDoesNotExist(saName, namespace);
+        if (sa.getMetadata() != null) {
+          String saName = sa.getMetadata().getName();
+          deleteServiceAccount(saName, namespace);
+          checkServiceDoesNotExist(saName, namespace);
+        }
       }
     }
   }
@@ -1270,7 +1272,6 @@ class ItUsabilityOperatorHelmChart {
    **/
   private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) 
       throws UnknownHostException {
-    ExecResult result;
     String adminServerPodName = domainUid + adminServerPrefix;
     String managedServer = "managed-server1";
     int adminServiceNodePort

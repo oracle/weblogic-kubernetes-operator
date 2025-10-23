@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -26,10 +26,9 @@ public class RoleBinding {
     List<V1RoleBinding> roleBindings = roleBindingList.getItems();
 
     for (V1RoleBinding roleBinding : roleBindings) {
-      if (roleBinding.getMetadata() != null && roleBinding.getMetadata().getName() != null) {
-        if (roleBinding.getMetadata().getName().equals(name)) {
-          return true;
-        }
+      if (roleBinding.getMetadata() != null && roleBinding.getMetadata().getName() != null
+          && roleBinding.getMetadata().getName().equals(name)) {
+        return true;
       }
     }
 

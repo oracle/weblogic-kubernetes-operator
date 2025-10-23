@@ -43,14 +43,22 @@ The WDT model format is fully described in the open source,
 When you deploy a Model in Image domain resource YAML file:
 
   - The operator will run a Kubernetes Job called the 'introspector job' that:
-    - Merges your WDT models.
-    - Runs WDT tooling to generate a domain home.
-    - Packages the domain home and passes it to the operator.
+    - For an [Auxiliary Image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) deployment, an init container is used to copy and set up the WDT installer in the main container, and all the WDT models are also copied to the main container.
+    - Sets up the call parameters for WDT to create the domain. The ordering of the models follow the pattern [Model files naming and ordering]({{< relref "/managing-domains/model-in-image/model-files#model-file-naming-and-loading-order" >}}).
+    - Runs WDT tooling to generate a domain home using the parameters from the previous step.
+    - Encrypts the domain salt key `SerializedSystemIni.dat`.
+    - Packages the domain home and passes it to the operator.  The packaged domain has two parts. The first part `primordial domain` contains the basic configuration including the encrypted salt key. The second part `domain config` contains the rest of the configuration `config/**/*.xml`.  These files are compressed but do not contain any applications, libraries, key stores, and such, because they can be restored from the WDT archives.   
 
   - After the introspector job completes:
-    - The operator creates one or more ConfigMaps following the pattern `DOMAIN_UID-weblogic-domain-introspect-cm***`.
-    - The operator subsequently boots your domain's WebLogic Server pods.
-    - The pods will obtain their domain home from the ConfigMap.
+    - The operator creates one or more ConfigMaps following the pattern `DOMAIN_UID-weblogic-domain-introspect-cm***`.  These ConfigMaps contain the packaged domains from the introspector job and other information for starting the domain.
+
+  - After completion of the introspector job, the operator will start the domain:
+    - For an [Auxiliary Image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) deployment, an init container is used to copy and set up the WDT installer in the main container, and all the WDT models are also copied to the main container first.    
+    - Restore the packaged domains in the server pod.
+    - Restore applications, libraries, key stores, and such, from the WDT archives.
+    - Decrypt the domain salt key.
+    - Start the domain.
+
 
 ### Using demo SSL certificates in v14.1.2.0.0 or later
 
@@ -89,6 +97,7 @@ If you are using the WebLogic Scripting Tool, before starting the WLST session, 
 ```shell
  export WLST_PROPERTIES="-Dweblogic.security.TrustKeyStore=DemoTrust -Dweblogic.security.SSL.ignoreHostnameVerification=true"
 ```
+
 
 ### Runtime updates
 

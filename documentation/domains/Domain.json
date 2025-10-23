@@ -238,6 +238,7 @@
             "DomainInvalid",
             "Introspection",
             "Kubernetes",
+            "KubernetesNetworkException",
             "ServerPod",
             "PersistentVolumeClaim",
             "ReplicasTooHigh",
@@ -465,7 +466,7 @@
           }
         },
         "image": {
-          "description": "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.",
+          "description": "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -603,8 +604,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
-          "description": "The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
+          "description": "The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -665,8 +666,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
-          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
+          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -742,6 +743,10 @@
           "description": "An optional field that describes the configuration for creating a PersistentVolumeClaim for `Domain on PV`. PersistentVolumeClaim is a user\u0027s request for and claim to a persistent volume. The operator will perform this one-time create operation only if the persistent volume claim does not already exist. Omit this section if you have manually created a persistent volume claim. If specified, the name must match one of the volumes under `serverPod.volumes` and the domain home must reside in the mount path of the volume using this claim. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc",
           "$ref": "#/definitions/PersistentVolumeClaim"
         },
+        "modelEncryptionPassphraseSecret": {
+          "description": "Specifies the secret name of the WebLogic Deployment Tool encryption passphrase if the WDT models provided in the \u0027domainCreationImages\u0027 or \u0027domainCreationConfigMap\u0027 are encrypted using the WebLogic Deployment Tool \u0027encryptModel\u0027 command. The secret must use the key \u0027passphrase\u0027 containing the actual passphrase for encryption.",
+          "type": "string"
+        },
         "setDefaultSecurityContextFsGroup": {
           "description": "Specifies whether the operator will set the default \u0027fsGroup\u0027 in the introspector job pod security context. This is needed to create the domain home directory on PV in some environments. If the \u0027fsGroup\u0027 is specified as part of \u0027spec.introspector.serverPod.podSecurityContext\u0027, then the operator will use that \u0027fsGroup\u0027 instead of the default \u0027fsGroup\u0027. Defaults to true.",
           "type": "boolean"
@@ -761,7 +766,7 @@
       "type": "object",
       "properties": {
         "podSecurityContext": {
-          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. If no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "resources": {
@@ -780,6 +785,13 @@
           "type": "array",
           "items": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
+          }
+        },
+        "initContainers": {
+          "description": "List of init containers for the introspector Job Pod. These containers run after the auxiliary image init container. See `kubectl explain pods.spec.initContainers`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         }
       }
@@ -879,8 +891,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.2.0",
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.2.0",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.7",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.7",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -977,7 +989,7 @@
         },
         "resources": {
           "description": "Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements.",
-          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "#/definitions/V1VolumeResourceRequirements"
         }
       }
     },
@@ -1045,7 +1057,7 @@
           "type": "string"
         },
         "podSecurityContext": {
-          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. If no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "priorityClassName": {
@@ -1065,6 +1077,10 @@
           "items": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.HostAlias"
           }
+        },
+        "startupProbe": {
+          "description": "Settings for the startup probe associated with a WebLogic Server instance. If not specified, the operator will not create a default startup probe.",
+          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "nodeSelector": {
           "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.",
@@ -1091,12 +1107,16 @@
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
           }
         },
+        "automountServiceAccountToken": {
+          "description": "Indicates whether a service account token should be automatically mounted on the pod. Defaults to true if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.",
+          "type": "boolean"
+        },
         "readinessProbe": {
           "description": "Settings for the readiness probe associated with a WebLogic Server instance. If not specified, the operator will create an HTTP probe accessing the /weblogic/ready path. If an HTTP probe is specified then the operator will fill in `path`, `port`, and `scheme`, if they are missing. The operator will also fill in any missing tuning-related fields if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different HTTP path to access.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "containerSecurityContext": {
-          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. If no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "envFrom": {
@@ -1293,6 +1313,20 @@
         "subsystemName": {
           "description": "Name of subsystem providing symptom information.",
           "type": "string"
+        }
+      }
+    },
+    "V1VolumeResourceRequirements": {
+      "description": "VolumeResourceRequirements describes the storage resource requirements for a volume.",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "description": "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "$ref": "#/definitions/Map"
+        },
+        "limits": {
+          "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "$ref": "#/definitions/Map"
         }
       }
     },

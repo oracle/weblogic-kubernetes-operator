@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -52,17 +52,17 @@ public class BaseTestUtils {
     private List<String> messagesToTrack = new ArrayList<>();
 
     @Override
-    public void publish(LogRecord record) {
-      if (record.getThrown() != null && !shouldIgnore(record.getThrown())) {
-        throwable = record.getThrown();
+    public void publish(LogRecord rec) {
+      if (rec.getThrown() != null && !shouldIgnore(rec.getThrown())) {
+        throwable = rec.getThrown();
       }
-      if (shouldTrack(record)) {
-        logRecords.add(record);
+      if (shouldTrack(rec)) {
+        logRecords.add(rec);
       }
     }
 
-    private boolean shouldTrack(LogRecord record) {
-      return messagesToTrack == ALL_MESSAGES || messagesToTrack.contains(record.getMessage());
+    private boolean shouldTrack(LogRecord rec) {
+      return messagesToTrack == ALL_MESSAGES || messagesToTrack.contains(rec.getMessage());
     }
 
     boolean shouldIgnore(Throwable thrown) {
@@ -110,8 +110,8 @@ public class BaseTestUtils {
 
       SimpleFormatter formatter = new SimpleFormatter();
       List<String> messageKeys = new ArrayList<>();
-      for (LogRecord record : logRecords) {
-        messageKeys.add(formatter.format(record));
+      for (LogRecord rec : logRecords) {
+        messageKeys.add(formatter.format(rec));
       }
 
       throw new AssertionError("Unexpected log messages " + messageKeys);

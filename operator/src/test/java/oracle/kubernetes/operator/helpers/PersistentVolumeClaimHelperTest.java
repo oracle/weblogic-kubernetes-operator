@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -84,7 +84,7 @@ class PersistentVolumeClaimHelperTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(
         consoleHandlerMemento =
             TestUtils.silenceOperatorLogger()
@@ -119,7 +119,7 @@ class PersistentVolumeClaimHelperTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
     testSupport.throwOnCompletionFailure();
   }
@@ -179,7 +179,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-            getPersistentVolumeClaimResource(domainPresenceInfo),
+            getPersistentVolumeClaimResource(),
             is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -194,7 +194,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-            getPersistentVolumeClaimResource(domainPresenceInfo),
+            getPersistentVolumeClaimResource(),
             is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -211,7 +211,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-        getPersistentVolumeClaimResource(domainPresenceInfo),
+        getPersistentVolumeClaimResource(),
         is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -228,7 +228,7 @@ class PersistentVolumeClaimHelperTest {
     runPersistentVolumeClaimHelper();
 
     assertThat(
-            getPersistentVolumeClaimResource(domainPresenceInfo),
+            getPersistentVolumeClaimResource(),
             is(persistentVolumeClaimWithName("Test")));
   }
 
@@ -290,7 +290,7 @@ class PersistentVolumeClaimHelperTest {
     return PersistentVolumeClaimHelper.createPersistentVolumeClaimStep(next);
   }
 
-  public V1PersistentVolumeClaim getPersistentVolumeClaimResource(DomainPresenceInfo info) {
+  public V1PersistentVolumeClaim getPersistentVolumeClaimResource() {
     return testSupport.getResourceWithName(PVC, "Test");
   }
 

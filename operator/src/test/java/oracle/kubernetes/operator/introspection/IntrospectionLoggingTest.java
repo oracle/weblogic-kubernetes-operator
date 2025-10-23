@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.introspection;
@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -59,7 +59,7 @@ class IntrospectionLoggingTest {
       = new V1Job().metadata(new V1ObjectMeta().uid(UID)).status(IntrospectionTestUtils.createCompletedStatus());
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectAllLogMessages(logRecords));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
@@ -71,7 +71,7 @@ class IntrospectionLoggingTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -136,15 +136,15 @@ class IntrospectionLoggingTest {
 
   @SuppressWarnings("SameParameterValue")
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
-    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    List<EventsV1Event> events = getEventsWithReason(getEvents(), event.getReason());
     return Optional.ofNullable(events)
         .filter(list -> !list.isEmpty())
         .map(n -> n.get(0))
-        .map(CoreV1Event::getMessage)
+        .map(EventsV1Event::getNote)
         .orElse("Event not found");
   }
 
-  private List<CoreV1Event> getEvents() {
+  private List<EventsV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -13,6 +13,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -49,6 +50,7 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.watcher.NamespaceWatcher;
 import oracle.kubernetes.operator.watcher.OperatorEventWatcher;
+import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -204,7 +206,7 @@ public class OperatorMain extends BaseMain {
     return new InitializeInternalIdentityStep(delegate, next);
   }
 
-  private class EventListResponseStep extends ResponseStep<CoreV1EventList> {
+  private class EventListResponseStep extends ResponseStep<EventsV1EventList> {
     DomainProcessor processor;
 
     EventListResponseStep(DomainProcessor processor) {
@@ -212,8 +214,8 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1EventList> callResponse) {
-      CoreV1EventList list = callResponse.getObject();
+    public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1EventList> callResponse) {
+      EventsV1EventList list = callResponse.getObject();
       operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
       list.getItems().forEach(DomainProcessorImpl::updateEventK8SObjects);
       return doContinueListOrNext(callResponse, packet);
@@ -267,16 +269,19 @@ public class OperatorMain extends BaseMain {
 
   void completeBegin() {
     try {
+      // Register metrics collectors
+      new NamespaceCollector(mainDelegate).register();
       startMetricsServer();
       startRestServer();
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
       int stuckPodInterval = TuningParameters.getInstance().getStuckPodRecheckSeconds();
-      mainDelegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
-      mainDelegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
+      Collection<Cancellable> futures = List.of(
+          mainDelegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS),
+          mainDelegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS));
 
-      markReadyAndStartLivenessThread();
+      markReadyAndStartLivenessThread(futures);
 
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);

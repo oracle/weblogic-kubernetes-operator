@@ -194,6 +194,10 @@ class OfflineWlstEnv(object):
     readDomain(self.getDomainHome())
     self.domain = cmo
     self.DOMAIN_NAME = self.getDomain().getName()
+    self.RESTAPI_ENABLED = "true"
+    mgmtsvc = self.getDomain().getRestfulManagementServices()
+    if mgmtsvc != None and not mgmtsvc.isEnabled():
+      self.RESTAPI_ENABLED = "false"
 
     # this should only be done for model in image case
     if self.DOMAIN_SOURCE_TYPE == "FromModel" or self.INIT_DOMAIN_ON_PV is not None:
@@ -816,6 +820,7 @@ class TopologyGenerator(Generator):
     self.indent()
     self.writeln("name: " + self.name(self.env.getDomain()))
     self.writeln("adminServerName: " + self.quote(self.env.getDomain().getAdminServerName()))
+    self.writeln('restfulAPIEnabled: ' + self.env.RESTAPI_ENABLED)
     self.addConfiguredClusters()
     self.addServerTemplates()
     self.addNonClusteredServers()
@@ -2076,8 +2081,8 @@ def isSecureModeEnabledForDomain(domain):
       if attributes['SecureModeEnabled']:
         secureModeEnabled = True
   else:
-    secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
-
+    secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0") \
+                    and domain.isAdministrationPortEnabled()
   return secureModeEnabled
 
 def isAdministrationPortEnabledForDomain(domain):
@@ -2134,7 +2139,9 @@ def isListenPortEnabledForServer(server, domain, is_server_template=False):
     cd('/Server')
   cd(server.getName())
   if not isSet('ListenPortEnabled') and isSecureModeEnabledForDomain(domain):
-    enabled = False
+      enabled = False
+      if not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0") and domain.isListenPortEnabled():
+          enabled = True
   return enabled
 
 def isSSLListenPortEnabled(ssl, domain):
@@ -2162,6 +2169,7 @@ def getSSLPortIfEnabled(server, domain, is_server_template=True):
   """
   ssl = None
   ssl_listen_port = None
+
   try:
     # this can throw if SSL mbean not there
     ssl = server.getSSL()
@@ -2179,6 +2187,14 @@ def getSSLPortIfEnabled(server, domain, is_server_template=True):
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
   elif ssl is None and isSecureModeEnabledForDomain(domain):
     ssl_listen_port = "7002"
+
+  # Check override for 14.1.2.x
+  if not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0"):
+    if ssl is None and domain.isSSLEnabled():
+        ssl_listen_port = 7002
+    elif ssl is None and not domain.isSSLEnabled():
+        ssl_listen_port = None
+
   return ssl_listen_port
 
 def get_server_template_listening_ports_from_configxml(config_xml):

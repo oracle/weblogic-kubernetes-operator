@@ -373,7 +373,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    */
   public Stream<V1Pod> getServerPodsNotBeingDeleted() {
     return getActiveServers().values().stream().filter(
-        sko -> !PodHelper.isPodAlreadyLabeledForShutdown(sko.getPod().get())).map(this::getPod)
+        sko -> !PodHelper.isPodAlreadyAnnotatedForShutdown(sko.getPod().get())).map(this::getPod)
         .filter(Objects::nonNull);
   }
 
@@ -383,7 +383,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
   public boolean isServerPodBeingDeleted(String serverName) {
     return Optional.ofNullable(getSko(serverName)).map(ServerKubernetesObjects::getPod).map(AtomicReference::get)
-        .map(PodHelper::isPodAlreadyLabeledForShutdown).orElse(false);
+        .map(PodHelper::isPodAlreadyAnnotatedForShutdown).orElse(false);
   }
 
   public boolean isServerPodDeleted(String serverName) {

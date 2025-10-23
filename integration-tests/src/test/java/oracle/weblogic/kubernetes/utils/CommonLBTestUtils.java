@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -34,9 +34,9 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeResourceRequirements;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_PORT_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.CRIO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
@@ -64,6 +65,8 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -95,6 +98,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -163,7 +167,7 @@ public class CommonLBTestUtils {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeName(sharingPvName)
-            .resources(new V1ResourceRequirements()
+            .resources(new V1VolumeResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("6Gi"))))
         .metadata(new V1ObjectMetaBuilder()
             .withName(sharingPvcName)
@@ -213,7 +217,7 @@ public class CommonLBTestUtils {
       getLogger().info("Getting admin service node port: {0}", serviceNodePort);
 
       getLogger().info("Validating WebLogic admin server access by login to console");
-      if (OKE_CLUSTER_PRIVATEIP) {
+      if (OKE_CLUSTER_PRIVATEIP || OCNE || CRIO) {
         assertTrue(assertDoesNotThrow(
             () -> adminLoginPageAccessible(adminServerPodName, "7001", domainNamespace,
                 ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
@@ -780,15 +784,16 @@ public class CommonLBTestUtils {
         + "&password=" + ADMIN_PASSWORD_DEFAULT
         + ((host != null) && host.contains(":") ? "&ipv6=true" : "&ipv6=false") + "\"";
     if (hostRouting) {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
-          + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, host)
-        : String.format("curl -g --show-error -ks --noproxy '*' "
-          + "-H 'host: %s' %s://%s/" + uri, ingressHostName, protocol, getHostAndPort(host, lbPort));
+      curlRequest = OKE_CLUSTER_PRIVATEIP
+          ? String.format("curl -g --show-error -ks --noproxy '*' -v -H 'host: %s' %s://%s/%s",
+            ingressHostName, protocol, host, uri)
+          : String.format("curl -g --show-error -ks --noproxy '*' -H 'host: %s' %s://%s/%s",
+            ingressHostName, protocol, getHostAndPort(host, lbPort), uri);
     } else {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
-          + "%s://%s" + locationString + "/" + uri, protocol, host)
-        : String.format("curl -g --show-error -ks --noproxy '*' "
-          + "%s://%s" + locationString + "/" + uri, protocol, getHostAndPort(host, lbPort));
+      curlRequest = OKE_CLUSTER_PRIVATEIP
+          ? String.format("curl -g --show-error -ks --noproxy '*' -v %s://%s%s/%s", protocol, host, locationString, uri)
+          : String.format("curl -g --show-error -ks --noproxy '*' %s://%s%s/%s",
+            protocol, getHostAndPort(host, lbPort),locationString, uri);
     }
 
     List<String> managedServers = new ArrayList<>();
@@ -853,14 +858,14 @@ public class CommonLBTestUtils {
     String curlCmd;
     if (isHostRouting) {
       curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' -H 'host: %s' %s",
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, ingressHostName, readyAppUrl.toString());
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, ingressHostName, readyAppUrl);
     } else {
       if (isTLS) {
         curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
-            + "-H 'WL-Proxy-SSL: false' %s", ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl.toString());
+            + "-H 'WL-Proxy-SSL: false' %s", ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl);
       } else {
         curlCmd = String.format("curl -g --user %s:%s -ks --show-error --noproxy '*' %s",
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl.toString());
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, readyAppUrl);
       }
     }
 
@@ -880,6 +885,44 @@ public class CommonLBTestUtils {
         }
       } catch (IOException | InterruptedException ex) {
         getLogger().severe(ex.getMessage());
+      }
+    }
+    if (OKE_CLUSTER) {
+      LoggingFacade logger = getLogger();
+      try {
+        if (!consoleAccessible) {
+          ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " get all -A");
+          logger.info(result.stdout());
+          //restart core-dns service
+          result = ExecCommand.exec(KUBERNETES_CLI + " rollout restart deployment coredns -n kube-system");
+          logger.info(result.stdout());
+          checkPodReady("coredns", null, "kube-system");
+        }
+      } catch (Exception ex) {
+        logger.warning(ex.getLocalizedMessage());
+      }
+      for (int i = 0; i < 10; i++) {
+        assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
+        ExecResult result;
+        try {
+          getLogger().info("Accessing app on admin server using curl request, iteration {0}: {1}", i, curlCmd);
+          result = ExecCommand.exec(curlCmd, true);
+          String response = result.stdout().trim();
+          getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+              result.exitValue(), response, result.stderr());
+          if (response.contains("RUNNING")) {
+            consoleAccessible = true;
+            break;
+          }
+
+          try {
+            Thread.sleep(5000);
+          } catch (InterruptedException ignore) {
+            // ignore
+          }
+        } catch (IOException | InterruptedException ex) {
+          getLogger().severe(ex.getMessage());
+        }
       }
     }
     assertTrue(consoleAccessible, "Couldn't access admin server app");

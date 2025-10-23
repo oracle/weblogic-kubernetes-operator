@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -183,6 +183,9 @@ def filter_model(model):
   try:
 
     if model is not None:
+
+      upgradeServerIfNeeded(model)
+
       if getOfflineWlstEnv() is None:
         initOfflineWlstEnv(model)
 
@@ -208,6 +211,9 @@ def filter_model(model):
         if 'Server' not in topology:
           topology['Server'] = {}
 
+        if 'Machine' in topology:
+          del topology['Machine']
+
         if admin_server not in topology['Server']:
           topology['Server'][admin_server] = {}
 
@@ -216,7 +222,6 @@ def filter_model(model):
         if 'ServerTemplate' in topology:
           customizeServerTemplates(model)
 
-        upgradeServerIfNeeded(model)
   except:
       exc_type, exc_obj, exc_tb = sys.exc_info()
       ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
@@ -253,6 +258,8 @@ def customizeServerTemplates(model):
   if template_names is not None:
     for template_name in template_names:
       template = serverTemplates[template_name]
+      if 'Machine' in template:
+        del template['Machine']
       cluster_name = getClusterNameOrNone(template)
       if cluster_name is not None:
         customizeServerTemplate(topology, template, template_name)
@@ -376,6 +383,9 @@ def customizeServer(model, server, name):
   if 'AdminServerName' in model['topology'] and len(model['topology']['AdminServerName']) > 0:
     adminServer = model['topology']['AdminServerName']
 
+  if 'Machine' in server:
+    del server['Machine']
+
   customizeLog(name, server)
   customizeAccessLog(name, server)
   customizeDefaultFileStore(server)
@@ -408,19 +418,24 @@ def upgradeServerIfNeeded(model):
     result = fh.read()
     fh.close()
     found = False
+    # if secure mode is not enabled in existing domain
     if result == 'False':
         # check if model has anything set
         # if domainInfo already set to secure or in dev mode then do not set it, prod mode will not be secure
         # regardless of others
         # if the model disabled `ProductionModeEnabled`  specifically now, do nothing
-
+        prod_mode = False
         if 'domainInfo' in model and 'ServerStartMode' in model['domainInfo']:
-          return
+          mode = model['domainInfo']['ServerStartMode']
+          if mode == 'secure' or mode == 'dev':
+              return
+          else:
+              prod_mode = True
 
         if 'topology' in model:
 
             topology = model['topology']
-            if 'ProductionModeEnabled' not in topology:
+            if not prod_mode and 'ProductionModeEnabled' not in topology:
               return
 
             if 'ProductionModeEnabled' in topology:
@@ -550,8 +565,33 @@ def _get_ssl_listen_port(server):
       ssl_listen_port = "7002"
   elif ssl is None and isSecureModeEnabledForDomain(model):
     ssl_listen_port = "7002"
+
+  # Check overrride for 14.1.2.x
+  if not env.wlsVersionEarlierThan("14.1.2.0") and not isGlobalSSLEnabled():
+          return None
   return ssl_listen_port
 
+def isGlobalSSLEnabled(model):
+    result=False
+    if 'topology' in model:
+        if 'SSLEnabled' in model['topology']:
+            val = model['topology']['SSLEnabled']
+            if isinstance(val, str) or isinstance(val, unicode):
+              result = Boolean.valueOf(val)
+            else:
+              result = val
+    return result
+
+def isGlobalListenPortEnabled(model):
+    result=False
+    if 'topology' in model:
+        if 'ListenPortEnabled' in model['topology']:
+            val = model['topology']['ListenPortEnabled']
+            if isinstance(val, str) or isinstance(val, unicode):
+              result = Boolean.valueOf(val)
+            else:
+              result = val
+    return result
 
 def addAdminChannelPortForwardNetworkAccessPoints(server):
   admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
@@ -579,8 +619,14 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
     _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
                                      listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
   elif index == 0:
-    if not secure_mode and is_listenport_enabled(server):
-      _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+    if not env.wlsVersionEarlierThan("14.1.2.0"):
+        if not secure_mode and is_listenport_enabled(server):
+          _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+        elif secure_mode and (is_listenport_enabled(server) or isGlobalListenPortEnabled(model)):
+          _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+    else:
+        if not secure_mode and is_listenport_enabled(server):
+          _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
 
     ssl = getSSLOrNone(server)
     ssl_listen_port = None
@@ -590,20 +636,27 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
         ssl_listen_port = "7002"
     elif ssl is None and secure_mode:
       ssl_listen_port = "7002"
+    # Check override for 14.1.2.x
+
+    if not env.wlsVersionEarlierThan("14.1.2.0") and ssl is None:
+        if isGlobalSSLEnabled(model):
+            ssl_listen_port = 7002
+        else:
+            ssl_listen_port = None
 
     if ssl_listen_port is not None:
       _writeAdminChannelPortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
 
 
 def is_listenport_enabled(server):
+  is_listen_port_enabled = True
   if 'ListenPortEnabled' in server:
     val = server['ListenPortEnabled']
     if isinstance(val, str) or isinstance(val, unicode):
       is_listen_port_enabled = Boolean.valueOf(val)
     else:
       is_listen_port_enabled = val
-  else:
-    is_listen_port_enabled = True
+
   return is_listen_port_enabled
 
 

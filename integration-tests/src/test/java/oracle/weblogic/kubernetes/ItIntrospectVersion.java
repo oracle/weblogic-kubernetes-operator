@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -20,24 +20,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
-import io.kubernetes.client.openapi.models.V1Volume;
-import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterStatus;
 import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.CreateIfNotExists;
+import oracle.weblogic.domain.DomainCreationImage;
+import oracle.weblogic.domain.DomainOnPV;
+import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
@@ -46,6 +47,7 @@ import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.Ingress;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -57,6 +59,7 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -65,6 +68,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -84,9 +88,11 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
@@ -107,6 +113,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
@@ -123,16 +130,17 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.FileUtils.createWdtPropertyFile;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
@@ -141,8 +149,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -151,7 +157,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.apache.commons.io.FileUtils.copyDirectory;
@@ -167,12 +172,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests related to introspectVersion attribute.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("oke-arm")
 class ItIntrospectVersion {
 
@@ -202,6 +206,7 @@ class ItIntrospectVersion {
 
   private static final String pvName = getUniqueName(domainUid + "-pv-");
   private static final String pvcName = getUniqueName(domainUid + "-pvc-");
+  private static final String storageClassName = "weblogic-domain-storage-class";
 
   private static final String wlSecretName = "weblogic-credentials";
   private static String wlsUserName = ADMIN_USERNAME_DEFAULT;
@@ -218,7 +223,16 @@ class ItIntrospectVersion {
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
-  private static final int managedServerPort = 7100;
+  private static int managedServerPort;
+
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      managedServerPort = 7100;
+    } else {
+      managedServerPort = 7001;
+    }
+  }
+  
   private static int adminPort = 7001;
   private static String hostHeader;
 
@@ -230,7 +244,7 @@ class ItIntrospectVersion {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -277,10 +291,10 @@ class ItIntrospectVersion {
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
+  @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   @Tag("gate")
-  @Tag("crio")
   void testDomainIntrospectVersionNotRolling() {
     // get the pod creation time stamps
     Map<String, OffsetDateTime> pods = new LinkedHashMap<>();
@@ -410,6 +424,7 @@ class ItIntrospectVersion {
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
+  @Order(2)
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
   void testDomainIntrospectVersionRolling() throws ApiException {
@@ -534,6 +549,7 @@ class ItIntrospectVersion {
    * e. Make a REST api call to access management console using new password.
    * f. Make a REST api call to access management console using old password.
    */
+  @Order(3)
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
   void testCredentialChange() {
@@ -669,6 +685,7 @@ class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
+  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   void testCreateNewCluster() {
@@ -743,14 +760,15 @@ class ItIntrospectVersion {
   }
 
   /**
-   * Modify the domain scope property
+   * Modify the domain scope property.
    * From: "image: container-registry.oracle.com/middleware/weblogic:ImageTagBeingUsed" to
    * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
-   * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"
+   * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8"
    * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
+  @Order(5)
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   void testUpdateImageName() {
@@ -856,6 +874,7 @@ class ItIntrospectVersion {
    * Test that when a domain resource has spec.introspectVersion configured,
    * after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
    */
+  @Order(6)
   @Test
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify label weblogic.introspectVersion set")
   void testDedicatedModeSameNamespaceScale() {
@@ -917,6 +936,7 @@ class ItIntrospectVersion {
    * It also verifies the intospector job is started/stoped and none of the
    * server pod is rolled since there is no change to resource configuration.
    */
+  @Order(7)
   @Test
   @DisplayName("Test to use sample scripts to explicitly initiate introspection")
   void testIntrospectDomainScript() {
@@ -1057,6 +1077,7 @@ class ItIntrospectVersion {
    * type: Completed, status: false
    * Verify the introspector reruns to make it right when model file is fixed.
    */
+  @Order(8)
   @Test
   @DisplayName("Test domain status condition with bad model file")
   void testIntrospectorMakeright() {
@@ -1120,13 +1141,13 @@ class ItIntrospectVersion {
     assertTrue(patchDomainResource(domainUid, miiDomainNamespace, patchStr),
         "patchDomainCustomResource(imageUpdate) failed");
 
-    final String adminServerPodName = domainUid + "-admin-server";
+    final String adminServerName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, miiDomainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, miiDomainNamespace);
+        adminServerName, miiDomainNamespace);
+    checkPodReadyAndServiceExists(adminServerName, domainUid, miiDomainNamespace);
     // check managed server pods are ready
     for (int i = 1; i <= 2; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
@@ -1136,98 +1157,60 @@ class ItIntrospectVersion {
   }
   
   private static void createDomain() {    
-    String uniquePath = "/shared/" + introDomainNamespace + "/domains";
+    String uniqueDomainHome = "/shared/" + introDomainNamespace + "/domains/";
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
         wlsUserName, wlsPassword);
-    createPV(pvName, domainUid, ItIntrospectVersion.class.getSimpleName());
-    createPVC(pvName, pvcName, domainUid, introDomainNamespace);
+    final String wlsModelFilePrefix = "model-dci-introspect";
+    final String wlsModelFile = wlsModelFilePrefix + ".yaml";
+    File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix, K8S_NODEPORT_HOST, t3ChannelPort);
 
-    // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(() ->
-            File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
-        "Failed to create domain properties file");
-    Properties p = new Properties();
-    p.setProperty("domain_path", uniquePath);
-    p.setProperty("domain_name", domainUid);
-    p.setProperty("cluster_name", cluster1Name);
-    p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
-    p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", wlsUserName);
-    p.setProperty("admin_password", wlsPassword);
-    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
-    p.setProperty("number_of_ms", "2"); // maximum number of servers in cluster
-    p.setProperty("managed_server_name_base", cluster1ManagedServerNameBase);
-    p.setProperty("domain_logs", uniquePath + "/logs/" + domainUid);
-    p.setProperty("production_mode_enabled", "true");
-    assertDoesNotThrow(() ->
-            p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
-        "Failed to write domain properties file");
+    // create domainCreationImage
+    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "introspect-domain-on-pv-image";
+    // create image with model and wdt installation files
+    WitParams witParams
+        = new WitParams()
+            .modelImageName(domainCreationImageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
+            .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
+    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
 
-    // WLST script for creating domain
-    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+    DomainCreationImage domainCreationImage
+        = new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
 
-    // create configmap and domain on persistent volume using the WLST script and property file
-    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, introDomainNamespace);
-    
-    // create cluster object
-    String clusterResName = domainUid + "-" + cluster1Name;
-    ClusterResource cluster = createClusterResource(clusterResName,
-        cluster1Name, introDomainNamespace, cluster1ReplicaCount);
-
-    logger.info("Creating cluster resource {0} in namespace {1}",clusterResName, introDomainNamespace);
-    createClusterAndVerify(cluster);    
-
-    // create a domain custom resource configuration object
+    // create a domain resource
     logger.info("Creating domain custom resource");
-    DomainResource domain = new DomainResource()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(introDomainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(IMAGE_PULL_POLICY)
-            .webLogicCredentialsSecret(new V1LocalObjectReference()
-                .name(wlSecretName))
-            .includeServerOutInPodLog(true)
-            .logHomeEnabled(Boolean.TRUE)
-            .logHome(uniquePath + "/logs/" + domainUid)
-            .dataHome("")
-            .serverStartPolicy("IfNeeded")
-            .serverPod(new ServerPod() //serverpod
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addVolumesItem(new V1Volume()
-                    .name(pvName)
-                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                        .claimName(pvcName)))
-                .addVolumeMountsItem(new V1VolumeMount()
-                    .mountPath("/shared")
-                    .name(pvName)))
-            .adminServer(new AdminServer() //admin server
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort())))));
+    Map<String, Quantity> pvCapacity = new HashMap<>();
+    pvCapacity.put("storage", new Quantity("2Gi"));
 
-    // create secrets
-    List<V1LocalObjectReference> secrets = new ArrayList<>();
-    for (String secret : createSecretsForImageRepos(introDomainNamespace)) {
-      secrets.add(new V1LocalObjectReference().name(secret));
+    Map<String, Quantity> pvcRequest = new HashMap<>();
+    pvcRequest.put("storage", new Quantity("2Gi"));
+    Configuration configuration = null;
+    if (OKE_CLUSTER) {
+      configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
+    } else {
+      configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
+          ItIntrospectVersion.class.getSimpleName());
     }
-    domain.spec().setImagePullSecrets(secrets);
-    // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+    configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
+        .createMode(CreateIfNotExists.DOMAIN)
+        .domainCreationImages(Collections.singletonList(domainCreationImage))
+        .domainType(DomainOnPVType.WLS));
+
+    DomainResource domain = createDomainResourceOnPv(domainUid,
+        introDomainNamespace,
+        wlSecretName,
+        cluster1Name,
+        pvName,
+        pvcName,
+        new String[]{BASE_IMAGES_REPO_SECRET_NAME},
+        uniqueDomainHome,
+        cluster1ReplicaCount,
+        t3ChannelPort,
+        configuration,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
 
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
@@ -1286,48 +1269,6 @@ class ItIntrospectVersion {
     verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
   }
 
-
-  /**
-   * Create a WebLogic domain on a persistent volume by doing the following.
-   * Create a configmap containing WLST script and property file.
-   * Create a Kubernetes job to create domain on persistent volume.
-   *
-   * @param wlstScriptFile       python script to create domain
-   * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName               name of the persistent volume to create domain in
-   * @param pvcName              name of the persistent volume claim
-   * @param namespace            name of the domain namespace in which the job is created
-   */
-  private static void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-                                         String pvName, String pvcName, String namespace) {
-    logger.info("Preparing to run create domain job using WLST");
-
-    List<Path> domainScriptFiles = new ArrayList<>();
-    domainScriptFiles.add(wlstScriptFile);
-    domainScriptFiles.add(domainPropertiesFile);
-
-    logger.info("Creating a config map to hold domain creation scripts");
-    String domainScriptConfigMapName = "create-domain-scripts-cm";
-    assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation(
-            domainScriptConfigMapName, domainScriptFiles, namespace, ItIntrospectVersion.class.getSimpleName()),
-        "Create configmap for domain creation failed");
-
-    // create a V1Container with specific scripts and properties for creating domain
-    V1Container jobCreationContainer = new V1Container()
-        .addCommandItem("/bin/sh")
-        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
-        .addArgsItem("/u01/weblogic/" + wlstScriptFile.getFileName()) //wlst.sh script
-        .addArgsItem("-skipWLSModuleScanning")
-        .addArgsItem("-loadProperties")
-        .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
-
-    logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
-        namespace, jobCreationContainer);
-
-  }
-
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
       String user, String code) {
 
@@ -1352,6 +1293,7 @@ class ItIntrospectVersion {
         } catch (IOException | InterruptedException ex) {
           logger.severe(ex.getMessage());
         }
+        assertNotNull(result, "result is null");
         String response = result.stdout().trim();
         logger.info(response);
         logger.info(result.stderr());
@@ -1391,7 +1333,7 @@ class ItIntrospectVersion {
           headers = new HashMap<>();
           headers.put("host", hostHeader);
         }
-        
+
         String url = "http://" + hostAndPort
             + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code + "&ipv6=" + ipv6;
         HttpResponse<String> response;
@@ -1418,10 +1360,8 @@ class ItIntrospectVersion {
     String podName = domainUid + "-" + serverName;
     boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
     final String command = String.format(
-        KUBERNETES_CLI + " exec -n " + introDomainNamespace + "  " + podName + " -- curl \"http://"
-        + podName + ":%s/clusterview/ClusterViewServlet"
-        + "?user=" + wlsUserName
-        + "&password=" + wlsPassword + "&ipv6=" + ipv6 + "\"", managedServerPort);
+        "%s exec -n %s %s -- curl \"http://%s:%s/clusterview/ClusterViewServlet?user=%s&password=%s&ipv6=%b\"",
+        KUBERNETES_CLI, introDomainNamespace, podName, podName, managedServerPort, wlsUserName, wlsPassword, ipv6);
     verifyServerCommunication(command, serverName, managedServerNames);
   }
 
@@ -1499,7 +1439,7 @@ class ItIntrospectVersion {
     CommandParams params = new CommandParams().defaults();
 
     params.command("sh "
-        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script)
         + commonParameters);
 
     ExecResult execResult = Command.withParams(params).executeAndReturnResult();
@@ -1557,7 +1497,7 @@ class ItIntrospectVersion {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
+                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 3000L)));
     setPodAntiAffinity(domain);
 
 
@@ -1574,7 +1514,10 @@ class ItIntrospectVersion {
   private void updateIngressBackendServicePort(int newAdminPort) throws ApiException {
     String ingressName = introDomainNamespace + "-" + domainUid + "-" + adminServerName + "-7001";
     V1Ingress ingress = Ingress.getIngress(introDomainNamespace, ingressName).orElse(null);
-    if (ingress != null) {
+    if (ingress != null
+        && ingress.getSpec() != null
+        && ingress.getSpec().getRules() != null
+        && !ingress.getSpec().getRules().isEmpty()) {
       logger.info("Updating ingress {0} with new admin port {1}", ingressName, newAdminPort);
       ingress.getSpec().getRules().getFirst().getHttp()
           .getPaths().getFirst().getBackend().getService()
@@ -1584,5 +1527,4 @@ class ItIntrospectVersion {
       fail("Ingress is null, failed to update ingress");
     }
   }
-  
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -33,6 +33,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -156,6 +157,7 @@ public class JobUtils {
     logger.info("Checking if the domain creation job {0} completed in namespace {1}",
         jobName, namespace);
     testUntil(
+        withLongRetryPolicy,
         jobCompleted(jobName, null, namespace),
         logger,
         "job {0} to be completed in namespace {1}",
@@ -165,7 +167,7 @@ public class JobUtils {
     // check job status and fail test if the job failed to create domain
     V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
         "Getting the job failed");
-    if (job != null) {
+    if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
           v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
@@ -175,7 +177,7 @@ public class JobUtils {
         List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
             namespace, "job-name=" + jobName).getItems(),
             "Listing pods failed");
-        if (!pods.isEmpty()) {
+        if (!pods.isEmpty() && pods.get(0).getMetadata() != null) {
           String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
               "Failed to get pod log");
           logger.severe(podLog);

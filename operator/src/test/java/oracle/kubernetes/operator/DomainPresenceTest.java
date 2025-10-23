@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -101,7 +101,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
     mementos.add(testSupport.install());
     mementos.add(StubWatchFactory.install());
@@ -111,7 +111,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     shutDownThreads();
     mementos.forEach(Memento::revert);
     testSupport.throwOnCompletionFailure();
@@ -127,13 +127,13 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
-    DomainResource domain = createDomain(UID1, NS);
-    testSupport.defineResources(domain);
+    DomainResource domainResource = createDomain(UID1, NS);
+    testSupport.defineResources(domainResource);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getDomain(), equalTo(domain));
+    assertThat(getDomainPresenceInfo(dp, UID1).getDomain(), equalTo(domainResource));
   }
 
   @Test
@@ -196,23 +196,23 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenClustersMatchDomain_addToDomainPresenceInfo() {
-    DomainResource domain = createDomain(UID1, NS);
+    DomainResource domainResource = createDomain(UID1, NS);
     ClusterResource cluster1 = createClusterResource(NS, CLUSTER_1);
     ClusterResource cluster2 = createClusterResource(NS, CLUSTER_2);
     ClusterResource cluster3 = createClusterResource("ns2", CLUSTER_3);
-    testSupport.defineResources(domain, cluster1, cluster2, cluster3);
+    testSupport.defineResources(domainResource, cluster1, cluster2, cluster3);
 
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
-    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-    configurator.configureCluster(info, CLUSTER_1);
-    configurator.configureCluster(info, CLUSTER_2);
+    DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
+    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domainResource);
+    configurator.configureCluster(domainPresenceInfo, CLUSTER_1);
+    configurator.configureCluster(domainPresenceInfo, CLUSTER_2);
 
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), nullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_2), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_3), nullValue());
   }
 
   @Test
@@ -229,10 +229,10 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
         testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), nullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
+    DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_2), nullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_3), notNullValue());
   }
 
   @Test
@@ -274,22 +274,12 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), notNullValue());
-    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
+    DomainPresenceInfo domainPresenceInfo = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_2), notNullValue());
+    MatcherAssert.assertThat(domainPresenceInfo.getClusterResource(CLUSTER_3), notNullValue());
     MatcherAssert.assertThat(getDomainPresenceInfo(dp, UID2).getClusterResource(CLUSTER_2), notNullValue());
   }
-
-  // todo examine the recheck logic to see if we need to handle events
-  // todo when cluster added, add to info
-  // todo when cluster removed, remove from info
-  // todo when cluster modified, update info
-
-  // todo domain validation should use cluster resources, not cluster from domain spec
-  // todo unit tests should create cluster resources, not cluster in domain spec
-  // todo when upgrading from v8 domain, create cluster resource (WebHook) and tag as operator-created
-  // todo when deleting domain, also delete any operator-created clusters
 
   // tell dp - here are the actual clusters that exist.
   // dp goes through its active domains, remove clusters no longer present?
@@ -363,8 +353,8 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   void whenNewDomainAddedWithoutStatus_generateDomainCreatedEvent() {
     processor.getDomainPresenceInfoMap().clear();
     addDomainResource(UID1, NS);
-    DomainResource domain = testSupport.getResourceWithName(DOMAIN, UID1);
-    domain.withStatus(null);
+    DomainResource domainResource = testSupport.getResourceWithName(DOMAIN, UID1);
+    domainResource.withStatus(null);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
 
@@ -411,7 +401,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithMissingInfo_dontRecordAdminServerService() {
+  void whenK8sHasOneDomainWithMissingInfo_recordAdminServerService() {
     addDomainResource(UID1, NS);
     V1Service service = createServerService(UID1, NS, "admin");
     testSupport.defineResources(service);
@@ -419,7 +409,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(null));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
   }
 
   @Test
@@ -467,7 +457,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithPodButMissingInfo_dontRecordPodPresence() {
+  void whenK8sHasOneDomainWithPodButMissingInfo_recordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
@@ -475,7 +465,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(pod));
   }
 
   @Test
@@ -537,11 +527,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(createEventResource(uid, serverName, message));
   }
 
-  private CoreV1Event createEventResource(String uid, String serverName, String message) {
-    return new CoreV1Event()
+  private EventsV1Event createEventResource(String uid, String serverName, String note) {
+    return new EventsV1Event()
         .metadata(createNamespacedMetadata(uid, NS))
-        .involvedObject(new V1ObjectReference().name(LegalNames.toEventName(uid, serverName)))
-        .message(message);
+        .regarding(new V1ObjectReference().name(LegalNames.toEventName(uid, serverName)))
+        .note(note);
   }
 
   @Test
@@ -727,6 +717,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
        * Access map of current fibers.
        * @return Map of fibers in this gate
        */
+      @Override
       public Map<String, Fiber> getCurrentFibers() {
         return myGateMap;
       }

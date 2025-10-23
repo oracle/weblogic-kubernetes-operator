@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -7,9 +7,9 @@ import java.net.HttpURLConnection;
 
 /** Kubernetes constants. */
 public interface KubernetesConstants {
-  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
-  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.2.0";
-  String DEFAULT_FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2";
+  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8";
+  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.7";
+  String DEFAULT_FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
   String LATEST_IMAGE_SUFFIX = ":latest";
 
@@ -56,7 +56,8 @@ public interface KubernetesConstants {
   String NAMESPACE = "Namespace";
   String POD = "Pod";
   String EVICTED_REASON = "Evicted";
-
+  String UNSCHEDULABLE_REASON = "Unschedulable";
+  String POD_SCHEDULED = "PodScheduled";
   int DEFAULT_EXPORTER_SIDECAR_PORT = 8080;
 
   //---------- HTTP statuses returned from Kubernetes ----------

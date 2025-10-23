@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -9,7 +9,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 
 /**
- * Parses a generated weblogic-domain-apache-security.yaml file into a set of typed k8s java objects
+ * Parses a generated weblogic-domain-apache-security.yaml file into a set of typed k8s java objects.
  */
 public class ParsedApacheSecurityYaml extends ParsedKubernetesYaml {
 

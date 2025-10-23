@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -42,7 +42,6 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
@@ -90,7 +89,7 @@ class RollingHelperTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords)
             .withLogLevel(Level.FINE));
@@ -129,7 +128,7 @@ class RollingHelperTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -233,19 +232,6 @@ class RollingHelperTest {
   }
 
   @Test
-  @Disabled("Temporarily disable to test if this is affecting later tests")
-  void whenClusterSizeSet_onlyOnePodImmediatelyReplaced() {
-    consoleHandlerMemento.trackMessage(MANAGED_POD_REPLACED);
-    initializeExistingPods();
-    CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
-    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
-
-    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
-
-    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME));
-  }
-
-  @Test
   void whenClusterSizeSetAndServersNotReady_replaceAllPodsImmediately() {
     consoleHandlerMemento.trackMessage(MANAGED_POD_REPLACED);
     initializeExistingPods();
@@ -328,7 +314,7 @@ class RollingHelperTest {
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
-    assertThat(testSupport, hasEvent(DOMAIN_ROLL_STARTING_EVENT).inNamespace(NS).withMessageContaining(UID));
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_STARTING_EVENT).inNamespace(NS).withNoteContaining(UID));
   }
 
   @Test
@@ -344,7 +330,7 @@ class RollingHelperTest {
 
     CLUSTERED_SERVER_NAMES.forEach(s ->
           assertThat(testSupport,
-                hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withMessageContaining(getPodName(s))));
+                hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withNoteContaining(getPodName(s))));
   }
 
   private String getPodName(String s) {

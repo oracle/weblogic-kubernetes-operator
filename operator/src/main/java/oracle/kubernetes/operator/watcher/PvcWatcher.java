@@ -3,10 +3,7 @@
 
 package oracle.kubernetes.operator.watcher;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -22,8 +19,6 @@ public class PvcWatcher {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  // Map of Pvc name to Runnable
-  private final Map<String,Consumer<V1PersistentVolumeClaim>> completeCallbackRegistrations = new ConcurrentHashMap<>();
   public final DomainProcessor processor;
 
   PvcWatcher(DomainProcessor processor) {

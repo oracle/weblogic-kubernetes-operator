@@ -1,6 +1,5 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-
 
 package oracle.weblogic.kubernetes.utils;
 
@@ -121,17 +120,42 @@ public class ConfigMapUtils {
    * @param namespace name of the namespace in which to create configmap
    * @param className name of the class to call this method
    * @throws IOException when reading the domain script files fail
-   * @throws ApiException if create configmap fails
    */
   public static void createConfigMapForDomainCreation(String configMapName, List<Path> files,
                                                       String namespace, String className)
+      throws IOException, ApiException {
+
+    createConfigMapForDomainCreation(configMapName, files,
+        namespace, "", className);
+  }
+
+  /**
+   * Create configmap containing domain creation scripts.
+   *
+   * @param configMapName name of the configmap to create
+   * @param files files to add in configmap
+   * @param namespace name of the namespace in which to create configmap
+   * @param className name of the class to call this method
+   * @throws IOException when reading the domain script files fail
+   * @throws ApiException if create configmap fails
+   */
+  public static void createConfigMapForDomainCreation(String configMapName, List<Path> files,
+                                                      String namespace, String domainUid, String className)
       throws ApiException, IOException {
 
     LoggingFacade logger = getLogger();
-    logger.info("Creating configmap {0}, namespace {1}, className {2}", configMapName, namespace, className);
+    logger.info("Creating configmap {0}, namespace {1}, domainUid {2}, className {3}",
+        configMapName, namespace, domainUid, className);
 
-    Path domainScriptsDir = Files.createDirectories(
-        Paths.get(TestConstants.LOGS_DIR, className, namespace));
+    Path domainScriptsDir;
+
+    if (domainUid == null || domainUid.isEmpty()) {
+      domainScriptsDir = Files.createDirectories(
+          Paths.get(TestConstants.LOGS_DIR, className, namespace));
+    } else {
+      domainScriptsDir = Files.createDirectories(
+          Paths.get(TestConstants.LOGS_DIR, className, namespace, domainUid));
+    }
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
@@ -162,17 +186,11 @@ public class ConfigMapUtils {
   public static Callable<Boolean> configMapExist(String nameSpace, String configMapName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
     V1ConfigMap configMapToModify = cmList.stream()
-        .filter(cm -> configMapName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && configMapName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
-    return () -> {
-      if (configMapToModify != null) {
-        return true;
-      } else {
-        return false;
-      }
-    };
+    return () -> configMapToModify != null;
   }
 
   /**
@@ -183,17 +201,11 @@ public class ConfigMapUtils {
   public static Callable<Boolean> configMapDoesNotExist(String nameSpace, String configMapName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
     V1ConfigMap configMapToModify = cmList.stream()
-        .filter(cm -> configMapName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && configMapName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
-    return () -> {
-      if (configMapToModify == null) {
-        return true;
-      } else {
-        return false;
-      }
-    };
+    return () -> configMapToModify == null;
   }
 
   /**
@@ -241,14 +253,17 @@ public class ConfigMapUtils {
                                    String configFileName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
     V1ConfigMap configMapToModify = cmList.stream()
-        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && cmName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 
     assertNotNull(configMapToModify,"Can't find cm for " + cmName);
     Map<String, String> cmData = configMapToModify.getData();
+    String values = null;
 
-    String values = cmData.get("logstash.conf").replace(oldRegex,newRegex);
+    if (cmData != null && cmData.get("logstash.conf") != null) {
+      values = cmData.get("logstash.conf").replace(oldRegex, newRegex);
+    }
     assertNotNull(values, "can't find values for key prometheus.yml");
     cmData.replace(configFileName, values);
 
@@ -258,7 +273,7 @@ public class ConfigMapUtils {
     cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
 
     configMapToModify = cmList.stream()
-        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .filter(cm -> cm.getMetadata() != null && cmName.equals(cm.getMetadata().getName()))
         .findAny()
         .orElse(null);
 

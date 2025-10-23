@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResour
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -59,13 +60,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies the dynamic update use cases using data source.
  */
 
-@DisplayName("Test dynamic updates to a model in image domain, part2")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("oke-arm")
 class ItMiiDynamicUpdatePart2 {
 
@@ -73,6 +73,8 @@ class ItMiiDynamicUpdatePart2 {
   private static final String domainUid = "mii-dynamic-update2";
   public static Path pathToChangReadsYaml = null;
   static LoggingFacade logger = null;
+
+  static boolean isDataSourceCreated = false;
 
   /**
    * Install Operator.
@@ -82,7 +84,7 @@ class ItMiiDynamicUpdatePart2 {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
     logger = getLogger();
 
@@ -100,7 +102,7 @@ class ItMiiDynamicUpdatePart2 {
    * Verify all k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     helper.beforeEach();
   }
 
@@ -116,7 +118,6 @@ class ItMiiDynamicUpdatePart2 {
   @Test
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
-  @Tag("gate")
   void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -168,7 +169,7 @@ class ItMiiDynamicUpdatePart2 {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfigViaAdminPod(helper.adminServerPodName, helper.domainNamespace,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams",
-        "newdburl"), "JDBCSystemResource DB URL not found");
+        "jdbc:oracle:thin:@host:1234:sid"), "JDBCSystemResource DB URL not found");
     logger.info("JDBCSystemResource DB URL found");
 
     // verify the application is undeployed
@@ -180,6 +181,7 @@ class ItMiiDynamicUpdatePart2 {
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected status");
     helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+    isDataSourceCreated = true;
   }
 
   /**
@@ -198,8 +200,19 @@ class ItMiiDynamicUpdatePart2 {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, OffsetDateTime> pods =
-        helper.addDataSourceAndVerify(false);
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    if (!isDataSourceCreated) {
+      pods =
+              helper.addDataSourceAndVerify(false);
+    } else {
+      // get the creation time of the admin server pod before patching
+      pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
+      // get the creation time of the managed server pods before patching
+      for (int i = 1; i <= helper.replicaCount; i++) {
+        pods.put(helper.managedServerPrefix + i,
+                getPodCreationTime(helper.domainNamespace, helper.managedServerPrefix + i));
+      }
+    }
 
     // write sparse yaml to delete datasource to file
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");

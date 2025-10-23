@@ -2,7 +2,7 @@
 
 The WebLogic Kubernetes Operator (the “operator”) supports running your WebLogic Server and Fusion Middleware Infrastructure domains on Kubernetes, an industry standard, cloud neutral deployment platform. It lets you encapsulate your entire WebLogic Server installation and layered applications into a portable set of cloud neutral images and simple resource description files. You can run them on any on-premises or public cloud that supports Kubernetes where you've deployed the operator.
 
-Furthermore, the operator is well suited to CI/CD processes. You can easily inject changes when moving between environments, such as from test to production. For example, you can externally inject database URLs and credentials during deployment or you can inject arbitrary changes to most WebLogic configurations.
+Furthermore, the operator is well suited to CI/CD processes. You can easily inject changes when moving between environments, such as from test to production. For example, you can externally inject database URLs and credentials during deployment, or you can inject arbitrary changes to most WebLogic configurations.
 
 The operator takes advantage of the [Kubernetes operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/), which means that it uses Kubernetes APIs to provide support for operations, such as: provisioning, lifecycle management, application versioning, product patching, scaling, and security. The operator also enables the use of tooling that is native to this infrastructure for monitoring, logging, tracing, and security.
 
@@ -43,7 +43,11 @@ See the [Release Notes](https://github.com/oracle/weblogic-kubernetes-operator/r
 
 #### Operator earlier versions
 
-Documentation for supported prior releases of the operator: [3.4](https://oracle.github.io/weblogic-kubernetes-operator/3.4/), [4.0](https://oracle.github.io/weblogic-kubernetes-operator/4.0/), and [4.1](https://oracle.github.io/weblogic-kubernetes-operator/4.1/).
+{{% notice note %}}
+As of November 2024, version 3.4.x of the WebLogic Kubernetes Operator is no longer supported.
+{{% /notice %}}
+
+Documentation for prior releases of the operator: [3.4](https://oracle.github.io/weblogic-kubernetes-operator/3.4/), [4.0](https://oracle.github.io/weblogic-kubernetes-operator/4.0/), [4.1](https://oracle.github.io/weblogic-kubernetes-operator/4.1/), and [4.2](https://oracle.github.io/weblogic-kubernetes-operator/4.2/).
 
 #### Backward compatibility guidelines
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -9,26 +9,37 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.UnaryOperator;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.ClusterList;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.CreateIfNotExists;
+import oracle.weblogic.domain.DomainCreationImage;
+import oracle.weblogic.domain.DomainOnPV;
+import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -40,13 +51,20 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -61,9 +79,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.removeReplicasSettingAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -71,13 +89,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.removeClusterInDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.FileUtils.createWdtPropertyFile;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
-import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.ABORTED_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_AVAILABLE;
@@ -109,7 +127,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
-import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
@@ -128,13 +145,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
  * and finally deletes it to generate all the domain related events.
  */
-@DisplayName("Verify the Kubernetes events for domain lifecycle")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
 @IntegrationTest
 @Tag("olcne-srg")
-@Tag("oke-parallel")
+@Tag("oke-sequential")
 class ItKubernetesDomainEvents {
 
   private static String opNamespace = null;
@@ -150,9 +166,8 @@ class ItKubernetesDomainEvents {
   static final String adminServerName = "admin-server";
   static final String domainUid = "k8seventsdomain";
   static final String adminServerPodName = domainUid + "-" + adminServerName;
-  static final String managedServerNameBase = "ms-";
+  static final String managedServerNameBase = "managed-server";
   static String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-  static final int managedServerPort = 8001;
   static int replicaCount = 2;
   String clusterRes2Name = cluster2Name;
   String clusterRes1Name = cluster1Name;
@@ -170,7 +185,6 @@ class ItKubernetesDomainEvents {
   private static final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
-  private  static String className = new Object(){}.getClass().getEnclosingClass().getSimpleName();
 
   public enum ScaleAction {
     scaleUp,
@@ -186,7 +200,7 @@ class ItKubernetesDomainEvents {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -221,8 +235,6 @@ class ItKubernetesDomainEvents {
    */
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
-  @Tag("gate")
-  @Tag("crio")
   void testK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");
@@ -251,10 +263,10 @@ class ItKubernetesDomainEvents {
       timestamp = now();
       logger.info("patch the domain resource with non-existing managed server");
       patchStr = "[{\"op\": \"add\",\"path\": \""
-        + "/spec/managedServers/-\", \"value\": "
-        + "{\"serverName\" : \"nonexisting-ms\", "
-        + "\"serverStartPolicy\": \"IfNeeded\"}"
-        + "}]";
+          + "/spec/managedServers/-\", \"value\": "
+          + "{\"serverName\" : \"nonexisting-ms\", "
+          + "\"serverStartPolicy\": \"IfNeeded\"}"
+          + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -347,7 +359,8 @@ class ItKubernetesDomainEvents {
         + " Changed and Failed events are logged");
     patchStr = "[{\"op\": \"replace\", "
         + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"},"
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/initializeDomainOnPV\"}]";
     logger.info("PatchStr for domainHome: {0}", patchStr);
 
     patch = new V1Patch(patchStr);
@@ -405,7 +418,6 @@ class ItKubernetesDomainEvents {
    */
   @Test
   void testDomainK8sEventsScalePastMaxWithoutChangingIntrospectVersion() {
-    OffsetDateTime timestamp = now();
     logger.info("Scaling cluster using patching");
     assertFalse(scaleCluster(cluster1Name, domainNamespace3, 3),
             "Patching cluster with a replica count that exceeds the cluster size did not fail as expected");
@@ -419,8 +431,9 @@ class ItKubernetesDomainEvents {
   void testDomainK8sEventsScalePastMaxAndChangeIntrospectVersion() {
     OffsetDateTime timestamp = now();
     try {
-      removeReplicasSettingAndVerify(domainUid, cluster1Name, domainNamespace3, replicaCount,
+      removeReplicasSettingAndVerify(domainUid, cluster1Name, domainNamespace3, replicaCount - 1,
           managedServerPodNamePrefix);
+      checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace3);
 
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
       String patchStr
@@ -432,7 +445,6 @@ class ItKubernetesDomainEvents {
       logger.info("Updating introspect version  using patch string: {0}",  patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
-
 
       logger.info("verify the Failed event is generated");
       checkFailedEvent(opNamespace, domainNamespace3, domainUid, REPLICAS_TOO_HIGH_ERROR, "Warning", timestamp);
@@ -488,13 +500,13 @@ class ItKubernetesDomainEvents {
           + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumes/0/name\", \"value\": \"sample-pv\"},"
           + "{\"op\": \"replace\", \"path\": "
           + "\"/spec/serverPod/volumes/0/persistentVolumeClaim/claimName\", \"value\": \"sample-pvc\"},"
-          + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-          + "]";
+          + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"},"
+          + "{\"op\": \"remove\", \"path\": \"/spec/configuration/initializeDomainOnPV\"}]";
       logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-
+      
       logger.info("verify the Failed event is generated");
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_FAILED, "Warning", timestamp);
     } finally {
@@ -614,7 +626,7 @@ class ItKubernetesDomainEvents {
     //change includeServerOutInPodLog
     String patchStr = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/includeServerOutInPodLog\", "
-        + "\"value\": " + Boolean.toString(!includeLogInPod) + "}"
+        + "\"value\": " + !includeLogInPod + "}"
         + "]";
     logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr);
 
@@ -674,7 +686,7 @@ class ItKubernetesDomainEvents {
    * Cleanup the persistent volume and persistent volume claim used by the test.
    */
   @AfterAll
-  public static void tearDown() {
+  static void tearDown() {
     if (!SKIP_CLEANUP) {
       deletePersistentVolumeClaim(domainNamespace3, "sample-pvc");
       deletePersistentVolume("sample-pv");
@@ -742,10 +754,9 @@ class ItKubernetesDomainEvents {
 
   // Create and start a WebLogic domain in PV
   private static DomainResource createDomain(String domainNamespace, String domainUid,
-                                             String pvName, String pvcName, String serverStartupPolicy,
-                                             UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
-
-    String uniquePath = "/shared/" + domainNamespace + "/domains";
+      String pvName, String pvcName, String serverStartupPolicy,
+      UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
+    String uniqueDomainHome = "/shared/" + domainNamespace + "/domains/";
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -753,124 +764,105 @@ class ItKubernetesDomainEvents {
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create persistent volume and persistent volume claim for domain
-    // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, domainUid, className);
-    createPVC(pvName, pvcName, domainUid, domainNamespace);
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    final String wlsModelFilePrefix = "model-dci-introspect";
+    final String wlsModelFile = wlsModelFilePrefix + ".yaml";
     int t3ChannelPort = getNextFreePort();
-    // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(()
-                    -> File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
-            "Failed to create domain properties file");
-    Properties p = new Properties();
-    p.setProperty("domain_path", uniquePath);
-    p.setProperty("domain_name", domainUid);
-    p.setProperty("cluster_name", cluster1Name);
-    p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
-    p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
-    p.setProperty("number_of_ms", "2");
-    p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid);
-    p.setProperty("production_mode_enabled", "true");
-    assertDoesNotThrow(()
-                    -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
-            "Failed to write domain properties file");
+    File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix,
+        K8S_NODEPORT_HOST, t3ChannelPort);
 
-    // WLST script for creating domain
-    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+    // create domainCreationImage
+    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "events-domain-on-pv-image";
+    // create image with model and wdt installation files
+    WitParams witParams
+        = new WitParams()
+            .modelImageName(domainCreationImageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
+            .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
+    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
 
-    // create configmap and domain on persistent volume using the WLST script and property file
-    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-            pvName, pvcName, domainNamespace);
+    DomainCreationImage domainCreationImage
+        = new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
+
+    // create a domain resource
+    logger.info("Creating domain custom resource");
+    Map<String, Quantity> pvCapacity = new HashMap<>();
+    pvCapacity.put("storage", new Quantity("2Gi"));
+
+    Map<String, Quantity> pvcRequest = new HashMap<>();
+    pvcRequest.put("storage", new Quantity("2Gi"));
+    Configuration configuration = null;
+    final String storageClassName = "weblogic-domain-storage-class";
+    if (OKE_CLUSTER) {
+      configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
+    } else {
+      configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
+          ItKubernetesDomainEvents.class.getSimpleName());
+    }
+    configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
+        .createMode(CreateIfNotExists.DOMAIN)
+        .domainCreationImages(Collections.singletonList(domainCreationImage))
+        .domainType(DomainOnPVType.WLS));
+    configuration.overrideDistributionStrategy("Dynamic");
+
+    // create secrets
+    List<V1LocalObjectReference> secrets = new ArrayList<>();
+    for (String secret : new String[]{wlSecretName, BASE_IMAGES_REPO_SECRET_NAME}) {
+      secrets.add(new V1LocalObjectReference().name(secret));
+    }
 
     // create a domain custom resource configuration object
-    logger.info("Creating domain custom resource");
     DomainResource domain = new DomainResource()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domainNamespace))
-            .spec(domainSpecUnaryOperator.apply(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
-                    .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-                    .replicas(replicaCount)
-                    .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                    .imagePullPolicy(IMAGE_PULL_POLICY)
-                    .imagePullSecrets(Arrays.asList(
-                            new V1LocalObjectReference()
-                                    .name(BASE_IMAGES_REPO_SECRET_NAME))) // secret for non-kind cluster
-                    .webLogicCredentialsSecret(new V1LocalObjectReference()
-                            .name(wlSecretName))
-                    .includeServerOutInPodLog(true)
-                    .logHomeEnabled(Boolean.TRUE)
-                    .logHome("/shared/" + domainNamespace + "/logs/" + domainUid + "/")
-                    .dataHome("")
-                    .serverStartPolicy(serverStartupPolicy)
-                    .serverPod(new ServerPod() //serverpod
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                            .addVolumesItem(new V1Volume()
-                                    .name(pvName)
-                                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                                            .claimName(pvcName)))
-                            .addVolumeMountsItem(new V1VolumeMount()
-                                    .mountPath("/shared")
-                                    .name(pvName)))));
-    setPodAntiAffinity(domain);
-    domain = createClusterResourceAndAddReferenceToDomain(
-        cluster1Name, cluster1Name, domainNamespace, domain, replicaCount);
-    assertNotNull(domain, "Failed to add Cluster to domain");
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(domainSpecUnaryOperator.apply(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome(uniqueDomainHome + domainUid)
+            .domainHomeSourceType("PersistentVolume")
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
+            .dataHome("")
+            .serverStartPolicy(serverStartupPolicy)
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
+            .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom"))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer() //admin server
+                .adminService(new AdminService()))
+            .configuration(configuration)));
+    domain.spec().setImagePullSecrets(secrets);
+
+    // create cluster resource for the domain    
+    if (!Cluster.doesClusterExist(cluster1Name, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(cluster1Name,
+          cluster1Name, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster1Name));
+
     createDomainAndVerify(domain, domainNamespace);
     return domain;
-  }
-
-  /**
-   * Create a WebLogic domain on a persistent volume by doing the following. Create a configmap containing WLST script
-   * and property file. Create a Kubernetes job to create domain on persistent volume.
-   *
-   * @param wlstScriptFile python script to create domain
-   * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName name of the persistent volume to create domain in
-   * @param pvcName name of the persistent volume claim
-   * @param namespace name of the domain namespace in which the job is created
-   */
-  private static void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-                                                String pvName, String pvcName, String namespace) {
-    logger.info("Preparing to run create domain job using WLST");
-
-    List<Path> domainScriptFiles = new ArrayList<>();
-    domainScriptFiles.add(wlstScriptFile);
-    domainScriptFiles.add(domainPropertiesFile);
-
-    logger.info("Creating a config map to hold domain creation scripts");
-    String domainScriptConfigMapName = "create-domain-scripts-cm";
-    assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation(
-            domainScriptConfigMapName, domainScriptFiles, namespace, className),
-        "Create configmap for domain creation failed");
-
-    // create a V1Container with specific scripts and properties for creating domain
-    V1Container jobCreationContainer = new V1Container()
-        .addCommandItem("/bin/sh")
-        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
-        .addArgsItem("/u01/weblogic/" + wlstScriptFile.getFileName()) //wlst.sh script
-        .addArgsItem("-skipWLSModuleScanning")
-        .addArgsItem("-loadProperties")
-        .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
-
-    logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
-        namespace, jobCreationContainer);
   }
 
   private void createNewCluster() {

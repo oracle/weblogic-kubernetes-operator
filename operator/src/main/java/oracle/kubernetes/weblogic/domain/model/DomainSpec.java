@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -196,11 +196,11 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * The WebLogic Server image.
    *
-   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
+   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8
    */
   @Description(
       "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; "
-          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
+          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.")
   private String image;
 
   /**
@@ -982,6 +982,12 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
+  String getModelEncryptionSecret() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+            .map(InitializeDomainOnPV::getModelEncryptionPassphraseSecret)
+            .orElse(null);
+  }
+
   private String getInitializeDomainOnPVOpssWalletFileSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
@@ -1215,7 +1221,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
             .append(getMaxClusterUnavailable(), rhs.getMaxClusterUnavailable())
             .append(fluentdSpecification, rhs.getFluentdSpecification())
-                .append(fluentbitSpecification, rhs.getFluentbitSpecification())
+            .append(fluentbitSpecification, rhs.getFluentbitSpecification())
             .append(replaceVariablesInJavaOptions, rhs.replaceVariablesInJavaOptions);
     return builder.isEquals();
   }

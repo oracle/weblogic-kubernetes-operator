@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -7,38 +7,49 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.CreateIfNotExists;
+import oracle.weblogic.domain.DomainCreationImage;
+import oracle.weblogic.domain.DomainOnPV;
+import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
@@ -50,30 +61,37 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminServerRESTAccess;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
-import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.adminLoginPageAccessible;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
@@ -87,18 +105,15 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -113,7 +128,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to Situational Configuration overrides for system resources.
  */
-@DisplayName("Verify the JMS and WLDF system resources are overridden with values from override files")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
@@ -127,10 +141,18 @@ class ItSystemResOverrides {
   final String adminServerName = "admin-server";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
-  final int managedServerPort = 8001;
   int t3ChannelPort;
   private static int adminPort = 7001;
-  private static String hostHeader;  
+
+  static {
+    if (WEBLOGIC_IMAGE_TAG_DEFAULT.startsWith("14")) {
+      adminPort = 7001;
+    } else {
+      adminPort = 7002;
+    }
+  }
+
+  private static String hostHeader;
   final String pvName = getUniqueName(domainUid + "-pv-");
   final String pvcName = getUniqueName(domainUid + "-pvc-");
   final String wlSecretName = "weblogic-credentials";
@@ -140,8 +162,11 @@ class ItSystemResOverrides {
 
   static Path sitconfigAppPath;
   String overridecm = "configoverride-cm";
-  String uniquePath;
   LinkedHashMap<String, OffsetDateTime> podTimestamps;
+  
+  private static Path encryptModelScript;
+  private static final String passPhrase = "encryptPA55word";
+  private static final String encryptionSecret = "model-encryption-secret";
 
   private static LoggingFacade logger = null;
 
@@ -156,7 +181,7 @@ class ItSystemResOverrides {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(2) List<String> namespaces) {
+  void initAll(@Namespaces(2) List<String> namespaces) throws IOException {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -165,7 +190,10 @@ class ItSystemResOverrides {
     logger.info("Assign a unique namespace for domain namspace");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
-    uniquePath = "/shared/" + domainNamespace + "/domains";
+    
+    logger.info("installing WebLogic Deploy Tool");
+    downloadAndInstallWDT();
+
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
@@ -175,7 +203,6 @@ class ItSystemResOverrides {
 
     //create and start WebLogic domain
     createDomain();
-    //restartDomain();
 
     // build the sitconfig application
     Path distDir = buildApplication(Paths.get(APP_DIR, "sitconfig"),
@@ -241,8 +268,8 @@ class ItSystemResOverrides {
           logger,
           "jms server configuration to be updated");
     }
-    assertDoesNotThrow(() -> verifyJMSResourceOverride());
-    assertDoesNotThrow(() -> verifyWLDFResourceOverride());
+    assertDoesNotThrow(this::verifyJMSResourceOverride);
+    assertDoesNotThrow(this::verifyWLDFResourceOverride);
   }
 
   private Callable<Boolean> configUpdated() {
@@ -381,81 +408,75 @@ class ItSystemResOverrides {
   }
 
   //create a standard WebLogic domain.
-  private void createDomain() {
+  private void createDomain() throws IOException {
+    String uniqueDomainHome = "/shared/" + domainNamespace + "/domains/";
+
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(domainNamespace);
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    createPV(pvName, domainUid, this.getClass().getSimpleName());
-    createPVC(pvName, pvcName, domainUid, domainNamespace);
-    LoggingFacade logger = getLogger();
-    String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
-    // check the persistent volume and persistent volume claim exist
-    testUntil(
-        assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
-            String.format("pvExists failed with ApiException when checking pv %s", pvName)),
-        logger,
-        "persistent volume {0} exists",
-        pvName);
-
-    testUntil(
-        assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
-            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
-                pvcName, domainNamespace)),
-        logger,
-        "persistent volume claim {0} exists in namespace {1}",
-        pvcName,
-        domainNamespace);
-    logger.info("Setting up WebLogic pod to access PV");
-    String mountPath = "/shared";
-    V1Pod pvPod = setupWebLogicPod(domainNamespace, pvName, pvcName, mountPath);
-    logger.info("Changing file ownership {0} to oracle:root in PV", mountPath);
-    String argCommand = "chown -R 1000:0 " + mountPath;
-    if (OKE_CLUSTER) {
-      argCommand = "chown 1000:0 " + mountPath
-          + "/. && find "
-          + mountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
-    }
-    //Calls execInPod to change the ownership of files in PV - not valid in OKD
-    if (!OKD) {
-      execInPod(pvPod, null, true, argCommand);
-    }
+    final String wlsModelFilePrefix = "sitconfig-dci-model";
+    final String wlsModelFile = wlsModelFilePrefix + ".yaml";
     t3ChannelPort = getNextFreePort();
+    logger.info("Create WDT property file");
+    File wlsModelPropFile = createWdtPropertyFile(wlsModelFilePrefix,
+        K8S_NODEPORT_HOST, t3ChannelPort);
+    logger.info("Create WDT passphrase file"); 
+    File passphraseFile = createPassphraseFile(passPhrase);    
+    logger.info("Run encruptModel.sh script to encrypt clear text password in property file");    
+    encryptModel(encryptModelScript,
+        Path.of(MODEL_DIR, wlsModelFile),
+        wlsModelPropFile.toPath(), passphraseFile.toPath());
+    createSecretWithUsernamePassword(wlSecretName, opNamespace, clusterName, passPhrase);
+    createEncryptionSecret(encryptionSecret, domainNamespace);
 
-    // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(()
-        -> File.createTempFile("domain", ".properties", new File(RESULTS_TEMPFILE)),
-        "Failed to create domain properties file");
-    Properties p = new Properties();
-    p.setProperty("domain_path", uniquePath);
-    p.setProperty("domain_name", domainUid);
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
-    p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
-    p.setProperty("number_of_ms", "2");
-    p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", uniquePath + "/logs/" + domainUid);
-    p.setProperty("production_mode_enabled", "true");
-    assertDoesNotThrow(()
-        -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
-        "Failed to write domain properties file");
+    // create domainCreationImage
+    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "sitconfig-domain-on-pv-image";
+    // create image with model and wdt installation files
+    WitParams witParams
+        = new WitParams()
+            .modelImageName(domainCreationImageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
+            .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
+    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
 
-    // WLST script for creating domain
-    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "sit-config-create-domain.py");
+    DomainCreationImage domainCreationImage
+        = new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
 
-    // create configmap and domain on persistent volume using the WLST script and property file
-    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, domainNamespace);
+    // create a domain resource
+    logger.info("Creating domain custom resource");
+    Map<String, Quantity> pvCapacity = new HashMap<>();
+    pvCapacity.put("storage", new Quantity("2Gi"));
+
+    Map<String, Quantity> pvcRequest = new HashMap<>();
+    pvcRequest.put("storage", new Quantity("2Gi"));
+    Configuration configuration = null;
+    final String storageClassName = "weblogic-domain-storage-class";
+    if (OKE_CLUSTER) {
+      configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
+    } else {
+      configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
+          ItSystemResOverrides.class.getSimpleName());
+    }
+    configuration.getInitializeDomainOnPV()
+        .modelEncryptionPassphraseSecret(encryptionSecret)
+        .domain(new DomainOnPV()
+            .createMode(CreateIfNotExists.DOMAIN)
+            .domainCreationImages(Collections.singletonList(domainCreationImage))
+            .domainType(DomainOnPVType.WLS));
+    configuration.overrideDistributionStrategy("Dynamic");
+
+    // create secrets
+    List<V1LocalObjectReference> secrets = new ArrayList<>();
+    for (String secret : new String[]{wlSecretName, BASE_IMAGES_REPO_SECRET_NAME}) {
+      secrets.add(new V1LocalObjectReference().name(secret));
+    }
 
     // create a domain custom resource configuration object
-    logger.info("Creating domain custom resource");
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -463,21 +484,16 @@ class ItSystemResOverrides {
             .name(domainUid)
             .namespace(domainNamespace))
         .spec(new DomainSpec()
-            .configuration(new Configuration()
-                .overrideDistributionStrategy("Dynamic"))
             .domainUid(domainUid)
-            .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .domainHome(uniqueDomainHome + domainUid)
+            .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
-            .imagePullSecrets(Arrays.asList(
-                new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET_NAME)))  // this secret is used only for non-kind cluster
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome(uniquePath + "/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
@@ -487,14 +503,15 @@ class ItSystemResOverrides {
                         + "-Dweblogic.debug.DebugSituationalConfigDumpXml=true "
                         + "-Dweblogic.kernel.debug=true "
                         + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true "                        
                         + "-Dweblogic.debug.DebugConnection=true "
                         + "-Dweblogic.ResolveDNSName=true"))
                 .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addEnvItem(new V1EnvVar()
                     .name("CUSTOM_ENV")
                     .value("##~`!^${ls}"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom"))
                 .addVolumesItem(new V1Volume()
                     .name(pvName)
                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
@@ -506,14 +523,22 @@ class ItSystemResOverrides {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(getNextFreePort()))
+                        .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort)))));
+                        .nodePort(t3ChannelPort))))
+            .configuration(configuration));
+    domain.spec().setImagePullSecrets(secrets);
+
+    // create cluster resource for the domain    
+    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterName,
+          clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     setPodAntiAffinity(domain);
-    // create cluster object
-    domain = createClusterResourceAndAddReferenceToDomain(
-        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
@@ -548,13 +573,7 @@ class ItSystemResOverrides {
       hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, adminPort);
       assertDoesNotThrow(() -> verifyAdminServerRESTAccess("localhost", 
           TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
-    }
-    logger.info("Validating WebLogic admin server access by login to console");
-    assertTrue(assertDoesNotThrow(
-        () -> adminLoginPageAccessible(adminServerPodName, "7001",
-            domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        "Access to admin console page failed"), "Console login validation failed");
-
+    }     
   }
 
   //deploy application sitconfig.war to domain
@@ -607,9 +626,6 @@ class ItSystemResOverrides {
         // script
         .addArgsItem("-skipWLSModuleScanning")
         .addArgsItem("-loadProperties")
-        .addEnvItem(new V1EnvVar()
-        .name("DOMAIN_HOME_DIR")
-        .value(uniquePath + "/" + domainUid))
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName());
     //domain property file
 
@@ -639,52 +655,82 @@ class ItSystemResOverrides {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
   }
+  
+  public static File createWdtPropertyFile(String wlsModelFilePrefix, String nodePortHost, int t3Port) {
+    // create property file used with domain model file
+    Properties p = new Properties();
+    p.setProperty("WebLogicAdminUserName", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("WebLogicAdminPassword", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("K8S_NODEPORT_HOST", nodePortHost);
+    p.setProperty("T3_CHANNEL_PORT", Integer.toString(t3Port));
 
-  private static V1Pod setupWebLogicPod(String namespace, String pvName, String pvcName, String mountPath) {
-    // this secret is used only for non-kind cluster
-    createBaseRepoSecret(namespace);
+    // create a model property file
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+            File.createTempFile(wlsModelFilePrefix, ".properties", new File(RESULTS_TEMPFILE)),
+        "Failed to create WLS model properties file");
 
-    final String podName = "weblogic-pv-pod-" + namespace;
-    V1PodSpec podSpec = new V1PodSpec()
-        .containers(Arrays.asList(
-            new V1Container()
-                .name("weblogic-container")
-                .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                .imagePullPolicy(IMAGE_PULL_POLICY)
-                .addCommandItem("sleep")
-                .addArgsItem("600")
-                .volumeMounts(Arrays.asList(
-                    new V1VolumeMount()
-                        .name(pvName) // mount the persistent volume to /shared inside the pod
-                        .mountPath(mountPath)))))
-        .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
-            .name(BASE_IMAGES_REPO_SECRET_NAME)))
-        // the persistent volume claim used by the test
-        .volumes(Arrays.asList(
-            new V1Volume()
-                .name(pvName) // the persistent volume that needs to be archived
-                .persistentVolumeClaim(
-                    new V1PersistentVolumeClaimVolumeSource()
-                        .claimName(pvcName))));
-    if (!OKD) {
-      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, mountPath)));
+    // create the property file
+    assertDoesNotThrow(() ->
+            p.store(new FileOutputStream(domainPropertiesFile), "WLS properties file"),
+        "Failed to write WLS properties file");
+
+    return domainPropertiesFile;
+  }
+  
+  private static void downloadAndInstallWDT() throws IOException {
+    String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
+    Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
+    encryptModelScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "encryptModel.sh");
+    if (!Files.exists(destLocation) && !Files.exists(encryptModelScript)) {
+      logger.info("Downloading WDT to {0}", destLocation);
+      Files.createDirectories(destLocation.getParent());
+      OracleHttpClient.downloadFile(wdtUrl, destLocation.toString(), null, null, 3);
+      String cmd = "cd " + destLocation.getParent() + ";unzip " + destLocation;
+      assertTrue(Command.withParams(new CommandParams().command(cmd)).execute(), "unzip command failed");
     }
+    assertTrue(Files.exists(encryptModelScript), "could not find createDomain.sh script");
+  }
+  
+  private static File createPassphraseFile(String passPhrase) throws IOException {
+    // create pass phrase file used with domain model file
+    File passphraseFile = assertDoesNotThrow(()
+        -> File.createTempFile("passphrase", ".txt", new File(RESULTS_TEMPFILE)),
+        "Failed to create WLS model encrypt passphrase file");
+    Files.write(passphraseFile.toPath(), passPhrase.getBytes(StandardCharsets.UTF_8));
+    logger.info("passphrase file contents {0}", Files.readString(passphraseFile.toPath()));
+    return passphraseFile;
+  }
+  
+  private static void encryptModel(Path encryptModelScript, Path modelFile,
+      Path propertyFile, Path passphraseFile) throws IOException {
+    Path mwHome = Path.of(RESULTS_ROOT, "mwhome");
+    logger.info("Encrypting property file containing the secrets {0}", propertyFile.toString());
+    List<String> command = List.of(
+        encryptModelScript.toString(),
+        "-oracle_home", mwHome.toString(),
+        "-model_file", modelFile.toString(),
+        "-variable_file", propertyFile.toString(),
+        "-passphrase_file", passphraseFile.toString()
+    );
+    logger.info("running {0}", command);
+    assertTrue(Command.withParams(new CommandParams()
+        .command(command.stream().collect(Collectors.joining(" ")))).execute(),
+        "encryptModel.sh command failed");
+    logger.info("Encrypted passphrase file contents {0}", Files.readString(propertyFile));
+  }
+  
+  public static void createEncryptionSecret(String secretName, String namespace) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("passphrase", passPhrase);
 
-    V1Pod podBody = new V1Pod()
-        .spec(podSpec)
-        .metadata(new V1ObjectMeta().name(podName))
-        .apiVersion("v1")
-        .kind("Pod");
+    if (!secretExists(secretName, namespace)) {
+      boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+          .metadata(new V1ObjectMeta()
+              .name(secretName)
+              .namespace(namespace))
+          .stringData(secretMap)), "Create secret failed with ApiException");
 
-    V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
-
-    testUntil(
-        podReady(podName, null, namespace),
-        logger,
-        "{0} to be ready in namespace {1}",
-        podName,
-        namespace);
-
-    return wlsPod;
+      assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+    }
   }
 }

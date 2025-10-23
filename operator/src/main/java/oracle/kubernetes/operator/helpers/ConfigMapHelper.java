@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -61,6 +61,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SIT_CONF
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_TIME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTBIT_CONFIGMAP_NAME_SUFFIX;
@@ -219,7 +220,8 @@ public class ConfigMapHelper {
     private final String name;
     private final String namespace;
     private V1ConfigMap model;
-    private final Map<String, String> labels = new HashMap<>();
+    private Map<String, String> annotations;
+    private Map<String, String> labels;
     protected final SemanticVersion productVersion;
 
     ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents,
@@ -274,6 +276,7 @@ public class ConfigMapHelper {
           new V1ObjectMeta()
           .name(name)
           .namespace(namespace)
+          .annotations(annotations)
           .labels(labels));
 
       if (productVersion != null) {
@@ -284,7 +287,19 @@ public class ConfigMapHelper {
     }
 
     @SuppressWarnings("SameParameterValue")
+    void addAnnotation(String name, String value) {
+      if (annotations == null) {
+        annotations = new HashMap<>();
+      }
+      annotations.put(name, value);
+      model = null;
+    }
+
+    @SuppressWarnings("SameParameterValue")
     void addLabel(String name, String value) {
+      if (labels == null) {
+        labels = new HashMap<>();
+      }
       labels.put(name, value);
       model = null;
     }
@@ -327,16 +342,18 @@ public class ConfigMapHelper {
       public Result onSuccess(Packet packet, KubernetesApiResponse<V1ConfigMap> callResponse) {
         DomainResource domain = DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).orElse(null);
         Optional.ofNullable(domain).map(DomainResource::getIntrospectVersion)
-              .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
+            .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
         Optional.ofNullable(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getGeneration)
-                .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
+            .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
+        Optional.ofNullable((String) packet.get(INTROSPECTION_TIME))
+                .ifPresent(value -> addAnnotation(INTROSPECTION_TIME, value));
         V1ConfigMap existingMap = withoutTransientData(callResponse.getObject());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
         } else if (isOutdated(existingMap)) {
           return doNext(replaceConfigMap(getNext()), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
-          return doNext(patchCurrentMap(existingMap, getNext()), packet);
+          return doNext(patchCurrentMap(existingMap, packet, getNext()), packet);
         } else if (mustPatchImageHashInMap(existingMap, packet)) {
           return doNext(patchImageHashInCurrentMap(existingMap, packet, getNext()), packet);
         } else {
@@ -366,8 +383,12 @@ public class ConfigMapHelper {
         return RequestBuilder.CM.update(model, createReplaceResponseStep(next));
       }
 
+      private Map<String,String> getAnnotations() {
+        return Optional.ofNullable(annotations).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
+      }
+
       private Map<String,String> getLabels() {
-        return Collections.unmodifiableMap(labels);
+        return Optional.ofNullable(labels).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
       }
 
       private boolean mustPatchCurrentMap(V1ConfigMap currentMap) {
@@ -387,11 +408,19 @@ public class ConfigMapHelper {
         return new PatchResponseStep(next);
       }
 
-      private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
+      private Step patchCurrentMap(V1ConfigMap currentMap, Packet packet, Step next) {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
         if (labelsNotDefined(currentMap)) {
           patchBuilder.add("/metadata/labels", JsonValue.EMPTY_JSON_OBJECT);
+        }
+
+        String introspectionTime = packet.getValue(INTROSPECTION_TIME);
+        if (introspectionTime != null) {
+          if (annotationsNotDefined(currentMap)) {
+            patchBuilder.add("/metadata/annotations", JsonValue.EMPTY_JSON_OBJECT);
+          }
+          patchBuilder.replace("/metadata/annotations/" + INTROSPECTION_TIME, introspectionTime);
         }
         
         KubernetesUtils.addPatches(
@@ -407,6 +436,14 @@ public class ConfigMapHelper {
 
         patchBuilder.add("/data/" + DOMAIN_INPUTS_HASH, (String)packet.get(DOMAIN_INPUTS_HASH));
 
+        String introspectionTime = packet.getValue(INTROSPECTION_TIME);
+        if (introspectionTime != null) {
+          if (annotationsNotDefined(currentMap)) {
+            patchBuilder.add("/metadata/annotations", JsonValue.EMPTY_JSON_OBJECT);
+          }
+          patchBuilder.replace("/metadata/annotations/" + INTROSPECTION_TIME, introspectionTime);
+        }
+
         return RequestBuilder.CM.patch(
             namespace, name, V1Patch.PATCH_FORMAT_JSON_PATCH,
             new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
@@ -414,6 +451,10 @@ public class ConfigMapHelper {
 
       private boolean labelsNotDefined(V1ConfigMap currentMap) {
         return Objects.requireNonNull(currentMap.getMetadata()).getLabels() == null;
+      }
+
+      private boolean annotationsNotDefined(V1ConfigMap currentMap) {
+        return Objects.requireNonNull(currentMap.getMetadata()).getAnnotations() == null;
       }
     }
 
@@ -918,6 +959,13 @@ public class ConfigMapHelper {
                       () -> packet.remove(INTROSPECTION_STATE_LABEL));
       Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
               .ifPresent(generation -> packet.put(INTROSPECTION_DOMAIN_SPEC_GENERATION, generation));
+
+      Map<String, String> annotations = Optional.ofNullable(result)
+              .map(V1ConfigMap::getMetadata)
+              .map(V1ObjectMeta::getAnnotations).orElse(null);
+
+      Optional.ofNullable(annotations).map(l -> l.get(INTROSPECTION_TIME))
+              .ifPresent(value -> packet.put(INTROSPECTION_TIME, value));
     }
 
     private String getTopologyYaml(Map<String, String> data) {

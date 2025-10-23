@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- if and (not (empty .Capabilities.APIVersions)) (not (.Capabilities.APIVersions.Has "policy/v1")) }}
@@ -28,9 +28,10 @@
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
 {{- include "operator.operatorWebhookExternalService" . }}
-{{- if or (not .enableClusterRoleBinding) (eq .domainNamespaceSelectionStrategy "Dedicated") }}
-{{-   include "operator.domainNamespaces" . }}
-{{- else }}
+{{- $useClusterRole := and (or .enableClusterRoleBinding (not (hasKey . "enableClusterRoleBinding"))) (not (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{- if $useClusterRole }}
 {{-   include "operator.operatorRoleBindingNamespace" . }}
+{{- else }}
+{{-   include "operator.domainNamespaces" . }}
 {{- end }}
 {{- end }}

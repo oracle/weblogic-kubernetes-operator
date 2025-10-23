@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -645,6 +645,10 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand    "\$WORKDIR/model-in-image/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   waitForDomain Completed
 
+  # Ensure pods are Ready before comparing timestamps
+  echo "@@ Waiting for all pods to be ready in namespace $DOMAIN_NAMESPACE..."
+  ${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE wait --for=condition=Ready pods --all --timeout=300s
+
   if [ ! "$DRY_RUN" = "true" ]; then
     if [ "$KIND_CLUSTER" = "true" ]; then
       testapp internal cluster-1 v2 "'SampleMinThreads' with configured count: 2" 60 quiet
@@ -662,13 +666,21 @@ if [ "$DO_UPDATE4" = "true" ]; then
     fi
 
     podInfoAfter="$(getPodInfo | grep -v introspectVersion)"
-    if [ "$podInfoBefore" = "$podInfoAfter" ]; then
-      trace "No roll detected. Good!"
+    getPodTimestamps() {
+      echo "$1" | grep -E 'name=|creationTimestamp=' | sed -e 's/^ *//' | paste - - | sed 's/ /\\n/g'
+    }
+
+    beforeTimestamps=$(getPodTimestamps "$podInfoBefore")
+    afterTimestamps=$(getPodTimestamps "$podInfoAfter")
+
+    if [ "$beforeTimestamps" = "$afterTimestamps" ]; then
+      trace "No roll detected based on pod creation timestamps. Good!"
     else
-      dumpInfo
-      trace "Info: Pods before:" && echo "${podInfoBefore}"
-      trace "Info: Pods after:" && echo "${podInfoAfter}"
-      trace "Error: Unexpected roll detected."
+      trace "Error: Unexpected roll detected based on creation timestamps."
+      echo "Before timestamps:"
+      echo "$beforeTimestamps"
+      echo "After timestamps:"
+      echo "$afterTimestamps"
       exit 1
     fi
   fi

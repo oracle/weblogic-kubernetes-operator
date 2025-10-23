@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -119,20 +119,19 @@ public class Secret {
     }
 
     for (V1Secret v1Secret : v1Secrets) {
-      if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
-        if (v1Secret.getMetadata().getName().equals(secretName)) {
-          if (OKD) {
-            for (Map.Entry<String, String> annotation : v1Secret.getMetadata().getAnnotations().entrySet()) {
-              if (annotation.getKey().equals("openshift.io/token-secret.value")) {
-                return annotation.getValue();
-              }
+      if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null
+          && v1Secret.getMetadata().getName().equals(secretName)) {
+        if (OKD) {
+          for (Map.Entry<String, String> annotation : v1Secret.getMetadata().getAnnotations().entrySet()) {
+            if (annotation.getKey().equals("openshift.io/token-secret.value")) {
+              return annotation.getValue();
             }
-            return null;
-          } else {
-            if (v1Secret.getData() != null) {
-              byte[] encodedToken = v1Secret.getData().get("token");
-              return Base64.getEncoder().encodeToString(encodedToken);
-            }
+          }
+          return null;
+        } else {
+          if (v1Secret.getData() != null) {
+            byte[] encodedToken = v1Secret.getData().get("token");
+            return Base64.getEncoder().encodeToString(encodedToken);
           }
         }
       }

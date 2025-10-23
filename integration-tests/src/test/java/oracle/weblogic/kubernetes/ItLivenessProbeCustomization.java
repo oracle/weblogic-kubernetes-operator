@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -80,13 +80,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * avilable on the pod else it returns failure(1).
  * Note: Livenessprobe is triggered only when the script returns success
  */
-@DisplayName("Verify liveness probe customization")
 @IntegrationTest
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-arm")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 class ItLivenessProbeCustomization {
 
   // domain constants
@@ -117,7 +116,7 @@ class ItLivenessProbeCustomization {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -156,7 +155,6 @@ class ItLivenessProbeCustomization {
    */
   @Test
   @DisplayName("Test custom liveness probe is triggered")
-  @Tag("gate")
   @Tag("crio")
   void testCustomLivenessProbeTriggered() {
     DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -517,9 +515,9 @@ class ItLivenessProbeCustomization {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, server1Name, null,
         true, "/bin/sh", "-c", "chmod +x " + destLocation),
         String.format("Failed to change permissions for file %s in pod %s", destLocation, server1Name));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
-            execResult.stderr(), execResult.stdout()));
+        execResult.stderr(), execResult.stdout()));
     logger.info("File permissions changed inside pod");
 
     /* First, kill the managed server process in the container three times to cause the node manager to
@@ -546,12 +544,12 @@ class ItLivenessProbeCustomization {
 
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
-            getContainerRestartCount(domainNamespace, null, server1Name, null),
+        getContainerRestartCount(domainNamespace, null, server1Name, null),
         String.format("Failed to get the restart count of the container from pod %s in namespace %s",
-            server1Name, domainNamespace));
-    assertTrue(afterRestartCount - beforeRestartCount == 1,
+        server1Name, domainNamespace));
+    assertEquals(1, afterRestartCount - beforeRestartCount,
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
-            server1Name, domainNamespace));
+        server1Name, domainNamespace));
 
     for (int j = 1; j <= replicaCount; j++) {
       String managedServerPodName = domainUid + "-cluster-1-" + MANAGED_SERVER_NAME_BASE + j;

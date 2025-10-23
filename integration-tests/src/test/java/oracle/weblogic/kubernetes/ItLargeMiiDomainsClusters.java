@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -102,7 +102,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
@@ -128,7 +127,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * -pl integration-tests -P integration-tests verify 2>&1  | tee test.out
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create large domain(s) and rolling the domain.")
 @IntegrationTest
 class ItLargeMiiDomainsClusters {
   private static String opNamespace = null;
@@ -136,7 +134,6 @@ class ItLargeMiiDomainsClusters {
   private static final String baseDomainUid = "domain";
   private static final String baseClusterName = "cluster-";
   private static String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String adminServerName = "admin-server";
   private static int numOfDomains;
   private static int numOfClusters;
   private static int numOfServersToStart;
@@ -158,7 +155,7 @@ class ItLargeMiiDomainsClusters {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(25) List<String> namespaces) {
+  static void initAll(@Namespaces(25) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace

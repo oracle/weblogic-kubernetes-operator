@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -18,9 +18,12 @@ import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.TMPDIR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
@@ -33,13 +36,15 @@ public class FluentdHelper {
 
   /**
    * Add sidecar container for fluentd.
+   * @param serverSpec Server specification
    * @param fluentdSpecification  FluentdSpecification.
    * @param containers  List of containers.
    * @param isJobPod  whether it belongs to the introspector job pod.
    * @param domain  Domain.
    */
-  public static void addFluentdContainer(FluentdSpecification fluentdSpecification, List<V1Container> containers,
-                                         DomainResource domain, boolean isJobPod) {
+  public static void addFluentdContainer(EffectiveServerSpec serverSpec,
+                                         FluentdSpecification fluentdSpecification, List<V1Container> containers,
+                                         DomainResource domain, boolean isJobPod, boolean isReadOnlyRootFileSystem) {
 
     V1Container fluentdContainer = new V1Container();
 
@@ -57,7 +62,7 @@ public class FluentdHelper {
     fluentdContainer.setImage(fluentdSpecification.getImage());
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
-    fluentdContainer.setSecurityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
+    fluentdContainer.setSecurityContext(serverSpec.getContainerSecurityContext());
 
     if (fluentdSpecification.getContainerCommand() != null) {
       fluentdContainer.setCommand(fluentdSpecification.getContainerCommand());
@@ -69,6 +74,11 @@ public class FluentdHelper {
         .forEach(fluentdContainer::addVolumeMountsItem);
 
     fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolumeMount());
+
+    if (isReadOnlyRootFileSystem) {
+      fluentdContainer.addVolumeMountsItem(new V1VolumeMount().name(TMPDIR_VOLUME).mountPath(TMPDIR_MOUNTS_PATH));
+    }
+
     containers.add(fluentdContainer);
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -26,7 +26,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
-import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -34,16 +33,20 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSIDECAR_ALERT_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSIDECAR_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERSIDECAR_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
@@ -58,8 +61,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
@@ -78,7 +79,6 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
-import static oracle.weblogic.kubernetes.utils.PodUtils.verifyIntrospectorPodLogContainsExpectedErrorMsg;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getOrigModelFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,11 +92,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via Traefik ingress controller.
  * Verify WebLogic metrics can be accessed via Prometheus
  */
-@DisplayName("Verify WebLogic Metric is processed as expected by "
-    + "MonitoringExporter Side Car via Prometheus and Grafana")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 class ItMonitoringExporterSideCar {
@@ -112,14 +110,12 @@ class ItMonitoringExporterSideCar {
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
   private static String domain3Uid = "monexp-domain-3";
-  private static String domain4Uid = "monexp-domain-4";
   private static HelmParams traefikHelmParams = null;
 
   private static String monitoringNS = null;
   PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
   private static String ingressClassName;
-  private static String monitoringExporterEndToEndDir = null;
   private static String monitoringExporterSrcDir = null;
 
   // constants for creating domain image using model in image
@@ -151,15 +147,13 @@ class ItMonitoringExporterSideCar {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
-  public static void initAll(@Namespaces(7) List<String> namespaces) {
+  static void initAll(@Namespaces(7) List<String> namespaces) {
 
     logger = getLogger();
 
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterSideCar", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
-    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
 
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -291,47 +285,6 @@ class ItMonitoringExporterSideCar {
       shutdownDomain(domain3Uid, domain3Namespace);
     }
 
-  }
-
-  /**
-   * Test Negative test to check error message in case
-   * if restfull management services are disabled.
-   * Create Model in Image with monitoring exporter and restfull services disabled.
-   * Check that introspector job fails with expected error message
-   * if domain crd contains exporter config with restfull services disabled
-   */
-  //@Test - test disabled until OWLS-111639 will be implemented
-  @DisplayName("Negative test to check error message in case if restfull"
-      + " services in the domain are disabled.")
-  void testSideCarRESTfullServicesDisabled() throws Exception {
-    boolean testPassed = false;
-    try {
-      // create and verify one cluster mii domain
-      logger.info("Create domain and verify that it's running");
-      String modelFile = generateNewModelFileWithUpdatedDomainUid(domain4Uid,
-          "ItMonitoringExporterSideCar", "model.sessmigr.restdisabled.yaml");
-      String miiImage1 = createAndVerifyMiiImage(modelFile);
-      String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
-
-      createAndVerifyDomain(miiImage1, domain4Uid, domain4Namespace,
-          "FromModel", 2, false, yaml, exporterImage, false);
-      // verify the condition type Failed exists
-      checkDomainStatusConditionTypeExists(domain4Uid, domain4Namespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
-      // verify the condition Failed type has expected status
-      checkDomainStatusConditionTypeHasExpectedStatus(domain4Uid, domain4Namespace,
-          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
-      String errorMessage =
-          "[SEVERE] exporter config is specified and the topology has the REST port disabled ";
-      verifyIntrospectorPodLogContainsExpectedErrorMsg(domain4Uid, domain4Namespace, errorMessage);
-      testPassed = true;
-    } finally {
-      if (!testPassed) {
-        List<String> ns = new ArrayList<>();
-        ns.add(domain4Namespace);
-        LoggingUtil.generateLog(this, ns);
-        shutdownDomain(domain4Uid, domain4Namespace);
-      }
-    }
   }
 
   private void changeMonitoringExporterSideCarConfig(String configYamlFile, String domainUid,
@@ -471,11 +424,18 @@ class ItMonitoringExporterSideCar {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
       String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
               "prometheus" + releaseSuffix).toString();
-      promHelmParams = installAndVerifyPrometheus(releaseSuffix,
-          monitoringNS,
-          promChartVersion,
-          prometheusRegexValue,
-          promHelmValuesFileDir);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir, null,
+            IT_MONITORINGEXPORTERSIDECAR_PROMETHEUS_HTTP_NODEPORT, IT_MONITORINGEXPORTERSIDECAR_ALERT_HTTP_NODEPORT);
+      } else {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir);
+      }
       assertNotNull(promHelmParams, " Failed to install prometheus");
       String command1 = KUBERNETES_CLI + " get svc -n " + monitoringNS;
       assertDoesNotThrow(() -> ExecCommand.exec(command1,true));
@@ -489,10 +449,9 @@ class ItMonitoringExporterSideCar {
       if (!OKE_CLUSTER_PRIVATEIP) {
         nodeportPrometheus = promHelmParams.getNodePortServer();
         String host = formatIPv6Host(K8S_NODEPORT_HOST);
-        if (TestConstants.KIND_CLUSTER
-            && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
           host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
-          nodeportPrometheus = IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+          nodeportPrometheus = IT_MONITORINGEXPORTERSIDECAR_PROMETHEUS_HTTP_HOSTPORT;
           logger.info("Running in podman Debug 1 : {0}", hostPortPrometheus);
         }
         hostPortPrometheus = host + ":" + nodeportPrometheus;
@@ -527,16 +486,7 @@ class ItMonitoringExporterSideCar {
               grafanaChartVersion);
       logger.info("Running in podman Debug 4 : {0}", hostPortPrometheus);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String host = formatIPv6Host(K8S_NODEPORT_HOST);
       logger.info("Running in podman Debug 5 : {0}", hostPortPrometheus);
-
-      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
-      if (OKE_CLUSTER_PRIVATEIP) {
-        hostPortGrafana = "http://" + ingressIP + "/" + "grafana";
-      }
-      if (OKD) {
-        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
-      }
     }
     logger.info("Running in podman Debug 6 : {0}", hostPortPrometheus);
     logger.info("Grafana is running");
@@ -544,7 +494,7 @@ class ItMonitoringExporterSideCar {
 
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     logger.info("Uninstalling Traefik");
     if (traefikHelmParams != null) {

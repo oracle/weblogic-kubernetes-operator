@@ -1,0 +1,60 @@
+# Copyright (c) 2024, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'prod'
+    WLSUserPasswordCredentialMappings:
+     CrossDomain:
+       map1:
+         RemoteDomain: '@@PROP:REMOTE_DOMAIN@@'
+         RemoteUser: xdomain
+         RemotePassword: '@@SECRET:__weblogic-credentials__:password@@'
+
+topology:
+    Name: '@@PROP:DOMAIN_UID@@'
+    AdminServerName: "@@PROP:ADMIN_SERVER_NAME@@"
+    SecurityConfiguration:
+      CrossDomainSecurityEnabled: true
+    Security:
+      User:
+        xdomain:
+          Name: xdomain
+          Password: '@@SECRET:__weblogic-credentials__:password@@'
+          GroupMemberOf:
+               - CrossDomainConnectors
+    Cluster:
+        "@@PROP:CLUSTER_NAME@@":
+            DynamicServers:
+                ServerTemplate:  "@@PROP:CLUSTER_NAME@@-template"
+                ServerNamePrefix: "@@PROP:MANAGED_SERVER_BASE_NAME@@"
+                DynamicClusterSize: "@@PROP:MANAGED_SERVER_COUNT@@"
+                MaxDynamicClusterSize: "@@PROP:MANAGED_SERVER_COUNT@@"
+                CalculatedListenPorts: false
+    Server:
+        "@@PROP:ADMIN_SERVER_NAME@@":
+            ListenPort: 7001
+            SSL:
+              Enabled: true
+              ListenPort: 7002
+            NetworkAccessPoint:
+                T3Channel:
+                    ListenPort: '@@PROP:T3CHANNELPORT@@'
+                    PublicAddress: '@@PROP:T3PUBLICADDRESS@@'
+                    PublicPort: '@@PROP:T3CHANNELPORT@@'
+    ServerTemplate:
+        "@@PROP:CLUSTER_NAME@@-template":
+            Cluster: "@@PROP:CLUSTER_NAME@@"
+            ListenPort : '@@PROP:MANAGED_SERVER_PORT@@'
+            SSL:
+              Enabled: true
+              ListenPort: 8500
+resources:
+    WebAppContainer:
+         WeblogicPluginEnabled: true
+appDeployments:
+    Application:
+        myear:
+            SourcePath: wlsdeploy/applications/crossdomainsec.ear
+            ModuleType: ear
+            Target: '@@PROP:CLUSTER_NAME@@,@@PROP:ADMIN_SERVER_NAME@@'

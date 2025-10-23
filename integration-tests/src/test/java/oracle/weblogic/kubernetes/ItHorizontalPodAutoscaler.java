@@ -1,9 +1,9 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
-import java.util.List;
+import java.util.List; 
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
@@ -20,7 +20,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -53,8 +52,8 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test Horizontal Pod Autoscaler using Kubernetes Metrics Server
@@ -62,9 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test is not run on OKE as the CPU utilization is not
  * going up intermittently after increasing the load.
  */
-@DisplayName("Test to a create MII domain and test autoscaling using HPA")
 @IntegrationTest
 @Tag("kind-parallel")
+@Tag("gate")
 public class ItHorizontalPodAutoscaler {
   private static String domainNamespace = null;
   static int replicaCount = 2;
@@ -91,7 +90,7 @@ public class ItHorizontalPodAutoscaler {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -181,7 +180,7 @@ public class ItHorizontalPodAutoscaler {
    * Delete metrics server.
    */
   @AfterAll
-  public static void cleanUp() {
+  static void cleanUp() {
     if (!SKIP_CLEANUP) {
       getLogger().info("After All cleanUp() method called");
       // delete metrics server
@@ -205,8 +204,7 @@ public class ItHorizontalPodAutoscaler {
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f " + METRICS_SERVER_YAML);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 0,
-        "Failed to install metrics server, result " + result);
+    assertEquals(0, result.exitValue(), "Failed to install metrics server, result " + result);
 
     // patch metrics server for fix this error
     // x509: cannot validate certificate for 192.168.65.4 because it doesn't contain any IP SANs
@@ -216,8 +214,7 @@ public class ItHorizontalPodAutoscaler {
     new CommandParams().defaults();
     params.command(patchCmd);
     result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 0,
-        "Failed to patch metrics server, result " + result);
+    assertEquals(0, result.exitValue(), "Failed to patch metrics server, result " + result);
 
     // check pods are in ready status
     testUntil(
@@ -237,8 +234,7 @@ public class ItHorizontalPodAutoscaler {
     params.command(KUBERNETES_CLI + " autoscale cluster " + clusterResName
         + " --cpu-percent=50 --min=2 --max=4 -n " + domainNamespace);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 0,
-        "Failed to create hpa or autoscale, result " + result);
+    assertEquals(0, result.exitValue(), "Failed to create hpa or autoscale, result " + result);
     // wait till autoscaler could get the current cpu utilization to make sure it is ready
     testUntil(withStandardRetryPolicy,
         () -> verifyHPA(domainNamespace, clusterResName),
@@ -250,15 +246,14 @@ public class ItHorizontalPodAutoscaler {
 
   private void createLoadOnCpuAndVerifyAutoscaling() {
     // execute command to increase cpu usage
-    int duration = (OKE_CLUSTER == true) ? 60 : 30;
+    int duration = OKE_CLUSTER ? 60 : 30;
     String cmd = KUBERNETES_CLI + " exec -t " + managedServerPrefix + "1 -n "
         + domainNamespace + "  -- timeout --foreground -s 2 "
         + duration + " dd if=/dev/zero of=/dev/null";
     CommandParams params = new CommandParams().defaults();
     params.command(cmd);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 124,
-        "Command failed to increase cpu usage, result " + result);
+    assertEquals(124, result.exitValue(), "Command failed to increase cpu usage, result " + result);
 
     // check cluster is scaled up
     for (int i = 1; i <= 4; i++) {

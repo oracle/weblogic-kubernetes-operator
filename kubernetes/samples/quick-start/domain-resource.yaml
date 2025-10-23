@@ -1,5 +1,21 @@
-# Copyright (c) 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: sample-domain1-cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: sample-domain1-ns
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID: sample-domain1
+
+spec:
+  replicas: 2
+  clusterName: cluster-1
+
+---
 
 apiVersion: "weblogic.oracle/v9"
 kind: Domain
@@ -49,7 +65,7 @@ spec:
   # images from OCR or create your images using the WebLogic Image Tool.
   # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
   # documentation for details.
-  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
+  image: "container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8"
 
   # Defaults to "Always" if image tag (version) is ':latest'
   imagePullPolicy: "IfNotPresent"
@@ -129,19 +145,3 @@ spec:
     # (the model yaml in the optional configMap or in the image)
     #secrets:
     #- sample-domain1-datasource-secret
-
----
-
-apiVersion: "weblogic.oracle/v1"
-kind: Cluster
-metadata:
-  name: sample-domain1-cluster-1
-  # Update this with the namespace your domain will run in:
-  namespace: sample-domain1-ns
-  labels:
-    # Update this with the `domainUID` of your domain:
-    weblogic.domainUID: sample-domain1
-
-spec:
-  replicas: 2
-  clusterName: cluster-1

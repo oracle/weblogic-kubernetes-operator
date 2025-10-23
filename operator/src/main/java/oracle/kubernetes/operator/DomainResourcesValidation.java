@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
@@ -31,8 +31,7 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -52,8 +51,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CR
  * that any domains which are found have the proper pods and services.
  */
 class DomainResourcesValidation {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final String namespace;
   private final DomainProcessor processor;
   private ClusterList activeClusterResources;
@@ -80,7 +77,7 @@ class DomainResourcesValidation {
       }
 
       @Override
-      public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+      public Consumer<EventsV1EventList> getOperatorEventListProcessing() {
         return DomainResourcesValidation.this::addOperatorEventList;
       }
 
@@ -148,18 +145,18 @@ class DomainResourcesValidation {
         .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
   }
 
-  private void addEvent(CoreV1Event event) {
+  private void addEvent(EventsV1Event event) {
     DomainProcessorImpl.updateEventK8SObjects(event);
   }
 
-  private void addOperatorEventList(CoreV1EventList list) {
+  private void addOperatorEventList(EventsV1EventList list) {
     list.getItems().forEach(this::addEvent);
   }
 
   private void addPod(V1Pod pod) {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
+    DomainPresenceInfo info = getOrComputeDomainPresenceInfo(domainUid);
     Optional.ofNullable(info).ifPresent(i -> i.addServerNameFromPodList(serverName));
 
     if (domainUid != null && serverName != null) {
@@ -178,10 +175,6 @@ class DomainResourcesValidation {
     return getDomainPresenceInfoMap().computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
   }
 
-  private DomainPresenceInfo getExistingDomainPresenceInfo(String domainUid) {
-    return getDomainPresenceInfoMap().get(domainUid);
-  }
-
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap() {
     return processor.getDomainPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
   }
@@ -197,7 +190,7 @@ class DomainResourcesValidation {
   private void addService(V1Service service) {
     String domainUid = ServiceHelper.getServiceDomainUid(service);
     if (domainUid != null) {
-      ServiceHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), service);
+      ServiceHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), service);
     }
   }
 
@@ -208,7 +201,7 @@ class DomainResourcesValidation {
   private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
     String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
     if (domainUid != null) {
-      PodDisruptionBudgetHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), pdb);
+      PodDisruptionBudgetHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), pdb);
     }
   }
 
@@ -229,14 +222,20 @@ class DomainResourcesValidation {
   }
 
   private boolean isNotBeingProcessed(String namespace, String domainUid) {
-    return processor.getMakeRightFiberGateMap().get(namespace).getCurrentFibers().get(domainUid) == null;
+    return Optional.ofNullable(processor)
+            .map(DomainProcessor::getMakeRightFiberGateMap)
+            .map(m -> m.get(namespace))
+            .map(FiberGate::getCurrentFibers)
+            .map(f -> f.get(domainUid))
+            .isEmpty();
   }
 
   private void addDomain(DomainResource domain) {
     DomainPresenceInfo cachedInfo = getDomainPresenceInfoMap().get(domain.getDomainUid());
     if (domain.getStatus() == null) {
       newDomainNames.add(domain.getDomainUid());
-    } else if (cachedInfo != null && domain.isGenerationChanged(cachedInfo.getDomain())) {
+    } else if (cachedInfo != null && cachedInfo.getDomain() != null
+        && domain.isGenerationChanged(cachedInfo.getDomain())) {
       modifiedDomainNames.add(domain.getDomainUid());
     }
     getOrComputeDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
@@ -289,7 +288,6 @@ class DomainResourcesValidation {
   }
 
   private void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
-    info.setPopulated(true);
     EventItem eventItem = getEventItem(info);
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (eventItem != null) {

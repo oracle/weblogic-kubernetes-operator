@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -40,13 +40,12 @@ import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
-import oracle.weblogic.domain.ClusterSpec;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -61,6 +60,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.CRIO;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
@@ -68,11 +68,14 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -103,6 +106,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRes
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiInOpPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
@@ -165,13 +169,10 @@ public class CommonTestUtils {
         .atMost(minutes, MINUTES).await();
   }
 
-  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
-  public static ConditionFactory withStandardRetryPolicyIgnoringExceptions =
-      createStandardRetryPolicyWithAtMost(5).ignoreExceptions();
-  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+  public static final ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static final ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
 
-  private static final String TMP_FILE_NAME = "temp-download-file.out";
-  private static int adminListenPort = 7001;
+  private static final int adminListenPort = 7001;
 
   /**
    * Create a condition factory with custom values for pollDelay, pollInterval and atMost time.
@@ -196,7 +197,7 @@ public class CommonTestUtils {
    */
   public static void testUntil(Callable<Boolean> conditionEvaluator,
                                LoggingFacade logger, String msg, Object... params) {
-    testUntil(withStandardRetryPolicy, conditionEvaluator, logger, msg, params);
+    testUntil(withLongRetryPolicy, conditionEvaluator, logger, msg, params);
   }
 
   /**
@@ -241,7 +242,7 @@ public class CommonTestUtils {
 
   private static <T> ConditionEvaluationListener<T> createConditionEvaluationListener(
       LoggingFacade logger, String msg, Object... params) {
-    return new ConditionEvaluationListener<T>() {
+    return new ConditionEvaluationListener<>() {
       @Override
       public void conditionEvaluated(EvaluatedCondition<T> condition) {
         int paramsSize = params != null ? params.length : 0;
@@ -271,7 +272,7 @@ public class CommonTestUtils {
     };
   }
 
-  public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+  public static final ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(120, SECONDS).await();
 
@@ -389,9 +390,10 @@ public class CommonTestUtils {
    * @return true, if the cluster replica count is matched
    */
   public static boolean checkClusterReplicaCountMatches(String clusterName,
-                                                        String namespace, Integer replicaCount) throws ApiException {
-    ClusterSpec clusterSpec = Kubernetes.getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION).getSpec();
-    return Optional.ofNullable(clusterSpec).get().replicas() == replicaCount;
+                                                        String namespace, int replicaCount) throws ApiException {
+    ClusterResource clusterResource = getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION);
+    return clusterResource != null
+        && clusterResource.getSpec().replicas() == replicaCount;
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
@@ -486,7 +488,7 @@ public class CommonTestUtils {
         clusterName, domainUid, domainNamespace, replicasAfterScale);
     if (withRestApi) {
       if (OKE_CLUSTER && args != null && args.length > 0) {
-        String operatorPodName = (args == null || args.length == 0) ? null : args[0];
+        String operatorPodName = args[0];
         int opExtPort = 8081;
         assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApiInOpPod(domainUid, clusterName,
             replicasAfterScale, operatorPodName, opExtPort, opNamespace, opServiceAccount)))
@@ -1052,7 +1054,7 @@ public class CommonTestUtils {
       ExecResult result = assertDoesNotThrow(() -> exec(javapCmd.toString(), true));
       logger.info("java returned {0}", result.toString());
       logger.info("java returned EXIT value {0}", result.exitValue());
-      return ((result.exitValue() == 0));
+      return (result.exitValue() == 0);
     });
   }
 
@@ -1099,7 +1101,7 @@ public class CommonTestUtils {
       ExecResult result = assertDoesNotThrow(() -> exec(javapCmd.toString(), true));
       logger.info("java returned {0}", result.toString());
       logger.info("java returned EXIT value {0}", result.exitValue());
-      return ((result.exitValue() == 0 && result.stdout().contains(expectedResult)));
+      return (result.exitValue() == 0 && result.stdout().contains(expectedResult));
     });
   }
 
@@ -1107,15 +1109,15 @@ public class CommonTestUtils {
    * Adds proxy extra arguments for image builder command.
    **/
   public static String getImageBuilderExtraArgs() {
-    StringBuffer extraArgs = new StringBuffer("");
+    StringBuffer extraArgs = new StringBuffer();
 
     String httpsproxy = HTTPS_PROXY;
     String httpproxy = HTTP_PROXY;
     String noproxy = NO_PROXY;
     LoggingFacade logger = getLogger();
     logger.info(" httpsproxy : " + httpsproxy);
-    String proxyHost = "";
-    StringBuffer mvnArgs = new StringBuffer("");
+    String proxyHost;
+    StringBuffer mvnArgs = new StringBuffer();
     if (httpsproxy != null) {
       logger.info(" httpsproxy : " + httpsproxy);
       proxyHost = httpsproxy.substring(httpsproxy.lastIndexOf("www"), httpsproxy.lastIndexOf(":"));
@@ -1136,8 +1138,8 @@ public class CommonTestUtils {
       logger.info(" noproxy : " + noproxy);
       extraArgs.append(String.format(" --build-arg no_proxy=%s",noproxy));
     }
-    if (!mvnArgs.equals("")) {
-      extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
+    if (!mvnArgs.isEmpty()) {
+      extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs + "\"");
     }
     return extraArgs.toString();
   }
@@ -1167,7 +1169,8 @@ public class CommonTestUtils {
             } catch (IOException | InterruptedException ex) {
               logger.severe(ex.getMessage());
             }
-            String response = result.stdout().trim();
+
+            String response = result != null ? result.stdout().trim() : "result is null";
             logger.info(response);
             for (var managedServer : managedServers.entrySet()) {
               boolean connectToOthers = true;
@@ -1328,16 +1331,26 @@ public class CommonTestUtils {
 
     try {
       String host;
-      if (TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-        host = K8S_NODEPORT_HOST;
+      String hostAndPort;
+      if (OCNE || CRIO) {
+        hostAndPort = K8S_NODEPORT_HOST + ":" + servicePort;
       } else {
-        if (servicePort >= 30500 && servicePort <= 30600) {
-          servicePort -= 29000;
+        if (TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+          host = K8S_NODEPORT_HOST;
+        } else {
+          if (servicePort >= 30500 && servicePort <= 30600) {
+            servicePort -= 29000;
+          }
+          host = InetAddress.getLocalHost().getHostAddress();
         }
-        host = InetAddress.getLocalHost().getHostAddress();
+        host = formatIPv6Host(host);
+        hostAndPort = ((OKD) ? hostName : host + ":" + servicePort);
       }
-      host = formatIPv6Host(host);
-      String hostAndPort = ((OKD) ? hostName : host + ":" + servicePort);
+
+      if (OKE_CLUSTER_PRIVATEIP) {
+        hostAndPort = hostName;
+      }
+
       logger.info("hostAndPort = {0} ", hostAndPort);
       return hostAndPort;
     } catch (UnknownHostException e) {
@@ -1524,7 +1537,7 @@ public class CommonTestUtils {
         .append(" -n ")
         .append(domainNamespace)
         .append(" :")
-        .append(String.valueOf(port))
+        .append(port)
         .append(" > ")
         .append(pfFileName)
         .append(" 2>&1 &");
@@ -1571,7 +1584,7 @@ public class CommonTestUtils {
         .append(" -n ")
         .append(namespace)
         .append(" :")
-        .append(String.valueOf(port))
+        .append(port)
         .append(" > ")
         .append(pfFileName)
         .append(" 2>&1 &");
@@ -1833,7 +1846,7 @@ public class CommonTestUtils {
       ex.printStackTrace();
     }
 
-    return result.stdout().contains("The server started in RUNNING mode");
+    return result != null && result.stdout() != null && result.stdout().contains("The server started in RUNNING mode");
   }
 
   /**
@@ -1883,7 +1896,7 @@ public class CommonTestUtils {
   }
 
   /**
-   * Generate the model.sessmigr.yaml for a given test class
+   * Generate the model.sessmigr.yaml for a given test class.
    *
    * @param domainUid unique domain identifier
    * @param className test class name
@@ -1910,7 +1923,7 @@ public class CommonTestUtils {
 
     // DOMAIN_NAME in model.sessmigr.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
-        destModelYamlFile.toString(), "DOMAIN_NAME", domainUid),
+        destModelYamlFile, "DOMAIN_NAME", domainUid),
         "Could not modify DOMAIN_NAME in " + destModelYamlFile);
 
     return destModelYamlFile;
@@ -2076,15 +2089,14 @@ public class CommonTestUtils {
   public static int getBaseImagesPrefixLength(String baseRepo, String baseTenancy) {
     int result = 0;
 
-    if (baseRepo != null && baseRepo.length() > 0) {
+    if (baseRepo != null && !baseRepo.isEmpty()) {
       // +1 for the trailing slash
       result += baseRepo.length() + 1;
 
-      if (!baseRepo.equalsIgnoreCase("container-registry.oracle.com")) {
-        if (baseTenancy != null && baseTenancy.length() > 0) {
-          // +1 for the trailing slash
-          result += baseTenancy.length() + 1;
-        }
+      if (!baseRepo.equalsIgnoreCase("container-registry.oracle.com")
+          && baseTenancy != null && !baseTenancy.isEmpty()) {
+        // +1 for the trailing slash
+        result += baseTenancy.length() + 1;
       }
     }
     return result;
@@ -2101,7 +2113,7 @@ public class CommonTestUtils {
    */
   public static String getKindRepoImageForSpec(String kindRepo, String imageName, String imageTag, int prefixLength) {
     String result = imageName + ":" + imageTag;
-    if (kindRepo != null && kindRepo.length() > 0) {
+    if (kindRepo != null && !kindRepo.isEmpty()) {
       String imageNoPrefix = result.substring(prefixLength);
       if (kindRepo.endsWith("/")) {
         kindRepo = kindRepo.substring(0, kindRepo.length() - 1);
@@ -2119,7 +2131,7 @@ public class CommonTestUtils {
    * @return the domain prefix
    */
   public static String getDomainImagePrefix(String repo, String tenancy) {
-    if (repo != null && repo.length() > 0) {
+    if (repo != null && !repo.isEmpty()) {
       if (repo.endsWith("/")) {
         repo = repo.substring(0, repo.length() - 1);
       }
@@ -2409,10 +2421,19 @@ public class CommonTestUtils {
         .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
         .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
         .contains(ingressName);
-    String curlCmd = assertDoesNotThrow(() -> "curl -g -k --silent --show-error --noproxy '*' -H 'host: "
-        + ingressHost + "' " + (isSecureMode ? "https" : "http") + "://"
-        + formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + +TRAEFIK_INGRESS_HTTP_HOSTPORT
-        + "/weblogic/ready --write-out %{http_code} -o /dev/null");
+
+    String curlCmd;
+    if (OCNE) {
+      curlCmd = assertDoesNotThrow(() -> "curl -g -k --silent --show-error --noproxy '*' -H 'host: "
+          + ingressHost + "' " + (isSecureMode ? "https" : "http") + "://"
+          + K8S_NODEPORT_HOST + ":" + TRAEFIK_INGRESS_HTTP_NODEPORT
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null");
+    } else {
+      curlCmd = assertDoesNotThrow(() -> "curl -g -k --silent --show-error --noproxy '*' -H 'host: "
+          + ingressHost + "' " + (isSecureMode ? "https" : "http") + "://"
+          + formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null");
+    }
     getLogger().info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
 

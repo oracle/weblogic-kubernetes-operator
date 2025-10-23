@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -65,11 +65,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
-import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -85,10 +85,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Verify cross domain transaction with istio enabled is successful")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-arm")
 @Tag("oke-parallel")
 class ItIstioCrossDomainTransaction {
 
@@ -112,13 +110,10 @@ class ItIstioCrossDomainTransaction {
   private static String adminServerName = "admin-server";  
   private static String domain1AdminServerPodName = domainUid1 + "-" + adminServerName;
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
-  private static String domain2AdminServerPodName = domainUid2 + "-" + adminServerName;
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static String clusterName = "cluster-1";
   private static final String SYSPASSWORD = "Oradoc_db1";
   private static String dbName = "my-istiocxt-sidb";  
-  private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static String ORACLEDBSUFFIX = null;
   private static LoggingFacade logger = null;
   private static String dbUrl;
   static int istioIngressPort;
@@ -132,7 +127,7 @@ class ItIstioCrossDomainTransaction {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
+  static void initAll(@Namespaces(3) List<String> namespaces) throws UnknownHostException {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -148,10 +143,8 @@ class ItIstioCrossDomainTransaction {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
-    //install Oracle Database Operator
-    assertDoesNotThrow(() -> installDBOperator(domain2Namespace), "Failed to install database operator");
-
     logger.info("Create Oracle DB in namespace: {0} ", domain2Namespace);
+    createBaseRepoSecret(domain2Namespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, SYSPASSWORD, domain2Namespace));
 
     // Now that we got the namespaces for both the domains, we need to update the model properties
@@ -179,7 +172,7 @@ class ItIstioCrossDomainTransaction {
    * Verify k8s services for all servers are created.
    */
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     int replicaCount = 2;
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i,
@@ -236,7 +229,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "txforward.ear").toFile().exists(),
         "Application archive is not available");
-    String appSource = distDir.toString() + "/txforward.ear";
+    String appSource = distDir + "/txforward.ear";
     logger.info("Application is in {0}", appSource);
 
     //build application archive
@@ -248,7 +241,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "cdttxservlet.war").toFile().exists(),
         "Application archive is not available");
-    String appSource1 = distDir.toString() + "/cdttxservlet.war";
+    String appSource1 = distDir + "/cdttxservlet.war";
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
@@ -260,7 +253,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "jmsservlet.war").toFile().exists(),
         "Application archive is not available");
-    String appSource2 = distDir.toString() + "/jmsservlet.war";
+    String appSource2 = distDir + "/jmsservlet.war";
     logger.info("Application is in {0}", appSource2);
 
     Path mdbSrcDir  = Paths.get(APP_DIR, "mdbtopic");
@@ -288,7 +281,7 @@ class ItIstioCrossDomainTransaction {
     assertTrue(Paths.get(distDir.toString(),
         "mdbtopic.jar").toFile().exists(),
         "Application archive is not available");
-    String appSource3 = distDir.toString() + "/mdbtopic.jar";
+    String appSource3 = distDir + "/mdbtopic.jar";
     logger.info("Application is in {0}", appSource3);
 
     // create admin credential secret for domain1
@@ -396,9 +389,7 @@ class ItIstioCrossDomainTransaction {
    */
   @Test
   @DisplayName("Check cross domain transaction with istio works")
-  void testIstioCrossDomainTransaction() throws UnknownHostException, IOException, InterruptedException {
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+  void testIstioCrossDomainTransaction() throws IOException, InterruptedException {
     String istioIngressIP = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : K8S_NODEPORT_HOST;
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
@@ -439,7 +430,7 @@ class ItIstioCrossDomainTransaction {
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
   @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
   void testIstioCrossDomainTransactionWithFailInjection()
-      throws UnknownHostException, IOException, InterruptedException {
+      throws IOException, InterruptedException {
     String host = K8S_NODEPORT_HOST;
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
@@ -473,11 +464,9 @@ class ItIstioCrossDomainTransaction {
    */
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
-  void testIstioCrossDomainTranscatedMDB() throws UnknownHostException, IOException, InterruptedException {
+  void testIstioCrossDomainTranscatedMDB() throws IOException, InterruptedException {
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
 
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
     if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
@@ -515,8 +504,6 @@ class ItIstioCrossDomainTransaction {
 
   private boolean checkLocalQueue() throws UnknownHostException {
     String host = formatIPv6Host(K8S_NODEPORT_HOST);
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
         : host + ":" + istioIngressPort;
@@ -632,7 +619,7 @@ class ItIstioCrossDomainTransaction {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS"))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(3000L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domNamespace);

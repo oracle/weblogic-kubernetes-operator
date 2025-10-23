@@ -54,12 +54,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to restart the operator when the server pods roll after changing the WebLogic credentials secret of a
 // domain custom resource that uses model-in-image.
-@DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
-@Tag("oke-gate")
+@Tag("oke-weekly-sequential")
 @Tag("oke-arm")
 class ItOperatorRestart {
   private static String opNamespace = null;
@@ -70,7 +69,6 @@ class ItOperatorRestart {
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
   private static LoggingFacade logger = null;
-  private static String ingressHost = null; //only used for OKD
 
   /**
    * Perform initialization for all the tests in this class.
@@ -81,7 +79,7 @@ class ItOperatorRestart {
    *           JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get namespaces
@@ -259,7 +257,7 @@ class ItOperatorRestart {
         },
         "Failed to get creationTimestamp for managed server pods");
 
-    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
 
     logger.info("Check that before patching current credentials are valid and new credentials are not");
     verifyCredentials(7001, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
@@ -302,7 +300,6 @@ class ItOperatorRestart {
 
     for (int i = 1; i <= replicaCount; i++) {
       final String podName = managedServerPrefix + i;
-      final OffsetDateTime lastCreationTime = msLastCreationTime.get(i - 1);
       // check that the managed server pod's label has been updated with the new restartVersion
       checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
     }

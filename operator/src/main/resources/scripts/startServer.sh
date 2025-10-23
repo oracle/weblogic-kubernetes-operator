@@ -1,12 +1,24 @@
 #!/bin/bash
-
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # startServer.sh
 # This is the script WebLogic Operator WLS Pods use to start their WL Server.
 #
+
+cleanup() {
+  trace "Suppressing signal to allow container to exit cleanly."
+  exit 0
+}
+
+trap cleanup SIGTERM SIGKILL
+
+exitMessage() {
+  trace "Exiting container for WebLogic Server '${SERVER_NAME}'."
+}
+
+trap exitMessage EXIT
 
 if [ -z ${SCRIPTPATH+x} ]; then
   SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
@@ -313,7 +325,7 @@ else
 fi
 
 #
-# Wait forever. Kubernetes will monitor this pod via liveness and readyness probes.
+# Wait forever. Kubernetes will monitor this pod via liveness and readiness probes.
 #
 
 waitForShutdownMarker

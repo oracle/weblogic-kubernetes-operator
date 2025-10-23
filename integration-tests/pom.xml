@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -48,6 +48,7 @@
         <wko.it.grafana.chart.version>${env.GRAFANA_CHART_VERSION}</wko.it.grafana.chart.version>
         <wko.it.istio.version>${env.ISTIO_VERSION}</wko.it.istio.version>
         <wko.it.oke.cluster>${env.OKE_CLUSTER}</wko.it.oke.cluster>
+        <wko.it.oci.compartment.ocid>${env.COMPARTMENT_OCID}</wko.it.oci.compartment.ocid>
         <wko.it.arm.cluster>${env.ARM}</wko.it.arm.cluster>
         <wko.it.oke.cluster.privateip>${env.OKE_CLUSTER_PRIVATEIP}</wko.it.oke.cluster.privateip>
         <wko.it.nfs.server>${env.NFS_SERVER}</wko.it.nfs.server>
@@ -378,6 +379,10 @@
                                 <resource>
                                     <directory>${resource-integration-test}</directory>
                                     <filtering>true</filtering>
+                                    <excludes>
+                                        <exclude>**/*.jks</exclude>
+                                        <exclude>**/SerializedSystemIni.dat</exclude>
+                                    </excludes>
                                 </resource>
                             </resources>
                         </configuration>
@@ -468,10 +473,10 @@
         </profile>
 
         <profile>
-            <id>oke-gate</id>
+            <id>oke-weekly-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>oke-gate</groups>
+                <groups>oke-weekly-sequential</groups>
             </properties>
         </profile>
         <profile>
@@ -570,11 +575,14 @@
                   **/ItDedicatedMode,
                   **/ItExternalLbTunneling,
                   **/ItExternalNodePortService,
+                  **/ItEvictedPodsCycling,
                   **/ItInitContainers,
                   **/ItIntrospectVersion,
+                  **/ItKubernetesNameSpaceWatchingEvents,
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
+                  **/ItMaxConcurOptions,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiCustomSslStore,
                   **/ItMiiSampleWlsAux,
@@ -583,6 +591,7 @@
                   **/ItPodsShutdownOption,
                   **/ItPodTemplates,
                   **/ItProductionSecureMode,
+                  **/ItRetryImprovementMisc,
                   **/ItServerStartPolicy,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
@@ -591,7 +600,8 @@
                   **/ItSystemResOverrides,
                   **/ItMonitoringExporterWebApp,
                   **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples
+                  **/ItMonitoringExporterSamples,
+                  **/ItWlsDomainOnPV
                 </includes-failsafe>
             </properties>
         </profile>
@@ -766,12 +776,5 @@
                 <groups>toolkits-srg</groups>
             </properties>
         </profile>
-        <profile>
-            <id>v8o</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <groups>v8o</groups>
-            </properties>
-        </profile>        
     </profiles>
 </project>

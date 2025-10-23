@@ -243,6 +243,11 @@ public class FiberTestSupport {
     }
 
     @Override
+    public void shutdown() {
+      // no-op
+    }
+
+    @Override
     @Nonnull
     public ScheduledFuture<?> schedule(
         @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {

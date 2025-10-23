@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -44,6 +44,18 @@
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
+cleanup() {
+  trace "Suppressing signal to allow container to exit cleanly."
+  exit 0
+}
+
+trap cleanup SIGTERM SIGKILL
+
+exitMessage() {
+  trace "Exiting container for introspection of '${DOMAIN_UID}'."
+}
+
+trap exitMessage EXIT
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
@@ -184,6 +196,10 @@ doIntrospect() {
     command -v unzip
     if [ $? -ne 0 ] ; then
       trace SEVERE "DomainSourceType is 'FromModel', 'unzip' is missing in the image. Please use an image with 'unzip' installed" && exit 1
+    fi
+    command -v jq
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "DomainSourceType is 'FromModel' and 'onlineUpdate' is enabled, 'jq' is missing in the image. Please use an image with 'jq' installed" && exit 1
     fi
     createFolder "${DOMAIN_HOME}" "DomainSourceType is 'FromModel' and this is the DOMAIN_HOME directory specified by 'domain.spec.domainHome'." || exit 1
     createWLDomain || exit 1

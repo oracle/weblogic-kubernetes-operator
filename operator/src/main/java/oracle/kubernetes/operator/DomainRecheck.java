@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -35,6 +36,7 @@ import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
@@ -158,7 +160,15 @@ class DomainRecheck {
     protected Result onFailureNoRetry(Packet packet, KubernetesApiResponse<V1NamespaceList> callResponse) {
       return useBackupStrategy(callResponse)
             ? doNext(createStartNamespacesStep(Namespaces.getConfiguredDomainNamespaces()), packet)
-            : super.onFailureNoRetry(packet, callResponse);
+            : onFailureNoRetryCheckForGone(packet, callResponse);
+    }
+
+    protected Result onFailureNoRetryCheckForGone(Packet packet,
+                                                  @NotNull KubernetesApiResponse<V1NamespaceList> callResponse) {
+      if (callResponse.getHttpStatusCode() == HTTP_GONE) {
+        return doEnd();
+      }
+      return super.onFailureNoRetry(packet, callResponse);
     }
 
     // Returns true if the failure wasn't due to authorization, and we have a list of namespaces to manage.
@@ -169,12 +179,13 @@ class DomainRecheck {
     @Override
     public Result onSuccess(Packet packet, KubernetesApiResponse<V1NamespaceList> callResponse) {
       final Set<String> namespacesToStart = getNamespacesToStart(callResponse.getObject());
-      Namespaces.getFoundDomainNamespaces(packet).addAll(namespacesToStart);
+      Collection<String> foundDomainNamespaces = Namespaces.getFoundDomainNamespaces(packet);
+      foundDomainNamespaces.addAll(namespacesToStart);
 
-      return doContinueListOrNext(callResponse, packet, createNextSteps(namespacesToStart));
+      return doContinueListOrNext(callResponse, packet, () -> createNextSteps(foundDomainNamespaces));
     }
 
-    private Step createNextSteps(Set<String> namespacesToStartNow) {
+    private Step createNextSteps(Collection<String> namespacesToStartNow) {
       if (!namespacesToStartNow.isEmpty()) {
         List<Step> nextSteps = new ArrayList<>();
         nextSteps.add(createStartNamespacesStep(namespacesToStartNow));
@@ -187,7 +198,7 @@ class DomainRecheck {
       return current;
     }
 
-    private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
+    private Step createNamespaceReviewStep(Collection<String> namespacesToStartNow) {
       return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
     }
 
@@ -241,7 +252,7 @@ class DomainRecheck {
       if (fullRecheck) {
         return doNext(packet);
       } else {
-        return doEnd(packet);
+        return doEnd();
       }
     }
 

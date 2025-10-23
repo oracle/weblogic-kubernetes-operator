@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -12,6 +12,7 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.RbacV1Subject;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -20,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleRef;
-import io.kubernetes.client.openapi.models.V1Subject;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -352,7 +352,6 @@ public class Domain {
       }
     }
 
-    // TODO: Below needs to be modified for v9
     // construct the patch string for scaling the cluster in the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
@@ -428,7 +427,7 @@ public class Domain {
     logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
         + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    if (secretToken.isEmpty()) {
+    if (secretToken == null || secretToken.isEmpty()) {
       logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
           secretName, opServiceAccount, opNamespace);
       return false;
@@ -504,7 +503,7 @@ public class Domain {
 
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
-    if (secretName.isEmpty()) {
+    if (secretName == null || secretName.isEmpty()) {
       logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
       return false;
     }
@@ -513,7 +512,7 @@ public class Domain {
     logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
         + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    if (secretToken.isEmpty()) {
+    if (secretToken == null || secretToken.isEmpty()) {
       logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
           secretName, opServiceAccount, opNamespace);
       return false;
@@ -595,7 +594,7 @@ public class Domain {
     logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
         + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    if (secretToken.isEmpty()) {
+    if (secretToken == null || secretToken.isEmpty()) {
       logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
           secretName, opServiceAccount, opNamespace);
       return new ExecResult(12, "", "secret token is empty");
@@ -803,9 +802,7 @@ public class Domain {
    */
   public static String getCurrentIntrospectVersion(String domainUid, String namespace) throws ApiException {
     DomainResource domain = getDomainCustomResource(domainUid, namespace);
-    String introspectVersion = domain.getSpec().getIntrospectVersion();
-
-    return introspectVersion;
+    return domain.getSpec().getIntrospectVersion();
   }
 
   /**
@@ -821,7 +818,6 @@ public class Domain {
    * @param opServiceAccount service account of operator
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithScalingActionScript(String clusterName,
                                              String domainUid,
@@ -831,7 +827,7 @@ public class Domain {
                                              int scalingSize,
                                              String opNamespace,
                                              String opServiceAccount)
-      throws ApiException, InterruptedException {
+      throws ApiException {
     LoggingFacade logger = getLogger();
     // create RBAC API objects for WLDF script
     logger.info("Creating RBAC API objects for scaling script");
@@ -952,7 +948,7 @@ public class Domain {
           .apiVersion(RBAC_API_VERSION)
           .metadata(new V1ObjectMeta()
               .name(clusterRoleBindingName))
-          .addSubjectsItem(new V1Subject()
+          .addSubjectsItem(new RbacV1Subject()
               .kind("ServiceAccount")
               .name("default")
               .namespace(domainNamespace)
@@ -979,7 +975,7 @@ public class Domain {
           .metadata(new V1ObjectMeta()
               .name(roleBindingName)
               .namespace(opNamespace))
-          .addSubjectsItem(new V1Subject()
+          .addSubjectsItem(new RbacV1Subject()
               .kind("ServiceAccount")
               .name("default")
               .namespace(domainNamespace)
@@ -1009,18 +1005,7 @@ public class Domain {
    */
   private static boolean copyFileToPod(String namespace, String pod, String container, Path srcPath, Path destPath) {
 
-    try {
-      FileUtils.copyFileToPod(namespace, pod, container, srcPath, destPath);
-    } catch (ApiException apex) {
-      getLogger().severe("Got ApiException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      getLogger().severe("Got IOException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, ioex.getStackTrace());
-      return false;
-    }
-
+    FileUtils.copyFileToPod(namespace, pod, container, srcPath, destPath);
     return true;
   }
 
@@ -1078,18 +1063,8 @@ public class Domain {
                                          String container,
                                          String srcPath,
                                          Path destPath) {
-    try {
-      getLogger().info("Copy file {0} from pod {1} in namespace {2} to {3}", srcPath, pod, namespace, destPath);
-      FileUtils.copyFileFromPod(namespace, pod, container, srcPath, destPath);
-    } catch (IOException ioex) {
-      getLogger().severe("Got IOException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, ioex.getStackTrace());
-      return false;
-    } catch (ApiException apiex) {
-      getLogger().severe("Got ApiException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
-          srcPath, pod, namespace, apiex.getResponseBody());
-      return false;
-    }
+    getLogger().info("Copy file {0} from pod {1} in namespace {2} to {3}", srcPath, pod, namespace, destPath);
+    FileUtils.copyFileFromPod(namespace, pod, container, srcPath, destPath);
     return true;
   }
 
@@ -1097,7 +1072,7 @@ public class Domain {
                                      String domainUid, String scalingAction, String clusterName,
                                      String opServiceAccount, int scalingSize,
                                      String domainHomeLocation,
-                                     V1Pod adminPod) throws ApiException, InterruptedException {
+                                     V1Pod adminPod) {
     LoggingFacade logger = getLogger();
     StringBuffer scalingCommand = new StringBuffer()
         //.append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
@@ -1126,6 +1101,8 @@ public class Domain {
     String commandToExecuteInsidePod = scalingCommand.toString();
 
     ExecResult result = null;
+    assertNotNull(adminPod, "admin pod is null");
+    assertNotNull(adminPod.getMetadata(), "admin pod metadata is null");
     try {
       result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
           "/bin/sh", "-c", commandToExecuteInsidePod),
@@ -1134,8 +1111,10 @@ public class Domain {
       logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
           commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
     } catch (Error err) {
-      logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-          commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+      if (result != null) {
+        logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+      }
       // copy scalingAction.log to local
       testUntil(
               () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,

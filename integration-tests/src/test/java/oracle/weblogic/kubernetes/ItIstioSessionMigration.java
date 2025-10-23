@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.configIstioModelInImageDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
@@ -37,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@DisplayName("Test WLS Session Migration via istio enabled")
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-arm")
@@ -62,8 +62,16 @@ class ItIstioSessionMigration {
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static int managedServerPort = 7100;
-  private static String finalPrimaryServerName = null;
+  private static int managedServerPort;
+
+  static {
+    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
+      managedServerPort = 7100;
+    } else {
+      managedServerPort = 7001;
+    }
+  }
+
   private static String configMapName = "istio-configmap";
   private static int replicaCount = 2;
 
@@ -74,13 +82,13 @@ class ItIstioSessionMigration {
 
   /**
    * Install operator, create a custom image using model in image with model files
-   * and create a WebLlogic domain with a dynamic cluster.
+   * and create a WebLogic domain with a dynamic cluster.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -109,7 +117,6 @@ class ItIstioSessionMigration {
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
-    //final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + SESSMIGR_MODEL_FILE);
     final List<String> modelList = Collections.singletonList(destSessionMigrYamlFile);
 
     // create image with model files
@@ -157,12 +164,11 @@ class ItIstioSessionMigration {
     final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + SESSION_STATE;
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
     final String clusterAddress = domainUid + "-cluster-" + clusterName;
-    String serverName = managedServerPrefix + "1";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
     Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace,
-        adminServerPodName, serverName, clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
+        adminServerPodName, clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
 
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
@@ -177,9 +183,8 @@ class ItIstioSessionMigration {
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
     // send a HTTP request to get server and session info after shutting down the primary server
-    serverName = domainUid + "-" + origSecondaryServerName;
     httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
-        serverName, clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
+        clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
 
     // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
@@ -204,8 +209,6 @@ class ItIstioSessionMigration {
         () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
-
-    finalPrimaryServerName = primaryServerName;
 
     logger.info("Done testSessionMigration \nThe new primary server is {0}, it was {1}. "
         + "\nThe session state was set to {2}, it is migrated to the new primary server.",

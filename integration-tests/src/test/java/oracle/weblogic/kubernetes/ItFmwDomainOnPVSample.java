@@ -1,11 +1,12 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.kubernetes;
+package oracle.weblogic.kubernetes; 
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import oracle.weblogic.kubernetes.actions.impl.UniqueName;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -17,7 +18,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -30,6 +30,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DB_PDB_ID_DEFAULT_19C;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
@@ -45,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_NAM
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
@@ -54,6 +56,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.backupReports;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.restoreReports;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SampleUtils.createPVHostPathAndChangePermissionInKindCluster;
@@ -64,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test and verify Domain on PV FMW domain sample.
  */
-@DisplayName("test domain on pv sample for FMW domain")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")
@@ -135,12 +138,10 @@ class ItFmwDomainOnPVSample {
     envMap.put("OKD", "" +  OKD);
     envMap.put("KIND_CLUSTER", "" + KIND_CLUSTER);
     envMap.put("OCNE", "" + OCNE);
-
-    if (OCNE) {
-      envMap.put("OPER_IMAGE_NAME", TEST_IMAGES_PREFIX + IMAGE_NAME_OPERATOR);
-      envMap.put("DOMAIN_CREATION_IMAGE_NAME", TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME);
-      envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET_NAME);
-    }
+    envMap.put("OPER_IMAGE_NAME", TEST_IMAGES_PREFIX + IMAGE_NAME_OPERATOR);
+    envMap.put("DOMAIN_CREATION_IMAGE_NAME", TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME);
+    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET_NAME);
+    envMap.put("DB_PDB_ID", DB_PDB_ID_DEFAULT_19C);
 
     // kind cluster uses openjdk which is not supported by image tool
     if (WIT_JAVA_HOME != null) {
@@ -181,7 +182,7 @@ class ItFmwDomainOnPVSample {
   @Order(1)
   public void testInstallOperator() {
     String backupReports = backupReports(UniqueName.uniqueName(this.getClass().getSimpleName()));
-    execTestScriptAndAssertSuccess("-oper", "Failed to run -oper");
+    assertTrue(execTestScriptAndAssertSuccess("-oper", "Failed to run -oper"));
     restoreReports(backupReports);
   }
 
@@ -191,7 +192,8 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(2)
   public void testInstallTraefik() {
-    execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik");
+    Assumptions.assumeTrue(previousTestSuccessful);
+    assertTrue(execTestScriptAndAssertSuccess("-traefik", "Failed to run -traefik"));
   }
 
   /**
@@ -200,7 +202,8 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(3)
   public void testPrecleandb() {
-    execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb");
+    Assumptions.assumeTrue(previousTestSuccessful);
+    assertTrue(execTestScriptAndAssertSuccess("-precleandb", "Failed to run -precleandb"));
   }
 
   /**
@@ -209,45 +212,60 @@ class ItFmwDomainOnPVSample {
   @Test
   @Order(4)
   public void testCreatedb() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for creating a db");
     if (KIND_REPO != null) {
       String dbimage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
       logger.info("loading image {0} to kind", dbimage);
       imagePush(dbimage);
     }
-    execTestScriptAndAssertSuccess("-db", "Failed to run -db");
+    assertTrue(execTestScriptAndAssertSuccess("-db", "Failed to run -db"));
   }
 
+  /**
+   * Test Domain on PV sample - Initialize schemas in the DB.
+   */
+  @Test
+  @Order(5)
+  public void testCreateRCU() {
+    Assumptions.assumeTrue(previousTestSuccessful);
+    logger.info("test case for initializing schemas in the DB");
+    assertTrue(execTestScriptAndAssertSuccess("-rcu", "Failed to run -rcu"));
+  }
+  
   /**
    * Test Domain on PV sample building image for FMW domain use case.
    */
   @Test
-  @Order(5)
+  @Order(6)
   public void testInitialImage() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for building image");
     imagePull(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG);
     imageTag(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG, "busybox");
-    execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image");
+    assertTrue(execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image"));
+    ExecResult result = Command.withParams(
+        new CommandParams()
+            .command(WLSIMG_BUILDER + " images")
+            .env(envMap)
+            .redirect(true)
+    ).executeAndReturnResult();
+    logger.info(result.stdout());
 
     // load the image to kind if using kind cluster
     String imageCreated;
-    if (KIND_REPO != null) {
-      imageCreated = DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_JRF_TAG;
-      logger.info("loading image {0} to kind", imageCreated);
-      imagePush(imageCreated);
-    } else if (OCNE) {
-      imageCreated = TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_JRF_TAG;
-      logger.info("pushing image {0} to repo", imageCreated);
-      imagePush(imageCreated);
-    }
+    imageCreated = TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_JRF_TAG;
+    logger.info("pushing image {0} to repo", imageCreated);
+    imagePush(imageCreated);
   }
 
   /**
    * Test Domain on PV sample create FMW domain use case.
    */
   @Test
-  @Order(6)
+  @Order(7)
   public void testInitialMain() {
+    Assumptions.assumeTrue(previousTestSuccessful);
     logger.info("test case for creating a FMW domain");
 
     // load the base image to kind if using kind cluster
@@ -257,7 +275,11 @@ class ItFmwDomainOnPVSample {
       createPVHostPathAndChangePermissionInKindCluster("/shared", envMap);
     }
 
-    execTestScriptAndAssertSuccess("-initial-main", "Failed to run -initial-main");
+    testUntil(
+        withLongRetryPolicy,
+        checkTestScriptAndAssertSuccess("-initial-main", "Failed to run -initial-main"),
+        logger,
+        "creating FMW domain");
   }
 
   /**
@@ -265,10 +287,9 @@ class ItFmwDomainOnPVSample {
    * @param arg arguments to execute script
    * @param errString a string of detailed error
    */
-  private void execTestScriptAndAssertSuccess(String arg,
-                                              String errString) {
+  private boolean execTestScriptAndAssertSuccess(String arg,
+                                                 String errString) {
 
-    Assumptions.assumeTrue(previousTestSuccessful);
     previousTestSuccessful = false;
 
     String command = domainOnPvSampleScript
@@ -288,14 +309,20 @@ class ItFmwDomainOnPVSample {
             && result.stdout() != null
             && result.stdout().contains("Finished without errors");
 
-    String outStr = errString;
-    outStr += ", command=\n{\n" + command + "\n}\n";
+    String outStr = success ? "Running test script succeeds: " : errString + ":";
+    outStr += " command=\n{\n" + command + "\n}\n";
     outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
     outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
 
-    assertTrue(success, outStr);
+    logger.info("output String is: {0}", outStr);
 
-    previousTestSuccessful = true;
+    previousTestSuccessful = success;
+
+    return success;
+  }
+
+  private Callable<Boolean> checkTestScriptAndAssertSuccess(String arg, String errString) {
+    return () -> execTestScriptAndAssertSuccess(arg, errString);
   }
 
   /**

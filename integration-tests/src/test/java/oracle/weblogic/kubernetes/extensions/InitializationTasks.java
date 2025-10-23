@@ -11,14 +11,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.INSTALL_WEBLOGIC;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
@@ -68,6 +70,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_OPERATOR_NS;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -83,6 +86,8 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants. WEBLOGIC_IMAGE_WLSADM_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SHIPHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
@@ -104,13 +109,16 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.deleteLoadBalancer;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -131,6 +139,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
+  private static Set<String> lbIPs = new HashSet<>();
   private static boolean isInitializationSuccessful = false;
 
   ConditionFactory withVeryLongRetryPolicy
@@ -201,6 +210,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           Collection<String> images = new ArrayList<>();
 
           images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG);
+          images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_WLSADM_TAG);
           images.add(FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG);
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
           images.add(LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG);
@@ -234,7 +244,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
         // build WDT basic image if does not exits
-        if (! imageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
+        if (!imageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG) && !CRIO && !OCNE) {
           logger.info("Building wdt-basic image {0}", wdtBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -243,7 +253,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                 logger,
                 "createBasicImage to be successful");
         } else {
-          logger.info("!!!! domain image {0} exists !!!!", wdtBasicImage);
+          logger.info("!!!! domain image {0} exists !!!! or env is not OCNE based", wdtBasicImage);
         }
 
         /* Check image exists using WLSIMG_BUILDER images | grep image tag.
@@ -255,8 +265,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", miiBasicImage));
 
-        assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
+        if (!CRIO && !OCNE) {
+          assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
+        }
 
         logger.info(WLSIMG_BUILDER + " login");
         testUntil(withVeryLongRetryPolicy,
@@ -274,7 +286,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           // add images only if SKIP_BUILD_IMAGES_IF_EXISTS is not set
           if (!SKIP_BUILD_IMAGES_IF_EXISTS) {
             images.add(miiBasicImage);
-            images.add(wdtBasicImage);
+            if (!CRIO && !OCNE) {
+              images.add(wdtBasicImage);
+            }
           }
 
           for (String image : images) {
@@ -305,16 +319,22 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         //install webhook to prevent every operator installation trying to update crd
         installWebHookOnlyOperator("DomainOnPvSimplification=true");
         //install traefik when running with podman container runtime
-        if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+        if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !CRIO) {
           installTraefikLB();
+        }
+        //install Oracle Database operator as a one time task
+        if (!OCNE && !CRIO && !ARM) {
+          installOracleDBOperator();
         }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
-        if ((!OKD && !OCNE && !CRIO)
-            || (OCNE && !CRIO && !assertDoesNotThrow(() -> Namespace.exists("istio-system")))) {
+        if (!OKD && !CRIO) {
           logger.info("Installing istio before any test suites are run");
           installIstio();
+        }
+        if (INSTALL_WEBLOGIC && !CRIO && !ARM && !OKE_CLUSTER) {
+          installOnPremWebLogic();
         }
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
@@ -349,6 +369,15 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     pushedImages.add(imageName);
   }
 
+  /**
+   * Called when load balancer is created in OCI, allowing conditional cleanup of load balancers.
+   *
+   * @param lbIP external IP of load balancer.
+   */
+  public static void registerLoadBalancerExternalIP(String lbIP) {
+    lbIPs.add(lbIP);
+  }
+
   @Override
   public void close() {
     LoggingFacade logger = getLogger();
@@ -356,13 +385,14 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     if (SKIP_CLEANUP) {
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
-      if (!OKD && !OCNE && !CRIO) {
+      if (!OKD && !CRIO) {
         logger.info("Uninstall istio after all test suites are run");
         uninstallIstio();
       }
-      if (!OKD && !OKE_CLUSTER && !OCNE && !CRIO) {
+      if (!OKD && !OKE_CLUSTER && !CRIO) {
         logger.info("Delete istio-system namespace after all test suites are run");
         deleteNamespace("istio-system");
+        deleteNamespace(ORACLE_OPERATOR_NS);
       }
       logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
       try {
@@ -388,6 +418,13 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       for (String image : pushedImages) {
         deleteImage(image);
       }
+      if (OKE_CLUSTER) {
+        logger.info("Cleanup created in OCI load balancers after all test suites are run");
+        // delete all load balancers in OCI
+        for (String ip : lbIPs) {
+          deleteLoadBalancer(ip);
+        }
+      }
     }
 
     // delete images from TEST_IMAGES_REPO, if necessary
@@ -396,7 +433,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       if (token != null) {
         logger.info("Deleting these images from REPO_REGISTRY");
         logger.info(String.join(", ", pushedImages));
-        for (String image : pushedImages.stream().distinct().collect(Collectors.toList())) {
+        for (String image : pushedImages.stream().distinct().toList()) {
           deleteImageOcir(token, image);
         }
       }
@@ -611,10 +648,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   HelmParams opHelmParams;
   String webhookNamespace = "ns-webhook";
 
-  private OperatorParams installWebHookOnlyOperator() {
-    return installWebHookOnlyOperator(null);
-  }
-
   private OperatorParams installWebHookOnlyOperator(String featureGates) {
     // recreate WebHook namespace
     deleteNamespace(webhookNamespace);
@@ -662,6 +695,27 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     //expose traefik node port service and get route host
     //oc -n ns-abcdef expose service nginx-release-nginx-ingress-nginx-controller
     //oc -n ns-abcdef get routes nginx-release-nginx-ingress-nginx-controller '-o=jsonpath={.spec.host}'
+  }  
+
+  private void installOracleDBOperator() {
+    //install Oracle Database Operator
+    String namespace = ORACLE_OPERATOR_NS;
+    if (!assertDoesNotThrow(() -> Namespace.exists(namespace))) {
+      assertDoesNotThrow(() -> new Namespace().name(namespace).create());
+    }
+    assertDoesNotThrow(() -> installDBOperator(), "Failed to install database operator");
+  }
+  
+  private void installOnPremWebLogic() {
+    Path installScript = Paths.get(RESOURCE_DIR, "bash-scripts", "install-wls.sh");
+    String command
+        = String.format("%s %s %s %s", "/bin/bash", installScript, RESULTS_ROOT, WEBLOGIC_SHIPHOME);
+    getLogger().info("WebLogic installation command {0}", command);
+    assertTrue(() -> Command.withParams(
+        defaultCommandParams()
+            .command(command)
+            .redirect(false))
+        .execute());
   }  
 
 }

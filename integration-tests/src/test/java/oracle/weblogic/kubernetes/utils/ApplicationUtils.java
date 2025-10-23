@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -36,20 +37,20 @@ public class ApplicationUtils {
    * @return true if curl command returns HTTP code 200 otherwise false
    */
   public static boolean checkAppUsingHostHeader(String url, String hostHeader, Boolean... args) {
-    boolean checlReadyAppAccessible = (args.length == 0) ? true : false;
+    boolean checlReadyAppAccessible = args.length == 0;
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    StringBuffer headerString = null;
+    StringBuffer headerString;
     if (hostHeader != null) {
       headerString = new StringBuffer("-H 'host: ");
       headerString.append(hostHeader)
           .append("' ");
     } else {
-      headerString = new StringBuffer("");
+      headerString = new StringBuffer();
     }
     curlString.append(" -g -sk --noproxy '*' ")
         .append(" --silent --show-error ")
-        .append(headerString.toString())
+        .append(headerString)
         .append(url)
         .append(" -o /dev/null")
         .append(" -w %{http_code});")
@@ -149,13 +150,13 @@ public class ApplicationUtils {
 
     LoggingFacade logger = getLogger();
     String curlString = String.format("curl -g -v --show-error --noproxy '*' "
-        + "--user " + username + ":" + password + " " + headers
+        + "--user %s:%s %s"
         + " -H X-Requested-By:MyClient -H Accept:application/json "
         + "-H Content-Type:application/json "
-        + " -d \"{ target: '" + target + "' }\" "
+        + " -d \"{ target: '%s' }\" "
         + " -X POST "
-        + "http://%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
-        + application + "/getState", hostAndPort);
+        + "http://%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/%s"
+        + "/getState", username, password, headers, target, hostAndPort, application);
 
     logger.info("curl command {0}", curlString);
     testUntil(
@@ -353,6 +354,34 @@ public class ApplicationUtils {
   /**
    * Call a web app and wait for the response code 200.
    * @param curlCmd curl command to call the web app
+   * @return true if 200 response code is returned, false otherwise
+   */
+  public static Callable<Boolean> callWebAppAndWaitTillReady(String curlCmd)  {
+    LoggingFacade logger = getLogger();
+    String httpStatusCode = "200";
+
+    return () -> {
+      final ExecResult result = ExecCommand.exec(curlCmd);
+      final String responseCode = result.stdout().trim();
+
+      if (result != null) {
+        logger.info("result.stdout: \n{0}", result.stdout());
+        logger.info("result.stderr: \n{0}", result.stderr());
+        logger.info("result.exitValue: \n{0}", result.exitValue());
+      }
+
+      if (result.exitValue() != 0 || !responseCode.equals(httpStatusCode)) {
+        logger.info("callWebApp did not return {0} response code, got {1}", httpStatusCode, responseCode);
+        return false;
+      }
+
+      return true;
+    };
+  }
+
+  /**
+   * Call a web app and wait for the response code 200.
+   * @param curlCmd curl command to call the web app
    * @param maxIterations max iterations to call the curl command
    * @return true if 200 response code is returned, false otherwise
    */
@@ -426,7 +455,7 @@ public class ApplicationUtils {
                                                   String port,
                                                   boolean secureMode,
                                                   Boolean... args) {
-    boolean checlReadyAppAccessible = (args.length == 0) ? true : false;
+    boolean checlReadyAppAccessible = args.length == 0;
     LoggingFacade logger = getLogger();
     String httpKey = "http://";
     if (secureMode) {
@@ -465,7 +494,7 @@ public class ApplicationUtils {
   public static boolean verifyAdminServerRESTAccess(String host, int port, boolean secure, String hostHeader)
       throws IOException {
     getLogger().info("Check REST interface availability");
-    StringBuffer curlCmd = new StringBuffer("status=$(curl -vkg --noproxy '*'");
+    StringBuffer curlCmd = new StringBuffer("status=$(curl -vkg --noproxy '*' -m 30");
     if (host.contains(":")) {
       host = "[" + host + "]";
     }

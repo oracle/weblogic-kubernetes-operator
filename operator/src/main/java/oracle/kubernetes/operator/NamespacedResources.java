@@ -13,7 +13,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.extended.controller.reconciler.Result;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
@@ -95,7 +95,7 @@ class NamespacedResources {
     return getListProcessing(Processors::getEventListProcessing).map(this::createPodEventListStep).orElse(null);
   }
 
-  private Step createPodEventListStep(List<Consumer<CoreV1EventList>> processing) {
+  private Step createPodEventListStep(List<Consumer<EventsV1EventList>> processing) {
     return Step.chain(getPauseWatchersStep(getEventWatcher()),
         RequestBuilder.EVENT.list(namespace,
             new ListOptions().fieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER),
@@ -111,7 +111,7 @@ class NamespacedResources {
         .map(this::createOperatorEventListStep).orElse(null);
   }
 
-  private Step createOperatorEventListStep(List<Consumer<CoreV1EventList>> processing) {
+  private Step createOperatorEventListStep(List<Consumer<EventsV1EventList>> processing) {
     return Step.chain(getPauseWatchersStep(getOperatorEventWatcher()),
         RequestBuilder.EVENT.list(namespace,
             new ListOptions().labelSelector(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER),
@@ -232,7 +232,7 @@ class NamespacedResources {
     }
   }
 
-  class PauseWatchersStep<T> extends Step {
+  static class PauseWatchersStep<T> extends Step {
     private final Watcher<T> watcher;
 
     PauseWatchersStep(Watcher<T> watcher) {

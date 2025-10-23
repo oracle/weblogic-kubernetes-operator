@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -235,7 +235,7 @@ public class SchemaGenerator {
 
   private String getPropertyName(Field field) {
     SerializedName serializedName = field.getAnnotation(SerializedName.class);
-    if (serializedName != null && serializedName.value().length() > 0) {
+    if (serializedName != null && !serializedName.value().isEmpty()) {
       return serializedName.value();
     } else {
       return field.getName();
@@ -426,7 +426,7 @@ public class SchemaGenerator {
   }
 
   private boolean isNonObsolete(Object enumConstant) {
-    return !(enumConstant instanceof Obsoleteable) || !((Obsoleteable) enumConstant).isObsolete();
+    return !(enumConstant instanceof Obsoleteable obs) || !obs.isObsolete();
   }
 
   private boolean satisfiesQualifier(Object enumConstant, Method qualifier) {
@@ -666,7 +666,7 @@ public class SchemaGenerator {
     }
 
     private ParameterizedType asParameterizedType(Type type) {
-      return type instanceof ParameterizedType ? (ParameterizedType) type : null;
+      return type instanceof ParameterizedType pt ? pt : null;
     }
 
     private Class<?> actualValueType(Type[] types) {

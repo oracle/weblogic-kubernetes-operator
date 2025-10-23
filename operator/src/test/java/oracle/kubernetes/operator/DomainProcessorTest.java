@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -29,7 +29,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -105,7 +105,6 @@ import org.hamcrest.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
@@ -144,7 +143,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTIO
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
@@ -168,7 +166,6 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.http.client.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.client.HttpAsyncTestSupport.createExpectedRequest;
-import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
@@ -720,31 +717,6 @@ class DomainProcessorTest {
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
   }
 
-  @Test
-  @Disabled("Test attempts to shut down a running server instance using REST")
-  void afterMakeRightAndChangeServerToNever_serverPodsWaitForShutdownWithHttpToCompleteBeforeTerminating() {
-    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
-    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
-
-    processor.createMakeRightOperation(newInfo).execute();
-
-    domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
-    DomainStatus status = newInfo.getDomain().getStatus();
-    defineServerShutdownWithHttpOkResponse();
-    setAdminServerStatus(status, SUSPENDING_STATE);
-    setManagedServerState(status, SUSPENDING_STATE);
-
-    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
-    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-
-    assertThat(getRunningPods().size(), equalTo(4));
-    setAdminServerStatus(status, SHUTDOWN_STATE);
-    setManagedServerState(status, SHUTDOWN_STATE);
-    testSupport.setTime(100, TimeUnit.SECONDS);
-    assertThat(getRunningPods().size(), equalTo(1));
-    assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
-  }
-
   private void defineServerShutdownWithHttpOkResponse() {
     httpSupport.defineResponse(createShutdownRequest(ADMIN_NAME, 7001),
         createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
@@ -926,6 +898,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainScaledDown_withoutPreCreateServerService_removeService() {
     final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3).withPrecreateServerService(false);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -937,6 +910,22 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
     assertThat(getServerService(SERVER3).isPresent(), is(false));
+  }
+
+  @Test
+  void whenDomainWithoutPreCreateServerService_removeService() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    createMakeRight(newInfo).execute();
+    assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
+    newInfo.getReferencedClusters().getFirst().getSpec().setPrecreateServerService(false);
+    newDomain.getSpec().setPrecreateServerService(false);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+    assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
   }
 
   @Test
@@ -1147,7 +1136,7 @@ class DomainProcessorTest {
 
   private List<Object> getEventsForSeason(String reason) {
     return testSupport.getResources(EVENT).stream()
-        .filter(e -> ((CoreV1Event)e).getReason().equals(reason)).collect(Collectors.toList());
+        .filter(e -> ((EventsV1Event)e).getReason().equals(reason)).collect(Collectors.toList());
   }
 
   @Test
@@ -1699,7 +1688,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void runStatusInitializationStepWithNonKubernetesFailure_dontRemoveFailedCondition() throws JsonProcessingException {
+  void runStatusInitializationStepWithNonKubernetesFailure_dontRemoveFailedCondition() {
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withStatus(true));
     testSupport.addDomainPresenceInfo(newInfo);
     testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false));
@@ -1764,36 +1753,12 @@ class DomainProcessorTest {
     Optional.ofNullable(job).map(V1Job::getMetadata).ifPresent(m -> m.setUid(Long.toString(++uidNum)));
   }
 
-  @Test
-  @Disabled("Test attempts to check health of running server instance")
-  void whenIntrospectionJobTimedOut_activeDeadlineIncreased() throws Exception {
-    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, "180");
-
-    runMakeRight_withIntrospectionTimeout();
-
-    executeScheduledRetry();
-
-    assertThat(getRecordedJob().getSpec().getActiveDeadlineSeconds(), is(240L));
-  }
-
   private V1Job getRecordedJob() {
     return testSupport.<V1Job>getResources(JOB).get(0);
   }
 
   private void executeScheduledRetry() {
     testSupport.setTime(domain.getFailureRetryIntervalSeconds(), TimeUnit.SECONDS);
-  }
-
-  @Test
-  @Disabled("Test attempts to check health of running server instance")
-  void whenIntrospectionJobTimedOutForInitDomainOnPV_activeDeadlineNotIncreased() throws Exception {
-    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, "180");
-    initializeDomainOnPV();
-    runMakeRight_withIntrospectionTimeout();
-
-    executeScheduledRetry();
-
-    assertThat(getRecordedJob().getSpec().getActiveDeadlineSeconds(), is(180L));
   }
 
   private void initializeDomainOnPV() {
@@ -1929,9 +1894,9 @@ class DomainProcessorTest {
   }
 
   private void defineTimedoutIntrospection() {
-    V1Job job = asFailedJob(createIntrospectorJob("TIMEDOUT_JOB"));
-    testSupport.defineResources(job);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    V1Job introspectorJob = asFailedJob(createIntrospectorJob("TIMEDOUT_JOB"));
+    testSupport.defineResources(introspectorJob);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, introspectorJob);
     setJobPodStatusReasonDeadlineExceeded();
   }
 
@@ -1965,9 +1930,9 @@ class DomainProcessorTest {
   }
 
   private void defineIntrospectionWithInitContainerImagePullError() {
-    V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
-    testSupport.defineResources(job);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    V1Job introspectorJob = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
+    testSupport.defineResources(introspectorJob);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, introspectorJob);
     testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(getInitContainerStatusWithImagePullError());
   }
 
@@ -1978,9 +1943,9 @@ class DomainProcessorTest {
   }
 
   private void defineIntrospectionWithInitContainerWithExecFormatError() {
-    V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
-    testSupport.defineResources(job);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    V1Job introspectorJob = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
+    testSupport.defineResources(introspectorJob);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, introspectorJob);
     testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(getInitContainerStatusWithExecFormatError());
   }
 
@@ -2059,29 +2024,6 @@ class DomainProcessorTest {
   private String defineTopology(List<String> clusterNames, List<String> serverNames) throws JsonProcessingException {
     return IntrospectionTestUtils.createTopologyYaml(createDomainConfig(clusterNames, serverNames));
   }
-
-  @Test
-  @Disabled("Needs update for change in behavior to list job pods")
-  void whenIntrospectionJobInitContainerScriptExecError_domainStatusUpdated() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
-    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
-    jobStatusSupplier.setJobStatus(createBackoffStatus());
-
-    establishPreviousIntrospection(null);
-    defineIntrospectionWithInitContainerWithExecFormatError();
-    testSupport.doOnDelete(JOB, j -> deletePod());
-    testSupport.doOnCreate(JOB, j -> createJobPodAndSetExecFormatErrorStatus(job));
-    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
-        String.format(EXEC_FORMAT_ERROR, defineTopology()));
-    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
-
-    processor.createMakeRightOperation(newInfo).interrupt().execute();
-
-    assertThat(newDomain.getStatus().getMessage().contains(EXEC_FORMAT_ERROR), is(true));
-  }
-
-  // case 1: job was able to pull, time out during introspection: pod will have DEADLINE_EXCEEDED
 
   @Test
   void afterIntrospection_introspectorConfigMapHasUpToDateLabel() throws Exception {
@@ -2288,6 +2230,7 @@ class DomainProcessorTest {
   void whenDomainTypeIsFromModelDomainAndManagedServerModified_runIntrospectionJobThenRoll() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    defineServerShutdownWithHttpOkResponse();
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
@@ -2530,7 +2473,6 @@ class DomainProcessorTest {
               sslListenPort: 8004
         """;
 
-    //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo, "cluster-1").withReplicas(2);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -2623,7 +2565,6 @@ class DomainProcessorTest {
               sslListenPort: 8004
         """;
 
-    //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo,"cluster-1").withReplicas(2);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -2665,8 +2606,6 @@ class DomainProcessorTest {
                     IntrospectionTestUtils.createTopologyYaml(createDomainConfig()),
                     IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash()))));
   }
-
-  // todo after external service created, if adminService deleted, delete service
 
   // problem - ServiceType doesn't know what this is, so does not
   // add it to DomainPresenceInfo, so does not delete it!
@@ -2891,24 +2830,7 @@ class DomainProcessorTest {
     newDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
   }
 
-  @Test
-  @Disabled("Test attempts to check health of running server instance")
-  void whenWebLogicCredentialsSecretRemoved_NullPointerExceptionAndAbortedEventNotGenerated() {
-    consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
-    processor.registerDomainPresenceInfo(originalInfo);
-    domain.getSpec().withWebLogicCredentialsSecret(null);
-    long time = 0;
-
-    for (int numRetries = 0; numRetries < 5; numRetries++) {
-      processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
-      time += domain.getFailureRetryIntervalSeconds();
-      testSupport.setTime(time, TimeUnit.SECONDS);
-    }
-
-    assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainFailedAbortedEvent), is(false));
-  }
-
-  private List<CoreV1Event> getEvents() {
+  private List<EventsV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
@@ -2953,17 +2875,6 @@ class DomainProcessorTest {
         .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER3));
 
     processor.dispatchClusterWatch(item);
-  }
-
-  @Test
-  void whenDomainAndClusterResourcesAddedAtSameTime_introspectorJobHasCorrectOwnerReference() {
-    consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
-    domain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(false));
-    setupNewDomainResource(NEW_DOMAIN_UID);
-    processor.registerDomainPresenceInfo(originalInfo);
-    addClustersAndDispatchClusterWatch();
-
-    assertThat(getIntrospectorJobOwnerReferenceUid(), equalTo(NEW_DOMAIN_UID));
   }
 
   private void setupNewDomainResource(String newUid) {

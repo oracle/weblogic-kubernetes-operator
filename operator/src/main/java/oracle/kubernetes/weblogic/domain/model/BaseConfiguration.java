@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -148,7 +148,7 @@ public abstract class BaseConfiguration {
   }
 
   V1Probe getLivenessProbe() {
-    return serverPod.getLivenessProbeTuning();
+    return serverPod.getLivenessProbe();
   }
 
   void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
@@ -164,7 +164,11 @@ public abstract class BaseConfiguration {
   }
 
   V1Probe getReadinessProbe() {
-    return serverPod.getReadinessProbeTuning();
+    return serverPod.getReadinessProbe();
+  }
+
+  V1Probe getStartupProbe() {
+    return serverPod.getStartupProbe();
   }
 
   Shutdown getShutdown() {
@@ -235,6 +239,10 @@ public abstract class BaseConfiguration {
     return serverPod.getServiceAccountName();
   }
 
+  public Boolean getAutomountServiceAccountToken() {
+    return serverPod.getAutomountServiceAccountToken();
+  }
+
   public void setNodeName(String nodeName) {
     serverPod.setNodeName(nodeName);
   }
@@ -294,7 +302,13 @@ public abstract class BaseConfiguration {
   }
 
   V1SecurityContext getContainerSecurityContext() {
-    return Optional.ofNullable(serverPod.getContainerSecurityContext()).orElse(getDefaultContainerSecurityContext());
+    return Optional.ofNullable(serverPod.getContainerSecurityContext())
+        .orElseGet(() -> {
+          if (serverPod.getPodSecurityContext() == null) {
+            return getDefaultContainerSecurityContext();
+          }
+          return null;
+        });
   }
 
   void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
@@ -353,7 +367,7 @@ public abstract class BaseConfiguration {
     return serverService.isPrecreateService();
   }
 
-  void setPrecreateServerService(boolean value) {
+  public void setPrecreateServerService(boolean value) {
     serverService.setIsPrecreateService(value);
   }
 

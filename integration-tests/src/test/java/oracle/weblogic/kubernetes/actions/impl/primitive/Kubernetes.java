@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -32,11 +32,13 @@ import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.apis.EventsV1Api;
 import io.kubernetes.client.openapi.apis.NetworkingV1Api;
 import io.kubernetes.client.openapi.apis.PolicyV1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1EventSeries;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
@@ -86,14 +88,9 @@ import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.Streams;
 import io.kubernetes.client.util.Yaml;
-import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
-import oracle.verrazzano.weblogic.ApplicationConfiguration;
-import oracle.verrazzano.weblogic.ApplicationList;
-import oracle.verrazzano.weblogic.Component;
-import oracle.verrazzano.weblogic.ComponentList;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
@@ -119,22 +116,16 @@ public class Kubernetes {
   private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
   private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
-  private static final String CLUSTER_GROUP = "weblogic.oracle";
   private static final String DOMAIN_PLURAL = "domains";
   private static final String CLUSTER_PLURAL = "clusters";
   private static final String FOREGROUND = "Foreground";
   private static final String BACKGROUND = "Background";
   private static final int GRACE_PERIOD = 0;
-  private static final String COMPONENT_VERSION = "v1alpha2";
-  private static final String COMPONENT_GROUP = "core.oam.dev";
-  private static final String COMPONENT_PLURAL = "components";
-  private static final String APPLICATION_VERSION = "v1alpha2";
-  private static final String APPLICATION_GROUP = "core.oam.dev";
-  private static final String APPLICATION_PLURAL = "applicationconfigurations";   
 
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
+  private static EventsV1Api eventsV1Api = null;
   private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
@@ -145,16 +136,12 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
   private static GenericKubernetesApi<DomainResource, DomainList> crdClient = null;
-  private static GenericKubernetesApi<ApplicationConfiguration, ApplicationList> vzAppCrdClient = null;
-  private static GenericKubernetesApi<Component, ComponentList> vzComCrdClient = null;
   private static GenericKubernetesApi<ClusterResource, ClusterList> clusterCrdClient = null;
-  private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
   private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
   private static GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient = null;
   private static GenericKubernetesApi<V1Pod, V1PodList> podClient = null;
   private static GenericKubernetesApi<V1PersistentVolume, V1PersistentVolumeList> pvClient = null;
   private static GenericKubernetesApi<V1PersistentVolumeClaim, V1PersistentVolumeClaimList> pvcClient = null;
-  private static GenericKubernetesApi<V1ReplicaSet, V1ReplicaSetList> rsClient = null;
   private static GenericKubernetesApi<V1Secret, V1SecretList> secretClient = null;
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
@@ -165,10 +152,11 @@ public class Kubernetes {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
       apiClient = Configuration.getDefaultApiClient();
       // disable connection and read write timeout to force the internal HTTP client
-      // to keep a long running connection with the server to fix SSL connection closed issue
+      // to keep a long-running connection with the server to fix SSL connection closed issue
       apiClient.setConnectTimeout(0);
       apiClient.setReadTimeout(0);
       coreV1Api = new CoreV1Api();
+      eventsV1Api = new EventsV1Api();
       policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
@@ -203,27 +191,7 @@ public class Kubernetes {
             DOMAIN_PLURAL, // the resource plural
             apiClient //the api client
         );
-    
-    vzAppCrdClient =
-        new GenericKubernetesApi<>(
-            ApplicationConfiguration.class,  // the api type class
-            ApplicationList.class, // the api list type class
-            APPLICATION_GROUP, // the api group
-            APPLICATION_VERSION, // the api version
-            APPLICATION_PLURAL, // the resource plural
-            apiClient //the api client
-        );
-    
-    vzComCrdClient =
-        new GenericKubernetesApi<>(
-            Component.class,  // the api type class
-            ComponentList.class, // the api list type class
-            COMPONENT_GROUP, // the api group
-            COMPONENT_VERSION, // the api version
-            COMPONENT_PLURAL, // the resource plural
-            apiClient //the api client
-        );    
-    
+
     clusterCrdClient =
         new GenericKubernetesApi<>(
             ClusterResource.class,  // the api type class
@@ -234,16 +202,6 @@ public class Kubernetes {
             apiClient //the api client
         );    
 
-
-    deploymentClient =
-        new GenericKubernetesApi<>(
-            V1Deployment.class,  // the api type class
-            V1DeploymentList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "deployments", // the resource plural
-            apiClient //the api client
-        );
 
     jobClient =
         new GenericKubernetesApi<>(
@@ -292,16 +250,6 @@ public class Kubernetes {
             "", // the api group
             "v1", // the api version
             "persistentvolumeclaims", // the resource plural
-            apiClient //the api client
-        );
-
-    rsClient =
-        new GenericKubernetesApi<>(
-            V1ReplicaSet.class, // the api type class
-            V1ReplicaSetList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "replicasets", // the resource plural
             apiClient //the api client
         );
 
@@ -441,6 +389,7 @@ public class Kubernetes {
           PRETTY, // String | If 'true', then the output is pretty printed.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -531,6 +480,7 @@ public class Kubernetes {
           PRETTY, // pretty print output
           previous, // Boolean, Return previous terminated container logs
           sinceSeconds, // relative time (seconds) before the current time from which to show logs
+          null,
           null, // number of lines from the end of the logs to show
           null // Boolean, add timestamp at the beginning of every line of log output
       );
@@ -683,8 +633,8 @@ public class Kubernetes {
     if (pod != null && pod.getStatus() != null) {
       List<V1ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
       // if containerName is null, get first container restart count
-      if (containerName == null && containerStatuses.size() >= 1) {
-        return containerStatuses.get(0).getRestartCount();
+      if (containerName == null && !containerStatuses.isEmpty()) {
+        return containerStatuses.getFirst().getRestartCount();
       } else {
         for (V1ContainerStatus containerStatus : containerStatuses) {
           if (containerName.equals(containerStatus.getName())) {
@@ -715,8 +665,8 @@ public class Kubernetes {
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
       List<V1Container> containerList = pod.getSpec().getContainers();
-      if (containerName == null && containerList.size() >= 1) {
-        return containerList.get(0).getImage();
+      if (containerName == null && !containerList.isEmpty()) {
+        return containerList.getFirst().getImage();
       } else {
         for (V1Container container : containerList) {
           if (containerName.equals(container.getName())) {
@@ -847,11 +797,8 @@ public class Kubernetes {
    * @param pod V1Pod object
    * @param srcPath source directory location
    * @param destination destination directory path
-   * @throws IOException when copy fails
-   * @throws ApiException when pod interaction fails
    */
-  public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
-      throws IOException, ApiException, CopyNotSupportedException {
+  public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination) {
     String namespace = pod.getMetadata().getNamespace();
     String podName = pod.getMetadata().getName();
 
@@ -882,11 +829,9 @@ public class Kubernetes {
    * @param srcPath source file location
    * @param destPath destination file location on pod
    * @return true if copy succeeds, otherwise false
-   * @throws IOException when copy fails
-   * @throws ApiException when pod interaction fails
    */
   public static boolean copyFileToPod(
-      String namespace, String pod, String container, Path srcPath, Path destPath) throws IOException, ApiException {
+      String namespace, String pod, String container, Path srcPath, Path destPath) {
     // kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar -c <specific-container>
     StringBuilder sb = new StringBuilder();
     sb.append(KUBERNETES_CLI + " cp ");
@@ -915,11 +860,8 @@ public class Kubernetes {
    * @param container name of the container
    * @param srcPath source file location on the pod
    * @param destPath destination file location on local filesystem
-   * @throws IOException when copy fails
-   * @throws ApiException when pod interaction fails
    */
-  public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath)
-      throws IOException, ApiException {
+  public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath) {
     // kubectl cp <some-namespace>/<some-pod>:/tmp/foo /tmp/bar -c <container>
     StringBuilder sb = new StringBuilder();
     sb.append(KUBERNETES_CLI + " cp ");
@@ -1012,9 +954,8 @@ public class Kubernetes {
           "Parameter 'namespace' cannot be null when calling createNamespace()");
     }
 
-    V1Namespace ns = null;
     try {
-      ns = coreV1Api.createNamespace(
+      coreV1Api.createNamespace(
           namespace, // V1Namespace configuration data object
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
@@ -1193,16 +1134,13 @@ public class Kubernetes {
     return true;
   }
 
-  private static Callable<Boolean> namespaceDeleted(String namespace) throws ApiException {
-    return new Callable<Boolean>() {
-      @Override
-      public Boolean call() throws Exception {
-        List<String> namespaces = listNamespaces();
-        if (!namespaces.contains(namespace)) {
-          return true;
-        }
-        return  false;
+  private static Callable<Boolean> namespaceDeleted(String namespace) {
+    return () -> {
+      List<String> namespaces = listNamespaces();
+      if (!namespaces.contains(namespace)) {
+        return true;
       }
+      return  false;
     };
   }
 
@@ -1212,13 +1150,13 @@ public class Kubernetes {
    * List events in a namespace.
    *
    * @param namespace name of the namespace in which to list events
-   * @return List of {@link CoreV1Event} objects
+   * @return List of {@link EventsV1Event} objects
    * @throws ApiException when listing events fails
    */
-  public static List<CoreV1Event> listNamespacedEvents(String namespace) throws ApiException {
-    List<CoreV1Event> events = null;
+  public static List<EventsV1Event> listNamespacedEvents(String namespace) throws ApiException {
+    List<EventsV1Event> events = null;
     try {
-      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -1232,8 +1170,8 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
-      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+      events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
+      events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
     } catch (ApiException apex) {
@@ -1243,17 +1181,22 @@ public class Kubernetes {
     return events;
   }
 
+  private static OffsetDateTime getEventTime(EventsV1Event event) {
+    return Optional.ofNullable(event.getSeries())
+        .map(EventsV1EventSeries::getLastObservedTime).orElse(event.getEventTime());
+  }
+
   /**
    * List operator generated events in a namespace.
    *
    * @param namespace name of the namespace in which to list events
-   * @return List of {@link CoreV1Event} objects
+   * @return List of {@link EventsV1Event} objects
    * @throws ApiException when listing events fails
    */
-  public static List<CoreV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
-    List<CoreV1Event> events = null;
+  public static List<EventsV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
+    List<EventsV1Event> events = null;
     try {
-      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -1267,8 +1210,8 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
-      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+      events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
+      events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
     } catch (ApiException apex) {
@@ -1309,9 +1252,8 @@ public class Kubernetes {
 
     JsonElement json = convertToJson(domain);
 
-    Object response;
     try {
-      response = customObjectsApi.createNamespacedCustomObject(
+      customObjectsApi.createNamespacedCustomObject(
           DOMAIN_GROUP, // custom resource's group name
           domainVersion, //custom resource's version
           namespace, // custom resource's namespace
@@ -1319,7 +1261,8 @@ public class Kubernetes {
           json, // JSON schema of the Resource to create
           null, // pretty print output
           null, // dry run
-          null // field manager
+          null, // field manager
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1327,161 +1270,6 @@ public class Kubernetes {
     }
 
     return true;
-  }
-
-  /**
-   * Create a Verrazzano Component resource.
-   *
-   * @param component Component custom resource model object
-   * @param comVersion custom resource's version
-   * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean createComponent(Component component, String... comVersion) throws ApiException {
-    String componentVersion = (comVersion.length == 0) ? COMPONENT_VERSION : comVersion[0];
-
-    if (component == null) {
-      throw new IllegalArgumentException(
-          "Parameter 'component' cannot be null when calling createComponent()");
-    }
-
-    if (component.metadata() == null) {
-      throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'component' cannot be null when calling createComponent()");
-    }
-
-    if (component.metadata().getNamespace() == null) {
-      throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createComponent()");
-    }
-
-    String namespace = component.metadata().getNamespace();
-
-    JsonElement json = convertToJson(component);
-
-    Object response;
-    try {
-      response = customObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
-          componentVersion, //custom resource's version
-          namespace, // custom resource's namespace
-          COMPONENT_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null // field manager
-      );
-    } catch (ApiException apex) {
-      getLogger().severe(apex.getResponseBody());
-      throw apex;
-    }
-
-    return true;
-  }
-
-  /**
-   * Delete Component Custom Resources from a given namespace.
-   *
-   * @param name of the component to delete
-   * @param namespace namespace name
-   * @return true if the resource exists and deleted
-   * @throws io.kubernetes.client.openapi.ApiException when list fails
-   */
-  public static boolean deleteComponent(String name, String namespace)
-      throws ApiException {
-    KubernetesApiResponse<Component> response = null;
-    try {
-      response = vzComCrdClient.delete(namespace, name);
-    } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
-      throw ex;
-    }
-
-    if (!response.isSuccess()) {
-      getLogger().warning("Failed to delete config map '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
-      return false;
-    }
-    return response.isSuccess();
-  }
-  
-  /**
-   * List Component Custom Resources from a given namespace.
-   *
-   * @param namespace namespace name
-   * @return List of Component Custom Resources
-   * @throws io.kubernetes.client.openapi.ApiException when list fails
-   */
-  public static ComponentList listComponents(String namespace)
-      throws ApiException {
-    KubernetesApiResponse<ComponentList> response = null;
-    try {
-      response = vzComCrdClient.list(namespace);
-    } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
-      throw ex;
-    }
-    return response != null ? response.getObject() : new ComponentList();
-  }
-  
-  /**
-   * Create a Verrazzano ApplicationConfiguration Custom Resource.
-   *
-   * @param application ApplicationConfiguration custom resource model object
-   * @param appVersion custom resource's version
-   * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean createApplication(ApplicationConfiguration application, String... appVersion) 
-      throws ApiException {
-    String applicationVersion = (appVersion.length == 0) ? APPLICATION_VERSION : appVersion[0];
-
-    if (application == null) {
-      throw new IllegalArgumentException(
-          "Parameter 'application' cannot be null when calling createApplication()");
-    }
-
-    if (application.metadata() == null) {
-      throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'application' cannot be null when calling createApplication()");
-    }
-    String namespace = application.metadata().getNamespace();
-    JsonElement json = convertToJson(application);
-    Object response;    
-    try {
-      response = customObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
-          applicationVersion, //custom resource's version
-          namespace, // custom resource's namespace
-          APPLICATION_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null // field manager
-      );
-    } catch (ApiException apex) {
-      getLogger().severe(apex.getResponseBody());
-      throw apex;
-    }
-
-    return true;
-  }
-  
-  /**
-   * List ApplicationConfiguration Custom Resources from a given namespace.
-   *
-   * @param namespace namespace name
-   * @return List of ApplicationConfiguration Custom Resources
-   * @throws io.kubernetes.client.openapi.ApiException when list fails
-   */
-  public static ApplicationList listApplications(String namespace)
-      throws ApiException {
-    KubernetesApiResponse<ApplicationList> response = null;
-    try {
-      response = vzAppCrdClient.list(namespace);
-    } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
-      throw ex;
-    }
-    return response != null ? response.getObject() : new ApplicationList();
   }
   
   /**
@@ -1715,9 +1503,8 @@ public class Kubernetes {
 
     JsonElement json = convertToJson(cluster);
 
-    Object response;
     try {
-      response = customObjectsApi.createNamespacedCustomObject(
+      customObjectsApi.createNamespacedCustomObject(
           DOMAIN_GROUP, // custom resource's group name
           clusterVersion, //custom resource's version
           namespace, // custom resource's namespace
@@ -1725,7 +1512,8 @@ public class Kubernetes {
           json, // JSON schema of the Resource to create
           null, // pretty print output
           null, // dry run
-          null // field manager
+          null, // field manager
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1984,9 +1772,8 @@ public class Kubernetes {
 
     String namespace = configMap.getMetadata().getNamespace();
 
-    V1ConfigMap cm;
     try {
-      cm = coreV1Api.createNamespacedConfigMap(
+      coreV1Api.createNamespacedConfigMap(
           namespace, // config map's namespace
           configMap, // config map configuration data
           PRETTY, // pretty print output
@@ -2133,9 +1920,8 @@ public class Kubernetes {
 
     String namespace = secret.getMetadata().getNamespace();
 
-    V1Secret v1Secret;
     try {
-      v1Secret = coreV1Api.createNamespacedSecret(
+      coreV1Api.createNamespacedSecret(
           namespace, // name of the Namespace
           secret, // secret configuration data
           PRETTY, // pretty print output
@@ -2219,10 +2005,8 @@ public class Kubernetes {
       namespace = reference.getNamespace();
     }
 
-    V1Secret secret = coreV1Api.readNamespacedSecret(
+    return coreV1Api.readNamespacedSecret(
         reference.getName(), namespace, "false");
-
-    return secret;
   }
 
   // --------------------------- pv/pvc ---------------------------
@@ -2239,9 +2023,8 @@ public class Kubernetes {
           "Parameter 'persistentVolume' cannot be null when calling createPv()");
     }
 
-    V1PersistentVolume pv;
     try {
-      pv = coreV1Api.createPersistentVolume(
+      coreV1Api.createPersistentVolume(
           persistentVolume, // persistent volume configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
@@ -2282,9 +2065,8 @@ public class Kubernetes {
 
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
 
-    V1PersistentVolumeClaim pvc;
     try {
-      pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
+      coreV1Api.createNamespacedPersistentVolumeClaim(
           namespace, // name of the Namespace
           persistentVolumeClaim, // persistent volume claim configuration data
           PRETTY, // pretty print output
@@ -2560,9 +2342,8 @@ public class Kubernetes {
 
     String namespace = service.getMetadata().getNamespace();
 
-    V1Service svc;
     try {
-      svc = coreV1Api.createNamespacedService(
+      coreV1Api.createNamespacedService(
           namespace, // name of the Namespace
           service, // service configuration data
           PRETTY, // pretty print output
@@ -2832,6 +2613,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -2853,7 +2635,7 @@ public class Kubernetes {
   public static V1ReplicaSetList listReplicaSets(String namespace) throws ApiException {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
-      V1ReplicaSetList list = apiInstance.listNamespacedReplicaSet(
+      return apiInstance.listNamespacedReplicaSet(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -2867,7 +2649,6 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      return list;
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2884,7 +2665,7 @@ public class Kubernetes {
    */
   public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
     try {
-      V1ClusterRole cr = rbacAuthApi.createClusterRole(
+      rbacAuthApi.createClusterRole(
           clusterRole, // cluster role configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
@@ -2909,7 +2690,7 @@ public class Kubernetes {
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
       throws ApiException {
     try {
-      V1ClusterRoleBinding crb = rbacAuthApi.createClusterRoleBinding(
+      rbacAuthApi.createClusterRoleBinding(
           clusterRoleBinding, // role binding configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
@@ -2934,7 +2715,7 @@ public class Kubernetes {
    */
   public static boolean createNamespacedRole(String namespace, V1Role role) throws ApiException {
     try {
-      V1Role crb = rbacAuthApi.createNamespacedRole(
+      rbacAuthApi.createNamespacedRole(
           namespace, // namespace where this role is created
           role, // role configuration data
           PRETTY, // pretty print output
@@ -2960,7 +2741,7 @@ public class Kubernetes {
    */
   public static boolean createNamespacedRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
     try {
-      V1RoleBinding crb = rbacAuthApi.createNamespacedRoleBinding(
+      rbacAuthApi.createNamespacedRoleBinding(
           namespace, // namespace where this role binding is created
           roleBinding, // role binding configuration data
           PRETTY, // pretty print output
@@ -3078,6 +2859,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -3167,6 +2949,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -3225,6 +3008,7 @@ public class Kubernetes {
           PRETTY, // String | pretty print output.
           null, // String | When present, indicates that modifications should not be persisted.
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -3383,6 +3167,7 @@ public class Kubernetes {
           PRETTY, // String | If 'true', then the output is pretty printed.
           null, // String | dry run or permanent change
           GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null,
           null, // Boolean | Deprecated: use the PropagationPolicy.
           BACKGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
@@ -3472,7 +3257,7 @@ public class Kubernetes {
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      String stderr = readExecCmdData(copyErr.getInputStream());;
+      String stderr = readExecCmdData(copyErr.getInputStream());
 
       ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
       getLogger().fine("result from exec command: " + result);

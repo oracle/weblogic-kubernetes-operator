@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
@@ -48,8 +48,12 @@ domainNamespaceSelectionStrategy: LabelSelector
 
 # enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
-# If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated, in which
+# If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated', in which
 # case this value is ignored as all resources will be created in the namespace where the operator is deployed.
+# If `enableClusterRoleBinding` is false but `domainNamespaceSelectionStrategy` is not `Dedicated` then
+# ClusterRoleBindings will still be created to allow the operator to manage the CRDs and to list namespaces.
+# No ClusterRoles or ClusterRoleBindings will be created when `enableClusterRoleBinding` is false and
+# `domainNamespaceSelectionStrategy` is `Dedicated`.
 #
 enableClusterRoleBinding: true
 
@@ -113,7 +117,7 @@ elasticSearchPort: 9200
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchProtocol: http
 
-# createlogStashConfigMap specifies whether a ConfigMap named
+# createLogStashConfigMap specifies whether a ConfigMap named
 # weblogic-operator-logstash-cm should be created during helm install.
 # The ConfigMap contains the Logstash pipeline configuration for the Logstash
 # container running in the operator pod.
@@ -259,18 +263,37 @@ clusterSizePaddingValidationEnabled: true
 # tokenReviewAuthentication, if set to true, specifies whether the operator's REST API should use
 #   1. Kubernetes token review API for authenticating users, and
 #   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
-#      patch, etc) on a resource.
+#      patch, etc.) on a resource.
 #   3. Update the Domain resource using the operator's privileges.
 # This parameter, if set to false, will use the caller's bearer token for any update
 # to the Domain resource so that it is done using the caller's privileges.
 # The default value is false.
 #tokenReviewAuthentication: false
 
-# runAsuser specifies the UID to run the operator and conversion webhook container processes. 
+# runAsUser specifies the UID to run the operator and conversion webhook container processes.
 # If not specified, it defaults to the user specified in the operator's container image.
 #runAsUser: 1000
+
+# priority specifies the operator and webhook pod priority. 
+# See https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+#priority: 100
+
+# priorityClassName specifies the operator and webhook priority class name.
+# See https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+#priorityClassName: name-of-priority-class
 
 # jvmOptions specifies a value used to control the Java process that runs the operator, such as the maximum heap size
 # that will be allocated.
 #jvmOptions: -XshowSettings:vm -XX:MaxRAMPercentage=70
+
+# operatorLogPVC specifies the PVC name for persistent storage for operator log files.  You must also specify
+# operatorLogDir and operatorLogMount
+#operatorLogPVC:
+
+# operatorLogDir specifies the operator logging directory.  The operator will create the directory but the default uid
+# (oracle:1000) must have permission to do so. It must be prefixed by operatorLogMount.
+#operatorLogDir:
+
+# operatorLogMount specifies the operator logging volumeMount.  The operator will mount this path with the operatorLogPVC
+#operatorLogMount:
 

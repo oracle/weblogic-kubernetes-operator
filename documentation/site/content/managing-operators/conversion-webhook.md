@@ -83,6 +83,29 @@ The following table describes the behavior of different operator `Helm` chart co
 **NOTE**:
 A webhook install is skipped if there's already a webhook deployment at the same or newer version. The `helm install` step requires cluster-level permissions to search for existing conversion webhook deployments in all namespaces.
 
+### Upgrade the conversion webhook
+
+We support having exactly one installation of the webhook and having one or more installations of the operator. To have more than one installation of the operator, you would need to install a Helm release with just the webhook and then separately install multiple Helm releases with just the operator. The conversion webhook should be updated to at least match the version of the most recent operator in the cluster.
+
+To upgrade the conversion webhook only, you must have _first_ installed a Helm release with the webhook only, use the `--set webhookOnly=true` option, then you can update that release.
+
+The following example installs the conversion webhook only (at the specified version), and then upgrades it (to a later, specified version).
+```
+kubectl create namespace <your-namespace>
+
+helm repo add weblogic-helm-repository https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+
+helm install <your-release-name> weblogic-helm-repository/weblogic-operator --namespace <your-namespace> --set webhookOnly=true --version <selected-version>
+```
+The first two steps create the namespace and configure Helm with the chart repository.
+
+The final step installs the webhook specifying that the install should be for the webhook only and at a specific version of the product.
+
+To upgrade to a later version of the webhook:
+```
+helm upgrade <your-release-name> weblogic-helm-repository/weblogic-operator --namespace <your-namespace> --version <selected-new-version>
+```
+
 ### Uninstall the conversion webhook
 
 {{% notice warning %}}

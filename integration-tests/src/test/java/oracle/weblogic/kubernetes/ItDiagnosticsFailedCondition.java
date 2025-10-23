@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -29,7 +29,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -48,7 +47,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
@@ -61,6 +59,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
@@ -79,8 +78,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
-import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodPhaseAndPodReady;
@@ -104,7 +105,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests related to Domain status conditions logged by operator.
  * The tests checks for the Failed conditions for multiple usecases.
  */
-@DisplayName("Verify the domain status failed conditions for domain lifecycle")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -134,7 +134,7 @@ class ItDiagnosticsFailedCondition {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
     ns = namespaces;
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
@@ -708,6 +708,7 @@ class ItDiagnosticsFailedCondition {
    * type: Completed, status: false
    */
   @DisabledIfEnvironmentVariable(named = "ARM", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "OCNE", matches = "true")
   @Test
   @DisplayName("Test domain status condition with managed server boot failure.")
   void testMSBootFailureStatus() {
@@ -726,25 +727,22 @@ class ItDiagnosticsFailedCondition {
 
       String rcuaccessSecretName = domainName + "-rcu-access";
       String opsswalletpassSecretName = domainName + "-opss-wallet-password-secret";
+      String rcuSysPassword = "Oradoc_db1";
+      String dbName = domainName + "my-oracle-db";      
 
-      logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
-          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", domainNamespace, dbListenerPort, rcuSchemaPrefix, dbUrl,
-          DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
-      assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-          rcuSchemaPrefix, domainNamespace, getNextFreePort(), dbUrl, dbListenerPort),
-          String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-              + "dbUrl %s, dbListenerPost %s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
+      logger.info("Create Oracle DB in namespace: {0} ", domainNamespace);
+      createBaseRepoSecret(domainNamespace);
+      dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, rcuSysPassword, domainNamespace));
+
+      logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
+          + " dbNamespace: {3}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, domainNamespace);
+      createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, domainNamespace);
 
       // create RCU access secret
       logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
           rcuaccessSecretName, rcuSchemaPrefix, rcuSchemaPassword, dbUrl);
-      assertDoesNotThrow(() -> createRcuAccessSecret(rcuaccessSecretName,
-          domainNamespace,
-          rcuSchemaPrefix,
-          rcuSchemaPassword,
-          dbUrl),
-          String.format("createSecret failed for %s", rcuaccessSecretName));
-
+      createRcuAccessSecret(rcuaccessSecretName, domainNamespace, rcuSchemaPrefix, rcuSchemaPassword, dbUrl);
+      
       logger.info("Create OPSS wallet password secret");
       assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
           opsswalletpassSecretName,
@@ -815,12 +813,7 @@ class ItDiagnosticsFailedCondition {
       }
 
       // delete Oracle database
-      String dbPodName = "oracledb";
-      assertDoesNotThrow(() -> Kubernetes.deleteDeployment(domainNamespace, "oracledb"),
-          "deleting oracle db failed");
-
-      logger.info("Wait for the oracle Db pod: {0} to be deleted in namespace {1}", dbPodName, domainNamespace);
-      PodUtils.checkPodDeleted(dbPodName, null, domainNamespace);
+      deleteOracleDB(domainNamespace, dbName);
 
       patchStr
           = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
@@ -837,18 +830,20 @@ class ItDiagnosticsFailedCondition {
         String managedServerName = managedServerPrefix + i + "-c1";
         logger.info("Checking managed server {0} has been shutdown in namespace {1}",
             managedServerName, domainNamespace);
-        checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, managedServerName, "Running", "False");
+        checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, "Running", "False");
       }
       testPassed = true;
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
-        deleteClusterCustomResource(clusterResName, domainNamespace);
-      }
-      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
-        deleteDomainResource(domainNamespace, domainName);
+      if (!SKIP_CLEANUP) {
+        if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+          deleteClusterCustomResource(clusterResName, domainNamespace);
+        }
+        if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+          deleteDomainResource(domainNamespace, domainName);
+        }
       }
     }
   }
@@ -897,7 +892,7 @@ class ItDiagnosticsFailedCondition {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
+                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 3000L)));
     setPodAntiAffinity(domain);
 
 

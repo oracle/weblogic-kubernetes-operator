@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -38,15 +38,16 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_REMOTECONSOLENGINX_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTPS_NODEPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_HOSTPORT;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -61,11 +62,14 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
@@ -89,12 +93,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * using routes are added to run only on OKD cluster.
 */
 
-@DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
 @DisabledOnSlimImage
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
-@Tag("oke-parallel")
+@Tag("oke-weekly-sequential")
 class ItRemoteConsole {
 
   private static String domainNamespace = null;
@@ -113,7 +116,6 @@ class ItRemoteConsole {
   private static LoggingFacade logger = null;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final int adminServerSecurePort = 7008;
-  private static String adminSvcExtHost = null;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -122,7 +124,7 @@ class ItRemoteConsole {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) throws Exception {
+  static void initAll(@Namespaces(4) List<String> namespaces) throws Exception {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -136,7 +138,7 @@ class ItRemoteConsole {
 
     logger.info("REMOTECONSOLE_DOWNLOAD_URL [{0}]", REMOTECONSOLE_DOWNLOAD_URL);
     logger.info("REMOTECONSOLE_FILE [{0}]", REMOTECONSOLE_FILE);
-    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+    assertTrue(installAndVerifyWlsRemoteConsole(),
         "Remote Console installation failed");
     logger.info("Assign a unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
@@ -170,7 +172,7 @@ class ItRemoteConsole {
     }
 
     // install WebLogic remote console
-    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+    assertTrue(installAndVerifyWlsRemoteConsole(),
         "Remote Console installation failed");
   }
 
@@ -305,9 +307,22 @@ class ItRemoteConsole {
    * Shutdown WLS Remote Console.
    */
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
     if (!SKIP_CLEANUP)  {
       assertTrue(shutdownWlsRemoteConsole(), "Remote Console shutdown failed");
+    }
+    if (traefikHelmParams != null && OKE_CLUSTER) {
+
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstallTraefik returns true")
+          .withFailMessage("uninstallTraefik did not return true")
+          .isTrue();
+    }
+    if (nginxHelmParams != null && OKE_CLUSTER) {
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
     }
   }
 
@@ -381,19 +396,18 @@ class ItRemoteConsole {
     logger.info("nginxServiceName is {0}", nginxServiceName);
 
     if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
-      nginxNodePort = NGINX_INGRESS_HTTP_HOSTPORT;
+      nginxNodePort = IT_REMOTECONSOLENGINX_INGRESS_HTTP_HOSTPORT;
     } else if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
         "Getting Nginx loadbalancer service node port failed");
+    } else if (OCNE && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+      nginxNodePort = IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT;
     }
+
     logger.info("nginxNodePort is {0}", nginxNodePort);
 
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    if (KIND_CLUSTER
-        && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       host = InetAddress.getLocalHost().getHostAddress();
     }
 
@@ -401,7 +415,7 @@ class ItRemoteConsole {
         ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : host + ":" + nginxNodePort;
     logger.info("nginxHostAndPort is {0}", nginxHostAndPort);
 
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + nginxHostAndPort
+    String curlCmd = "curl --noproxy '*' -g --silent --show-error --noproxy '*' http://" + nginxHostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
@@ -409,20 +423,12 @@ class ItRemoteConsole {
   }
   
   private static void installTraefikIngressController() {
-
-    String nodePortValue = null;
-    if (!OKE_CLUSTER) {
-      nodePortValue = "NodePort";
-    }
-
     if (!OKD || (KIND_CLUSTER
-        && WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
-      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0, nodePortValue)
+        && WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT))) {
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0, (OKE_CLUSTER ? null : "NodePort"))
           .getHelmParams();
     }
-
     createTraefikIngressRoutingRules(domainNamespace);
-
   }
 
   private static void installNgnixIngressController() throws UnknownHostException {
@@ -430,11 +436,11 @@ class ItRemoteConsole {
     if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("Installing Ngnix controller using 0 as nodeport");
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    } else if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+    } else if ((KIND_CLUSTER || OCNE) && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       logger.info("Installing Ngnix controller using http_nodeport {0}, https_nodeport {1}",
-          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+          IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT, IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT);
       nginxHelmParams = installAndVerifyNginx(nginxNamespace,
-          NGINX_INGRESS_HTTP_NODEPORT, NGINX_INGRESS_HTTPS_NODEPORT);
+          IT_REMOTECONSOLENGINX_INGRESS_HTTP_NODEPORT, IT_REMOTECONSOLENGINX_INGRESS_HTTPS_NODEPORT);
     }
 
     createNginxIngressPathRoutingRules();
@@ -449,7 +455,7 @@ class ItRemoteConsole {
 
     logger.info("For loadbalancer {0} hostAndPort is {0}", type, hostAndPort);
 
-    String curlCmd = "curl -g -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+    String curlCmd = "curl --noproxy '*' -g -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H "
         + "\"" + "Content-Type:application/json" + "\""
         + " --data "
@@ -463,11 +469,8 @@ class ItRemoteConsole {
   }
 
   private static String getLBhostAndPort(int nodePortOfLB, String type) {
-    String host = K8S_NODEPORT_HOST;
     String hostAndPort = null;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
+    String host = formatIPv6Host(K8S_NODEPORT_HOST);
     String ingressServiceName = null;
     String traefikNamespace = null;
     if (type.equalsIgnoreCase("traefik")) {
@@ -489,14 +492,12 @@ class ItRemoteConsole {
 
   /**
    * Install WebLogic Remote Console.
-   * @param domainNamespace namespace in which the domain will be created
-   * @param adminServerPodName the name of the admin server pod
    *
    * @return true if WebLogic Remote Console is successfully installed, false otherwise.
    */
-  public static boolean installAndVerifyWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
+  public static boolean installAndVerifyWlsRemoteConsole() {
 
-    assertThat(installWlsRemoteConsole(domainNamespace, adminServerPodName))
+    assertThat(installWlsRemoteConsole())
         .as("WebLogic Remote Console installation succeeds")
         .withFailMessage("WebLogic Remote Console installation failed")
         .isTrue();

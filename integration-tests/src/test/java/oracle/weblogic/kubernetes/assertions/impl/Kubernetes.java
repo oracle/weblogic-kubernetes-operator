@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentCondition;
@@ -49,14 +48,11 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Kubernetes {
 
-  private static final String OPERATOR_NAME = "weblogic-operator-";
-
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
 
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
-  private static CustomObjectsApi customObjectsApi = null;
   private static final String RUNNING = "Running";
 
   static {
@@ -64,7 +60,6 @@ public class Kubernetes {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
       apiClient = Configuration.getDefaultApiClient();
       coreV1Api = new CoreV1Api();
-      customObjectsApi = new CustomObjectsApi();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
@@ -462,21 +457,42 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
-    V1PodList v1PodList =
-        coreV1Api.listNamespacedPod(
-            namespace, // namespace in which to look for the pods.
-            Boolean.FALSE.toString(), // // pretty print output.
-            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-            null, // continue to query when there is more results to return.
-            null, // selector to restrict the list of returned objects by their fields
-            labelSelector, // selector to restrict the list of returned objects by their labels.
-            null, // maximum number of responses to return for a list call.
-            null, // shows changes that occur after that particular version of a resource.
-            RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-            SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-            null, // Timeout for the list/watch call.
-            Boolean.FALSE // Watch for changes to the described resources.
-        );
+    V1PodList v1PodList = null;
+    int maxRetries = 3;
+    int retryCount = 0;
+    boolean success = false;
+    while (retryCount < maxRetries && !success) {
+      try {
+        v1PodList
+            = coreV1Api.listNamespacedPod(
+                namespace, // namespace in which to look for the pods.
+                Boolean.FALSE.toString(), // // pretty print output.
+                Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+                null, // continue to query when there is more results to return.
+                null, // selector to restrict the list of returned objects by their fields
+                labelSelector, // selector to restrict the list of returned objects by their labels.
+                null, // maximum number of responses to return for a list call.
+                null, // shows changes that occur after that particular version of a resource.
+                RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+                SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
+                null, // Timeout for the list/watch call.
+                Boolean.FALSE // Watch for changes to the described resources.
+            );
+        success = true;
+      } catch (ApiException ex) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          System.out.println("Max retries reached. Giving up.");
+          throw ex;
+        } else {
+          try {
+            Thread.sleep(1000); // Wait for 1 second
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
+    }
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
         getLogger().info("Name: {0}, Namespace: {1}, Phase: {2}",
@@ -525,7 +541,7 @@ public class Kubernetes {
         logger.info("LoadBalancer Status " + service.getStatus().getLoadBalancer().toString());
         List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
         if (ingress != null) {
-          logger.info("LoadBalancer Ingress " + ingress.toString());
+          logger.info("LoadBalancer Ingress " + ingress);
           V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
               !c.getIp().equals("pending")
           ).findAny().orElse(null);
@@ -557,13 +573,14 @@ public class Kubernetes {
     LoggingFacade logger = getLogger();
     String labelSelector = null;
     if (label != null) {
-      String key = label.keySet().iterator().next().toString();
-      String value = label.get(key).toString();
+      String key = label.keySet().iterator().next();
+      String value = label.get(key);
       labelSelector = String.format("%s in (%s)", key, value);
       logger.info(labelSelector);
     }
-    V1ServiceList v1ServiceList
-        = coreV1Api.listServiceForAllNamespaces(
+    V1ServiceList v1ServiceList = null;
+    try {
+      v1ServiceList = coreV1Api.listServiceForAllNamespaces(
         Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
         null, // continue to query when there is more results to return.
         null, // selector to restrict the list of returned objects by their fields
@@ -575,7 +592,20 @@ public class Kubernetes {
         SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
-    );
+      );
+    } catch (ApiException aex) {
+      logger.info("Failed to check whether service {0} in namespace {1} exists! Caught ApiException!",
+          serviceName, namespace);
+      logger.info("Printing aex.getCode:");
+      aex.getCode();
+      logger.info("Printing aex.getResponseBody:");
+      aex.getResponseBody();
+      logger.info("Printing aex.printStackTrace:");
+      aex.printStackTrace();
+
+      return null;
+    }
+
     for (V1Service service : v1ServiceList.getItems()) {
       if (service.getMetadata().getName().equals(serviceName.trim())
           && service.getMetadata().getNamespace().equals(namespace.trim())) {
@@ -591,6 +621,7 @@ public class Kubernetes {
         return service;
       }
     }
+
     return null;
   }
 
@@ -608,8 +639,8 @@ public class Kubernetes {
     String labelSelector = null;
     LoggingFacade logger = getLogger();
     if (label != null) {
-      String key = label.keySet().iterator().next().toString();
-      String value = label.get(key).toString();
+      String key = label.keySet().iterator().next();
+      String value = label.get(key);
       labelSelector = String.format("%s in (%s)", key, value);
       logger.info(labelSelector);
     }
@@ -678,8 +709,7 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
-    V1PodList v1PodList
-        = coreV1Api.listNamespacedPod(
+    return coreV1Api.listNamespacedPod(
         namespace, // namespace in which to look for the pods.
         Boolean.FALSE.toString(), // pretty print output.
         Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -693,7 +723,6 @@ public class Kubernetes {
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
     );
-    return v1PodList;
   }
 
   /**
@@ -781,8 +810,7 @@ public class Kubernetes {
    * @return V1Job object if found otherwise null
    * @throws ApiException when there is error in querying the cluster
    */
-  public static V1Job getJob(String namespace, String labelSelectors, String jobName)
-      throws ApiException {
+  public static V1Job getJob(String namespace, String labelSelectors, String jobName) {
     V1JobList jobList = listJobs(namespace, labelSelectors);
     if (jobList != null) {
       for (V1Job job : jobList.getItems()) {
@@ -802,10 +830,8 @@ public class Kubernetes {
    * @param labelSelectors labels to narrow the job list
    * @param jobName name of the job to check for its completion status
    * @return true if completed false otherwise
-   * @throws ApiException when querying pod condition fails
    */
-  public static boolean isJobComplete(String namespace, String labelSelectors, String jobName)
-      throws ApiException {
+  public static boolean isJobComplete(String namespace, String labelSelectors, String jobName) {
     boolean completionStatus = false;
     LoggingFacade logger = getLogger();
 

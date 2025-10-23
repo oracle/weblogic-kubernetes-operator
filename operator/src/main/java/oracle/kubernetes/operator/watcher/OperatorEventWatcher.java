@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
@@ -23,14 +23,14 @@ import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_EVENT_LABE
  * This class handles Domain Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
-public class OperatorEventWatcher extends Watcher<CoreV1Event> {
+public class OperatorEventWatcher extends Watcher<EventsV1Event> {
   private final String ns;
 
   private OperatorEventWatcher(
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
-        WatchListener<CoreV1Event> listener,
+        WatchListener<EventsV1Event> listener,
         AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
@@ -51,7 +51,7 @@ public class OperatorEventWatcher extends Watcher<CoreV1Event> {
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
-      WatchListener<CoreV1Event> listener,
+      WatchListener<EventsV1Event> listener,
       AtomicBoolean isStopping) {
     OperatorEventWatcher watcher =
         new OperatorEventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
@@ -60,7 +60,7 @@ public class OperatorEventWatcher extends Watcher<CoreV1Event> {
   }
 
   @Override
-  public Watchable<CoreV1Event> initiateWatch(ListOptions options) throws ApiException {
+  public Watchable<EventsV1Event> initiateWatch(ListOptions options) throws ApiException {
     return RequestBuilder.EVENT.watch(ns, options.labelSelector(OPERATOR_EVENT_LABEL_FILTER));
   }
 
@@ -70,9 +70,9 @@ public class OperatorEventWatcher extends Watcher<CoreV1Event> {
   }
 
   @Override
-  public String getDomainUid(Watch.Response<CoreV1Event> item) {
+  public String getDomainUid(Watch.Response<EventsV1Event> item) {
     return Optional.ofNullable(item.object)
-        .map(CoreV1Event::getMetadata)
+        .map(EventsV1Event::getMetadata)
         .map(V1ObjectMeta::getLabels)
         .map(l -> l.get(LabelConstants.DOMAINUID_LABEL))
         .orElse(null);

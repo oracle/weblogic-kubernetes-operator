@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -49,7 +49,7 @@ class PodHelperTest {
   }
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
@@ -57,7 +57,7 @@ class PodHelperTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -109,42 +109,42 @@ class PodHelperTest {
 
   @Test
   void whenPodPhaseNotRunning_isNotReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Pending")
                 .addConditionsItem(new V1PodCondition()));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(false));
   }
 
   @Test
   void whenPodRunningWithOnlyNonReadyConditions_isNotReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Initialized")));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(false));
   }
 
   @Test
   void whenPodRunningWithOnlyReadyConditionNotTrue_isNotReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Ready")));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(false));
   }
 
   @Test
   void whenPodRunningWithOnlyReadyConditionTrue_isReady() {
-    V1Pod pod = new V1Pod()
+    V1Pod serverPod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
 
-    assertThat(PodHelper.hasReadyStatus(pod), is(true));
+    assertThat(PodHelper.hasReadyStatus(serverPod), is(true));
   }
 
 }

@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Verify WebApp can be accessed via NGINX ingress controller if db is installed.
  */
-@DisplayName("Verify WebApp can be accessed via NGINX ingress controller if db is installed")
 @Tag("oke-gate")
 @Tag("kind-parallel")
 @IntegrationTest
@@ -85,7 +84,6 @@ class ItWebAppAccessWithDBTest {
   private static String domainUid = "dbtestdomain";
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
-  private static int nodeportshttps = 0;
   private static List<String> ingressHostList = null;
   private static String ingressIP = null;
   private static final String TEST_WDT_FILE = "/sample-topology.yaml";
@@ -110,8 +108,7 @@ class ItWebAppAccessWithDBTest {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  static void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger = getLogger();
 
@@ -168,6 +165,8 @@ class ItWebAppAccessWithDBTest {
         String dbService = createMySQLDB("mysql", "root", "root123", domainNamespace, null);
         assertNotNull(dbService, "Failed to create database");
         V1Pod pod = getPod(domainNamespace, null, "mysql");
+        assertNotNull(pod, "pod is null");
+        assertNotNull(pod.getMetadata(), "pod metadata is null");
         createFileInPod(pod.getMetadata().getName(), domainNamespace, "root123");
         runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root123", "/tmp/grant.sql");
         runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root123", "/tmp/create.sql");
@@ -184,7 +183,7 @@ class ItWebAppAccessWithDBTest {
    */
   @Test
   @DisplayName("Test that if db is  started, access to app successful.")
-  void testAccesToWebApp() throws Exception {
+  void testAccesToWebApp() {
 
     wdtImage = createAndVerifyDomainInImage();
     logger.info("Create wdt domain and verify that it's running");
@@ -250,7 +249,7 @@ class ItWebAppAccessWithDBTest {
   }
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // delete mii domain images created for parameterized test
     if (wdtImage != null) {

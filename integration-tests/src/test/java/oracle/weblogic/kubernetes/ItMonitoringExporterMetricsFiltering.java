@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -39,14 +39,21 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_ALERT_HTTP_NODEPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTPS_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -67,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.deleteMonitoringE
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.replaceValueInFile;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -82,10 +90,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Verify WebLogic metrics can be filtered as expected.
  */
-@DisplayName("Verify WebLogic Metric is processed and filtered as expected by MonitoringExporter")
 @IntegrationTest
-@Tag("olcne-mrg")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 @Tag("kind-sequential")
 @Tag("okd-wls-mrg")
 class ItMonitoringExporterMetricsFiltering {
@@ -96,7 +102,6 @@ class ItMonitoringExporterMetricsFiltering {
   private static int nodeportshttp = 0;
   private static String host = null;
   private static String ingressIP = null;
-  private static List<String> ingressHost1List = null;
 
   private static String monitoringNS = null;
   private static String traefikNamespace = null;
@@ -105,7 +110,6 @@ class ItMonitoringExporterMetricsFiltering {
   private static String ingressClassName;
   static PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
-  private static String monitoringExporterEndToEndDir = null;
   private static String monitoringExporterSrcDir = null;
   private static String monitoringExporterAppDir = null;
   // constants for creating domain image using model in image
@@ -121,7 +125,6 @@ class ItMonitoringExporterMetricsFiltering {
   private static int managedServerPort = 8001;
   private static int nodeportPrometheus;
   private static String exporterUrl = null;
-  private static String prometheusDomainRegexValue = null;
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
@@ -130,6 +133,7 @@ class ItMonitoringExporterMetricsFiltering {
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
   private static String hostPortPrometheus = null;
+  private static String servletPath = "com.oracle.wls.exporter";
 
 
   /**
@@ -140,14 +144,12 @@ class ItMonitoringExporterMetricsFiltering {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
-  public void initAll(@Namespaces(4) List<String> namespaces) throws IOException {
+  void initAll(@Namespaces(4) List<String> namespaces) throws IOException {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterMetricsFiltering", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
-    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
     monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -180,8 +182,7 @@ class ItMonitoringExporterMetricsFiltering {
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, modelList,
         STICKYSESS_APP_NAME, SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     host = formatIPv6Host(K8S_NODEPORT_HOST);
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
     }
 
@@ -220,6 +221,13 @@ class ItMonitoringExporterMetricsFiltering {
     }
     assertDoesNotThrow(() -> setupDomainAndMonitoringTools(domain1Namespace, domain1Uid),
         "failed to setup domain and monitoring tools");
+    if (!isVersionAtLeast(MONITORING_EXPORTER_WEBAPP_VERSION, "2.3.0")) {
+      logger.info("Monitoting Exporter Version is less than 2.3.0");
+      servletPath = "com.oracle.wls.exporter.webapp";
+    } else {
+      servletPath = servletPath + ((WEBLOGIC_IMAGE_TAG.contains("14.1")
+          || WEBLOGIC_IMAGE_TAG.contains("12.")) ? ".javax" : ".jakarta");
+    }
   }
 
   /**
@@ -246,11 +254,19 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIIncludedKeysFromSubLevel() throws Exception {
     logger.info("Testing filtering only included specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    // Regular expression pattern to match servletName="ANYTHING.ExporterServlet"
+    String checkKey1 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkIncluded.add(checkKey1);
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    // Regular expression pattern to match servletName="ANYTHING.ExporterServlet"
+    String checkKey2 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkExcluded.add(checkKey2);
 
-    replaceConfigurationWithFilter(RESOURCE_DIR + "/exporter/rest_filter_included_servlet_name.yaml",
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIIncludedKeysFromSubLevel",
+        "rest_filter_included_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
         checkIncluded, checkExcluded);
   }
 
@@ -263,13 +279,19 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIIncludedKeysFromBothLevels() throws Exception {
     logger.info("Testing filtering only included specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    String checkKey1 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkIncluded.add(checkKey1);
     checkIncluded.add("app=\"wls-exporter\"");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    String checkKey2 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkExcluded.add(checkKey2);
     checkExcluded.add("app=\"myear1\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIIncludedKeysFromBothLevels",
+        "rest_filter_included_webapp_and_servlet_names.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
   }
 
   /**
@@ -296,11 +318,16 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterExcludedKeysFromSubLevel() throws Exception {
     logger.info("Testing filtering only excluded specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    String checkKey1 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkIncluded.add(checkKey1);
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
-
-    replaceConfigurationWithFilter(RESOURCE_DIR + "/exporter/rest_filter_excluded_servlet_name.yaml",
+    String checkKey2 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkExcluded.add(checkKey2);
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterExcludedKeysFromSubLevel",
+        "rest_filter_excluded_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
         checkIncluded, checkExcluded);
   }
 
@@ -313,13 +340,19 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterExcludedKeysFromBothLevels() throws Exception {
     logger.info("Testing filtering only excluded specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    String checkKey1 = "servletName=\"" + servletPath + ".ExporterServlet\"";
+    checkIncluded.add(checkKey1);
     checkIncluded.add("app=\"myear1\"");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
+    String checkKey2 = "servletName=\"" + servletPath + ".MainServlet\"";
+    checkExcluded.add(checkKey2);
     checkExcluded.add("app=\"myear123\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_excluded_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterExcludedKeysFromBothLevels",
+        "rest_filter_excluded_webapp_and_servlet_names.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
   }
 
   /**
@@ -333,9 +366,13 @@ class ItMonitoringExporterMetricsFiltering {
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("app=\"wls-exporter\"");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_webapp_excluded_servlet_name.yaml",checkIncluded, checkExcluded);
+    checkExcluded.add("servletName=\"" + servletPath + ".ExporterServlet\"");
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIncludedTopExcludedKeysSubLevels",
+        "rest_filter_included_webapp_excluded_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
   }
 
   /**
@@ -365,17 +402,21 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIncludedExcludedKeysComboSubLevel() throws Exception {
     logger.info("Testing filtering included and excluded specific app names in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp");
+    checkIncluded.add("servletName=\"" + servletPath);
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
-    replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_excluded_servlet_name.yaml",checkIncluded, checkExcluded);
+    checkExcluded.add("servletName=\"" + servletPath + ".ExporterServlet\"");
+    String configurationFile = replaceValueInFile(
+        "ItMonitoringExporterMetricsFiltering/testFilterIncludedExcludedKeysComboSubLevel",
+        "rest_filter_included_excluded_servlet_name.yaml",
+        "com.oracle.wls.exporter.webapp", servletPath);
+    replaceConfigurationWithFilter(configurationFile,
+        checkIncluded, checkExcluded);
   }
 
   /**
-   * Check filtering functionality of monitoring exporter for
-   * not existed includedKeyValues .
-   */
+     * Check filtering functionality of monitoring exporter for
+     * not existed includedKeyValues .
+  */
   @Test
   @DisplayName("Test Filtering of the Metrics with includedKeyValues for not existed key of Monitoring Exporter on "
       + " top level.")
@@ -484,7 +525,6 @@ class ItMonitoringExporterMetricsFiltering {
 
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    String adminServerPodName = domainUid + "-admin-server";
     String clusterService = domainUid + "-cluster-cluster-1";
 
     // Need to expose the admin server external service to access the console in OKD cluster only
@@ -521,19 +561,26 @@ class ItMonitoringExporterMetricsFiltering {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
-      String promHelmValuesFileDir = Paths.get(RESULTS_ROOT,this.getClass().getSimpleName(),
+      String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
           "prometheus" + releaseSuffix).toString();
-      promHelmParams = installAndVerifyPrometheus(releaseSuffix,
-          monitoringNS,
-          promChartVersion,
-          prometheusRegexValue, promHelmValuesFileDir);
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir, null,
+            IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_NODEPORT, IT_MONITORINGEXPORTERMF_ALERT_HTTP_NODEPORT);
+      } else {
+        promHelmParams = installAndVerifyPrometheus(releaseSuffix,
+            monitoringNS,
+            promChartVersion,
+            prometheusRegexValue, promHelmValuesFileDir);
+      }
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       String host = formatIPv6Host(K8S_NODEPORT_HOST);
-      if (TestConstants.KIND_CLUSTER
-          && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+      if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
         host = formatIPv6Host(InetAddress.getLocalHost().getHostAddress());
-        nodeportPrometheus = IT_MONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
+        nodeportPrometheus = IT_MONITORINGEXPORTERMF_PROMETHEUS_HTTP_HOSTPORT;
       }
       hostPortPrometheus = host + ":" + nodeportPrometheus;
 
@@ -564,7 +611,7 @@ class ItMonitoringExporterMetricsFiltering {
 
 
   @AfterAll
-  public void tearDownAll() {
+  void tearDownAll() {
 
     // uninstall Traefik release
 
@@ -671,11 +718,6 @@ class ItMonitoringExporterMetricsFiltering {
     webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
   }
 
-  private static void setCredentials(WebClient webClient, String username, String password) {
-    String base64encodedUsernameAndPassword = base64Encode(username + ":" + password);
-    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
-  }
-
   private static String base64Encode(String stringToEncode) {
     Base64.Encoder enc = Base64.getEncoder();
     return enc.encodeToString(stringToEncode.getBytes());
@@ -718,9 +760,11 @@ class ItMonitoringExporterMetricsFiltering {
   }
 
   private static void verifyMetrics(List<String> checkIncluded, List<String> checkExcluded) {
+    boolean isRegexInc = false;
+    boolean isRegexExc = false;
     for (String includedString : checkIncluded) {
       assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
-              includedString,
+              includedString, isRegexInc,
               domain1Uid,
               domain1Namespace,
               false, cluster1Name),
@@ -728,7 +772,7 @@ class ItMonitoringExporterMetricsFiltering {
     }
     for (String excludedString : checkExcluded) {
       assertFalse(verifyMonExpAppAccess("wls-exporter/metrics",
-              excludedString,
+              excludedString, isRegexExc,
               domain1Uid,
               domain1Namespace,
               false, cluster1Name),
@@ -753,7 +797,7 @@ class ItMonitoringExporterMetricsFiltering {
   private static void installTraefikIngressController() throws IOException {
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
-    if (TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
       traefikHelmParams = traefikParams.getHelmParams();
       ingressClassName = traefikParams.getIngressClassName();
@@ -763,14 +807,30 @@ class ItMonitoringExporterMetricsFiltering {
   }
 
   private int getTraefikLbNodePort(boolean isHttps) {
-    if (TestConstants.KIND_CLUSTER
-        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
+    if (KIND_CLUSTER && !WLSIMG_BUILDER.equals(WLSIMG_BUILDER_DEFAULT)) {
       return isHttps ? TRAEFIK_INGRESS_HTTPS_HOSTPORT : TRAEFIK_INGRESS_HTTP_HOSTPORT;
     }
     logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
     return assertDoesNotThrow(()
         -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
+  }
+
+  private static boolean isVersionAtLeast(String version, String minVersion) {
+    String[] versionParts = version.split("\\.");
+    String[] minVersionParts = minVersion.split("\\.");
+
+    for (int i = 0; i < 3; i++) {
+      int verPart = Integer.parseInt(versionParts[i]); // Convert to integer
+      int minVPart = Integer.parseInt(minVersionParts[i]);
+
+      if (verPart > minVPart) {
+        return true;
+      } else if (verPart < minVPart) {
+        return false;
+      }
+    }
+    return true; // Versions are equal
   }
 }
 

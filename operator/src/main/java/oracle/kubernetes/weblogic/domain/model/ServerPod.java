@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -109,6 +109,15 @@ class ServerPod extends KubernetesResource {
   private V1Probe readinessProbe = null;
 
   /**
+   * Defines the settings for a startup probe.
+   *
+   * @since 4.2.4
+   */
+  @Description("Settings for the startup probe associated with a WebLogic Server instance."
+      + " If not specified, the operator will not create a default startup probe.")
+  private V1Probe startupProbe = null;
+
+  /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
    * indicated key-value pairs as labels.
    *
@@ -171,6 +180,10 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.serviceAccountName`.")
   private String serviceAccountName = null;
 
+  @Description("Indicates whether a service account token should be automatically mounted on the pod. "
+      + "Defaults to true if not set. See `kubectl explain pods.spec.automountServiceAccountToken`.")
+  private Boolean automountServiceAccountToken = null;
+
   @Description("HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file "
       + "if specified. This is only valid for non-hostNetwork pods.")
   private List<V1HostAlias> hostAliases = new ArrayList<>();
@@ -193,10 +206,10 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. "
-      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "If no value is specified for this field, the operator will use default "
       + "content for the pod-level `securityContext`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
-  private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+  private V1PodSecurityContext podSecurityContext = null;
 
   /**
    * InitContainers holds a list of initialization containers that should be run before starting the
@@ -233,10 +246,10 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Container-level security attributes. Will override any matching Pod-level attributes. "
       + "See `kubectl explain pods.spec.containers.securityContext`. "
-      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "If no value is specified for this field, the operator will use default "
       + "content for container-level `securityContext`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
-  private V1SecurityContext containerSecurityContext = new V1SecurityContext();
+  private V1SecurityContext containerSecurityContext = null;
 
   public List<V1Volume> getVolumes() {
     return volumes;
@@ -329,57 +342,97 @@ class ServerPod extends KubernetesResource {
   }
 
   @SuppressWarnings("Duplicates")
-  private void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getFsGroup() == null) {
-      to.fsGroup(from.getFsGroup());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
-    }
-    if (to.getSupplementalGroups() == null) {
-      to.supplementalGroups(from.getSupplementalGroups());
-    }
-    if (to.getSysctls() == null) {
-      to.sysctls(from.getSysctls());
+  private void copyValues(V1PodSecurityContext from) {
+    if (from != null) {
+      if (podSecurityContext == null) {
+        podSecurityContext = new V1PodSecurityContext();
+      }
+      if (podSecurityContext.getRunAsNonRoot() == null) {
+        podSecurityContext.runAsNonRoot(from.getRunAsNonRoot());
+      }
+      if (podSecurityContext.getFsGroup() == null) {
+        podSecurityContext.fsGroup(from.getFsGroup());
+      }
+      if (podSecurityContext.getRunAsGroup() == null) {
+        podSecurityContext.runAsGroup(from.getRunAsGroup());
+      }
+      if (podSecurityContext.getRunAsUser() == null) {
+        podSecurityContext.runAsUser(from.getRunAsUser());
+      }
+      if (podSecurityContext.getSeLinuxOptions() == null) {
+        podSecurityContext.seLinuxOptions(from.getSeLinuxOptions());
+      }
+      if (podSecurityContext.getSeLinuxChangePolicy() == null) {
+        podSecurityContext.seLinuxChangePolicy(from.getSeLinuxChangePolicy());
+      }
+      if (podSecurityContext.getSupplementalGroups() == null) {
+        podSecurityContext.supplementalGroups(from.getSupplementalGroups());
+      }
+      if (podSecurityContext.getSupplementalGroupsPolicy() == null) {
+        podSecurityContext.supplementalGroupsPolicy(from.getSupplementalGroupsPolicy());
+      }
+      if (podSecurityContext.getSysctls() == null) {
+        podSecurityContext.sysctls(from.getSysctls());
+      }
+      if (podSecurityContext.getFsGroupChangePolicy() == null) {
+        podSecurityContext.fsGroupChangePolicy(from.getFsGroupChangePolicy());
+      }
+      if (podSecurityContext.getSeccompProfile() == null) {
+        podSecurityContext.seccompProfile(from.getSeccompProfile());
+      }
+      if (podSecurityContext.getWindowsOptions() == null) {
+        podSecurityContext.windowsOptions(from.getWindowsOptions());
+      }
+      if (podSecurityContext.getAppArmorProfile() == null) {
+        podSecurityContext.appArmorProfile(from.getAppArmorProfile());
+      }
     }
   }
 
   @SuppressWarnings("Duplicates")
-  private void copyValues(V1SecurityContext to, V1SecurityContext from) {
-    if (to.getAllowPrivilegeEscalation() == null) {
-      to.allowPrivilegeEscalation(from.getAllowPrivilegeEscalation());
-    }
-    if (to.getPrivileged() == null) {
-      to.privileged(from.getPrivileged());
-    }
-    if (to.getReadOnlyRootFilesystem() == null) {
-      to.readOnlyRootFilesystem(from.getReadOnlyRootFilesystem());
-    }
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getCapabilities() == null) {
-      to.setCapabilities(from.getCapabilities());
-    } else {
-      copyValues(to.getCapabilities(), from.getCapabilities());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
+  private void copyValues(V1SecurityContext from) {
+    if (from != null) {
+      if (containerSecurityContext == null) {
+        containerSecurityContext = new V1SecurityContext();
+      }
+      if (containerSecurityContext.getAllowPrivilegeEscalation() == null) {
+        containerSecurityContext.allowPrivilegeEscalation(from.getAllowPrivilegeEscalation());
+      }
+      if (containerSecurityContext.getPrivileged() == null) {
+        containerSecurityContext.privileged(from.getPrivileged());
+      }
+      if (containerSecurityContext.getReadOnlyRootFilesystem() == null) {
+        containerSecurityContext.readOnlyRootFilesystem(from.getReadOnlyRootFilesystem());
+      }
+      if (containerSecurityContext.getRunAsNonRoot() == null) {
+        containerSecurityContext.runAsNonRoot(from.getRunAsNonRoot());
+      }
+      if (containerSecurityContext.getCapabilities() == null) {
+        containerSecurityContext.setCapabilities(from.getCapabilities());
+      } else {
+        copyValues(containerSecurityContext.getCapabilities(), from.getCapabilities());
+      }
+      if (containerSecurityContext.getRunAsGroup() == null) {
+        containerSecurityContext.runAsGroup(from.getRunAsGroup());
+      }
+      if (containerSecurityContext.getRunAsUser() == null) {
+        containerSecurityContext.runAsUser(from.getRunAsUser());
+      }
+      if (containerSecurityContext.getSeLinuxOptions() == null) {
+        containerSecurityContext.seLinuxOptions(from.getSeLinuxOptions());
+      }
+      if (containerSecurityContext.getAppArmorProfile() == null) {
+        containerSecurityContext.appArmorProfile(from.getAppArmorProfile());
+      }
+      if (containerSecurityContext.getProcMount() == null) {
+        containerSecurityContext.procMount(from.getProcMount());
+      }
+      if (containerSecurityContext.getSeccompProfile() == null) {
+        containerSecurityContext.seccompProfile(from.getSeccompProfile());
+      }
+      if (containerSecurityContext.getWindowsOptions() == null) {
+        containerSecurityContext.windowsOptions(from.getWindowsOptions());
+      }
     }
   }
 
@@ -411,7 +464,7 @@ class ServerPod extends KubernetesResource {
         .skipWaitingCohEndangeredState(skipWaitingCohEndangeredState);
   }
 
-  V1Probe getReadinessProbeTuning() {
+  V1Probe getReadinessProbe() {
     return this.readinessProbe;
   }
 
@@ -433,7 +486,7 @@ class ServerPod extends KubernetesResource {
         .httpGet(new V1HTTPGetAction().path(httpGetActionPath));
   }
 
-  V1Probe getLivenessProbeTuning() {
+  V1Probe getLivenessProbe() {
     return this.livenessProbe;
   }
 
@@ -448,6 +501,10 @@ class ServerPod extends KubernetesResource {
     livenessProbe = Optional.ofNullable(livenessProbe).orElse(new V1Probe())
         .successThreshold(successThreshold)
         .failureThreshold(failureThreshold);
+  }
+
+  V1Probe getStartupProbe() {
+    return startupProbe;
   }
 
   public Long getMaxReadyWaitTimeSeconds() {
@@ -486,6 +543,11 @@ class ServerPod extends KubernetesResource {
     } else {
       copyValues(readinessProbe, serverPod1.readinessProbe);
     }
+    if (startupProbe == null) {
+      startupProbe = serverPod1.startupProbe;
+    } else {
+      copyValues(startupProbe, serverPod1.startupProbe);
+    }
     shutdown.copyValues(serverPod1.shutdown);
     for (V1Volume volume : serverPod1.getAdditionalVolumes()) {
       addIfMissing(new V1VolumeBuilder(volume).build());
@@ -502,8 +564,8 @@ class ServerPod extends KubernetesResource {
     fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
     copyValues(resources, serverPod1.resources);
-    copyValues(podSecurityContext, serverPod1.podSecurityContext);
-    copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
+    copyValues(serverPod1.podSecurityContext);
+    copyValues(serverPod1.containerSecurityContext);
     if (maxReadyWaitTimeSeconds == null) {
       maxReadyWaitTimeSeconds = serverPod1.maxReadyWaitTimeSeconds;
     }
@@ -529,6 +591,9 @@ class ServerPod extends KubernetesResource {
     }
     if (serviceAccountName == null) {
       serviceAccountName = serverPod1.serviceAccountName;
+    }
+    if (automountServiceAccountToken == null) {
+      automountServiceAccountToken = serverPod1.automountServiceAccountToken;
     }
     if (schedulerName == null) {
       schedulerName = serverPod1.schedulerName;
@@ -823,6 +888,14 @@ class ServerPod extends KubernetesResource {
     this.serviceAccountName = serviceAccountName;
   }
 
+  Boolean getAutomountServiceAccountToken() {
+    return automountServiceAccountToken;
+  }
+
+  void setAutomountServiceAccountToken(Boolean automountServiceAccountToken) {
+    this.automountServiceAccountToken = automountServiceAccountToken;
+  }
+
   List<V1Toleration> getTolerations() {
     return tolerations;
   }
@@ -855,6 +928,7 @@ class ServerPod extends KubernetesResource {
         .append("envFrom", envFrom)
         .append("livenessProbe", livenessProbe)
         .append("readinessProbe", readinessProbe)
+        .append("startupProbe", startupProbe)
         .append("additionalVolumes", volumes)
         .append("additionalVolumeMounts", volumeMounts)
         .append("nodeSelector", nodeSelector)
@@ -875,6 +949,7 @@ class ServerPod extends KubernetesResource {
         .append("tolerations", tolerations)
         .append("hostAliases", hostAliases)
         .append("serviceAccountName", serviceAccountName)
+        .append("automountServiceAccountToken", automountServiceAccountToken)
         .toString();
   }
 
@@ -898,6 +973,7 @@ class ServerPod extends KubernetesResource {
         .append(envFrom, that.envFrom)
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
+        .append(startupProbe, that.startupProbe)
         .append(
             DomainResource.sortList(volumes, VOLUME_COMPARATOR),
             DomainResource.sortList(that.volumes, VOLUME_COMPARATOR))
@@ -922,6 +998,7 @@ class ServerPod extends KubernetesResource {
         .append(tolerations, that.tolerations)
         .append(hostAliases, that.hostAliases)
         .append(serviceAccountName, that.serviceAccountName)
+        .append(automountServiceAccountToken, that.automountServiceAccountToken)
         .isEquals();
   }
 
@@ -933,6 +1010,7 @@ class ServerPod extends KubernetesResource {
         .append(envFrom)
         .append(livenessProbe)
         .append(readinessProbe)
+        .append(startupProbe)
         .append(DomainResource.sortList(volumes, VOLUME_COMPARATOR))
         .append(DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector)
@@ -953,6 +1031,7 @@ class ServerPod extends KubernetesResource {
         .append(tolerations)
         .append(hostAliases)
         .append(serviceAccountName)
+        .append(automountServiceAccountToken)
         .toHashCode();
   }
 }

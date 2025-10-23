@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -83,7 +83,7 @@ class PersistentVolumeHelperTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(
         consoleHandlerMemento =
             TestUtils.silenceOperatorLogger()
@@ -119,7 +119,7 @@ class PersistentVolumeHelperTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
     testSupport.throwOnCompletionFailure();
   }
@@ -178,7 +178,7 @@ class PersistentVolumeHelperTest {
     runPersistentVolumeHelper();
 
     assertThat(
-            getPersistentVolumeResource(domainPresenceInfo),
+            getPersistentVolumeResource(),
             is(persistentVolumeWithName("Test")));
   }
 
@@ -193,7 +193,7 @@ class PersistentVolumeHelperTest {
     runPersistentVolumeHelper();
 
     assertThat(
-            getPersistentVolumeResource(domainPresenceInfo),
+            getPersistentVolumeResource(),
             is(persistentVolumeWithName("Test")));
   }
 
@@ -209,7 +209,7 @@ class PersistentVolumeHelperTest {
     runPersistentVolumeHelper();
 
     assertThat(
-            getPersistentVolumeResource(domainPresenceInfo),
+            getPersistentVolumeResource(),
             is(persistentVolumeWithName("Test")));
   }
 
@@ -271,7 +271,7 @@ class PersistentVolumeHelperTest {
     return PersistentVolumeHelper.createPersistentVolumeStep(next);
   }
 
-  public V1PersistentVolume getPersistentVolumeResource(DomainPresenceInfo info) {
+  public V1PersistentVolume getPersistentVolumeResource() {
     return testSupport.getResourceWithName(PV, "Test");
   }
 
@@ -280,7 +280,7 @@ class PersistentVolumeHelperTest {
   }
 
   private DomainResource getDomain() {
-    return (DomainResource) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
+    return (DomainResource) testSupport.getResources(KubernetesTestSupport.DOMAIN).getFirst();
   }
 
   @Test

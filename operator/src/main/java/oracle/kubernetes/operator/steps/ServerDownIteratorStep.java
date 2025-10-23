@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -151,9 +151,9 @@ public class ServerDownIteratorStep extends Step {
       public Result apply(Packet packet) {
         if (info.getServerPod(ssi.getServerName()) != null) {
           // requeue to wait for pod to be deleted
-          return doRequeue(packet);
+          return doRequeue();
         }
-        return doEnd(packet);
+        return doEnd();
       }
     }
   }

@@ -17,7 +17,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
  * proposed new cluster resource and returns a result to indicate if the proposed resource is allowed, and if not,
  * what the problem is.
  * Currently, it always accepts a new cluster resource.
- * </p>
  */
 
 public class ClusterCreateAdmissionChecker extends AdmissionChecker {

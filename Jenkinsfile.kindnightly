@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
@@ -93,6 +93,10 @@ pipeline {
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
+        string(name: 'OPERATOR_LOG_LEVEL',
+               description: 'The default log level is not set',
+               defaultValue: ''
+        )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
@@ -126,13 +130,14 @@ pipeline {
         choice(name: 'ISTIO_VERSION',
                description: 'Istio version',
                choices: [
+                   '1.27.2',
+                   '1.27.0',
+                   '1.23.0',
                    '1.17.2',
                    '1.16.1',
                    '1.13.2',
                    '1.12.6',
-                   '1.11.1',
-                   '1.10.4',
-                   '1.9.9'
+                   '1.11.1'
                ]
         )
         booleanParam(name: 'PARALLEL_RUN',
@@ -189,7 +194,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.1.2'
+               defaultValue: '2.3.0'
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
@@ -507,6 +512,7 @@ EOF
                                 echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
 				echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
 
 
                                 echo "${WORKSPACE}/.mvn/maven.config contents:"

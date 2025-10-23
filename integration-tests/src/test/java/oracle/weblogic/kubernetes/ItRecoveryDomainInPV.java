@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.JakartaRefactorUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -47,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -75,7 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The test verifies the persistent WebLogic data survives server pod restarts in Domain on PV model.
  */
-@DisplayName("Verify istio enabled WebLogic domain in domainhome-on-pv model")
 @IntegrationTest
 @Tag("olcne-mrg")
 @Tag("kind-parallel")
@@ -100,7 +102,7 @@ class ItRecoveryDomainInPV  {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
@@ -135,7 +137,7 @@ class ItRecoveryDomainInPV  {
    */
   @Test
   @DisplayName("verifies persistent WebLogic data survives the server pod scaling")
-  void testRecoveryDomainHomeInPv() {
+  void testRecoveryDomainHomeInPv() throws IOException {
 
     final String managedServerNameBase = "managed-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
@@ -255,9 +257,12 @@ class ItRecoveryDomainInPV  {
 
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
+    Path srcFile = Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java");
+    Path destFile = Paths.get(WORK_DIR, ItRecoveryDomainInPV.class.getName(), "jms", "JmsSendReceiveClient.java");
+    JakartaRefactorUtil.copyAndRefactorDirectory(srcFile.getParent(), destFile.getParent());
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
-        Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
+        destFile,
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
 
@@ -360,7 +365,7 @@ class ItRecoveryDomainInPV  {
             .redirect(true);
     if (Command.withParams(params).execute()
         && params.stdout() != null
-        && params.stdout().length() != 0) {
+        && !params.stdout().isEmpty()) {
       String uid = params.stdout();
       logger.info("{0}, got uid {1} for pod {2} in the namespace {3}", verbose, uid, podName, nameSpace);
       return true;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -20,8 +20,8 @@ import io.kubernetes.client.common.KubernetesType;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -88,7 +88,7 @@ class KubernetesTestSupportTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
@@ -96,7 +96,7 @@ class KubernetesTestSupportTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -513,17 +513,17 @@ class KubernetesTestSupportTest {
 
   @Test
   void listEventWithSelector_returnsMatches() {
-    CoreV1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
-    CoreV1Event s2 = createEvent("ns1", "event2", "walk");
-    CoreV1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
-    CoreV1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
-    CoreV1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
-    CoreV1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
+    EventsV1Event s1 = createEvent("ns1", "event1", "walk").regarding(kind("bird"));
+    EventsV1Event s2 = createEvent("ns1", "event2", "walk");
+    EventsV1Event s3 = createEvent("ns1", "event3", "walk").regarding(kind("bird"));
+    EventsV1Event s4 = createEvent("ns1", "event4", "run").regarding(kind("frog"));
+    EventsV1Event s5 = createEvent("ns1", "event5", "run").regarding(kind("bird"));
+    EventsV1Event s6 = createEvent("ns2", "event3", "walk").regarding(kind("bird"));
     testSupport.defineResources(s1, s2, s3, s4, s5, s6);
 
-    TestResponseStep<CoreV1EventList> responseStep = new TestResponseStep<>();
+    TestResponseStep<EventsV1EventList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(RequestBuilder.EVENT.list("ns1",
-        new ListOptions().fieldSelector("action=walk,involvedObject.kind=bird"), responseStep));
+        new ListOptions().fieldSelector("action=walk,regarding.kind=bird"), responseStep));
 
     assertThat(responseStep.callResponse.getObject().getItems(), containsInAnyOrder(s1, s3));
   }
@@ -532,8 +532,8 @@ class KubernetesTestSupportTest {
     return new V1ObjectReference().kind(kind);
   }
 
-  private CoreV1Event createEvent(String namespace, String name, String act) {
-    return new CoreV1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
+  private EventsV1Event createEvent(String namespace, String name, String act) {
+    return new EventsV1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
   }
 
   @Test
@@ -589,18 +589,6 @@ class KubernetesTestSupportTest {
     assertThat(getResourcesInNamespace("ns2"), hasSize(3));
   }
 
-  private void definePodResource() {
-    V1Pod pod = createPod("ns", "pod");
-    testSupport.defineResources(pod);
-  }
-
-  private OffsetDateTime getPodCreationTime() {
-    return Optional.ofNullable(testSupport.<V1Pod>getResources(POD).get(0))
-          .map(V1Pod::getMetadata)
-          .map(V1ObjectMeta::getCreationTimestamp)
-          .orElse(OffsetDateTime.MIN);
-  }
-
   private List<KubernetesObject> getResourcesInNamespace(String name) {
     List<KubernetesObject> result = new ArrayList<>();
     result.addAll(getResourcesInNamespace(DOMAIN, name));
@@ -612,7 +600,7 @@ class KubernetesTestSupportTest {
   private List<KubernetesObject> getResourcesInNamespace(String resourceType, String name) {
     return testSupport.<KubernetesObject>getResources(resourceType).stream()
           .filter(n -> name.equals(getNamespace(n)))
-          .collect(Collectors.toList());
+          .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private String getNamespace(KubernetesObject object) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -60,7 +60,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(execFactory.install());
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "stepFactory", stepFactory));
@@ -85,7 +85,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();

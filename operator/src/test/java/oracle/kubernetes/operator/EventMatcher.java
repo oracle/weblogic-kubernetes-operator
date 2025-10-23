@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventSeries;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -22,7 +24,7 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
 
   @Nonnull
   private final String expectedReason;
-  private List<String> expectedMessageStrings = Collections.emptyList();
+  private List<String> expectedNoteStrings = Collections.emptyList();
   private String expectedNamespace;
   private Integer expectedCount;
 
@@ -34,8 +36,8 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
     return new EventMatcher(expectedReason);
   }
 
-  public EventMatcher withMessageContaining(String... messageStrings) {
-    expectedMessageStrings = Arrays.asList(messageStrings);
+  public EventMatcher withNoteContaining(String... noteStrings) {
+    expectedNoteStrings = Arrays.asList(noteStrings);
     return this;
   }
 
@@ -62,39 +64,44 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
     }
   }
 
-  private List<CoreV1Event> getEvents(KubernetesTestSupport testSupport) {
+  private List<EventsV1Event> getEvents(KubernetesTestSupport testSupport) {
     return testSupport.getResources(EVENT);
   }
 
-  private String toEventString(CoreV1Event event) {
+  private String toEventString(EventsV1Event event) {
     List<String> descriptions = new ArrayList<>();
     descriptions.add("reason \"" + event.getReason() + '"');
     if (expectedNamespace != null) {
       descriptions.add("namespace \"" + event.getMetadata().getNamespace() + '"');
     }
-    if (!expectedMessageStrings.isEmpty()) {
-      descriptions.add("message '" + event.getMessage() + "'");
+    if (!expectedNoteStrings.isEmpty()) {
+      descriptions.add("note '" + event.getNote() + "'");
     }
     if (expectedCount != null) {
-      descriptions.add("count <" + event.getCount() + '>');
+      descriptions.add("count <" + getCount(event) + '>');
     }
     return "with " + joinListGrammatically(descriptions);
   }
 
-  private boolean matches(CoreV1Event event) {
+  private int getCount(EventsV1Event event) {
+    return Optional.ofNullable(event).map(EventsV1Event::getSeries).map(EventsV1EventSeries::getCount).orElse(1);
+  }
+
+  private boolean matches(EventsV1Event event) {
     if (!expectedReason.equals(event.getReason())) {
       return false;
     } else if (expectedNamespace != null && !expectedNamespace.equals(event.getMetadata().getNamespace())) {
       return false;
-    } else if (expectedCount != null && !expectedCount.equals(event.getCount())) {
+    } else if (expectedCount != null && !expectedCount.equals(getCount(event))) {
       return false;
     } else {
-      return getMissingMessageStrings(event.getMessage()).isEmpty();
+      return getMissingNoteStrings(event.getNote()).isEmpty();
     }
   }
 
-  private List<String> getMissingMessageStrings(String message) {
-    return expectedMessageStrings.stream().filter(s -> !message.contains(s)).collect(Collectors.toList());
+  private List<String> getMissingNoteStrings(String note) {
+    return expectedNoteStrings.stream().filter(s -> !note.contains(s))
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @Override
@@ -106,8 +113,8 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
     if (expectedCount != null) {
       description.appendText(" with count ").appendValue(expectedCount);
     }
-    if (!expectedMessageStrings.isEmpty()) {
-      description.appendValueList(" and a message containing ", ", ", ".", expectedMessageStrings);
+    if (!expectedNoteStrings.isEmpty()) {
+      description.appendValueList(" and a note containing ", ", ", ".", expectedNoteStrings);
     }
   }
 }

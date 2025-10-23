@@ -1,15 +1,17 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.Random;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventSeries;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
@@ -89,6 +91,8 @@ import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT
 import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.calls.ResponseStep.isForbidden;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -101,6 +105,8 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookPodUI
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  private static final Random random = new Random();
 
   /**
    * Factory for {@link Step} that asynchronously create an event.
@@ -174,7 +180,7 @@ public class EventHelper {
       eventData.additionalMessage(getAdditionalMessage(eventData, info));
     }
 
-    private static CoreV1Event createEventModel(
+    private static EventsV1Event createEventModel(
         Packet packet,
         EventData eventData) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
@@ -182,16 +188,16 @@ public class EventHelper {
       eventData.domainPresenceInfo(info);
       addAdditionalMessage(eventData, info);
 
-      return new CoreV1Event()
+      return new EventsV1Event()
           .metadata(createMetadata(eventData))
-          .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+          .reportingController(WEBLOGIC_OPERATOR_COMPONENT)
           .reportingInstance(getOperatorPodName())
-          .lastTimestamp(eventItem.getCurrentTimestamp())
+          .eventTime(eventItem.getCurrentTimestamp())
           .type(eventItem.getType())
+          .action(eventItem.getReason()) // use reason for action and reason
           .reason(eventItem.getReason())
-          .message(eventItem.getMessage(eventData))
-          .involvedObject(eventItem.createInvolvedObject(eventData))
-          .count(1);
+          .note(eventItem.getNote(eventData))
+          .regarding(eventItem.createRegarding(eventData));
     }
 
     @Override
@@ -199,37 +205,42 @@ public class EventHelper {
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 
-    private Step createEventAPICall(CoreV1Event event) {
-      CoreV1Event existingEvent = getExistingEvent(event);
+    private Step createEventAPICall(EventsV1Event event) {
+      EventsV1Event existingEvent = getExistingEvent(event);
       return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
     }
 
-    private Step createCreateEventCall(CoreV1Event event) {
+    private Step createCreateEventCall(EventsV1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
-      event.firstTimestamp(event.getLastTimestamp());
       return RequestBuilder.EVENT.create(event, new CreateEventResponseStep(getNext()));
     }
 
-    private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
+    private Step createReplaceEventCall(EventsV1Event event, @NotNull EventsV1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
-      existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
-      existingEvent.lastTimestamp(event.getLastTimestamp());
+      existingEvent.series(new EventsV1EventSeries()
+          .lastObservedTime(event.getEventTime())
+          .count(Optional.ofNullable(existingEvent.getSeries()).map(EventsV1EventSeries::getCount).orElse(1) + 1));
+      // Short circuit domain incomplete unavailable events
+      if (existingEvent.getSeries().getCount() > 5 && (DOMAIN_INCOMPLETE == eventData.eventItem
+          || DOMAIN_UNAVAILABLE == eventData.eventItem)) {
+        return getNext();
+      }
       return RequestBuilder.EVENT.update(existingEvent,
           new ReplaceEventResponseStep(this, existingEvent, getNext()));
     }
 
-    private CoreV1Event getExistingEvent(CoreV1Event event) {
+    private EventsV1Event getExistingEvent(EventsV1Event event) {
       return Optional.ofNullable(getEventK8SObjects(event))
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
 
-    private class CreateEventResponseStep extends ResponseStep<CoreV1Event> {
+    private class CreateEventResponseStep extends ResponseStep<EventsV1Event> {
       CreateEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
           LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
           domainNamespaces.shouldStartNamespace(eventData.getNamespace());
@@ -238,7 +249,7 @@ public class EventHelper {
       }
 
       @Override
-      public Result onFailure(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
         }
@@ -268,23 +279,23 @@ public class EventHelper {
       }
     }
 
-    private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
+    private class ReplaceEventResponseStep extends ResponseStep<EventsV1Event> {
       final Step replaceEventStep;
-      final CoreV1Event existingEvent;
+      final EventsV1Event existingEvent;
 
-      ReplaceEventResponseStep(Step replaceEventStep, CoreV1Event existingEvent, Step next) {
+      ReplaceEventResponseStep(Step replaceEventStep, EventsV1Event existingEvent, Step next) {
         super(next);
         this.existingEvent = existingEvent;
         this.replaceEventStep = replaceEventStep;
       }
 
       @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         return doNext(packet);
       }
 
       @Override
-      public Result onFailure(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         restoreExistingEvent();
         if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
@@ -299,29 +310,34 @@ public class EventHelper {
       }
 
       private void restoreExistingEvent() {
-        if (existingEvent == null || existingEvent.getCount() == null) {
+        if (existingEvent == null) {
           return;
         }
-        existingEvent.count(existingEvent.getCount() - 1);
+        int count = Optional.ofNullable(existingEvent.getSeries()).map(EventsV1EventSeries::getCount).orElse(0);
+        if (count > 1) {
+          existingEvent.getSeries().setCount(count - 1);
+        } else {
+          existingEvent.setSeries(null);
+        }
       }
 
-      Step createRetry(CoreV1Event event) {
+      Step createRetry(EventsV1Event event) {
         return Step.chain(createEventRefreshStep(event), replaceEventStep);
       }
 
-      private Step createEventRefreshStep(CoreV1Event event) {
+      private Step createEventRefreshStep(EventsV1Event event) {
         return RequestBuilder.EVENT.get(
             event.getMetadata().getNamespace(), event.getMetadata().getName(), new ReadEventResponseStep(getNext()));
       }
     }
 
     private boolean isForbiddenForNSWatchStoppedEvent(
-        ResponseStep<CoreV1Event> responseStep, KubernetesApiResponse<CoreV1Event> callResponse) {
+        ResponseStep<EventsV1Event> responseStep, KubernetesApiResponse<EventsV1Event> callResponse) {
       return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
     }
 
     private boolean hasLoggedForbiddenNSWatchStoppedEvent(
-        ResponseStep<CoreV1Event> responseStep, KubernetesApiResponse<CoreV1Event> callResponse) {
+        ResponseStep<EventsV1Event> responseStep, KubernetesApiResponse<EventsV1Event> callResponse) {
       if (isForbiddenForNSWatchStoppedEvent(responseStep, callResponse)) {
         LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN, eventData.eventItem.getReason(), eventData.getNamespace());
         return true;
@@ -329,13 +345,13 @@ public class EventHelper {
       return false;
     }
 
-    private static class ReadEventResponseStep extends ResponseStep<CoreV1Event> {
+    private static class ReadEventResponseStep extends ResponseStep<EventsV1Event> {
       ReadEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
         return doNext(packet);
       }
@@ -343,7 +359,7 @@ public class EventHelper {
   }
 
   private static long generateRandomLong() {
-    return (long) (Math.random() * Long.MAX_VALUE);
+    return random.nextLong() * Long.MAX_VALUE;
   }
 
   public enum EventItem {
@@ -364,7 +380,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForClusterResource(eventData);
       }
     },
@@ -385,7 +401,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForClusterResource(eventData);
       }
     },
@@ -401,7 +417,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForClusterResource(eventData);
       }
     },
@@ -417,7 +433,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForClusterResource(eventData);
       }
     },
@@ -433,7 +449,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForClusterResource(eventData);
       }
     },
@@ -454,7 +470,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForClusterResource(eventData);
       }
     },
@@ -475,7 +491,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForClusterResource(eventData);
       }
     },
@@ -561,7 +577,7 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(EventData eventData) {
+      public String getNote(EventData eventData) {
         return getMessageFromFailedEventData(eventData);
       }
     },
@@ -620,7 +636,7 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(EventData eventData) {
+      public String getNote(EventData eventData) {
         return getMessageFromEventData(eventData);
       }
     },
@@ -652,7 +668,7 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(EventData eventData) {
+      public String getNote(EventData eventData) {
         return getMessageFromEventDataWithPod(eventData);
       }
     },
@@ -673,7 +689,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createNSEventInvolvedObject(eventData);
       }
     },
@@ -694,7 +710,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createNSEventInvolvedObject(eventData);
       }
     },
@@ -715,7 +731,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createOperatorEventInvolvedObject();
       }
 
@@ -746,7 +762,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createOperatorEventInvolvedObject();
       }
 
@@ -772,7 +788,7 @@ public class EventHelper {
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createOperatorEventInvolvedObject();
       }
 
@@ -803,12 +819,12 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(EventData eventData) {
+      public String getNote(EventData eventData) {
         return getMessageFromFailedConversionEventData(eventData);
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForWebhook();
       }
     },
@@ -834,12 +850,12 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(EventData eventData) {
+      public String getNote(EventData eventData) {
         return getMessageFromFailedWebhookFailedEventData(eventData);
       }
 
       @Override
-      public V1ObjectReference createInvolvedObject(EventData eventData) {
+      public V1ObjectReference createRegarding(EventData eventData) {
         return createInvolvedObjectForWebhook();
       }
     },
@@ -919,7 +935,7 @@ public class EventHelper {
     protected String generateEventName(EventData eventData) {
       return String.format("%s.%s.%h%h",
           eventData.getResourceName(),
-          eventData.eventItem.getReason(),
+          eventData.eventItem.getReason().toLowerCase(),
           System.currentTimeMillis(),
           generateRandomLong());
     }
@@ -943,13 +959,13 @@ public class EventHelper {
     String generateOperatorNSEventName(EventData eventData) {
       return String.format("%s.%s.%s.%h%h",
           getOperatorPodName(),
-          eventData.eventItem.getReason(),
+          eventData.eventItem.getReason().toLowerCase(),
           eventData.getResourceName(),
           System.currentTimeMillis(),
           generateRandomLong());
     }
 
-    public String getMessage(EventData eventData) {
+    public String getNote(EventData eventData) {
       return LOGGER.formatMessage(getPattern(), eventData.getResourceName());
     }
 
@@ -963,7 +979,7 @@ public class EventHelper {
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
-    V1ObjectReference createInvolvedObject(EventData eventData) {
+    V1ObjectReference createRegarding(EventData eventData) {
       return new V1ObjectReference()
           .name(eventData.getResourceNameFromInfo())
           .namespace(eventData.getNamespace())
@@ -1099,18 +1115,17 @@ public class EventHelper {
     }
   }
 
-  private static CoreV1Event createConversionWebhookEventModel(EventItem eventItem, EventData eventData) {
-    return new CoreV1Event()
-                .reportingComponent(OPERATOR_WEBHOOK_COMPONENT)
+  private static EventsV1Event createConversionWebhookEventModel(EventItem eventItem, EventData eventData) {
+    return new EventsV1Event()
+                .reportingController(OPERATOR_WEBHOOK_COMPONENT)
                 .reportingInstance(getWebhookPodName())
-                .firstTimestamp(eventItem.getCurrentTimestamp())
-                .lastTimestamp(eventItem.getCurrentTimestamp())
+                .eventTime(eventItem.getCurrentTimestamp())
                 .type(eventItem.getType())
+                .action(eventItem.getReason()) // use reason for action and reason
                 .reason(eventItem.getReason())
-                .message(eventItem.getMessage(eventData))
-                .involvedObject(eventItem.createInvolvedObject(eventData))
-                .metadata(CreateEventStep.createMetadata(eventData))
-                .count(1);
+                .note(eventItem.getNote(eventData))
+                .regarding(eventItem.createRegarding(eventData))
+                .metadata(CreateEventStep.createMetadata(eventData));
   }
 
   private static V1ObjectReference createInvolvedObjectForWebhook() {
@@ -1158,19 +1173,19 @@ public class EventHelper {
       return eventData.eventItem.toString();
     }
 
-    private static CoreV1Event createEventModel(EventData eventData) {
+    private static EventsV1Event createEventModel(EventData eventData) {
       EventItem eventItem = eventData.eventItem;
 
-      return new CoreV1Event()
+      return new EventsV1Event()
           .metadata(CreateEventStep.createMetadata(eventData))
-          .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+          .reportingController(WEBLOGIC_OPERATOR_COMPONENT)
           .reportingInstance(getOperatorPodName())
-          .lastTimestamp(eventItem.getCurrentTimestamp())
+          .eventTime(eventItem.getCurrentTimestamp())
           .type(eventItem.getType())
+          .action(eventItem.getReason()) // use reason for action and reason
           .reason(eventItem.getReason())
-          .message(eventItem.getMessage(eventData))
-          .involvedObject(eventItem.createInvolvedObject(eventData))
-          .count(1);
+          .note(eventItem.getNote(eventData))
+          .regarding(eventItem.createRegarding(eventData));
     }
 
     @Override
@@ -1178,46 +1193,46 @@ public class EventHelper {
       return doNext(createEventAPICall(createEventModel(eventData)), packet);
     }
 
-    private Step createEventAPICall(CoreV1Event event) {
-      CoreV1Event existingEvent = getExistingClusterEvent(event);
+    private Step createEventAPICall(EventsV1Event event) {
+      EventsV1Event existingEvent = getExistingClusterEvent(event);
       return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
     }
 
-    private Step createCreateEventCall(CoreV1Event event) {
+    private Step createCreateEventCall(EventsV1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
-      event.firstTimestamp(event.getLastTimestamp());
       return RequestBuilder.EVENT.create(event, new CreateClusterResourceEventResponseStep(getNext()));
     }
 
-    private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
+    private Step createReplaceEventCall(EventsV1Event event, @NotNull EventsV1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
-      existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
-      existingEvent.lastTimestamp(event.getLastTimestamp());
+      existingEvent.series(new EventsV1EventSeries()
+          .lastObservedTime(event.getEventTime())
+          .count(Optional.ofNullable(existingEvent.getSeries()).map(EventsV1EventSeries::getCount).orElse(1) + 1));
       return RequestBuilder.EVENT.update(
           existingEvent, new ReplaceClusterResourceEventResponseStep(this, existingEvent, getNext()));
     }
 
-    private CoreV1Event getExistingClusterEvent(CoreV1Event event) {
+    private EventsV1Event getExistingClusterEvent(EventsV1Event event) {
       return Optional.ofNullable(getClusterEventK8SObjects(event))
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
 
-    private static class CreateClusterResourceEventResponseStep extends ResponseStep<CoreV1Event> {
+    private static class CreateClusterResourceEventResponseStep extends ResponseStep<EventsV1Event> {
       CreateClusterResourceEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         return doNext(packet);
       }
     }
 
-    private class ReplaceClusterResourceEventResponseStep extends ResponseStep<CoreV1Event> {
+    private class ReplaceClusterResourceEventResponseStep extends ResponseStep<EventsV1Event> {
       final Step replaceClusterEventStep;
-      final CoreV1Event existingClusterEvent;
+      final EventsV1Event existingClusterEvent;
 
-      ReplaceClusterResourceEventResponseStep(Step replaceClusterEventStep, CoreV1Event existingClusterEvent,
+      ReplaceClusterResourceEventResponseStep(Step replaceClusterEventStep, EventsV1Event existingClusterEvent,
           Step next) {
         super(next);
         this.existingClusterEvent = existingClusterEvent;
@@ -1225,12 +1240,12 @@ public class EventHelper {
       }
 
       @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         return doNext(packet);
       }
 
       @Override
-      public Result onFailure(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onFailure(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         restoreExistingClusterEvent();
         if (isNotFound(callResponse) || hasConflict(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(eventData)), getNext()), packet);
@@ -1242,29 +1257,34 @@ public class EventHelper {
       }
 
       private void restoreExistingClusterEvent() {
-        if (existingClusterEvent == null || existingClusterEvent.getCount() == null) {
+        if (existingClusterEvent == null) {
           return;
         }
-        existingClusterEvent.count(existingClusterEvent.getCount() - 1);
+        int count = Optional.ofNullable(existingClusterEvent.getSeries()).map(EventsV1EventSeries::getCount).orElse(0);
+        if (count > 1) {
+          existingClusterEvent.getSeries().setCount(count - 1);
+        } else {
+          existingClusterEvent.setSeries(null);
+        }
       }
 
-      Step createClusterEventRetryStep(CoreV1Event event) {
+      Step createClusterEventRetryStep(EventsV1Event event) {
         return Step.chain(createClusterEventRefreshStep(event), replaceClusterEventStep);
       }
 
-      private Step createClusterEventRefreshStep(CoreV1Event event) {
+      private Step createClusterEventRefreshStep(EventsV1Event event) {
         return RequestBuilder.EVENT.get(
             event.getMetadata().getNamespace(), event.getMetadata().getName(), new ReadEventResponseStep(getNext()));
       }
     }
 
-    private static class ReadEventResponseStep extends ResponseStep<CoreV1Event> {
+    private static class ReadEventResponseStep extends ResponseStep<EventsV1Event> {
       ReadEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public Result onSuccess(Packet packet, KubernetesApiResponse<CoreV1Event> callResponse) {
+      public Result onSuccess(Packet packet, KubernetesApiResponse<EventsV1Event> callResponse) {
         DomainProcessorImpl.updateEventK8SObjects(callResponse.getObject());
         return doNext(packet);
       }
