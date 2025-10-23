@@ -694,7 +694,7 @@ public class Domain {
     logger.info("Copying scalingAction.sh to admin server pod");
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
-          Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
+          Paths.get(PROJECT_ROOT + "/../kubernetes/samples/scripts/scaling/scalingAction.sh"),
           Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
         logger,
         "Copying scalingAction.sh to admin server pod");
@@ -849,7 +849,7 @@ public class Domain {
     logger.info("Copying scalingAction.sh to admin server pod");
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
-          Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
+          Paths.get(PROJECT_ROOT + "/../kubernetes/samples/scripts/scaling/scalingAction.sh"),
           Paths.get("/u01/scalingAction.sh")),
         logger,
         "Copying scalingAction.sh to admin server pod");
