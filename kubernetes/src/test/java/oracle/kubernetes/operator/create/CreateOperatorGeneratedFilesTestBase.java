@@ -27,18 +27,14 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1SeccompProfile;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
 import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
 import oracle.kubernetes.operator.utils.OperatorValues;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
@@ -67,19 +63,13 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newProbe;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRole;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleBinding;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecret;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretVolumeSource;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newService;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceAccount;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServicePort;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceSpec;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolumeMount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
@@ -136,56 +126,8 @@ abstract class CreateOperatorGeneratedFilesTestBase {
       v1ConfigMap.putDataItem("domainNamespaceRegExp", getInputs().getDomainNamespaceRegExp());
     }
 
-    if (expectExternalCredentials()) {
-      v1ConfigMap.putDataItem(
-          "externalOperatorCert",
-          Base64.encodeBase64String(getExpectedExternalWeblogicOperatorCert().getBytes()));
-    }
     return v1ConfigMap;
   }
-
-  protected abstract String getExpectedExternalWeblogicOperatorCert();
-
-  @Test
-  void generatesCorrect_operatorSecrets() {
-    if (expectExternalCredentials()) {
-      assertThat(
-          new String(getActualWeblogicOperatorSecrets().getData().get("externalOperatorKey")),
-          equalTo(new String(getExpectedWeblogicOperatorSecrets().getData().get("externalOperatorKey"))));
-    } else {
-      assertThat(getActualWeblogicOperatorSecrets().getData(), not(hasKey("externalOperatorKey")));
-    }
-  }
-
-  private V1Secret getActualWeblogicOperatorSecrets() {
-    return getGeneratedFiles().getOperatorSecrets();
-  }
-
-  private V1Secret getExpectedWeblogicOperatorSecrets() {
-    V1Secret v1Secret =
-        newSecret()
-            .metadata(
-                newObjectMeta()
-                    .name("weblogic-operator-secrets")
-                    .namespace(getInputs().getNamespace())
-                    .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-            .type("Opaque");
-    if (expectExternalCredentials()) {
-      v1Secret.putDataItem(
-          "externalOperatorKey", getExpectedExternalWeblogicOperatorKey().getBytes());
-    }
-    return v1Secret;
-  }
-
-  private boolean expectExternalCredentials() {
-    return isExternalRestPortEnabled();
-  }
-
-  private boolean isExternalRestPortEnabled() {
-    return Boolean.parseBoolean(getInputs().getExternalRestEnabled());
-  }
-
-  protected abstract String getExpectedExternalWeblogicOperatorKey();
 
   @Test
   void generatesCorrect_operatorDeployment() {
@@ -257,8 +199,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                                         .fieldPath("metadata.uid"))))
                                         .addEnvItem(
                                             newEnvVar().name("OPERATOR_VERBOSE").value("false"))
-                                        .addEnvItem(
-                                            newEnvVar().name("ENABLE_REST_ENDPOINT").value("true"))
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_LEVEL")
@@ -365,73 +305,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
         .periodSeconds(periodSeconds)
         .failureThreshold(failureThreshold)
         .exec(newExecAction().addCommandItem(shellScript));
-  }
-
-  @Test
-  void generatesCorrect_externalWeblogicOperatorService() {
-    V1Service expected = getExpectedExternalWeblogicOperatorService();
-    if (expected != null) {
-      assertThat(getGeneratedFiles().getExternalOperatorService(), equalTo(expected));
-    }
-  }
-
-  protected abstract V1Service getExpectedExternalWeblogicOperatorService();
-
-  V1Service getExpectedExternalWeblogicOperatorService(
-      boolean debuggingEnabled, boolean externalRestEnabled) {
-    if (!debuggingEnabled && !externalRestEnabled) {
-      return null;
-    }
-    V1ServiceSpec spec =
-        newServiceSpec().type("NodePort").putSelectorItem(APP_LABEL, "weblogic-operator");
-    if (externalRestEnabled) {
-      spec.addPortsItem(newServicePort()
-              .name("rest")
-              .port(8081)
-              .appProtocol("https")
-              .nodePort(Integer.parseInt(getInputs().getExternalRestHttpsPort())));
-    }
-    if (debuggingEnabled) {
-      spec.addPortsItem(
-          newServicePort()
-              .name("debug")
-              .port(Integer.parseInt(getInputs().getInternalDebugHttpPort()))
-              .appProtocol("http")
-              .nodePort(Integer.parseInt(getInputs().getExternalDebugHttpPort())));
-    }
-    return newService()
-        .metadata(
-            newObjectMeta()
-                .name("external-weblogic-operator-svc")
-                .namespace(getInputs().getNamespace())
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .spec(spec);
-  }
-
-  @Test
-  void generatesCorrect_internalWeblogicOperatorService() {
-    assertThat(
-        getActualInternalWeblogicOperatorService(),
-        equalTo(getExpectedInternalWeblogicOperatorService()));
-  }
-
-  private V1Service getActualInternalWeblogicOperatorService() {
-    return getGeneratedFiles().getInternalOperatorService();
-  }
-
-  private V1Service getExpectedInternalWeblogicOperatorService() {
-    return newService()
-        .metadata(
-            newObjectMeta()
-                .name("internal-weblogic-operator-svc")
-                .namespace(getInputs().getNamespace())
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .spec(
-            newServiceSpec()
-                .type("ClusterIP")
-                .putSelectorItem(APP_LABEL, "weblogic-operator")
-                .addPortsItem(newServicePort().name("rest").appProtocol("https").port(8082))
-                .addPortsItem(newServicePort().name("metrics").appProtocol("http").port(8083)));
   }
 
   @Test
@@ -824,33 +697,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @SuppressWarnings("unused")
-  protected V1Service getExpectedExternalOperatorService(
-      boolean debuggingEnabled, boolean externalRestEnabled) {
-    V1ServiceSpec spec =
-        newServiceSpec().type("NodePort").putSelectorItem(APP_LABEL, "weblogic-operator");
-    if (externalRestEnabled) {
-      spec.addPortsItem(
-          newServicePort()
-              .name("rest")
-              .port(8081)
-              .nodePort(Integer.parseInt(inputs.getExternalRestHttpsPort())));
-    }
-    if (debuggingEnabled) {
-      spec.addPortsItem(
-          newServicePort()
-              .name("debug")
-              .port(Integer.parseInt(inputs.getInternalDebugHttpPort()))
-              .nodePort(Integer.parseInt(inputs.getExternalDebugHttpPort())));
-    }
-    return newService()
-        .metadata(
-            newObjectMeta()
-                .name("external-weblogic-operator-svc")
-                .namespace(inputs.getNamespace())
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .spec(spec);
-  }
-
   protected void expectRemoteDebug(V1Container operatorContainer, String debugSuspend) {
     operatorContainer.addEnvItem(
         newEnvVar().name("REMOTE_DEBUG_PORT").value(getInputs().getInternalDebugHttpPort()));

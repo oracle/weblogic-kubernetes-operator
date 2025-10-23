@@ -8,13 +8,6 @@ import java.util.Objects;
 import org.apache.commons.codec.binary.Base64;
 
 public class OperatorValues {
-  public static final String JAVA_LOGGING_LEVEL_SEVERE = "SEVERE";
-  public static final String JAVA_LOGGING_LEVEL_WARNING = "WARNING";
-  public static final String JAVA_LOGGING_LEVEL_INFO = "INFO";
-  public static final String JAVA_LOGGING_LEVEL_CONFIG = "CONFIG";
-  public static final String JAVA_LOGGING_LEVEL_FINE = "FINE";
-  public static final String JAVA_LOGGING_LEVEL_FINER = "FINER";
-  public static final String JAVA_LOGGING_LEVEL_FINEST = "FINEST";
   private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
   private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
   private String version = "";
@@ -27,12 +20,6 @@ public class OperatorValues {
   private String weblogicOperatorImage = "";
   private String weblogicOperatorImagePullPolicy = "Never";
   private String weblogicOperatorImagePullSecretName = "";
-  private String restEnabled = "";
-  private String externalRestEnabled = "";
-  private String externalRestHttpsPort = "";
-  private String externalOperatorCert = "";
-  private String externalOperatorSecret = "";
-  private String externalOperatorKey = "";
   private String remoteDebugNodePortEnabled = "";
   private String suspendOnDebugStartup = "";
   private String internalDebugHttpPort = "";
@@ -58,7 +45,6 @@ public class OperatorValues {
         .weblogicOperatorImagePullPolicy("Never")
         .javaLoggingLevel("FINEST")
         .logStashImage("test-logstash-image")
-        .restEnabled("true")
         .elasticSearchHost("test-elastic-search_host")
         .elasticSearchPort("9200")
         .elasticSearchProtocol("http");
@@ -72,17 +58,6 @@ public class OperatorValues {
     return this.remoteDebugNodePortEnabled("true")
         .internalDebugHttpPort("9090")
         .externalDebugHttpPort("30090");
-  }
-
-  /**
-   * setup external REST.
-   * @return values
-   */
-  public OperatorValues setupExternalRestEnabled() {
-    return this.externalRestHttpsPort("30070")
-        .externalRestEnabled("true")
-        .externalOperatorCert(toBase64(externalOperatorCustomCertPem()))
-        .externalOperatorKey(toBase64(externalOperatorCustomKeyPem()));
   }
 
   public String externalOperatorCustomCertPem() {
@@ -224,79 +199,6 @@ public class OperatorValues {
 
   public OperatorValues weblogicOperatorImagePullSecretName(String val) {
     setWeblogicOperatorImagePullSecretName(val);
-    return this;
-  }
-
-  public String getRestEnabled() {
-    return restEnabled;
-  }
-
-  public void setRestEnabled(String val) {
-    restEnabled = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues restEnabled(String val) {
-    setRestEnabled(val);
-    return this;
-  }
-
-  public String getExternalRestEnabled() {
-    return externalRestEnabled;
-  }
-
-  public void setExternalRestEnabled(String val) {
-    externalRestEnabled = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues externalRestEnabled(String val) {
-    setExternalRestEnabled(val);
-    return this;
-  }
-
-  public String getExternalRestHttpsPort() {
-    return externalRestHttpsPort;
-  }
-
-  public void setExternalRestHttpsPort(String val) {
-    externalRestHttpsPort = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues externalRestHttpsPort(String val) {
-    setExternalRestHttpsPort(val);
-    return this;
-  }
-
-  public String getExternalOperatorSecret() {
-    return externalOperatorSecret;
-  }
-
-  public void setExternalOperatorSecret(String val) {
-    externalOperatorSecret = convertNullToEmptyString(val);
-  }
-
-  public String getExternalOperatorCert() {
-    return externalOperatorCert;
-  }
-
-  public void setExternalOperatorCert(String val) {
-    externalOperatorCert = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues externalOperatorCert(String val) {
-    setExternalOperatorCert(val);
-    return this;
-  }
-
-  public String getExternalOperatorKey() {
-    return externalOperatorKey;
-  }
-
-  public void setExternalOperatorKey(String val) {
-    externalOperatorKey = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues externalOperatorKey(String val) {
-    setExternalOperatorKey(val);
     return this;
   }
 

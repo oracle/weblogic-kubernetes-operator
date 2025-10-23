@@ -24,7 +24,7 @@ class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   private static final String WRONG_TYPE = "%s must be a %s : %s";
 
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {
-    "externalRestEnabled", "remoteDebugNodePortEnabled", "elkIntegrationEnabled"
+    "remoteDebugNodePortEnabled", "elkIntegrationEnabled"
   };
 
   private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {"serviceAccount", "image"};
@@ -111,89 +111,6 @@ class CreateOperatorInputsValidationIt extends OperatorChartItBase {
         allOf(
             containsEnumParameterError("imagePullPolicy", badValue, PULL_POLICIES),
             containsEnumParameterError("javaLoggingLevel", badValue, LOGGING_LEVELS)));
-  }
-
-  @Test
-  void whenExternalRestEnabled_reportMissingRelatedParameters() throws Exception {
-    setProperty("externalRestEnabled", true);
-
-    removeProperty("externalRestHttpsPort");
-    removeProperty("externalRestIdentitySecret");
-    removeProperty("externalOperatorCert");
-    removeProperty("externalOperatorKey");
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsMissingStringParameterError("externalRestIdentitySecret"),
-            containsMissingIntParameterError("externalRestHttpsPort")));
-  }
-
-  @Test
-  void whenExternalRestNotEnabled_ignoreMissingRelatedParameters() throws Exception {
-    setProperty("externalRestEnabled", false);
-
-    removeProperty("externalRestHttpsPort");
-    removeProperty("externalOperatorCert");
-    removeProperty("externalOperatorKey");
-
-    assertThat(getProcessingError(), emptyString());
-  }
-
-  @Test
-  void whenExternalRestEnabled_reportRelatedParameterErrorsLegacy() throws Exception {
-    setProperty("externalRestEnabled", true);
-
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCert", 1234);
-    setProperty("externalOperatorKey", true);
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("externalRestHttpsPort", "float64", "string"),
-            containsTypeError("externalOperatorCert", "string", "float64"),
-            containsTypeError("externalOperatorKey", "string", "bool")));
-  }
-
-  @Test
-  void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
-    setProperty("externalRestEnabled", true);
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalRestIdentitySecret", 1234);
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("externalRestHttpsPort", "float64", "string"),
-            containsTypeError("externalRestIdentitySecret", "string", "float64")));
-  }
-
-  @Test
-  void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
-    setProperty("externalRestEnabled", false);
-
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalRestIdentitySecret", 1234);
-    setProperty("externalOperatorCert", 1234);
-    setProperty("externalOperatorKey", true);
-
-    assertThat(getProcessingError(), emptyString());
-  }
-
-  @Test
-  void whenExternalOperatorSecret_ExcludeCertKeyErrors() throws Exception {
-    setProperty("externalRestEnabled", true);
-
-    setProperty("externalRestIdentitySecret", "secretName");
-    setProperty("externalOperatorCert", "cert");
-    setProperty("externalOperatorKey", "key");
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsMutexParameterError("externalOperatorKey", "externalRestIdentitySecret"),
-            containsMutexParameterError("externalOperatorCert", "externalRestIdentitySecret")));
   }
 
   @Test

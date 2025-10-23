@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
 public abstract class CreateOperatorGeneratedFilesDebugEnabledTestBase
@@ -12,21 +11,6 @@ public abstract class CreateOperatorGeneratedFilesDebugEnabledTestBase
 
   protected static void defineOperatorYamlFactory(OperatorYamlFactory factory) throws Exception {
     setup(factory, factory.newOperatorValues().enableDebugging());
-  }
-
-  @Override
-  protected String getExpectedExternalWeblogicOperatorCert() {
-    return ""; // no cert
-  }
-
-  @Override
-  protected String getExpectedExternalWeblogicOperatorKey() {
-    return ""; // no key
-  }
-
-  @Override
-  protected V1Service getExpectedExternalWeblogicOperatorService() {
-    return getExpectedExternalWeblogicOperatorService(true, false);
   }
 
   @Override

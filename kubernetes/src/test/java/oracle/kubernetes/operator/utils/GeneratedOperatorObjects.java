@@ -10,8 +10,6 @@ import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 
 /**
@@ -50,20 +48,8 @@ public class GeneratedOperatorObjects {
     return operatorYaml.getOperatorDeployment();
   }
 
-  public V1Secret getOperatorSecrets() {
-    return operatorYaml.getOperatorSecrets();
-  }
-
   public V1ConfigMap getOperatorConfigMap() {
     return operatorYaml.getOperatorConfigMap();
-  }
-
-  public V1Service getExternalOperatorService() {
-    return operatorYaml.getExternalOperatorService();
-  }
-
-  public V1Service getInternalOperatorService() {
-    return operatorYaml.getInternalOperatorService();
   }
 
   public V1ServiceAccount getOperatorServiceAccount() {

@@ -29,19 +29,14 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
     loadFromMap(map, this::setNamespace, "operatorNamespace");
     loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "imagePullPolicy");
-    loadFromMap(map, this::setExternalOperatorSecret, "externalOperatorSecret");
-    loadFromMap(map, this::setExternalOperatorCert, "externalOperatorCert");
-    loadFromMap(map, this::setExternalOperatorKey, "externalOperatorKey");
     loadFromMap(map, this::setLogStashImage, "logStashImage");
     loadFromMap(map, this::setElasticSearchHost, "elasticSearchHost");
     loadFromMap(map, this::setJvmOptions, "jvmOptions");
 
-    loadBooleanFromMap(map, this::setExternalRestEnabled, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     loadBooleanFromMap(map, this::setSuspendOnDebugStartup, "suspendOnDebugStartup");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
 
-    loadIntegerFromMap(map, this::setExternalRestHttpsPort, "externalRestHttpsPort");
     loadIntegerFromMap(map, this::setExternalDebugHttpPort, "externalDebugHttpPort");
     loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
     loadIntegerFromMap(map, this::setElasticSearchPort, "elasticSearchPort");
@@ -51,12 +46,6 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setDomainNamespaceRegExp, "domainNamespaceRegExp");
     loadDomainNamespacesFromMap(map);
     loadImagePullSecretsFromMap(map);
-  }
-
-  private void setExternalRestEnabled(Boolean enabled) {
-    if (enabled != null) {
-      setExternalRestEnabled(enabled.toString());
-    }
   }
 
   private void setRemoteDebugNodePortEnabled(Boolean enabled) {
@@ -108,20 +97,14 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
     addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicyAsString, "imagePullPolicy");
-    addStringMapEntry(map, this::getExternalOperatorSecret, "externalOperatorSecret");
-    addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
-    addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");
     addStringMapEntry(map, this::getLogStashImage, "logStashImage");
     addStringMapEntry(map, this::getElasticSearchHost, "elasticSearchHost");
     addStringMapEntry(map, this::getJvmOptions, "jvmOptions");
 
-    addMapEntry(map, this::isRestEnabled, "enableRest");
-    addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
     addMapEntry(map, this::isRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     addMapEntry(map, this::isSuspendOnDebugStartup, "suspendOnDebugStartup");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
 
-    addMapEntry(map, this::getExternalRestHttpsPortNum, "externalRestHttpsPort");
     addMapEntry(map, this::getExternalDebugHttpPortNum, "externalDebugHttpPort");
     addMapEntry(map, this::getInternalDebugHttpPortNum, "internalDebugHttpPort");
     addMapEntry(map, this::getElasticSearchPortNum, "elasticSearchPort");
@@ -146,14 +129,6 @@ class HelmOperatorValues extends OperatorValues {
     }
   }
 
-  private Boolean isRestEnabled() {
-    return MapUtils.valueOf(getRestEnabled());
-  }
-
-  private Boolean isExternalRestEnabled() {
-    return MapUtils.valueOf(getExternalRestEnabled());
-  }
-
   private Boolean isRemoteDebugNodePortEnabled() {
     return MapUtils.valueOf(getRemoteDebugNodePortEnabled());
   }
@@ -164,10 +139,6 @@ class HelmOperatorValues extends OperatorValues {
 
   private Boolean isElkIntegrationEnabled() {
     return MapUtils.valueOf(getElkIntegrationEnabled());
-  }
-
-  private Integer getExternalRestHttpsPortNum() {
-    return MapUtils.integerValue(getExternalRestHttpsPort());
   }
 
   private Integer getExternalDebugHttpPortNum() {

@@ -8,7 +8,6 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1KeyToPath;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
-import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainer;
@@ -20,7 +19,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh creates are correct
- * when all optional features are enabled: external rest self signed cert remote debug port enabled
+ * when all optional features are enabled: self-signed cert remote debug port enabled
  * elk enabled have image pull secret.
  */
 public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase
@@ -31,26 +30,10 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         factory,
         factory
             .newOperatorValues()
-            .setupExternalRestEnabled()
             .enableDebugging()
             .suspendOnDebugStartup("true")
             .elkIntegrationEnabled("true")
             .weblogicOperatorImagePullSecretName("test-operator-image-pull-secret-name"));
-  }
-
-  @Override
-  protected String getExpectedExternalWeblogicOperatorCert() {
-    return getInputs().externalOperatorCustomCertPem();
-  }
-
-  @Override
-  protected String getExpectedExternalWeblogicOperatorKey() {
-    return getInputs().externalOperatorCustomKeyPem();
-  }
-
-  @Override
-  protected V1Service getExpectedExternalWeblogicOperatorService() {
-    return getExpectedExternalWeblogicOperatorService(true, true);
   }
 
   @Override

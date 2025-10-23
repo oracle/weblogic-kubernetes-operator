@@ -4,12 +4,11 @@
 package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh creates are correct
- * when all optional features are disabled: external rest disabled remote debug port disabled elk
+ * when all optional features are disabled: remote debug port disabled elk
  * disabled no image pull secret.
  */
 public abstract class CreateOperatorGeneratedFilesOptionalFeaturesDisabledTestBase
@@ -24,20 +23,5 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesDisabledTestBa
     V1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
     expectProbes(expected.getSpec().getTemplate().getSpec().getContainers().get(0));
     return expected;
-  }
-
-  @Override
-  protected String getExpectedExternalWeblogicOperatorCert() {
-    return ""; // no cert
-  }
-
-  @Override
-  protected String getExpectedExternalWeblogicOperatorKey() {
-    return ""; // no key
-  }
-
-  @Override
-  protected V1Service getExpectedExternalWeblogicOperatorService() {
-    return getExpectedExternalWeblogicOperatorService(false, false);
   }
 }

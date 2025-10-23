@@ -86,10 +86,6 @@ spec:
         - name: "KUBERNETES_PLATFORM"
           value: {{ .kubernetesPlatform | quote }}
         {{- end }}
-        {{- if and (hasKey . "enableRest") .enableRest }}
-        - name: "ENABLE_REST_ENDPOINT"
-          value: "true"
-        {{- end }}
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | default "INFO" | quote }}
         - name: "JAVA_LOGGING_MAXSIZE"

@@ -115,8 +115,6 @@ class HelmOperatorValuesTest {
 
 
   enum HelmBooleanValue {
-    EXTERNAL_REST_ENABLED("externalRestEnabled",
-        HelmOperatorValues::externalRestEnabled, HelmOperatorValues::getExternalRestEnabled),
     REMOTE_DEBUG_PORT_ENABLED("remoteDebugNodePortEnabled",
         HelmOperatorValues::remoteDebugNodePortEnabled, HelmOperatorValues::getRemoteDebugNodePortEnabled),
     SUSPEND_ON_DEBUG_STARTUP("suspendOnDebugStartup",
@@ -184,9 +182,6 @@ class HelmOperatorValuesTest {
   }
 
   enum HelmIntegerValue {
-    EXTERNAL_REST_PORT("externalRestHttpsPort",
-        HelmOperatorValues::externalRestHttpsPort,
-        HelmOperatorValues::getExternalRestHttpsPort),
     INTERNAL_DEBUG_HTTP_PORT("internalDebugHttpPort",
         HelmOperatorValues::internalDebugHttpPort,
         HelmOperatorValues::getInternalDebugHttpPort),
