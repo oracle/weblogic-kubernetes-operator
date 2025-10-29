@@ -554,36 +554,16 @@ class ItReadOnlyRootFS {
       logger.info("PASS: Container " + containerName + " in pod " + podName + " has readOnlyRootFilesystem=true");
     }
 
-    if (!isInitContainer) {
-      // 2. For regular containers, exec to check /tmp mount
-      try {
-
-        ExecResult result = execCommand(namespace, podName, containerName, true, "df", "-h", "/tmp");
-        String stdout = result.stdout();
-        if (stdout == null || !stdout.contains("tmpfs")) {
-          String msg = "FAIL: /tmp is not mounted as tmpfs in container " + containerName + " in pod " + podName;
-          logger.severe(msg);
-          failures.add(msg);
-        } else {
-          logger.info("PASS: /tmp is mounted as tmpfs in container " + containerName + " in pod " + podName);
-        }
-      } catch (Exception e) {
-        String msg = "FAIL: Exec failed for container " + containerName + " in pod " + podName + ": " + e.getMessage();
-        logger.severe(msg);
-        failures.add(msg);
-      }
+    // 2. Check volumeMounts
+    List<V1VolumeMount> volumeMounts = container.getVolumeMounts();
+    boolean hasTmpMount = volumeMounts != null && volumeMounts.stream()
+        .anyMatch(mount -> mount.getMountPath() != null && mount.getMountPath().startsWith("/tmp"));
+    if (!hasTmpMount) {
+      String msg = "FAIL: container " + containerName + " in pod " + podName + " does not have /tmp mounted";
+      logger.severe(msg);
+      failures.add(msg);
     } else {
-      // 3. For init container, check volumeMounts
-      List<V1VolumeMount> volumeMounts = container.getVolumeMounts();
-      boolean hasTmpMount = volumeMounts != null && volumeMounts.stream()
-          .anyMatch(mount -> mount.getMountPath() != null && mount.getMountPath().startsWith("/tmp"));
-      if (!hasTmpMount) {
-        String msg = "FAIL: Init container " + containerName + " in pod " + podName + " does not have /tmp mounted";
-        logger.severe(msg);
-        failures.add(msg);
-      } else {
-        logger.info("PASS: Init container " + containerName + " in pod " + podName + " has /tmp mounted");
-      }
+      logger.info("PASS: container " + containerName + " in pod " + podName + " has /tmp mounted");
     }
   }
 

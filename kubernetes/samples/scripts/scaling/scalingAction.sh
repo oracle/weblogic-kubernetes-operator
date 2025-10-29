@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017,2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # script parameters
@@ -7,9 +7,6 @@ scaling_action=""
 wls_domain_uid=""
 wls_cluster_name=""
 wls_domain_namespace="default"
-operator_service_name="internal-weblogic-operator-svc"
-operator_namespace="weblogic-operator"
-operator_service_account="weblogic-operator"
 scaling_size=1
 access_token=""
 no_op=""
@@ -33,7 +30,7 @@ trace() {
 }
 
 print_usage() {
-  echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1] [--no_op]"
+  echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--scaling_size=1] [--no_op]"
   echo "  where"
   echo "    action - scaleUp or scaleDown"
   echo "    domain_uid - WebLogic Domain Unique Identifier"
@@ -41,15 +38,12 @@ print_usage() {
   echo "    kubernetes_master - Kubernetes master URL, default=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
   echo "    access_token - Service Account Bearer token for authentication and authorization for access to REST Resources"
   echo "    wls_domain_namespace - Kubernetes name space WebLogic Domain is defined in, default=default"
-  echo "    operator_service_name - WebLogic Operator Service name, default=internal-weblogic-operator-svc"
-  echo "    operator_service_account - Kubernetes Service Account for WebLogic Operator, default=weblogic-operator"
-  echo "    operator_namespace - WebLogic Operator Namespace, default=weblogic-operator"
   echo "    scaling_size - number of WebLogic server instances by which to scale up or down, default=1"
   echo "    no_op - if specified, returns without doing anything. For use by unit test to include methods in the script"
   exit 1
 }
 
-# Retrieve WebLogic Operator Service Account Token for Authorization
+# Retrieve Service Account Token for Authorization
 initialize_access_token() {
   if [ -z "$access_token" ]
   then
@@ -62,9 +56,6 @@ logScalingParameters() {
   trace "wls_domain_uid: $wls_domain_uid"
   trace "wls_cluster_name: $wls_cluster_name"
   trace "wls_domain_namespace: $wls_domain_namespace"
-  trace "operator_service_name: $operator_service_name"
-  trace "operator_service_account: $operator_service_account"
-  trace "operator_namespace: $operator_namespace"
   trace "scaling_size: $scaling_size"
 }
 
@@ -75,75 +66,14 @@ jq_available() {
   false
 }
 
-# Query WebLogic Operator Service Port
-get_operator_internal_rest_port() {
-  local STATUS=$(curl \
-    -v \
-    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-    -X GET "$kubernetes_master"/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status)
-  if [ $? -ne 0 ]
-  then
-    trace "Failed to retrieve status of $operator_service_name in name space: $operator_namespace"
-    trace "STATUS: $STATUS"
-    exit 1
-  fi
-
-  local port
-  if jq_available; then
-    local extractPortCmd="(.spec.ports[] | select (.name == \"rest\") | .port)"
-    port=$(echo "${STATUS}" | jq "${extractPortCmd}" 2>> ${log_file_name})
-  else
-cat > cmds-$$.py << INPUT
-import sys, json
-for i in json.load(sys.stdin)["spec"]["ports"]:
-  if i["name"] == "rest":
-    print((i["port"]))
-INPUT
-port=$(echo "${STATUS}" | python cmds-$$.py 2>> ${log_file_name})
-  fi
-  echo "$port"
-}
-
-# Retrieve the api version of the deployed Custom Resource Domain
-get_domain_api_version() {
-  # Retrieve Custom Resource Definition for WebLogic domain
-  local APIS=$(curl \
-    -v \
-    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-    -X GET \
-    "$kubernetes_master"/apis)
-  if [ $? -ne 0 ]
-    then
-      trace "Failed to retrieve list of APIs from Kubernetes cluster"
-      trace "APIS: $APIS"
-      exit 1
-  fi
-
-# Find domain version
-  local domain_api_version
-  if jq_available; then
-    local extractVersionCmd="(.groups[] | select (.name == \"weblogic.oracle\") | .preferredVersion.version)"
-    domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}" 2>> ${log_file_name})
-  else
-cat > cmds-$$.py << INPUT
-import sys, json
-for i in json.load(sys.stdin)["groups"]:
-  if i["name"] == "weblogic.oracle":
-    print((i["preferredVersion"]["version"]))
-INPUT
-domain_api_version=$(echo "${APIS}" | python cmds-$$.py 2>> ${log_file_name})
-  fi
-  echo "$domain_api_version"
-}
-
 # Retrieve Custom Resource Domain
 get_custom_resource_domain() {
   local DOMAIN=$(curl \
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    -H "Accept: application/json" \
+    -H "User-Agent: WebLogic scalingAction.sh" \
+    -H "Authorization: Bearer $access_token" \
     "$kubernetes_master"/apis/weblogic.oracle/"$domain_api_version"/namespaces/"$wls_domain_namespace"/domains/"$wls_domain_uid")
   if [ $? -ne 0 ]; then
     trace "Failed to retrieve WebLogic Domain Custom Resource Definition"
@@ -160,7 +90,9 @@ get_custom_resource_cluster() {
   local clusterJson=$(curl \
     -v -f \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    -H "Accept: application/json" \
+    -H "User-Agent: WebLogic scalingAction.sh" \
+    -H "Authorization: Bearer $access_token" \
     "$kubernetes_master"/apis/weblogic.oracle/"$cluster_api_version"/namespaces/"$wls_domain_namespace"/clusters/"$cluster_resource_name")
   if [ $? -ne 0 ]; then
     trace "Failed to retrieve WebLogic Cluster Custom Resource Definition with cluster resource name '$cluster_resource_name'"
@@ -339,6 +271,25 @@ INPUT
   echo "$clusterName"
 }
 
+# Function to get the metadata.name from cluster resource.
+# args:
+# $1 Cluster resource in json format
+get_cluster_resource_name_from_cluster() {
+  local clusterJson="$1"
+  local resourceName
+  if jq_available; then
+    resourceName=$(echo "${clusterJson}" | jq -r ".metadata.name" 2>> ${log_file_name} )
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+print((json.load(sys.stdin)["metadata"]["name"]))
+INPUT
+  resourceName=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+
+  echo "$resourceName"
+}
+
 #
 # Function to get minimum replica count from cluster resource
 # $1 - Cluster resource in json format
@@ -465,37 +416,6 @@ replica count of $maxReplicas. Exiting."
   fi
 }
 
-# Create the REST endpoint CA certificate in PEM format
-# args:
-# $1 certificate file name to create
-create_ssl_certificate_file() {
-  local pem_filename="$1"
-  if [ "${INTERNAL_OPERATOR_CERT}" ];
-  then
-    echo "${INTERNAL_OPERATOR_CERT}" | base64 --decode >  "$pem_filename"
-  else
-    trace "Operator Cert File not found"
-    exit 1
-  fi
-}
-
-# Create request body for scaling request
-# args:
-# $1 replica count
-get_request_body() {
-local new_replica="$1"
-local request_body=$(cat <<EOF
-{
-  "spec":
-  {
-    "replicas": $new_replica
-  }
-}
-EOF
-)
-echo "$request_body"
-}
-
 #### Main ####
 
 # Parse arguments/parameters
@@ -519,15 +439,12 @@ do
     shift # past argument=value
     ;;
     --operator_service_name=*)
-    operator_service_name="${arg#*=}"
     shift # past argument=value
     ;;
     --operator_service_account=*)
-    operator_service_account="${arg#*=}"
     shift # past argument=value
     ;;
     --operator_namespace=*)
-    operator_namespace="${arg#*=}"
     shift # past argument=value
     ;;
     --scaling_size=*)
@@ -568,15 +485,8 @@ initialize_access_token
 # Log the script input parameters for debugging
 logScalingParameters
 
-# Retrieve the operator's REST endpoint port
-port=$(get_operator_internal_rest_port)
-trace "port: $port"
-
-# Retrieve the api version of the deployed Domain Resource
-domain_api_version=$(get_domain_api_version)
-trace "domain_api_version: $domain_api_version"
-
 # Retrieve the Domain configuration
+domain_api_version="v9"
 DOMAIN=$(get_custom_resource_domain)
 
 # API version of cluster resource hard coded to "v1" in this release
@@ -599,48 +509,27 @@ new_replica=$(calculate_new_replica_count "$scaling_action" "$current_replica_co
 verify_minimum_replicas_for_cluster "$new_replica" "$CLUSTER"
 verify_maximum_replicas_for_cluster "$new_replica" "$CLUSTER"
 
+cluster_resource_name=$(get_cluster_resource_name_from_cluster "$CLUSTER")
+
 # Cleanup cmds-$$.py
 [ -e cmds-$$.py ] && rm cmds-$$.py
 
-# Create the scaling request body
-request_body=$(get_request_body "$new_replica")
+trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | oldReplica: $current_replica_count | newReplica: $new_replica "
 
-content_type="Content-Type: application/json"
-requested_by="X-Requested-By: WLDF"
-authorization="Authorization: Bearer $access_token"
-pem_filename="weblogic_operator-$$.pem"
-
-# Create PEM file for Operator SSL Certificate
-create_ssl_certificate_file "$pem_filename"
-
-# Operator Service REST URL for scaling
-operator_url="https://$operator_service_name.$operator_namespace.svc.cluster.local:$port/operator/v1/domains/$wls_domain_uid/clusters/$wls_cluster_name/scale"
-
-trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | oldReplica: $current_replica_count | newReplica: $new_replica | operator_url: $operator_url "
-
-# send REST request to Operator
-if [ -e $pem_filename ]
-then
-  result=$(curl \
-    -v \
-    --cacert $pem_filename \
-    -X POST \
-    -H "$content_type" \
-    -H "$requested_by" \
-    -H "$authorization" \
-    -d "$request_body" \
-    "$operator_url")
-else
-  trace "Operator PEM formatted file not found"
-  exit 1
-fi
+# send scaling request
+result=$(curl \
+  -v -f -X PATCH \
+  --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+  -H "Content-Type: application/merge-patch+json" \
+  -H "Accept: application/json" \
+  -H "User-Agent: WebLogic scalingAction.sh" \
+  -H "Authorization: Bearer $access_token" \
+  -d "{\"spec\":{\"replicas\":$new_replica}}" \
+  "$kubernetes_master"/apis/weblogic.oracle/"$cluster_api_version"/namespaces/"$wls_domain_namespace"/clusters/"$cluster_resource_name"/scale)
 
 if [ $? -ne 0 ]
 then
-  trace "Failed scaling request to WebLogic Operator"
+  trace "Failed scaling request"
   trace "$result"
   exit 1
 fi
-
-# Cleanup generated operator PEM file
-[ -e $pem_filename ] && rm $pem_filename
