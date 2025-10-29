@@ -44,13 +44,13 @@ spec:
       containers:
       - env:
         - name: ORACLE_SID
-          value: ORCLCDB
+          value: devcdb
         - name: ORACLE_PDB
-          value: ORCLPDB1
+          value: devpdb
         - name: DB_DOMAIN
           value: k8s
-        - name: DB_BUNDLE
-          value: basic  
+        - name: ORACLE_EDITION
+          value: standard
         - name: ORACLE_PWD
           valueFrom:
             secretKeyRef:

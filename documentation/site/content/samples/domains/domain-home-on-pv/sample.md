@@ -47,7 +47,7 @@ The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1
 In this section, you will define the PV and PVC configuration and reference the `domain creation image` created earlier in the domain resource YAML file. You will then deploy the domain resource YAML file to the namespace `sample-domain1-ns`, including the following steps:
 
   - Create a Secret containing your WebLogic administrator user name and password.
-  - If your domain type is `JRF`, create secrets containing your RCU access URL, credentials, and prefix.
+  - If your domain type is `JRF`, create secrets containing your RCU access URL, credentials, prefix and DBA password.
   - Deploy a Domain YAML file that references the PV/PVC configuration and a `domain creation image` under the `spec.configuration.initializeDomainOnPV` section.
   - Wait for the PV and PVC to be created if they do not already exist.
   - Wait for domain's Pods to start and reach their ready state.
@@ -82,8 +82,8 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
-  **NOTE**: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
-  that you chose in the prequisite steps when
+  **NOTE**: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password and `MY_DBA_PASSWORD` with the DBA password of the database
+  that you chose in the prerequisite steps when
   [setting up JRF]({{< relref "/samples/domains/domain-home-on-pv/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
 
   ```shell
@@ -91,7 +91,9 @@ Run the following `kubectl` commands to deploy the required secrets:
     sample-domain1-rcu-access \
      --from-literal=rcu_prefix=FMW1 \
      --from-literal=rcu_schema_password=MY_RCU_SCHEMA_PASSWORD \
-     --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+     --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb \
+     --from-literal=dba_user=sys \
+     --from-literal=dba_password=MY_DBA_PASSWORD     
   ```
   ```shell
   $ kubectl -n sample-domain1-ns label  secret \

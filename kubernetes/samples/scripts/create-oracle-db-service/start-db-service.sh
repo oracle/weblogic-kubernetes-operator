@@ -46,8 +46,6 @@ while getopts ":a:p:i:s:n:h:l:" opt; do
     ;;
     n) namespace="${OPTARG}"
     ;;
-    l) pdbid="${OPTARG}"
-    ;;
     h) usage 0
     ;;
     *) usage 1
@@ -77,6 +75,7 @@ if [ ! -f "$dbYaml" ]; then
         templateYaml="${scriptDir}/common/oracle.db.yaml"
     else
         templateYaml="${scriptDir}/common/oracle.db.19plus.yaml"
+        pdbid="devpdb"
     fi
     echo "Using template: $templateYaml"
     cp "$templateYaml" "$dbYaml"
@@ -140,10 +139,6 @@ if [ $counter -gt ${max} ]; then
  echo "[ERRORR] Oracle DB Service is not ready after [${max}] iterations ..."
  exit -1
 fi
-
-# for db 19c only
-echo " set sys password "
-${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash setPassword.sh Oradoc_db1
 
 if [ $? != 0  ]; then
  echo "######################";
