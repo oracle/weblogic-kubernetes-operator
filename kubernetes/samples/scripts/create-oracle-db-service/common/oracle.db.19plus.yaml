@@ -47,8 +47,6 @@ spec:
           value: devcdb
         - name: ORACLE_PDB
           value: devpdb
-        - name: DB_DOMAIN
-          value: k8s
         - name: ORACLE_EDITION
           value: standard
         - name: ORACLE_PWD
