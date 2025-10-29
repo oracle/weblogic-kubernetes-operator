@@ -63,7 +63,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newProbe;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRole;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleBinding;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceAccount;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
@@ -240,11 +239,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .mountPath("/deployment/debug-config"))
                                         .addVolumeMountsItem(
                                             newVolumeMount()
-                                                .name("weblogic-operator-secrets-volume")
-                                                .mountPath("/deployment/secrets")
-                                                .readOnly(true))
-                                        .addVolumeMountsItem(
-                                            newVolumeMount()
                                                 .name("deployment-volume")
                                                 .mountPath("/deployment"))
                                         .addVolumeMountsItem(
@@ -264,12 +258,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newConfigMapVolumeSource()
                                                 .optional(Boolean.TRUE)
                                                 .name("weblogic-operator-debug-cm")))
-                                .addVolumesItem(
-                                    newVolume()
-                                        .name("weblogic-operator-secrets-volume")
-                                        .secret(
-                                            newSecretVolumeSource()
-                                                .secretName("weblogic-operator-secrets")))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("deployment-volume")

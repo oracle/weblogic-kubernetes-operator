@@ -141,9 +141,6 @@ spec:
           mountPath: "/deployment/config"
         - name: "weblogic-operator-debug-cm-volume"
           mountPath: "/deployment/debug-config"
-        - name: "weblogic-operator-secrets-volume"
-          mountPath: "/deployment/secrets"
-          readOnly: true
         - name: "deployment-volume"
           mountPath: "/deployment"
         - name: "tmp-volume"
@@ -209,9 +206,6 @@ spec:
         configMap:
           name: "weblogic-operator-debug-cm"
           optional: true
-      - name: "weblogic-operator-secrets-volume"
-        secret:
-          secretName: "weblogic-operator-secrets"
       - name: "deployment-volume"
         emptyDir: {}
       - name: "tmp-volume"
