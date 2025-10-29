@@ -12,20 +12,20 @@
     <title>Scaling :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1761708994" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1761708994" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1761753918" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1761753918" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1761708994"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1761753918"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1761708994"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1761708994"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1761753918"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1761753918"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1761708994"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1761753918"></script>
 
     
   </div>
@@ -3929,14 +3929,14 @@
     <li><a href="#supported-autoscaling-controllers">Supported autoscaling controllers</a>
       <ul>
         <li><a href="#kubernetes-horizontal-pod-autoscaler-hpa">Kubernetes Horizontal Pod Autoscaler (HPA)</a></li>
-        <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a>
+        <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-scaling-script">Using a WLDF policy rule and script action to call the scaling script</a>
           <ul>
             <li><a href="#configure-automatic-scaling-of-weblogic-clusters-in-kubernetes-with-wldf">Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF</a></li>
             <li><a href="#create-clusterrolebindings-to-allow-a-namespace-user-to-query-wls-kubernetes-cluster-information">Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information</a></li>
           </ul>
         </li>
         <li><a href="#horizontal-pod-autoscaler-hpa-using-weblogic-exporter-metrics">Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics</a></li>
-        <li><a href="#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</a></li>
+        <li><a href="#using-a-prometheus-alert-action-to-call-the-scaling-script">Using a Prometheus alert action to call the scaling script</a></li>
       </ul>
     </li>
     <li><a href="#helpful-tips">Helpful tips</a>
@@ -3996,14 +3996,14 @@
     <li><a href="#supported-autoscaling-controllers">Supported autoscaling controllers</a>
       <ul>
         <li><a href="#kubernetes-horizontal-pod-autoscaler-hpa">Kubernetes Horizontal Pod Autoscaler (HPA)</a></li>
-        <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a>
+        <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-scaling-script">Using a WLDF policy rule and script action to call the scaling script</a>
           <ul>
             <li><a href="#configure-automatic-scaling-of-weblogic-clusters-in-kubernetes-with-wldf">Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF</a></li>
             <li><a href="#create-clusterrolebindings-to-allow-a-namespace-user-to-query-wls-kubernetes-cluster-information">Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information</a></li>
           </ul>
         </li>
         <li><a href="#horizontal-pod-autoscaler-hpa-using-weblogic-exporter-metrics">Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics</a></li>
-        <li><a href="#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</a></li>
+        <li><a href="#using-a-prometheus-alert-action-to-call-the-scaling-script">Using a Prometheus alert action to call the scaling script</a></li>
       </ul>
     </li>
     <li><a href="#helpful-tips">Helpful tips</a>
@@ -4024,8 +4024,8 @@
 <li><a href="#using-domain-lifecycle-sample-scripts">Using Domain lifecycle sample scripts</a></li>
 <li><a href="#calling-the-operators-rest-scale-api">Calling the operator&rsquo;s REST scale API, for example, from <code>curl</code></a></li>
 <li><a href="#kubernetes-horizontal-pod-autoscaler-hpa">Kubernetes Horizontal Pod Autoscaler (HPA)</a></li>
-<li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a></li>
-<li><a href="#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</a></li>
+<li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-scaling-script">Using a WLDF policy rule and script action to call the scaling script</a></li>
+<li><a href="#using-a-prometheus-alert-action-to-call-the-scaling-script">Using a Prometheus alert action to call the scaling script</a></li>
 </ul>
 <h3 id="kubectl-cli-commands"><code>kubectl</code> CLI commands</h3>
 <p>Use the Kubernetes command-line tool, <code>kubectl</code>, to manually scale WebLogic clusters with the following commands:</p>
@@ -4177,42 +4177,26 @@ Detailed instructions for configuring the external REST endpoint are available <
 <li>By listing the Managed Server pods, you will see the autoscaler increase the replicas on the Cluster resource and the operator respond by starting additional cluster member servers.  Conversely, after stopping the load and when the CPU utilization average is consistently under 50%, the autoscaler will scale down the WebLogic cluster by decreasing the replicas value on the Cluster resource.</li>
 </ol>
 <p>For more in-depth information on the Kubernetes Horizontal Pod Autoscaler, see <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Horizontal Pod Autoscaling</a>.</p>
-<h4 id="using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</h4>
+<h4 id="using-a-wldf-policy-rule-and-script-action-to-call-the-scaling-script">Using a WLDF policy rule and script action to call the scaling script</h4>
 <p>The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
-in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a>,
-for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.</p>
-
-<div class="notices note" ><p>Beginning with operator version 4.0.5, the operator&rsquo;s REST endpoint is disabled by default. Install the operator with the Helm install option <code>--set &quot;enableRest=true&quot;</code> to enable the REST endpoint.</p>
-</div>
-
+in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a>,
+for use as a Script Action, which initiates a scaling of the selected cluster.</p>
 <h5 id="configure-automatic-scaling-of-weblogic-clusters-in-kubernetes-with-wldf">Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF</h5>
-<p>The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator&rsquo;s REST endpoint:</p>
+<p>The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests:</p>
 <ol>
 <li>
-<p>Copy the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script to <code>$DOMAIN_HOME/bin/scripts</code> so that it&rsquo;s accessible within the Administration Server pod. For more information, see <a href="https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_notifications.html#GUID-5CC52534-13CD-40D9-915D-3380C86580F1">Configuring Script Actions</a> in <em>Configuring and Using the Diagnostics Framework for Oracle WebLogic Server</em>.</p>
+<p>Copy the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script to <code>$DOMAIN_HOME/bin/scripts</code> so that it&rsquo;s accessible within the Administration Server pod. For more information, see <a href="https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_notifications.html#GUID-5CC52534-13CD-40D9-915D-3380C86580F1">Configuring Script Actions</a> in <em>Configuring and Using the Diagnostics Framework for Oracle WebLogic Server</em>.</p>
 </li>
 <li>
 <p>Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
 see <a href="https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_watch_notif.html#GUID-D3FA8301-AAF2-41CE-A6A5-AB4005849913">Configuring Policies and Actions</a> in <em>Configuring and Using the Diagnostics Framework for Oracle WebLogic Server</em>.</p>
 <p>a. Configure a WLDF policy with a rule expression for monitoring WebLogic Server metrics, such as memory, idle threads, and CPU load for example.</p>
-<p>b. Configure a WLDF script action and associate the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script.</p>
+<p>b. Configure a WLDF script action and associate the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script.</p>
 </li>
 </ol>
-<p>Important notes about the configuration properties for the Script Action:</p>
-<p>The <code>scalingAction.sh</code> script requires access to the SSL certificate of the operator’s endpoint and this is provided through the environment variable <code>INTERNAL_OPERATOR_CERT</code>.<br>
-The operator’s SSL certificate can be found in the <code>internalOperatorCert</code> entry of the operator’s ConfigMap <code>weblogic-operator-cm</code>:</p>
-<p>For example:</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">#&gt; kubectl describe configmap weblogic-operator-cm -n weblogic-operator
-...
-Data
-====
-internalOperatorCert:
-----
-LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
-...
-</code></pre><p>The scalingAction.sh script accepts a number of customizable parameters:</p>
+<p>The scalingAction.sh script accepts a number of customizable parameters:</p>
 <ul>
 <li>
 <p><code>action</code> - scaleUp or scaleDown (Required)</p>
@@ -4239,15 +4223,6 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
 <p><code>wls_domain_namespace</code> - Kubernetes Namespace in which the WebLogic domain is defined, default=<code>default</code></p>
 </li>
 <li>
-<p><code>operator_service_name</code> - WebLogic Kubernetes Operator Service name of the REST endpoint, default=<code>internal-weblogic-operator-service</code></p>
-</li>
-<li>
-<p><code>operator_service_account</code> - Kubernetes Service Account name for the operator, default=<code>weblogic-operator</code></p>
-</li>
-<li>
-<p><code>operator_namespace</code> – Namespace in which the operator is deployed, default=<code>weblogic-operator</code></p>
-</li>
-<li>
 <p><code>scaling_size</code> – Incremental number of Managed Server instances by which to scale up or down, default=<code>1</code></p>
 </li>
 </ul>
@@ -4258,7 +4233,7 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
 <li>REST</li>
 <li>JMX application</li>
 </ul>
-<p>A more in-depth description and example on using WLDF&rsquo;s Policies and Actions component for initiating scaling requests through the operator&rsquo;s REST endpoint can be found in the blogs:</p>
+<p>A more in-depth description and example on using WLDF&rsquo;s Policies and Actions component for initiating scaling requests can be found in the blogs:</p>
 <ul>
 <li><a href="https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2">Automatic Scaling of WebLogic Clusters on Kubernetes</a></li>
 <li><a href="https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes">WebLogic Dynamic Clusters on Kubernetes</a></li>
@@ -4275,11 +4250,8 @@ The following is an example YAML file for creating the appropriate Kubernetes Cl
 </span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-cluster-role</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">rules</span>:
-</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;services/status&#34;</span>]
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>]
 </span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;weblogic.oracle&#34;</span>]
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;domains&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;domains&#34;</span>, <span style="color:#e6db74">&#34;clusters&#34;</span>, <span style="color:#e6db74">&#34;clusters/scale&#34;</span>]
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>]
 </span></span><span style="display:flex;"><span>---
 </span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
@@ -4319,19 +4291,19 @@ The following is an example YAML file for creating the appropriate Kubernetes Cl
 </span></span><span style="display:flex;"><span>---
 </span></span></code></pre></div><h4 id="horizontal-pod-autoscaler-hpa-using-weblogic-exporter-metrics">Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics</h4>
 <p>Please read this blog post to learn how to scale a WebLogic cluster, based on WebLogic metrics provided by the Monitoring Exporter, using the Kubernetes Horizontal Pod Autoscaler (HPA). We will use the Prometheus Adapter to gather the names of the available metrics from Prometheus at regular intervals. A custom configuration of the adapter will expose only metrics that follow specific formats. <a href="https://blogs.oracle.com/weblogicserver/post/horizontal-pod-autoscaler-hpausing-weblogic-exporter-metrics">Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics</a>. See this corresponding video for a demonstration of the blog post in action. <a href="https://www.youtube.com/watch?v=aKBG6yJ3sMg">WebLogic Kubernetes Operator support for Kubernetes Horizontal Pod Autoscaling</a>.</p>
-<h4 id="using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</h4>
+<h4 id="using-a-prometheus-alert-action-to-call-the-scaling-script">Using a Prometheus alert action to call the scaling script</h4>
 <p>In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about <a href="https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5">Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes</a>.</p>
 <h3 id="helpful-tips">Helpful tips</h3>
 <h4 id="debugging-scalingactionsh">Debugging scalingAction.sh</h4>
-<p>The <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script was designed to be executed within a container of the
+<p>The <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script was designed to be executed within a container of the
 Administration Server Pod because the associated diagnostic module is targeted to the Administration Server.</p>
 <p>The easiest way to verify and debug the <code>scalingAction.sh</code> script is to open a shell on the running Administration Server pod and execute the script on the command line.</p>
 <p>The following example illustrates how to open a bash shell on a running Administration Server pod named <code>domain1-admin-server</code> and execute the <code>scriptAction.sh</code> script.  It assumes that:</p>
 <ul>
 <li>The domain home is in <code>/u01/oracle/user-projects/domains/domain1</code> (that is, the domain home is inside an image).</li>
-<li>The Dockerfile copied <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> to <code>/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh</code>.</li>
+<li>The Dockerfile copied <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> to <code>/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh</code>.</li>
 </ul>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl exec -it domain1-admin-server /bin/bash
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /u01/oracle/user-projects/domains/domain1/bin/scripts <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
@@ -7028,19 +7000,19 @@ This example assumes the operator and Domain YAML file are configured with the f
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1761708994"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1761708994"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1761708994"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1761708994"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1761708994"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1761708994"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1761753918"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1761753918"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1761753918"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1761753918"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1761753918"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1761753918"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1761708994"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1761708994"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1761708994"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1761753918"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1761753918"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1761753918"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1761708994"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1761753918"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
