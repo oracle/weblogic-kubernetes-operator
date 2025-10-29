@@ -23,4 +23,10 @@ rules:
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains", "clusters"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["weblogic.oracle"]
+  resources: ["domains/status", "clusters/status"]
+  verbs: ["get", "watch"]
+- apiGroups: ["weblogic.oracle"]
+  resources: ["clusters/scale"]
+  verbs: ["update", "patch"]
 {{- end }}
