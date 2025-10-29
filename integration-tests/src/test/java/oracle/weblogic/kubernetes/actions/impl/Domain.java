@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -1068,12 +1069,39 @@ public class Domain {
     return true;
   }
 
-  private static void scaleViaScript(String opNamespace, String domainNamespace,
+  private static boolean scaleViaScript(String opNamespace, String domainNamespace,
                                      String domainUid, String scalingAction, String clusterName,
                                      String opServiceAccount, int scalingSize,
                                      String domainHomeLocation,
                                      V1Pod adminPod) {
     LoggingFacade logger = getLogger();
+
+    String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
+    if (secretName.isEmpty()) {
+      logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+      return false;
+    }
+    logger.info("Got secret {0} of service account {1} in namespace {2}",
+        secretName, opServiceAccount, opNamespace);
+
+    logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
+        + " in namespace {2}", secretName, opServiceAccount, opNamespace);
+    String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
+    if (secretToken == null || secretToken.isEmpty()) {
+      logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
+          secretName, opServiceAccount, opNamespace);
+      return false;
+    }
+    logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, secretToken);
+
+    // decode the secret encoded token
+    String decodedToken = OKD ? secretToken : new String(Base64.getDecoder().decode(secretToken));
+    logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, decodedToken);
+
+    assertNotNull(decodedToken, "Couldn't get secret, token is null");
+
     StringBuffer scalingCommand = new StringBuffer()
         //.append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
         .append(Paths.get("cd /u01; /u01/scalingAction.sh"))
@@ -1085,12 +1113,8 @@ public class Domain {
         .append(domainNamespace)
         .append(" --cluster_name=")
         .append(clusterName)
-        .append(" --operator_namespace=")
-        .append(opNamespace)
-        .append(" --operator_service_account=")
-        .append(opServiceAccount)
-        .append(" --operator_service_name=")
-        .append("internal-weblogic-operator-svc")
+        .append(" --access_token=")
+        .append(decodedToken)
         .append(" --scaling_size=")
         .append(scalingSize)
         .append(" --kubernetes_master=")
@@ -1103,6 +1127,8 @@ public class Domain {
     ExecResult result = null;
     assertNotNull(adminPod, "admin pod is null");
     assertNotNull(adminPod.getMetadata(), "admin pod metadata is null");
+    Path scalingActionLogPath = Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log");
+    Path scalingActionOutPath = Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.out");
     try {
       result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
           "/bin/sh", "-c", commandToExecuteInsidePod),
@@ -1119,16 +1145,24 @@ public class Domain {
       testUntil(
               () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
                       "/u01/scalingAction.log",
-                      Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
+                      scalingActionLogPath),
               logger,
               "Copying scalingAction.log from admin server pod");
       // copy scalingAction.out to local
       testUntil(
               () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
                       "/u01/scalingAction.out",
-                      Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.out")),
+                      scalingActionOutPath),
               logger,
               "Copying scalingAction.out from admin server pod");
+
+      try {
+        logger.info("Contents of scalingAction.log:\n" + Files.readString(scalingActionLogPath));
+        logger.info("Contents of scalingAction.out:\n" + Files.readString(scalingActionOutPath));
+      } catch (IOException ioex) {
+        // no-op
+      }
+
       throw err;
 
     }
@@ -1136,17 +1170,24 @@ public class Domain {
     testUntil(
         () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
           "/u01/scalingAction.log",
-          Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
+          scalingActionLogPath),
         logger,
         "Copying scalingAction.log from admin server pod");
     // copy scalingAction.out to local
     testUntil(
         () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
             "/u01/scalingAction.out",
-            Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.out")),
+            scalingActionOutPath),
         logger,
         "Copying scalingAction.out from admin server pod");
     //      domainHomeLocation + "/bin/scripts/scalingAction.log",
+
+    try {
+      logger.info("Contents of scalingAction.log:\n" + Files.readString(scalingActionLogPath));
+      logger.info("Contents of scalingAction.out:\n" + Files.readString(scalingActionOutPath));
+    } catch (IOException ioex) {
+      // no-op
+    }
 
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
     // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
@@ -1155,6 +1196,7 @@ public class Domain {
         String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
             commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
 
+    return true;
   }
 
 }

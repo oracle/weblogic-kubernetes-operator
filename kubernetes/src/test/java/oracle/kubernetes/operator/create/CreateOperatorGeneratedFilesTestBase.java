@@ -521,6 +521,11 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .verbs(asList("get", "create", "list", "watch", "update", "patch")))
         .addRulesItem(
             newPolicyRule()
+                .addApiGroupsItem("weblogic.oracle")
+                .addResourcesItem("clusters/scale")
+                .verbs(asList("update", "patch")))
+        .addRulesItem(
+            newPolicyRule()
                 .addApiGroupsItem("authentication.k8s.io")
                 .addResourcesItem("tokenreviews")
                 .verbs(singletonList("create")))
@@ -800,7 +805,23 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                       "update",
                       "patch",
                       "delete",
-                      "deletecollection")));
+                      "deletecollection")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("weblogic.oracle")
+                .resources(asList("domains/status", "clusters/status"))
+                .verbs(
+                    asList(
+                        "get",
+                        "watch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("weblogic.oracle")
+                .resources(singletonList("clusters/scale"))
+                .verbs(
+                    asList(
+                        "update",
+                        "patch")));
   }
 
   private V1PolicyRule newPolicyRuleForValidatingWebhookConfiguration() {
