@@ -12,20 +12,20 @@
     <title>Prerequisites :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1761795212" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1761795212" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1761863303" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1761863303" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1761795212"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1761863303"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1761795212"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1761795212"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1761863303"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1761863303"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1761795212"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1761863303"></script>
 
     
   </div>
@@ -4040,7 +4040,7 @@ $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-
 <p>For more information on ingresses and load balancers, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/ingress/">Ingress</a>.</p>
 </li>
 <li>
-<p>Obtain the WebLogic 12.2.1.4 image that is referenced by the sample&rsquo;s Domain resource YAML.</p>
+<p>Obtain the WebLogic 14.1.2.0 image that is referenced by the sample&rsquo;s Domain resource YAML.</p>
 <p>a. Use a browser to access the <a href="http://container-registry.oracle.com">Oracle Container Registry</a>.</p>
 <p>b. Choose an image location: for JRF domains, select <code>Middleware</code>, then <code>fmw-infrastructure</code>; for WLS domains, select <code>Middleware</code>, then <code>weblogic</code>.</p>
 <p>c. Select Sign In and accept the license agreement.</p>
@@ -4084,7 +4084,7 @@ for the Domain on PV sample.</p>
 </tr>
 <tr>
 <td>database image</td>
-<td><code>container-registry.oracle.com/database/enterprise:12.2.0.1-slim</code></td>
+<td><code>container-registry.oracle.com/database/enterprise:19.3.0.0</code></td>
 </tr>
 <tr>
 <td>database password</td>
@@ -4100,7 +4100,7 @@ for the Domain on PV sample.</p>
 </tr>
 <tr>
 <td>database URL</td>
-<td><code>oracle-db.default.svc.cluster.local:1521/devpdb.k8s</code></td>
+<td><code>oracle-db.default.svc.cluster.local:1521/devpdb</code></td>
 </tr>
 </tbody>
 </table>
@@ -4134,7 +4134,7 @@ Use only <code>_</code> and <code>#</code> as special characters to eliminate po
 <li>
 <p>Use the sample script in <code>/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service</code> to create an Oracle database running in the pod, <code>oracle-db</code>.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ start-db-service.sh
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ start-db-service.sh -i container-registry.oracle.com/database/enterprise:19.3.0.0
 </span></span></code></pre></div><p>This script will deploy a database in the <code>default</code> namespace with the connect string <code>oracle-db.default.svc.cluster.local:1521/devpdb.k8s</code>, and administration password MY_DBA_PASSWORD.</p>
 <p>This step is based on the steps documented in <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/database/">Run a Database</a>.</p>
 <p><strong>NOTE</strong>: If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then deploy a Kubernetes <code>docker secret</code> to the default namespace with login credentials for <code>container-registry.oracle.com</code>, and pass the name of this secret as a parameter to <code>start-db-service.sh</code> using <code>-s your-image-pull-secret</code>. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/cannot-pull-image/">Cannot pull image FAQ</a>.</p>
@@ -4160,6 +4160,8 @@ Use only <code>_</code> and <code>#</code> as special characters to eliminate po
         rcu_prefix: &#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@&#39;
         rcu_schema_password: &#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@&#39;
         rcu_db_conn_string: &#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@&#39;
+        rcu_admin_password: &#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:dba_password@@&#39;
+        rcu_admin_user: sys        
 </code></pre><p>For important JRF domain information, refer to <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/">JRF domains</a>.</p>
 
 
@@ -6784,19 +6786,19 @@ Use only <code>_</code> and <code>#</code> as special characters to eliminate po
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1761795212"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1761795212"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1761795212"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1761795212"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1761795212"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1761795212"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1761863303"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1761863303"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1761863303"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1761863303"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1761863303"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1761863303"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1761795212"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1761795212"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1761795212"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1761863303"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1761863303"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1761863303"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1761795212"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1761863303"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
