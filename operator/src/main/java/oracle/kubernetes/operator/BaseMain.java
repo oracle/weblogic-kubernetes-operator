@@ -83,6 +83,7 @@ public abstract class BaseMain {
 
         Logger logger = Logger.getLogger("Operator", "Operator");
         logger.setLevel(level);
+        logger.addHandler(consoleHandler);
       }
 
     } catch (IOException e) {
