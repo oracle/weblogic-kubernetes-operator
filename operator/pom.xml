@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2025, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -195,17 +195,6 @@
             </goals>
             <configuration>
               <sourceDirectory>src/main/resources/scripts</sourceDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>test-scaling-script</id>
-            <phase>test</phase>
-            <goals>
-              <goal>shunit2</goal>
-            </goals>
-            <configuration>
-              <testSourceDirectory>src/test/sh/scaling</testSourceDirectory>
-              <sourceDirectory>scripts/scaling</sourceDirectory>
             </configuration>
           </execution>
         </executions>

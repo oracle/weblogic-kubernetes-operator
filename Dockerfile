@@ -4,8 +4,8 @@
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build
 
-ENV JAVA_URL_X64="https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz"
-ENV JAVA_URL_AARCH64="https://download.oracle.com/java/21/latest/jdk-21_linux-aarch64_bin.tar.gz"
+ENV JAVA_URL_X64="https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz"
+ENV JAVA_URL_AARCH64="https://download.oracle.com/java/25/latest/jdk-25_linux-aarch64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \

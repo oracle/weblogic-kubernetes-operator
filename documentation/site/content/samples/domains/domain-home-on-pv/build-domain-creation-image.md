@@ -222,6 +222,8 @@ domainInfo:
         rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
         rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
         rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+        rcu_admin_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:dba_password@@'
+        rcu_admin_user: sys
 
 topology:
     AdminServerName: 'admin-server'
