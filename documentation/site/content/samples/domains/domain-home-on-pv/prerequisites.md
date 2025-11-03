@@ -127,7 +127,7 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
    For more information on ingresses and load balancers, see [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
 
 
-1. Obtain the WebLogic 12.2.1.4 image that is referenced by the sample's Domain resource YAML.
+1. Obtain the WebLogic 14.1.2.0 image that is referenced by the sample's Domain resource YAML.
 
    a. Use a browser to access the [Oracle Container Registry](http://container-registry.oracle.com).
 
@@ -169,11 +169,11 @@ A JRF domain requires an infrastructure database and requires initializing this 
 | --------- | ----- |
 | database Kubernetes namespace | `default` |
 | database Kubernetes pod | `oracle-db` |
-| database image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
+| database image | `container-registry.oracle.com/database/enterprise:19.3.0.0` |
 | database password | MY_DBA_PASSWORD |
 | infrastructure schema prefix | `FMW1` (for domain1) |
 | infrastructure schema password | MY_RCU_SCHEMA_PASSWORD |
-| database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
+| database URL | `oracle-db.default.svc.cluster.local:1521/devpdb` |
 
 
 1. Ensure that you have access to the database image, and then create a deployment using it:
@@ -201,7 +201,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
      $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
      ```
      ```shell
-     $ start-db-service.sh
+     $ start-db-service.sh -i container-registry.oracle.com/database/enterprise:19.3.0.0
      ```
 
      This script will deploy a database in the `default` namespace with the connect string `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password MY_DBA_PASSWORD.
@@ -231,6 +231,8 @@ For example, in this sample:
         rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
         rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
         rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+        rcu_admin_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:dba_password@@'
+        rcu_admin_user: sys        
 ```
 
 For important JRF domain information, refer to [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md" >}}).

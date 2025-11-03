@@ -922,6 +922,7 @@ public class Domain {
           .addRulesItem(new V1PolicyRule()
               .addApiGroupsItem("weblogic.oracle")
               .addResourcesItem("clusters")
+              .addResourcesItem("clusters/scale")
               .addResourcesItem("domains")
               .addVerbsItem("get")
               .addVerbsItem("list")

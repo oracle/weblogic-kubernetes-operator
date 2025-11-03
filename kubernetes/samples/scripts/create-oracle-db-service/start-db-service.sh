@@ -22,7 +22,6 @@ usage() {
   echo "      If this secret is not deployed, then Kubernetes will try pull anonymously."
   echo "  -n Configurable Kubernetes NameSpace for Oracle DB Service (optional)"
   echo "      (default: default) "
-  echo "  -l db pdb id for Oracle DB service (optional, default: devpdb.k8s)"
   echo "  -h Help"
   exit $1
 }
@@ -46,8 +45,6 @@ while getopts ":a:p:i:s:n:h:l:" opt; do
     ;;
     n) namespace="${OPTARG}"
     ;;
-    l) pdbid="${OPTARG}"
-    ;;
     h) usage 0
     ;;
     *) usage 1
@@ -67,20 +64,18 @@ fi
 
 echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}] NameSpace[${namespace}] SysSecret[${syssecret}]"
 
-#create unique db yaml file if does not exists
+#unique db yaml file holder
 dbYaml=${scriptDir}/common/oracle.db.${namespace}.yaml
 
-if [ ! -f "$dbYaml" ]; then
-    echo "$dbYaml does not exist."
-    # Choose template based on dbimage version
-    if echo "$dbimage" | grep -q "12\."; then
-        templateYaml="${scriptDir}/common/oracle.db.yaml"
-    else
-        templateYaml="${scriptDir}/common/oracle.db.19plus.yaml"
-    fi
-    echo "Using template: $templateYaml"
-    cp "$templateYaml" "$dbYaml"
+# Choose template based on dbimage version
+if echo "$dbimage" | grep -q "12\."; then
+    templateYaml="${scriptDir}/common/oracle.db.yaml"
+else
+    templateYaml="${scriptDir}/common/oracle.db.19plus.yaml"
+    pdbid="devpdb"
 fi
+echo "Using template: $templateYaml"
+cp "$templateYaml" "$dbYaml"
 
 
 # Modify ImagePullSecret and DatabaseImage based on input
@@ -140,10 +135,6 @@ if [ $counter -gt ${max} ]; then
  echo "[ERRORR] Oracle DB Service is not ready after [${max}] iterations ..."
  exit -1
 fi
-
-# for db 19c only
-echo " set sys password "
-${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash setPassword.sh Oradoc_db1
 
 if [ $? != 0  ]; then
  echo "######################";
