@@ -7,9 +7,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -19,10 +19,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialects;
 import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
@@ -62,9 +62,9 @@ public class CrdSchemaGeneratorTest {
                           DOMAIN_V2_SAMPLE_YAML_4, DOMAIN_V2_SAMPLE_YAML_5})
   void validateSchemaAgainstSamples(String fileName) throws IOException {
     final JsonNode jsonToValidate = convertToJson(fileName);
-    final JsonSchema schema = createJsonSchema(DomainResource.class);
+    final Schema schema = createJsonSchema(DomainResource.class);
 
-    Set<ValidationMessage> validationResult = schema.validate(jsonToValidate);
+    Collection<Error> validationResult = schema.validate(jsonToValidate);
     if (!validationResult.isEmpty()) {
       throw new RuntimeException(toExceptionMessage(fileName, validationResult));
     }
@@ -101,7 +101,7 @@ public class CrdSchemaGeneratorTest {
   }
 
   @Nonnull
-  private String toExceptionMessage(String fileName, Set<ValidationMessage> validationResult) {
+  private String toExceptionMessage(String fileName, Collection<Error> validationResult) {
     return Stream.concat(toPrefixStream(fileName), toFailureStream(validationResult))
           .collect(Collectors.joining(System.lineSeparator()));
   }
@@ -112,12 +112,12 @@ public class CrdSchemaGeneratorTest {
   }
 
   @Nonnull
-  private Stream<String> toFailureStream(Set<ValidationMessage> validationResult) {
+  private Stream<String> toFailureStream(Collection<Error> validationResult) {
     return validationResult.stream().map(this::toIndentedString);
   }
 
   @Nonnull
-  private String toIndentedString(ValidationMessage message) {
+  private String toIndentedString(Error message) {
     return "  " + message;
   }
 
@@ -126,8 +126,8 @@ public class CrdSchemaGeneratorTest {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private static JsonSchema createJsonSchema(Class<?> someClass) throws JsonProcessingException {
-    final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
+  private static Schema createJsonSchema(Class<?> someClass) throws JsonProcessingException {
+    final SchemaRegistry schemaFactory = SchemaRegistry.withDialect(Dialects.getDraft201909());
     final Map<String, Object> schema = createSchema(someClass);
     return schemaFactory.getSchema(toJsonInputStream(schema));
   }
