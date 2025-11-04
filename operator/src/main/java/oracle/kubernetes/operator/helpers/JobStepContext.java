@@ -7,6 +7,7 @@ import java.io.File;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -197,6 +198,16 @@ public class JobStepContext extends BasePodStepContext {
   private List<V1Container> getIntrospectorInitContainers() {
     return Optional.ofNullable(getDomain().getIntrospectorSpec())
             .map(EffectiveIntrospectorJobPodSpec::getInitContainers).orElse(new ArrayList<>());
+  }
+
+  private Map<String, String> getIntrospectorLabels() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+            .map(EffectiveIntrospectorJobPodSpec::getLabels).orElse(new HashMap<>());
+  }
+
+  private Map<String, String> getIntrospectorAnnotations() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+            .map(EffectiveIntrospectorJobPodSpec::getAnnotations).orElse(new HashMap<>());
   }
 
   private List<V1EnvVar> getAdminServerEnvVariables() {
@@ -463,8 +474,13 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
+    Map<String, String> labels = getIntrospectorLabels();
+    Map<String, String> annotations = getIntrospectorAnnotations();
+
     return new V1ObjectMeta()
           .name(getJobName())
+          .labels(labels)
+          .annotations(annotations)
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.JOBNAME_LABEL, createJobName(getDomainUid()));

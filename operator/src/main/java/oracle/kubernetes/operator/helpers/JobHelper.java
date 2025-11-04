@@ -526,7 +526,14 @@ public class JobHelper {
       }
 
       private V1ContainerStatus getJobPodContainerStatus(V1Pod jobPod) {
-        return Optional.ofNullable(getContainerStatuses(jobPod)).flatMap(cs -> cs.stream().findFirst()).orElse(null);
+        String targetContainerName = getContainerName(); // Get the actual job container name
+
+        return Optional.ofNullable(getContainerStatuses(jobPod))
+                .flatMap(cs -> cs.stream()
+                        .filter(status -> targetContainerName.equals(status.getName()))
+                        .findFirst())
+                .orElse(null);
+
       }
 
       private List<V1ContainerStatus> getContainerStatuses(V1Pod jobPod) {

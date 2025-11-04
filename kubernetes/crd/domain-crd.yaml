@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 68317b3e7f2cc05c004dcf48eb7f2b83a8c6747f54d7a6929d6ba664df0594db
+    weblogic.sha256: 6e58fa19cc5aff28cc719869a8b6172feb024bbc30d1586ee33f61e1b9fffe9a
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -4413,6 +4413,11 @@ spec:
                               type: string
                             type: object
                         type: object
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: The annotations to be added to generated resources.
+                        type: object
                       env:
                         description: 'A list of environment variables to set in the
                           Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
@@ -5069,6 +5074,12 @@ spec:
                           required:
                           - name
                         type: array
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: The labels to be added to generated resources.
+                          The label names must not start with "weblogic.".
+                        type: object
                     type: object
                 type: object
               clusters:

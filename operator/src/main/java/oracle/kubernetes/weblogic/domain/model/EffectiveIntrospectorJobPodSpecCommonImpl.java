@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
@@ -53,6 +54,16 @@ public class EffectiveIntrospectorJobPodSpecCommonImpl implements EffectiveIntro
   @Override
   public List<V1Container> getInitContainers() {
     return introspector.getInitContainers();
+  }
+
+  @Override
+  public Map<String, String> getLabels() {
+    return introspector.getLabels();
+  }
+
+  @Override
+  public Map<String, String> getAnnotations() {
+    return introspector.getAnnotations();
   }
 
 }
