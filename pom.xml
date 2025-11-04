@@ -754,7 +754,7 @@
     <grizzly-version>4.0.2</grizzly-version>
     <jakarta-version>6.1.0</jakarta-version>
     <prometheus-version>0.16.0</prometheus-version>
-    <jackson-version>2.20.0</jackson-version>
+    <jackson-version>2.20.1</jackson-version>
     <jackson-annotations-version>2.20</jackson-annotations-version>
     <jackson-databind-version>2.20.0</jackson-databind-version>
     <snakeyaml-version>2.5</snakeyaml-version>
