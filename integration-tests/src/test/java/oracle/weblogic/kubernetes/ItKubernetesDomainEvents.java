@@ -42,6 +42,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -221,9 +222,11 @@ class ItKubernetesDomainEvents {
     opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount,
-            domainNamespace1, domainNamespace2, domainNamespace3,
-            domainNamespace4, domainNamespace5);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .opServiceAccount(opServiceAccount)
+        .domainNamespaces(domainNamespace1, domainNamespace2, domainNamespace3, domainNamespace4, domainNamespace5)
+        .build());
 
     createDomain(domainNamespace3, domainUid, pvName3, pvcName3);
   }

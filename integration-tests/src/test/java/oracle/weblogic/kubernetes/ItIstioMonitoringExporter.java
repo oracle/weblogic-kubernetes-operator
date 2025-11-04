@@ -18,6 +18,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -138,7 +139,10 @@ class ItIstioMonitoringExporter {
     testWebAppWarLoc = createTestWebAppWarFile(domain1Namespace);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain1Namespace, domain2Namespace)
+        .build());
     prometheusPort = IT_ISTIOMONITORINGEXPORTER_PROMETHEUS_HTTP_NODEPORT;
   }
 

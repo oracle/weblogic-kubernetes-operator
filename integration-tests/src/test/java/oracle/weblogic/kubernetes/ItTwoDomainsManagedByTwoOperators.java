@@ -35,6 +35,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -166,8 +167,14 @@ class ItTwoDomainsManagedByTwoOperators {
     domain2Namespace = domainNamespaces.get(1);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespaces.get(0), domain1Namespace, twoDomainsNamespace);
-    installAndVerifyOperator(opNamespaces.get(1), domain2Namespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespaces.get(0))
+        .domainNamespaces(domain1Namespace, twoDomainsNamespace)
+        .build());
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespaces.get(1))
+        .domainNamespaces(domain2Namespace)
+        .build());
 
     // initiate domainUid list for two domains
     String domainPrefix = getUniqueName("tdlbs-domain-");

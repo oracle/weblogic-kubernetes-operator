@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -153,7 +154,10 @@ class ItIstioManagedCoherence {
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace, labelMap));
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainInImageNamespace, miiDomainNamespace, multiDomainsNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainInImageNamespace, miiDomainNamespace, multiDomainsNamespace)
+        .build());
 
     // build Coherence applications
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, COHERENCE_APP_NAME),

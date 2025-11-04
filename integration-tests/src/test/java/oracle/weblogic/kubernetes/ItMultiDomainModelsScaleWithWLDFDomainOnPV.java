@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -148,8 +149,11 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
     miiImage = createAndPushMiiImage();
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount,
-        domainOnPVNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .opServiceAccount(opServiceAccount)
+        .domainNamespaces(domainOnPVNamespace)
+        .build());
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough

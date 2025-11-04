@@ -68,9 +68,11 @@ public class UpgradeUtils {
             .chartVersion(operatorVersion);
 
     // install operator with passed version
-    String opServiceAccount = opNamespace + "-sa";
-    installAndVerifyOperator(opNamespace, opServiceAccount,
-        opHelmParams, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .opHelmParams(opHelmParams)
+        .domainNamespaces(domainNamespace)
+        .build());
 
     return opHelmParams;
   }

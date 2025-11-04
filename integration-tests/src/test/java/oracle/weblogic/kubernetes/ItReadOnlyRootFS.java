@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -115,7 +116,10 @@ class ItReadOnlyRootFS {
     logger = getLogger();
     opNamespace = namespaces.get(0);
     domainNamespace = namespaces.get(1);
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build());
     String monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItReadOnlyRootFS", "monitoringexp", domainNamespace).toString();
     logger.info("install monitoring exporter");

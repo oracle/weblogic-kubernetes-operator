@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -135,11 +136,11 @@ class ItLBTwoDomainsNginx {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     nginxNamespace = namespaces.get(2);
 
-    // set the service account name for the operator
-    String opServiceAccount = opNamespace + "-sa";
-
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build());
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

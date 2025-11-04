@@ -29,6 +29,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -169,8 +170,10 @@ class ItMonitoringExporterMetricsFiltering {
     domain1Namespace = namespaces.get(3);
 
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace,
-        domain1Namespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain1Namespace)
+        .build());
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir, true);

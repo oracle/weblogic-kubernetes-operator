@@ -38,10 +38,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.DomainUtils;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
-import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.ImageUtils;
+import oracle.weblogic.kubernetes.utils.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -159,7 +156,10 @@ class ItMiiDomainUpgradeToSecureMode {
     ingressNamespace = namespaces.get(1);
 
     // install operator watching 6 domain namespaces
-    installAndVerifyOperator(opNamespace, namespaces.subList(2, 8).toArray(String[]::new));
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(namespaces.subList(2, 8).toArray(String[]::new))
+        .build());
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster

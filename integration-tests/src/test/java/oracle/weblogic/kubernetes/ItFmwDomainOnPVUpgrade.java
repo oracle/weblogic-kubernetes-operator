@@ -45,6 +45,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -195,6 +196,12 @@ class ItFmwDomainOnPVUpgrade {
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .opHelmParams(opHelmParams)
+        .elasticSearchHost(ELASTICSEARCH_HOST)
+        .domainNamespaces(domainNamespace)
+        .build());
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         opHelmParams, ELASTICSEARCH_HOST, false, true, null,
         null, false, "INFO", "DomainOnPvSimplification=true", false, domainNamespace);

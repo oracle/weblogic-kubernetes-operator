@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -178,7 +179,10 @@ class ItOnPremCrossDomainTransaction {
     logger.info("installing WebLogic Deploy Tool");
     downloadAndInstallWDT();
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domain1Namespace, domain3Namespace);    
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain1Namespace, domain3Namespace)
+        .build());
   }
   
   /**

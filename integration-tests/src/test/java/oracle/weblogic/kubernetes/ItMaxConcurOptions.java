@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -133,7 +134,10 @@ class ItMaxConcurOptions {
     domainNamespace = namespaces.get(1);
 
     // install and verify operator
-    HelmParams opHelmParams  = installAndVerifyOperator(opNamespace, domainNamespace).getHelmParams();
+    HelmParams opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build()).getHelmParams();
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()

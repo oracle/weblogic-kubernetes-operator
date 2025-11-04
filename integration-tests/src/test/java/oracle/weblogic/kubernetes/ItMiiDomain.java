@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -176,7 +177,10 @@ class ItMiiDomain {
     miiDomainNegativeNamespace = namespaces.get(3);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace, domainNamespace1, miiDomainNegativeNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace, domainNamespace1, miiDomainNegativeNamespace)
+        .build());
   }
 
   /**

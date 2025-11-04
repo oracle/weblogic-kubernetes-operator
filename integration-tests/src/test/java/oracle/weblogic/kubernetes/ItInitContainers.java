@@ -29,6 +29,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -139,9 +140,10 @@ class ItInitContainers {
     // install and verify operator
     logger.info("Installing and verifying operator");
 
-    opHelmParams = installAndVerifyOperator(opNamespace,
-        domain1Namespace, domain2Namespace,
-        domain3Namespace, domain4Namespace).getHelmParams();
+    opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain1Namespace, domain2Namespace, domain3Namespace, domain4Namespace)
+        .build()).getHelmParams();
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()

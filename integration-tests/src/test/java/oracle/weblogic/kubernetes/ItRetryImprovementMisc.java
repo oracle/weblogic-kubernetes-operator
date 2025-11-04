@@ -11,6 +11,7 @@ import io.kubernetes.client.custom.V1Patch;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -90,11 +91,12 @@ class ItRetryImprovementMisc {
     assertNotNull(namespaces.get(1), "Namespace namespaces.get(1) is null");
     domainNamespace = namespaces.get(1);
 
-    String opServiceAccount = opNamespace + "-sa";
-
     // install and verify operator with REST API
     logger.info("Install an operator in namespace {0}, managing namespace {1}", opNamespace, domainNamespace);
-    installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build());
   }
 
   /**

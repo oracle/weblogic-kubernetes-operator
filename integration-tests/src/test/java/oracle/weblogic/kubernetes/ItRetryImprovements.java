@@ -19,6 +19,7 @@ import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -117,11 +118,11 @@ class ItRetryImprovements {
     assertNotNull(namespaces.get(1));
     domainNamespace = namespaces.get(1);
 
-    // set the service account name for the operator
-    String opServiceAccount = opNamespace + "-sa";
-
     // install and verify operator
-    installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build());
 
     // get operator pod name
     operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));

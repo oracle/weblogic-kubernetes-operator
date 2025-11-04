@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -192,8 +193,10 @@ class ItMonitoringExporterWebApp {
     domain2Namespace = namespaces.get(5);
 
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain3Namespace,
-        domain1Namespace, domain2Namespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain3Namespace, domain1Namespace, domain2Namespace)
+        .build());
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);

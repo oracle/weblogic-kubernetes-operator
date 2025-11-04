@@ -108,7 +108,10 @@ public class ItMiiSampleHelper {
     traefikNamespace = namespaces.get(2);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build());
 
     String miiSampleWorkDir =
         RESULTS_ROOT + "/" + domainNamespace + "/model-in-image-sample-work-dir";

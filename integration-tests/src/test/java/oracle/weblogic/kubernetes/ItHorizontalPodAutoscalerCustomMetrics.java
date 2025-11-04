@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -169,10 +170,11 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     assertNotNull(namespaces.get(3), "Namespace list is null");
     String nginxNamespace = namespaces.get(3);
 
-    // set the service account name for the operator
-    String opServiceAccount = opNamespace + "-sa";
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build());
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

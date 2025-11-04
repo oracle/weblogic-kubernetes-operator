@@ -30,6 +30,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -141,8 +142,11 @@ class ItValidateWebhookReplicas {
     // install and verify operator with REST API
     logger.info("Install an operator in namespace {0}, managing namespace {1} and {2}",
         opNamespace, domainNamespace, domainNamespace2);
-    installAndVerifyOperator(opNamespace, opServiceAccount,
-        domainNamespace, domainNamespace2);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .opServiceAccount(opServiceAccount)
+        .domainNamespaces(domainNamespace, domainNamespace2)
+        .build());
 
     // create a mii domain resource with one cluster
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",

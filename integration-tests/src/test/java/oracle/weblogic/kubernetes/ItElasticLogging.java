@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -375,9 +376,13 @@ class ItElasticLogging {
     createConfigMapFromFiles(configMapName, logstashConfigFiles, opNamespace2);
 
     // install and verify Operator2 up and running with createLogStashConfigMap = false
-    installAndVerifyOperator(opNamespace2, opNamespace2 + "-sa",
-        elasticSearchHost, elkIntegrationEnabled,
-        createLogStashConfigMap, defaultNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace2)
+        .elasticSearchHost(elasticSearchHost)
+        .elkIntegrationEnabled(elkIntegrationEnabled)
+        .createLogStashConfigMap(createLogStashConfigMap)
+        .domainNamespaces(defaultNamespace)
+        .build());
   }
 
   private static String createAndVerifyDomainImage() {

@@ -34,6 +34,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -183,7 +184,10 @@ class ItIstioDBOperator {
     createTestWebAppWarFile(wlsDomainNamespace);
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, wlsDomainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(wlsDomainNamespace)
+        .build());
   }
 
   /**

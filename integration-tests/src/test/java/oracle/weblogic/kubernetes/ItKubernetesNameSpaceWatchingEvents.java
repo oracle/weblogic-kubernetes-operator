@@ -15,6 +15,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -65,7 +66,6 @@ class ItKubernetesNameSpaceWatchingEvents {
   private static String domainNamespace3 = null;
   private static String domainNamespace4 = null;
   private static String domainNamespace5 = null;
-  private static String opServiceAccount = null;
   private static OperatorParams opParams = null;
   private static LoggingFacade logger = null;
   private static OperatorParams opParamsOriginal = null;
@@ -95,11 +95,11 @@ class ItKubernetesNameSpaceWatchingEvents {
     assertNotNull(namespaces.get(5), "Namespace is null");
     domainNamespace5 = namespaces.get(5);
 
-    // set the service account name for the operator
-    opServiceAccount = opNamespace + "-sa";
-
     // install and verify operator with REST API
-    opParams = installAndVerifyOperator(opNamespace, opServiceAccount, domainNamespace1);
+    opParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace1)
+        .build());
     opParamsOriginal = opParams;
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough

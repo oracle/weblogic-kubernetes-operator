@@ -95,7 +95,10 @@ public class ServerStartPolicyUtils {
    */
   public static void prepare(String domainNamespace, String domainUid, String opNamespace, String samplePath) {
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .build());
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster

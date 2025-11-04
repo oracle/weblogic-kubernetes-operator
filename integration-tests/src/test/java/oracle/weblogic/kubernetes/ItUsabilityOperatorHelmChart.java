@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -237,7 +238,10 @@ class ItUsabilityOperatorHelmChart {
     try {
       // install and verify operator
       logger.info("Installing and verifying operator");
-      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
+      HelmParams opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+          .opNamespace(opNamespace)
+          .domainNamespaces(domain1Namespace)
+          .build()).getHelmParams();
       if (!isDomain1Running) {
         logger.info("Installing and verifying domain1 in {0}", domain1Namespace);
         assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
@@ -503,7 +507,10 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Negative test to install two operators sharing the same namespace")
   void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() {
-    HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
+    HelmParams opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain1Namespace)
+        .build()).getHelmParams();
     if (!isDomain1Running) {
       logger.info("Installing and verifying domain");
       assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
@@ -550,7 +557,10 @@ class ItUsabilityOperatorHelmChart {
   void testSecondOpSharingSameDomainNamespacesNegativeInstall() {
     // install and verify operator1
     logger.info("Installing and verifying operator1");
-    HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain2Namespace).getHelmParams();
+    HelmParams opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain2Namespace)
+        .build()).getHelmParams();
     if (!isDomain2Running) {
       logger.info("Installing and verifying domain");
       assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),

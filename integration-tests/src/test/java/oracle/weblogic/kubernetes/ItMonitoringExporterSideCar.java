@@ -26,6 +26,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -183,8 +184,10 @@ class ItMonitoringExporterSideCar {
     traefikNamespace = namespaces.get(6);
 
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace,
-        domain1Namespace, domain2Namespace, domain3Namespace, domain4Namespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domain1Namespace, domain2Namespace, domain3Namespace, domain4Namespace)
+        .build());
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);

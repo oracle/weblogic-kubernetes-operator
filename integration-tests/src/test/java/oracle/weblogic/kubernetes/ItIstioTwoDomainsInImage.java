@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -127,7 +128,10 @@ class ItIstioTwoDomainsInImage {
     testWebAppWarLoc = createTestWebAppWarFile(domainNamespace1);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace1,domainNamespace2);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace1, domainNamespace2)
+        .build());
   }
 
   /**
