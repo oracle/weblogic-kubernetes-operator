@@ -773,6 +773,13 @@
           "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
         "env": {
           "description": "A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
@@ -793,6 +800,13 @@
           "items": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
         }
       }
     },

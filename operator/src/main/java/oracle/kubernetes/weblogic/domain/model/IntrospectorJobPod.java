@@ -24,7 +24,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
 
-class IntrospectorJobPod {
+class IntrospectorJobPod extends KubernetesResource {
 
   private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
       Comparator.comparing(V1EnvVar::getName);
@@ -159,6 +159,7 @@ class IntrospectorJobPod {
       }
       initContainers.addAll(serverPod1.initContainers);
     }
+    fillInFrom((KubernetesResource) serverPod1);
     copyValues(resources, serverPod1.resources);
     copyValues(serverPod1.podSecurityContext);
   }
