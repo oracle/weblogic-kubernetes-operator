@@ -456,29 +456,77 @@ public class OperatorUtils {
       this.loggingLevel = builder.loggingLevel;
       this.featureGates = builder.featureGates;
       this.webhookOnly = builder.webhookOnly;
-      this.domainNamespaces = builder.domainNamespaces != null ? new ArrayList<>(builder.domainNamespaces) : new ArrayList<>();
+      this.domainNamespaces = builder.domainNamespaces != null
+          ? new ArrayList<>(builder.domainNamespaces) : new ArrayList<>();
       this.domainPresenceFailureRetryMaxCount = builder.domainPresenceFailureRetryMaxCount;
       this.domainPresenceFailureRetrySeconds = builder.domainPresenceFailureRetrySeconds;
       this.openshiftIstioInjection = builder.openshiftIstioInjection;
     }
 
     // Getters
-    public String getOpNamespace() { return opNamespace; }
-    public String getOpServiceAccount() { return opServiceAccount; }
-    public HelmParams getOpHelmParams() { return opHelmParams; }
-    public String getElasticSearchHost() { return elasticSearchHost; }
-    public boolean isElkIntegrationEnabled() { return elkIntegrationEnabled; }
-    public boolean isCreateLogStashConfigMap() { return createLogStashConfigMap; }
-    public String getDomainNamespaceSelectionStrategy() { return domainNamespaceSelectionStrategy; }
-    public String getDomainNamespaceSelector() { return domainNamespaceSelector; }
-    public boolean isEnableClusterRoleBinding() { return enableClusterRoleBinding; }
-    public String getLoggingLevel() { return loggingLevel; }
-    public String getFeatureGates() { return featureGates; }
-    public boolean isWebhookOnly() { return webhookOnly; }
-    public List<String> getDomainNamespaces() { return domainNamespaces; }
-    public int getDomainPresenceFailureRetryMaxCount() { return domainPresenceFailureRetryMaxCount; }
-    public int getDomainPresenceFailureRetrySeconds() { return domainPresenceFailureRetrySeconds; }
-    public boolean isOpenshiftIstioInjection() { return openshiftIstioInjection; }
+    public String getOpNamespace() {
+      return opNamespace;
+    }
+
+    public String getOpServiceAccount() {
+      return opServiceAccount;
+    }
+
+    public HelmParams getOpHelmParams() {
+      return opHelmParams;
+    }
+
+    public String getElasticSearchHost() {
+      return elasticSearchHost;
+    }
+
+    public boolean isElkIntegrationEnabled() {
+      return elkIntegrationEnabled;
+    }
+
+    public boolean isCreateLogStashConfigMap() {
+      return createLogStashConfigMap;
+    }
+
+    public String getDomainNamespaceSelectionStrategy() {
+      return domainNamespaceSelectionStrategy;
+    }
+
+    public String getDomainNamespaceSelector() {
+      return domainNamespaceSelector;
+    }
+
+    public boolean isEnableClusterRoleBinding() {
+      return enableClusterRoleBinding;
+    }
+
+    public String getLoggingLevel() {
+      return loggingLevel;
+    }
+
+    public String getFeatureGates() {
+      return featureGates;
+    }
+
+    public boolean isWebhookOnly() {
+      return webhookOnly;
+    }
+
+    public List<String> getDomainNamespaces() {
+      return domainNamespaces;
+    }
+
+    public int getDomainPresenceFailureRetryMaxCount() {
+      return domainPresenceFailureRetryMaxCount;
+    }
+
+    public int getDomainPresenceFailureRetrySeconds() {
+      return domainPresenceFailureRetrySeconds;
+    }
+
+    public boolean isOpenshiftIstioInjection() {
+      return openshiftIstioInjection;
+    }
 
     public static Builder builder() {
       return new Builder();
@@ -582,6 +630,10 @@ public class OperatorUtils {
         return this;
       }
 
+      /**
+       * Builds operator install configuration.
+       * @return Operator install configuration
+       */
       public OperatorInstallConfig build() {
         if (opNamespace == null) {
           throw new IllegalStateException("Required fields (opNamespace) must be set");

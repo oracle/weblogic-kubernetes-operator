@@ -180,8 +180,11 @@ class ItElasticLogging {
     assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        true, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .elkIntegrationEnabled(true)
+        .build());
 
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()

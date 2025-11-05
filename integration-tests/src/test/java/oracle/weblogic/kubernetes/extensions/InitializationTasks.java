@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import oracle.weblogic.kubernetes.utils.PortInuseEventWatcher;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -68,8 +69,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_OPERATOR_NS;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
@@ -652,27 +651,16 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     // recreate WebHook namespace
     deleteNamespace(webhookNamespace);
     assertDoesNotThrow(() -> new Namespace().name(webhookNamespace).create());
-    String webhookSa = webhookNamespace + "-sa";
     getLogger().info("Installing webhook only operator in namespace {0}", webhookNamespace);
-    opHelmParams
-        = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(webhookNamespace)
-            .chartDir(OPERATOR_CHART_DIR);
-    return installAndVerifyOperator(
-        webhookNamespace, // webhook namespace
-        webhookSa, //webhook service account
-        opHelmParams, // operator helm parameters
-        null, // elasticsearchHost
-        false, // ElkintegrationEnabled
-        false, // createLogStashconfigmap
-        null, // domainspaceSelectionStrategy
-        null, // domainspaceSelector
-        true, // enableClusterRolebinding
-        "INFO", // webhook pod log level
-        featureGates, // the name of featureGates
-        true, // webhookOnly
-        "null" // domainNamespace
-    );
+    OperatorParams params = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(webhookNamespace)
+        .enableClusterRoleBinding(true)
+        .loggingLevel("INFO")
+        .featureGates(featureGates)
+        .webhookOnly(true)
+        .build());
+    opHelmParams = params.getHelmParams();
+    return params;
   }
   
   private void installTraefikLB() {

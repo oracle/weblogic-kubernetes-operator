@@ -343,8 +343,12 @@ class ItUsabilityOperatorHelmChart {
     String opServiceAccount = opNamespace + "-sa";
     try {
       // install operator
-      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount,
-          op1HelmParams, domain1Namespace).getHelmParams();
+      HelmParams opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+          .opNamespace(opNamespace)
+          .opServiceAccount(opServiceAccount)
+          .opHelmParams(op1HelmParams)
+          .domainNamespaces(domain1Namespace)
+          .build()).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
 
       if (!isDomain1Running) {
@@ -410,8 +414,12 @@ class ItUsabilityOperatorHelmChart {
     try {
       // install operator
       String opServiceAccount = op2Namespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount,
-          op1HelmParams, domain2Namespace).getHelmParams();
+      HelmParams opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+          .opNamespace(op2Namespace)
+          .opServiceAccount(opServiceAccount)
+          .opHelmParams(op1HelmParams)
+          .domainNamespaces(domain2Namespace)
+          .build()).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
       if (!isDomain2Running) {
         logger.info("Installing and verifying domain");
@@ -814,8 +822,12 @@ class ItUsabilityOperatorHelmChart {
     try {
       // install operator
       String opServiceAccount = op3Namespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount,
-          op1HelmParams, domain4Namespace).getHelmParams();
+      HelmParams opHelmParams = installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+          .opNamespace(op3Namespace)
+          .opServiceAccount(opServiceAccount)
+          .opHelmParams(op1HelmParams)
+          .domainNamespaces(domain4Namespace)
+          .build()).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
 
       logger.info("Installing and verifying domain4");

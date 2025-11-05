@@ -40,6 +40,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -178,8 +179,11 @@ class ItElasticLoggingFluentd {
     assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        true, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .elkIntegrationEnabled(true)
+        .build());
 
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc";
 

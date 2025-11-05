@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -139,9 +140,13 @@ class ItDedicatedMode {
     // domainNamespaceSelectionStrategy set to Dedicated and set
     // domainNamespaces parameter to something other than Operator ns (say wls)
     logger.info("Installing and verifying operator");
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        opHelmParams, domainNamespaceSelectionStrategy,
-        false, domain2Namespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .opServiceAccount(opServiceAccount)
+        .opHelmParams(opHelmParams)
+        .domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy)
+        .domainNamespaces(domain2Namespace)
+        .build());
     logger.info("Operator installed on namespace {0} and domainNamespaces set to {1} ", opNamespace, domain2Namespace);
 
   }

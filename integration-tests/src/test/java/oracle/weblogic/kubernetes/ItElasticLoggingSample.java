@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OperatorUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -139,8 +140,11 @@ class ItElasticLoggingSample {
     assertTrue(result, "Failed to install Elasticsearch and Kibana");
 
     // install and verify Operator
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        true, domainNamespace);
+    installAndVerifyOperator(OperatorUtils.OperatorInstallConfig.builder()
+        .opNamespace(opNamespace)
+        .domainNamespaces(domainNamespace)
+        .elkIntegrationEnabled(true)
+        .build());
 
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
