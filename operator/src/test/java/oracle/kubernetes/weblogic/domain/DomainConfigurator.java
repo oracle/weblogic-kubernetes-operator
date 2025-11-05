@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
@@ -31,6 +32,7 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
+import oracle.kubernetes.weblogic.domain.model.Introspector;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
@@ -94,6 +96,28 @@ public abstract class DomainConfigurator {
 
   public DomainConfigurator withWDTInstallationHome(String wdtInstallationHome) {
     getDomainSpec().setWdtInstallHome(wdtInstallationHome);
+    return this;
+  }
+
+  /**
+   * Add annotations to the domain introspector.
+   * @param introspectorAnnotations map of annotations
+   * @return DomainConfigurator
+   */
+  public DomainConfigurator withIntrospectorAnnotations(Map<String, String> introspectorAnnotations) {
+    Introspector introspector = getDomainSpec().getOrCreateIntrospector();
+    introspector.getAnnotations().putAll(introspectorAnnotations);
+    return this;
+  }
+
+  /**
+   * Add labels to the domain introspector.
+   * @param introspectorLabels map of labels
+   * @return DomainConfigurator
+   */
+  public DomainConfigurator withIntrospectorLabels(Map<String, String> introspectorLabels) {
+    Introspector introspector = getDomainSpec().getOrCreateIntrospector();
+    introspector.getLabels().putAll(introspectorLabels);
     return this;
   }
 

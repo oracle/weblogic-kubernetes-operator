@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -51,6 +52,14 @@ public class IntrospectorJobPodConfiguration implements EffectiveIntrospectorJob
 
   public List<V1Container> getInitContainers() {
     return serverPod.getInitContainers();
+  }
+
+  public Map<String, String> getLabels() {
+    return serverPod.getLabels();
+  }
+
+  public Map<String, String> getAnnotations() {
+    return serverPod.getAnnotations();
   }
 
   void addEnvironmentVariable(String name, String value) {
