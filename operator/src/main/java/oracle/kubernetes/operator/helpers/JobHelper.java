@@ -60,6 +60,8 @@ import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_INCOMPLETE;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_INIT_CONTAINER_FAILURE;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_INIT_CONTAINER_FAILURE_NOSTATUS;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE;
@@ -515,6 +517,17 @@ public class JobHelper {
           containerName = getContainerName();
         } else {
           containerName = getInitContainerName(jobPod);
+          List<V1ContainerStatus> initContainerStatuses = getInitContainerStatuses(jobPod);
+          if (initContainerStatuses != null) {
+            Optional<V1ContainerStatus> errorStatus = initContainerStatuses.stream()
+                    .filter(c -> c.getName().equals(containerName))
+                    .findFirst();
+            if (errorStatus.isPresent()) {
+              LOGGER.severe(INTROSPECTOR_INIT_CONTAINER_FAILURE, getJobName(), containerName, errorStatus.get());
+            } else {
+              LOGGER.severe(INTROSPECTOR_INIT_CONTAINER_FAILURE_NOSTATUS, getJobName(), containerName);
+            }
+          }
         }
 
         String jobPodName = JobHelper.getName(jobPod);

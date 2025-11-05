@@ -161,7 +161,8 @@ public class MessageKeys {
   public static final String PVC_NOT_BOUND_ERROR = "WLSKO-0239";
   public static final String FLUENTBIT_CONFIGMAP_CREATED = "WLSKO-0240";
   public static final String FLUENTBIT_CONFIGMAP_REPLACED = "WLSKO-0241";
-
+  public static final String INTROSPECTOR_INIT_CONTAINER_FAILURE = "WLSKO-0242";
+  public static final String INTROSPECTOR_INIT_CONTAINER_FAILURE_NOSTATUS = "WLSKO-0243";
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
