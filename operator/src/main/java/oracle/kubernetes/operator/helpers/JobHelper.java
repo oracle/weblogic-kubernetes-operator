@@ -523,7 +523,18 @@ public class JobHelper {
                     .filter(c -> c.getName().equals(containerName))
                     .findFirst();
             if (errorStatus.isPresent()) {
-              LOGGER.severe(INTROSPECTOR_INIT_CONTAINER_FAILURE, getJobName(), containerName, errorStatus.get());
+              V1ContainerStateTerminated terminated = Optional.ofNullable(errorStatus.get().getState())
+                      .map(V1ContainerState::getTerminated)
+                      .orElse(null);
+
+              if (terminated != null) {
+                LOGGER.severe(INTROSPECTOR_INIT_CONTAINER_FAILURE, getJobName(), containerName,
+                        terminated.getExitCode(),
+                        terminated.getMessage(),
+                        terminated.getReason());
+              } else {
+                LOGGER.severe(INTROSPECTOR_INIT_CONTAINER_FAILURE_NOSTATUS, getJobName(), containerName);
+              }
             } else {
               LOGGER.severe(INTROSPECTOR_INIT_CONTAINER_FAILURE_NOSTATUS, getJobName(), containerName);
             }
