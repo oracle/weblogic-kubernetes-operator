@@ -731,7 +731,7 @@
     <commons-codec-version>1.19.0</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
     <voyager-client-version>0.1.0</voyager-client-version>
-    <jsonpath-version>2.9.0</jsonpath-version>
+    <jsonpath-version>2.10.0</jsonpath-version>
     <jose4j-version>0.9.6</jose4j-version>
     <mojo-build-helper-version>3.6.1</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
