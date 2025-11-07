@@ -13,7 +13,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/</link>
       <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/</guid>
-      <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.&#xA;Get the operator source and put it in /tmp/weblogic-kubernetes-operator.&#xA;For example:&#xA;$ cd /tmp $ git clone --branch v4.3.3 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.&#xA;For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
+      <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.&#xA;Get the operator source and put it in /tmp/weblogic-kubernetes-operator.&#xA;For example:&#xA;$ cd /tmp $ git clone --branch v4.3.4 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.&#xA;For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
     </item>
     <item>
       <title>Auxiliary image creation</title>
