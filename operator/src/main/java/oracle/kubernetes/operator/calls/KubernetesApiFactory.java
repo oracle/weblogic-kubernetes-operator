@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.calls;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -68,12 +69,10 @@ public interface KubernetesApiFactory {
         return new KubernetesApiResponse<>(PatchUtils.patch(
             apiTypeClass,
             () ->
-                c.patchNamespacedCustomObjectStatusCall(
+                c.patchNamespacedCustomObjectStatus(
                     apiGroup, apiVersion, object.getMetadata().getNamespace(), resourcePlural,
                         object.getMetadata().getName(),
-                        Arrays.asList(new StatusPatch(status.apply(object))),
-                        null, null, null, null, null
-                    ),
+                        Arrays.asList(new StatusPatch(status.apply(object)))).buildCall(null),
             V1Patch.PATCH_FORMAT_JSON_PATCH,
             c.getApiClient()));
       } catch (ApiException e) {
@@ -87,8 +86,11 @@ public interface KubernetesApiFactory {
       CoreV1Api c = new CoreV1Api(Client.getInstance());
       try {
         return new KubernetesApiResponse<>(new RequestBuilder.V1StatusObject(
-            c.deleteCollectionNamespacedPod(namespace, null, null, null, listOptions.getFieldSelector(), null, null,
-                listOptions.getLabelSelector(), null, null, null, null, null, null, null, deleteOptions)));
+            c.deleteCollectionNamespacedPod(namespace)
+                .gracePeriodSeconds(Optional.ofNullable(
+                    deleteOptions.getGracePeriodSeconds()).map(Long::intValue).orElse(null))
+                .labelSelector(listOptions.getLabelSelector())
+                .fieldSelector(listOptions.getFieldSelector()).execute()));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }
@@ -99,8 +101,7 @@ public interface KubernetesApiFactory {
       CoreV1Api c = new CoreV1Api(Client.getInstance());
       try {
         return new KubernetesApiResponse<>(new RequestBuilder.StringObject(
-            c.readNamespacedPodLog(name, namespace, container,
-                null, null, null, null, null, null, null, null, null)));
+            c.readNamespacedPodLog(name, namespace).container(container).execute()));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }
@@ -110,7 +111,7 @@ public interface KubernetesApiFactory {
     public KubernetesApiResponse<RequestBuilder.VersionInfoObject> getVersionCode() {
       VersionApi c = new VersionApi(Client.getInstance());
       try {
-        return new KubernetesApiResponse<>(new RequestBuilder.VersionInfoObject(c.getCode()));
+        return new KubernetesApiResponse<>(new RequestBuilder.VersionInfoObject(c.getCode().execute()));
       } catch (ApiException e) {
         return RequestStep.responseFromApiException(c.getApiClient(), e);
       }

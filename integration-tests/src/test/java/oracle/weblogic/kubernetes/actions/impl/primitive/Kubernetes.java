@@ -109,18 +109,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class Kubernetes {
 
-  private static final String PRETTY = "true";
-  private static final Boolean ALLOW_WATCH_BOOKMARKS = false;
-  private static final String RESOURCE_VERSION = "";
-  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
-  private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
-  private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
   private static final String DOMAIN_PLURAL = "domains";
   private static final String CLUSTER_PLURAL = "clusters";
   private static final String FOREGROUND = "Foreground";
   private static final String BACKGROUND = "Background";
-  private static final int GRACE_PERIOD = 0;
 
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
@@ -321,14 +314,7 @@ public class Kubernetes {
     boolean status = false;
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
-      V1Deployment createdDeployment = apiInstance.createNamespacedDeployment(
-          namespace, // String | namespace in which to create job
-          deployment, // V1Deployment | body of the V1Deployment containing deployment data
-          PRETTY, // String | pretty print output.
-          null, // String | dry run or permanent change
-          null, // String | field manager who is making the change
-          null // String | field validation
-      );
+      V1Deployment createdDeployment = apiInstance.createNamespacedDeployment(namespace, deployment).execute();
       if (createdDeployment != null) {
         status = true;
       }
@@ -350,20 +336,7 @@ public class Kubernetes {
     V1DeploymentList deployments;
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
-      deployments = apiInstance.listNamespacedDeployment(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      deployments = apiInstance.listNamespacedDeployment(namespace).timeoutSeconds(5).execute();
 
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -383,17 +356,8 @@ public class Kubernetes {
   public static boolean deleteDeployment(String namespace, String name) throws ApiException {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
-      apiInstance.deleteNamespacedDeployment(
-          name, // String | deployment object name.
-          namespace, // String | namespace in which the deployment exists.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null,
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
+      apiInstance.deleteNamespacedDeployment(name, namespace)
+          .gracePeriodSeconds(0).propagationPolicy(FOREGROUND).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -470,20 +434,8 @@ public class Kubernetes {
     String log = null;
     checkPodInitialized(name,null,namespace);
     try {
-      log = coreV1Api.readNamespacedPodLog(
-          name, // name of the Pod
-          namespace, // name of the Namespace
-          container, // container for which to stream logs
-          follow, //  Boolean Follow the log stream of the pod
-          null, // skip TLS verification of backend
-          null, // number of bytes to read from the server before terminating the log output
-          PRETTY, // pretty print output
-          previous, // Boolean, Return previous terminated container logs
-          sinceSeconds, // relative time (seconds) before the current time from which to show logs
-          null,
-          null, // number of lines from the end of the logs to show
-          null // Boolean, add timestamp at the beginning of every line of log output
-      );
+      log = coreV1Api.readNamespacedPodLog(name, namespace)
+          .container(container).follow(follow).previous(previous).sinceSeconds(sinceSeconds).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -502,7 +454,7 @@ public class Kubernetes {
   public static V1Pod createPod(String namespace, V1Pod podBody) throws ApiException {
     V1Pod pod;
     try {
-      pod = coreV1Api.createNamespacedPod(namespace, podBody, null, null, null, null);
+      pod = coreV1Api.createNamespacedPod(namespace, podBody).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -736,20 +688,7 @@ public class Kubernetes {
     V1PodList v1PodList = null;
     try {
       v1PodList
-          = coreV1Api.listNamespacedPod(
-          namespace, // namespace in which to look for the pods.
-          Boolean.FALSE.toString(), // pretty print output.
-          Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // continue to query when there is more results to return.
-          null, // selector to restrict the list of returned objects by their fields
-          labelSelectors, // selector to restrict the list of returned objects by their labels.
-          null, // maximum number of responses to return for a list call.
-          null, // shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          null, // Timeout for the list/watch call.
-          Boolean.FALSE // Watch for changes to the described resources.
-      );
+          = coreV1Api.listNamespacedPod(namespace).labelSelector(labelSelectors).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -768,20 +707,7 @@ public class Kubernetes {
   public static V1PodDisruptionBudgetList listPodDisruptionBudgets(String namespace, String labelSelectors)
       throws ApiException {
     try {
-      return policyV1Api.listNamespacedPodDisruptionBudget(
-          namespace, // namespace in which to look for the pods.
-          Boolean.FALSE.toString(), // pretty print output.
-          Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // continue to query when there is more results to return.
-          null, // selector to restrict the list of returned objects by their fields
-          labelSelectors, // selector to restrict the list of returned objects by their labels.
-          null, // maximum number of responses to return for a list call.
-          null, // shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          null, // Timeout for the list/watch call.
-          Boolean.FALSE // Watch for changes to the described resources.
-      );
+      return policyV1Api.listNamespacedPodDisruptionBudget(namespace).labelSelector(labelSelectors).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -897,13 +823,7 @@ public class Kubernetes {
     V1Namespace namespace = new V1NamespaceBuilder().withMetadata(meta).build();
 
     try {
-      coreV1Api.createNamespace(
-          namespace, // name of the Namespace
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // name associated with the actor or entity that is making these changes
-          null // field validation
-      );
+      coreV1Api.createNamespace(namespace).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -926,13 +846,7 @@ public class Kubernetes {
     V1Namespace namespace = new V1NamespaceBuilder().withMetadata(meta).build();
 
     try {
-      coreV1Api.createNamespace(
-          namespace, // name of the Namespace
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // name associated with the actor or entity that is making these changes
-          null // field validation
-      );
+      coreV1Api.createNamespace(namespace).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -955,13 +869,7 @@ public class Kubernetes {
     }
 
     try {
-      coreV1Api.createNamespace(
-          namespace, // V1Namespace configuration data object
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // name associated with the actor or entity that is making these changes
-          null // field validation
-      );
+      coreV1Api.createNamespace(namespace).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -979,14 +887,7 @@ public class Kubernetes {
   public static void replaceNamespace(V1Namespace ns) throws ApiException {
 
     try {
-      coreV1Api.replaceNamespace(
-          ns.getMetadata().getName(), // name of the namespace
-          ns, // V1Namespace object body
-          PRETTY, // pretty print the output
-          null, // dry run or changes need to be permanent
-          null, // field manager
-          null // field validation
-      );
+      coreV1Api.replaceNamespace(ns.getMetadata().getName(), ns).execute();
     } catch (ApiException ex) {
       getLogger().severe(ex.getResponseBody());
       throw ex;
@@ -1011,19 +912,7 @@ public class Kubernetes {
     ArrayList<String> nameSpaces = new ArrayList<>();
     V1NamespaceList namespaceList;
     try {
-      namespaceList = coreV1Api.listNamespace(
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          labelSelector, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
-      );
+      namespaceList = coreV1Api.listNamespace().labelSelector(labelSelector).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1044,19 +933,7 @@ public class Kubernetes {
   public static V1NamespaceList listNamespacesAsObjects() throws ApiException {
     V1NamespaceList namespaceList;
     try {
-      namespaceList = coreV1Api.listNamespace(
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          null, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
-      );
+      namespaceList = coreV1Api.listNamespace().timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1073,19 +950,7 @@ public class Kubernetes {
    */
   public static V1Namespace getNamespace(String name) throws ApiException {
     try {
-      V1NamespaceList namespaceList = coreV1Api.listNamespace(
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          null, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
-      );
+      V1NamespaceList namespaceList = coreV1Api.listNamespace().timeoutSeconds(5).execute();
 
       if (!namespaceList.getItems().isEmpty()) {
         for (V1Namespace ns : namespaceList.getItems()) {
@@ -1156,20 +1021,7 @@ public class Kubernetes {
   public static List<EventsV1Event> listNamespacedEvents(String namespace) throws ApiException {
     List<EventsV1Event> events = null;
     try {
-      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(namespace).timeoutSeconds(5).execute();
       events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
       events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
@@ -1196,20 +1048,8 @@ public class Kubernetes {
   public static List<EventsV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
     List<EventsV1Event> events = null;
     try {
-      EventsV1EventList list = eventsV1Api.listNamespacedEvent(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          "weblogic.createdByOperator", // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      EventsV1EventList list = eventsV1Api.listNamespacedEvent(namespace)
+          .labelSelector("weblogic.createdByOperator").timeoutSeconds(5).execute();
       events = Optional.ofNullable(list).map(EventsV1EventList::getItems).orElse(Collections.emptyList());
       events.sort(Comparator.comparing(Kubernetes::getEventTime,
           Comparator.nullsFirst(Comparator.naturalOrder())));
@@ -1258,12 +1098,8 @@ public class Kubernetes {
           domainVersion, //custom resource's version
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null, // field manager
-          null // field validation
-      );
+          json // JSON schema of the Resource to create
+      ).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1342,7 +1178,7 @@ public class Kubernetes {
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           domainUid // custom object's name
-      );
+      ).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1509,12 +1345,8 @@ public class Kubernetes {
           clusterVersion, //custom resource's version
           namespace, // custom resource's namespace
           CLUSTER_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null, // field manager
-          null // field validation
-      );
+          json // JSON schema of the Resource to create
+      ).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1542,7 +1374,7 @@ public class Kubernetes {
           namespace, // custom resource's namespace
           CLUSTER_PLURAL, // custom resource's plural name
           clusterResName // custom object's name
-      );
+      ).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1696,16 +1528,10 @@ public class Kubernetes {
       PatchUtils.patch(
           V1Deployment.class,
           () ->
-              apiInstance.patchNamespacedDeploymentCall(
+              apiInstance.patchNamespacedDeployment(
                   deploymentName,
                   namespace,
-                  patch,
-                  null,
-                  null,
-                  null, // field-manager is optional
-                  null,
-                  null,
-                  null),
+                  patch).buildCall(null),
           patchFormat,
           apiClient);
     } catch (ApiException apiex) {
@@ -1773,14 +1599,7 @@ public class Kubernetes {
     String namespace = configMap.getMetadata().getNamespace();
 
     try {
-      coreV1Api.createNamespacedConfigMap(
-          namespace, // config map's namespace
-          configMap, // config map configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // name associated with the actor or entity that is making these changes
-          null // field validation
-      );
+      coreV1Api.createNamespacedConfigMap(namespace, configMap).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1818,15 +1637,7 @@ public class Kubernetes {
 
     V1ConfigMap cm;
     try {
-      cm = coreV1Api.replaceNamespacedConfigMap(
-          configMap.getMetadata().getName(),
-          namespace,
-          configMap, // config map configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // name associated with the actor or entity that is making these changes
-          null // field validation
-      );
+      cm = coreV1Api.replaceNamespacedConfigMap(configMap.getMetadata().getName(), namespace, configMap).execute();
       assertNotNull(cm, "cm replace failed ");
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
@@ -1847,20 +1658,7 @@ public class Kubernetes {
 
     V1ConfigMapList configMapList;
     try {
-      configMapList = coreV1Api.listNamespacedConfigMap(
-          namespace, // config map's namespace
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          null, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
-      );
+      configMapList = coreV1Api.listNamespacedConfigMap(namespace).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1921,14 +1719,7 @@ public class Kubernetes {
     String namespace = secret.getMetadata().getNamespace();
 
     try {
-      coreV1Api.createNamespacedSecret(
-          namespace, // name of the Namespace
-          secret, // secret configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      coreV1Api.createNamespacedSecret(namespace, secret).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -1946,7 +1737,7 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1Secret getSecret(String secretName, String namespace) throws ApiException {
-    return coreV1Api.readNamespacedSecret(secretName, namespace, PRETTY);
+    return coreV1Api.readNamespacedSecret(secretName, namespace).execute();
   }
 
   /**
@@ -2006,7 +1797,7 @@ public class Kubernetes {
     }
 
     return coreV1Api.readNamespacedSecret(
-        reference.getName(), namespace, "false");
+        reference.getName(), namespace).execute();
   }
 
   // --------------------------- pv/pvc ---------------------------
@@ -2024,13 +1815,7 @@ public class Kubernetes {
     }
 
     try {
-      coreV1Api.createPersistentVolume(
-          persistentVolume, // persistent volume configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      coreV1Api.createPersistentVolume(persistentVolume).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2066,14 +1851,7 @@ public class Kubernetes {
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
 
     try {
-      coreV1Api.createNamespacedPersistentVolumeClaim(
-          namespace, // name of the Namespace
-          persistentVolumeClaim, // persistent volume claim configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      coreV1Api.createNamespacedPersistentVolumeClaim(namespace, persistentVolumeClaim).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2158,19 +1936,7 @@ public class Kubernetes {
   public static V1PersistentVolumeList listPersistentVolumes(String labels) throws ApiException {
     V1PersistentVolumeList listPersistentVolume;
     try {
-      listPersistentVolume = coreV1Api.listPersistentVolume(
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          labels, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
-      );
+      listPersistentVolume = coreV1Api.listPersistentVolume().labelSelector(labels).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2255,14 +2021,7 @@ public class Kubernetes {
     String namespace = serviceAccount.getMetadata().getNamespace();
 
     try {
-      serviceAccount = coreV1Api.createNamespacedServiceAccount(
-          namespace, // name of the Namespace
-          serviceAccount, // service account configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      serviceAccount = coreV1Api.createNamespacedServiceAccount(namespace, serviceAccount).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2343,14 +2102,7 @@ public class Kubernetes {
     String namespace = service.getMetadata().getNamespace();
 
     try {
-      coreV1Api.createNamespacedService(
-          namespace, // name of the Namespace
-          service, // service configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      coreV1Api.createNamespacedService(namespace, service).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2496,14 +2248,7 @@ public class Kubernetes {
     String namespace = jobBody.getMetadata().getNamespace();
     try {
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
-      V1Job createdJob = apiInstance.createNamespacedJob(
-          namespace, // String | namespace in which to create job
-          jobBody, // V1Job | body of the V1Job containing job data
-          PRETTY, // String | pretty print output.
-          null, // String | dry run or permanent change
-          null, // String | field manager who is making the change
-          null // field validation
-      );
+      V1Job createdJob = apiInstance.createNamespacedJob(namespace, jobBody).execute();
       if (createdJob != null) {
         name = createdJob.getMetadata().getName();
       }
@@ -2551,20 +2296,7 @@ public class Kubernetes {
     V1JobList list;
     try {
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
-      list = apiInstance.listNamespacedJob(
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources
-      );
+      list = apiInstance.listNamespacedJob(namespace).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2607,17 +2339,8 @@ public class Kubernetes {
   public static boolean deleteReplicaSet(String namespace, String name) throws ApiException {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
-      apiInstance.deleteNamespacedReplicaSet(
-          name, // String | name of the replica set.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null,
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
+      apiInstance.deleteNamespacedReplicaSet(name, namespace)
+          .gracePeriodSeconds(0).propagationPolicy(FOREGROUND).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2635,20 +2358,7 @@ public class Kubernetes {
   public static V1ReplicaSetList listReplicaSets(String namespace) throws ApiException {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
-      return apiInstance.listNamespacedReplicaSet(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      return apiInstance.listNamespacedReplicaSet(namespace).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2665,13 +2375,7 @@ public class Kubernetes {
    */
   public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
     try {
-      rbacAuthApi.createClusterRole(
-          clusterRole, // cluster role configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      rbacAuthApi.createClusterRole(clusterRole).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2690,13 +2394,7 @@ public class Kubernetes {
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
       throws ApiException {
     try {
-      rbacAuthApi.createClusterRoleBinding(
-          clusterRoleBinding, // role binding configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      rbacAuthApi.createClusterRoleBinding(clusterRoleBinding).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2715,14 +2413,7 @@ public class Kubernetes {
    */
   public static boolean createNamespacedRole(String namespace, V1Role role) throws ApiException {
     try {
-      rbacAuthApi.createNamespacedRole(
-          namespace, // namespace where this role is created
-          role, // role configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      rbacAuthApi.createNamespacedRole(namespace, role).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2741,14 +2432,7 @@ public class Kubernetes {
    */
   public static boolean createNamespacedRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
     try {
-      rbacAuthApi.createNamespacedRoleBinding(
-          namespace, // namespace where this role binding is created
-          roleBinding, // role binding configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null, // fieldManager is a name associated with the actor
-          null // field validation
-      );
+      rbacAuthApi.createNamespacedRoleBinding(namespace, roleBinding).execute();
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -2792,19 +2476,8 @@ public class Kubernetes {
   public static V1RoleBindingList listRoleBindingForAllNamespaces(String labelSelector) throws ApiException {
     V1RoleBindingList roleBindings;
     try {
-      roleBindings = rbacAuthApi.listRoleBindingForAllNamespaces(
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          PRETTY, // String | If true, then the output is pretty printed.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources
-      );
+      roleBindings = rbacAuthApi.listRoleBindingForAllNamespaces()
+          .labelSelector(labelSelector).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2822,19 +2495,8 @@ public class Kubernetes {
   public static V1ClusterRoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
     V1ClusterRoleBindingList clusterRoleBindingList;
     try {
-      clusterRoleBindingList = rbacAuthApi.listClusterRoleBinding(
-          PRETTY, // String | If true, then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources
-      );
+      clusterRoleBindingList = rbacAuthApi.listClusterRoleBinding()
+          .labelSelector(labelSelector).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2853,17 +2515,8 @@ public class Kubernetes {
   public static boolean deleteNamespacedRoleBinding(String namespace, String name)
       throws ApiException {
     try {
-      rbacAuthApi.deleteNamespacedRoleBinding(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null,
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
+      rbacAuthApi.deleteNamespacedRoleBinding(namespace, name)
+          .gracePeriodSeconds(0).propagationPolicy(FOREGROUND).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2882,20 +2535,7 @@ public class Kubernetes {
       throws ApiException {
     V1RoleBindingList roleBindings;
     try {
-      roleBindings = rbacAuthApi.listNamespacedRoleBinding(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      roleBindings = rbacAuthApi.listNamespacedRoleBinding(namespace).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2914,19 +2554,8 @@ public class Kubernetes {
     V1ValidatingWebhookConfigurationList validatingWebhookConfigurations;
     try {
 
-      validatingWebhookConfigurations = admissionregistrationApi.listValidatingWebhookConfiguration(
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      validatingWebhookConfigurations
+          = admissionregistrationApi.listValidatingWebhookConfiguration().timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2944,16 +2573,7 @@ public class Kubernetes {
    */
   public static boolean deleteClusterRole(String name) throws ApiException {
     try {
-      rbacAuthApi.deleteClusterRole(
-          name, // String | name of the role.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null,
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
+      rbacAuthApi.deleteClusterRole(name).gracePeriodSeconds(0).propagationPolicy(FOREGROUND).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -2972,19 +2592,7 @@ public class Kubernetes {
   public static V1ClusterRoleList listClusterRoles(String labelSelector) throws ApiException {
     V1ClusterRoleList roles;
     try {
-      roles = rbacAuthApi.listClusterRole(
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      roles = rbacAuthApi.listClusterRole().labelSelector(labelSelector).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -3002,17 +2610,7 @@ public class Kubernetes {
    */
   public static boolean deleteNamespacedRole(String namespace, String name) throws ApiException {
     try {
-      rbacAuthApi.deleteNamespacedRole(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null,
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
+      rbacAuthApi.deleteNamespacedRole(name, namespace).gracePeriodSeconds(0).propagationPolicy(FOREGROUND).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -3030,20 +2628,7 @@ public class Kubernetes {
   public static V1RoleList listNamespacedRoles(String namespace) throws ApiException {
     V1RoleList roles;
     try {
-      roles = rbacAuthApi.listNamespacedRole(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
-      );
+      roles = rbacAuthApi.listNamespacedRole(namespace).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -3104,20 +2689,7 @@ public class Kubernetes {
     V1IngressList ingressList;
     try {
       NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
-      ingressList = apiInstance.listNamespacedIngress(
-          namespace, // namespace
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
-          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          ALLOW_WATCH_BOOKMARKS // Boolean | Watch for changes to the described resources.
-      );
+      ingressList = apiInstance.listNamespacedIngress(namespace).timeoutSeconds(5).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -3135,15 +2707,7 @@ public class Kubernetes {
   public static void updateNamespacedIngresses(String namespace, V1Ingress ingress) throws ApiException {
     try {
       NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
-      apiInstance.replaceNamespacedIngress(
-          ingress.getMetadata().getName(), // ingress name
-          namespace, //namespace
-          ingress, //ingress body
-          PRETTY, //pretty print output
-          null, // dryRun
-          null, // field manager
-          null // filed validation
-      );
+      apiInstance.replaceNamespacedIngress(ingress.getMetadata().getName(), namespace, ingress).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -3161,17 +2725,8 @@ public class Kubernetes {
   public static boolean deleteIngress(String name, String namespace) throws ApiException {
     try {
       NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
-      apiInstance.deleteNamespacedIngress(
-          name, // ingress name
-          namespace, // namespace
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          null, // String | dry run or permanent change
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null,
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          BACKGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
+      apiInstance.deleteNamespacedIngress(name, namespace)
+          .gracePeriodSeconds(0).propagationPolicy(BACKGROUND).execute();
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -3322,14 +2877,7 @@ public class Kubernetes {
     try {
       getLogger().info("Creating ingress: {0}", Yaml.dump(ingressBody));
       NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
-      ingress = apiInstance.createNamespacedIngress(
-          namespace, //namespace
-          ingressBody, // V1Ingress object, representing the ingress details
-          PRETTY, // pretty print output
-          null, // when present, indicates that modifications should not be persisted
-          null, // a name associated with the actor or entity that is making these changes
-          null // field validation
-      );
+      ingress = apiInstance.createNamespacedIngress(namespace, ingressBody).execute();
       getLogger().info("Created ingress: {0}", Yaml.dump(ingress));
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -3351,17 +2899,7 @@ public class Kubernetes {
       crds = customObjectsApi
           .listClusterCustomObject("apiextensions.k8s.io",
               "v1",
-              "customresourcedefinitions",
-              null,
-              false,
-              null,
-              null,
-              null,
-              0,
-              null,
-              null,
-              0,
-              false);
+              "customresourcedefinitions").execute();
     } catch (Exception ex) {
       getLogger().severe(ex.getMessage());
       throw ex;

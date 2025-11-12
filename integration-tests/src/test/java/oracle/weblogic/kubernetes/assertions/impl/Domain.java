@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -51,7 +51,7 @@ public class Domain {
   public static boolean doesCrdExist(String crd) {
     try {
       V1CustomResourceDefinition domainCrd
-          = apiextensionsV1Api.readCustomResourceDefinition(crd, null);
+          = apiextensionsV1Api.readCustomResourceDefinition(crd).execute();
       assertNotNull(domainCrd, crd + " CRD is null");
       return true;
     } catch (ApiException aex) {
@@ -74,7 +74,7 @@ public class Domain {
     try {
       domainObject
           = customObjectsApi.getNamespacedCustomObject(
-          "weblogic.oracle", domainVersion, namespace, "domains", domainUid);
+          "weblogic.oracle", domainVersion, namespace, "domains", domainUid).execute();
     } catch (ApiException apex) {
       getLogger().info(apex.getMessage());
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -37,7 +37,7 @@ public class Cluster {
     try {
       clusterObject
           = customObjectsApi.getNamespacedCustomObject(
-          "weblogic.oracle", clusterVersion, namespace, "clusters", clusterResName);
+          "weblogic.oracle", clusterVersion, namespace, "clusters", clusterResName).execute();
     } catch (ApiException apex) {
       getLogger().info(apex.getMessage());
     }
