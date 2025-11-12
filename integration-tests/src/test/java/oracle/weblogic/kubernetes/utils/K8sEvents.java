@@ -424,12 +424,15 @@ public class K8sEvents {
                                             OffsetDateTime timestamp) {
 
     List<EventsV1Event> events = new ArrayList<>();
+    logger.info("+++++++++++++++++++++++++++++++++++++++++");
 
     try {
       List<EventsV1Event> allEvents = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (EventsV1Event event : allEvents) {
         if (event.getMetadata() != null) {
           Map<String, String> labels = event.getMetadata().getLabels();
+          logger.info(event.getEventTime().toString());
+          logger.info(event.getNote());          
           if (event.getReason() != null && event.getReason().equals(reason)
               && (isEqualOrAfter(timestamp, event))
               && event.getType() != null && event.getType().equals(type)
@@ -441,6 +444,7 @@ public class K8sEvents {
           }
         }
       }
+      logger.info("=======================================");
     } catch (ApiException ex) {
       Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
