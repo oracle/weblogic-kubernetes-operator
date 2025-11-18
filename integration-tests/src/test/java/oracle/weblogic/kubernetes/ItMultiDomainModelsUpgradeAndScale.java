@@ -145,14 +145,14 @@ class ItMultiDomainModelsUpgradeAndScale {
   }
   
   /**
-   * Create 3 different types of domains with operator 4.0.8 (domain-on-pv, domain-in-image and model-in-image).
+   * Create 3 different types of domains with operator 4.2.0 (domain-on-pv, domain-in-image and model-in-image).
    *
    */
   @Test
-  @DisplayName("create three different type of domains in Operator 4.0.8 and upgrade")
-  void testInstallAndUpgradeOperatorFrom408() {
+  @DisplayName("create three different type of domains in Operator 4.2.0 and upgrade")
+  void testInstallAndUpgradeOperatorFrom420() {
     // install and verify operator
-    installOldOperator("4.0.8", opNamespace,
+    installOldOperator("4.2.0", opNamespace,
         miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace);
     String[] domainTypes = {"modelInImage", "domainInImage", "domainOnPV"};
     for (String domainType : domainTypes) {
@@ -164,14 +164,14 @@ class ItMultiDomainModelsUpgradeAndScale {
   }
 
   /**
-   * Create 3 different types of domains with operator 4.1.2 (domain-on-pv, domain-in-image and model-in-image).
+   * Create 3 different types of domains with operator 4.3.4 (domain-on-pv, domain-in-image and model-in-image).
    *
    */
   @Test
-  @DisplayName("create three different type of domains in Operator 4.1.2 and upgrade")
-  void testInstallAndUpgradeOperatorFrom412() {
+  @DisplayName("create three different type of domains in Operator 4.3.4 and upgrade")
+  void testInstallAndUpgradeOperatorFrom434() {
     // install and verify operator
-    installOldOperator("4.1.2", opNamespace,
+    installOldOperator("4.3.4", opNamespace,
         miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace);
     String[] domainTypes = {"modelInImage", "domainInImage", "domainOnPV"};
     for (String domainType : domainTypes) {
