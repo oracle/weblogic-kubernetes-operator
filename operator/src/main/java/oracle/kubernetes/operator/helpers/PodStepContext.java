@@ -1275,6 +1275,34 @@ public abstract class PodStepContext extends BasePodStepContext {
       stream(podSpec.getContainers()).filter(c -> "monitoring-exporter".equals(c.getName()))
           .findFirst().flatMap(c -> stream(c.getEnv()).filter(p -> "JDK_JAVA_OPTIONS".equals(p.getName()))
               .findFirst()).ifPresent(p -> p.setName("JAVA_OPTS"));
+
+    }
+
+    private void removePodNameJavaOpt(V1Pod recipe, V1Pod currentPod) {
+      V1PodSpec podSpec = recipe.getSpec();
+
+      stream(podSpec.getContainers())
+              .filter(c -> "monitoring-exporter".equals(c.getName()))
+              .findFirst()
+              .ifPresent(container -> {
+
+                // find the JDK_JAVA_OPTIONS env var
+                stream(container.getEnv())
+                        .filter(env -> "JDK_JAVA_OPTIONS".equals(env.getName()))
+                        .findFirst()
+                        .ifPresent(envVar -> {
+                          String original = envVar.getValue();
+                          if (original == null) {
+                            return;
+                          }
+
+                          // remove `-DPOD_NAME=<whatever>` (and surrounding spaces)
+                          String cleaned = original.replaceAll("\\s*-DPOD_NAME=\\S+", "")
+                                  .trim()
+                                  .replaceAll(" +", " "); // collapse double spaces
+                          envVar.setValue(cleaned);
+                        });
+              });
     }
 
     private void restoreLegacyIstioPortsConfig(V1Pod recipePod,  V1Pod currentPod) {
@@ -1423,6 +1451,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       // return true if any adjusted hash matches required hash
       List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments = List.of(
           Pair.of("restoreMetricsExporterSidecarPortTcpMetrics", this::restoreMetricsExporterSidecarPortTcpMetrics),
+          Pair.of("removePodNameJavaOpt", this::removePodNameJavaOpt),
           Pair.of("restoreMetricsExporterSidecarJavaOpts", this::restoreMetricsExporterSidecarJavaOpts),
           Pair.of("convertAuxImagesInitContainerVolumeAndMounts",
               this::convertAuxImagesInitContainerVolumeAndMounts),
@@ -1685,6 +1714,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       final List<String> args = new ArrayList<>();
       args.add("-DDOMAIN=" + getDomainUid());
       args.add("-DWLS_PORT=" + getWebLogicRestPort());
+      args.add("-DPOD_NAME=" + getPodName());
       if (isWebLogicSecure()) {
         args.add("-DWLS_SECURE=true");
       }
