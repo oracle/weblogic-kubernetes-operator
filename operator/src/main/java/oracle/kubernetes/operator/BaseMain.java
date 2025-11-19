@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -17,6 +19,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -54,12 +57,19 @@ public abstract class BaseMain {
   static {
     try {
       Map<String, String> env  = System.getenv();
-      String loggingLevel = env.get("JAVA_LOGGING_LEVEL");
+      final String loggingLevel = env.get("JAVA_LOGGING_LEVEL");
+      Level level = Level.WARNING;
       if (loggingLevel != null) {
-        Level level = Level.parse(loggingLevel);
+
+        if (Arrays.stream(new String[]{"OFF", "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", "FINEST", "ALL"})
+                .anyMatch(l -> l.equals(loggingLevel))) {
+          level = Level.parse(loggingLevel);
+        } else {
+          System.err.println("Invalid JAVA_LOGGING_LEVEL='" + loggingLevel + "', using WARNING");
+        }
 
         Logger rootLogger = Logger.getLogger("");
-        rootLogger.setLevel(Level.WARNING);
+        rootLogger.setLevel(level);
 
         // Console Handler
         ConsoleHandler consoleHandler = new ConsoleHandler();
@@ -68,26 +78,43 @@ public abstract class BaseMain {
         rootLogger.addHandler(consoleHandler);
 
         String logDir = env.get("OPERATOR_LOGDIR");
-        if (logDir != null) {
+        if (logDir != null && !(logDir = logDir.trim()).isEmpty()) {
           Files.createDirectories(PathSupport.getPath(new File(logDir)));
-
+          Path logPath = Paths.get(logDir).normalize();
           // File handler
-          String pattern = logDir + "/operator%g.log";
-          int limit = Integer.parseInt(env.getOrDefault("JAVA_LOGGING_MAXSIZE", "20000000"));
-          int count = Integer.parseInt(env.getOrDefault("JAVA_LOGGING_COUNT", "10"));
-          FileHandler fileHandler = new FileHandler(pattern, limit, count);
-          fileHandler.setLevel(level);
-          fileHandler.setFormatter(new oracle.kubernetes.operator.logging.OperatorLoggingFormatter());
-          rootLogger.addHandler(fileHandler);
-        }
+          if (logPath.startsWith("..") || logPath.toString().contains("/../")) {
+            System.err.println("Invalid OPERATOR_LOGDIR (path traversal attempt): " + logDir);
+          } else {
+            int limit = getIntegerOrDefault(env.getOrDefault("JAVA_LOGGING_MAXSIZE", "20000000"), 20_000_000);
+            int count = getIntegerOrDefault(env.getOrDefault("JAVA_LOGGING_COUNT", "10"), 10);
 
-        Logger logger = Logger.getLogger("Operator", "Operator");
-        logger.setLevel(level);
-        logger.addHandler(consoleHandler);
+            limit = Math.min(limit, 100_000_000);
+            count = Math.min(count, 100);
+
+            FileHandler fileHandler = new FileHandler(logPath.resolve("operator%g.log").toString(), limit, count, true);
+            fileHandler.setLevel(level);
+            fileHandler.setFormatter(new oracle.kubernetes.operator.logging.OperatorLoggingFormatter());
+            rootLogger.addHandler(fileHandler);
+            Logger logger = Logger.getLogger("Operator", "Operator");
+            logger.setLevel(level);
+            logger.addHandler(consoleHandler);
+          }
+        }
       }
 
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Throwable t) {  // Catch ALL exceptions
+      System.err.println("FATAL: Failed to initialize logging: " + t);
+      t.printStackTrace();
+      throw new RuntimeException("Logging initialization failed", t);
+    }
+  }
+
+  private static int getIntegerOrDefault(String val, int def) {
+    try {
+      int i = Integer.parseInt(val);
+      return i > 0 ? i : def;
+    } catch (NumberFormatException e) {
+      return def;
     }
   }
 
