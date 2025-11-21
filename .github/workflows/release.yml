@@ -83,7 +83,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
           path: gh-pages
