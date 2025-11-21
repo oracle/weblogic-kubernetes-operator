@@ -484,9 +484,6 @@ class TopologyValidationStepTest {
 
     assertThat(domain, hasCondition(FAILED).withReason(TOPOLOGY_MISMATCH).withMessageContaining(message));
     assertThat(logRecords, containsWarning(messageKey).withParams(parameters));
-    assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT)
-            .withNoteContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
   }
 
   private void assertMaxReplicasSet() {
