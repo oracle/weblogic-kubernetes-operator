@@ -49,6 +49,8 @@ class MonitoringExporterConfigurationTest {
           queries:
           - applicationRuntimes:
               key: name
+              excludedKeyValues: "^(Oracle.*|bea.*|coherence.*|state.*|opss.*|jms.*|test_ins.*)$"
+              includedKeyValues: "^(Oracle.*|bea.*|coherence.*|state.*|opss.*|jms.*|test_ins.*)$"
               componentRuntimes:
                 type: WebAppComponentRuntime
                 prefix: webapp_config_

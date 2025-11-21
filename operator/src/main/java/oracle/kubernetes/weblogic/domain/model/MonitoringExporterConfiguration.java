@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -99,6 +99,10 @@ public class MonitoringExporterConfiguration {
     private String[] values;
 
     private Map<String,String[]> stringValues;
+
+    private String excludedKeyValues;
+
+    private String includedKeyValues;
   }
 
   // This class controls serialization of the exporter configuration.
@@ -138,6 +142,8 @@ public class MonitoringExporterConfiguration {
       writeOptionalStringField(out, "keyName", src.keyName);
       writeOptionalStringField(out, "type", src.type);
       writeOptionalStringField(out, "prefix", src.prefix);
+      writeOptionalStringField(out, "excludedKeyValues", src.excludedKeyValues);
+      writeOptionalStringField(out, "includedKeyValues", src.includedKeyValues);
       writeOptionalValueArray(out, src.values);
       writeOptionalStringValues(out, src.stringValues);
 
@@ -227,6 +233,8 @@ public class MonitoringExporterConfiguration {
           case "prefix" -> query.prefix = in.nextString();
           case "values" -> query.values = readArrayValue(in);
           case "stringValues" -> query.stringValues = readStringValues(in);
+          case "excludedKeyValues" -> query.excludedKeyValues = in.nextString();
+          case "includedKeyValues" -> query.includedKeyValues = in.nextString();
           default -> query.put(name, readQuery(in));
         }
       }

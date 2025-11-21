@@ -76,8 +76,14 @@ public class MonitoringExporterSpecification {
     return new Gson().toJson(object);
   }
 
-  private MonitoringExporterConfiguration toConfiguration(String string) {
-    return new Gson().fromJson(string, MonitoringExporterConfiguration.class);
+  private MonitoringExporterConfiguration toConfiguration(String jsonConfig) {
+    try {
+      return new Gson().fromJson(jsonConfig, MonitoringExporterConfiguration.class);
+    } catch (com.google.gson.JsonSyntaxException e) {
+      throw new IllegalArgumentException(
+          "Failed to parse monitoring exporter configuration in 'domain.spec.monitoringExporter' - "
+                  + e.getMessage(), e);
+    }
   }
 
   void createConfiguration(String yaml) {
