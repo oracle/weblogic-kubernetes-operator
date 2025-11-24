@@ -115,35 +115,35 @@ class ItOperatorUpgradeWithIstio {
   }
 
   /**
-   * Upgrade from Operator 4.0.9 to current with Istio enabled domain.
+   * Upgrade from Operator 4.1.8 to current with Istio enabled domain.
    */
   @Test
-  @DisplayName("Upgrade 4.0.9 Istio Domain with Istio to current")
-  void testOperatorWlsIstioDomainUpgradeFrom409ToCurrent() {
-    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom409ToCurrent" 
-         + " to upgrade Istio Image Domain with Istio with v9 schema to current");
-    upgradeWlsIstioDomain("4.0.9");
+  @DisplayName("Upgrade 4.1.8 Istio Domain with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom418ToCurrent() {
+    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom418ToCurrent"
+        + " to upgrade Istio Image Domain with Istio with v9 schema to current");
+    upgradeWlsIstioDomain("4.1.8");
   }
 
   /**
-   * Upgrade from Operator 4.1.7 to current with Istio enabled domain.
+   * Upgrade from Operator 4.2.20 to current with Istio enabled domain.
    */
   @Test
-  @DisplayName("Upgrade 4.1.7 Istio Domain(v9) with Istio to current")
-  void testOperatorWlsIstioDomainUpgradeFrom417ToCurrent() {
-    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom417ToCurrent"
-         + " to upgrade Istio Image Domain with Istio with v9 schema to current");
-    upgradeWlsIstioDomain("4.1.7");
+  @DisplayName("Upgrade 4.2.20 Istio Domain(v9) with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom4220ToCurrent() {
+    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom4220ToCurrent"
+        + " to upgrade Istio Image Domain with Istio with v9 schema to current");
+    upgradeWlsIstioDomain("4.2.20");
   }
 
   /**
-   * Upgrade from Operator v4.2.6 to current with Istio enabled domain.
+   * Upgrade from Operator v4.3.4 to current with Istio enabled domain.
    */
   @Test
-  @DisplayName("Upgrade 4.2.6 Istio Domain with Istio to current")
-  void testOperatorWlsIstioDomainUpgradeFrom426ToCurrent() {
+  @DisplayName("Upgrade 4.3.4 Istio Domain with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom434ToCurrent() {
     logger.info("Starting test to upgrade Istio Image Domain with Istio with v9 schema to current");
-    upgradeWlsIstioDomain("4.2.6");
+    upgradeWlsIstioDomain("4.3.4");
   }
 
   /**
