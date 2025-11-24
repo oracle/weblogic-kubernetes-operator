@@ -105,9 +105,9 @@ public interface TestConstants {
   // Default image names, tags to be used to downlaod base images 
   // It depends on the default value of BASE_IMAGES_REPO. 
   // Following defaults are assumining OCIR as default for BASE_IMAGES_REPO.
-  String WEBLOGIC_IMAGE_NAME_DEFAULT = "test-images/weblogic";
+  String WEBLOGIC_IMAGE_NAME_DEFAULT = "test-images/weblogic_cpu";
   String WEBLOGIC_IMAGE_TAG_DEFAULT = "14.1.2.0-generic-jdk17-ol8";
-  String FMWINFRA_IMAGE_NAME_DEFAULT = "test-images/fmw-infrastructure";
+  String FMWINFRA_IMAGE_NAME_DEFAULT = "test-images/fmw-infrastructure_cpu";
   String FMWINFRA_IMAGE_TAG_DEFAULT = "14.1.2.0-jdk17-ol8";
   String FMWINFRA_IMAGE_TAG_12213 = "12.2.1.3";
   String DB_IMAGE_NAME_DEFAULT = "test-images/database/enterprise";
@@ -136,7 +136,7 @@ public interface TestConstants {
   String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
        WEBLOGIC_IMAGE_TAG_DEFAULT);
   //WebLogic base image tag with added user "wlsadm" for 14.1.2.0-jdk17-ol8
-  String WEBLOGIC_IMAGE_WLSADM_TAG = "14.1.2.0-with-wlsadm-jdk17-ol8";
+  String WEBLOGIC_IMAGE_WLSADM_TAG = "14.1.2.0-with-wlsadm-jdk21-ol8";
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
