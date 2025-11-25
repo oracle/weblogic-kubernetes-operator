@@ -6,6 +6,7 @@
 {{- $ignore := set $scope "Chart" .Chart -}}
 {{- $ignore := set $scope "Release" .Release -}}
 {{- $ignore := set $scope "APIVersions" .Capabilities.APIVersions -}}
+{{- $ignore := set $scope "Capabilities" .Capabilities -}}
 
 {{ include "operator.validateInputs" $scope }}
 {{- include "operator.operator" $scope }}

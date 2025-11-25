@@ -35,7 +35,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
-      {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+      {{- if semverCompare ">=1.24-0" .Capabilities.KubeVersion.Version }}
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -318,7 +318,7 @@ spec:
           {{- end }}
         spec:
           serviceAccountName: {{ .serviceAccount | quote }}
-          {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+          {{- if semverCompare ">=1.24-0" .Capabilities.KubeVersion.Version }}
           securityContext:
             seccompProfile:
               type: RuntimeDefault
