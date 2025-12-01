@@ -217,26 +217,6 @@
           <version>${dependency-check-version}</version>
         </plugin>
         <plugin>
-          <groupId>org.jacoco</groupId>
-          <artifactId>jacoco-maven-plugin</artifactId>
-          <version>${jacoco.version}</version>
-          <executions>
-            <execution>
-              <id>prepare-agent</id>
-              <goals>
-                <goal>prepare-agent</goal>
-              </goals>
-            </execution>
-            <execution>
-              <id>report</id>
-              <phase>test</phase>
-              <goals>
-                <goal>report</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jxr-plugin</artifactId>
           <version>${maven-jxr-plugin-version}</version>
@@ -770,7 +750,6 @@
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
     <skip.dependency-check>false</skip.dependency-check>
-    <jacoco.version>0.8.14</jacoco.version>
     <git-commit-id-plugin-version>4.9.10</git-commit-id-plugin-version>
     <htmlunit-version>2.70.0</htmlunit-version>
     <jython-standalone-version>2.7.4</jython-standalone-version>
