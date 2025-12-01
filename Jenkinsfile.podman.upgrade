@@ -2,25 +2,20 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
-    '0.22.0': [
-        '1.29.2':  'kindest/node:v1.29.2@sha256:51a1434a5397193442f0be2a297b488b6c919ce8a3931be0ce822606ea5ca245',
-        '1.29':    'kindest/node:v1.29.2@sha256:51a1434a5397193442f0be2a297b488b6c919ce8a3931be0ce822606ea5ca245',
-        '1.28.7':  'kindest/node:v1.28.7@sha256:9bc6c451a289cf96ad0bbaf33d416901de6fd632415b076ab05f5fa7e4f65c58',
-        '1.28':    'kindest/node:v1.28.7@sha256:9bc6c451a289cf96ad0bbaf33d416901de6fd632415b076ab05f5fa7e4f65c58',
-        '1.27.11': 'kindest/node:v1.27.11@sha256:681253009e68069b8e01aad36a1e0fa8cf18bb0ab3e5c4069b2e65cafdd70843',
-        '1.27':    'kindest/node:v1.27.11@sha256:681253009e68069b8e01aad36a1e0fa8cf18bb0ab3e5c4069b2e65cafdd70843',
-        '1.26.14': 'kindest/node:v1.26.14@sha256:5d548739ddef37b9318c70cb977f57bf3e5015e4552be4e27e57280a8cbb8e4f',
-        '1.26':    'kindest/node:v1.26.14@sha256:5d548739ddef37b9318c70cb977f57bf3e5015e4552be4e27e57280a8cbb8e4f',
-        '1.25.16': 'kindest/node:v1.25.16@sha256:e8b50f8e06b44bb65a93678a65a26248fae585b3d3c2a669e5ca6c90c69dc519',
-        '1.25':    'kindest/node:v1.25.16@sha256:e8b50f8e06b44bb65a93678a65a26248fae585b3d3c2a669e5ca6c90c69dc519',
-        '1.24.17': 'kindest/node:v1.24.17@sha256:bad10f9b98d54586cba05a7eaa1b61c6b90bfc4ee174fdc43a7b75ca75c95e51',
-        '1.24':    'kindest/node:v1.24.17@sha256:bad10f9b98d54586cba05a7eaa1b61c6b90bfc4ee174fdc43a7b75ca75c95e51',
-        '1.23.17': 'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3',
-        '1.23':    'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3'
+    '0.30.0': [
+        '1.34.0':  'kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a',
+        '1.34':    'kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a',
+        '1.33.4':  'kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2',
+        '1.33':    'kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2',
+        '1.32.8':  'kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1',
+        '1.32':    'kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1',
+        '1.31.12': 'kindest/node:v1.31.12@sha256:0f5cc49c5e73c0c2bb6e2df56e7df189240d83cf94edfa30946482eb08ec57d2',
+        '1.31':    'kindest/node:v1.31.12@sha256:0f5cc49c5e73c0c2bb6e2df56e7df189240d83cf94edfa30946482eb08ec57d2'
     ]
 ]
+
 def _kind_image = null
-CRON_SETTINGS = '''H 4 * * 1-5 % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.24.17'''
+CRON_SETTINGS = '''H 4 * * 1-5 % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.34.0'''
 
 pipeline {
     agent { label 'large-ol9u4' }
@@ -67,14 +62,7 @@ pipeline {
 
         choice(name: 'MAVEN_PROFILE_NAME',
                 description: 'Profile to use in mvn command to run the tests. Possible values are wls-srg (the default), integration-tests, toolkits-srg, kind-sequential and kind-upgrade. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-                choices: [
-		        'kind-parallel',
-                        'wls-srg',
-                        'integration-tests',
-                        'kind-sequential',
-                        'kind-upgrade',
-                        'toolkits-srg'
-                ]
+		defaultValue: 'kind-upgrade'
         )
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
@@ -87,27 +75,21 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                   '0.22.0'
+                   '0.30.0'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.22.0: 1.29, 1.29.2, 1.28, 1.28.7, 1.27, 1.27.11, 1.26, 1.26.14, 1.25, 1.25.16, 1.24, 1.24.17, 1.23, 1.23.17 ',
+	       description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.30.0: 1.34.0, 1,34, 1.33.4, 1.33, 1.32.8, 1.32, 1.31.12, 1.31 ',
                choices: [
                     // The first item in the list is the default value...
-                    '1.29.2',
-                    '1.29',
-                    '1.28.7',
-                    '1.28',
-                    '1.27.11',
-                    '1.27',
-		    '1.26.4',
-                    '1.26',
-                    '1.25.16',
-                    '1.25',
-                    '1.24.17',
-                    '1.24',
-                    '1.23.17',
-                    '1.23'
+                    '1.34.0',
+                    '1.34',
+                    '1.33.4',
+                    '1.33',
+                    '1.32.8',
+                    '1.32',
+                    '1.31.12',
+                    '1.31'
                ]
         )
         string(name: 'HELM_VERSION',
@@ -129,7 +111,7 @@ pipeline {
         )
         booleanParam(name: 'PARALLEL_RUN',
                      description: 'Runs tests in parallel. Default is true, test classes run in parallel.',
-                     defaultValue: true
+                     defaultValue: false
         )
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
@@ -157,19 +139,19 @@ pipeline {
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
-               defaultValue: "test-images/weblogic_cpu"
+               defaultValue: "test-images/weblogic"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
-               description: '12.2.1.4-generic-jdk8-ol7, 12.2.1.4-generic-jdk8-ol8, 12.2.1.4-generic-jdk8-ol9, 12.2.1.4-slim-jdk8-ol7,12.2.1.4-slim-jdk8-ol7, 12.2.1.4-slim-jdk8-ol7, 14.1.1.0-generic-jdk8-ol7, 14.1.1.0-generic-jdk8-ol8, 14.1.1.0-generic-jdk8-ol9, 14.1.1.0-generic-jdk11-ol8, 14.1.1.0-generic-jdk11-ol9, 14.1.1.0-slim-jdk11-ol7, 14.1.1.0-slim-jdk11-ol8, 14.1.1.0-slim-jdk8-ol7, 14.1.1.0-slim-jdk8-ol8',
-               defaultValue: '12.2.1.4-generic-jdk8-ol8'
+               description: '12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
+               defaultValue: '12.2.1.4'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
                description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: "test-images/fmw-infrastructure_cpu"
+               defaultValue: "test-images/fmw-infrastructure"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
-               description: '12.2.1.4-jdk8-ol8, 12.2.1.4-jdk8-ol9',
-               defaultValue: '12.2.1.4-jdk8-ol8'
+               description: 'FWM Infra image tag',
+               defaultValue: '12.2.1.4'
         )
         string(name: 'DB_IMAGE_NAME',
                description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
@@ -530,8 +512,17 @@ EOF
                                 error('Profile/ItTests Validation Failed')
                             }
                         }
-
-                        sh '''
+			withCredentials([
+                             string(credentialsId: "${wko_files_bucket_token}", variable: 'WKO_BUCKET_TOKEN')
+                        ]) {
+                            sh '''
+                            if [ -z $WIT_DOWNLOAD_URL ]; then
+                              WIT_DOWNLOAD_URL="https://objectstorage.${wko_region}.oraclecloud.com/p/${WKO_BUCKET_TOKEN}/n/${wko_tenancy}/b/wko-system-test-files/o/imagetool-main.zip"
+                            fi
+                            if [ -z $WDT_DOWNLOAD_URL ]; then
+                              WDT_DOWNLOAD_URL="https://objectstorage.${wko_region}.oraclecloud.com/p/${WKO_BUCKET_TOKEN}/n/${wko_tenancy}/b/wko-system-test-files/o/weblogic-deploy-main.zip"
+                            fi
+                            
                             export PATH=${runtime_path}
                             export KUBECONFIG=${kubeconfig_file}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
@@ -581,6 +572,7 @@ EOF
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
                         '''
+			}
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             withCredentials([
                                 usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
