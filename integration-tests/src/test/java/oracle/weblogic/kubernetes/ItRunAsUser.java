@@ -98,14 +98,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * USER wlsadm
  * 2. Create the custom image based on the default base Weblogic image
  * imagetool create \
- *   --fromImage phx.ocir.io/devweblogic/test-images/weblogic:14.1.2.0-generic-jdk17-ol8 \
- *   --tag phx.ocir.io/devweblogic/test-images/weblogic:14.1.2.0-with-wlsadm-jdk17-ol8 \
+ *   --fromImage phx.ocir.io/devweblogic/test-images/weblogic:14.1.2.0-generic-jdk21-ol8 \
+ *   --tag phx.ocir.io/devweblogic/test-images/weblogic:14.1.2.0-with-wlsadm-jdk21-ol8 \
  *   --type WLS \
  *   --version 14.1.2.0 \
  *   --additionalBuildCommands pathto/additionalBuildCommands \
  *   --chown wlsadm:root
  *
- * Push this image to the ocir with tag: 14.1.2.0-with-wlsadm-jdk17-ol8-org
+ * Push this image to the ocir with tag: 14.1.2.0-with-wlsadm-jdk21-ol8-org
  * Using this custom WebLogic base image to create a mii domain with new user, wlsadm:root
  * Set runAsUser > 10000(12345) and verify mii domain is up and running
  */

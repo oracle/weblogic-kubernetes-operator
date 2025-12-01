@@ -83,7 +83,7 @@
           <includes>
             <exclude>**/*Test.java</exclude>
           </includes>
-          <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
+          <argLine>--add-opens java.base/java.time=ALL-UNNAMED</argLine>
         </configuration>
       </plugin>
 
@@ -311,15 +311,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <configuration>
-            <excludes>
-                <exclude>com/gargoylesoftware/**</exclude>
-            </excludes>
-        </configuration>
       </plugin>
     </plugins>
   </build>
