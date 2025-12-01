@@ -38,6 +38,7 @@ pipeline {
         ocir_host = "${env.WKT_OCIR_HOST}"
         wko_tenancy = "${env.WKT_TENANCY}"
         ocir_creds = 'wkt-ocir-creds'
+        wko_region = "${env.WKT_REGION}"
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -523,7 +524,7 @@ EOF
                             }
                         }
                         withCredentials([
-                             string(credentialsId: "${wko-system-test-files-bucket-par-token}", variable: 'WKO_BUCKET_TOKEN')
+                             string(credentialsId: "${wko-system-test-files}", variable: 'WKO_BUCKET_TOKEN')
                         ]) {
                             sh '''
                               if [ -z $WIT_DOWNLOAD_URL ]; then
