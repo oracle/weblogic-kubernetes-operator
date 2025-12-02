@@ -42,6 +42,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDeployment;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDomainCustomResource;
@@ -720,6 +721,27 @@ public class CleanupUtil {
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
       logger.warning("Failed to delete namespace {0}", namespace);
+    }
+  }
+  
+  /**
+   * print k8s cluster objects.
+   */
+  public static void printClusterObjects() {
+    LoggingFacade logger = getLogger();
+    StringBuilder cmd = new StringBuilder()
+        .append(KUBERNETES_CLI)
+        .append(" get all -A");
+    ExecResult result = null;
+    try {
+      result = ExecCommand.exec(cmd.toString(), true);
+    } catch (Exception e) {
+      logger.info("Got exception while running command: {0}", cmd);
+      logger.info(e.toString());
+    }
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
     }
   }
 

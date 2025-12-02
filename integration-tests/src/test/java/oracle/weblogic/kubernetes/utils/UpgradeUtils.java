@@ -57,6 +57,7 @@ public class UpgradeUtils {
       String opNamespace, String... domainNamespace) {
     // delete existing CRD if any
     cleanUpCRD();
+    CleanupUtil.printClusterObjects();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
