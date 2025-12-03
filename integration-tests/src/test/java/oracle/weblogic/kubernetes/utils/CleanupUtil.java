@@ -727,22 +727,28 @@ public class CleanupUtil {
   /**
    * print k8s cluster objects.
    */
-  public static void printClusterObjects() {
-    LoggingFacade logger = getLogger();
-    StringBuilder cmd = new StringBuilder()
-        .append(KUBERNETES_CLI)
-        .append(" get all -A");
-    ExecResult result = null;
-    try {
-      result = ExecCommand.exec(cmd.toString(), true);
-    } catch (Exception e) {
-      logger.info("Got exception while running command: {0}", cmd);
-      logger.info(e.toString());
-    }
-    if (result != null) {
-      logger.info("result.stdout: \n{0}", result.stdout());
-      logger.info("result.stderr: \n{0}", result.stderr());
-    }
+  public static Callable<Boolean> printClusterObjects() {
+    return () -> {
+      LoggingFacade logger = getLogger();
+      StringBuilder cmd = new StringBuilder()
+          .append(KUBERNETES_CLI)
+          .append(" get all -A");
+      ExecResult result = null;
+      try {
+        result = ExecCommand.exec(cmd.toString(), true);
+      } catch (Exception e) {
+        logger.info("Got exception while running command: {0}", cmd);
+        logger.info(e.toString());
+      }
+      if (result != null) {
+        logger.info("result.stdout: \n{0}", result.stdout());
+        logger.info("result.stderr: \n{0}", result.stderr());
+        if (result.stdout().contains("kube-system")) {
+          return true;
+        }
+      }
+      return false;
+    };
   }
 
 }

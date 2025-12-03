@@ -57,7 +57,6 @@ public class UpgradeUtils {
       String opNamespace, String... domainNamespace) {
     // delete existing CRD if any
     cleanUpCRD();
-    CleanupUtil.printClusterObjects();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
@@ -184,5 +183,9 @@ public class UpgradeUtils {
             .execute();
       }
     }
+    testUntil(
+        CleanupUtil.printClusterObjects(),
+        logger,
+        "the cluster service to be working again");
   }
 }
