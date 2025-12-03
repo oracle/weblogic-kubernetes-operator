@@ -1,8 +1,8 @@
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-{{- if and (not (empty .Capabilities.APIVersions)) (not (.Capabilities.APIVersions.Has "policy/v1")) }}
-{{- fail "Kubernetes version 1.21 or greater is required." }}
+{{- if and (not (empty .Capabilities.APIVersions)) (or (not (.Capabilities.APIVersions.Has "policy/v1")) (.Capabilities.APIVersions.Has "policy/v1beta1")) }}
+{{- fail "Kubernetes version 1.25 or greater is required." }}
 {{- end }}
 
 {{- define "operator.operator" -}}
