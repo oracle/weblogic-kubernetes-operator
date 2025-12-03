@@ -21,8 +21,10 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REP
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorWebhookIsReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesCrdExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
@@ -114,6 +116,14 @@ public class UpgradeUtils {
           checkCrdVersion(),
           logger,
           "the CRD version to be updated to current");
+    CleanupUtil.printClusterObjects();
+    testUntil(
+        withLongRetryPolicy,
+        assertDoesNotThrow(() -> operatorWebhookIsReady(opNamespace),
+            "operatorWebhookIsReady failed with ApiException"),
+        logger,
+        "operator webhook to be running in namespace {0}",
+        opNamespace);
   }
 
   private static Callable<Boolean> getOpContainerImageName(String namespace) {
