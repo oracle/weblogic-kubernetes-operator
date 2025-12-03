@@ -412,9 +412,11 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       } catch (IOException ioe) {
         logger.severe("Failed to cleanup files @ " + RESULTS_ROOT, ioe);
       }
-      logger.info("Uninstalling webhook only operator");
-      uninstallOperator(opHelmParams);
-      deleteNamespace(webhookNamespace);
+      if (MAVEN_PROFILE_NAME == null) {
+        logger.info("Uninstalling webhook only operator");
+        uninstallOperator(opHelmParams);
+        deleteNamespace(webhookNamespace);
+      }
 
       logger.info("Cleanup images after all test suites are run");
       // delete all the images from local repo
