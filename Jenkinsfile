@@ -132,18 +132,18 @@ pipeline {
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
-               defaultValue: "test-images/weblogic"
+               defaultValue: "test-images/weblogic_cpu"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
-	       description: '14.1.2.0-generic-jdk17-ol8, 14.1.2.0-generic-jdk17-ol9, 14.1.2.0-generic-jdk21-ol8, 14.1.2.0-generic-jdk21-ol9, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
+	       description: '14.1.2.0-generic-jdk17-ol8, 14.1.2.0-generic-jdk17-ol9, 14.1.2.0-generic-jdk21-ol8, 14.1.2.0-generic-jdk21-ol9, 12.2.1.4-generic-jdk8-ol7, 12.2.1.4-generic-jdk8-ol8, 12.2.1.4-generic-jdk8-ol9, 12.2.1.4-slim-jdk8-ol7,12.2.1.4-slim-jdk8-ol7, 12.2.1.4-slim-jdk8-ol7, 14.1.1.0-generic-jdk8-ol7, 14.1.1.0-generic-jdk8-ol8, 14.1.1.0-generic-jdk8-ol9, 14.1.1.0-generic-jdk11-ol8, 14.1.1.0-generic-jdk11-ol9, 14.1.1.0-slim-jdk11-ol7, 14.1.1.0-slim-jdk11-ol8, 14.1.1.0-slim-jdk8-ol7, 14.1.1.0-slim-jdk8-ol8',
                defaultValue: '14.1.2.0-generic-jdk17-ol8'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
                description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: "test-images/fmw-infrastructure"
+               defaultValue: "test-images/fmw-infrastructure_cpu"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
-               description: '14.1.2.0-jdk17-ol8, 14.1.2.0-jdk17-ol9, 14.1.2.0-jdk21-ol8, 14.1.2.0-jdk21-ol9',
+               description: '14.1.2.0-jdk17-ol8, 14.1.2.0-jdk17-ol9, 14.1.2.0-jdk21-ol8, 14.1.2.0-jdk21-ol9,12.2.1.4-jdk8-ol8, 12.2.1.4-jdk8-ol9',
                defaultValue: '14.1.2.0-jdk17-ol8'
         )
         string(name: 'DB_IMAGE_NAME',
@@ -153,7 +153,7 @@ pipeline {
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
                defaultValue: '19.3.0.0'
-        )
+	)
         string(name: 'MONITORING_EXPORTER_BRANCH',
                description: '',
                defaultValue: 'main'
