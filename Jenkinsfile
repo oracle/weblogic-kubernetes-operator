@@ -153,7 +153,7 @@ pipeline {
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
                defaultValue: '19.3.0.0'
-        )
+	)
         string(name: 'MONITORING_EXPORTER_BRANCH',
                description: '',
                defaultValue: 'main'
