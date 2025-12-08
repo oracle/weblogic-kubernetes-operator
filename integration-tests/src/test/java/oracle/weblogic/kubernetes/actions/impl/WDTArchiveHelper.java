@@ -17,7 +17,7 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -427,7 +427,7 @@ public class WDTArchiveHelper {
   static Path archiveHelperScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "archiveHelper.sh");
 
   private static void downloadAndInstallWDT() throws IOException {
-    String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
+    String wdtUrl = WDT_DOWNLOAD_URL_DEFAULT + "/download/weblogic-deploy.zip";
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
     if (!Files.exists(destLocation) && !Files.exists(archiveHelperScript)) {
       getLogger().info("Downloading WDT to {0}", destLocation);

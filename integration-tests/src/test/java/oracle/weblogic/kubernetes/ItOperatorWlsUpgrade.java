@@ -281,7 +281,7 @@ class ItOperatorWlsUpgrade {
   void tearDown() {
     if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
-      cleanUpCRD();
+      cleanUpCRD();      
     }
   }
 
