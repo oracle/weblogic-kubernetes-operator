@@ -62,7 +62,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
@@ -651,7 +651,7 @@ class ItOnPremCrossDomainTransaction {
   }  
 
   private static void downloadAndInstallWDT() throws IOException {
-    String wdtUrl = WDT_DOWNLOAD_URL + "/download/weblogic-deploy.zip";
+    String wdtUrl = WDT_DOWNLOAD_URL_DEFAULT + "/download/weblogic-deploy.zip";
     Path destLocation = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy.zip");
     createDomainScript = Path.of(DOWNLOAD_DIR, "wdt", "weblogic-deploy", "bin", "createDomain.sh");
     if (!Files.exists(destLocation) && !Files.exists(createDomainScript)) {

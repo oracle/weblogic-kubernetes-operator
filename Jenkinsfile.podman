@@ -38,6 +38,8 @@ pipeline {
         ocir_host = "${env.WKT_OCIR_HOST}"
         wko_tenancy = "${env.WKT_TENANCY}"
         ocir_creds = 'wkt-ocir-creds'
+        wko_region = "${env.WKT_REGION}"
+	wko_files_bucket_token = 'wko-system-test-files-bucket-par-token'
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -125,11 +127,11 @@ pipeline {
         )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
-               defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
+               defaultValue: ""
         )
         string(name: 'WIT_DOWNLOAD_URL',
                description: 'URL to download WIT.',
-               defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
+               defaultValue: ""
         )
         string(name: 'REMOTECONSOLE_VERSION',
                description: 'RemoteConsole version.',
@@ -522,58 +524,67 @@ EOF
                                 error('Profile/ItTests Validation Failed')
                             }
                         }
+                        withCredentials([
+                             string(credentialsId: "${wko_files_bucket_token}", variable: 'WKO_BUCKET_TOKEN')
+                        ]) {
+                            sh '''
+                              if [ -z $WIT_DOWNLOAD_URL ]; then
+                                WIT_DOWNLOAD_URL="https://objectstorage.${wko_region}.oraclecloud.com/p/${WKO_BUCKET_TOKEN}/n/${wko_tenancy}/b/wko-system-test-files/o/imagetool-main.zip"
+                              fi
+                              if [ -z $WDT_DOWNLOAD_URL ]; then
+                                WDT_DOWNLOAD_URL="https://objectstorage.${wko_region}.oraclecloud.com/p/${WKO_BUCKET_TOKEN}/n/${wko_tenancy}/b/wko-system-test-files/o/weblogic-deploy-main.zip"
+                              fi
+                              export PATH=${runtime_path}
+                              export KUBECONFIG=${kubeconfig_file}
+                              mkdir -m777 -p "${WORKSPACE}/.mvn"
+                              touch ${WORKSPACE}/.mvn/maven.config
+                              K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
+                              if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
+                                  PARALLEL_RUN='false'
+                              elif [ "${MAVEN_PROFILE_NAME}" == "kind-upgrade" ]; then
+                                  PARALLEL_RUN='false'
+                              fi
+                              if [ -n "${IT_TEST}" ]; then
+                                  echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                  MAVEN_PROFILE_NAME="integration-tests"
+                                  echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
+                              fi
+                              echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.base.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.test.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
+                              echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
 
-                        sh '''
-                            export PATH=${runtime_path}
-                            export KUBECONFIG=${kubeconfig_file}
-                            mkdir -m777 -p "${WORKSPACE}/.mvn"
-                            touch ${WORKSPACE}/.mvn/maven.config
-                            K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
-                            if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
-                                PARALLEL_RUN='false'
-                            elif [ "${MAVEN_PROFILE_NAME}" == "kind-upgrade" ]; then
-                                PARALLEL_RUN='false'
-                            fi
-                            if [ -n "${IT_TEST}" ]; then
-                                echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
-                                MAVEN_PROFILE_NAME="integration-tests"
-                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
-                            fi
-                            echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.base.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.test.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
-			    echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
-
-                            echo "${WORKSPACE}/.mvn/maven.config contents:"
-                            cat "${WORKSPACE}/.mvn/maven.config"
-                            cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
+                              echo "${WORKSPACE}/.mvn/maven.config contents:"
+                              cat "${WORKSPACE}/.mvn/maven.config"
+                              cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
                         '''
+                        }
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             withCredentials([
                                 usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
@@ -648,7 +659,6 @@ EOF
                 anyOf {
                     branch 'main'
                     branch 'release/4.0'
-                    branch 'release/3.4'
                 }
                 anyOf {
                     not { triggeredBy 'TimerTrigger' }

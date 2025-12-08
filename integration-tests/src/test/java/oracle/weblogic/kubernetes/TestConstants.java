@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
 
+  String MAVEN_PROFILE_NAME = getNonEmptySystemProperty("maven.profile.name", null);
   String OLD_DOMAIN_VERSION = "v8";
   Boolean SKIP_CLEANUP =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.cleanup", "false"));

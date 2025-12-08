@@ -60,6 +60,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MAVEN_PROFILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -317,7 +318,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         }
         
         //install webhook to prevent every operator installation trying to update crd
-        installWebHookOnlyOperator("DomainOnPvSimplification=true");
+        if (MAVEN_PROFILE_NAME == null) {
+          installWebHookOnlyOperator("DomainOnPvSimplification=true");
+        }
         //install traefik when running with podman container runtime
         if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !CRIO) {
           installTraefikLB();
@@ -409,9 +412,11 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       } catch (IOException ioe) {
         logger.severe("Failed to cleanup files @ " + RESULTS_ROOT, ioe);
       }
-      logger.info("Uninstalling webhook only operator");
-      uninstallOperator(opHelmParams);
-      deleteNamespace(webhookNamespace);
+      if (MAVEN_PROFILE_NAME == null) {
+        logger.info("Uninstalling webhook only operator");
+        uninstallOperator(opHelmParams);
+        deleteNamespace(webhookNamespace);
+      }
 
       logger.info("Cleanup images after all test suites are run");
       // delete all the images from local repo

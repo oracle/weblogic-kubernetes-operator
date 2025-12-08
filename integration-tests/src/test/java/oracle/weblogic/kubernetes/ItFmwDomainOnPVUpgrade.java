@@ -139,9 +139,9 @@ class ItFmwDomainOnPVUpgrade {
 
   private final String fmwModelFilePrefix = "model-fmwdomain-upgrade";  
   
-  private static final String imageTag12214 = "12.2.1.4";
+  private static final String imageTag12214 = "12.2.1.4-jdk8-ol8";
   private static final String image12214 = FMWINFRA_IMAGE_NAME + ":" + imageTag12214;
-  private static final String imageTag1412 = "14.1.2.0-jdk17-ol8";
+  private static final String imageTag1412 = "14.1.2.0-jdk21-ol8";
   private static final String image1412 = FMWINFRA_IMAGE_NAME + ":" + imageTag1412;
   
   private static ConditionFactory withVeryLongRetryPolicy
