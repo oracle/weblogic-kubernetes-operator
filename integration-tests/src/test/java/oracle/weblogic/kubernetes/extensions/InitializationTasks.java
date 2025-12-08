@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.PortInuseEventWatcher;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -147,8 +146,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       .and().with().pollInterval(10, SECONDS)
       .atMost(30, MINUTES).await();
 
-  PortInuseEventWatcher portInuseEventWatcher;
-
   @Override
   public void beforeAll(ExtensionContext context) {
     LoggingFacade logger = getLogger();
@@ -162,8 +159,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
      */
     if (!started.getAndSet(true)) {
       try {
-        portInuseEventWatcher = new PortInuseEventWatcher();
-        portInuseEventWatcher.start();
         // clean up the download directory so that we always get the latest
         // versions of the WDT and WIT tools in every run of the test suite.
         try {
@@ -450,7 +445,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
       handler.close();
     }
-    portInuseEventWatcher.interrupt();
   }
 
   private String getOcirToken() {
