@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -10,7 +10,6 @@ package oracle.kubernetes.common.logging;
 public class MessageKeys {
   public static final String OPERATOR_STARTED = "WLSKO-0000";
   public static final String CREATING_API_CLIENT = "WLSKO-0001";
-  public static final String K8S_MASTER_URL = "WLSKO-0002";
   public static final String ENABLED_FEATURES = "WLSKO-0003";
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
@@ -53,7 +52,6 @@ public class MessageKeys {
   public static final String VERIFY_K8S_MIN_VERSION = "WLSKO-0074";
   public static final String DOMAIN_UID_UNIQUENESS_FAILED = "WLSKO-0076";
   public static final String PV_NOT_FOUND_FOR_DOMAIN_UID = "WLSKO-0077";
-  public static final String PV_ACCESS_MODE_FAILED = "WLSKO-0078";
   public static final String K8S_VERSION_CHECK = "WLSKO-0079";
   public static final String K8S_VERSION_CHECK_FAILURE = "WLSKO-0080";
   public static final String HTTP_METHOD_FAILED = "WLSKO-0081";
@@ -61,7 +59,6 @@ public class MessageKeys {
   public static final String OP_CONFIG_NAMESPACE = "WLSKO-0083";
   public static final String OP_CONFIG_DOMAIN_NAMESPACES = "WLSKO-0084";
   public static final String OP_CONFIG_SERVICE_ACCOUNT = "WLSKO-0085";
-  public static final String WAITING_FOR_POD_READY = "WLSKO-0087";
   public static final String POD_IS_READY = "WLSKO-0088";
   public static final String POD_IS_FAILED = "WLSKO-0089";
   public static final String WATCH_EVENT = "WLSKO-0101";
@@ -84,7 +81,6 @@ public class MessageKeys {
   public static final String SCRIPT_LOADED = "WLSKO-0134";
   public static final String JOB_IS_FAILED = "WLSKO-0136";
   public static final String JOB_DELETED = "WLSKO-0137";
-  public static final String WAITING_FOR_JOB_READY = "WLSKO-0138";
   public static final String JOB_CREATED = "WLSKO-0139";
   public static final String JOB_IS_COMPLETE = "WLSKO-0140";
   public static final String CANNOT_PARSE_TOPOLOGY = "WLSKO-0141";
@@ -103,7 +99,6 @@ public class MessageKeys {
   public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
   public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
   public static final String CALL_FAILED = "WLSKO-0168";
-  public static final String JOB_CREATION_TIMESTAMP_MESSAGE = "WLSKO-0169";
   public static final String NAMESPACE_IS_MISSING = "WLSKO-0171";
   public static final String CM_PATCHED = "WLSKO-0172";
   public static final String REPLACE_CRD_FAILED = "WLSKO-0173";
@@ -123,11 +118,8 @@ public class MessageKeys {
   public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
   public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
   public static final String DOMAIN_ROLL_START = "WLSKO-0190";
-  public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
-  public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
   public static final String DOMAIN_FATAL_ERROR = "WLSKO-0195";
-  public static final String DUMP_BREADCRUMBS = "WLSKO-0198";
   public static final String BEGIN_SERVER_SHUTDOWN_REST = "WLSKO-0199";
   public static final String SERVER_SHUTDOWN_REST_SUCCESS = "WLSKO-0200";
   public static final String SERVER_SHUTDOWN_REST_FAILURE = "WLSKO-0201";
@@ -157,7 +149,6 @@ public class MessageKeys {
   public static final String PV_EXISTS = "WLSKO-0235";
   public static final String PVC_EXISTS = "WLSKO-0236";
   public static final String PVC_IS_BOUND = "WLSKO-0237";
-  public static final String WAITING_FOR_PVC_TO_BIND = "WLSKO-0238";
   public static final String PVC_NOT_BOUND_ERROR = "WLSKO-0239";
   public static final String FLUENTBIT_CONFIGMAP_CREATED = "WLSKO-0240";
   public static final String FLUENTBIT_CONFIGMAP_REPLACED = "WLSKO-0241";
@@ -265,7 +256,7 @@ public class MessageKeys {
   public static final String CLUSTER_INCOMPLETE_EVENT_PATTERN = "WLSEO-0037";
   public static final String PERSISTENT_VOLUME_CLAIM_EVENT_ERROR = "WLSEO-0038";
   public static final String PERSISTENT_VOLUME_CLAIM_EVENT_SUGGESTION = "WLSEO-0039";
-  public static final String PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN = "WLSEO-0040";
+  public static final String PERSISTENT_VOLUME_CLAIM_BOUND_EVENT_PATTERN = "WLSEO-0040";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";

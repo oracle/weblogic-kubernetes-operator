@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED;
-import static oracle.kubernetes.common.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
 import static oracle.kubernetes.common.logging.MessageKeys.VERIFY_ACCESS_DENIED;
 import static oracle.kubernetes.common.logging.MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS;
@@ -41,7 +40,6 @@ class HealthCheckHelperTest {
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
       DOMAIN_UID_UNIQUENESS_FAILED,
-      PV_ACCESS_MODE_FAILED,
       PV_NOT_FOUND_FOR_DOMAIN_UID,
       VERIFY_ACCESS_DENIED,
       VERIFY_ACCESS_DENIED_WITH_NS

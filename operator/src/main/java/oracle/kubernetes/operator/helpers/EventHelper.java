@@ -57,7 +57,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UNAVAILABLE_EV
 import static oracle.kubernetes.common.logging.MessageKeys.EXCEPTION;
 import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STARTED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN;
-import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOLUME_CLAIM_BOUND_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
@@ -869,7 +869,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN;
+        return PERSISTENT_VOLUME_CLAIM_BOUND_EVENT_PATTERN;
       }
     };
 

@@ -19,7 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.common.logging.MessageKeys.DUMP_BREADCRUMBS;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.instanceOf;
@@ -48,7 +47,6 @@ class FiberTest {
   @BeforeEach
   void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger()
-          .collectLogMessages(logRecords, DUMP_BREADCRUMBS)
           .withLogLevel(Level.INFO));
 
     packet.put(STEPS, stepList);

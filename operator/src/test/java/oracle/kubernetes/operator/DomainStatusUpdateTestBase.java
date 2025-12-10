@@ -1058,7 +1058,7 @@ abstract class DomainStatusUpdateTestBase {
     SystemClockTestSupport.increment(21);
     updateDomainStatus();
     assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(SERVER_POD)
-            .withMessageContaining("One or more pods in the domain cannot be scheduled."));
+            .withMessageContaining("One or more Pods in the domain cannot be scheduled."));
   }
 
 
