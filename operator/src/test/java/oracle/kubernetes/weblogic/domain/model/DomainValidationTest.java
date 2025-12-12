@@ -477,7 +477,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withEnvironmentVariable("INTROSPECT_HOME", "/shared/home/introspection");
 
     assertThat(domain.getValidationFailures(resourceLookup).failures(),
-          contains(stringContainsInOrder("variables", "ADMIN_NAME", "INTROSPECT_HOME", "spec.serverPod.env", "are")));
+          contains(stringContainsInOrder("spec.serverPod.env", "ADMIN_NAME", "INTROSPECT_HOME")));
   }
 
   @Test
@@ -489,7 +489,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup).failures(),
           contains(
-                stringContainsInOrder("variables", "LOG_HOME", "NAMESPACE", "spec.adminServer.serverPod.env", "are")));
+                stringContainsInOrder("spec.adminServer.serverPod.env", "LOG_HOME", "NAMESPACE")));
   }
 
   @Test
@@ -499,7 +499,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withEnvironmentVariable("SERVER_NAME", "testValue");
 
     assertThat(domain.getValidationFailures(resourceLookup).failures(),
-          contains(stringContainsInOrder("variable", "SERVER_NAME", "spec.managedServers[ms1].serverPod.env", "is")));
+          contains(stringContainsInOrder("spec.managedServers[ms1].serverPod.env", "SERVER_NAME")));
   }
 
   @Test
@@ -511,7 +511,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup).failures(),
-          contains(stringContainsInOrder("variable", "DOMAIN_HOME", "spec.clusters[cluster1].serverPod.env", "is")));
+          contains(stringContainsInOrder("spec.clusters[cluster1].serverPod.env", "DOMAIN_HOME")));
   }
 
   @Test

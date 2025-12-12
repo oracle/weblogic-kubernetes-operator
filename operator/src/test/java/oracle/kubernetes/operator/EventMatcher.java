@@ -18,7 +18,6 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
-import static oracle.kubernetes.utils.OperatorUtils.joinListGrammatically;
 
 public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSupport> {
 
@@ -80,7 +79,7 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
     if (expectedCount != null) {
       descriptions.add("count <" + getCount(event) + '>');
     }
-    return "with " + joinListGrammatically(descriptions);
+    return "with " + String.join(", ", descriptions);
   }
 
   private int getCount(EventsV1Event event) {
