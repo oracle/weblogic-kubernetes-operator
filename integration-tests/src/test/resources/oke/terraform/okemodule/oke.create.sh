@@ -232,6 +232,11 @@ compartment_ocid=$(prop 'compartment.ocid')
 sub_compartment_ocid=$(prop 'sub.comp.ocid')
 compartment_name=$(prop 'compartment.name')
 okeclustername=$(prop 'okeclustername')
+BASE_CLUSTER_NAME=$(prop 'okeclustername')
+# Generate unique OKE cluster name per Jenkins run
+okeclustername="${BASE_CLUSTER_NAME}_${BUILD_ID}"
+export okeclustername
+echo "Using OKE cluster name: ${okeclustername}"
 ociapi_pubkey_fingerprint=$(prop 'ociapi.pubkey.fingerprint')
 ocipk_path=$(prop 'ocipk.path')
 vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')

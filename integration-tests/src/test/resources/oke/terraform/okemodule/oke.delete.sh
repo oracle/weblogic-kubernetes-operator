@@ -13,48 +13,49 @@ prop() {
 }
 
 cleanupLB() {
-  echo 'Clean up left over LB'
-  myvcn_id=`oci network vcn list --compartment-id $compartment_ocid  --display-name=${clusterName}_vcn | jq -r '.data[] | .id'`
-  declare -a vcnidarray
-  vcnidarray=(${myvcn_id// /})
-  myip=`oci lb load-balancer list --compartment-id $compartment_ocid |jq -r '.data[] | .id'`
-  mysubnets=`oci network subnet list --vcn-id=${vcnidarray[0]} --display-name=${clusterName}-LB-${1} --compartment-id $compartment_ocid | jq -r '.data[] | .id'`
+  echo "Cleaning Load Balancers for cluster ${clusterName}"
 
-  declare -a iparray
-  declare -a mysubnetsidarray
-  mysubnetsidarray=(${mysubnets// /})
+  oci lb load-balancer list \
+    --compartment-id "$compartment_ocid" \
+    --all \
+    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].id" \
+    --raw-output | while read -r lb_id; do
 
-  iparray=(${myip// /})
-  vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
-  for k in "${mysubnetsidarray[@]}"
-    do
-      for i in "${iparray[@]}"
-         do
-            lb=`oci lb load-balancer get --load-balancer-id=$i`
-            echo "deleting lb with id $i   $lb"
-            if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
-               echo "deleting lb with id $i"
-               sleep 60
-               oci lb load-balancer delete --load-balancer-id=$i --force || true
-            fi
-        done
-    done
-  myip=`oci lb load-balancer list --compartment-id $compartment_ocid |jq -r '.data[] | .id'`
-  iparray=(${myip// /})
-   for k in "${mysubnetsidarray[@]}"
-      do
-        for i in "${iparray[@]}"
-           do
-              lb=`oci lb load-balancer get --load-balancer-id=$i`
-              echo "deleting lb with id $i   $lb"
-              if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
-                 echo "deleting lb with id $i"
-                 sleep 60
-                 oci lb load-balancer delete --load-balancer-id=$i --force || true
-              fi
-          done
-      done
+      [ -z "$lb_id" ] && continue
+      echo "Deleting LB $lb_id"
+      oci lb load-balancer delete \
+        --load-balancer-id "$lb_id" \
+        --force || true
+  done
 }
+
+listClusterLBs() {
+  oci lb load-balancer list \
+    --compartment-id "$compartment_ocid" \
+    --all \
+    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].{id:id,name:display-name,state:\"lifecycle-state\"}" \
+    --output table
+}
+
+
+verifyNoLeftoverLBs() {
+  echo "Verifying no Load Balancers remain for cluster ${clusterName}"
+
+  leftover=$(oci lb load-balancer list \
+    --compartment-id "$compartment_ocid" \
+    --all \
+    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].id" \
+    --raw-output)
+
+  if [[ -n "$leftover" ]]; then
+    echo "[ERROR] Leftover Load Balancers detected for cluster ${clusterName}:"
+    echo "$leftover"
+    exit 1
+  fi
+
+  echo "No leftover Load Balancers found for cluster ${clusterName}"
+}
+
 
 deleteOKE() {
   cd ${terraform_script_dir}
@@ -77,3 +78,8 @@ export TF_LOG=ERROR
 echo 'Deleting cluster'
 
 deleteOKE || true
+echo "=== Load Balancers BEFORE cleanup for ${clusterName} ==="
+listClusterLBs || true
+cleanupLB
+sleep 30
+verifyNoLeftoverLBs
