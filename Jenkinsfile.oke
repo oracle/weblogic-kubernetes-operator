@@ -2,9 +2,9 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
-CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seqweek;PARALLEL_RUN=false
-                   H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seqone;PARALLEL_RUN=false
-                   H 12 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
+CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;BASE_CLUSTER_NAME=seqweek;PARALLEL_RUN=false
+                   H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;BASE_CLUSTER_NAME=seqone;PARALLEL_RUN=false
+                   H 12 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;BASE_CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 
 pipeline {
     agent { label 'large' }
@@ -48,6 +48,8 @@ pipeline {
         wkotest_ssh_pk = "${WORKSPACE}/.ssh/wkotestkey"
 
         OKE_CLUSTER='true'
+        BASE_CLUSTER_NAME = "${env.BASE_CLUSTER_NAME ?: params.BASE_CLUSTER_NAME}"
+        CLUSTER_NAME = "${BASE_CLUSTER_NAME}_${BUILD_ID}"
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -127,10 +129,10 @@ pipeline {
                description: 'Number of threads to run the classes in parallel, default is 3.',
                defaultValue: "3"
         )
-        string(name: 'CLUSTER_NAME',
-                       description: 'OKE cluster name',
-                       defaultValue: "seqone"
-                )
+	string(name: 'BASE_CLUSTER_NAME',
+               description: 'Base OKE cluster name (BUILD_ID will be appended)',
+               defaultValue: "seqone"
+        )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
                //defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
@@ -428,6 +430,15 @@ EOF
 
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
+			    echo "[DEBUG] BASE_CLUSTER_NAME=${BASE_CLUSTER_NAME}"
+                            echo "[DEBUG] BUILD_ID=${BUILD_ID}"
+                            echo "[DEBUG] CLUSTER_NAME=${CLUSTER_NAME}"
+
+                            if [[ "${CLUSTER_NAME}" != "${BASE_CLUSTER_NAME}_${BUILD_ID}" ]]; then
+                              echo "[FATAL] CLUSTER_NAME derivation mismatch"
+                              exit 1
+                            fi
+
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == "'"${CLUSTER_NAME}"'" and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
                             echo "clusterIp : $clusterIP"
