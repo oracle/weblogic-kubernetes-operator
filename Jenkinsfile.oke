@@ -434,7 +434,7 @@ EOF
                             echo "[DEBUG] BUILD_ID=${BUILD_ID}"
                             echo "[DEBUG] CLUSTER_NAME=${CLUSTER_NAME}"
 
-                            if [[ "${CLUSTER_NAME}" != "${BASE_CLUSTER_NAME}_${BUILD_ID}" ]]; then
+                            if [[ "${CLUSTER_NAME}" != "${BASE_CLUSTER_NAME}-${BUILD_ID}" ]]; then
                               echo "[FATAL] CLUSTER_NAME derivation mismatch"
                               exit 1
                             fi
