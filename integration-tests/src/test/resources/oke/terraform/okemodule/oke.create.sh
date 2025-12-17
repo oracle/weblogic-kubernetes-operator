@@ -169,21 +169,22 @@ assertClusterNameConsistency() {
 
   tf_var_name=$(terraform output -raw DEBUG_var_cluster_name)
   tf_local_name=$(terraform output -raw DEBUG_local_cluster_name)
-  tf_module_name=$(terraform output -raw DEBUG_module_cluster_name)
 
   echo "[DEBUG] tf_var_name    = ${tf_var_name}"
   echo "[DEBUG] tf_local_name  = ${tf_local_name}"
-  echo "[DEBUG] tf_module_name = ${tf_module_name}"
   echo "[DEBUG] shell_name     = ${okeclustername}"
 
+  if [[ -z "${tf_var_name}" || -z "${tf_local_name}" ]]; then
+    echo "[FATAL] Terraform outputs missing"
+    exit 1
+  fi
+
   if [[ "${tf_var_name}" != "${tf_local_name}" ]] ||
-     [[ "${tf_var_name}" != "${tf_module_name}" ]] ||
      [[ "${tf_var_name}" != "${okeclustername}" ]]; then
     echo "[ERROR] Cluster name mismatch detected!"
-    echo "Shell:   ${okeclustername}"
-    echo "Var:     ${tf_var_name}"
-    echo "Local:   ${tf_local_name}"
-    echo "Module:  ${tf_module_name}"
+    echo "Shell: ${okeclustername}"
+    echo "Var:   ${tf_var_name}"
+    echo "Local: ${tf_local_name}"
     exit 1
   fi
 
