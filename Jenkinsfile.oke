@@ -319,7 +319,7 @@ pipeline {
                         cat ${jenkins_home_directory}/.oci/config
                         mkdir -p ${WORKSPACE}/.ssh
                         cd ${WORKSPACE}/.ssh
-                        ssh-keygen -b 2048 -t rsa -q  -f wkotestkey -N ""
+                        ssh-keygen -b 2048 -t rsa -q  -f wkotestkey -N "" <<< y
                         chmod 600 ${wkotest_ssh_pk}
 
                         COMPARTMENT_OCID=${compartment_id}
