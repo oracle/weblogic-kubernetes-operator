@@ -14,7 +14,3 @@ resource "oci_file_storage_export" "oketest_export2" {
   file_system_id = oci_file_storage_file_system.oketest_fs2.id
   path           = "/${var.cluster_name}oketest2"
 }
-output "DEBUG_export_cluster_name" {
-  value = var.cluster_name
-}
-

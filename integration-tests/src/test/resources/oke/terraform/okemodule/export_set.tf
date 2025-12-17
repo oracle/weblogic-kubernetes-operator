@@ -8,7 +8,3 @@ resource "oci_file_storage_export_set" "oketest_export_set" {
   mount_target_id = var.mount_target_ocid
   # mount_target_id = oci_file_storage_mount_target.oketest_mount_target.id
 }
-output "DEBUG_export_cluster_name" {
-  value = var.cluster_name
-}
-

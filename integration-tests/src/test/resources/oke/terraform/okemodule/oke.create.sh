@@ -164,6 +164,33 @@ checkKubernetesCliConnection() {
 
 }
 
+assertClusterNameConsistency() {
+  echo "[DEBUG] Running cluster name consistency check"
+
+  tf_var_name=$(terraform output -raw DEBUG_var_cluster_name)
+  tf_local_name=$(terraform output -raw DEBUG_local_cluster_name)
+  tf_module_name=$(terraform output -raw DEBUG_module_cluster_name)
+
+  echo "[DEBUG] tf_var_name    = ${tf_var_name}"
+  echo "[DEBUG] tf_local_name  = ${tf_local_name}"
+  echo "[DEBUG] tf_module_name = ${tf_module_name}"
+  echo "[DEBUG] shell_name     = ${okeclustername}"
+
+  if [[ "${tf_var_name}" != "${tf_local_name}" ]] ||
+     [[ "${tf_var_name}" != "${tf_module_name}" ]] ||
+     [[ "${tf_var_name}" != "${okeclustername}" ]]; then
+    echo "[ERROR] Cluster name mismatch detected!"
+    echo "Shell:   ${okeclustername}"
+    echo "Var:     ${tf_var_name}"
+    echo "Local:   ${tf_local_name}"
+    echo "Module:  ${tf_module_name}"
+    exit 1
+  fi
+
+  echo "[DEBUG] Cluster name consistency check PASSED"
+}
+
+
 checkClusterRunning() {
 	debug "checkClusterRunning(): okeclustername=${okeclustername}"
 debug "checkClusterRunning(): KUBECONFIG=${KUBECONFIG}"
@@ -293,7 +320,12 @@ export TF_LOG=ERROR
 debug "before createCluster(): okeclustername=${okeclustername}"
 debug "before createCluster(): tfvars file=${clusterTFVarsFile}.tfvars"
 
+set -o errexit
+set -o pipefail
+
+
 createCluster
+assertClusterNameConsistency
 
 
 debug "after createCluster(): okeclustername=${okeclustername}"
