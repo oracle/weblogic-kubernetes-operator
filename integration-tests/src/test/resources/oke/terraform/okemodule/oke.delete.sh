@@ -12,6 +12,11 @@ prop() {
   grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
 
+debug() {
+  echo "[DEBUG] $*"
+}
+
+
 debug "oke.delete.sh: okeclustername=${clusterName}"
 
 
