@@ -120,3 +120,18 @@ locals {
     }
   ]
 }
+
+# -----------------------------
+# DEBUG OUTPUTS (temporary)
+# -----------------------------
+
+output "DEBUG_var_cluster_name" {
+  description = "Cluster name as seen from variables"
+  value       = var.cluster_name
+}
+
+output "DEBUG_local_cluster_name" {
+  description = "Cluster name as seen from locals"
+  value       = local.cluster_name
+}
+

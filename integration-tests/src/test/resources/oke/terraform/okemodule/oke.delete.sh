@@ -12,6 +12,9 @@ prop() {
   grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
 
+debug "oke.delete.sh: okeclustername=${clusterName}"
+
+
 cleanupLB() {
   echo "Cleaning Load Balancers for cluster ${clusterName}"
 
@@ -58,9 +61,13 @@ verifyNoLeftoverLBs() {
 
 
 deleteOKE() {
+	debug "deleteOKE(): destroying cluster ${clusterName}"
+
   cd ${terraform_script_dir}
   terraform init -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
   terraform plan -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
+  debug "deleteOKE(): destroying cluster ${clusterName}"
+
   terraform destroy -auto-approve -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
 }
 
