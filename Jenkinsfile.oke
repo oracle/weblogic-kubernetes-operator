@@ -49,7 +49,7 @@ pipeline {
 
         OKE_CLUSTER='true'
         BASE_CLUSTER_NAME = "${env.BASE_CLUSTER_NAME ?: params.BASE_CLUSTER_NAME}"
-        CLUSTER_NAME = "${BASE_CLUSTER_NAME}_${BUILD_ID}"
+        CLUSTER_NAME = "${BASE_CLUSTER_NAME}-${BUILD_ID}"
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
