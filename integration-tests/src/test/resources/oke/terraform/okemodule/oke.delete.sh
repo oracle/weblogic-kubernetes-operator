@@ -8,6 +8,21 @@
 set -o errexit
 set -o pipefail
 
+# OCI CLI must be explicit in Jenkins
+export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
+
+if [[ -z "${OCI_CLI_CONFIG_FILE}" ]]; then
+  export OCI_CLI_CONFIG_FILE="${HOME}/.oci/config"
+fi
+
+if [[ -z "${OCI_CLI_PROFILE}" ]]; then
+  export OCI_CLI_PROFILE="DEFAULT"
+fi
+
+echo "[DEBUG] Using OCI config: ${OCI_CLI_CONFIG_FILE}"
+echo "[DEBUG] Using OCI profile: ${OCI_CLI_PROFILE}"
+
+
 prop() {
   grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
