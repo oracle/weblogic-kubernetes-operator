@@ -8,17 +8,14 @@
 ########################################
 
 output "DEBUG_var_cluster_name" {
-  description = "Cluster name as passed via tfvars"
-  value       = var.cluster_name
+  value = var.cluster_name
 }
 
 output "DEBUG_local_cluster_name" {
-  description = "Cluster name as resolved inside locals"
-  value       = local.cluster_name
+  value = local.cluster_name
 }
 
-output "DEBUG_module_cluster_name" {
-  description = "Cluster name as seen by the OKE module"
-  value       = one(module.c1[*].cluster_name)
+output "DEBUG_module_cluster_id" {
+  value = try(one(module.c1[*].cluster_id), null)
 }
 

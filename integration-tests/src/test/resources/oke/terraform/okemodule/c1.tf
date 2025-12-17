@@ -48,15 +48,6 @@ output "cluster_kubeconfig" {
   ) : null
 }
 
-output "DEBUG_cluster_name" {
-  value = var.cluster_name
-}
-
-output "DEBUG_cluster_name_from_module" {
-  value = one(module.c1[*].cluster_name)
-}
-
-
 variable "cluster_kube_config_expiration" {
   default = 2592000
 }
