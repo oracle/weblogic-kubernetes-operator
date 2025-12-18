@@ -22,6 +22,11 @@ fi
 echo "[DEBUG] Using OCI config: ${OCI_CLI_CONFIG_FILE}"
 echo "[DEBUG] Using OCI profile: ${OCI_CLI_PROFILE}"
 
+lb_query_by_cluster() {
+  local cluster="$1"
+  echo 'data[?"freeform-tags"."oke.cluster.name" == '"'"${cluster}"'"'" ].{"id":id,"name":"display-name","state":"lifecycle-state"}'
+}
+
 
 prop() {
   grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
@@ -53,10 +58,10 @@ cleanupLB() {
 }
 
 listClusterLBs() {
-  oci lb load-balancer list \
+   oci lb load-balancer list \
     --compartment-id "$compartment_ocid" \
+    --query "$(lb_query_by_cluster "$okeclustername")" \
     --all \
-    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].{id:id,name:display-name,state:\"lifecycle-state\"}" \
     --output table
 }
 
