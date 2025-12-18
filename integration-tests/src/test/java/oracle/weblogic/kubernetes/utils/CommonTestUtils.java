@@ -64,6 +64,7 @@ import static oracle.weblogic.kubernetes.TestConstants.CRIO;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_CLUSTER_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
@@ -122,6 +123,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createDiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.getLbExternalIp;
+import static oracle.weblogic.kubernetes.utils.OciLbServiceTagger.patchServiceIfMissing;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodEvictedStatusInOperatorLogs;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -1391,6 +1393,11 @@ public class CommonTestUtils {
           "Can't find external IP address of the service " + serviceName);
 
       logger.info("External IP address of the service is {0} ", serviceExtIPAddr);
+      try {
+        patchServiceIfMissing(nameSpace, serviceName, K8S_CLUSTER_NAME);
+      } catch (Exception ex) {
+        logger.warning("Failed to add freeform tag to k8s cluster with k8s cluster name for LB cleanup in OKE");
+      }
     }
 
     String serviceExtIPAddress = serviceExtIPAddr;

@@ -31,6 +31,7 @@ public interface TestConstants {
       Integer.parseInt(getNonEmptySystemProperty("wko.it.sleep.seconds.after.failure", "0"));
   String K8S_NODEPORT_HOST1 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host1");
   String K8S_NODEPORT_HOST2 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host2");
+  String K8S_CLUSTER_NAME = getNonEmptySystemProperty("wko.k8s.cluster.name");
   String OPDEMO = getNonEmptySystemProperty("wko.it.opdemo");
   //ARM constants
   boolean ARM =
