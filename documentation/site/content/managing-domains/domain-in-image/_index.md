@@ -6,7 +6,7 @@ draft = true
 pre = "<b> </b>"
 +++
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}
 
 
 {{% notice note %}}

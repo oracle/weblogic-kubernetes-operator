@@ -9,7 +9,7 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 
 {{% notice note %}}
 
-**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) and then build a Domain on PV `domain creation image` by completing the steps in [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" >}}).
+**Before you begin**: Perform the steps in [Prerequisites]({{% relref "/samples/domains/domain-home-on-pv/prerequisites.md" %}}) and then build a Domain on PV `domain creation image` by completing the steps in [Build the domain creation image]({{% relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" %}}).
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
@@ -27,7 +27,7 @@ The sample demonstrates setting up a WebLogic domain with a domain home on a Kub
 
 
 **PV and PVC Notes:**
-- The specifications of PersistentVolume and PersistentVolumeClaim defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML file are environment specific and often require information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{< relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" >}}) in the user documentation for more details.
+- The specifications of PersistentVolume and PersistentVolumeClaim defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML file are environment specific and often require information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{% relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" %}}) in the user documentation for more details.
 - You must use a storage provider that supports the `ReadWriteMany` option.
 - This sample will automatically set the owner of all files in the domain home on the persistent
 volume to `uid 1000`. If you want to use a different user, configure the desired `runAsUser` and
@@ -38,7 +38,7 @@ After the Domain is deployed, the operator creates the PV and PVC (if they are c
 
 ### Domain creation image
 
-The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1` that you created in the [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" >}}) step. The WDT model files in this image define the initial WebLogic Domain on PV configuration. The image contains:
+The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1` that you created in the [Build the domain creation image]({{% relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" %}}) step. The WDT model files in this image define the initial WebLogic Domain on PV configuration. The image contains:
 - The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image's `/auxiliary/weblogic-deploy` directory, by default.
 - WDT model YAML, property, and archive files, expected in the directory `/auxiliary/models`, by default.
 
@@ -54,7 +54,7 @@ In this section, you will define the PV and PVC configuration and reference the 
 
 #### Secrets
 
-First, create the secrets needed by both WLS and JRF type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/domain-on-pv/model-files.md" >}}).
+First, create the secrets needed by both WLS and JRF type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{% relref "managing-domains/domain-on-pv/model-files.md" %}}).
 
 Run the following `kubectl` commands to deploy the required secrets:
 
@@ -78,13 +78,13 @@ Run the following `kubectl` commands to deploy the required secrets:
   - Delete a secret before creating it, otherwise the create command will fail if the secret already exists..
   - Name and label the secrets using their associated domain UID to clarify which secrets belong to which domains and make it easier to clean up a domain.
 
-  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the JRF model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Domain on PV]({{< relref "/managing-domains/domain-on-pv/usage.md" >}}) user documentation.
+  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the JRF model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Domain on PV]({{% relref "/managing-domains/domain-on-pv/usage.md" %}}) user documentation.
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
   **NOTE**: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password and `MY_DBA_PASSWORD` with the DBA password of the database
   that you chose in the prerequisite steps when
-  [setting up JRF]({{< relref "/samples/domains/domain-home-on-pv/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
+  [setting up JRF]({{% relref "/samples/domains/domain-home-on-pv/prerequisites#additional-prerequisites-for-jrf-domains" %}}).
 
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
@@ -133,20 +133,20 @@ Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operat
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) to view the JRF Domain YAML file.
 
-Modify the PV and PVC specifications defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML file based on your environment. These specifications often require your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{< relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" >}}) in the user documentation for more details.
+Modify the PV and PVC specifications defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML file based on your environment. These specifications often require your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{% relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" %}}) in the user documentation for more details.
 
 {{% notice note %}}
 By default, this sample creates a Persistent Volume (PV) of type `hostPath`. This works only for a single node Kubernetes cluster for testing or proof of concept activities. In a multinode Kubernetes cluster, consider using a Kubernetes `StorageClass`, or PV of `nfs` type. If you use Oracle Container Engine for Kubernetes (OKE) and plan to use Oracle Cloud Infrastructure File Storage (FSS) for PV, then Oracle recommends creating a `StorageClass` and specifying the name of the `StorageClass` in your PersistentVolumeClaim (PVC) configuration in the `initializeDomainOnPV` section. See [Provisioning PVCs on the File Storage Service (FSS)](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim_Provisioning_PVCs_on_FSS.htm#Provisioning_Persistent_Volume_Claims_on_the_FileStorageService) in the OCI documentation for more details.
 {{% /notice %}}
 
-  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{% relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
   Run the following command to apply the two sample resources.
   ```shell
   $ kubectl apply -f /tmp/sample/domain-resource.yaml
   ```
 
-   The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample `domain creation image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{< relref "/managing-domains/domain-resource.md" >}}).
+   The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample `domain creation image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{% relref "/managing-domains/domain-resource.md" %}}).
 
 ### Verify the PV, PVC, and domain
 
@@ -388,7 +388,7 @@ $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/domain-lifecyc
 $ ./waitForDomain.sh -n sample-domain1-ns -d sample-domain1 -p Completed
 ```
 
-If you see an error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
+If you see an error, then consult [Debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
 
 ### Verify the services
@@ -412,12 +412,12 @@ Now that all the sample resources have been deployed, you can invoke the sample 
 
 - Send a web application request to the load balancer URL for the application, as shown in the following example.
 
-    {{< tabs groupId="config" >}}
-    {{% tab name="Request from a local machine" %}}
+    {{< tabs groupid="config" >}}
+    {{% tab title="Request from a local machine" %}}
         $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' http://localhost:30305/myapp_war/index.jsp
 
     {{% /tab %}}
-    {{% tab name="Request from a remote machine" %}}
+    {{% tab title="Request from a remote machine" %}}
 
         $ K8S_CLUSTER_ADDRESS=$(kubectl cluster-info | grep DNS | sed 's/^.*https:\/\///g' | sed 's/:.*$//g')
 
@@ -453,7 +453,7 @@ Now that all the sample resources have been deployed, you can invoke the sample 
 
 ### Clean up resources and remove the generated domain home
 
-Follow the cleanup instructions [here]({{< relref "samples/domains/domain-home-on-pv/cleanup.md" >}}) to remove the domain, cluster and other associated resources.
+Follow the cleanup instructions [here]({{% relref "samples/domains/domain-home-on-pv/cleanup.md" %}}) to remove the domain, cluster and other associated resources.
 
 Sometimes in production, but most likely in testing environments, you might also want to remove the Domain on PV contents that are generated using this sample.
 You can use the `pv-pvc-helper.sh` helper script in the domain lifecycle directory for this.

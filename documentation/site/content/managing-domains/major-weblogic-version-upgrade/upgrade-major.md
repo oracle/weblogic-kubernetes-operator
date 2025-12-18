@@ -13,7 +13,7 @@ In general, the process for upgrading WLS and FMW/JRF infrastructure domains in 
 
 **Before the upgrade**, you must do the following:
 
-- If your [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is Domain on Persistent Volume (DoPV), then back up the domain home.
+- If your [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) is Domain on Persistent Volume (DoPV), then back up the domain home.
 - If your domain type is `JRF`:
    - Back up the JRF database.
    - Back up the OPSS wallet file, this allows you to reuse the same JRF database schemas if you need to recreate the domain.
@@ -27,7 +27,7 @@ In general, the process for upgrading WLS and FMW/JRF infrastructure domains in 
 - Make sure nothing else is accessing the database.
 - **Do not delete** the domain resource.
 
-{{% notice note %}} According to My Oracle Support [Doc ID 2752458.1](https://support.oracle.com/epmos/faces/DocumentDisplay?id=2752458.1), if you are using an FMW/JRF domain and upgrading from 12.2.1.3 to 12.2.1.4, then before upgrading, you do _not_ need to run the Upgrade Assistant or Reconfiguration Wizard, but we recommend moving the domain to a persistent volume.  See [Move MII/JRF domains to PV]({{< relref "/managing-domains/model-in-image/move-to-pv.md" >}}).
+{{% notice note %}} According to My Oracle Support [Doc ID 2752458.1](https://support.oracle.com/epmos/faces/DocumentDisplay?id=2752458.1), if you are using an FMW/JRF domain and upgrading from 12.2.1.3 to 12.2.1.4, then before upgrading, you do _not_ need to run the Upgrade Assistant or Reconfiguration Wizard, but we recommend moving the domain to a persistent volume.  See [Move MII/JRF domains to PV]({{% relref "/managing-domains/model-in-image/move-to-pv.md" %}}).
 {{% /notice %}}
 
 To upgrade WLS and FMW/JRF infrastructure domains, use the following procedure.

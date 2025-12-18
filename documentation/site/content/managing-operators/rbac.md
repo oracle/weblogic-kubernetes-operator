@@ -26,7 +26,7 @@ they are correct when it starts.
 
 Note that the operator installation Helm chart
 creates ClusterRoles and ClusterRoleBindings
-when the [enableClusterRoleBinding]({{<relref "/managing-operators/using-helm#enableclusterrolebinding">}}) Helm chart configuration setting
+when the [enableClusterRoleBinding]({{% relref "/managing-operators/using-helm#enableclusterrolebinding" %}}) Helm chart configuration setting
 is set to `true` (the default), and the chart creates Roles and RoleBindings
 when the setting is set to `false`.
 
@@ -34,12 +34,12 @@ when the setting is set to `false`.
 
 For more information about:
 - Installing the operator, see
-  [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}})
-  and [Installation]({{< relref "/managing-operators/installation.md" >}}).
+  [Prepare for installation]({{% relref "/managing-operators/preparation.md" %}})
+  and [Installation]({{% relref "/managing-operators/installation.md" %}}).
 - The `enableClusterRoleBinding` operator Helm chart setting, see
-  [Choose a security strategy]({{<relref "/managing-operators/preparation#choose-a-security-strategy">}}).
+  [Choose a security strategy]({{% relref "/managing-operators/preparation#choose-a-security-strategy" %}}).
 - The Kubernetes `ServiceAccount` used by the operator, see
-  [Service accounts]({{<relref "/managing-operators/service-accounts.md">}}).
+  [Service accounts]({{% relref "/managing-operators/service-accounts.md" %}}).
 - Kubernetes Roles, see the Kubernetes
   [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) documentation.
 
@@ -146,7 +146,7 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
 [^1]: The binding is assigned to the operator `ServiceAccount`.
 [^2]: The binding is assigned to the operator `ServiceAccount`
       in each namespace that the operator is configured to manage.
-      See [Namespace management]({{< relref "/managing-operators/namespace-management.md" >}})
+      See [Namespace management]({{% relref "/managing-operators/namespace-management.md" %}})
 [^3]: The binding is assigned to the operator `ServiceAccount`.
       In addition, the Kubernetes RBAC resources that the operator installation actually
       sets up will be adjusted based on whether the operator is in dedicated mode.
@@ -155,5 +155,5 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
       If the operator is running in dedicated mode,
       then those resources will be created as `Roles` and `RoleBindings` in the namespace of the operator.
       See the `Dedicated` option for the
-      [domainNamespaceSelectionStrategy]({{< relref "/managing-operators/using-helm#domainnamespaceselectionstrategy" >}})
+      [domainNamespaceSelectionStrategy]({{% relref "/managing-operators/using-helm#domainnamespaceselectionstrategy" %}})
       setting.

@@ -40,5 +40,5 @@ these commands. The site will be available on the URL shown here:
 
 5. When you are ready to submit your changes, push your branch to `origin`
 and submit a pull request. Remember to follow the guidelines in the
-[Contribute to the operator]({{< relref "/developerguide/contributing.md" >}})
+[Contribute to the operator]({{% relref "/developerguide/contributing.md" %}})
 document.

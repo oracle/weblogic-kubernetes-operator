@@ -5,4 +5,4 @@ weight: 1
 description: "Operator SSL/TLS certificate handling."
 ---
 
-This document is now located in the operator user guide, see [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
+This document is now located in the operator user guide, see [REST Services]({{% relref "/managing-operators/the-rest-api.md" %}}).

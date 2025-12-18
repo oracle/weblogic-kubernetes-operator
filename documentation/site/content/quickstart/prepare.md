@@ -25,7 +25,7 @@ weight: 2
     ```
 
     {{% notice note %}} If you have reached this point while following the prerequisites in the domain samples,
-    **stop here** and return to the Model in Image [sample instructions]({{< relref "/samples/domains/model-in-image/prerequisites#resume" >}}) or Domain on PV [sample instructions]({{< relref "/samples/domains/domain-home-on-pv/prerequisites#resume" >}}).
+    **stop here** and return to the Model in Image [sample instructions]({{% relref "/samples/domains/model-in-image/prerequisites#resume" %}}) or Domain on PV [sample instructions]({{% relref "/samples/domains/domain-home-on-pv/prerequisites#resume" %}}).
     {{% /notice %}}
 
 1. Accept the license agreement for WebLogic Server images.

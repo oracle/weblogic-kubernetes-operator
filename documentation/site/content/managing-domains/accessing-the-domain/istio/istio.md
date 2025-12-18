@@ -48,7 +48,7 @@ The current support for Istio has these limitations:
   does not have an `EXTERNAL-IP` defined and
   you would like to externally run WLST commands,
   then see
-  [Use WLST]({{< relref "/managing-domains/accessing-the-domain/wlst.md" >}}).  
+  [Use WLST]({{% relref "/managing-domains/accessing-the-domain/wlst.md" %}}).  
 
 ### Determining the Istio version
 
@@ -81,7 +81,7 @@ Label the namespace as follows:
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
-After the namespace is labeled, you can [install the operator]({{< relref "/managing-operators/installation.md" >}}).
+After the namespace is labeled, you can [install the operator]({{% relref "/managing-operators/installation.md" %}}).
 
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the Envoy container `istio-proxy`.

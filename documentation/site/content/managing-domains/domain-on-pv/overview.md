@@ -10,7 +10,7 @@ description = "Learn how to create a domain on a persistent volume."
 
 ### Overview
 
-Domain on persistent volume (Domain on PV) is an operator [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}),
+Domain on persistent volume (Domain on PV) is an operator [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}),
 which requires that the domain home exists on a persistent volume. The domain home can be created either manually
 or automatically by specifying the section, `domain.spec.configuration.initializeDomainOnPV`, in the domain resource YAML file.
 The initial domain topology and resources are described using [WebLogic Deploy Tooling (WDT) models](#weblogic-deploy-tooling-models).
@@ -28,7 +28,7 @@ The `initializeDomainOnPv` section:
 
 {{% notice note %}}
 If you are running WebLogic Scripting Tool (WLST) inside a server pod, then
-please refer to [Use kubectl exec]({{< relref "/managing-domains/accessing-the-domain/wlst#use-kubectl-exec">}}) in the WLST documentation for very important information related to memory usage.
+please refer to [Use kubectl exec]({{% relref "/managing-domains/accessing-the-domain/wlst#use-kubectl-exec" %}}) in the WLST documentation for very important information related to memory usage.
 {{% /notice %}}
 
 ### High-level use case
@@ -48,8 +48,8 @@ configuration scripts.
 They compactly define a WebLogic domain using model files, variable properties files, and application archive files.
 For more information about the model format
 and its integration,
-see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
-and [Working with WDT Model files]({{< relref "/managing-domains/domain-on-pv/model-files.md" >}}).
+see [Usage]({{% relref "/managing-domains/domain-on-pv/usage.md" %}})
+and [Working with WDT Model files]({{% relref "/managing-domains/domain-on-pv/model-files.md" %}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 

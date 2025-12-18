@@ -7,4 +7,4 @@ description: "Managing domains in Kubernetes."
 
 The following sections provide information for running, managing, accessing, and monitoring domains.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

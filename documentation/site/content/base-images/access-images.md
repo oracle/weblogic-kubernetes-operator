@@ -57,7 +57,7 @@ and set up image pull secrets for a domain resource:
   you must use the web interface to accept the Oracle Standard Terms and Restrictions
   for the Oracle software images that you intend to deploy.
   You need to do this only once for a particular image.
-  See [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+  See [Obtain images from the Oracle Container Registry]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}}).
 
 For more information about creating Kubernetes Secrets for accessing
 the registry, see the Kubernetes documentation,

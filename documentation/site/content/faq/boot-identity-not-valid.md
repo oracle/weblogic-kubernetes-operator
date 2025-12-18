@@ -13,12 +13,12 @@ One or more WebLogic Server instances in my domain will not start and I see erro
 
 When you see these kinds of errors, it typically means that the user name and password provided in the `weblogicCredentialsSecret` are incorrect. Prior to operator version 2.5.0, this error could have also indicated that the WebLogic domain directory's security configuration files have changed in an incompatible way between when the operator scanned
 the domain directory, which occurs during the "introspection" phase, and when the server instance attempted to start. There is now a separate validation for that condition described in the
-[Domain secret mismatch]({{< relref "/faq/domain-secret-mismatch.md" >}})
+[Domain secret mismatch]({{% relref "/faq/domain-secret-mismatch.md" %}})
 FAQ entry.
 
 
 Check that the user name and password credentials stored in the Kubernetes Secret, referenced by `weblogicCredentialsSecret`, contain the expected values for an account with administrative privilege for the WebLogic domain.
-Then [stop all WebLogic Server instances]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}})
+Then [stop all WebLogic Server instances]({{% relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" %}})
 in the domain before restarting so that the operator will repeat its introspection and generate the corrected `boot.properties` files.
 
 If the `Boot identity not valid` error is still not resolved, and the error is logged on a WebLogic Managed Server, then the server may be failing to contact the Administration Server. Check carefully for any errors or exceptions logged before the `Boot identity not valid` error in the Managed Server log file and look for indications of communication failure.
@@ -37,6 +37,6 @@ For example:
   or `<BEA-141151> <The Administration Server could not be reached at http://my-domain-admin-server:7011.>`.
   Make sure the domain is configured correctly for your Istio version. In particular,
   make sure `spec.configuration.istio.localHostBindingsEnabled` is set correctly.
-  See [Istio]({{< relref "/managing-domains/accessing-the-domain/istio/istio.md" >}}).
+  See [Istio]({{% relref "/managing-domains/accessing-the-domain/istio/istio.md" %}}).
 
 - If the DNS hostname of the Administration Server can't be resolved during Managed Server startup with errors such as `java.net.UnknownHostException: domain1-admin-server`, then check the DNS server pod logs for any errors and take corrective actions to resolve those errors.

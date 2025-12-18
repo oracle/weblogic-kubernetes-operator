@@ -16,17 +16,17 @@ The Domain CustomResourceDefinition in operator version 4.0 has changed signific
 {{% notice note %}}
 The automated upgrade described in this section converts `weblogic.oracle/v8` schema auxiliary image configuration into low-level Kubernetes schema, for example, init containers and volumes.
 Instead of relying on the generated low-level schema, Oracle recommends using a simplified `weblogic.oracle/v9` schema configuration for auxiliary images, as documented in the
-Auxiliary Images [Configuration]({{<relref "/managing-domains/model-in-image/auxiliary-images#configuration" >}}) section.
+Auxiliary Images [Configuration]({{% relref "/managing-domains/model-in-image/auxiliary-images#configuration" %}}) section.
 {{% /notice %}}
 
-The 4.0 operator provides a seamless upgrade of the Domain resources with the `weblogic.oracle/v8` version of the schema. When you create a Domain using a domain resource YAML file with `weblogic.oracle/v8` schema in a namespace managed by the 4.0 operator, the `WebLogic Domain resource conversion webhook` explained in the [Upgrade operator from version 3.x to 4.x]({{< relref "/managing-operators/conversion-webhook.md" >}}) document, performs an automated upgrade of the domain resource to the `weblogic.oracle/v9` schema. The conversion webhook runtime converts the `weblogic.oracle/v8` configuration to the equivalent configuration in operator 4.0. Similarly, when [upgrading the operator version]({{< relref "/managing-operators/installation#upgrade-the-operator" >}}), Domain resources with `weblogic.oracle/v8` schema are seamlessly upgraded.
+The 4.0 operator provides a seamless upgrade of the Domain resources with the `weblogic.oracle/v8` version of the schema. When you create a Domain using a domain resource YAML file with `weblogic.oracle/v8` schema in a namespace managed by the 4.0 operator, the `WebLogic Domain resource conversion webhook` explained in the [Upgrade operator from version 3.x to 4.x]({{% relref "/managing-operators/conversion-webhook.md" %}}) document, performs an automated upgrade of the domain resource to the `weblogic.oracle/v9` schema. The conversion webhook runtime converts the `weblogic.oracle/v8` configuration to the equivalent configuration in operator 4.0. Similarly, when [upgrading the operator version]({{% relref "/managing-operators/installation#upgrade-the-operator" %}}), Domain resources with `weblogic.oracle/v8` schema are seamlessly upgraded.
 
 ### Upgrade the `weblogic.oracle/v8` schema domain resource manually
 
 {{% notice note %}}
 The manual upgrade tooling described in this section converts `weblogic.oracle/v8` schema auxiliary image configuration into low-level Kubernetes schema, for example, init containers and volumes.
 Instead of relying on the generated low-level schema, Oracle recommends using a simplified `weblogic.oracle/v9` schema configuration for auxiliary images, as documented in the
-Auxiliary Images [Configuration]({{<relref "/managing-domains/model-in-image/auxiliary-images#configuration" >}}) section.
+Auxiliary Images [Configuration]({{% relref "/managing-domains/model-in-image/auxiliary-images#configuration" %}}) section.
 {{% /notice %}}
 
 Beginning with operator version 4.0, you can use a standalone command-line tool for manually upgrading the domain resource YAML file with `weblogic.oracle/v8` schema to the `weblogic.oracle/v9` schema. If you are required to keep the upgraded Domain resource YAML file in the source control repository, then you can use this tool to generate the upgraded Domain resource YAML file.

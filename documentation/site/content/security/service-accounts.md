@@ -5,4 +5,4 @@ weight: 4
 description: "Kubernetes ServiceAccounts for the operator."
 ---
 
-This document is now located in the operator user guide, see [Service Accounts]({{<relref "/managing-operators/service-accounts.md">}}).
+This document is now located in the operator user guide, see [Service Accounts]({{% relref "/managing-operators/service-accounts.md" %}}).

@@ -79,7 +79,7 @@ The following example shows how to set up an ephemeral Oracle database with the 
        Pass the name of this secret as a parameter to the `start-db-service.sh`
        in the following step using `-s your-image-pull-secret`.
      - Alternatively, copy the database image to each local Docker cache in the cluster.
-     - For more information, see the FAQ, [Cannot pull image]({{<relref "/faq/cannot-pull-image">}}).
+     - For more information, see the FAQ, [Cannot pull image]({{% relref "/faq/cannot-pull-image" %}}).
 
 
       **WARNING**: The Oracle Database images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker [Doc ID 2216342.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2216342.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).

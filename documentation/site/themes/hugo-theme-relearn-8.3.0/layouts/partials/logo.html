@@ -1,0 +1,10 @@
+<!-- rpatrick - replace default logo with ours.
+          <a id="R-logo" class="R-default" href="{{ partial "permalink.gotmpl" (dict "to" .Site.Home) }}">
+            <div class="logo-title">{{ .Site.Params.linkTitle | default .Site.Title }}</div>
+          </a>
+-->
+
+<a id="logo" href="{{ .Site.BaseURL }}">
+  <img src="{{ .Site.BaseURL }}/images/logo.png" height="90"><br/>
+  WebLogic Kubernetes Operator
+</a>

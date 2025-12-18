@@ -7,7 +7,7 @@ description = "Moving an MII/JRF domain to a persistent volume."
 +++
 
 
-FMW/JRF domains using the Model in Image domain home source type has been deprecated since WebLogic Kubernetes Operator 4.1.  We recommend moving your domain home to Domain on Persistent Volume (Domain on PV). For more information, see [Domain On Persistent Volume]({{< relref "/managing-domains/domain-on-pv/overview.md" >}}).
+FMW/JRF domains using the Model in Image domain home source type has been deprecated since WebLogic Kubernetes Operator 4.1.  We recommend moving your domain home to Domain on Persistent Volume (Domain on PV). For more information, see [Domain On Persistent Volume]({{% relref "/managing-domains/domain-on-pv/overview.md" %}}).
 
 If you cannot move the domain to a persistent volume right now, you can use the following procedure.
 
@@ -19,8 +19,8 @@ If you cannot move the domain to a persistent volume right now, you can use the 
    $ opss-wallet.sh -n sample-ns -d sample-domain1 -s -r -wf /tmp/ewallet.p12 -ws sample-domain1-opss-walletfile-secret
    ```
 
-2. Follow the steps in [Upgrade managed domains]({{< relref "/managing-domains/major-weblogic-version-upgrade/_index.md" >}}).
-3. If you are using an auxiliary image in your MII/JRF domain, then it will be used as a domain creation image. If you are _not_ using an auxiliary image in your MII/JRF domain, then create a [Domain creation image]({{< relref "/managing-domains/domain-on-pv/domain-creation-images.md" >}}).
+2. Follow the steps in [Upgrade managed domains]({{% relref "/managing-domains/major-weblogic-version-upgrade/_index.md" %}}).
+3. If you are using an auxiliary image in your MII/JRF domain, then it will be used as a domain creation image. If you are _not_ using an auxiliary image in your MII/JRF domain, then create a [Domain creation image]({{% relref "/managing-domains/domain-on-pv/domain-creation-images.md" %}}).
 4. You can delete the old domain resource YAML file by using this command: `$ kubectl delete -f <original domain resource YAML>`.
 5. Then, create a new domain resource YAML file.  You should have at least the following changes:
 

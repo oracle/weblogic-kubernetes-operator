@@ -16,7 +16,7 @@ $ mvn clean install
 
 This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
 
-Contributions must conform to [coding and formatting standards]({{< relref "/developerguide/coding-standards.md" >}}).
+Contributions must conform to [coding and formatting standards]({{% relref "/developerguide/coding-standards.md" %}}).
 
 #### Building and pushing the operator container image
 
@@ -55,6 +55,6 @@ On the Kubernetes server:
 $ docker load < /some/path/operator.tar
 ```
 
-Use the Helm charts to [install the operator]({{< relref "/managing-operators/installation.md" >}}).
+Use the Helm charts to [install the operator]({{% relref "/managing-operators/installation.md" %}}).
 
-If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options]({{< relref "/managing-operators/using-helm#debugging-options" >}}).
+If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options]({{% relref "/managing-operators/using-helm#debugging-options" %}}).

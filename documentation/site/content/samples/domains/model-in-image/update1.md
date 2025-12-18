@@ -10,17 +10,17 @@ This use case demonstrates dynamically adding a data source to your running doma
 - A domain's model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap.
 - Model updates can be as simple as changing the value of a single attribute, or more complex, such as adding a JMS Server.
 
-For a detailed description of model updates, see [Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}).
+For a detailed description of model updates, see [Runtime Updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}).
 
 {{% notice warning %}}
-The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update before attempting a dynamic update in production.
+The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}) in the Model in Image user docs, and carefully test any model update before attempting a dynamic update in production.
 {{% /notice %}}
 
 Here are the steps:
 
 1. Ensure that you have a running domain.
 
-    Make sure you have deployed the domain from the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case.
+    Make sure you have deployed the domain from the [Initial]({{% relref "/samples/domains/model-in-image/initial.md" %}}) use case.
 
 1. Create a data source model YAML file.
 
@@ -82,7 +82,7 @@ Here are the steps:
       weblogic.domainUID=sample-domain1
    ```
 
-    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically correcting the data source attributes in the [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case without requiring rolling the domain.
+    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically correcting the data source attributes in the [Update 4]({{% relref "/samples/domains/model-in-image/update4.md" %}}) use case without requiring rolling the domain.
 
     You name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
@@ -114,7 +114,7 @@ Here are the steps:
 
     - Option 1: Update a copy of your Domain YAML file from the Initial use case.
 
-      - In the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case, we suggested creating a Domain YAML file named `/tmp/sample/mii-initial-domain.yaml` or using the [domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file that is supplied with the sample.
+      - In the [Initial]({{% relref "/samples/domains/model-in-image/initial.md" %}}) use case, we suggested creating a Domain YAML file named `/tmp/sample/mii-initial-domain.yaml` or using the [domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file that is supplied with the sample.
         - We suggest copying the original Domain YAML file and naming the copy `/tmp/sample/mii-update1.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
@@ -145,7 +145,7 @@ Here are the steps:
 
       - Apply your changed Domain YAML file:
 
-        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxliary-image` and other images]({{% relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
         ```shell
         $ kubectl apply -f /tmp/sample/mii-update1.yaml
@@ -153,7 +153,7 @@ Here are the steps:
 
     - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxliary-image` and other images]({{% relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
         ```shell
         $ kubectl apply -f /tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
@@ -258,10 +258,10 @@ Here are the steps:
 
     ```
 
-A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}).
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{% relref "/samples/domains/model-in-image/update4.md" %}}).
 
-If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
-If you plan to run the [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}) or [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
+If you plan to run the [Update 3]({{% relref "/samples/domains/model-in-image/update3.md" %}}) or [Update 4]({{% relref "/samples/domains/model-in-image/update4.md" %}}) use case, then leave your domain running.
 
-To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}}).
+To remove the resources you have created in the samples, see [Cleanup]({{% relref "/samples/domains/model-in-image/cleanup.md" %}}).

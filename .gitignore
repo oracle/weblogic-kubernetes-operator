@@ -47,3 +47,4 @@ dependency-reduced-pom.xml
 docs-source/docs
 .git/logs
 **/.hugo_build.lock
+documentation/**/docs

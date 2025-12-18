@@ -19,7 +19,7 @@ access external resources (for example, the data source password). In addition, 
 may be used to create a running server that further exposes the WebLogic domain
 outside of the Kubernetes cluster.
 
-**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+**NOTE**: The Domain in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 
 For information about setting up Kubernetes to access a private registry, see
-[Set up Kubernetes to access domain images]({{< relref "/base-images/access-images.md" >}}).
+[Set up Kubernetes to access domain images]({{% relref "/base-images/access-images.md" %}}).

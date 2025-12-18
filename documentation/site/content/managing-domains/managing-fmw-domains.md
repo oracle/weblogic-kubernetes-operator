@@ -21,7 +21,7 @@ listed here, FMW Infrastructure domains work in the same way as WebLogic Server 
 The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
-**NOTE**: FMW Infrastructure domains are supported using the Domain on PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) _only_.
+**NOTE**: FMW Infrastructure domains are supported using the Domain on PV [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) _only_.
 
 For more information about the deployment of Oracle Fusion Middleware products on Kubernetes, see https://oracle.github.io/fmw-kubernetes/.
 
@@ -38,7 +38,7 @@ following limitations currently exist for FMW Infrastructure domains:
   you just need to define the maximum size of your cluster at domain creation time.
 * FMW Infrastructure domains are not supported with any version of the operator
   before version 2.2.0.
-* FMW Infrastructure domains are _not_ supported using the Model in Image or Domain in Image [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+* FMW Infrastructure domains are _not_ supported using the Model in Image or Domain in Image [domain home source types]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
 
 
 ### Obtaining the FMW Infrastructure image
@@ -46,12 +46,12 @@ following limitations currently exist for FMW Infrastructure domains:
 The WebLogic Kubernetes Operator requires patch 29135930.
 The standard pre-built FMW Infrastructure General Availability image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already
 has this patch applied. The FMW Infrastructure 12.2.1.4.0 images do not require this patch. For detailed instructions
-on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}}).
 
 **NOTE**: As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022. As of June, 2023, Oracle WebLogic Server 12.2.1.3 is no longer supported. The last CPU images for WebLogic Server 12.2.1.3 were published in April, 2023.
 
 {{% notice warning %}}
-This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{% relref "/base-images/ocr-images.md" %}}) or create your images using the [WebLogic Image Tool]({{% relref "/base-images/custom-images#create-a-custom-base-image" %}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
 {{% /notice %}}
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
@@ -104,7 +104,7 @@ $ ./buildDockerImage.sh -v 12.2.1.4 -s
 
 The image produced will be named `oracle/fmw-infrastructure:12.2.1.4`.
 
-You must also install the [required patch]({{< relref "/introduction/prerequisites/introduction.md" >}})
+You must also install the [required patch]({{% relref "/introduction/prerequisites/introduction.md" %}})
 to use this image with the operator.  We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
  that demonstrates how to create an image with the necessary patch installed.
 
@@ -423,7 +423,7 @@ the operator will initiate a rolling restart of the domain.
 
 If you wish to apply a non-ZDP compliant patch to the FMW Infrastructure binary image,
 you must shut down the entire domain before applying the patch. Please see the documentation on
-[domain lifecycle operations]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}})
+[domain lifecycle operations]({{% relref "/managing-domains/domain-lifecycle/_index.md" %}})
 for more information.
 
 An example of a non-ZDP compliant patch is one that includes a schema change
@@ -432,5 +432,5 @@ that can not be applied dynamically.
 ### Additional considerations for Coherence
 
 If you are running a domain which contains Coherence, please refer to
-[Coherence requirements]({{< relref "/faq/coherence-requirements.md" >}})
+[Coherence requirements]({{% relref "/faq/coherence-requirements.md" %}})
 for more information.

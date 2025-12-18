@@ -12,7 +12,7 @@ description: "Use port forwarding to access WebLogic Server administration conso
 
 Beginning with WebLogic Kubernetes Operator version 3.3.2,
 or earlier if you are using an
-[Istio-enabled]({{< relref "/managing-domains/accessing-the-domain/istio/istio.md" >}}) domain,
+[Istio-enabled]({{% relref "/managing-domains/accessing-the-domain/istio/istio.md" %}}) domain,
 you can use the `kubectl port-forward` command to set up external access for
 the WebLogic Server Administration Console, the Remote Console, and WLST.
 This approach is particularly useful for managing WebLogic
@@ -33,7 +33,7 @@ then see [enabling WLST access when local and remote ports do not match](#enabli
 Externally exposing administrative, RMI, or T3 capable WebLogic channels
 using a Kubernetes `NodePort`, load balancer,
 port forwarding, or a similar method can create an insecure configuration.
-For more information, see [External network access security]({{<relref "/security/domain-security/weblogic-channels.md">}}).
+For more information, see [External network access security]({{% relref "/security/domain-security/weblogic-channels.md" %}}).
 {{% /notice %}}
 
 ### Set up Administration Server network channels for port forward access
@@ -70,7 +70,7 @@ This behavior depends on your version and domain resource configuration:
   it to the required value.)
   * Listen port. Note: Choose a port value that does not conflict with any ports defined
   in any of the additional network channels created for use with Istio versions prior to v1.10.
-  For more details, see [Added network channels for Istio versions prior to v1.10]({{< relref "/managing-domains/accessing-the-domain/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" >}}).
+  For more details, see [Added network channels for Istio versions prior to v1.10]({{% relref "/managing-domains/accessing-the-domain/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" %}}).
   * Enable `HTTP` protocol for this network channel.
   * Do _NOT_ set an `external listen address` or `external listen port`.
 
@@ -219,7 +219,7 @@ In this example:
 - _Security warning_:
   A port-forward connection can expose a WebLogic T3 or administrative channel
   outside the Kubernetes cluster.
-For domain security considerations, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).
+For domain security considerations, see [External network access security]({{% relref "/security/domain-security/weblogic-channels.md" %}}).
 
 - _Working with administration or SSL ports_:
   If a WebLogic administration port is configured and enabled on the Administration Server,

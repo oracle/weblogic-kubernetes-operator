@@ -56,17 +56,17 @@ There are three common approaches on how to structure these components:
    outside of the image.
  * The second, Domain in Image,
    puts the JDK, WebLogic Server binaries,
-   and the domain home all in the image. **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+   and the domain home all in the image. **NOTE**: The Domain in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
  * The third approach, Model in Image, puts the JDK, WebLogic Server binaries, and a domain model
    in the image, and generates the domain home at runtime
    from the domain model.
 
 All of these approaches are perfectly
 valid (and fully supported) and they have various advantages and disadvantages.
-We have listed the [relative advantages of these approaches here]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+We have listed the [relative advantages of these approaches here]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
 
 One of the key differences between these approaches is how many images
 you have, and therefore, how you build and maintain them - your image CI/CD
 process.  Let's take a short detour and talk about image layering.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

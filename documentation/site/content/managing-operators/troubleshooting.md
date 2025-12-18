@@ -10,13 +10,13 @@ description: "General advice for debugging and monitoring the operator."
 ### Troubleshooting a particular domain resource
 
 After you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.
-If you are having problems with a particular domain resource, then first see [Domain debugging]({{<relref "/managing-domains/debugging.md">}}).
+If you are having problems with a particular domain resource, then first see [Domain debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
 ### Check Helm status
 
 An operator runtime is installed into a Kubernetes cluster and maintained using a Helm release.
 For information about how to list your installed Helm releases and get each release's configuration,
-see [Useful Helm operations]({{<relref "/managing-operators/using-helm#useful-helm-operations">}}).
+see [Useful Helm operations]({{% relref "/managing-operators/using-helm#useful-helm-operations" %}}).
 
 ### Ensure the operator CRDs are installed
 
@@ -41,7 +41,7 @@ When a domain or cluster CRD is not installed, the operator runtimes will not be
 
 Typically, the operator automatically installs each CRD when the operator first starts. However,
 if a CRD was not installed, for example, if the operator lacked sufficient permission to install it, then
-refer to the operator [Prepare for installation]({{< relref "/managing-operators/preparation#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" >}}) documentation.
+refer to the operator [Prepare for installation]({{% relref "/managing-operators/preparation#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" %}}) documentation.
 
 ### Check the operator deployment
 
@@ -120,12 +120,12 @@ $ kubectl -n WH_NAMESPACE describe pod weblogic-operator-webhook-UNIQUESUFFIX
 ```
 A pod `describe` usefully includes any events that might be associated with the conversion webhook.
 For information about installing and uninstalling the webhook, see
-[WebLogic Domain resource conversion webhook]({{< relref "/managing-operators/conversion-webhook.md" >}}).
+[WebLogic Domain resource conversion webhook]({{% relref "/managing-operators/conversion-webhook.md" %}}).
 
 ### Check common operator issues
 
-- See [Common mistakes and solutions]({{< relref "/managing-operators/common-mistakes.md" >}}).
-- Check the [FAQs]({{<relref "/faq/_index.md">}}).
+- See [Common mistakes and solutions]({{% relref "/managing-operators/common-mistakes.md" %}}).
+- Check the [FAQs]({{% relref "/faq/_index.md" %}}).
 
 ### Check for operator events
 
@@ -192,7 +192,7 @@ An operator is designed to robustly handle thousands of domains even in the even
 so it should not normally be necessary to force an operator to restart, even after an upgrade.
 Accordingly, if you encounter a problem that you think requires an operator restart to resolve,
 then please make sure that the operator development team is aware of the issue
-(see [Get Help]({{< relref "/introduction/get-help.md" >}})).
+(see [Get Help]({{% relref "/introduction/get-help.md" %}})).
 {{% /notice %}}
 
 When you restart an operator:
@@ -290,7 +290,7 @@ $ helm upgrade \
 ```
 
 For more information, see the
-[javaLoggingLevel]({{< relref "/managing-operators/using-helm#javalogginglevel" >}}) documentation.
+[javaLoggingLevel]({{% relref "/managing-operators/using-helm#javalogginglevel" %}}) documentation.
 
 ### Troubleshooting the conversion webhook
 The following are some common mistakes and solutions for the conversion webhook.
@@ -307,7 +307,7 @@ Error from server: error when creating "k8s-domain.yaml": conversion webhook for
 The conversion webhook can be deployed standalone or as part of an operator installation. Note that if the conversion webhook was installed as part
 of an operator installation, then it is implicitly removed by default when the operator is uninstalled.  If the conversion webhook is not deployed or running,
 then reinstall it by following the steps in
-[Installing the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}).
+[Installing the conversion webhook]({{% relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" %}}).
 
 If the conversion webhook Deployment is deployed but is not in the ready status, then you will see a `connection refused` error when creating a Domain using the `weblogic.oracle/v8` schema Domain resource.
 
@@ -322,7 +322,7 @@ $  kubectl get service weblogic-operator-webhook-svc -n sample-weblogic-operator
 NAME                            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
 weblogic-operator-webhook-svc   ClusterIP   10.106.89.198   <none>        8084/TCP   88m
 ```
-If the conversion webhook Deployment status is not ready, then [check the conversion webhook log]({{<relref "/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and the [conversion webhook events]({{<relref "/managing-operators/troubleshooting#check-for-conversion-webhook-events">}}) in the conversion webhook namespace. If the conversion webhook service doesn't exist, make sure that the conversion webhook was installed correctly and reinstall the conversion webhook to see if it resolves the issue.
+If the conversion webhook Deployment status is not ready, then [check the conversion webhook log]({{% relref "/managing-operators/troubleshooting#check-the-conversion-webhook-log" %}}) and the [conversion webhook events]({{% relref "/managing-operators/troubleshooting#check-for-conversion-webhook-events" %}}) in the conversion webhook namespace. If the conversion webhook service doesn't exist, make sure that the conversion webhook was installed correctly and reinstall the conversion webhook to see if it resolves the issue.
 
 #### X509: Certificate signed by unknown authority error from the webhook
 The following `x509: certificate signed by unknown authority` error from the conversion webhook can be due to the incorrect proxy configuration of the Kubernetes API server in your environment or incorrect self-signed certificate in the conversion webhook configuration in the Domain CRD.
@@ -357,7 +357,7 @@ kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conve
 ```
 
 #### Check for runtime errors during conversion
-If you see a `WebLogic Domain custom resource conversion webhook failed` error when creating a Domain with a `weblogic.oracle/v8` schema domain resource, then [check the conversion webhook runtime Pod logs]({{<relref "/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and [check for the generated events]({{<relref "/managing-operators/troubleshooting#check-for-conversion-webhook-events">}}) in the conversion webhook namespace. Assuming that the conversion webhook is deployed in the `sample-weblogic-operator-ns` namespace, run the following commands to check for logs and events.
+If you see a `WebLogic Domain custom resource conversion webhook failed` error when creating a Domain with a `weblogic.oracle/v8` schema domain resource, then [check the conversion webhook runtime Pod logs]({{% relref "/managing-operators/troubleshooting#check-the-conversion-webhook-log" %}}) and [check for the generated events]({{% relref "/managing-operators/troubleshooting#check-for-conversion-webhook-events" %}}) in the conversion webhook namespace. Assuming that the conversion webhook is deployed in the `sample-weblogic-operator-ns` namespace, run the following commands to check for logs and events.
 
 ```
 $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator-webhook deployments/weblogic-operator-webhook
@@ -368,5 +368,5 @@ $ kubectl get events -n sample-weblogic-operator-ns
 ### See also
 
 If you have set up either of the following, then these documents may be helpful in debugging:
-- [Operator REST HTTPS interface]({{<relref "/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
-- [Elastic Stack (Elasticsearch, Logstash, and Kibana)]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) integration
+- [Operator REST HTTPS interface]({{% relref "/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface" %}})
+- [Elastic Stack (Elasticsearch, Logstash, and Kibana)]({{% relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration" %}}) integration

@@ -9,4 +9,4 @@ pre = "<b> </b>"
 
 See the following reference documentation.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

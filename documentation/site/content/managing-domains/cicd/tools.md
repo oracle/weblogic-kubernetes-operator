@@ -42,7 +42,7 @@ Other than the tools themselves, there are three components to the WDT tools:
 
 #### WDT Create Domain Samples
 
-- (Kubernetes) A [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}})
+- (Kubernetes) A [Model in Image sample]({{% relref "/samples/domains/model-in-image/_index.md" %}})
   for supplying an image that contains a WDT model only,
   instead of a domain home. In this case, the operator generates the domain
   home for you at runtime.
