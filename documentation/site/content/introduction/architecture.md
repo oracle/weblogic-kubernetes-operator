@@ -35,13 +35,13 @@ The operator is packaged in a [container image](https://github.com/orgs/oracle/p
 $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}
 ```
 
-For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}).
+For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide]({{% relref "/quickstart/_index.md" %}}).
 
-The operator registers two Kubernetes custom resource definitions. The first is for the `Domain` resource and is named `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  The second is for the `Cluster` resource and is named `cluster.weblogic.oracle` (shortname `cluster`, plural `clusters`).  More details about the types defined by these CRDs, including their schema, are available [here]({{< relref "/managing-domains/domain-resource.md" >}}).
+The operator registers two Kubernetes custom resource definitions. The first is for the `Domain` resource and is named `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  The second is for the `Cluster` resource and is named `cluster.weblogic.oracle` (shortname `cluster`, plural `clusters`).  More details about the types defined by these CRDs, including their schema, are available [here]({{% relref "/managing-domains/domain-resource.md" %}}).
 
 The following diagram shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
 
-{{< img "High-level architecture" "images/high-level-architecture.png" >}}
+{{% img "High-level architecture" "images/high-level-architecture.png" %}}
 
 The Kubernetes cluster has several namespaces. Components may be deployed into namespaces as follows:
 
@@ -102,13 +102,13 @@ the `weblogic.domainUID` label in a Kubernetes cluster try:
 
 A Domain UID may be up to 45 characters long. For
 more details about Domain UID name requirements, see
-[Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+[Meet Kubernetes resource name restrictions]({{% relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" %}}).
 
 ### Domain architecture
 
 The following diagram shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.
 
-{{< img "Domain architecture" "images/domain-architecture2.png" >}}
+{{% img "Domain architecture" "images/domain-architecture2.png" %}}
 
 This diagram shows the following details:
 
@@ -123,17 +123,17 @@ This diagram shows the following details:
 *	An Ingress may optionally be created by the customer for each WebLogic cluster.  An Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The load balancer updates its routing table for an Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.
 
 {{% notice note %}}
-Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{% relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" %}}).
 {{% /notice %}}
 
 The following diagram shows the components inside the containers running WebLogic Server instances:
 
-{{< img "Inside a container" "images/inside-a-container.png" >}}
+{{% img "Inside a container" "images/inside-a-container.png" %}}
 
-The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic images]({{< relref "/base-images/_index.md" >}}).
+The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic images]({{% relref "/base-images/_index.md" %}}).
 
 {{% notice warning %}}
-The default image is a General Availability image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+The default image is a General Availability image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{% relref "/base-images/ocr-images.md" %}}) or create your images using the [WebLogic Image Tool]({{% relref "/base-images/custom-images#create-a-custom-base-image" %}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
 {{% /notice %}}
 
 {{% notice note %}}
@@ -142,8 +142,8 @@ During a rolling event caused by a change to the Domain's `image` field, contain
 Within the container, the following aspects are configured by the operator:
 
 *	The `ENTRYPOINT` is configured by a script that starts up a Node Manager process, and then uses WLST to request that Node Manager start the server.  Node Manager is used to start servers so that the socket connection to the server will be available to obtain server status even when the server is unresponsive.  This is used by the liveness probe.
-* The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container. For details about liveness probe customization, see [Liveness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}).
-*	The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe determines if a server is ready to accept user requests.  The readiness probe is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes. For details about readiness probe customization, see [Readiness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}).
+* The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container. For details about liveness probe customization, see [Liveness probe customization]({{% relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" %}}).
+*	The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe determines if a server is ready to accept user requests.  The readiness probe is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes. For details about readiness probe customization, see [Readiness probe customization]({{% relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" %}}).
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
 
 ### Network name predictability
@@ -157,7 +157,7 @@ The operator also automatically overrides the `ListenAddress` fields in each
 running WebLogic Server to match its service name in order
 to ensure that the servers will always be able to find each other.
 
-For details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+For details, see [Meet Kubernetes resource name restrictions]({{% relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" %}}).
 
 ### Domain state stored outside container images
 The operator expects (and requires) that all state that is expected to outlive the life of a pod be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
@@ -168,7 +168,7 @@ The external state approach allows the operator to treat the images as essential
 
 This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database backend. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.
 
-When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image. If desired, any domains that are running may be updated to this new patched image with a rolling restart. See the [WebLogic Server images]({{< relref "/base-images/patch-images.md" >}}) and [Domain life cycle]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}}) documentation.
+When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image. If desired, any domains that are running may be updated to this new patched image with a rolling restart. See the [WebLogic Server images]({{% relref "/base-images/patch-images.md" %}}) and [Domain life cycle]({{% relref "/managing-domains/domain-lifecycle/_index.md" %}}) documentation.
 
 It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
 

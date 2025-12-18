@@ -11,7 +11,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
 
 ### Prerequisites
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-01.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/prerequisites-01.txt" %}}
 
 #### Prepare parameters
 
@@ -42,41 +42,41 @@ export ACR_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
 
 #### Oracle Container Registry
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" %}}
 
 #### Sign in with Azure CLI
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/sign-in-azure.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/sign-in-azure.txt" %}}
 
 #### Download the WebLogic Kubernetes Operator sample
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/download-samples-zip.txt" %}}
 
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
 
 ### Create Resource Group
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/create-resource-group.txt" %}}
 
 ### Create the AKS cluster
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" %}}
 
- **NOTE**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
+ **NOTE**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{% relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" %}}).
 
  ### Create storage
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" %}}
 
 ### Create a domain creation image
 
-This sample requires [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images" >}}). For more information, see [Domain on Persistent Volume]({{< relref "/managing-domains/domain-on-pv/overview" >}}).
+This sample requires [Domain creation images]({{% relref "/managing-domains/domain-on-pv/domain-creation-images" %}}). For more information, see [Domain on Persistent Volume]({{% relref "/managing-domains/domain-on-pv/overview" %}}).
 
 #### Image creation prerequisites
 
 - The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
-- Copy the sample to a new directory; for example, use the directory `/tmp/dpv-sample`. In the directory name, `dpv` is short for "domain on pv". Domain on PV is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+- Copy the sample to a new directory; for example, use the directory `/tmp/dpv-sample`. In the directory name, `dpv` is short for "domain on pv". Domain on PV is one of three domain home source types supported by the operator. To learn more, see [Choose a domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
 
    ```shell
    $ rm -rf /tmp/dpv-sample
@@ -98,15 +98,15 @@ This sample requires [Domain creation images]({{< relref "/managing-domains/doma
    $ export WDT_MODEL_FILES_PATH=/tmp/dpv-sample/wdt-model-files
    ```
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/download-wls-tools.txt" %}}
 
 #### Image creation - Introduction
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/auxiliary-image-directory.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/auxiliary-image-directory.txt" %}}
 
 #### Understanding your first archive
 
-See [Understanding your first archive]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#understand-your-first-archive" >}}).
+See [Understanding your first archive]({{% relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#understand-your-first-archive" %}}).
 
 #### Staging a ZIP file of the archive
 
@@ -125,25 +125,25 @@ $ zip -r ${WDT_MODEL_FILES_PATH}/WLS-v1/archive.zip wlsdeploy
 
 #### Staging model files
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/staging-model-files.txt" %}}
 
-An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/domain-on-pv/model-files" >}}) in the user documentation.
+An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{% relref "/managing-domains/domain-on-pv/model-files" %}}) in the user documentation.
 
 #### Creating the image with WIT
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/run-mii-to-create-auxiliary-image.txt" %}}
 
 {{% notice note %}}
-The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{< relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" >}}).
+The `imagetool.sh` is not supported on macOS with Apple Silicon. See [Troubleshooting - exec format error]({{% relref "/samples/azure-kubernetes-service/troubleshooting#exec-weblogic-operatorscriptsintrospectdomainsh-exec-format-error" %}}).
 {{% /notice %}}
 
 {{% notice note %}}
-You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
+You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{% relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" %}}).
 {{% /notice %}}
 
 #### Pushing the image to Azure Container Registry
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/create-acr.txt" %}}
 
 Push the `wdt-domain-image:WLS-v1` image created while satisfying the preconditions to this registry.
 
@@ -152,9 +152,9 @@ $ docker tag wdt-domain-image:WLS-v1 $LOGIN_SERVER/wdt-domain-image:WLS-v1
 $ docker push ${LOGIN_SERVER}/wdt-domain-image:WLS-v1
 ```
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/aks-connect-acr.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/aks-connect-acr.txt" %}}
 
-If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
+If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{% relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" %}}).
 
 ### Install WebLogic Kubernetes Operator into the AKS cluster
 
@@ -277,7 +277,7 @@ Now, you deploy a `sample-domain1` domain resource and an associated `sample-dom
 
 After running above commands, you will get three files: `domain-resource.yaml`, `admin-lb.yaml`, `cluster-lb.yaml`.
 
-The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample `domain creation image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{< relref "/managing-domains/domain-resource.md" >}}).
+The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample `domain creation image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{% relref "/managing-domains/domain-resource.md" %}}).
 
 - Run the following command to apply the two sample resources.
     ```shell
@@ -470,16 +470,16 @@ wlsstorage1612795811.file.core.windows.net:/wlsstorage1612795811/wls-weblogic-16
 
 ### Clean up resources
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-01.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-01.txt" %}}
 
 If you created the AKS cluster step by step, run the following command to clean up resources.
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
+{{% readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" %}}
 
 ### Troubleshooting
 
-For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
+For troubleshooting advice, see [Troubleshooting]({{% relref "/samples/azure-kubernetes-service/troubleshooting.md" %}}).
 
 ### Useful links
 
-- [Domain on a PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}}) sample
+- [Domain on a PV]({{% relref "/samples/domains/domain-home-on-pv/_index.md" %}}) sample

@@ -32,7 +32,7 @@ to the domain encryption key, so it needs to be protected appropriately.
 
 Every time you run your CI/CD pipeline to create a new mutation of the domain,
 it should retrieve and unzip the primordial domain first, and then apply changes
-to that domain using tools like WDT or WLST (see [here]({{< relref "/managing-domains/cicd/tools.md" >}})).
+to that domain using tools like WDT or WLST (see [here]({{% relref "/managing-domains/cicd/tools.md" %}})).
 
 > **Always use external state.**
 

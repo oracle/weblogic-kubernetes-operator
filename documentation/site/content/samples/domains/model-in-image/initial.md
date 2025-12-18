@@ -7,7 +7,7 @@ weight: 2
 {{< table_of_contents >}}
 
 {{% notice note %}}
-**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) and then create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}).  
+**Before you begin**: Perform the steps in [Prerequisites]({{% relref "/samples/domains/model-in-image/prerequisites.md" %}}) and then create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{% relref "/samples/domains/model-in-image/auxiliary-image-creation.md" %}}).  
 {{% /notice %}}
 
 ### Overview
@@ -22,7 +22,7 @@ After the Domain is deployed, the operator starts an 'introspector job' that con
 
 ### Auxiliary image
 
-The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` that you created in the [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}) step. The WDT model files in this auxiliary image define the WebLogic domain configuration. The image contains:
+The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` that you created in the [Auxiliary image creation]({{% relref "/samples/domains/model-in-image/auxiliary-image-creation.md" %}}) step. The WDT model files in this auxiliary image define the WebLogic domain configuration. The image contains:
 - The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image's `/auxiliary/weblogic-deploy` directory, by default.
 - WDT model YAML, property, and archive files (expected in the directory `/auxiliary/models` by default).
 
@@ -40,7 +40,7 @@ In this section, you will deploy the domain resource with the new auxiliary imag
 
 #### Secrets
 
-First, create the secrets needed by the domain. You have to create the WebLogic credentials secret and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/domain-on-pv/model-files.md" >}}).
+First, create the secrets needed by the domain. You have to create the WebLogic credentials secret and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{% relref "managing-domains/domain-on-pv/model-files.md" %}}).
 
 Run the following `kubectl` commands to deploy the required secrets:
 
@@ -84,11 +84,11 @@ Run the following `kubectl` commands to deploy the required secrets:
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
 Copy the contents of the [domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file to a file called `/tmp/sample/mii-initial-domain.yaml` or similar. Alternatively, you can use the file `/tmp/sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
-This file contains both the domain resource and the referenced cluster resource definition.  See [Domain and Cluster resources]({{< relref "/managing-domains/domain-resource">}}).
+This file contains both the domain resource and the referenced cluster resource definition.  See [Domain and Cluster resources]({{% relref "/managing-domains/domain-resource" %}}).
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) to view the Domain YAML file.
 
-  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{% relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
   Run the following command to create the domain custom resource:
 
@@ -96,7 +96,7 @@ Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operat
   $ kubectl apply -f /tmp/sample/mii-initial-domain.yaml
   ```
 
-   The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, and a sample `auxiliary image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{< relref "/managing-domains/domain-resource.md" >}}).
+   The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, and a sample `auxiliary image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{% relref "/managing-domains/domain-resource.md" %}}).
 
 #### Verify the domain
 Run the following `kubectl describe domain` command to check the status and events for the created domain.
@@ -147,7 +147,7 @@ $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/domain-lifecyc
 $ ./waitForDomain.sh -n sample-domain1-ns -d sample-domain1 -p Completed
 ```
 
-If you see an error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
+If you see an error, then consult [Debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
 #### Invoke the web application
 
@@ -157,12 +157,12 @@ Now that all the initial use case resources have been deployed, you can invoke t
 
 - Send a web application request to the load balancer for the application, as shown in the following example.
 
-    {{< tabs groupId="config" >}}
-    {{% tab name="Request from a local machine" %}}
+    {{< tabs groupid="config" >}}
+    {{% tab title="Request from a local machine" %}}
         $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' http://localhost:30305/myapp_war/index.jsp
 
     {{% /tab %}}
-    {{% tab name="Request from a remote machine" %}}
+    {{% tab title="Request from a remote machine" %}}
 
         $ K8S_CLUSTER_ADDRESS=$(kubectl cluster-info | grep DNS | sed 's/^.*https:\/\///g' | sed 's/:.*$//g')
 
@@ -196,6 +196,6 @@ Now that all the initial use case resources have been deployed, you can invoke t
    </pre></body></html>
    ```
 
- If you want to continue to the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, then leave your domain running.
+ If you want to continue to the [Update 1]({{% relref "/samples/domains/model-in-image/update1.md" %}}) use case, then leave your domain running.
 
- To remove the resources you have created in this sample, see [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}}).
+ To remove the resources you have created in this sample, see [Cleanup]({{% relref "/samples/domains/model-in-image/cleanup.md" %}}).

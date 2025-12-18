@@ -4,7 +4,7 @@ date: 2019-02-23T17:32:31-05:00
 weight: 4
 ---
 
-This use case demonstrates concurrently deploying a domain that is similar to the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case domain to the same `sample-domain1-ns` namespace, but with a different domain UID, a different WebLogic domain name, and a different WebLogic domain encryption key. It does this by:
+This use case demonstrates concurrently deploying a domain that is similar to the [Update 1]({{% relref "/samples/domains/model-in-image/update1.md" %}}) use case domain to the same `sample-domain1-ns` namespace, but with a different domain UID, a different WebLogic domain name, and a different WebLogic domain encryption key. It does this by:
 
 - Using the same image, image model YAML file, and application archive as the Initial and Update 1 use cases.
 - Using the same model update ConfigMap source file as the Update 1 use case (a data source).
@@ -12,14 +12,14 @@ This use case demonstrates concurrently deploying a domain that is similar to th
 - Using a different (unique) domain name, `domain2`, for the different domains.
 - Deploying secrets and a model update ConfigMap that are uniquely labeled and named for the new domain.
 
-Note that this use case shows Model in Image's unique ability to quickly deploy a copy of a WebLogic domain that has a different WebLogic domain name and domain encryption key. This is a useful capability that is not supported by the Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}):
+Note that this use case shows Model in Image's unique ability to quickly deploy a copy of a WebLogic domain that has a different WebLogic domain name and domain encryption key. This is a useful capability that is not supported by the Domain in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}):
 
 - Domain in Image does not support overriding the domain name, but different domain names are necessary when two domains need to interoperate. This use case takes advantage of model macros to ensure that its two different domains have a different domain name:
 
   - First, you define the domain name in the model YAML file using the `@@ENV:CUSTOM_DOMAIN_NAME@@` environment variable macro.
   - Second, you set the value of the `CUSTOM_DOMAIN_NAME` environment variable to be different using the `env` stanza in each Domain's YAML file.
 
-- Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [Why layering matters]({{< relref "/managing-domains/cicd/why-layering-matters.md" >}}) in CI/CD considerations). This necessarily means that two Domain in Image domains that share the same image can decrypt each other's encrypted passwords. On the other hand, a Model in Image's domain encryption key is not embedded in the image and instead, is dynamically and uniquely created each time the domain is started.
+- Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [Why layering matters]({{% relref "/managing-domains/cicd/why-layering-matters.md" %}}) in CI/CD considerations). This necessarily means that two Domain in Image domains that share the same image can decrypt each other's encrypted passwords. On the other hand, a Model in Image's domain encryption key is not embedded in the image and instead, is dynamically and uniquely created each time the domain is started.
 
 {{% notice warning %}}
 Oracle requires interoperating WebLogic domains to have different domain names. This is necessary when two domains communicate, or when a WebLogic Server or WebLogic Java client concurrently connects to multiple domains.
@@ -27,7 +27,7 @@ Oracle requires interoperating WebLogic domains to have different domain names. 
 
 Here are the steps for this use case:
 
-1. Make sure you have deployed the domain from the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case.
+1. Make sure you have deployed the domain from the [Update 1]({{% relref "/samples/domains/model-in-image/update1.md" %}}) use case.
 
 1. Create a ConfigMap with the WDT model that contains the data source definition.
 
@@ -115,13 +115,13 @@ Here are the steps for this use case:
      - You use a different set of secrets for the new domain for two reasons:
        - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
-     - We deliberately specify an incorrect password and a low maximum pool capacity in the data source secret because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in the [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case.
+     - We deliberately specify an incorrect password and a low maximum pool capacity in the data source secret because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in the [Update 4]({{% relref "/samples/domains/model-in-image/update4.md" %}}) use case.
 
 1. Set up a Domain YAML file that is similar to your Update 1 use case Domain YAML file but with a different domain UID, domain name, model update ConfigMap reference, and Secret references:
 
     - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
-      - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
+      - In the [Update 1]({{% relref "/samples/domains/model-in-image/update1.md" %}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
         - We suggest copying this Domain YAML file and naming the copy `/tmp/sample/mii-update2.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
@@ -273,7 +273,7 @@ Here are the steps for this use case:
 
       - Apply your changed Domain YAML file:
 
-          **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+          **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{% relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
           ```shell
           $ kubectl apply -f /tmp/sample/mii-update2.yaml
@@ -281,7 +281,7 @@ Here are the steps for this use case:
 
     - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{% relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
         ```shell
         $ kubectl apply -f /tmp/sample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
@@ -389,10 +389,10 @@ Here are the steps for this use case:
 
     ```
 
-A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}).
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in [Update 4]({{% relref "/samples/domains/model-in-image/update4.md" %}}).
 
-If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
 You will not be using the `sample-domain2` domain again in this sample; if you wish, you can shut it down now by calling `kubectl -n sample-domain1-ns delete domain sample-domain2`.
 
-To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}}).
+To remove the resources you have created in the samples, see [Cleanup]({{% relref "/samples/domains/model-in-image/cleanup.md" %}}).

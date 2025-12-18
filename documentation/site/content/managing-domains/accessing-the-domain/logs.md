@@ -21,7 +21,7 @@ To disable this behavior, set the Domain `includeServerOutInPodLog` to `false`.
 
 Optionally, you can monitor a WebLogic Server and its log using an [Elastic Stack](https://www.elastic.co/elastic-stack/)
 (previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
-For an example, see the WebLogic Server [Elastic Stack]({{<relref "/samples/elastic-stack/weblogic-domain/_index.md">}}) sample.
+For an example, see the WebLogic Server [Elastic Stack]({{% relref "/samples/elastic-stack/weblogic-domain/_index.md" %}}) sample.
 
 {{% notice warning %}}
 Kubernetes stores pod logs on each of its nodes, and, depending on the Kubernetes implementation, extra steps may be necessary to limit their disk space usage.
@@ -111,4 +111,4 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 set logging attributes using system properties that start with `weblogic.log.`
 and that end with the corresponding Log MBean attribute name.
 
-  For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
+  For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{% relref "/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" %}}).

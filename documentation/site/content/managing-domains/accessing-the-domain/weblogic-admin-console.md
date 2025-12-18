@@ -20,20 +20,20 @@ You can access the WebLogic Server Administration Console external to the Kubern
 **NOTES**:
  * For production use cases, Oracle recommends using a load balancer with ingress path routing rules and an SSL port to access the WebLogic Server Administration Console.
 
- * To verify that your load balancer, NodePort, or `kubectl port-forward` setup is working as expected, see [Test]({{< relref "#test" >}}).
+ * To verify that your load balancer, NodePort, or `kubectl port-forward` setup is working as expected, see [Test]({{% relref "#test" %}}).
 
- * Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
- * If your domain home type is either Domain in Image or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the Administration Console to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+ * Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{% relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" %}}) and [Scaling]({{% relref "/managing-domains/domain-lifecycle/scaling.md" %}}).
+ * If your domain home type is either Domain in Image or [Model in Image]({{% relref "/samples/domains/model-in-image/_index.md" %}}), then do not use the Administration Console to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
 
 {{% notice warning %}}
 Externally exposing administrative, RMI, or T3 capable WebLogic channels
 using a Kubernetes `NodePort`, load balancer,
 port forwarding, or a similar method can create an insecure configuration.
-For more information, see [External network access security]({{<relref "/security/domain-security/weblogic-channels.md">}}).
+For more information, see [External network access security]({{% relref "/security/domain-security/weblogic-channels.md" %}}).
 {{% /notice %}}
 
 ### Use a load balancer
-To access the WebLogic Server Administration Console through a load balancer, first set up an [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}). This, in combination with SSL, is the best practice approach for production use cases.
+To access the WebLogic Server Administration Console through a load balancer, first set up an [Ingress]({{% relref "/managing-domains/accessing-the-domain/ingress/_index.md" %}}). This, in combination with SSL, is the best practice approach for production use cases.
 
 {{% notice note %}} The following `path-routing` ingress instructions do not apply when you need to concurrently access multiple domains in the same Kubernetes cluster through the same external load balancer port. For the multiple domain use case, see the [Host-based routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-routing) sample and make sure that the host names are resolvable by your DNS server (for example, `domain1.org` and `domain2.org` in the sample).
 {{% /notice %}}
@@ -75,7 +75,7 @@ The following example sets up an ingress path routing rule to access a WebLogic 
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
-If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
+If you have an [FMW Infrastructure]({{% relref "/managing-domains/managing-fmw-domains.md" %}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
 ```
 http://${HOSTNAME}:${LB_PORT}/em
@@ -152,7 +152,7 @@ The following example sets up load balancer routing for access to the WebLogic S
    https://${HOSTNAME}:${SSLPORT}/console
    ```
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
+   If you have an [FMW Infrastructure]({{% relref "/managing-domains/managing-fmw-domains.md" %}}) domain, then you can add an ingress path routing rule for the PathPrefix `/em` and access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
    ```
    https://${HOSTNAME}:${SSLPORT}/em
@@ -164,7 +164,7 @@ Use the following steps to configure a `NodePort` to access the WebLogic Server 
 
 1. Update the WebLogic Administration Server configuration to add a Network Access Point (custom channel) with the HTTP protocol, and expose this channel on a NodePort service using the `domain.spec.adminServer.adminService.channels` attribute.
 
-   For an example of setting up the `NodePort` on an Administration Server, see [Use a `NodePort`]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}). For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) document.
+   For an example of setting up the `NodePort` on an Administration Server, see [Use a `NodePort`]({{% relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" %}}). For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) document.
 
 2. From your browser, use the following URL to access the WebLogic Server Administration Console:
 
@@ -173,7 +173,7 @@ Use the following steps to configure a `NodePort` to access the WebLogic Server 
    ```
    The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
+   If you have an [FMW Infrastructure]({{% relref "/managing-domains/managing-fmw-domains.md" %}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
    ```
    http://hostname:adminserver-NodePort/em
@@ -185,7 +185,7 @@ A Kubernetes port forward command is convenient for development use cases but is
 1. Forward a local port (that is external to
    Kubernetes) to the administration port of the
    Administration Server Pod according to these
-   [instructions]({{< relref "/managing-domains/accessing-the-domain/port-forward.md" >}}).
+   [instructions]({{% relref "/managing-domains/accessing-the-domain/port-forward.md" %}}).
 
    **NOTE**: If you plan to access the WebLogic Server Administration Console from a browser
    on a different machine than the port forwarding command,
@@ -206,7 +206,7 @@ A Kubernetes port forward command is convenient for development use cases but is
 
      * `${LOCAL_PORT}` is the local port specified on the `kubectl port-forward` command line.
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-domains/managing-fmw-domains.md" >}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
+   If you have an [FMW Infrastructure]({{% relref "/managing-domains/managing-fmw-domains.md" %}}) domain, then you can also access Fusion Middleware Control (Enterprise Manager) using the following URL:
 
    ```
    http://${HOSTNAME}:${LOCAL_PORT}/em

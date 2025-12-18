@@ -10,13 +10,13 @@ description: "Sample for creating and deploying a WebLogic domain on a persisten
 ### Introduction
 
 This sample demonstrates deploying a
-[Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type
- with [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images.md" >}}).
+[Domain on PV]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) domain home source type
+ with [Domain creation images]({{% relref "/managing-domains/domain-on-pv/domain-creation-images.md" %}}).
 The Domain on PV sample uses a WebLogic Deploy Tooling (WDT) model to specify your initial WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts. They compactly define a WebLogic domain using model files, variable properties files, and application archive files. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
 
-For more information, see the [Domain on PV]({{< relref "/managing-domains/domain-on-pv/_index.md" >}}) user documentation.
+For more information, see the [Domain on PV]({{% relref "/managing-domains/domain-on-pv/_index.md" %}}) user documentation.
 
 #### Domain on PV domain types (WLS and JRF)
 
@@ -52,11 +52,11 @@ For example, if you have permission to put the image in a container registry tha
 
 Alternatively, if you have access to the local image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a Docker command to load the image file into the node's image cache.
 
-For more information, see the [Cannot pull image]({{<relref "/faq/cannot-pull-image">}}) FAQ.
+For more information, see the [Cannot pull image]({{% relref "/faq/cannot-pull-image" %}}) FAQ.
 
 ### References
 
 For references to the relevant user documentation, see:
- - [Domain on PV]({{< relref "/managing-domains/domain-on-pv/_index.md" >}}) user documentation
+ - [Domain on PV]({{% relref "/managing-domains/domain-on-pv/_index.md" %}}) user documentation
  - [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/)
  - [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/)

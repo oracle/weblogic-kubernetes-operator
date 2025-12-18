@@ -14,14 +14,14 @@ various approaches.  We can start by asking ourselves questions like these:
 
   When your domain home source type is Domain on PV or Domain in Image,
   the operator allows you to inject a number of [configuration
-  overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}})
+  overrides]({{% relref "/managing-domains/configoverrides/_index.md" %}})
   into your pods before starting any servers in the domain.  
 
   When your domain home source type is Model in Image, you can
-  [inject model updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}})
+  [inject model updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}})
   before starting any servers in the domain for any type of update, or even while your domain
   is running for most types of updates. Model in Image runtime model updates are propagated
-  by [restarting]({{< relref "/managing-domains/domain-lifecycle/restarting.md" >}})
+  by [restarting]({{% relref "/managing-domains/domain-lifecycle/restarting.md" %}})
   (rolling) the running WebLogic Servers.
 
   A good example of a change would be changing the settings for a data

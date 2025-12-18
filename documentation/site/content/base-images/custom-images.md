@@ -25,16 +25,16 @@ from a base OS image (optionally, with WebLogic patches). In addition, the WIT `
 supports creating auxiliary images which
 do _not_ contain a WebLogic Server installation,
 and instead, solely contain the [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) installation and model files;
-this option is designed for the Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+this option is designed for the Model in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
 
-Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/base-images/ocr-images#inspect-images" >}}).
+Finally, you can use the WIT `inspect` command to [inspect images]({{% relref "/base-images/ocr-images#inspect-images" %}}).
 
   In detail:
 
   - WIT [`create`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) command:
 
     - Creates a new WebLogic image from a base OS image.
-    - Can be used for all [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) (Domain in Image, Model in Image, and Domain on PV).
+    - Can be used for all [domain home source types]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) (Domain in Image, Model in Image, and Domain on PV).
     - Optionally, includes a WebLogic Deploy Tooling (WDT) [installation](https://oracle.github.io/weblogic-deploy-tooling/userguide/install/) and model files in the image
       (for Model in Image domains).
       See also, [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image).
@@ -63,7 +63,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
         that doesn't already have a domain home, such as an updated CPU image from OCR.
       - Or, as a new WebLogic image from a base OS image. **NOTE**:  Oracle strongly recommends rebasing your
         images with the latest security patches by applying the [`--recommendedPatches`](https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/) option.
-      - For more information, see [Apply patched images to a running domain]({{< relref "/base-images/patch-images#domain-in-image" >}}).
+      - For more information, see [Apply patched images to a running domain]({{% relref "/base-images/patch-images#domain-in-image" %}}).
 
   - WIT [`update`](https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/) command:
 
@@ -90,7 +90,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
         when the update is intended for a running domain.
         Use the WIT `rebase` command instead
         or shut down the running domain entirely before applying the new image.
-        For more information, see [Apply patched images to a running domain]({{< relref "/base-images/patch-images#apply-patched-images-to-a-running-domain" >}}).
+        For more information, see [Apply patched images to a running domain]({{% relref "/base-images/patch-images#apply-patched-images-to-a-running-domain" %}}).
       - Optionally, includes a WDT installation and model files in the image (for Model in Image domains).
 
   - WIT [`createAuxImage`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) command:
@@ -100,17 +100,17 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
        solely contain WebLogic Deploy Tooling files for the Model in Image use case
        and are used in addition to the
        domain resource image that contains your WebLogic and Java installations.
-     - For more information, see [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+     - For more information, see [Auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}).
 
   - WIT [`inspect`](https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/) command:
 
      - Inspects images created with the WebLogic Image Tool.
-     - See [Inspect images]({{< relref "/base-images/ocr-images#inspect-images" >}}).
+     - See [Inspect images]({{% relref "/base-images/ocr-images#inspect-images" %}}).
 
 ### Create a custom image with patches applied
 
 All domain home source types require a base image which contains JDK and WebLogic Server binaries.
-This base image is usually [obtained directly]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}) from the Oracle Container Registry,
+This base image is usually [obtained directly]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}}) from the Oracle Container Registry,
 but, as needed, you can also [create your own custom base image](#create-a-custom-base-image).
 
 If you are using the Domain in Image domain home source type,
@@ -130,7 +130,7 @@ This is sometimes necessary to build an image with a specific patch, and such,
 but most use cases can instead, obtain pre-built
 patched images directly from the Oracle Container Registry.
 See
-[Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+[Obtain images from the Oracle Container Registry]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}}).
 {{% /notice %}}
 
 Here's an example of using the WIT [create](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/)
@@ -205,7 +205,7 @@ sample assumes that you have installed WIT in `/tmp/imagetool`; you can choose t
      the `wlsslim` type to the WLS slim installation,
      and the `wlsdev` type to the WLS developer installation.
      For a description of each installation type, see
-     [WebLogic distribution installer type]({{< relref "/base-images/ocr-images#weblogic-distribution-installer-type" >}}).
+     [WebLogic distribution installer type]({{% relref "/base-images/ocr-images#weblogic-distribution-installer-type" %}}).
    - The `--recommendedPatches` parameter finds and applies the latest PatchSet Update (PSU)
      and recommended patches for each of the products included in the installer. For example, for WebLogic Server, the recommended patches for Coherence and TopLink are included.
    - These sample commands use a default base image, which is an Oracle Linux OS image,
@@ -221,7 +221,7 @@ sample assumes that you have installed WIT in `/tmp/imagetool`; you can choose t
     $ docker images
     ```
 
-   You can also [inspect]({{< relref "/base-images/ocr-images#inspect-images" >}}) the contents of the image.
+   You can also [inspect]({{% relref "/base-images/ocr-images#inspect-images" %}}) the contents of the image.
 
 #### Create a custom image with your domain inside the image
 
@@ -233,7 +233,7 @@ including credentials that are used to access external resources
 and decryption keys
 (for example, the `DOMAIN_HOME/security/SerializedSystemIni.dat` domain secret file).
 For more information,
-see [Container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
+see [Container image protection]({{% relref "/security/domain-security/image-protection.md" %}}).
 {{% /notice %}}
 
 
@@ -245,7 +245,7 @@ which **does not include** the latest security patches for WebLogic Server.
 GA images are intended for single desktop demonstration and development purposes _only_.
 For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
 such as OCR Critical Patch Updates (CPU) images or custom generated images.
-See [Ensure you are using recently patched images]({{< relref "/base-images/ocr-images#ensure-you-are-using-recently-patched-images" >}}).
+See [Ensure you are using recently patched images]({{% relref "/base-images/ocr-images#ensure-you-are-using-recently-patched-images" %}}).
 {{% /notice %}}
 
 
@@ -254,15 +254,15 @@ This section provides guidance for creating a new Domain in Image image.
 This type of image cannot be used in pods that must join the pods in
 an already running domain. If you need to create a Domain in Image
 image that is meant for updating an already running domain, then see
-[Apply patched images to a running domain]({{< relref "/base-images/patch-images#apply-patched-images-to-a-running-domain" >}}).
+[Apply patched images to a running domain]({{% relref "/base-images/patch-images#apply-patched-images-to-a-running-domain" %}}).
 
-**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is
+**NOTE**: The Domain in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) is
 deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 
 You should use an image with the recommended security patches installed as this base image,
 where this image could be an OCR image or a custom image.
 See
-[Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+[Obtain images from the Oracle Container Registry]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}})
 and
 [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
 
@@ -478,7 +478,7 @@ to create the domain home in Domain in Image.
 
 #### Create a custom image with your model inside the image
 
-**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}).
 
 {{% notice warning %}}
 The example in this section references a base image,
@@ -488,20 +488,20 @@ which **does not include** the latest security patches for WebLogic Server.
 GA images are intended for single desktop demonstration and development purposes _only_.
 For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
 such as OCR Critical Patch Updates (CPU) images or custom generated images.
-See [Ensure you are using recently patched images]({{< relref "/base-images/ocr-images#ensure-you-are-using-recently-patched-images" >}}).
+See [Ensure you are using recently patched images]({{% relref "/base-images/ocr-images#ensure-you-are-using-recently-patched-images" %}}).
 {{% /notice %}}
 
 Example steps for creating a custom WebLogic image with a Model in Image file layer
 (using files from the Model in Image sample):
 
 1. To gain an overall understanding of Model in Image domains,
-   read the [Model in Image User Guide]({{< relref "/managing-domains/model-in-image/_index.md" >}})
-   and the [Model in Image Sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
+   read the [Model in Image User Guide]({{% relref "/managing-domains/model-in-image/_index.md" %}})
+   and the [Model in Image Sample]({{% relref "/samples/domains/model-in-image/_index.md" %}}).
    Note that the sample uses the recommended best approach,
    auxiliary images, instead of the alternative approach, which is used in this example.
 
 1. Follow the prerequisite steps in the
-   [Model in Image Sample]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}})
+   [Model in Image Sample]({{% relref "/samples/domains/model-in-image/prerequisites.md" %}})
    that describe how to:
 
    - Download the operator source and its Model in Image sample
@@ -514,7 +514,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
 
 1. Locate or create a base WebLogic image.
 
-   See [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+   See [Obtain images from the Oracle Container Registry]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}})
    or [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
 
    In the following step, you will use the `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8` GA image.
@@ -551,7 +551,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
      --wdtDomainType WLS \
      --chown oracle:root
    ```
-   **NOTE** that JRF support in Model in Image domains is deprecated in operator version 4.1.0; For JRF domains, use the [Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type instead.
+   **NOTE** that JRF support in Model in Image domains is deprecated in operator version 4.1.0; For JRF domains, use the [Domain on PV]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) domain home source type instead.
 
 1. For an example Domain YAML file that sets up Model in Image to reference the image,
    see `/tmp/sample/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`

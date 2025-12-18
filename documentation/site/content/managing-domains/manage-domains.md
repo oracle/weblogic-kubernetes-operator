@@ -12,17 +12,17 @@ This document is an overview of managing WebLogic domains and clusters in Kubern
 ### Creating and managing WebLogic domains
 
 Domain resources reference WebLogic domain configuration, a WebLogic install,
-[images]({{< relref "/base-images/_index.md" >}}),
+[images]({{% relref "/base-images/_index.md" %}}),
 and anything else necessary to run the domain.
 Beginning with operator 4.0, WebLogic clusters that are within a WebLogic domain configuration
 may optionally be associated with a Cluster resource in addition to a Domain resource.
-For more information, see [Domain and Cluster resources]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
+For more information, see [Domain and Cluster resources]({{% relref "/managing-domains/domain-resource/_index.md" %}}).
 
 You can locate a WebLogic domain either on a persistent volume (Domain on PV), inside the container only (Model in Image), or in an image (Domain in Image).
-For an explanation of each, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
-For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/domains/_index.md" >}}).
+For an explanation of each, see [Choose a domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
+For examples of each, see the [WebLogic Kubernetes Operator samples]({{% relref "/samples/domains/_index.md" %}}).
 
-{{% notice note %}}The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+{{% notice note %}}The Domain in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 {{% /notice %}}
 
 If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
@@ -30,9 +30,9 @@ with a specific configuration or applications deployed, then you can create the 
 manually to deploy your domain.
 
 **NOTE**: After you are familiar with the basics, it is recommended to review
-[important considerations]({{< relref "/managing-domains/manage-domains#important-considerations-for-weblogic-domains-in-kubernetes" >}})
+[important considerations]({{% relref "/managing-domains/manage-domains#important-considerations-for-weblogic-domains-in-kubernetes" %}})
 and
-[resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+[resource name restrictions]({{% relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" %}}).
 
 ### Modifying domain configurations
 
@@ -40,20 +40,20 @@ You can modify the WebLogic domain configuration for Domain on PV, Domain in Ima
 
 When the domain is on a persistent volume, you can use WLST or WDT to change the configuration.
 
-For Domain in Image and Domain on PV, you can use [Configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
+For Domain in Image and Domain on PV, you can use [Configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md" %}}).
 
 Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
-and URLs that are stored in a secret. However, note the scenarios for which configuration overrides [are _not_ supported]({{< relref "/managing-domains/configoverrides#unsupported-overrides" >}}).
+and URLs that are stored in a secret. However, note the scenarios for which configuration overrides [are _not_ supported]({{% relref "/managing-domains/configoverrides#unsupported-overrides" %}}).
 
-For Model in Image, you use [Runtime Updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md" >}}).
+For Model in Image, you use [Runtime Updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}).
 
 ### Managing lifecycle operations
 
 You can perform lifecycle operations on WebLogic Servers, clusters, or domains.
 This includes starting, stopping, and rolling domains, clusters,
 or individual servers, plus detecting failures and tuning retry behavior.
-See [Domain life cycle]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}}).
+See [Domain life cycle]({{% relref "/managing-domains/domain-lifecycle/_index.md" %}}).
 
 ### Scaling clusters
 
@@ -66,23 +66,23 @@ The operator lets you initiate scaling of clusters in various ways:
 * Using WLDF policies
 * Using a Prometheus action
 
-See [Domain life cycle scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
+See [Domain life cycle scaling]({{% relref "/managing-domains/domain-lifecycle/scaling.md" %}}).
 
 ### About domain events
 
 The operator generates Kubernetes events at key points during domain processing.
-For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
+For more information, see [Domain events]({{% relref "/managing-domains/accessing-the-domain/domain-events.md" %}}).
 
 ### Accessing and monitoring domains
 
 To access the domain using WLST, console, T3, or a load balancer,  or to export Prometheus-compatible metrics,
-see [Access and monitor domains]({{< relref "/managing-domains/accessing-the-domain/" >}}).
+see [Access and monitor domains]({{% relref "/managing-domains/accessing-the-domain/" %}}).
 
 ### Logging
 
-To tune log file location and rotation, see [Log Files]({{< relref "/managing-domains/accessing-the-domain/logs.md" >}}).
+To tune log file location and rotation, see [Log Files]({{% relref "/managing-domains/accessing-the-domain/logs.md" %}}).
 
-To export operator or domain log files, see the [Elastic Stack]({{< relref "/samples/elastic-stack/" >}}) examples.
+To export operator or domain log files, see the [Elastic Stack]({{% relref "/samples/elastic-stack/" %}}) examples.
 
 ### Meet Kubernetes resource name restrictions
 
@@ -90,10 +90,10 @@ Kubernetes requires that the names of some resource types follow the DNS label s
 
 The following is a list of such Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
 
-* A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{< relref "/managing-operators/using-helm#weblogic-domain-management" >}})).
+* A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{% relref "/managing-operators/using-helm#weblogic-domain-management" %}})).
 * A ClusterIP type service and a pod for each WebLogic Server named `<domainUID>-<serverName>`.
 * A ClusterIP type service for each WebLogic cluster named `<domainUID>-cluster-<clusterName>`.
-* An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{< relref "/managing-operators/using-helm#weblogic-domain-management" >}})).
+* An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{% relref "/managing-operators/using-helm#weblogic-domain-management" %}})).
 
 The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.
 * All the names previously described can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lowercase and substitute a hyphen (`-`) for each underscore (`_`).
@@ -118,16 +118,16 @@ Be aware of the following important considerations for WebLogic domains running 
   A container image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
+  [WebLogic domain in container image protection]({{% relref "/security/domain-security/image-protection.md" %}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
   This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
-  For additional log file tuning information, see [Log files]({{< relref "/managing-domains/accessing-the-domain/logs.md" >}}).
+  For additional log file tuning information, see [Log files]({{% relref "/managing-domains/accessing-the-domain/logs.md" %}}).
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
-  SSL, admin, or custom channel listen addresses (using [Configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}})).  These will become `domainUID` followed by a
+  SSL, admin, or custom channel listen addresses (using [Configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md" %}})).  These will become `domainUID` followed by a
   hyphen and then the server name, all lowercase, and underscores converted to hyphens.  For example, if `domainUID=domain1` and
   the WebLogic Server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
 
@@ -145,7 +145,7 @@ Be aware of the following important considerations for WebLogic domains running 
   Exposing administrative, RMI, or T3 capable channels using a Kubernetes `NodePort`
   can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
-  For more information, see [WebLogic T3 and administrative channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-and-administrative-channels">}}).
+  For more information, see [WebLogic T3 and administrative channels]({{% relref "/security/domain-security/weblogic-channels#weblogic-t3-and-administrative-channels" %}}).
   {{% /notice %}}
 
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
@@ -160,7 +160,7 @@ Be aware of the following important considerations for WebLogic domains running 
     * `NODEMGR_JAVA_OPTIONS` - Java options for starting a Node Manager instance
     * `NODEMGR_MEM_ARGS` - JVM memory arguments for starting a Node Manager instance
 
-    For more information, see [JVM memory and Java option environment variables]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}).
+    For more information, see [JVM memory and Java option environment variables]({{% relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" %}}).
 
 * _Node Manager environment variables:_ You can use the following environment variables to specify the logging files limit.
 

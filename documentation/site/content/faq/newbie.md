@@ -7,7 +7,7 @@ description: "Answers to commonly asked newcomer questions."
 ---
 #### What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation?
 
-It's all [here]({{< relref "/_index.md" >}}).
+It's all [here]({{% relref "/_index.md" %}}).
 
 #### How much does it cost?
 
@@ -15,12 +15,12 @@ The WebLogic Kubernetes Operator (the “operator”) is open source and free, l
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
-For more information, see [Pricing and licensing]({{< relref "/introduction/platforms/environments#pricing-and-licensing" >}}).
+For more information, see [Pricing and licensing]({{% relref "/introduction/platforms/environments#pricing-and-licensing" %}}).
 
 #### How can I get help?
 
 You are welcome to get in touch with us to ask questions, provide feedback, or give suggestions.
-To learn how, see [Get help]({{< relref "/introduction/get-help.md" >}}).
+To learn how, see [Get help]({{% relref "/introduction/get-help.md" %}}).
 
 #### WebLogic Server Certification
 
@@ -33,7 +33,7 @@ To learn how, see [Get help]({{< relref "/introduction/get-help.md" >}}).
 
 **Q:** How is the WebLogic Server domain configured in a container (for example, databases, JMS, and such) that is potentially shared by many domains?
 
-**A:** In a Kubernetes and container environment, the WebLogic domain home can be externalized to a persistent volume, or supplied in an image (by using a layer on top of a WebLogic Server image). For WebLogic domains that are supplied using an image, the domain logs and store locations optionally can be located on a persistent volume.  See the [samples]({{< relref "/samples/_index.md" >}}) in this project.
+**A:** In a Kubernetes and container environment, the WebLogic domain home can be externalized to a persistent volume, or supplied in an image (by using a layer on top of a WebLogic Server image). For WebLogic domains that are supplied using an image, the domain logs and store locations optionally can be located on a persistent volume.  See the [samples]({{% relref "/samples/_index.md" %}}) in this project.
 
 When using the operator, each deployed domain is specified by a domain resource that you define which describes important aspects of the domain. These include the location of the WebLogic Server image you wish to use, a unique identifier for the domain called the `domain-uid`, any PVs or PVC the domain pods will need to mount, the WebLogic clusters and servers which you want to be running, and the location of its domain home.
 
@@ -41,7 +41,7 @@ Beginning with operator 4.0, WebLogic clusters that are part of the domain confi
 
 Multiple deployments of the same domain are supported by specifying a unique `domain-uid` string for each deployed domain and specifying a different domain resource. The `domain-uid` is in turn used by the operator as the name-prefix and/or label for the domain's Kubernetes resources that the operator deploys for you. The WebLogic configuration of a domain's deployments optionally can by customized by specifying configuration overrides in the domain resource -- which, for example, is useful for overriding the configuration of a data source URL, user name, or password.
 
-The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator [samples]({{< relref "/samples/_index.md" >}}) show how to create domains using WLST and using WDT.
+The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator [samples]({{% relref "/samples/_index.md" %}}) show how to create domains using WLST and using WDT.
 
 
 **Q:** Is the Administration Server required? Node Manager?
@@ -60,14 +60,14 @@ The operator does not specify how a WebLogic domain home configuration is create
 
 **A:**
 
-* _HTTP communication to your applications from locations outside the cluster_: Typically, this is accomplished by deploying a load balancer that redirects traffic to your domain's Kubernetes services (the operator automatically deploys these services for you); see [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
-For an example, see the Quick Start, [Install the operator and ingress controller]({{< relref "/quickstart/install.md" >}}).
+* _HTTP communication to your applications from locations outside the cluster_: Typically, this is accomplished by deploying a load balancer that redirects traffic to your domain's Kubernetes services (the operator automatically deploys these services for you); see [Ingress]({{% relref "/managing-domains/accessing-the-domain/ingress/_index.md" %}}).
+For an example, see the Quick Start, [Install the operator and ingress controller]({{% relref "/quickstart/install.md" %}}).
 
-* _JMS, EJB, and other types of RMI communication with locations outside of the Kubernetes cluster_: This is typically accomplished by tunneling the RMI traffic over HTTP through a load balancer or, less commonly accomplished by using T3 or T3S directly with Kubernetes NodePorts; see [External WebLogic clients]({{< relref "/managing-domains/accessing-the-domain/external-clients.md" >}}).
+* _JMS, EJB, and other types of RMI communication with locations outside of the Kubernetes cluster_: This is typically accomplished by tunneling the RMI traffic over HTTP through a load balancer or, less commonly accomplished by using T3 or T3S directly with Kubernetes NodePorts; see [External WebLogic clients]({{% relref "/managing-domains/accessing-the-domain/external-clients.md" %}}).
 
-* _Access the WebLogic Server Administration Console_: This can be done through a load balancer; see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.  Or, this can be done through a Kubernetes NodePort service; run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
+* _Access the WebLogic Server Administration Console_: This can be done through a load balancer; see the [Model in Image]({{% relref "/samples/domains/model-in-image/_index.md" %}}) sample.  Or, this can be done through a Kubernetes NodePort service; run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
 
-* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/managing-domains/accessing-the-domain/remote-admin-console.md" >}}).
+* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{% relref "/managing-domains/accessing-the-domain/remote-admin-console.md" %}}).
 
 
 **Q:** Are clusters supported on Kubernetes using both multicast and unicast?
@@ -86,7 +86,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 **Q:** Load balancing and failover inside a DataCenter (HTTPS and T3s)?
 
-**A:** We originally certified on Traefik with the Kubernetes cluster; this is a very basic load balancer.  We have also certified other more sophisticated load balancers. See [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
+**A:** We originally certified on Traefik with the Kubernetes cluster; this is a very basic load balancer.  We have also certified other more sophisticated load balancers. See [Ingress]({{% relref "/managing-domains/accessing-the-domain/ingress/_index.md" %}}).
 
 ***
 
@@ -94,7 +94,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 **Q:** How to deal with grow and shrink? Cluster and non-cluster mode.
 
-**A:** You can scale and shrink a configured WebLogic cluster (a set of preconfigured Managed Servers) or a dynamic WebLogic cluster (a cluster that uses templated Managed Servers) using different methods. See [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
+**A:** You can scale and shrink a configured WebLogic cluster (a set of preconfigured Managed Servers) or a dynamic WebLogic cluster (a cluster that uses templated Managed Servers) using different methods. See [Scaling]({{% relref "/managing-domains/domain-lifecycle/scaling.md" %}}).
 * Manually, using Kubernetes command-line interface, `kubectl`.
 * WLDF rules and policies; when the rule is met the Administration Server sends a REST call to the operator which calls the Kubernetes API to start a new pod/container/server.
 * We have developed and made open source the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) which exports WebLogic metrics to Prometheus and Grafana.  In Prometheus, you can set rules similar to WLDF and when these rules are met, a REST call is made to the operator which invokes a Kubernetes API to start a new pod.
@@ -110,7 +110,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 These operations also can be done manually using the Kubernetes command-line interface, `kubectl`.
 
-For more information, see the [Domain life cycle]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}}) documentation.
+For more information, see the [Domain life cycle]({{% relref "/managing-domains/domain-lifecycle/_index.md" %}}) documentation.
 
 ***
 
@@ -121,18 +121,18 @@ For more information, see the [Domain life cycle]({{< relref "/managing-domains/
 
 **A:** Download pre-patched images from the Oracle Container Registry or use WebLogic Image Tool to create your own.
 For additional information on WebLogic container images on Oracle Container registry,
-see [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+see [Obtain images from the Oracle Container Registry]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}}).
 
 For additional information on creating new container images with the WebLogic Image Tool,
-see [Create custom images]({{< relref "/base-images/custom-images.md" >}}).
+see [Create custom images]({{% relref "/base-images/custom-images.md" %}}).
 
 **Q:** How do I apply patches without impacting my application's uptime?
 
-**A:** See [Rolling restarts]({{< relref "/managing-domains/domain-lifecycle/restarting#overview" >}}).
+**A:** See [Rolling restarts]({{% relref "/managing-domains/domain-lifecycle/restarting#overview" %}}).
 
 **Q:** How do I integrate patching with my continuous integration and continuous deployment processes?
 
-**A:** See [CI/CD considerations]({{< relref "/managing-domains/cicd/_index.md" >}}).
+**A:** See [CI/CD considerations]({{% relref "/managing-domains/cicd/_index.md" %}}).
 
 ***
 
@@ -141,6 +141,6 @@ see [Create custom images]({{< relref "/base-images/custom-images.md" >}}).
 
 **Q:** Integration with ecosystems: logging, monitoring (OS, JVM and application level), and such.
 
-**A:** WebLogic Server `stdout` logging is echoed to their pod logs by default, and WebLogic Server file logs are optionally persisted to an external volume.  We are working on a project to integrate WebLogic Server logs with the Elastic Stack.  See [Elastic Stack]({{< relref "/samples/elastic-stack/_index.md" >}}).
+**A:** WebLogic Server `stdout` logging is echoed to their pod logs by default, and WebLogic Server file logs are optionally persisted to an external volume.  We are working on a project to integrate WebLogic Server logs with the Elastic Stack.  See [Elastic Stack]({{% relref "/samples/elastic-stack/_index.md" %}}).
 
 With regards to monitoring, all the tools that are traditionally used to monitor WebLogic Server can be used running in containers and Kubernetes.  In addition, as mentioned previously, we have developed the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter), which exports WebLogic metrics in a format that can be read and displayed in dashboards like Prometheus and Grafana.

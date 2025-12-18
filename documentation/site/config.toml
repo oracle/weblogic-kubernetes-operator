@@ -6,7 +6,7 @@ languageCode = "en-us"
 title = "WebLogic Kubernetes Operator"
 
 # Change the default theme to be use when building the site with Hugo
-theme = "hugo-theme-learn"
+theme = "hugo-theme-relearn-8.3.0"
 
 publishDir = "docs"
 
@@ -17,11 +17,17 @@ canonifyURLs = true
   home = [ "HTML", "RSS", "JSON"]
 
 [params]
+  hideAuthorDate = true
   # disable the copy to clipboard links
   disableInlineCopyToClipBoard = true
+  themeVariant = "learn"
 
 [markup]
+  defaultMarkdownHandler = 'goldmark'
   [markup.tableOfContents]
     endLevel = 5
     ordered = false
     startLevel = 3
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

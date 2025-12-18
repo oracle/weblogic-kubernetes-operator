@@ -13,11 +13,11 @@ This document describes domain failure retry processing in the Oracle WebLogic S
 ### Overview
 
 The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource.
-Failures are reported using Kubernetes events and [conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}})
+Failures are reported using Kubernetes events and [conditions]({{% relref "/managing-domains/accessing-the-domain/status-conditions.md" %}})
 in the `status.conditions` field in the Domain resource.
-See [Domain debugging]({{< relref "/managing-domains/debugging#check-the-domain-status" >}}).
+See [Domain debugging]({{% relref "/managing-domains/debugging#check-the-domain-status" %}}).
 Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries.
-Refer to [Retry behavior]({{< relref "#retry-behavior" >}}) on tuning failure retry limits and intervals.
+Refer to [Retry behavior]({{% relref "#retry-behavior" %}}) on tuning failure retry limits and intervals.
 
 ### Domain failure severities
 
@@ -29,7 +29,7 @@ Domain resource failures fall into three severity levels:
 - Severe failures
    - Most of the failures during domain processing are temporary failures that may either resolve at a later
      time without intervention, or be fixed by user actions without making any change to the domain resource
-     or the cluster resource. The operator [periodically retries]({{< relref "#retry-behavior" >}})
+     or the cluster resource. The operator [periodically retries]({{% relref "#retry-behavior" %}})
      when it encounters this type of failure. \
      Examples:
      - Introspector job time out (`DeadlineExceeded` error).
@@ -40,13 +40,13 @@ Domain resource failures fall into three severity levels:
      - Validation errors that can be fixed without changing the domain spec, for example, missing secrets or a missing ConfigMap.
 - Fatal failures
     - Failures that are not automatically retried. The cause of the failure must be fixed, and the retry
-      must be manually initiated by updating the domain as described in [Retry behavior]({{< relref "#retry-behavior" >}}). \
+      must be manually initiated by updating the domain as described in [Retry behavior]({{% relref "#retry-behavior" %}}). \
       Examples:
         - Fatal errors in the introspector log that contain the special marker string `FatalIntrospectorError`.
         - Validation errors in the domain resource that require changes to the domain spec.
-        - Failures at the `Severe` level that have reached the expected [maximum retry time]({{< relref "#retry-behavior" >}}).
+        - Failures at the `Severe` level that have reached the expected [maximum retry time]({{% relref "#retry-behavior" %}}).
 
-For reasons for Domain failures, see [Domain failure reasons]({{< relref "#domain-failure-reasons" >}}).
+For reasons for Domain failures, see [Domain failure reasons]({{% relref "#domain-failure-reasons" %}}).
 
 {{%expand "Click here for an example of domain status showing a failure and its severity." %}}
 ```yaml
@@ -105,8 +105,8 @@ Status:
 To manually initiate an immediate retry, or to restart retries that have reached their
 `spec.failureRetryLimitMinutes`, update a domain field that will cause immediate action by the operator.
 For example, change `spec.introspectVersion` or `spec.restartVersion` as appropriate.
-See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})
-and [Initiating introspection]({{< relref "/managing-domains/domain-lifecycle/introspection#initiating-introspection" >}})
+See [Startup and shutdown]({{% relref "/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" %}})
+and [Initiating introspection]({{% relref "/managing-domains/domain-lifecycle/introspection#initiating-introspection" %}})
 
 ### Domain failure reasons
 

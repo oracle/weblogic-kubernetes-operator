@@ -15,8 +15,8 @@ and this document is a reference guide for useful Helm commands and operator con
 This document assumes that the operator has been installed using an operator Helm chart.
 An operator Helm chart can be obtained from the chart repository or can be found in the operator source.
 For information about operator Helm chart access, installation, and upgrade,
-see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}})
-and [Installation and upgrade]({{< relref "/managing-operators/installation.md" >}}).
+see [Prepare for installation]({{% relref "/managing-operators/preparation.md" %}})
+and [Installation and upgrade]({{% relref "/managing-operators/installation.md" %}}).
 
 ### Useful Helm operations
 
@@ -79,7 +79,7 @@ and [Installation and upgrade]({{< relref "/managing-operators/installation.md" 
   **NOTES**:
   - In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained.
   - Before changing the `javaLoggingLevel` setting,
-    consult the [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) advice.
+    consult the [Operator logging level]({{% relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" %}}) advice.
 
 
 ### Operator Helm configuration values
@@ -104,10 +104,10 @@ serviceAccount: "weblogic-operator"
 Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift; the setting should be left unset for other platforms.
 
 When set to `OpenShift`, the operator:
-- Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), and Domain home in Image domains. Specifically, it sets file group permissions so that they match file user permissions.
+- Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for [Model in Image]({{% relref "/samples/domains/model-in-image/_index.md" %}}), and Domain home in Image domains. Specifically, it sets file group permissions so that they match file user permissions.
 - Sets the `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on the command line of each WebLogic Server. This flag suppresses insecure file system warnings reported in the WebLogic Server console when the WebLogic Server is in production mode. These warnings result from setting the file permissions necessary to work with restricted security context constraints on OpenShift.
 
-For more information about the security requirements for running WebLogic in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
+For more information about the security requirements for running WebLogic in OpenShift, see the [OpenShift]({{% relref "/security/openshift.md" %}}) documentation.
 
 Example:
 ```yaml
@@ -133,7 +133,7 @@ at the time the Helm release was installed or upgraded.
 then a running operator will _not_ have privilege to manage a newly added namespace
 that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
-See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
+See [Ensuring the operator has permission to manage a namespace]({{% relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" %}}).
 
 #### Creating the operator pod
 
@@ -168,7 +168,7 @@ Contains an optional list of Kubernetes Secrets, in the operator's namespace, th
 For example, you might need an operator `imagePullSecret` if you are using an operator image from a private registry that requires authentication to pull.
 You are responsible for creating the secret. If no secrets are required, then omit this property. For more information on specifying the registry
 credentials when the operator image is stored in a private registry, see
-[Customizing operator image name, pull secret, and private registry]({{<relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
+[Customizing operator image name, pull secret, and private registry]({{% relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry" %}}).
 
 Examples:
 - Using YAML:
@@ -254,7 +254,7 @@ runAsUser: 1000
 
 #### WebLogic domain conversion webhook
 
-The WebLogic domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
+The WebLogic domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{% relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" %}}) and [Uninstall the conversion webhook]({{% relref "/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" %}}).
 
 **NOTE**: By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using the following `webhookOnly` configuration value and provide the new value during webhook installation.
 
@@ -282,7 +282,7 @@ Defaults to `false`.
 
 The settings in this section determine the namespaces that an operator
 monitors for domain resources. For usage,
-also see [Namespace management]({{< relref "/managing-operators/namespace-management.md" >}}).
+also see [Namespace management]({{% relref "/managing-operators/namespace-management.md" %}}).
 
 ##### `domainNamespaceSelectionStrategy`
 
@@ -300,13 +300,13 @@ Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`:
 
 **NOTES**:
 - Defaults to `LabelSelector`.
-- For more information, see [Choose a domain namespace section strategy]({{<relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
+- For more information, see [Choose a domain namespace section strategy]({{% relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" %}}).
 
 {{% notice note %}}
 If your operator Helm `enableClusterRoleBinding` configuration value is `false`, note that any domain namespaces created after operator installation,
 requires running `helm upgrade` on the operator to have the operator rescan for domains to manage, even if,
 for example, using a `LabelSelector` where the namespace has a matching label. See
-[Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).  
+[Ensuring the operator has permission to manage a namespace]({{% relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" %}}).  
 {{% /notice %}}
 
 ##### `domainNamespaces`
@@ -340,7 +340,7 @@ Examples:
   then the new list completely replaces the original list
   (they are not merged).
 - For more information,
-see [Namespace Management]({{<relref "/managing-operators/namespace-management.md">}}).
+see [Namespace Management]({{% relref "/managing-operators/namespace-management.md" %}}).
 
 ##### `domainNamespaceLabelSelector`
 Specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors) that will be used when searching for namespaces that the operator will manage.
@@ -368,7 +368,7 @@ Examples:
   a running operator will _not_ have privilege to manage a newly added namespace
   that matches its label selector until you upgrade
   the operator's Helm release.
-  See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
+  See [Ensuring the operator has permission to manage a namespace]({{% relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" %}}).
 
 ##### `domainNamespaceRegExp`
 Specifies a regular expression that will be used when searching for namespaces that the operator will manage.
@@ -390,7 +390,7 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
   then a running operator will _not_ have privilege to manage a newly added namespace
   that matches its regular expression until you upgrade
   the operator's Helm release.
-  See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
+  See [Ensuring the operator has permission to manage a namespace]({{% relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" %}}).
 
 ##### `introspectorJobNameSuffix` and `externalServiceNameSuffix`
 Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.
@@ -402,7 +402,7 @@ Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect
 {{% /notice %}}
 
 {{% notice note %}}
-To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see [Meet Kubernetes resource name restrictions]({{% relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" %}}).
 {{% /notice %}}
 
 ##### `clusterSizePaddingValidationEnabled`
@@ -416,13 +416,13 @@ If `clusterSizePaddingValidationEnabed` is set to `true`, two additional charact
 
 Default for the domain resource `domain.spec.configuration.istio.localhostBindingsEnabled` setting.
 
-For more information, see [Configuring the domain resource]({{< relref "/managing-domains/accessing-the-domain/istio/istio#configuring-the-domain-resource" >}}) in Istio Support.
+For more information, see [Configuring the domain resource]({{% relref "/managing-domains/accessing-the-domain/istio/istio#configuring-the-domain-resource" %}}) in Istio Support.
 
 #### Elastic Stack integration
 
 The following settings are related to integrating the Elastic Stack with the operator pod.
 
-For example usage, see the operator [Elastic Stack (Elasticsearch, Logstash, and Kibana)]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) integration sample.
+For example usage, see the operator [Elastic Stack (Elasticsearch, Logstash, and Kibana)]({{% relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration" %}}) integration sample.
 
 ##### `elkIntegrationEnabled`
 Specifies whether or not Elastic Stack integration is enabled.
@@ -493,7 +493,7 @@ createLogStashConfigMap:  false
 
 The REST interface configuration options are advanced settings for configuring the operator's external REST interface.
 
-For usage information, see the operator [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
+For usage information, see the operator [REST Services]({{% relref "/managing-operators/the-rest-api.md" %}}).
 
 ##### `enableRest`
 Determines whether the operator's REST endpoint is enabled.
@@ -632,7 +632,7 @@ Example:
 javaLoggingLevel:  "FINE"
 ```
 
-**NOTE**: Please consult [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) before changing this setting.
+**NOTE**: Please consult [Operator logging level]({{% relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" %}}) before changing this setting.
 
 ##### `remoteDebugNodePortEnabled`
 Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.

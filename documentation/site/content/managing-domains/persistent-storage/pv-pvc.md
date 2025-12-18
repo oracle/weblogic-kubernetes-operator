@@ -20,7 +20,7 @@ PersistentVolumes can point to different storage locations, for example NFS serv
 
 **Note regarding HostPath**: In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster, a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely-available option.  There are other options listed in the referenced table.
 
-The operator provides a sample script to create the PersistentVolume and PersistentVolumeClaim for the domain. This script must be executed before creating the domain.  Beginning with operator version 4.1.0, for the Domain on PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}), the operator provides options to create the PV and PVC during the domain initialization. See the [Domain on PV documentation]({{< relref "/managing-domains/domain-on-pv/_index.md" >}}) or the `domain.spec.configuration.initializeDomainOnPV` section in the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) for more details.
+The operator provides a sample script to create the PersistentVolume and PersistentVolumeClaim for the domain. This script must be executed before creating the domain.  Beginning with operator version 4.1.0, for the Domain on PV [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}), the operator provides options to create the PV and PVC during the domain initialization. See the [Domain on PV documentation]({{% relref "/managing-domains/domain-on-pv/_index.md" %}}) or the `domain.spec.configuration.initializeDomainOnPV` section in the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) for more details.
 
 #### Persistent volumes using HostPath approach
 The `HOST_PATH` provider is the simplest case for creating a PersistentVolume. It requires creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
@@ -33,7 +33,7 @@ $ mkdir -m 777 -p /path/to/domain1PersistentVolume
 
 Persistent volumes and claims are described in YAML files. For each PersistentVolume, you should create one PersistentVolume YAML file and one PersistentVolumeClaim YAML file. In the following example, you will find two YAML templates, one for the volume and one for the claim. As stated previously, they either can be dedicated to a specific domain, or shared across multiple domains. For the use cases where a volume will be dedicated to a particular domain, it is a best practice to label it with `weblogic.domainUID=[domain name]`. This makes it easy to search for, and clean up resources associated with that particular domain.
 
-For sample YAML templates, refer to the [PersistentVolumes example]({{< relref "/samples/storage/_index.md" >}}).
+For sample YAML templates, refer to the [PersistentVolumes example]({{% relref "/samples/storage/_index.md" %}}).
 
 For more details, refer to Kubernetes PV/PVC examples [here](https://github.com/kubernetes/examples/tree/master/staging/volumes).
 

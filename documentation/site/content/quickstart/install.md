@@ -37,7 +37,7 @@ First, install the operator.
      This Helm release deploys the operator with the default behavior of managing Domains in all Kubernetes namespaces with the label `weblogic-operator=enabled`.
 
 1. Verify that the operator's pod is running by listing the pods in the operator's namespace. You should see one
-   for the operator and one for the [conversion webhook]({{< relref "/managing-operators/conversion-webhook#introduction" >}}), a
+   for the operator and one for the [conversion webhook]({{% relref "/managing-operators/conversion-webhook#introduction" %}}), a
    singleton Deployment in your Kubernetes cluster that automatically and transparently upgrades domain resources.
 
      ```shell

@@ -12,7 +12,7 @@ set the operator `kubernetesPlatform` Helm chart property to `OpenShift`.
 This property accommodates OpenShift security requirements. Specifically, the operator's deployment and any pods created
 by the operator for WebLogic Server instances will not contain `runAsUser: 1000` in the configuration of the `securityContext`. This is to
 accommodate OpenShift's default `restricted` security context constraint.
-For more information, see [Operator Helm configuration values]({{<relref "/managing-operators/using-helm#operator-helm-configuration-values">}}).
+For more information, see [Operator Helm configuration values]({{% relref "/managing-operators/using-helm#operator-helm-configuration-values" %}}).
 
 #### Use a dedicated namespace
 
@@ -20,9 +20,9 @@ When the user that installs an individual instance of the operator
 does _not_ have the required privileges to create resources at the Kubernetes cluster level,
 they can use a `Dedicated` namespace selection strategy for the operator instance to limit
 it to managing domain resources in its local namespace only
-(see [Operator namespace management]({{< relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
+(see [Operator namespace management]({{% relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" %}})),
 and they may need to manually install the Domain Custom Resource (CRD)
-(see [Prepare for installation]({{< relref "/managing-operators/preparation#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" >}})).
+(see [Prepare for installation]({{% relref "/managing-operators/preparation#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" %}})).
 
 {{% notice note %}}
 WebLogic Kubernetes Operator expects to connect to the auto-created services for each domain it manages. Any networking configuration in place must allow that connection because without it, the operator cannot accurately report the status of the domain. For more information, see  [MOS 2988024.1](https://support.oracle.com/rs?type=doc&id=2988024.1).
@@ -32,9 +32,9 @@ WebLogic Kubernetes Operator expects to connect to the auto-created services for
 
 When using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT),
 `create`, `rebase`, or `update` command, to create a
-[Domain in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home,
-[Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) image,
-or [Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) auxiliary image,
+[Domain in Image]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) domain home,
+[Model in Image]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) image,
+or [Model in Image]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) auxiliary image,
 you can specify the `--target` parameter for the target Kubernetes environment.
 Its value can be either `Default` or `OpenShift`.
 The `OpenShift` option changes the domain directory files such that the group permissions
@@ -80,5 +80,5 @@ group, and that the group read, write and execute permissions are set (enabled):
 
 {{% notice note %}}
 For additional information about OpenShift requirements and the operator,
-see [OpenShift]({{<relref  "/introduction/platforms/environments#openshift">}}).
+see [OpenShift]({{% relref  "/introduction/platforms/environments#openshift" %}}).
 {{% /notice %}}

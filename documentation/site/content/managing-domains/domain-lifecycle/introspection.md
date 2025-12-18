@@ -14,7 +14,7 @@ This document describes domain introspection, when it occurs automatically, and 
 
 To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
 domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspector`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
-[domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are different (for instance, Domain on PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
+[domain home source types]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) are different (for instance, Domain on PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
 as similar as possible to the Pod that will later be generated for the Administration Server. This guarantees that the operator is
 analyzing the same WebLogic domain configuration that WebLogic Server instances will use.
 
@@ -22,7 +22,7 @@ Introspection ensures that:
 1. The operator is aware of domain topology from the WebLogic domain configuration, including servers, clusters, network access points, listen addresses, and other configurations.
 2. The operator can generate configuration overrides to adjust the WebLogic domain configuration to match the Kubernetes environment, such as modifying listen addresses.
 3. For Model in Image, the operator can generate the WebLogic domain home, including the final domain configuration.
-4. For Domain on PV and Domain in Image, the operator can use any customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}) along with the operator-generated overrides to generate the final configuration overrides.
+4. For Domain on PV and Domain in Image, the operator can use any customer-provided [configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md" %}}) along with the operator-generated overrides to generate the final configuration overrides.
 
 ### When introspection occurs automatically
 
@@ -70,7 +70,7 @@ When introspection fails, the operator will not start any WebLogic Server instan
 
 The introspection will be periodically retried and then will eventually timeout with the Domain `status` indicating the processing failed. To recover from a failed state, correct the underlying problem and update the `introspectVersion`.
 
-Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/managing-domains/debugging.md">}}).
+Please review the details for diagnosing introspection failures related to [configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md#debugging" %}}) or [Model in Image domain home generation]({{% relref "/managing-domains/debugging.md" %}}).
 
 {{% notice tip %}}
 The introspector log is mirrored to the Domain resource `spec.logHome` directory
@@ -116,7 +116,7 @@ When this updated Domain YAML file is applied, the operator will initiate a new 
 
 #### Distributing changes to configuration overrides
 
-The operator supports customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}). These configuration overrides, which are supported with Domain on PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL's or credentials.
+The operator supports customer-provided [configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md" %}}). These configuration overrides, which are supported with Domain on PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL's or credentials.
 
 With operator 3.0.0, you can now change the configuration overrides and distribute these new configuration overrides to already running WebLogic Server instances. To do this, update the ConfigMap that contains the configuration overrides or update one or more of the Secrets referenced by those configuration overrides and then initiate introspection by changing the `introspectVersion` field.
 
@@ -131,4 +131,4 @@ Alternately, you can set `overrideDistributionStrategy` to `OnRestart`, which me
 
 #### Distributing changes to running Model in Image domains
 
-The operator supports rerunning the introspector to propagate [model updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md">}}) to a running Model in Image domain.
+The operator supports rerunning the introspector to propagate [model updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}) to a running Model in Image domain.

@@ -6,4 +6,4 @@ pre = "<b> </b>"
 description = "Upgrade managed domains, general and specific guidelines."
 +++
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

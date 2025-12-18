@@ -11,12 +11,12 @@ description = "Use overrides to customize domains."
 ### Overview
 
 {{% notice note %}}
-Configuration overrides can only be used in combination with Domain in Image and Domain on PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
+Configuration overrides can only be used in combination with Domain in Image and Domain on PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}) instead.
 {{% /notice %}}
 
 Use configuration overrides (also called _situational configuration_) to customize a Domain in Image or Domain on PV domain's WebLogic domain configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
 
-**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+**NOTE**: The Domain in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 
 You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site. Beginning with operator version 3.0.0, you can now modify configuration overrides for running WebLogic Server instances and have these new overrides take effect dynamically. There are [limitations](#unsupported-overrides) to the WebLogic configuration attributes that can be modified by overrides and only changes to dynamic configuration MBean attributes may be changed while a server is running. Other changes, specifically overrides to non-dynamic MBeans, must be applied when servers are starting or restarting.
 
@@ -33,19 +33,19 @@ You can use overrides to customize domains as they are moved from QA to producti
   * Set your domain `configuration.secrets` to reference the aforementioned Secrets.
 * If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
   * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances or if the change required a full domain shutdown.
-  * If a full domain shut down is required, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
-  * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
+  * If a full domain shut down is required, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" %}}).)
+  * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" %}}).)
 * Verify your overrides are taking effect.  (See [Debugging](#debugging)).
 
 For a detailed walk-through of these steps, see the [Step-by-step guide](#step-by-step-guide).
 
 #### How do overrides work during runtime?
 
-* Configuration overrides are processed during the operator's [introspection]({{< relref "/managing-domains/domain-lifecycle/introspection.md" >}}) phase.
+* Configuration overrides are processed during the operator's [introspection]({{% relref "/managing-domains/domain-lifecycle/introspection.md" %}}) phase.
 * Introspection automatically occurs when:
   1. The operator is starting a WebLogic Server instance when there are currently no other servers running. This occurs when the operator first starts servers for a domain or when starting servers following a full domain shutdown.
   2. For Model in Image, the operator determines that at least one WebLogic Server instance that is currently running must be shut down and restarted. This could be a rolling of one or more clusters, the shut down and restart of one or more WebLogic Server instances, or a combination.
-* You can [initiate introspection]({{< relref "/managing-domains/domain-lifecycle/introspection/_index.md#initiating-introspection" >}}) by changing the value of the Domain `introspectVersion` field.
+* You can [initiate introspection]({{% relref "/managing-domains/domain-lifecycle/introspection/_index.md#initiating-introspection" %}}) by changing the value of the Domain `introspectVersion` field.
 * For configuration overrides and during introspection, the operator will:
   * Resolve any macros in your override templates.
   * Place expanded override templates in the `optconfig` directory located in each WebLogic domain home directory.  
@@ -60,7 +60,7 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 ### Prerequisites
 
 * Configuration overrides can be used in combination with Domain in Image and Domain on PV domains.
-  For Model in Image domains (introduced in 3.0.0), use [Model in Image Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
+  For Model in Image domains (introduced in 3.0.0), use [Model in Image Runtime Updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}) instead.
 
 * A WebLogic domain home must not contain any configuration overrides XML file in its `optconfig` directory that was not placed there by the operator. Any existing configuration overrides XML files in this directory will be deleted and replaced by your operator override templates, if any.
 
@@ -119,9 +119,9 @@ The behavior when using an unsupported override is undefined.
 
 ### Overrides distribution
 
-The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed]({{< relref "/managing-domains/domain-lifecycle/introspection/_index.md#distributing-changes-to-configuration-overrides" >}}) and applied to already running WebLogic Server instances.
+The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed]({{% relref "/managing-domains/domain-lifecycle/introspection/_index.md#distributing-changes-to-configuration-overrides" %}}) and applied to already running WebLogic Server instances.
 
-For [Domain on PV]({{< relref "/managing-domains/domain-lifecycle/restarting/_index.md#domain-on-pv" >}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
+For [Domain on PV]({{% relref "/managing-domains/domain-lifecycle/restarting/_index.md#domain-on-pv" %}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
 
 ---
 ### Override template names and syntax
@@ -328,11 +328,11 @@ Best practices for data source modules and their overrides:
 * Configure the names of each Secret in Domain YAML file.
   * If the Secret contains the WebLogic admin `username` and `password` keys, then set the Domain YAML file `webLogicCredentialsSecret` field.
   * For all other Secrets, add them to the Domain YAML file `configuration.secrets` field. Note: This must be in an array format even if you only add one Secret (see the following sample Domain YAML file).
-* Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take effect until the operator runs or repeats its [introspection]({{< relref "/managing-domains/domain-lifecycle/introspection.md" >}}) of the WebLogic domain configuration.
+* Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take effect until the operator runs or repeats its [introspection]({{% relref "/managing-domains/domain-lifecycle/introspection.md" %}}) of the WebLogic domain configuration.
 * If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
   * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances, or if the change requires a full domain shutdown. (See [Overrides distribution](#overrides-distribution))
-  * If a full domain shut down is required, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
-  * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
+  * If a full domain shut down is required, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" %}}).)
+  * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" %}}).)
 * See [Debugging](#debugging) for ways to check if the configuration overrides are taking effect or if there are errors.
 
 Example Domain YAML:
@@ -389,7 +389,7 @@ __Debugging steps:__
 * If WebLogic Server instance Pods do not come up at all, then:
   * Examine your Domain resource status: `kubectl -n MYDOMAINNAMESPACE describe domain MYDOMAIN`
   * Check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
-  For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
+  For more information, see [Domain events]({{% relref "/managing-domains/accessing-the-domain/domain-events.md" %}}).
 
   * Check the introspector job and its log.
     * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector`

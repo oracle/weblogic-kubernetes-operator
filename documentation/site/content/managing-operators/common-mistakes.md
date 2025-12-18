@@ -24,7 +24,7 @@ the value of `domainNamespaceSelectionStragegy` (or any other value) using a val
 #### Deleting and recreating a namespace that an operator manages without informing the operator
 
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
-For more details about the problem and solutions, see [Namespace management]({{<relref "/managing-operators/namespace-management#recreate-a-previously-deleted-kubernetes-namespace-with-a-running-operator">}}).
+For more details about the problem and solutions, see [Namespace management]({{% relref "/managing-operators/namespace-management#recreate-a-previously-deleted-kubernetes-namespace-with-a-running-operator" %}}).
 
 #### Forgetting to configure the operator to monitor a namespace
 
@@ -35,7 +35,7 @@ If it appears that an operator is not managing a domain resource, for example:
 - The domain resource's `domain.status` fields do not contain updated information about the status of the domain.
 Then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
 
-For more information, see [Namespace management]({{<relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace">}}).
+For more information, see [Namespace management]({{% relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" %}}).
 
 #### Installing the operator a second time into the same namespace
 

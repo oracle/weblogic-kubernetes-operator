@@ -9,14 +9,14 @@ Here's some insight into what's happening under the covers during the Quick Star
 
 - The Quick Start guide first installs the WebLogic Kubernetes Operator, then creates a domain using the _Model in Image_ domain home source type.
 
-  - For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
-  - To learn more about Model in Image domains, see the detailed [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user guide.
-  - Also recommended, review a detailed Model in Image sample [here]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
+  - For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
+  - To learn more about Model in Image domains, see the detailed [Model in Image]({{% relref "/managing-domains/model-in-image/_index.md" %}}) user guide.
+  - Also recommended, review a detailed Model in Image sample [here]({{% relref "/samples/domains/model-in-image/_index.md" %}}).
 
 - The WebLogic domain configuration is specified using the [WebLogic Deployment Tool](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) model YAML file in a separate _auxiliary image_.
 
   - The auxiliary image contains a WebLogic domain and WebLogic application defined by using WDT model YAML and application archive files.
-  - To learn more about auxiliary images, see the [user guide]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+  - To learn more about auxiliary images, see the [user guide]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}).
   - If you want to step through the auxiliary image creation process, follow the instructions in the Advanced [do-it-yourself](#advanced-do-it-yourself) section.
 
 - The operator detects the domain and cluster resources, and deploys their WebLogic Server Administration Server and Managed Server pods.

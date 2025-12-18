@@ -65,8 +65,8 @@ $ helm -n weblogic-operator-ns upgrade weblogic-operator weblogic-operator/weblo
 ```
 
 **Additional resources**:
-* [REST interface configuration settings]({{<relref "/managing-operators/using-helm#rest-interface-configuration">}})
-* [Sample to create external certificate and key]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}})
+* [REST interface configuration settings]({{% relref "/managing-operators/using-helm#rest-interface-configuration" %}})
+* [Sample to create external certificate and key]({{% relref "/samples/rest/_index.md#sample-to-create-certificate-and-key" %}})
 
 
 ### Use the operator's REST services
@@ -76,7 +76,7 @@ You can access most of the REST services using `GET`, for example:
 * To obtain a list of domains, send a `GET` request to the URL `/operator/latest/domains`
 * To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUID>/clusters`
 
-All of the REST services require authentication.  Callers must pass in a valid token header and must have a properly configured CA certificate in their trust store, so that the X.509 certificate presented by the server is trusted by the client (see [How to add your certificate to your operating system trust store](#how-to-add-your-certificate-to-your-operating-system-trust-store)).  In previous operator versions, the operator performed checks using the Kubernetes token review and subject access review APIs, and then updated the Domain resource using the operator's privileges.  Now, by default, the operator will use the caller's bearer token to perform the underlying update to the Domain resource using the caller's privileges and thus delegating authentication and authorization checks directly to the Kubernetes API Server (see [REST interface configuration]({{< relref "/managing-operators/using-helm#rest-interface-configuration" >}})). Depending on your Kubernetes cluster authentication and authorization configuration, there are multiple ways of getting a valid token. For an example using a Kubernetes service account, see the [Sample operator REST client script](#sample-operator-rest-client-script).
+All of the REST services require authentication.  Callers must pass in a valid token header and must have a properly configured CA certificate in their trust store, so that the X.509 certificate presented by the server is trusted by the client (see [How to add your certificate to your operating system trust store](#how-to-add-your-certificate-to-your-operating-system-trust-store)).  In previous operator versions, the operator performed checks using the Kubernetes token review and subject access review APIs, and then updated the Domain resource using the operator's privileges.  Now, by default, the operator will use the caller's bearer token to perform the underlying update to the Domain resource using the caller's privileges and thus delegating authentication and authorization checks directly to the Kubernetes API Server (see [REST interface configuration]({{% relref "/managing-operators/using-helm#rest-interface-configuration" %}})). Depending on your Kubernetes cluster authentication and authorization configuration, there are multiple ways of getting a valid token. For an example using a Kubernetes service account, see the [Sample operator REST client script](#sample-operator-rest-client-script).
 
 
 {{% notice note %}}
@@ -129,12 +129,12 @@ For other operating systems, consult your operating system's documentation (or G
 
 #### Sample SSL certificate and private key for the REST interface
 
-For testing purposes, the WebLogic Kubernetes Operator project provides a [sample script]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}})
+For testing purposes, the WebLogic Kubernetes Operator project provides a [sample script]({{% relref "/samples/rest/_index.md#sample-to-create-certificate-and-key" %}})
 that generates a self-signed certificate and private key for the operator external REST interface.
 The generated certificate and key are stored in a Kubernetes `tls secret` and the sample
 script outputs the corresponding configuration values in YAML format. These values can be added to your
 custom YAML configuration file, for use when the operator's Helm chart is installed. For more detailed information about the sample script and how to run it, see
-the [Sample to create certificate and key]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}}).
+the [Sample to create certificate and key]({{% relref "/samples/rest/_index.md#sample-to-create-certificate-and-key" %}}).
 
 {{% notice warning %}}
 The sample script should ***not*** be used in a production environment because

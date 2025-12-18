@@ -105,7 +105,7 @@ the deployment model is Model in Image, then the merged model is saved internall
 
 **NOTE**: If the WDT model files in the image source are supplied by combining multiple images ,
 then the files in this directory are populated according to their
-[Merge order]({{< relref "/managing-domains/model-in-image/auxiliary-images#multiple-images" >}})
+[Merge order]({{% relref "/managing-domains/model-in-image/auxiliary-images#multiple-images" %}})
 before the loading order is determined.
 
 For example, if you have these files in the model home directory:

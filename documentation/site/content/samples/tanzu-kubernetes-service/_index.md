@@ -23,7 +23,7 @@ This sample assumes the following prerequisite environment setup:
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
 * [Helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
-See [Supported environments]({{< relref "/introduction/platforms/environments" >}})
+See [Supported environments]({{% relref "/introduction/platforms/environments" %}})
 for general operator prerequisites
 and operator support limitations that are specific to Tanzu.
 
@@ -294,7 +294,7 @@ The model files:
         - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
         - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{% relref "/managing-domains/model-in-image/model-files.md" %}}) files in the Model in Image user documentation.
 
 ### Creating the image with WIT
 
@@ -344,10 +344,10 @@ When the command succeeds, it should end with output like the following:
 
 Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v1`.
 
-**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{% relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
 {{% notice warning %}}
-This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{% relref "/base-images/ocr-images.md" %}}) or create your images using the [WebLogic Image Tool]({{% relref "/base-images/custom-images#create-a-custom-base-image" %}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
 {{% /notice %}}
 
 ### Create WebLogic domain
@@ -557,7 +557,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   {{% /expand %}}
 
 
-  **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{% relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" %}}).
 
 Run the following command to create the domain custom resource:
 
