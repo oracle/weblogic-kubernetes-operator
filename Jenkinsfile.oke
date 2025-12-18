@@ -306,6 +306,12 @@ pipeline {
 
 
                         sh '''
+                        chmod 600 ${jenkins_home_directory}/.oci/config
+                        chmod 600 ${jenkins_home_directory}/.oci/oci-signing-key.pem
+
+                        # OCI CLI safety check (idempotent)
+                        oci setup repair-file-permissions --file ${jenkins_home_directory}/.oci/config
+
                         TENANCY_OCID=$(grep -Po '(?<=tenancy=).*' ${jenkins_home_directory}/.oci/config)
                         USER_OCID=$(grep -Po '(?<=user=).*' ${jenkins_home_directory}/.oci/config)
                         FINGERPRINT=$(grep -Po '(?<=fingerprint=).*' ${jenkins_home_directory}/.oci/config)
