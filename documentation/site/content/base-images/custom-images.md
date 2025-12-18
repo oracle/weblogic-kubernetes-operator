@@ -259,13 +259,6 @@ image that is meant for updating an already running domain, then see
 **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is
 deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 
-For Domain in Image domains,
-you must create an image with the WebLogic domain inside the image.
-[Samples]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}})
-are provided that demonstrate how to create the image using either
-WLST to define the domain
-or [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) models to define the domain.
-In these samples, you will see a reference to a "base" or `--fromImage` image.
 You should use an image with the recommended security patches installed as this base image,
 where this image could be an OCR image or a custom image.
 See

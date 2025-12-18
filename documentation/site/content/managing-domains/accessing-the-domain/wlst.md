@@ -17,7 +17,7 @@ To give WLST access to a domain running in Kubernetes, you can:
 - [Use a `NodePort`](#use-a-nodeport)
 - [Use port forwarding](#use-port-forwarding)
 
-**NOTE**:  If your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+**NOTE**:  If your domain home type is either Domain in Image or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 ### Use `kubectl exec`
 

@@ -30,7 +30,7 @@ When using the operator to start WebLogic Server instances from a domain, you ha
      or [model updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}})
      supplied in a Kubernetes ConfigMap.
 
- - **[Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}})**:
+ - **Domain in Image**:
  **NOTE**: The Domain in Image domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
    - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `Image`.
    - Supply a WebLogic installation in an image and supply a WebLogic configuration as a domain home layered on this image.

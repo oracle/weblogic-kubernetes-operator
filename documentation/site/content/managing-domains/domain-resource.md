@@ -42,8 +42,7 @@ you may need to update the operator by running `helm upgrade` to be able to moni
 
 Domains and clusters are defined using YAML files. For each WebLogic Server domain you want to run, you should create one YAML file defining a Domain resource and, optionally, one Cluster resource for each WebLogic cluster, and apply it. In the following referenced example, the sample scripts generate a YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WebLogic Server domain parameters that define your domain.
 
-See the WebLogic Server samples, [Domain home on a PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}}),
-[Domain home in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}), and [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
+See the WebLogic Server samples, [Domain home on a PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}}) and [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
 
 After you have written your YAML files, you use them to create your domain artifacts using the `kubectl apply -f` command.
 

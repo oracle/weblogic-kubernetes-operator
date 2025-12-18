@@ -104,7 +104,7 @@ $ ./buildDockerImage.sh -v 12.2.1.4 -s
 
 The image produced will be named `oracle/fmw-infrastructure:12.2.1.4`.
 
-You must also install the [required patch]({{< relref "/introduction/introduction/_index.md#prerequisites" >}})
+You must also install the [required patch]({{< relref "/introduction/prerequisites/introduction.md" >}})
 to use this image with the operator.  We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
  that demonstrates how to create an image with the necessary patch installed.
 
@@ -401,8 +401,7 @@ password will be the password you provided for regular schema users during RCU c
 ### Creating an FMW Infrastructure domain
 
 Now that you have your images and you have created your RCU schemas, you are ready
-to create your domain.  We provide a [sample]({{< relref "/samples/domains/fmw-domain/_index.md" >}})
-that demonstrates how to create an FMW Infrastructure domain.
+to create your domain.
 
 ### Patching the FMW Infrastructure image
 

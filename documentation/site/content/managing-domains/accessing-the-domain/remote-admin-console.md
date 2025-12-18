@@ -26,7 +26,7 @@ along with the URL of the WebLogic Server Administration Server's administration
 
 **NOTES**:  
   * An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
-  * If your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WebLogic Remote Console to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+  * If your domain home type is either Domain in Image or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WebLogic Remote Console to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 
 {{% notice warning %}}

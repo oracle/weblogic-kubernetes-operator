@@ -27,8 +27,7 @@ For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref 
 
 If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration or applications deployed, then you can create the domain custom resource
-manually to deploy your domain.  This process is documented in [this
-sample]({{< relref "/samples/domains/manually-create-domain/_index.md" >}}).
+manually to deploy your domain.
 
 **NOTE**: After you are familiar with the basics, it is recommended to review
 [important considerations]({{< relref "/managing-domains/manage-domains#important-considerations-for-weblogic-domains-in-kubernetes" >}})
