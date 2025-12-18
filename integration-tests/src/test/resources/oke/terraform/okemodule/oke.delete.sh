@@ -22,10 +22,11 @@ fi
 echo "[DEBUG] Using OCI config: ${OCI_CLI_CONFIG_FILE}"
 echo "[DEBUG] Using OCI profile: ${OCI_CLI_PROFILE}"
 
-lb_query_by_cluster() {
+lb_query_for_cluster() {
   local cluster="$1"
-  echo 'data[?"freeform-tags"."oke.cluster.name" == '"'"${cluster}"'"'" ].{"id":id,"name":"display-name","state":"lifecycle-state"}'
+  echo 'data[?"freeform-tags"."oke.cluster.name" == '"'"${cluster}"'"' ].{"id":id,"name":"display-name","state":"lifecycle-state"}'
 }
+
 
 
 prop() {
