@@ -61,7 +61,7 @@ cleanupLB() {
 listClusterLBs() {
    oci lb load-balancer list \
     --compartment-id "$compartment_ocid" \
-    --query "$(lb_query_by_cluster "$okeclustername")" \
+    --query "$(lb_query_for_cluster "$okeclustername")" \
     --all \
     --output table
 }
