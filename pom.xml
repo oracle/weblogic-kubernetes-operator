@@ -684,12 +684,12 @@
     <maven-compiler-plugin-version>3.14.1</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.1.4</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.1.4</maven-install-plugin-version>
-    <maven-jar-plugin-version>3.4.2</maven-jar-plugin-version>
-    <maven-resources-plugin-version>3.3.1</maven-resources-plugin-version>
+    <maven-jar-plugin-version>3.5.0</maven-jar-plugin-version>
+    <maven-resources-plugin-version>3.4.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.21.0</maven-site-plugin-version>
     <maven-surefire-plugin-version>3.5.4</maven-surefire-plugin-version>
     <maven-checkstyle-plugin-version>3.6.0</maven-checkstyle-plugin-version>
-    <maven-release-plugin-version>3.1.1</maven-release-plugin-version>
+    <maven-release-plugin-version>3.2.0</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.12.0</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.5.4</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.9.0</maven-dependency-plugin-version>
@@ -742,7 +742,7 @@
     <dependency-check-version>12.1.9</dependency-check-version>
     <slf4j-version>2.0.17</slf4j-version>
     <logback-classic-version>1.5.20</logback-classic-version>
-    <protobuf-java-version>4.33.0</protobuf-java-version>
+    <protobuf-java-version>4.33.1</protobuf-java-version>
     <json-smart-version>2.6.0</json-smart-version>
     <nimbus-jose-jwt-version>10.6</nimbus-jose-jwt-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
