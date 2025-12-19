@@ -28,7 +28,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `fluentbitSpecification` | [Fluentbit Specification](#fluentbit-specification) | Automatic fluent-bit sidecar injection. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the fluent-bit, Optionally, the introspector job pod can be enabled to deploy with the fluent-bit sidecar container. WebLogic Server instances that are already running when the `fluentbitSpecification` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod  will have the fluent-bit sidecar or not, as appropriate |
 | `fluentdSpecification` | [Fluentd Specification](#fluentd-specification) | Automatic fluentd sidecar injection. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. WebLogic Server instances that are already running when the `fluentdSpecification` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod  will have the fluentd sidecar or not, as appropriate |
 | `httpAccessLogInLogHome` | Boolean | Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true. |
-| `image` | string | The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4. |
+| `image` | string | The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `imagePullSecrets` | Array of [Local Object Reference](k8s1.28.2.md#local-object-reference) | A list of image pull Secrets for the WebLogic Server image. |
 | `includeServerOutInPodLog` | Boolean | Specifies whether the server .out file will be included in the Pod's log. Defaults to true. |
@@ -102,7 +102,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `elasticSearchCredentials` | string | Fluentbit elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password |
 | `env` | Array of [Env Var](k8s1.28.2.md#env-var) | A list of environment variables to set in the fluentbit container. See `kubectl explain pods.spec.containers.env`. |
 | `fluentbitConfiguration` | string | The Fluentbit configuration text, specify your own custom fluentbit configuration. |
-| `image` | string | The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2 |
+| `image` | string | The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1 |
 | `imagePullPolicy` | string | The image pull policy for the Fluentbit sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `parserConfiguration` | string | The Fluentbit parser configuration text, specify your own custom fluentbit configuration. |
 | `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentbit container. See `kubectl explain pods.spec.containers.resources`. |
@@ -118,7 +118,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `elasticSearchCredentials` | string | Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password |
 | `env` | Array of [Env Var](k8s1.28.2.md#env-var) | A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`. |
 | `fluentdConfiguration` | string | The fluentd configuration text, specify your own custom fluentd configuration. |
-| `image` | string | The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2 |
+| `image` | string | The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1 |
 | `imagePullPolicy` | string | The image pull policy for the Fluentd sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`. |
 | `volumeMounts` | Array of [Volume Mount](k8s1.28.2.md#volume-mount) | Volume mounts for fluentd container |
@@ -145,7 +145,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `configuration` | Map | The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances. |
-| `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.5 |
+| `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.8 |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `port` | integer | The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs). |
 | `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`. |
@@ -278,9 +278,11 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `annotations` | Map | The annotations to be added to generated resources. |
 | `env` | Array of [Env Var](k8s1.28.2.md#env-var) | A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
 | `envFrom` | Array of [Env From Source](k8s1.28.2.md#env-from-source) | List of sources to populate environment variables in the Introspector Job Pod container. The sources include either a config map or a secret. The operator will not expand the dependent variables in the 'envFrom' source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. |
 | `initContainers` | Array of [Container](k8s1.28.2.md#container) | List of init containers for the introspector Job Pod. These containers run after the auxiliary image init container. See `kubectl explain pods.spec.initContainers`. |
+| `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
 | `podSecurityContext` | [Pod Security Context](k8s1.28.2.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. If no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
 | `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`. |
 
@@ -398,7 +400,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `resources` | [Resource Requirements](k8s1.28.2.md#resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
+| `resources` | [V 1 Volume Resource Requirements](#v-1-volume-resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
 | `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
 | `volumeName` | string | VolumeName is the binding reference to the PersistentVolume backing this claim. |
 
@@ -414,3 +416,12 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `startApplicationTimeoutMillis` | integer | WDT application start timeout in milliseconds. Default: 180000. |
 | `stopApplicationTimeoutMillis` | integer | WDT application stop timeout in milliseconds. Default: 180000. |
 | `undeployTimeoutMillis` | integer | WDT application or library undeployment timeout in milliseconds. Default: 180000. |
+
+### V 1 Volume Resource Requirements
+
+VolumeResourceRequirements describes the storage resource requirements for a volume.
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `limits` | Map | Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
+| `requests` | Map | Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Azure Kubernetes Service (AKS) on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/</link>
-    <description>Recent content in Azure Kubernetes Service (AKS) on WebLogic Kubernetes Operator</description>
+    <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/index.html</link>
+    <description>Deploy WebLogic Server on Azure Kubernetes Service.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>

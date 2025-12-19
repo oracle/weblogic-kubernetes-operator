@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.153.0">
+    <meta name="generator" content="Relearn 8.3.0">
+    <meta name="description" content="Upgrade managed domains to v14.1.2.0.">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Upgrade managed domains to v14.1.2.0 :: WebLogic Kubernetes Operator">
+    <meta name="twitter:description" content="Upgrade managed domains to v14.1.2.0.">
+    <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14120/index.html">
+    <meta property="og:site_name" content="WebLogic Kubernetes Operator">
+    <meta property="og:title" content="Upgrade managed domains to v14.1.2.0 :: WebLogic Kubernetes Operator">
+    <meta property="og:description" content="Upgrade managed domains to v14.1.2.0.">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="Manage domains">
+    <meta property="article:published_time" content="2023-10-05T16:43:45-05:00">
+    <meta property="article:modified_time" content="2023-10-05T16:43:45-05:00">
+    <meta itemprop="name" content="Upgrade managed domains to v14.1.2.0 :: WebLogic Kubernetes Operator">
+    <meta itemprop="description" content="Upgrade managed domains to v14.1.2.0.">
+    <meta itemprop="datePublished" content="2023-10-05T16:43:45-05:00">
+    <meta itemprop="dateModified" content="2023-10-05T16:43:45-05:00">
+    <meta itemprop="wordCount" content="3114">
+    <title>Upgrade managed domains to v14.1.2.0 :: WebLogic Kubernetes Operator</title>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1766147057" rel="icon" type="image/png">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1766147057" rel="stylesheet">
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1766147057" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1766147057";
+    </script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1766147057" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1766147057" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1766147057" rel="stylesheet"></noscript>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1766147057" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1766147057" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1766147057" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = `.min`;
+      window.relearn.path='\/managing-domains\/major-weblogic-version-upgrade\/upgrade-14120\/index.html';
+      window.relearn.relBasePath='..\/..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='https:\/\/oracle.github.io\/weblogic-kubernetes-operator';
+      window.relearn.disableInlineCopyToClipboard=true;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy text to clipboard`;
+      window.T_Copied_to_clipboard = `Text copied to clipboard!`;
+      window.T_Link_copied_to_clipboard = `Link copied to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      window.T_Browser_unsupported_feature = `This browser doesn't support this feature`;
+      // variant stuff
+      window.relearn.themevariants = [ 'learn' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14120/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide">
+<span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button></span>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button></span>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#important-considerations">Important considerations</a></li>
+    <li><a href="#general-upgrade-procedures">General upgrade procedures</a>
+      <ul>
+        <li><a href="#back-up-the-opss-wallet-and-save-it-in-a-secret">Back up the OPSS wallet and save it in a secret</a></li>
+        <li><a href="#deploy-a-weblogic-server-pod-to-access-the-domain-home-on-a-persistent-volume">Deploy a WebLogic Server pod to access the domain home on a persistent volume</a></li>
+        <li><a href="#upgrade-the-jrf-database">Upgrade the JRF database</a></li>
+        <li><a href="#reconfigure-the-domain">Reconfigure the domain</a></li>
+      </ul>
+    </li>
+    <li><a href="#upgrade-use-cases">Upgrade use cases</a>
+      <ul>
+        <li><a href="#wls-domain-on-persistent-volume">WLS Domain on Persistent Volume</a></li>
+        <li><a href="#fmwjrf-domain-on-persistent-volume">FMW/JRF Domain on Persistent Volume</a></li>
+        <li><a href="#wls-domain-using-model-in-image">WLS domain using Model in Image</a></li>
+        <li><a href="#fmwjrf-domain-using-model-in-image">FMW/JRF domain using Model in Image</a></li>
+      </ul>
+    </li>
+    <li><a href="#sample-wdt-model-for-secured-production-mode-and-ssl">Sample WDT model for secured production mode and SSL</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><span itemprop="name">WebLogic Kubernetes Operator</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/index.html"><span itemprop="name">Manage domains</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/index.html"><span itemprop="name">Upgrade managed domains</span></a><meta itemprop="position" content="3">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">Upgrade managed domains to v14.1.2.0</span><meta itemprop="position" content="4"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/index.html" title="Upgrade managed domains (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></span>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/index.html" title="Domain on Persistent Volume (PV) (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></span>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button></span>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable managing-domains" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+
+
+<h1 id="upgrade-managed-domains-to-v14120">Upgrade managed domains to v14.1.2.0</h1>
+
+
+
+<h3 id="contents">Contents</h3>
+<div class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#important-considerations">Important considerations</a></li>
+    <li><a href="#general-upgrade-procedures">General upgrade procedures</a>
+      <ul>
+        <li><a href="#back-up-the-opss-wallet-and-save-it-in-a-secret">Back up the OPSS wallet and save it in a secret</a></li>
+        <li><a href="#deploy-a-weblogic-server-pod-to-access-the-domain-home-on-a-persistent-volume">Deploy a WebLogic Server pod to access the domain home on a persistent volume</a></li>
+        <li><a href="#upgrade-the-jrf-database">Upgrade the JRF database</a></li>
+        <li><a href="#reconfigure-the-domain">Reconfigure the domain</a></li>
+      </ul>
+    </li>
+    <li><a href="#upgrade-use-cases">Upgrade use cases</a>
+      <ul>
+        <li><a href="#wls-domain-on-persistent-volume">WLS Domain on Persistent Volume</a></li>
+        <li><a href="#fmwjrf-domain-on-persistent-volume">FMW/JRF Domain on Persistent Volume</a></li>
+        <li><a href="#wls-domain-using-model-in-image">WLS domain using Model in Image</a></li>
+        <li><a href="#fmwjrf-domain-using-model-in-image">FMW/JRF domain using Model in Image</a></li>
+      </ul>
+    </li>
+    <li><a href="#sample-wdt-model-for-secured-production-mode-and-ssl">Sample WDT model for secured production mode and SSL</a></li>
+  </ul>
+</nav></div>
+<p>This document provides guidelines for upgrading WLS and FMW/JRF infrastructure domains to v14.1.2.0.</p>
+<h3 id="important-considerations">Important considerations<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<p>By default, version 14.1.2.0 WLS and FMW/JRF infrastructure domains <em>in production mode</em> are set to <strong>secured production mode</strong>, in which their default security configuration
+is more secure, insecure configurations are logged as warnings, and default authorization and
+role mapping policies are more restrictive.</p>
+<p>Some important secured production mode changes are:</p>
+<ul>
+<li>
+<p>Plain HTTP listen ports are disabled.  Any application code, utilities, or ingresses that use plain HTTP listen ports must be changed.</p>
+</li>
+<li>
+<p>SSL listen ports must be enabled for every server in the domain.  Each server must have at least one SSL listen port set up, either in the default channel or in one of the custom network channels. Note that demo SSL certificates should <strong>not</strong> be used in a production environment; you should set up SSL listen ports with valid SSL certificates in all server instances.</p>
+</li>
+<li>
+<p>Demo SSL certificates have been changed completely from previous releases; there are special considerations when using them.  For more information, see 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/overview/#using-demo-ssl-certificates-in-v141200-or-later"
+   
+   >
+Using demo SSL certificates in v14.1.2.0.0 or later
+</a>
+.</p>
+</li>
+</ul>
+<p>For more information about secured production mode, see the 
+
+<a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/lockd/secure.html#GUID-ADF914EF-0FB6-446E-B6BF-D230D8B0A5B0"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+secured production mode
+</a>
+ documentation.</p>
+<p><strong>NOTE</strong>: If the domain is <em>not</em> in production mode, then none of the security changes apply.</p>
+<h3 id="general-upgrade-procedures">General upgrade procedures<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<p>In general, the process for upgrading WLS and FMW/JRF infrastructure domains in Kubernetes is similar to upgrading domains on premises. For a thorough understanding, we suggest that you read the 
+
+<a href="https://docs.oracle.com/en/middleware/fusion-middleware/12.2.1.4/asmas/planning-upgrade-oracle-fusion-middleware-12c.html#GUID-D9CEE7E2-5062-4086-81C7-79A33A200080"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Fusion Middleware Upgrade Guide
+</a>
+.</p>
+<p>Before the upgrade, you must do the following:</p>
+<ul>
+<li>If your 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/"
+   
+   >
+domain home source type
+</a>
+ is Domain on Persistent Volume (DoPV), then back up the domain home.</li>
+<li>If your domain type is <code>JRF</code>, then:
+<ul>
+<li>Back up the JRF database.</li>
+<li>Back up the OPSS wallet file. See 
+
+<a href="#back-up-the-opss-wallet-and-save-it-in-a-secret"
+   
+   >
+Save the OPSS wallet secret
+</a>
+.</li>
+<li>Make sure nothing else is accessing the database.</li>
+</ul>
+</li>
+<li><strong>Do not delete</strong> the domain resource.</li>
+<li>Shut down the domain by patching the domain and/or cluster spec <code>serverStartPolicy</code> to <code>Never</code>. For example:
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p=&#39;[ {&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/serverStartPolicy&#34;, &#34;value&#34;: &#34;Never&#34;}]&#39;</code></pre></div>
+</li>
+</ul>
+<p>If your domain is on a persistent volume, WebLogic provides two utilities for performing version upgrades of WebLogic domains: the Upgrade Assistant for upgrading FMW JRF database schemas and the Reconfiguration Wizard for upgrading the domain configuration. When running these utilities, you will need access to the existing domain home directory.
+Because a typical Kubernetes environment lacks a graphical interface, you must run these utilities with the command-line options.</p>
+<p>If your domain is using Model in Image, because the domain will be rebuilt when the model is updated, see the 
+
+<a href="#upgrade-use-cases"
+   
+   >
+Upgrade Use Cases
+</a>
+ for details.</p>
+<h4 id="back-up-the-opss-wallet-and-save-it-in-a-secret">Back up the OPSS wallet and save it in a secret<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p>The operator provides a helper script, the 
+
+<a href="https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernetes-operator/-/blob/main/kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+OPSS wallet utility
+</a>
+, for extracting the wallet file and storing it in a Kubernetes <code>walletFileSecret</code>. In addition, you should save the wallet file in a safely backed-up location, outside of Kubernetes. For example, the following command saves the OPSS wallet for the <code>sample-domain1</code> domain in the <code>sample-ns</code> namespace to a file named <code>ewallet.p12</code> in the <code>/tmp</code> directory and also stores it in the wallet secret named <code>sample-domain1-opss-walletfile-secret</code>.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>$ opss-wallet.sh -n sample-ns -d sample-domain1 -s -r -wf /tmp/ewallet.p12 -ws sample-domain1-opss-walletfile-secret</code></pre></div>
+<h4 id="deploy-a-weblogic-server-pod-to-access-the-domain-home-on-a-persistent-volume">Deploy a WebLogic Server pod to access the domain home on a persistent volume<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p>For domain on persistent volume, you will need to access the domain home on the shared volume with the 14.1.2.0 WebLogic Server version pod.
+You can launch a running pod with the 
+
+<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/pv-pvc-helper.sh"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+PV and PVC helper script
+</a>
+.</p>
+<p>For example,</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./pv-pvc-helper.sh -n sample-domain1-ns -c sample-domain1-pvc-rwm1 -m /share -i wls14120:fmw</span></span></code></pre></div>
+<p>After the pod is deployed, you can <code>kubectl -n sample-domain1-ns exec -it pvhelper -- /bin/sh'</code> into the pod&rsquo;s terminal session.</p>
+<h4 id="upgrade-the-jrf-database">Upgrade the JRF database<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p>The Upgrade Assistant is for upgrading schemas in a JRF database.  It will detect if any schema needs to be upgraded, then upgrade the schemas and also upgrade the system-owned schema version table.</p>
+<p>If you have not yet deployed a WebLogic Server pod, see 
+
+<a href="#deploy-a-weblogic-server-pod-attaching-a-persistent-volume"
+   
+   >
+Deploy the server pod
+</a>
+.</p>
+<p>From the <code>pvhelper</code> pod, to discover all the command-line options:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd $ORACLE_HOME/oracle_common/upgrade/bin
+</span></span><span style="display:flex;"><span>$ ./ua -help</span></span></code></pre></div>
+<p>Create a file named <code>response.txt</code> with this content and modify any <code>&lt;TODO:</code> to match your environment.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code># This is a response file for the Fusion Middleware Upgrade Assistant.
+# Individual component upgrades are performed in the order they are described here.
+# Each upgrade is introduced by a section header containing the name of the
+# component and name of the upgrade plugin. The form of the section header is
+# [ComponentName.PluginName]
+# These names can be found in the Upgrade Descriptor files for the components.
+
+# Individual input lines consist of a name, an equal sign, and a value.
+# The name is in two parts separated by a period.  The first part is the &#34;name&#34;
+# attribute from the Descriptor File XML tag by which the plugin refers to the value.
+# The second part of the name identifies a field within that value.  Some input
+# types have only one field, while other types can have half a dozen.   Do not
+# intermix input lines that apply to different XML tags.
+
+[GENERAL]
+# This is the file format version number.  Do not change the next line.
+fileFormatVersion = 3
+
+# The next section contains information for accessing a WebLogic Server domain.
+
+[UAWLSINTERNAL.UAWLS]
+# The following number uniquely identifies this instance of an
+# upgrade plugin.  Do not change it.
+pluginInstance = 1
+
+# Specifies the WebLogic Server domain directory:
+
+#UASVR.path = /share/domains/sample-domain1
+UASVR.path = &lt;TODO: provides the complete domain home path&gt;
+
+# The next section contains the information for performing a schema
+# upgrade on Oracle Platform Security Services, as described in the Upgrade
+# Descriptor file located at
+#   /u01/oracle/oracle_common/plugins/upgrade/Opss.xml
+
+# Do not change the next line.
+[OPSS.OPSS_SCHEMA_PLUGIN]
+
+# The following number uniquely identifies this instance of an
+# upgrade plugin.  Do not change it.
+pluginInstance = 10
+
+# The next few lines describe a database connection.
+#  &#34;Specify the database containing the OPSS schema.&#34;
+# Specifies the type of database.  Supported types for this product are
+#   Oracle Database, Oracle Database enabled for edition-based redefinition, Microsoft SQL Server, IBM DB2
+
+OPSS.databaseType = Oracle Database
+
+# Specifies the database connection string for the DBA user.
+# The format depends upon the database type.
+
+#OPSS.databaseConnectionString = //nuc:1521/orclpdb1
+OPSS.databaseConnectionString = &lt;TODO: provides the connection string&gt;
+
+# Specifies the database connection string for the user schema.
+# The format depends upon the database type.
+
+#OPSS.schemaConnectionString = //nuc:1521/orclpdb1
+OPSS.schemaConnectionString = &lt;TODO: provides the connection string&gt;
+
+# Specifies the name of the schema or database user
+
+#OPSS.schemaUserName = FMWTEST_OPSS
+OPSS.schemaUserName = &lt;TODO: provides the schema name rcuprefix_OPSS &gt;
+
+# Specifies the password for the schema, in encrypted form.
+# To specify a different password in cleartext, use the &#34;cleartextSchemaPassword&#34; keyword instead:
+
+OPSS.cleartextSchemaPassword = &lt;TODO: provides the clear text password&gt;
+
+# encrypted password can be generated with command line option -createResponse
+#OPSS.encryptedSchemaPassword = 0551CF2EACFC4FE7BCB1F860FCF68E13AA6E61A724E7CFC09E
+# Specifies the name of the database administrator account.
+
+OPSS.dbaUserName = &lt;TODO: provide dba user name, e.g. sys as sysdba&gt;
+
+# Specifies the password for the database administrator account, in encrypted form.
+# To specify a different password in cleartext, use the &#34;cleartextDbaPassword&#34; keyword
+# instead:
+
+OPSS.cleartextDbaPassword = &lt;TODO: provides clear text dba password&gt;
+
+#OPSS.encryptedDbaPassword = 057B3698F71FB2EE583D32EF36234174DCC2C7276FC11F77E7
+
+# The next section contains the information for performing a schema
+# upgrade on Oracle Metadata Services, as described in the Upgrade
+# Descriptor file located at
+#   /u01/oracle/oracle_common/plugins/upgrade/mds.xml
+# Do not change the next line.
+
+[MDS.SCHEMA_UPGRADE]
+pluginInstance = 11
+
+MDS.databaseConnectionString = &lt;TODO: provides the connection string&gt;
+MDS.schemaConnectionString = &lt;TODO: provides the connection string&gt;
+MDS.schemaUserName = &lt;TODO: provides the schema name rcuprefix_MDS &gt;
+MDS.cleartextSchemaPassword = &lt;TODO: provides the clear text password&gt;
+MDS.dbaUserName = &lt;TODO: provide dba user name, e.g. sys as sysdba&gt;
+MDS.cleartextDbaPassword = &lt;TODO: provides clear text dba password&gt;
+
+# The next section contains the information for performing a schema
+# upgrade on Oracle Audit Services, as described in the Upgrade
+# Descriptor file located at
+#   /u01/oracle/oracle_common/plugins/upgrade/audit.xml
+# Do not change the next line.
+
+[IAU.AUDIT_SCHEMA_PLUGIN]
+pluginInstance = 6
+
+IAU.databaseType = Oracle Database
+IAU.databaseConnectionString = &lt;TODO: provides the connection string&gt;
+IAU.schemaConnectionString = &lt;TODO: provides the connection string&gt;
+IAU.schemaUserName = &lt;TODO: provides the schema name rcuprefix_IAU &gt;
+IAU.cleartextSchemaPassword = &lt;TODO: provides the clear text password&gt;
+IAU.dbaUserName = &lt;TODO: provide dba user name, e.g. sys as sysdba&gt;
+IAU.cleartextDbaPassword = &lt;TODO: provides clear text dba password&gt;
+
+
+# The next section contains the information for performing a schema
+# upgrade on Common Infrastructure Services, as described in the Upgrade
+# Descriptor file located at
+#   /u01/oracle/oracle_common/plugins/upgrade/cie.xml
+# Do not change the next line.
+
+[FMWCONFIG.CIE_SCHEMA_PLUGIN]
+pluginInstance = 4
+
+STB.databaseType = Oracle Database
+STB.databaseConnectionString = &lt;TODO: provides the connection string&gt;
+STB.schemaConnectionString = &lt;TODO: provides the connection string&gt;
+STB.schemaUserName = &lt;TODO: provides the schema name rcuprefix_STB &gt;
+STB.cleartextSchemaPassword = &lt;TODO: provides the clear text password&gt;
+STB.dbaUserName = &lt;TODO: provide dba user name, e.g. sys as sysdba&gt;
+STB.cleartextDbaPassword = &lt;TODO: provides clear text dba password&gt;
+
+# This section is not needed for pure JRF domain.
+
+# The next section contains the information for performing a schema
+# upgrade on Oracle WebLogicServer, as described in the Upgrade
+# Descriptor file located at
+#   /u01/oracle/oracle_common/plugins/upgrade/wlsservices.xml
+# Do not change the next line.
+
+#[WLS.WLS]
+#pluginInstance = 7
+
+#WLS.databaseType = Oracle Database
+#WLS.databaseConnectionString =
+#WLS.schemaConnectionString =
+#WLS.schemaUserName =
+#WLS.encryptedSchemaPassword = 05FEC474FC653B49B15ED79A53565A8B00F49ADADA72D30816
+#WLS.dbaUserName =
+# WLS.cleartextDbaPassword =
+#WLS.encryptedDbaPassword = 0543C93F9A28FBAFBF3FCC49E78EB2C6B3AA02F53098BB322C</code></pre></div>
+<p>Copy the response file to the pod.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns cp response.txt pvhelper:/tmp</span></span></code></pre></div>
+<p>Run the Upgrade Assistant readiness check to verify the input values and whether the schema needs to be upgraded.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./ua -readiness -response /tmp/response.txt -logDir /tmp</span></span></code></pre></div>
+<p>Check the output to see if there are any errors.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>Oracle Fusion Middleware Upgrade Assistant 14.1.2.0.0
+Log file is located at: /tmp/ua2023-10-04-17-23-32PM.log
+Reading installer inventory, this will take a few moments...
+...completed reading installer inventory.
+Using response file /tmp/response.txt for input
+ Oracle Metadata Services schema readiness check is in progress
+ Oracle Audit Services schema readiness check is in progress
+ Oracle Platform Security Services schema readiness check is in progress
+ Common Infrastructure Services schema readiness check is in progress
+ Common Infrastructure Services schema readiness check finished with status: ready for upgrade
+ Oracle Metadata Services schema readiness check finished with status: ready for upgrade
+ Oracle Audit Services schema readiness check finished with status: ready for upgrade
+ Oracle Platform Security Services schema readiness check finished with status: ready for upgrade
+Readiness Check Report File: /tmp/readiness2023-10-04-17-24-55PM.txt
+Upgrade readiness check completed successfully.
+UPGAST-00281: Upgrade is being skipped because the -readiness flag is set
+Actual upgrades are not done when the -readiness command line option is set.
+If you want to perform an actual upgrade remove the -readiness flag from the command line.  If you intended to perform just the readiness phase, no action is necessary.</code></pre></div>
+<p>If there are no errors and you are ready to upgrade, then run the command again without the <code>-readiness</code> flag.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./ua -response /tmp/response.txt -logDir /tmp</span></span></code></pre></div>
+<p>Check the output again.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>Oracle Fusion Middleware Upgrade Assistant 14.1.2.0.0
+Log file is located at: /u01/oracle/oracle_common/upgrade/logs/ua2023-10-05-14-03-18PM.log
+Reading installer inventory, this will take a few moments...
+...completed reading installer inventory.
+Using response file /tmp/response.txt for input
+ Oracle Platform Security Services schema examine is in progress
+ Oracle Metadata Services schema examine is in progress
+ Oracle Audit Services schema examine is in progress
+ Common Infrastructure Services schema examine is in progress
+ Common Infrastructure Services schema examine finished with status: ready for upgrade
+ Oracle Platform Security Services schema examine finished with status: ready for upgrade
+ Oracle Audit Services schema examine finished with status: ready for upgrade
+ Oracle Metadata Services schema examine finished with status: ready for upgrade
+Schema Version Registry saved to: /u01/oracle/oracle_common/upgrade/logs/ua2023-10-05-14-03-18PM.xml
+ Oracle Platform Security Services schema upgrade is in progress
+ Oracle Audit Services schema upgrade is in progress
+ Oracle Metadata Services schema upgrade is in progress
+ Common Infrastructure Services schema upgrade is in progress
+ Common Infrastructure Services schema upgrade finished with status: succeeded
+ Oracle Audit Services schema upgrade finished with status: succeeded
+ Oracle Platform Security Services schema upgrade finished with status: succeeded
+ Oracle Metadata Services schema upgrade finished with status: succeeded</code></pre></div>
+<p>If there are any errors, you need to correct them or contact Oracle Support for assistance.</p>
+<h4 id="reconfigure-the-domain">Reconfigure the domain<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p>The Reconfiguration Wizard will upgrade the domain configuration to the 14.1.2.0 version.</p>
+<p>If you have not yet deployed a WebLogic Server pod, see 
+
+<a href="#deploy-a-weblogic-server-pod-attaching-a-persistent-volume"
+   
+   >
+Deploy the server pod
+</a>
+.</p>
+<p>From the <code>pvhelper</code> pod, use the following WLST commands to reconfigure a domain to the 14.1.2.0 version.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /u01/oracle/oracle_common/bin/wlst.sh
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Initializing WebLogic Scripting Tool <span style="color:#f92672">(</span>WLST<span style="color:#f92672">)</span> ...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Welcome to WebLogic Server Administration Scripting Shell
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Type help<span style="color:#f92672">()</span> <span style="color:#66d9ef">for</span> help on available commands
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wls:/offline&gt; readDomainForUpgrade<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;&lt;your domain home directory path&gt;&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>wls:/offline&gt; updateDomain<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>wls:/offline&gt; closeDomain<span style="color:#f92672">()</span></span></span></code></pre></div>
+<p>If there are any errors, you need to correct them or contact Oracle Support for assistance.</p>
+<h3 id="upgrade-use-cases">Upgrade use cases<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<p>Consider the following use case scenarios, depending on your WebLogic domain type (<code>WLS</code> or <code>JRF</code>) and domain home source type (Domain on PV or Model in Image).</p>
+<ul>
+<li>
+
+<a href="#wls-domain-on-persistent-volume"
+   
+   >
+WLS Domain on Persistent Volume
+</a>
+</li>
+<li>
+
+<a href="#fmwjrf-domain-on-persistent-volume"
+   
+   >
+FMW/JRF Domain on Persistent Volume
+</a>
+</li>
+<li>
+
+<a href="#wls-domain-using-model-in-image"
+   
+   >
+WLS domain using Model in Image
+</a>
+</li>
+<li>
+
+<a href="#fmwjrf-domain-using-model-in-image"
+   
+   >
+FMW/JRF domain using Model in Image
+</a>
+</li>
+</ul>
+<h4 id="wls-domain-on-persistent-volume">WLS Domain on Persistent Volume<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<ol>
+<li>Follow the steps in the 
+
+<a href="#general-upgrade-procedures"
+   
+   >
+General upgrade procedures
+</a>
+.  You can skip the database related steps.</li>
+<li>Upgrade the domain configuration using the reconfiguration WLST commands. See 
+
+<a href="#reconfigure-the-domain"
+   
+   >
+Reconfigure the domain
+</a>
+.</li>
+<li>Update the domain resource to use the WebLogic 14120 base image, and patch the <code>serverStartPolicy</code> to <code>IfNeeded</code> to restart the domain.  For example,
+<code>kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p='[ {&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/serverStartPolicy&quot;, &quot;value&quot;: &quot;Never&quot;}, {&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;:&quot;/spec/image&quot;, &quot;value&quot;:&quot;&lt;WebLogic 14120 base image&gt;&quot;]'</code></li>
+</ol>
+<h4 id="fmwjrf-domain-on-persistent-volume">FMW/JRF Domain on Persistent Volume<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<ol>
+<li>Follow the steps in the 
+
+<a href="#general-upgrade-procedures"
+   
+   >
+General upgrade procedures
+</a>
+.</li>
+<li>Run the Upgrade Assistant. See 
+
+<a href="#upgrade-the-jrf-database"
+   
+   >
+Upgrade the JRF database
+</a>
+.</li>
+<li>Upgrade the domain configuration using the reconfiguration WLST commands. See 
+
+<a href="#reconfigure-the-domain"
+   
+   >
+Reconfigure the domain
+</a>
+.</li>
+<li>Update the domain resource to use the Fusion Middleware Infrastructure 14120 base image, and patch the <code>serverStartPolicy</code> to <code>IfNeeded</code> to restart the domain.  For example,
+<code>kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p='[ {&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/serverStartPolicy&quot;, &quot;value&quot;: &quot;Never&quot;}, {&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;:&quot;/spec/image&quot;, &quot;value&quot;:&quot;&lt;Fusion Middleware Infrastructure 14120 image&gt;&quot;]'</code></li>
+</ol>
+<h4 id="wls-domain-using-model-in-image">WLS domain using Model in Image<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<ol>
+<li>Follow the steps in the 
+
+<a href="#general-upgrade-procedures"
+   
+   >
+General upgrade procedures
+</a>
+.</li>
+<li>Depending on whether your existing domain is using secured production mode, use one of the following options.</li>
+</ol>
+<table>
+  <thead>
+      <tr>
+          <th>Existing Domain</th>
+          <th>Upgrade Actions</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Domain is already using secured production mode</td>
+          <td>Update the domain resource to use the WebLogic 14120 base image and redeploy the domain.</td>
+      </tr>
+      <tr>
+          <td>Domain is not using secured production mode but ready to switch to use secured production mode</td>
+          <td>Enable secured production mode. See the 
+
+<a href="#sample-wdt-model-for-secured-production-mode-and-ssl"
+   
+   >
+Sample WDT YAML
+</a>
+, update the domain resource to use the WebLogic 14120 base image and redeploy the domain.</td>
+      </tr>
+      <tr>
+          <td>Domain is not using secured production mode but <em>not</em> ready to switch to use secured production mode</td>
+          <td>Update the domain resource to use the WebLogic 14120 base image and redeploy the domain, the operator will automatically disable the secured production mode for you, but your domain will not have the added benefits of a secured production mode.</td>
+      </tr>
+      <tr>
+          <td>Domain is not using secured production mode and wanted to start from scratch to rebuild the domain</td>
+          <td>Delete the domain first, enable secure production mode. See the 
+
+<a href="#sample-wdt-model-for-secured-production-mode-and-ssl"
+   
+   >
+Sample WDT YAML
+</a>
+, update the domain resource YAML to use the WebLogic 14120 base image and deploy the domain.</td>
+      </tr>
+  </tbody>
+</table>
+<ol start="3">
+<li>You can use this patch command for redeploying the domain with the new WebLogic 14120 image.  For example,
+<code>kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json -p='[ {&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/serverStartPolicy&quot;, &quot;value&quot;: &quot;Never&quot;}, {&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;:&quot;/spec/image&quot;, &quot;value&quot;:&quot;&lt;WebLogic 14120 base image&gt;&quot;]'</code></li>
+</ol>
+<h4 id="fmwjrf-domain-using-model-in-image">FMW/JRF domain using Model in Image<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p>FMW/JRF domains using Model in Image has been deprecated since WebLogic Kubernetes Operator 4.1. Before upgrading to FMW v14.1.2.0, we recommend moving your domain home to Domain on Persistent Volume. For more information, see 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/"
+   
+   >
+Domain On Persistent Volume
+</a>
+.</p>
+<ol>
+<li>Follow the steps in the 
+
+<a href="#general-upgrade-procedures"
+   
+   >
+General upgrade procedures
+</a>
+.</li>
+<li>If are not using an auxiliary image in your domain, then create a 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/"
+   
+   >
+Domain creation image
+</a>
+.</li>
+<li>Create a new domain resource YAML file.  You should have at least the following changes:</li>
+</ol>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code># Change type to PersistentVolume
+domainHomeSourceType: PersistentVolume
+image: &lt;Fusion Middleware Infrastructure 14120 base image&gt;
+...
+serverPod:
+    ...
+    # specify the volume and volume mount information
+
+    volumes:
+    - name: weblogic-domain-storage-volume
+      persistentVolumeClaim:
+         claimName: sample-domain1-pvc-rwm1
+    volumeMounts:
+    - mountPath: /share
+      name: weblogic-domain-storage-volume
+
+  # specify a new configuration section, remove the old configuration section.
+
+  configuration:
+
+    # secrets that are referenced by model yaml macros
+    # sample-domain1-rcu-access is used for JRF domains
+    secrets: [ sample-domain1-rcu-access ]
+
+    initializeDomainOnPV:
+      persistentVolumeClaim:
+        metadata:
+            name: sample-domain1-pvc-rwm1
+        spec:
+            storageClassName: my-storage-class
+            resources:
+                requests:
+                    storage: 10Gi
+      domain:
+          createIfNotExists: Domain
+          domainCreationImages:
+          - image: &#39;myaux:v6&#39;
+          domainType: JRF
+          domainCreationConfigMap: sample-domain1-wdt-config-map
+          opss:
+            # Make sure you have already saved the wallet file secret. This allows the domain to use
+            # an existing JRF database schemas.
+            walletFileSecret: sample-domain1-opss-walletfile-secret
+            walletPasswordSecret: sample-domain1-opss-wallet-password-secret</code></pre></div>
+<ol start="4">
+<li>Deploy the domain. If it is successful, then the domain has been migrated to a persistent volume.  Now, you can proceed to upgrade to version 14.1.2.0, see 
+
+<a href="#fmwjrf-domain-on-persistent-volume"
+   
+   >
+FMW/JRF domain on PV
+</a>
+.</li>
+</ol>
+<h3 id="sample-wdt-model-for-secured-production-mode-and-ssl">Sample WDT model for secured production mode and SSL<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<p>If you are upgrading an existing domain to 14.1.2.0 and your existing domain does not have secured production mode enabled, the operator, by default, will <em>disable</em> secured production mode. If you want to override this behavior, you must enable it explicitly. Optionally, you can delete the existing domain and let the operator completely rebuild the domain and, by default, secured production mode will be enabled; you do not have to enable it explicitly.</p>
+<p>The following is a code snippet of a WDT model for setting up secured production mode and SSL.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>topology:
+  # Production mode must be true for secured production mode
+  #
+  ProductionModeEnabled: true
+  SecurityConfiguration:
+    # If you are updating an existing, pre 14.1.2.0 domain that does not have secure mode enabled,
+    # and want to use secured production mode, make sure you enable secure mode; otherwise the
+    # operator will disable it by default.  
+    #
+    #
+    SecureMode:
+      SecureModeEnabled: true
+    #
+    # Make sure SSL is set up in all servers and server templates.
+    #
+    Server:
+        &#34;admin-server&#34;:
+            CustomTrustKeyStoreFileName: &#39;wlsdeploy/servers/admin-server/trust-keystore.jks&#39;
+            CustomIdentityKeyStoreFileName: &#39;wlsdeploy/servers/admin-server/identity-keystore.jks&#39;
+            KeyStores: CustomIdentityAndCustomTrust
+            CustomIdentityKeyStoreType: JKS
+            CustomTrustKeyStoreType: JKS           
+            CustomIdentityKeyStorePassPhraseEncrypted:            
+            CustomTrustKeyStorePassPhraseEncrypted:
+            SSL:
+                ListenPort: 7002
+                Enabled : true            
+                ServerPrivateKeyAlias: adminkey
+                ServerPrivateKeyPassPhraseEncrypted:
+    ServerTemplate:
+       &#34;cluster-1-template&#34;:
+            CustomTrustKeyStoreFileName: &#39;wlsdeploy/servers/managed-server/trust-keystore.jks&#39;
+            CustomIdentityKeyStoreFileName: &#39;wlsdeploy/servers/managed-server/identity-keystore.jks&#39;
+            KeyStores: CustomIdentityAndCustomTrust
+            CustomIdentityKeyStoreType: JKS
+            CustomTrustKeyStoreType: JKS           
+            CustomIdentityKeyStorePassPhraseEncrypted:            
+            CustomTrustKeyStorePassPhraseEncrypted:
+            SSL:
+                ListenPort: 7102
+                Enabled : true            
+                ServerPrivateKeyAlias: mykey
+                ServerPrivateKeyPassPhraseEncrypted:</code></pre></div>
+
+  <footer class="footline">
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+
+
+<a id="logo" href="https://oracle.github.io/weblogic-kubernetes-operator/">
+  <img src="https://oracle.github.io/weblogic-kubernetes-operator//images/logo.png" height="90"><br/>
+  WebLogic Kubernetes Operator
+</a>
+
+        </div>
+        <search><form action="https://oracle.github.io/weblogic-kubernetes-operator/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/index.html"><b> </b>Quick Start</a><ul id="R-subsections-d63193e927818b6cb77d9c791ea48a61" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/introduction/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/index.html"><b> </b>Introduction</a><ul id="R-subsections-e1ed3a04f1f57a27be4a8d0eb274be18" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/index.html"><b> </b>Manage operators</a><ul id="R-subsections-7d4cf64999b86ce8197c0bc43769472c" class="collapsible-menu"></ul></li>
+            <li class="parent " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/index.html">Manage domains</a><ul id="R-subsections-45a55625d0c34b621eb1935c75fae249" class="collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/index.html">About WebLogic domains</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/index.html">Choose a domain home source type</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/index.html"><b> </b>Domain and Cluster resources</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/index.html"><b> </b>Upgrade Domain resource</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/index.html">Prepare to run a domain</a></li>
+            <li class="parent alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/index.html"><b> </b>Upgrade managed domains</a><ul id="R-subsections-ccbca7935ed481eeab6222c998578048" class="collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/index.html"><b> </b>Upgrade managed domains</a></li>
+            <li class="active " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14120/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14120/index.html"><b> </b>Upgrade managed domains to v14.1.2.0</a></li></ul></li>
+            <li class="alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/index.html"><b> </b>Domain on Persistent Volume (PV)</a><ul id="R-subsections-d40ed8eea8326dbcd46326f7659b3e4f" class="collapsible-menu"></ul></li>
+            <li class="alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/index.html"><b> </b>Model in Image</a><ul id="R-subsections-d9db9d9e38880e56d7ba5514a8527a97" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/index.html"><b> </b>Configuration overrides</a></li>
+            <li class="alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/index.html"><b> </b>Persistent storage</a><ul id="R-subsections-661be2f02fd0ae2ad3377779776a4545" class="collapsible-menu"></ul></li>
+            <li class="alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/index.html"><b> </b>Access and monitor domains</a><ul id="R-subsections-5f509e3b856bccb56052229a523c07b3" class="collapsible-menu"></ul></li>
+            <li class="alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/index.html"><b> </b>Domain life cycle</a><ul id="R-subsections-47783ab45f0ad76897c1eb1a21f9e6e7" class="collapsible-menu"></ul></li>
+            <li class="alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/index.html">CI/CD considerations</a><ul id="R-subsections-8802c993ce14e9bb7903113fc1be4858" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/index.html">Manage FMW Infrastructure domains</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/index.html">Azure Kubernetes Service (AKS)</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/index.html"><b> </b>Domain debugging</a></li></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/index.html"><b> </b>WebLogic images</a><ul id="R-subsections-b3440c9f2ce961fe2579290479f05e53" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/samples/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/samples/index.html"><b> </b>Samples</a><ul id="R-subsections-88c2b1e6419b221ce89c4be4a8ae2a6b" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/index.html"><b> </b>Developer Guide</a><ul id="R-subsections-6d5a8d333894e1a8a4ced31c7a69170c" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/reference/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/reference/index.html"><b> </b>Reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><b> </b>Security</a><ul id="R-subsections-66815ecaaecfc1c209e5637d03b258b2" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html">Frequently asked questions</a><ul id="R-subsections-24e4fc446616bf2bbeac7b1dba804bb8" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html">Deprecated functionality</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html">Known limitations</a></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer">
+
+<p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://join.slack.com/t/oracle-weblogic/shared_invite/zt-1ni1gtjv6-PGC6CQ4uIte3KBdm_67~aQ"><i class="fab fa-slack"></i> Public Slack #weblogic</a></p>
+</div>
+      </div>
+    </aside>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1766147057" defer></script>
+    <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+  </body>
+</html>

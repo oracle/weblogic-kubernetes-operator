@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Choose a domain home source type on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/</link>
-    <description>Recent content in Choose a domain home source type on WebLogic Kubernetes Operator</description>
+    <title>Choose a domain home source type :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/index.html</link>
+    <description>Choose among these domain home types depending on your requirements and create images that are appropriate for your type.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>

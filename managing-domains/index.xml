@@ -1,47 +1,124 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Manage domains on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/</link>
-    <description>Recent content in Manage domains on WebLogic Kubernetes Operator</description>
+    <title>Manage domains :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/index.html</link>
+    <description>Managing domains in Kubernetes.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 11 Mar 2020 16:45:16 -0500</lastBuildDate>
+    <lastBuildDate>Wed, 27 Oct 2021 15:27:38 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>About WebLogic domains</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/index.html</link>
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/</guid>
-      <description>This document is an overview of managing WebLogic domains and clusters in Kubernetes.&#xA;Contents Creating and managing WebLogic domains Modifying domain configurations Managing lifecycle operations Scaling clusters About domain events Accessing and monitoring domains Logging Meet Kubernetes resource name restrictions Important considerations for WebLogic domains in Kubernetes Creating and managing WebLogic domains Domain resources reference WebLogic domain configuration, a WebLogic install, images, and anything else necessary to run the domain. Beginning with operator 4.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/index.html</guid>
+      <description>An overview about managing WebLogic domains and clusters in Kubernetes.</description>
+    </item>
+    <item>
+      <title>Choose a domain home source type</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 16:44:54 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/index.html</guid>
+      <description>Choose among these domain home types depending on your requirements and create images that are appropriate for your type.</description>
     </item>
     <item>
       <title>Domain and Cluster resources</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/index.html</link>
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/</guid>
-      <description>This document describes how to create your own Domain and Cluster resources.&#xA;Contents Overview Prerequisites Deploying domain and cluster resource YAML files Domain and cluster resource attribute references Using kubectl explain Domain and cluster spec elements Domain spec elements Cluster spec elements JVM memory and Java option environment variables Node Manager environment variables Pod generation Overview Domain resources reference WebLogic domain configuration, a WebLogic install, images, and anything else necessary to run the domain.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/index.html</guid>
+      <description>Create your own Domain and Cluster resources.</description>
+    </item>
+    <item>
+      <title>Upgrade Domain resource</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/index.html</guid>
+      <description>Upgrade Domain resources.</description>
     </item>
     <item>
       <title>Prepare to run a domain</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/index.html</link>
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/</guid>
-      <description>Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:&#xA;Create the domain namespace or namespaces. One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.&#xA;$ kubectl create namespace domain-namespace-1 Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lowercase, numbers, and hyphens.&#xA;Create a Kubernetes Secret containing the Administration Server boot credentials.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/index.html</guid>
+      <description>Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain.</description>
+    </item>
+    <item>
+      <title>Upgrade managed domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:00 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/index.html</guid>
+      <description>Upgrade managed domains, general and specific guidelines.</description>
+    </item>
+    <item>
+      <title>Domain on Persistent Volume (PV)</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/index.html</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/index.html</guid>
+      <description>Create and deploy a typical domain on PV.</description>
+    </item>
+    <item>
+      <title>Model in Image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/index.html</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/index.html</guid>
+      <description>Create and deploy a typical Model in Image domain.</description>
+    </item>
+    <item>
+      <title>Configuration overrides</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/index.html</guid>
+      <description>Use overrides to customize domains.</description>
+    </item>
+    <item>
+      <title>Persistent storage</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:09 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/index.html</guid>
+      <description>Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC) to store WebLogic domain homes and log files.</description>
+    </item>
+    <item>
+      <title>Access and monitor domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:00 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/index.html</guid>
+      <description>Choose among several options for accessing and monitoring domains.</description>
+    </item>
+    <item>
+      <title>Domain life cycle</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 16:50:09 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/index.html</guid>
+      <description>Learn how to start, stop, restart, and scale the WebLogic Server instances in your domain.</description>
+    </item>
+    <item>
+      <title>CI/CD considerations</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/index.html</link>
+      <pubDate>Thu, 11 Apr 2019 13:01:55 -0400</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/index.html</guid>
+      <description>Learn about managing domain images with continuous integration and continuous delivery (CI/CD).</description>
     </item>
     <item>
       <title>Manage FMW Infrastructure domains</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/index.html</link>
       <pubDate>Thu, 18 Apr 2019 06:46:23 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/</guid>
-      <description>Contents Limitations Obtaining the FMW Infrastructure image Creating an FMW Infrastructure image Configuring access to your database Running the database inside Kubernetes Running the database outside Kubernetes Running the Repository Creation Utility to set up your database schema Creating schemas Dropping schemas Create a Kubernetes Secret with the RCU credentials Creating an FMW Infrastructure domain Patching the FMW Infrastructure image Additional considerations for Coherence The operator supports FMW Infrastructure domains, that is, domains that are created with the FMW Infrastructure installer rather than the WebLogic Server installer.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/index.html</guid>
+      <description>FMW Infrastructure domains contain the Java Required Files (JRF) feature and are the prerequisite for upper stack products like Oracle SOA Suite.</description>
+    </item>
+    <item>
+      <title>Azure Kubernetes Service (AKS)</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/index.html</link>
+      <pubDate>Wed, 27 Oct 2021 15:27:38 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/index.html</guid>
+      <description>Deploy WebLogic Server on Azure Kubernetes Service.</description>
     </item>
     <item>
       <title>Domain debugging</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/index.html</link>
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/</guid>
-      <description>Here are some suggestions for debugging problems with a domain after your Domain or Cluster YAML files are deployed.&#xA;Contents Understand failure types, severities, and tuning Check the Domain status Check the Cluster status Check the Domain events Check the introspector job Check the WebLogic Server pods Check the docs Check the operator Understand failure types, severities, and tuning When debugging, it helps to understand failure types, failure severities, retry behavior, and retry tuning, see Domain failure retry processing.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/index.html</guid>
+      <description>Debug deployed domains.</description>
     </item>
   </channel>
 </rss>

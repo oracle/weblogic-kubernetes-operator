@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Domain security on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/</link>
-    <description>Recent content in Domain security on WebLogic Kubernetes Operator</description>
+    <title>Domain security :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/index.html</link>
+    <description>WebLogic domain security and the operator.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate>Fri, 08 Mar 2019 19:07:36 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Pod and container security</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/index.html</link>
       <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/</guid>
-      <description>The WebLogic Kubernetes Operator enforces pod and container security best practices for the pods and containers that the operator creates for WebLogic Server instances, the init container for auxiliary images, sidecar containers for Fluentd or the WebLogic Monitoring Exporter, and the introspection job.&#xA;The operator adds the following pod-level securityContext content:&#xA;securityContext: seccompProfile: type: RuntimeDefault The operator also adds the following container-level securityContext content to each container:&#xA;securityContext: runAsUser: 1000 runAsNonRoot: true privileged: false allowPrivilegeEscalation: false capabilities: drop: - ALL On OpenShift environments, the operator omits the runAsUser element.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/index.html</guid>
+      <description>Pod and container security.</description>
     </item>
     <item>
       <title>Container image protection</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/index.html</link>
       <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/</guid>
-      <description>Oracle strongly recommends storing the container images that contain a WebLogic domain home as private in the container registry. In addition to any local registry, public container registries include GitHub Container Registry and the Oracle Cloud Infrastructure Registry (OCIR).&#xA;The WebLogic domain home that is part of a Domain in Image image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/index.html</guid>
+      <description>WebLogic domain in image protection.</description>
     </item>
     <item>
       <title>External network access security</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/index.html</link>
       <pubDate>Fri, 08 Mar 2019 19:07:36 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</guid>
-      <description>WebLogic T3 and administrative channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary.&#xA;If exposing an administrative, RMI, EJB, JMS, or T3 capable channel using a load balancer, port forwarding, NodePorts, or similar, then limit access by using a custom dedicated WebLogic Server port that you have configured with the T3 or administration protocol (a network access point) instead of relaying the traffic to a default port, leverage two-way SSL, use controls like security lists, and/or set up a Bastion to provide access.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/index.html</guid>
+      <description>Remote access security.</description>
     </item>
   </channel>
 </rss>

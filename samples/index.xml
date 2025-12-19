@@ -1,12 +1,75 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Samples on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/</link>
-    <description>Recent content in Samples on WebLogic Kubernetes Operator</description>
+    <title>Samples :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/index.html</link>
+    <description>The samples provide demonstrations of how to accomplish common tasks. These samples are provided for educational and demonstration purposes only; they are not intended to be used in production deployments or to be depended upon to create production environments.&#xA;CredentialsSample for creating a Kubernetes Secret that contains the Administration Server credentials. This Secret can be used in creating a WebLogic Domain YAML file.&#xA;StorageSample for creating a PV or PVC that can be used by a Domain YAML file as the persistent storage for the WebLogic domain home or log files.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate></lastBuildDate>
+    <lastBuildDate>Mon, 16 Nov 2020 13:34:31 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/samples/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Credentials</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/credentials/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/credentials/index.html</guid>
+      <description>Sample for creating a Kubernetes Secret that contains the Administration Server credentials. This Secret can be used in creating a WebLogic Domain YAML file.</description>
+    </item>
+    <item>
+      <title>Storage</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/storage/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/storage/index.html</guid>
+      <description>Sample for creating a PV or PVC that can be used by a Domain YAML file as the persistent storage for the WebLogic domain home or log files.</description>
+    </item>
+    <item>
+      <title>Run a database</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/database/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/database/index.html</guid>
+      <description>Run an ephemeral database in Kubernetes that is suitable for sample or basic testing purposes.</description>
+    </item>
+    <item>
+      <title>Domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/index.html</guid>
+      <description>These samples show various choices for working with domains.</description>
+    </item>
+    <item>
+      <title>REST APIs</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/rest/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/rest/index.html</guid>
+      <description>Sample for generating a self-signed certificate and private key that can be used for the operator&#39;s external REST API.</description>
+    </item>
+    <item>
+      <title>Ingress</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/ingress/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/ingress/index.html</guid>
+      <description>Ingress controllers and load balancer sample scripts.</description>
+    </item>
+    <item>
+      <title>Elastic Stack</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/index.html</guid>
+      <description>OperatorSample for configuring the Elasticsearch and Kibana deployments and services for the operator&#39;s logs.&#xA;WebLogic domainSample for using Fluentd for WebLogic domain and operator&#39;s logs.</description>
+    </item>
+    <item>
+      <title>Azure Kubernetes Service</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/index.html</link>
+      <pubDate>Sun, 12 Jul 2020 18:22:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/index.html</guid>
+      <description>Sample for using the operator to set up a WLS cluster on the Azure Kubernetes Service.</description>
+    </item>
+    <item>
+      <title>Tanzu Kubernetes Service</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/tanzu-kubernetes-service/index.html</link>
+      <pubDate>Mon, 16 Nov 2020 13:34:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/tanzu-kubernetes-service/index.html</guid>
+      <description>Sample for using the operator to set up a WLS cluster on the Tanzu Kubernetes Service.</description>
+    </item>
   </channel>
 </rss>

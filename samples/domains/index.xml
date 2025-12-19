@@ -1,12 +1,40 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Domains on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/</link>
-    <description>Recent content in Domains on WebLogic Kubernetes Operator</description>
+    <title>Domains :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/index.html</link>
+    <description>These samples show various choices for working with domains.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate></lastBuildDate>
+    <lastBuildDate>Sat, 23 Feb 2019 17:32:31 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Domain on PV</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/index.html</guid>
+      <description>Sample for creating and deploying a WebLogic domain on a persistent volume (PV).</description>
+    </item>
+    <item>
+      <title>Model in image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/index.html</guid>
+      <description>Sample for supplying a WebLogic Deploy Tooling (WDT) model that the operator expands into a full domain home during runtime.</description>
+    </item>
+    <item>
+      <title>Delete resources associated with the domain</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/delete-domain/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/delete-domain/index.html</guid>
+      <description>Delete the Kubernetes resources associated with the domain created while executing the samples.</description>
+    </item>
+    <item>
+      <title>Domain lifecycle operations</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/lifecycle/index.html</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/lifecycle/index.html</guid>
+      <description>Start and stop Managed Servers, clusters, and domains.</description>
+    </item>
   </channel>
 </rss>

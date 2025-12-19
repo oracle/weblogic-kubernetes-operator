@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>REST APIs on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/rest/</link>
-    <description>Recent content in REST APIs on WebLogic Kubernetes Operator</description>
+    <title>REST APIs :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/rest/index.html</link>
+    <description>Sample for generating a self-signed certificate and private key that can be used for the operator&#39;s external REST API.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>

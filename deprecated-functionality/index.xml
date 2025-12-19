@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Deprecated functionality on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/</link>
-    <description>Recent content in Deprecated functionality on WebLogic Kubernetes Operator</description>
+    <title>Deprecated functionality :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html</link>
+    <description>The following functionality has been deprecated and no longer is supported in WebLogic Kubernetes Operator.&#xA;Domain in Image The Domain in Image domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.&#xA;Model in Image without auxiliary images The Model in Image domain home source type without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image with auxiliary images .</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>

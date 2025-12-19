@@ -466,7 +466,7 @@
           }
         },
         "image": {
-          "description": "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.",
+          "description": "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -604,8 +604,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
-          "description": "The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
+          "description": "The Fluentbit container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -666,8 +666,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
-          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
+          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -773,6 +773,13 @@
           "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
         "env": {
           "description": "A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
@@ -793,6 +800,13 @@
           "items": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
         }
       }
     },
@@ -891,8 +905,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.5",
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.5",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.8",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.8",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -989,7 +1003,7 @@
         },
         "resources": {
           "description": "Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements.",
-          "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "#/definitions/V1VolumeResourceRequirements"
         }
       }
     },
@@ -1313,6 +1327,20 @@
         "subsystemName": {
           "description": "Name of subsystem providing symptom information.",
           "type": "string"
+        }
+      }
+    },
+    "V1VolumeResourceRequirements": {
+      "description": "VolumeResourceRequirements describes the storage resource requirements for a volume.",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "description": "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "$ref": "#/definitions/Map"
+        },
+        "limits": {
+          "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "$ref": "#/definitions/Map"
         }
       }
     },

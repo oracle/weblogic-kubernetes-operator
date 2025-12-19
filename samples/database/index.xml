@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Run a database on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/database/</link>
-    <description>Recent content in Run a database on WebLogic Kubernetes Operator</description>
+    <title>Run a database :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/database/index.html</link>
+    <description>Run an ephemeral database in Kubernetes that is suitable for sample or basic testing purposes.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>

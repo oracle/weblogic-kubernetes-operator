@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Upgrade Domain resource on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/</link>
-    <description>Recent content in Upgrade Domain resource on WebLogic Kubernetes Operator</description>
+    <title>Upgrade Domain resource :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/index.html</link>
+    <description>Upgrade Domain resources.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>

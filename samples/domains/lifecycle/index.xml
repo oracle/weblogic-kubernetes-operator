@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Domain lifecycle operations on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/lifecycle/</link>
-    <description>Recent content in Domain lifecycle operations on WebLogic Kubernetes Operator</description>
+    <title>Domain lifecycle operations :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/lifecycle/index.html</link>
+    <description>Start and stop Managed Servers, clusters, and domains.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>

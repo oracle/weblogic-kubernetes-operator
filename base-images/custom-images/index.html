@@ -1,3904 +1,118 @@
 <!DOCTYPE html>
-<html lang="en" class="js csstransforms3d">
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.133.0">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.153.0">
+    <meta name="generator" content="Relearn 8.3.0">
     <meta name="description" content="Create custom WebLogic images using the WebLogic Image Tool (WIT) with specified patches and/or JDK version.">
-
-
-    <link rel="icon" href="https://oracle.github.io/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
-
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Create custom images :: WebLogic Kubernetes Operator">
+    <meta name="twitter:description" content="Create custom WebLogic images using the WebLogic Image Tool (WIT) with specified patches and/or JDK version.">
+    <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/index.html">
+    <meta property="og:site_name" content="WebLogic Kubernetes Operator">
+    <meta property="og:title" content="Create custom images :: WebLogic Kubernetes Operator">
+    <meta property="og:description" content="Create custom WebLogic images using the WebLogic Image Tool (WIT) with specified patches and/or JDK version.">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="WebLogic images">
+    <meta property="article:published_time" content="2019-02-23T16:45:55-05:00">
+    <meta property="article:modified_time" content="2019-02-23T16:45:55-05:00">
+    <meta itemprop="name" content="Create custom images :: WebLogic Kubernetes Operator">
+    <meta itemprop="description" content="Create custom WebLogic images using the WebLogic Image Tool (WIT) with specified patches and/or JDK version.">
+    <meta itemprop="datePublished" content="2019-02-23T16:45:55-05:00">
+    <meta itemprop="dateModified" content="2019-02-23T16:45:55-05:00">
+    <meta itemprop="wordCount" content="3130">
     <title>Create custom images :: WebLogic Kubernetes Operator</title>
-
-    
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1766094385" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1766094385" rel="stylesheet">
-    
-    
-
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1766094385"></script>
-
-    <style>
-      :root #header + #content > #left > #rlblock_left{
-          display:none !important;
-      }
-      
-        :not(pre) > code + span.copy-to-clipboard {
-            display: none;
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1766147057" rel="icon" type="image/png">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1766147057" rel="stylesheet">
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1766147057" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1766147057";
+    </script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1766147057" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1766147057" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1766147057" rel="stylesheet"></noscript>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1766147057" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1766147057" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1766147057" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = `.min`;
+      window.relearn.path='\/base-images\/custom-images\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..';
+      window.relearn.absBaseUri='https:\/\/oracle.github.io\/weblogic-kubernetes-operator';
+      window.relearn.disableInlineCopyToClipboard=true;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy text to clipboard`;
+      window.T_Copied_to_clipboard = `Text copied to clipboard!`;
+      window.T_Link_copied_to_clipboard = `Link copied to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      window.T_Browser_unsupported_feature = `This browser doesn't support this feature`;
+      // variant stuff
+      window.relearn.themevariants = [ 'learn' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
         }
-      
-    </style>
-    
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
   </head>
-  <body class="" data-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/">
-    <nav id="sidebar" class="">
-
-
-
-  <div id="header-wrapper">
-    <div id="header">
-      <a id="logo" href="https://oracle.github.io/weblogic-kubernetes-operator/">
-  <img src="https://oracle.github.io/weblogic-kubernetes-operator//images/logo.png" height="90"><br/>
-  WebLogic Kubernetes Operator
-</a>
-
-    </div>
-    
-        <div class="searchbox">
-    <label for="search-by"><i class="fas fa-search"></i></label>
-    <input data-search-input id="search-by" type="search" placeholder="Search...">
-    <span data-search-clear=""><i class="fas fa-times"></i></span>
-</div>
-
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1766094385"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1766094385"></script>
-<script type="text/javascript">
-    
-        var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/";
-    
-</script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1766094385"></script>
-
-    
-  </div>
-
-    <div class="highlightable">
-    <ul class="topics">
-      <li><a  class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/">Home</a></li>
-        
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/quickstart/" title="Quick Start" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/">
-          <b> </b>Quick Start
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and ingress controller
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/quickstart/prepare/" title="Prepare for a domain" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prepare/">
-        Prepare for a domain
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/quickstart/create-domain/" title="Create a domain" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/create-domain/">
-        Create a domain
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/quickstart/cleanup/" title="Clean up" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/cleanup/">
-        Clean up
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/quickstart/summary/" title="Under the covers" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/summary/">
-        Under the covers
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/introduction/" title="Introduction" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/">
-          <b> </b>Introduction
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/introduction/terms/" title="Important terms" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/terms/">
-        Important terms
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/introduction/design/" title="Design philosophy" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/design/">
-        Design philosophy
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/introduction/architecture/" title="Architecture" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/architecture/">
-        Architecture
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/introduction/get-help/" title="Get help" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/get-help/">
-        Get help
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/introduction/prerequisites/introduction/" title="Operator prerequisites" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/">
-        Operator prerequisites
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/introduction/platforms/environments/" title="Supported environments" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/platforms/environments/">
-        Supported environments
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-operators/" title="Manage operators" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/">
-          <b> </b>Manage operators
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/overview/" title="Overview" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/overview/">
-        Overview
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/preparation/" title="Prepare for installation" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/preparation/">
-        Prepare for installation
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/installation/" title="Installation and upgrade" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/installation/">
-        Installation and upgrade
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/conversion-webhook/" title="Upgrade operator from version 3.x to 4.x" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/conversion-webhook/">
-        Upgrade operator from version 3.x to 4.x
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/using-helm/" title="Configuration reference" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/using-helm/">
-        Configuration reference
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/namespace-management/" title="Namespace management" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/namespace-management/">
-        Namespace management
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/service-accounts/" title="Service accounts" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/service-accounts/">
-        Service accounts
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/rbac/" title="RBAC" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/rbac/">
-        RBAC
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/the-rest-api/" title="REST services" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/the-rest-api/">
-        REST services
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/k8s-setup/">
-        Set up Kubernetes
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/common-mistakes/" title="Common mistakes and solutions" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/common-mistakes/">
-        Common mistakes and solutions
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-operators/troubleshooting/" title="Troubleshooting" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/">
-        Troubleshooting
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/" title="Manage domains" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/">
-          Manage domains
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-            
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/manage-domains/" title="About WebLogic domains" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/">
-        About WebLogic domains
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/choosing-a-model/" title="Choose a domain home source type" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">
-          Choose a domain home source type
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-resource/" title="Domain and Cluster resources" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/">
-        <b> </b>Domain and Cluster resources
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/upgrade-domain-resource/" title="Upgrade Domain resource" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/">
-          <b> </b>Upgrade Domain resource
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/prepare/">
-        Prepare to run a domain
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/" title="Upgrade managed domains" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/">
-          <b> </b>Upgrade managed domains
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/upgrade-major/" title="Upgrade managed domains" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-major/">
-        <b> </b>Upgrade managed domains
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/major-weblogic-version-upgrade/upgrade-14210/" title="Upgrade managed domains to v14.1.2.0" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/upgrade-14210/">
-        <b> </b>Upgrade managed domains to v14.1.2.0
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/domain-on-pv/" title="Domain on Persistent Volume (PV)" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/">
-          <b> </b>Domain on Persistent Volume (PV)
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-on-pv/overview/" title="Overview" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/">
-        <b> </b>Overview
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-on-pv/usage/" title="Usage" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/">
-        <b> </b>Usage
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-on-pv/domain-creation-images/" title="Domain creation images" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/">
-        <b> </b>Domain creation images
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-on-pv/model-files/" title="Working with WDT model files" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/">
-        <b> </b>Working with WDT model files
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-on-pv/jrf-domain/" title="JRF domains" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/">
-        <b> </b>JRF domains
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/model-in-image/" title="Model in Image" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/">
-          <b> </b>Model in Image
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/model-in-image/overview/" title="Overview" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/overview/">
-        <b> </b>Overview
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/usage/">
-        <b> </b>Usage
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">
-        <b> </b>Auxiliary images
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/model-in-image/model-files/" title="Model files" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/model-files/">
-        <b> </b>Model files
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/model-in-image/runtime-updates/" title="Runtime updates" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/runtime-updates/">
-        <b> </b>Runtime updates
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/model-in-image/move-to-pv/" title="Move MII/JRF domains to PV" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/move-to-pv/">
-        <b> </b>Move MII/JRF domains to PV
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/">
-          <b> </b>Configuration overrides
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/">
-          <b> </b>Persistent storage
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/persistent-storage/pv-pvc/" title="PersistentVolumes and PersistentVolumeClaims" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/pv-pvc/">
-        PersistentVolumes and PersistentVolumeClaims
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/persistent-storage/oci-fss-pv/" title="Use OCI File Storage (FSS) for persistent volumes" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/oci-fss-pv/">
-        Use OCI File Storage (FSS) for persistent volumes
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/persistent-storage/volumes/" title="Provide access to a PersistentVolumeClaim" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/volumes/">
-        Provide access to a PersistentVolumeClaim
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/persistent-storage/configmaps/" title="Provide access to a ConfigMap" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/configmaps/">
-        Provide access to a ConfigMap
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/accessing-the-domain/" title="Access and monitor domains" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/">
-          <b> </b>Access and monitor domains
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-            
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/weblogic-admin-console/" title="Use the Administration Console" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/weblogic-admin-console/">
-        Use the Administration Console
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/remote-admin-console/" title="Use the Remote Console" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/remote-admin-console/">
-        Use the Remote Console
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/wlst/">
-        Use WLST
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/port-forward/">
-        Use port forwarding
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/accessing-the-domain/ingress/" title="Ingress" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/ingress/">
-          Ingress
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/oci-lb/" title="Use an OCI load balancer" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/oci-lb/">
-        Use an OCI load balancer
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/istio/istio/" title="Istio support" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/istio/istio/">
-        Istio support
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/external-clients/" title="External WebLogic clients" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/external-clients/">
-        External WebLogic clients
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/domain-events/" title="Domain events" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/domain-events/">
-        Domain events
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/status-conditions/" title="Status conditions" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/status-conditions/">
-        Status conditions
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/logs/" title="Log files" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/logs/">
-        Log files
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/accessing-the-domain/monitoring-exporter/" title="Monitoring exporter" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/monitoring-exporter/">
-        Monitoring exporter
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/domain-lifecycle/" title="Domain life cycle" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/">
-          <b> </b>Domain life cycle
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-lifecycle/startup/" title="Startup and shutdown" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/startup/">
-        Startup and shutdown
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-lifecycle/restarting/" title="Restarting" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/restarting/">
-        Restarting
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-lifecycle/scaling/" title="Scaling" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/scaling/">
-        Scaling
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-lifecycle/introspection/" title="Domain introspection" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/introspection/">
-        Domain introspection
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/" title="Liveness and readiness probes customization" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/">
-        Liveness and readiness probes customization
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-lifecycle/retry/" title="Domain failure retry processing" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/retry/">
-        Domain failure retry processing
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/domain-lifecycle/scripts/" title="Lifecycle scripts" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/scripts/">
-        Lifecycle scripts
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/cicd/" title="CI/CD considerations" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/">
-          CI/CD considerations
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/cicd/layering/" title="Container image layering" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/layering/">
-        Container image layering
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/cicd/why-layering-matters/" title="Why layering matters" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/why-layering-matters/">
-        Why layering matters
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/cicd/choose-an-approach/" title="Choose an approach" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/choose-an-approach/">
-        Choose an approach
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/cicd/mutate-the-domain-layer/" title="Mutate the domain layer" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/mutate-the-domain-layer/">
-        Mutate the domain layer
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/cicd/how-to-copy-domains/" title="Copy domains" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/how-to-copy-domains/">
-        Copy domains
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/cicd/tools/" title="Tools" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/tools/">
-        Tools
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/managing-fmw-domains/" title="Manage FMW Infrastructure domains" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/managing-fmw-domains/">
-        Manage FMW Infrastructure domains
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/managing-domains/aks/" title="Azure Kubernetes Service (AKS)" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/">
-          Azure Kubernetes Service (AKS)
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/managing-domains/debugging/" title="Domain debugging" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/">
-        <b> </b>Domain debugging
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/base-images/" title="WebLogic images" class="dd-item
-        parent
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/">
-          <b> </b>WebLogic images
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/base-images/ocr-images/" title="OCR images" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/">
-        OCR images
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/base-images/custom-images/" title="Create custom images" class="dd-item active">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/">
-        Create custom images
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/base-images/patch-images/" title="Patch running domains" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/">
-        Patch running domains
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/base-images/access-images/" title="Access domain images" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/access-images/">
-        Access domain images
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/" title="Samples" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/">
-          <b> </b>Samples
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-            
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/credentials/" title="Credentials" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/credentials/">
-          Credentials
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/storage/" title="Storage" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/storage/">
-          Storage
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/database/" title="Run a database" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/database/">
-          Run a database
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/" title="Domains" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/">
-          Domains
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-            
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/domain-home-on-pv/" title="Domain on PV" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/">
-          Domain on PV
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/domain-home-on-pv/prerequisites/" title="Prerequisites" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/prerequisites/">
-        Prerequisites
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/domain-home-on-pv/build-domain-creation-image/" title="Build domain creation image" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/build-domain-creation-image/">
-        Build domain creation image
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/domain-home-on-pv/sample/" title="Sample" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/sample/">
-        Sample
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/domain-home-on-pv/cleanup/" title="Cleanup" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/cleanup/">
-        Cleanup
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/model-in-image/" title="Model in image" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">
-          Model in image
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/prerequisites/" title="Prerequisites" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">
-        Prerequisites
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/auxiliary-image-creation/" title="Auxiliary image creation" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/auxiliary-image-creation/">
-        Auxiliary image creation
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/initial/" title="Initial use case" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/">
-        Initial use case
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/update1/" title="Update 1" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">
-        Update 1
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/update2/" title="Update 2" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update2/">
-        Update 2
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/update3/" title="Update 3" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update3/">
-        Update 3
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/update4/" title="Update 4" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update4/">
-        Update 4
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/domains/model-in-image/cleanup/" title="Cleanup" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/cleanup/">
-        Cleanup
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/delete-domain/" title="Delete resources associated with the domain" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/delete-domain/">
-          Delete resources associated with the domain
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/lifecycle/">
-          Domain lifecycle operations
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/rest/" title="REST APIs" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/rest/">
-          REST APIs
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/ingress/" title="Ingress" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/ingress/">
-          Ingress
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/elastic-stack/" title="Elastic Stack" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/">
-          Elastic Stack
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-            
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/elastic-stack/operator/" title="Operator" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/operator/">
-          Operator
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/elastic-stack/weblogic-domain/" title="WebLogic domain" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/weblogic-domain/">
-          WebLogic domain
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/azure-kubernetes-service/" title="Azure Kubernetes Service" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/">
-          Azure Kubernetes Service
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/azure-kubernetes-service/domain-on-pv/" title="Domain home on a PV" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/">
-        Domain home on a PV
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/azure-kubernetes-service/model-in-image/" title="Model in Image" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image/">
-        Model in Image
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/samples/azure-kubernetes-service/troubleshooting/" title="Troubleshooting" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/">
-        Troubleshooting
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/tanzu-kubernetes-service/" title="Tanzu Kubernetes Service" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/tanzu-kubernetes-service/">
-          Tanzu Kubernetes Service
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/developerguide/" title="Developer Guide" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/">
-          <b> </b>Developer Guide
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/contributing/" title="Contribute to the operator" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/contributing/">
-        Contribute to the operator
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/requirements/" title="Requirements" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/">
-        Requirements
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/building/" title="Building" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/building/">
-        Building
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/integration-tests/" title="Integration tests" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/integration-tests/">
-        Integration tests
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/branching/" title="Branching" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/branching/">
-        Branching
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/coding-standards/" title="Coding standards" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/coding-standards/">
-        Coding standards
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/code-structure/" title="Code structure" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/code-structure/">
-        Code structure
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/asynchronous-call-model/" title="Asynchronous call model" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/asynchronous-call-model/">
-        Asynchronous call model
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/domain-processing/" title="Domain processing" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/domain-processing/">
-        Domain processing
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/documentation/" title="Documentation" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/documentation/">
-        Documentation
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/developerguide/backwards-compatibility/" title="Backward compatibility" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/backwards-compatibility/">
-        Backward compatibility
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/reference/" title="Reference" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/reference/">
-          <b> </b>Reference
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/reference/domain-resource/" title="Domain resource" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/reference/domain-resource/">
-        Domain resource
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/security/" title="Security" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/">
-          <b> </b>Security
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-            
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/certificates/" title="Certificates" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/">
-        Certificates
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/security/domain-security/" title="Domain security" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/">
-          Domain security
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/domain-security/pod-and-container/" title="Pod and container security" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/">
-        Pod and container security
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/domain-security/image-protection/" title="Container image protection" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/">
-        Container image protection
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        External network access security
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/encryption/" title="Encryption" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/encryption/">
-        Encryption
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/service-accounts/" title="Service accounts" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/">
-        Service accounts
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/rbac/" title="RBAC" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/rbac/">
-        RBAC
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/secrets/" title="Secrets" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/secrets/">
-        Secrets
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/security/openshift/" title="OpenShift" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/openshift/">
-        OpenShift
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/faq/" title="Frequently asked questions" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/">
-          Frequently asked questions
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/newbie/" title="Answers for newcomers" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/">
-        Answers for newcomers
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/cannot-pull-image/" title="Cannot pull image" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/cannot-pull-image/">
-        Cannot pull image
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/boot-identity-not-valid/" title="Boot identity not valid" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/boot-identity-not-valid/">
-        Boot identity not valid
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/domain-secret-mismatch/" title="Domain secret mismatch" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/domain-secret-mismatch/">
-        Domain secret mismatch
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/node-heating/" title="Node heating problem" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/">
-        Node heating problem
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/fan/" title="Disabling Fast Application Notifications" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/">
-        Disabling Fast Application Notifications
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/coherence-requirements/" title="Coherence requirements" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/">
-        Coherence requirements
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/resource-settings/" title="Pod memory and CPU resources" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/">
-        Pod memory and CPU resources
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/security-validation/" title="Handling security validations" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/">
-        Handling security validations
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/faq/node-selector/" title="Scheduling pods to particular nodes" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/">
-        Scheduling pods to particular nodes
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/deprecated-functionality/" title="Deprecated functionality" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/">
-          Deprecated functionality
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-          
-          
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/known-limitations/" title="Known limitations" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/">
-          Known limitations
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-          
-        
-      <li><a  class="padding" href="https://github.com/oracle/weblogic-kubernetes-operator/releases">Release Notes</a></li>
-    </ul>
-
-    
-    
-
-    
-    <section id="footer">
-      <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
-<p>&nbsp</p>
-<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
-<p><a href="https://join.slack.com/t/oracle-weblogic/shared_invite/zt-1ni1gtjv6-PGC6CQ4uIte3KBdm_67~aQ"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
-
-    </section>
-  </div>
-</nav>
-
-
-
-
-        <section id="body">
-        <div id="overlay"></div>
-        <div class="padding highlightable">
-              
-              <div>
-                <div id="top-bar">
-                
-                
-                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
-                    <span id="sidebar-toggle-span">
-                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
-                          <i class="fas fa-bars"></i>
-                        </a>
-                    </span>
-                  
-                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
-                  
-                  <span class="links">
-                 
-                 
-                    
-          
-          
-            
-            
-          
-          
-            
-            
-          
-          
-            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/base-images/'>WebLogic images</a> > Create custom images
-          
-        
-          
-        
-          
-        
-                 
-                  </span>
-                </div>
-                
-                    <div class="progress">
-    <div class="wrapper">
-<nav id="TableOfContents">
+  <body class="mobile-support html" data-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide">
+<span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button></span>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button></span>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
   <ul>
     <li><a href="#use-the-weblogic-image-tool-to-create-custom-images">Use the WebLogic Image Tool to create custom images</a></li>
     <li><a href="#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a>
@@ -3910,26 +124,42 @@
     </li>
   </ul>
 </nav>
-    </div>
-</div>
-
-                
+                </div>
               </div>
             </div>
-            
-        <div id="head-tags">
-        
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><span itemprop="name">WebLogic Kubernetes Operator</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/index.html"><span itemprop="name">WebLogic images</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">Create custom images</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/index.html" title="OCR images (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></span>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/index.html" title="Patch running domains (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></span>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+<span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button></span>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div id="body-inner">
-          
-            <h1>
-              
-              Create custom images
-            </h1>
-          
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable base-images" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
 
-        
+
+
+<h1 id="create-custom-images">Create custom images</h1>
+
 
 
 <h3 id="contents">Contents</h3>
@@ -3945,48 +175,153 @@
     </li>
   </ul>
 </nav></div>
-<h3 id="use-the-weblogic-image-tool-to-create-custom-images">Use the WebLogic Image Tool to create custom images</h3>
-<p>You can use the <a href="https://oracle.github.io/weblogic-image-tool/">WebLogic Image Tool</a> (WIT) to build your own WebLogic Server or
+<h3 id="use-the-weblogic-image-tool-to-create-custom-images">Use the WebLogic Image Tool to create custom images<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<p>You can use the 
+
+<a href="https://oracle.github.io/weblogic-image-tool/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+WebLogic Image Tool
+</a>
+ (WIT) to build your own WebLogic Server or
 Fusion Middleware Infrastructure images (with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
 apply one-off patches to existing OCR images, or overlay your own files and applications on top of an OCR image.</p>
 <p>Download and install the WebLogic Image Tool (WIT) following the
-WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/setup/">Setup</a> instructions.
-Also, refer to the WIT <a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/">Quick Start</a> Guide. The
+WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/setup/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Setup
+</a>
+ instructions.
+Also, refer to the WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Quick Start
+</a>
+ Guide. The
 samples in this document assume that you have installed WIT in <code>/tmp/imagetool</code>; you can choose to install it in any location.</p>
 <p>The WebLogic Image Tool <code>create</code>, <code>update</code>, or <code>rebase</code> commands supply
 three different ways to generate a custom WebLogic Server installation image
 from a base OS image (optionally, with WebLogic patches). In addition, the WIT <code>createAuxImage</code> command
 supports creating auxiliary images which
 do <em>not</em> contain a WebLogic Server installation,
-and instead, solely contain the <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tooling</a> (WDT) installation and model files;
-this option is designed for the Model in Image <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a>.</p>
-<p>Finally, you can use the WIT <code>inspect</code> command to <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#inspect-images">inspect images</a>.</p>
+and instead, solely contain the 
+
+<a href="https://oracle.github.io/weblogic-deploy-tooling/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+WebLogic Deploy Tooling
+</a>
+ (WDT) installation and model files;
+this option is designed for the Model in Image 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/"
+   
+   >
+domain home source type
+</a>
+.</p>
+<p>Finally, you can use the WIT <code>inspect</code> command to 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#inspect-images"
+   
+   >
+inspect images
+</a>
+.</p>
 <p>In detail:</p>
 <ul>
 <li>
-<p>WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"><code>create</code></a> command:</p>
+<p>WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>create</code>
+</a>
+ command:</p>
 <ul>
 <li>Creates a new WebLogic image from a base OS image.</li>
-<li>Can be used for all <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source types</a> (Domain in Image, Model in Image, and Domain on PV).</li>
-<li>Optionally, includes a WebLogic Deploy Tooling (WDT) <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/install/">installation</a> and model files in the image
+<li>Can be used for all 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/"
+   
+   >
+domain home source types
+</a>
+ (Domain in Image, Model in Image, and Domain on PV).</li>
+<li>Optionally, includes a WebLogic Deploy Tooling (WDT) 
+
+<a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/install/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+installation
+</a>
+ and model files in the image
 (for Model in Image domains).
-See also, <a href="#create-a-custom-image-with-your-model-inside-the-image">Create a custom image with your model inside the image</a>.</li>
+See also, 
+
+<a href="#create-a-custom-image-with-your-model-inside-the-image"
+   
+   >
+Create a custom image with your model inside the image
+</a>
+.</li>
 <li>Optionally, generates a domain home in the image using WLST or WDT
 (for Domain in Image domains).
-See also, <a href="#create-a-custom-image-with-your-domain-inside-the-image">Create a custom image with your domain inside the image</a>.</li>
+See also, 
+
+<a href="#create-a-custom-image-with-your-domain-inside-the-image"
+   
+   >
+Create a custom image with your domain inside the image
+</a>
+.</li>
 <li><em>Important</em>:
 <ul>
 <li>The <code>create</code> command is <em>not</em> suitable for updating an existing domain home
 in existing Domain in Image images
 when the update is intended for a running domain. Use <code>rebase</code> instead
 or shut down the running domain entirely before applying the new image.
-For more information, see <a href="#create-a-custom-image-with-your-domain-inside-the-image">Create a custom image with your domain inside the image</a>.</li>
+For more information, see 
+
+<a href="#create-a-custom-image-with-your-domain-inside-the-image"
+   
+   >
+Create a custom image with your domain inside the image
+</a>
+.</li>
 </ul>
 </li>
 </ul>
 </li>
 <li>
-<p>WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/"><code>rebase</code></a> command:</p>
+<p>WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>rebase</code>
+</a>
+ command:</p>
 <ul>
 <li>
 <p>The <code>rebase</code> command is used for Domain in Image
@@ -4005,14 +340,39 @@ domain with an older version of the domain home.</li>
 WebLogic image in the repository
 that doesn&rsquo;t already have a domain home, such as an updated CPU image from OCR.</li>
 <li>Or, as a new WebLogic image from a base OS image. <strong>NOTE</strong>:  Oracle strongly recommends rebasing your
-images with the latest security patches by applying the <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/"><code>--recommendedPatches</code></a> option.</li>
-<li>For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/#domain-in-image">Apply patched images to a running domain</a>.</li>
+images with the latest security patches by applying the 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>--recommendedPatches</code>
+</a>
+ option.</li>
+<li>For more information, see 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/#domain-in-image"
+   
+   >
+Apply patched images to a running domain
+</a>
+.</li>
 </ul>
 </li>
 </ul>
 </li>
 <li>
-<p>WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/"><code>update</code></a> command:</p>
+<p>WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>update</code>
+</a>
+ command:</p>
 <ul>
 <li>Creates a new WebLogic image layered on
 an existing WebLogic image (specified in the WIT <code>--fromImage</code> parameter).
@@ -4041,65 +401,208 @@ an existing Domain in Image image
 when the update is intended for a running domain.
 Use the WIT <code>rebase</code> command instead
 or shut down the running domain entirely before applying the new image.
-For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/#apply-patched-images-to-a-running-domain">Apply patched images to a running domain</a>.</li>
+For more information, see 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/#apply-patched-images-to-a-running-domain"
+   
+   >
+Apply patched images to a running domain
+</a>
+.</li>
 <li>Optionally, includes a WDT installation and model files in the image (for Model in Image domains).</li>
 </ul>
 </li>
 </ul>
 </li>
 <li>
-<p>WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/"><code>createAuxImage</code></a> command:</p>
+<p>WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>createAuxImage</code>
+</a>
+ command:</p>
 <ul>
 <li>Supports creating auxiliary images for Model in Image domains only.</li>
 <li>The auxiliary images
 solely contain WebLogic Deploy Tooling files for the Model in Image use case
 and are used in addition to the
 domain resource image that contains your WebLogic and Java installations.</li>
-<li>For more information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a>.</li>
+<li>For more information, see 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/"
+   
+   >
+Auxiliary images
+</a>
+.</li>
 </ul>
 </li>
 <li>
-<p>WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/"><code>inspect</code></a> command:</p>
+<p>WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>inspect</code>
+</a>
+ command:</p>
 <ul>
 <li>Inspects images created with the WebLogic Image Tool.</li>
-<li>See <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#inspect-images">Inspect images</a>.</li>
+<li>See 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#inspect-images"
+   
+   >
+Inspect images
+</a>
+.</li>
 </ul>
 </li>
 </ul>
-<h3 id="create-a-custom-image-with-patches-applied">Create a custom image with patches applied</h3>
+<h3 id="create-a-custom-image-with-patches-applied">Create a custom image with patches applied<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
 <p>All domain home source types require a base image which contains JDK and WebLogic Server binaries.
-This base image is usually <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">obtained directly</a> from the Oracle Container Registry,
-but, as needed, you can also <a href="#create-a-custom-base-image">create your own custom base image</a>.</p>
+This base image is usually 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry"
+   
+   >
+obtained directly
+</a>
+ from the Oracle Container Registry,
+but, as needed, you can also 
+
+<a href="#create-a-custom-base-image"
+   
+   >
+create your own custom base image
+</a>
+.</p>
 <p>If you are using the Domain in Image domain home source type,
 then you will additionally need to use the base image
-to <a href="#create-a-custom-image-with-your-domain-inside-the-image">create a custom image with your domain inside the image</a>.</p>
+to 
+
+<a href="#create-a-custom-image-with-your-domain-inside-the-image"
+   
+   >
+create a custom image with your domain inside the image
+</a>
+.</p>
 <p>Or, if you are using the Model in Image domain home source type <em>without</em> auxiliary images,
 then you will additionally need to use the base image
-to <a href="#create-a-custom-image-with-your-model-inside-the-image">create a custom image with your model inside the image</a>.</p>
-<h4 id="create-a-custom-base-image">Create a custom base image</h4>
+to 
 
-<div class="notices tip" ><p>This section describes using the WebLogic Image Tool (WIT) <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"><code>create</code></a> command
+<a href="#create-a-custom-image-with-your-model-inside-the-image"
+   
+   >
+create a custom image with your model inside the image
+</a>
+.</p>
+<h4 id="create-a-custom-base-image">Create a custom base image<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+
+<details open class="box cstyle notices tip">
+  <summary class="box-label" tabindex="-1">
+    <i class="fa-fw fas fa-lightbulb"></i> 
+    Tip
+  </summary>
+  <div class="box-content">
+<p>This section describes using the WebLogic Image Tool (WIT) 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>create</code>
+</a>
+ command
 to build a custom base WebLogic Server image.
 This is sometimes necessary to build an image with a specific patch, and such,
 but most use cases can instead, obtain pre-built
 patched images directly from the Oracle Container Registry.
 See
-<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a>.</p>
-</div>
 
-<p>Here&rsquo;s an example of using the WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/">create</a>
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry"
+   
+   >
+Obtain images from the Oracle Container Registry
+</a>
+.</p>
+  </div>
+</details>
+<p>Here&rsquo;s an example of using the WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+create
+</a>
+
 command to create a base WebLogic Server image
 from a base Oracle Linux image, a WebLogic installer download, and a JRE installer download:</p>
 <ol>
 <li>
-<p>First, <a href="https://oracle.github.io/weblogic-image-tool/userguide/setup/">install</a> the WebLogic Image Tool. This
+<p>First, 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/setup/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+install
+</a>
+ the WebLogic Image Tool. This
 sample assumes that you have installed WIT in <code>/tmp/imagetool</code>; you can choose to install it in any location.</p>
 </li>
 <li>
-<p>Download your desired JRE installer from the Oracle Technology Network <a href="https://www.oracle.com/java/technologies/downloads/">Java downloads</a> page or from the <a href="https://edelivery.oracle.com/osdc/faces/Home.jspx">Oracle Software Delivery Cloud</a> (OSDC).</p>
+<p>Download your desired JRE installer from the Oracle Technology Network 
+
+<a href="https://www.oracle.com/java/technologies/downloads/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Java downloads
+</a>
+ page or from the 
+
+<a href="https://edelivery.oracle.com/osdc/faces/Home.jspx"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Oracle Software Delivery Cloud
+</a>
+ (OSDC).</p>
 </li>
 <li>
-<p>Download your desired WebLogic Server installer from the Oracle Technology Network <a href="https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html">WebLogic Server installers</a> page or from the <a href="https://edelivery.oracle.com/osdc/faces/Home.jspx">Oracle Software Delivery Cloud</a> (OSDC).</p>
+<p>Download your desired WebLogic Server installer from the Oracle Technology Network 
+
+<a href="https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+WebLogic Server installers
+</a>
+ page or from the 
+
+<a href="https://edelivery.oracle.com/osdc/faces/Home.jspx"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Oracle Software Delivery Cloud
+</a>
+ (OSDC).</p>
 <p><strong>NOTE</strong>: The WebLogic Server installers will not be fully patched.
 In a subsequent step, you&rsquo;ll use
 the WIT <code>--patches</code> or <code>--recommendedPatches</code> options
@@ -4107,20 +610,47 @@ to apply one-off and recommended Oracle patches.</p>
 </li>
 <li>
 <p>Add the installers to your WIT cache using the
-<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/"><code>cache</code></a> command.
+
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>cache</code>
+</a>
+ command.
 For example, assuming you downloaded the installers to the <code>/home/acmeuser/wls-installers</code> directory:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /tmp/imagetool/bin/imagetool.sh cache addInstaller <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --type<span style="color:#f92672">=</span>jdk <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --version<span style="color:#f92672">=</span>8u291 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/jre-8u291-linux-x64.tar.gz
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /tmp/imagetool/bin/imagetool.sh cache addInstaller <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --version<span style="color:#f92672">=</span>12.2.1.4.0 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
-</span></span></code></pre></div><p>For details, see the WIT <a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/">Quick Start</a> guide.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /tmp/imagetool/bin/imagetool.sh cache addInstaller <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --type<span style="color:#f92672">=</span>jdk <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --version<span style="color:#f92672">=</span>8u291 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/jre-8u291-linux-x64.tar.gz</span></span></code></pre></div>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /tmp/imagetool/bin/imagetool.sh cache addInstaller <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --version<span style="color:#f92672">=</span>12.2.1.4.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip</span></span></code></pre></div>
+<p>For details, see the WIT 
+
+<a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Quick Start
+</a>
+ guide.</p>
 </li>
 <li>
-<p>Use the <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"><code>create</code></a> command
+<p>Use the 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+<code>create</code>
+</a>
+ command
 to build the image using a default Oracle Linux image as its base, and download and apply the patches.</p>
 <p>For example, use the following command to create a WebLogic Server image
 named <code>latest_weblogic:12.2.1.4</code> with:</p>
@@ -4130,21 +660,27 @@ named <code>latest_weblogic:12.2.1.4</code> with:</p>
 <li>The latest version of the Oracle Linux 7 slim container image</li>
 <li>The latest quarterly Patch Set Update (PSU), which include security fixes, or with one-off patches</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /tmp/imagetool/bin/imagetool.sh create <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --tag latest_weblogic:12.2.1.4 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --pull <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --jdkVersion<span style="color:#f92672">=</span>8u291 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --version<span style="color:#f92672">=</span>12.2.1.4.0 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --recommendedPatches <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --user myusername@mycompany.com <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --passwordEnv<span style="color:#f92672">=</span>MYPWD
-</span></span></code></pre></div></li>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /tmp/imagetool/bin/imagetool.sh create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --tag latest_weblogic:12.2.1.4 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --pull <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --jdkVersion<span style="color:#f92672">=</span>8u291 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --version<span style="color:#f92672">=</span>12.2.1.4.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --recommendedPatches <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --user myusername@mycompany.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --passwordEnv<span style="color:#f92672">=</span>MYPWD</span></span></code></pre></div>
+</li>
 </ol>
 
-<div class="notices note" ><p>As of June, 2023, Oracle WebLogic Server 12.2.1.3 is no longer supported. The last Critical Patch Updates (CPU) images for WebLogic Server 12.2.1.3 were published in April, 2023. As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last CPU images for FMW Infrastructure 12.2.1.3 were published in October, 2022.</p>
-</div>
-
+<details open class="box cstyle notices note">
+  <summary class="box-label" tabindex="-1">
+    <i class="fa-fw fas fa-exclamation-circle"></i> 
+    Note
+  </summary>
+  <div class="box-content">
+<p>As of June, 2023, Oracle WebLogic Server 12.2.1.3 is no longer supported. The last Critical Patch Updates (CPU) images for WebLogic Server 12.2.1.3 were published in April, 2023. As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last CPU images for FMW Infrastructure 12.2.1.3 were published in October, 2022.</p>
+  </div>
+</details>
 <p><strong>NOTES</strong>:</p>
 <ul>
 <li>To enable WIT to download patches,
@@ -4159,7 +695,14 @@ the <code>wls</code> type corresponds to the WebLogic Server (WLS) generic insta
 the <code>wlsslim</code> type to the WLS slim installation,
 and the <code>wlsdev</code> type to the WLS developer installation.
 For a description of each installation type, see
-<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#weblogic-distribution-installer-type">WebLogic distribution installer type</a>.</li>
+
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#weblogic-distribution-installer-type"
+   
+   >
+WebLogic distribution installer type
+</a>
+.</li>
 <li>The <code>--recommendedPatches</code> parameter finds and applies the latest PatchSet Update (PSU)
 and recommended patches for each of the products included in the installer. For example, for WebLogic Server, the recommended patches for Coherence and TopLink are included.</li>
 <li>These sample commands use a default base image, which is an Oracle Linux OS image,
@@ -4167,51 +710,121 @@ and downloads (pulls) this image only if it is not already cached locally.
 You can use <code>docker images</code> to view your image cache.</li>
 <li>The <code>--pull</code> parameter for WIT is passed to the container build engine which forces a check to the remote repository,
 if applicable, prior to the build execution of the new image to update any image used during the build (updates dependencies).</li>
-<li>For details about each parameter, see the WebLogic Image Tool <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/">User Guide</a>.</li>
+<li>For details about each parameter, see the WebLogic Image Tool 
+
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+User Guide
+</a>
+.</li>
 </ul>
 <ol>
 <li>
 <p>After the tool creates the image, verify that the image is in your local repository:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker images
-</span></span></code></pre></div><p>You can also <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#inspect-images">inspect</a> the contents of the image.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker images</span></span></code></pre></div>
+<p>You can also 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#inspect-images"
+   
+   >
+inspect
+</a>
+ the contents of the image.</p>
 </li>
 </ol>
-<h4 id="create-a-custom-image-with-your-domain-inside-the-image">Create a custom image with your domain inside the image</h4>
+<h4 id="create-a-custom-image-with-your-domain-inside-the-image">Create a custom image with your domain inside the image<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
 
-<div class="notices warning" ><p>Oracle strongly recommends storing Domain in Image images in a private registry.
+<details open class="box cstyle notices warning">
+  <summary class="box-label" tabindex="-1">
+    <i class="fa-fw fas fa-exclamation-triangle"></i> 
+    Warning
+  </summary>
+  <div class="box-content">
+<p>Oracle strongly recommends storing Domain in Image images in a private registry.
 A container image that contains a WebLogic domain home has sensitive information
 including credentials that are used to access external resources
 (for example, a data source password),
 and decryption keys
 (for example, the <code>DOMAIN_HOME/security/SerializedSystemIni.dat</code> domain secret file).
 For more information,
-see <a href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/">Container image protection</a>.</p>
-</div>
+see 
 
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/"
+   
+   >
+Container image protection
+</a>
+.</p>
+  </div>
+</details>
 
-<div class="notices warning" ><p>The sample scripts in this section reference base image
+<details open class="box cstyle notices warning">
+  <summary class="box-label" tabindex="-1">
+    <i class="fa-fw fas fa-exclamation-triangle"></i> 
+    Warning
+  </summary>
+  <div class="box-content">
+<p>The sample scripts in this section reference base image
 <code>container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8</code>.
 This is an OCR General Availability (GA) image
 which <strong>does not include</strong> the latest security patches for WebLogic Server.
 GA images are intended for single desktop demonstration and development purposes <em>only</em>.
 For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
 such as OCR Critical Patch Updates (CPU) images or custom generated images.
-See <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#ensure-you-are-using-recently-patched-images">Ensure you are using recently patched images</a>.</p>
-</div>
+See 
 
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#ensure-you-are-using-recently-patched-images"
+   
+   >
+Ensure you are using recently patched images
+</a>
+.</p>
+  </div>
+</details>
 <p>This section provides guidance for creating a new Domain in Image image.
 This type of image cannot be used in pods that must join the pods in
 an already running domain. If you need to create a Domain in Image
 image that is meant for updating an already running domain, then see
-<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/#apply-patched-images-to-a-running-domain">Apply patched images to a running domain</a>.</p>
-<p><strong>NOTE</strong>: The Domain in Image <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a> is
+
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/#apply-patched-images-to-a-running-domain"
+   
+   >
+Apply patched images to a running domain
+</a>
+.</p>
+<p><strong>NOTE</strong>: The Domain in Image 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/"
+   
+   >
+domain home source type
+</a>
+ is
 deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.</p>
 <p>You should use an image with the recommended security patches installed as this base image,
 where this image could be an OCR image or a custom image.
 See
-<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a>
+
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry"
+   
+   >
+Obtain images from the Oracle Container Registry
+</a>
+
 and
-<a href="#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a>.</p>
+
+
+<a href="#create-a-custom-image-with-patches-applied"
+   
+   >
+Create a custom image with patches applied
+</a>
+.</p>
 <p>The samples perform multiple steps for you
 using a single provided script
 and are not intended for production use.
@@ -4229,18 +842,13 @@ assume the operator source is in <code>/tmp/weblogic-kubernetes-operator</code>,
 assume you have installed WIT in <code>/tmp/imagetool</code>,
 and generate a Domain in Image image named <code>my-dii-wdt:v1</code>.</p>
 
-<div class="expand">
-    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
-        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
-        <span>
-        
-    	
-    	Click here to view the script.
-    	
-    	</span>
-    </div>
-    <div class="expand-content" style="display: none;">
-        <pre tabindex="0"><code>#!/bin/bash
+<details class="box cstyle notices transparent expand">
+  <summary class="box-label">
+    <i class="expander-icon fa-fw fas fa-chevron-right"></i> 
+    Click here to view the script.
+  </summary>
+  <div class="box-content">
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>#!/bin/bash
 
 set -eux
 
@@ -4324,10 +932,9 @@ $imageToolBin/imagetool.sh update \
   --wdtOperation CREATE \
   --wdtVersion LATEST \
   --wdtDomainHome &#34;$domainHome&#34; \
-  --chown=oracle:root
-</code></pre>
-    </div>
-</div>
+  --chown=oracle:root</code></pre></div>
+  </div>
+</details>
 </li>
 <li>
 <p>Domain in Image using WLST:</p>
@@ -4338,18 +945,13 @@ assume the operator source is in <code>/tmp/weblogic-kubernetes-operator</code>,
 assume you have installed WIT in <code>/tmp/imagetool</code>,
 and name the final image <code>my-dii-wlst:v1</code>.</p>
 
-<div class="expand">
-    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
-        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
-        <span>
-        
-    	
-    	Click here to view the script.
-    	
-    	</span>
-    </div>
-    <div class="expand-content" style="display: none;">
-        <pre tabindex="0"><code>#!/bin/bash
+<details class="box cstyle notices transparent expand">
+  <summary class="box-label">
+    <i class="expander-icon fa-fw fas fa-chevron-right"></i> 
+    Click here to view the script.
+  </summary>
+  <div class="box-content">
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>#!/bin/bash
 
 set -eux
 
@@ -4421,10 +1023,9 @@ $imageToolBin/imagetool.sh update \
   --wdtDomainHome &#34;$domainHome&#34;  \
   --additionalBuildCommands $stageDir/additional-build-commands \
   --additionalBuildFiles &#34;$stageDir/createWLSDomain.sh,$stageDir/create-wls-domain.py,$stageDir/domain.properties&#34; \
-  --chown=oracle:root
-</code></pre>
-    </div>
-</div>
+  --chown=oracle:root</code></pre></div>
+  </div>
+</details>
 </li>
 </ul>
 <p><strong>NOTES</strong>:</p>
@@ -4438,38 +1039,97 @@ are <em>not</em> intended for production use.
 These files can all change substantially in new versions of the operator
 and must all be copied, preserved, and customized to suite your particular use case.</li>
 </ul>
-<h4 id="create-a-custom-image-with-your-model-inside-the-image">Create a custom image with your model inside the image</h4>
-<p><strong>NOTE</strong>: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image <em>with</em> auxiliary images. See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a>.</p>
+<h4 id="create-a-custom-image-with-your-model-inside-the-image">Create a custom image with your model inside the image<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p><strong>NOTE</strong>: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image <em>with</em> auxiliary images. See 
 
-<div class="notices warning" ><p>The example in this section references a base image,
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/"
+   
+   >
+Auxiliary images
+</a>
+.</p>
+
+<details open class="box cstyle notices warning">
+  <summary class="box-label" tabindex="-1">
+    <i class="fa-fw fas fa-exclamation-triangle"></i> 
+    Warning
+  </summary>
+  <div class="box-content">
+<p>The example in this section references a base image,
 <code>container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8</code>.
 This is an OCR General Availability (GA) image
 which <strong>does not include</strong> the latest security patches for WebLogic Server.
 GA images are intended for single desktop demonstration and development purposes <em>only</em>.
 For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
 such as OCR Critical Patch Updates (CPU) images or custom generated images.
-See <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#ensure-you-are-using-recently-patched-images">Ensure you are using recently patched images</a>.</p>
-</div>
+See 
 
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#ensure-you-are-using-recently-patched-images"
+   
+   >
+Ensure you are using recently patched images
+</a>
+.</p>
+  </div>
+</details>
 <p>Example steps for creating a custom WebLogic image with a Model in Image file layer
 (using files from the Model in Image sample):</p>
 <ol>
 <li>
 <p>To gain an overall understanding of Model in Image domains,
-read the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/">Model in Image User Guide</a>
-and the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image Sample</a>.
+read the 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/"
+   
+   >
+Model in Image User Guide
+</a>
+
+and the 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/"
+   
+   >
+Model in Image Sample
+</a>
+.
 Note that the sample uses the recommended best approach,
 auxiliary images, instead of the alternative approach, which is used in this example.</p>
 </li>
 <li>
 <p>Follow the prerequisite steps in the
-<a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">Model in Image Sample</a>
+
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/"
+   
+   >
+Model in Image Sample
+</a>
+
 that describe how to:</p>
 <ul>
 <li>Download the operator source and its Model in Image sample
 (including copying the sample to the suggested location, <code>/tmp/sample</code>).</li>
-<li>Download the latest <a href="https://github.com/oracle/weblogic-deploy-tooling/releases">WebLogic Deploy Tooling</a> (WDT)
-and <a href="https://github.com/oracle/weblogic-image-tool/releases">WebLogic Image Tool</a> (WIT) installer ZIP files
+<li>Download the latest 
+
+<a href="https://github.com/oracle/weblogic-deploy-tooling/releases"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+WebLogic Deploy Tooling
+</a>
+ (WDT)
+and 
+
+<a href="https://github.com/oracle/weblogic-image-tool/releases"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+WebLogic Image Tool
+</a>
+ (WIT) installer ZIP files
 to your <code>/tmp/sample/wdt-artifacts</code> directory.
 Both WDT and WIT are required to create your Model in Image container images.</li>
 <li>Install (unzip) the WebLogic Image Tool and configure its cache to reference your WebLogic Deploy Tooling download.</li>
@@ -4477,8 +1137,22 @@ Both WDT and WIT are required to create your Model in Image container images.</l
 </li>
 <li>
 <p>Locate or create a base WebLogic image.</p>
-<p>See <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a>
-or <a href="#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a>.</p>
+<p>See 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry"
+   
+   >
+Obtain images from the Oracle Container Registry
+</a>
+
+or 
+
+<a href="#create-a-custom-image-with-patches-applied"
+   
+   >
+Create a custom image with patches applied
+</a>
+.</p>
 <p>In the following step, you will use the <code>container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8</code> GA image.</p>
 </li>
 <li>
@@ -4486,24 +1160,31 @@ or <a href="#create-a-custom-image-with-patches-applied">Create a custom image w
 and WDT model file locations. For example:</p>
 <p>First, create a model ZIP file application archive and place it in the same directory
 where the sample model YAML file and model properties files are already staged:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1/archive.zip
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1/archive.zip
 </span></span><span style="display:flex;"><span>$ cd /tmp/sample/wdt-artifacts/archives/archive-v1
-</span></span><span style="display:flex;"><span>$ zip -r /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1/archive.zip wlsdeploy
-</span></span></code></pre></div><p>(The <code>rm -f</code> command is included in case there&rsquo;s an
+</span></span><span style="display:flex;"><span>$ zip -r /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1/archive.zip wlsdeploy</span></span></code></pre></div>
+<p>(The <code>rm -f</code> command is included in case there&rsquo;s an
 old version of the archive ZIP file from a
 previous run of this sample.)</p>
 <p>Second, run the following WIT command:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --tag wdt-domain-image:WLS-LEGACY-v1 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --fromImage container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModel      ./model.10.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtVariables  ./model.10.properties <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtArchive    ./archive.zip <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModelOnly <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtDomainType WLS <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --chown oracle:root
-</span></span></code></pre></div><p><strong>NOTE</strong> that JRF support in Model in Image domains is deprecated in operator version 4.1.0; For JRF domains, use the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">Domain on PV</a> domain home source type instead.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1</span></span></code></pre></div>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --tag wdt-domain-image:WLS-LEGACY-v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --fromImage container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --wdtModel      ./model.10.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --wdtVariables  ./model.10.properties <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --wdtArchive    ./archive.zip <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --wdtModelOnly <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --wdtDomainType WLS <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --chown oracle:root</span></span></code></pre></div>
+<p><strong>NOTE</strong> that JRF support in Model in Image domains is deprecated in operator version 4.1.0; For JRF domains, use the 
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/"
+   
+   >
+Domain on PV
+</a>
+ domain home source type instead.</p>
 </li>
 <li>
 <p>For an example Domain YAML file that sets up Model in Image to reference the image,
@@ -4522,2646 +1203,97 @@ must correspond with the <code>--wdtDomainType</code> specified on the WIT comma
 </li>
 </ol>
 
-
-<footer class="footline">
-	
-</footer>
-
-        
+  <footer class="footline">
+  </footer>
+</article>
         </div>
-        
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
 
+
+<a id="logo" href="https://oracle.github.io/weblogic-kubernetes-operator/">
+  <img src="https://oracle.github.io/weblogic-kubernetes-operator//images/logo.png" height="90"><br/>
+  WebLogic Kubernetes Operator
+</a>
+
+        </div>
+        <search><form action="https://oracle.github.io/weblogic-kubernetes-operator/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
       </div>
-
-    <div id="navigation">
-        
-        
-
-        
-            
-            
-                
-                    
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-
-        
-
-
-	 
-	 
-		
-			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/" title="OCR images"> <i class="fa fa-chevron-left"></i></a>
-		
-		
-			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/" title="Patch running domains" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
-		
-	
-    </div>
-
-    </section>
-
-    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
-      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
-    </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1766094385"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1766094385"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1766094385"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1766094385"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1766094385"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1766094385"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1766094385"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1766094385"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1766094385"></script>
-    
-        
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1766094385"></script>
-        
-        <script>
-            mermaid.initialize({ startOnLoad: true });
-        </script>
-    
-    
-
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/index.html"><b> </b>Quick Start</a><ul id="R-subsections-d63193e927818b6cb77d9c791ea48a61" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/introduction/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/index.html"><b> </b>Introduction</a><ul id="R-subsections-e1ed3a04f1f57a27be4a8d0eb274be18" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/index.html"><b> </b>Manage operators</a><ul id="R-subsections-7d4cf64999b86ce8197c0bc43769472c" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/index.html">Manage domains</a><ul id="R-subsections-45a55625d0c34b621eb1935c75fae249" class="collapsible-menu"></ul></li>
+            <li class="parent " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/index.html"><b> </b>WebLogic images</a><ul id="R-subsections-b3440c9f2ce961fe2579290479f05e53" class="collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/index.html">OCR images</a></li>
+            <li class="active " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/index.html">Create custom images</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/index.html">Patch running domains</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/base-images/access-images/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/access-images/index.html">Access domain images</a></li></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/samples/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/samples/index.html"><b> </b>Samples</a><ul id="R-subsections-88c2b1e6419b221ce89c4be4a8ae2a6b" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/index.html"><b> </b>Developer Guide</a><ul id="R-subsections-6d5a8d333894e1a8a4ced31c7a69170c" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/reference/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/reference/index.html"><b> </b>Reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><b> </b>Security</a><ul id="R-subsections-66815ecaaecfc1c209e5637d03b258b2" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html">Frequently asked questions</a><ul id="R-subsections-24e4fc446616bf2bbeac7b1dba804bb8" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html">Deprecated functionality</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html">Known limitations</a></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer">
+
+<p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://join.slack.com/t/oracle-weblogic/shared_invite/zt-1ni1gtjv6-PGC6CQ4uIte3KBdm_67~aQ"><i class="fab fa-slack"></i> Public Slack #weblogic</a></p>
+</div>
+      </div>
+    </aside>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1766147057" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1766147057" defer></script>
+    <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>
-

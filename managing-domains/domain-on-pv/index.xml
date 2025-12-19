@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Domain on Persistent Volume (PV) on WebLogic Kubernetes Operator</title>
-    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/</link>
-    <description>Recent content in Domain on Persistent Volume (PV) on WebLogic Kubernetes Operator</description>
+    <title>Domain on Persistent Volume (PV) :: WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/index.html</link>
+    <description>Create and deploy a typical domain on PV.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 26 Apr 2023 16:45:16 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Overview</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/index.html</link>
       <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/</guid>
-      <description>Contents Overview High-level use case WebLogic Deploy Tooling models Runtime behavior Runtime updates Overview Domain on persistent volume (Domain on PV) is an operator domain home source type, which requires that the domain home exists on a persistent volume. The domain home can be created either manually or automatically by specifying the section, domain.spec.configuration.initializeDomainOnPV, in the domain resource YAML file. The initial domain topology and resources are described using WebLogic Deploy Tooling (WDT) models.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/index.html</guid>
+      <description>Learn how to create a domain on a persistent volume.</description>
     </item>
     <item>
       <title>Usage</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/index.html</link>
       <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/</guid>
-      <description>This document describes how to create and deploy a typical Domain home on persistent volume (Domain on PV).&#xA;Contents WebLogic Kubernetes Operator Configuration WebLogic base image Domain creation WDT models Optional WDT models ConfigMap Using WDT model encryption Volumes and VolumeMounts information Persistent Volume and Persistent Volume Claim PV and PVC requirements References Domain information Best practices Back up the JRF domain home directory and database Store the OPSS wallet in a Kubernetes Secret and update opss.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/index.html</guid>
+      <description>Instructions for using Domain on PV.</description>
     </item>
     <item>
       <title>Domain creation images</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/index.html</link>
       <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/</guid>
-      <description>Contents Introduction Configuration References Source locations Multiple images Configuration examples Example 1: Basic configuration Example 2: Source locations Example 3: Multiple images Introduction Domain creation images are used for supplying WebLogic Deploy Tooling (WDT) model files, WDT variables files, WDT application archive files (collectively known as WDT model files), and the directory where the WebLogic Deploy Tooling software is installed (known as the WDT Home) when deploying a domain using a Domain on PV model.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/index.html</guid>
+      <description>Domain creation images supply the WDT model for Domain on PV.</description>
     </item>
     <item>
       <title>Working with WDT model files</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/index.html</link>
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/</guid>
-      <description>Contents Sample WDT model file with macros Important notes about WDT model files WDT models source location and loading order Model file macros Using secrets in model files Using environment variables in model files Combining secrets and environment variables in model files This document describes working with WebLogic Deploy Tooling (WDT) model files in the operator. For additional information, see the WebLogic Deploy Tooling documentation.&#xA;The WDT Discover Domain Tool is particularly useful for generating WDT model files from an existing domain home.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/index.html</guid>
+      <description>Learn about model file requirements, macros, and loading order.</description>
     </item>
     <item>
       <title>JRF domains</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/</link>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/index.html</link>
       <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/</guid>
-      <description>Contents Overview Sample WDT model for JRF domain Importance of domain home directory backup Download OPSS wallet and store in a Kubernetes Secret Disaster recovery for Domain on PV deployment Disaster recovery for Model in Image domains Overview A Java Required Files (JRF) domain consists of those components not included in a WebLogic Server installation that provide common functionality for Oracle business applications and application frameworks. They consist of a number of independently developed libraries and applications that are deployed in a common location.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/index.html</guid>
+      <description>Important information about using JRF domains.</description>
     </item>
   </channel>
 </rss>
