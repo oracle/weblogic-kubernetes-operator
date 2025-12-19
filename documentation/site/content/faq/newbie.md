@@ -24,9 +24,9 @@ To learn how, see [Get help]({{% relref "/introduction/get-help.md" %}}).
 
 #### WebLogic Server Certification
 
-**Q:** Which Java EE profiles are supported/certified on Kubernetes, only Web Profile or WLS Java EE full blown?
+**Q:** Which Java EE and Jakarta EE profiles are supported/certified on Kubernetes, only Web Profile or WLS Java EE full-blown?
 
-**A:** We support the full Java EE Profile.
+**A:** We support the full Java EE and Jakarta EE profiles.
 
 
 #### WebLogic Server Configuration
