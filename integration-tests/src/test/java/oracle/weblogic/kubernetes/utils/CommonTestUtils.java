@@ -46,6 +46,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -1391,6 +1392,7 @@ public class CommonTestUtils {
           "Can't find external IP address of the service " + serviceName);
 
       logger.info("External IP address of the service is {0} ", serviceExtIPAddr);
+      InitializationTasks.registerLoadBalancerExternalIP(serviceExtIPAddr);
     }
 
     String serviceExtIPAddress = serviceExtIPAddr;

@@ -8,58 +8,92 @@
 set -o errexit
 set -o pipefail
 
+# OCI CLI must be explicit in Jenkins
+export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
+
+if [[ -z "${OCI_CLI_CONFIG_FILE}" ]]; then
+  export OCI_CLI_CONFIG_FILE="${HOME}/.oci/config"
+fi
+
+if [[ -z "${OCI_CLI_PROFILE}" ]]; then
+  export OCI_CLI_PROFILE="DEFAULT"
+fi
+
+echo "[DEBUG] Using OCI config: ${OCI_CLI_CONFIG_FILE}"
+echo "[DEBUG] Using OCI profile: ${OCI_CLI_PROFILE}"
+
+lb_query_for_cluster() {
+  local cluster="$1"
+  echo 'data[?"freeform-tags"."oke.cluster.name" == '"'"${cluster}"'"' ].{"id":id,"name":"display-name","state":"lifecycle-state"}'
+}
+
+
+
 prop() {
   grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
 
-cleanupLB() {
-  echo 'Clean up left over LB'
-  myvcn_id=`oci network vcn list --compartment-id $compartment_ocid  --display-name=${clusterName}_vcn | jq -r '.data[] | .id'`
-  declare -a vcnidarray
-  vcnidarray=(${myvcn_id// /})
-  myip=`oci lb load-balancer list --compartment-id $compartment_ocid |jq -r '.data[] | .id'`
-  mysubnets=`oci network subnet list --vcn-id=${vcnidarray[0]} --display-name=${clusterName}-LB-${1} --compartment-id $compartment_ocid | jq -r '.data[] | .id'`
-
-  declare -a iparray
-  declare -a mysubnetsidarray
-  mysubnetsidarray=(${mysubnets// /})
-
-  iparray=(${myip// /})
-  vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
-  for k in "${mysubnetsidarray[@]}"
-    do
-      for i in "${iparray[@]}"
-         do
-            lb=`oci lb load-balancer get --load-balancer-id=$i`
-            echo "deleting lb with id $i   $lb"
-            if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
-               echo "deleting lb with id $i"
-               sleep 60
-               oci lb load-balancer delete --load-balancer-id=$i --force || true
-            fi
-        done
-    done
-  myip=`oci lb load-balancer list --compartment-id $compartment_ocid |jq -r '.data[] | .id'`
-  iparray=(${myip// /})
-   for k in "${mysubnetsidarray[@]}"
-      do
-        for i in "${iparray[@]}"
-           do
-              lb=`oci lb load-balancer get --load-balancer-id=$i`
-              echo "deleting lb with id $i   $lb"
-              if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
-                 echo "deleting lb with id $i"
-                 sleep 60
-                 oci lb load-balancer delete --load-balancer-id=$i --force || true
-              fi
-          done
-      done
+debug() {
+  echo "[DEBUG] $*"
 }
 
+
+debug "oke.delete.sh: okeclustername=${clusterName}"
+
+
+cleanupLB() {
+  echo "Cleaning Load Balancers for cluster ${clusterName}"
+
+  oci lb load-balancer list \
+    --compartment-id "$compartment_ocid" \
+    --all \
+    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].id" \
+    --raw-output | while read -r lb_id; do
+
+      [ -z "$lb_id" ] && continue
+      echo "Deleting LB $lb_id"
+      oci lb load-balancer delete \
+        --load-balancer-id "$lb_id" \
+        --force || true
+  done
+}
+
+listClusterLBs() {
+   oci lb load-balancer list \
+    --compartment-id "$compartment_ocid" \
+    --query "$(lb_query_for_cluster "$okeclustername")" \
+    --all \
+    --output table
+}
+
+
+verifyNoLeftoverLBs() {
+  echo "Verifying no Load Balancers remain for cluster ${clusterName}"
+
+  leftover=$(oci lb load-balancer list \
+    --compartment-id "$compartment_ocid" \
+    --all \
+    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].id" \
+    --raw-output)
+
+  if [[ -n "$leftover" ]]; then
+    echo "[ERROR] Leftover Load Balancers detected for cluster ${clusterName}:"
+    echo "$leftover"
+    exit 1
+  fi
+
+  echo "No leftover Load Balancers found for cluster ${clusterName}"
+}
+
+
 deleteOKE() {
+	debug "deleteOKE(): destroying cluster ${clusterName}"
+
   cd ${terraform_script_dir}
   terraform init -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
   terraform plan -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
+  debug "deleteOKE(): destroying cluster ${clusterName}"
+
   terraform destroy -auto-approve -var-file=${terraform_script_dir}/${clusterName}.tfvars > /dev/null
 }
 
@@ -77,3 +111,8 @@ export TF_LOG=ERROR
 echo 'Deleting cluster'
 
 deleteOKE || true
+echo "=== Load Balancers BEFORE cleanup for ${clusterName} ==="
+listClusterLBs || true
+cleanupLB
+sleep 30
+verifyNoLeftoverLBs
