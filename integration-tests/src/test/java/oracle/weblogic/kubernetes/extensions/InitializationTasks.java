@@ -421,6 +421,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       if (OKE_CLUSTER) {
         logger.info("Cleanup created in OCI load balancers after all test suites are run");
         // delete all load balancers in OCI
+        logger.info(lbIPs.toString());
         for (String ip : lbIPs) {
           deleteLoadBalancer(ip);
         }
