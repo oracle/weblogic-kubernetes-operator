@@ -331,7 +331,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           logger.info("Installing istio before any test suites are run");
           installIstio();
         }
-        if (INSTALL_WEBLOGIC && !CRIO && !ARM && !OKE_CLUSTER) {
+        if (INSTALL_WEBLOGIC && !CRIO && !ARM) {
           installOnPremWebLogic();
         }
       } finally {
