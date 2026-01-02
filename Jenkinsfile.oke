@@ -320,6 +320,9 @@ pipeline {
                         vcn_ocid=$(oci network vcn list --compartment-id=${wkt_compartment_ocid}| jq -r '.data[] | .id')
                         pub_subnet_ocid=$(oci network subnet list --compartment-id=${wkt_compartment_ocid}  | jq '.data[] | select(."display-name" == "Public-Subnet-wktiso1")' | jq -r ."id")
                         private_subnet_ocid=$(oci network subnet list --compartment-id=${wkt_compartment_ocid}  | jq '.data[] | select(."display-name" == "Private-Subnet-wktiso1")' | jq -r ."id")
+			CLUSTER_OCID=$(oci ce cluster list --compartment-id ${wkt_compartment_ocid} --all --query "data[?name=='$CLUSTER_NAME'].id | [0]" --raw-output)
+                        echo "Cluster OCID = $CLUSTER_OCID"
+			export CLUSTER_OCID
                         export WKT_TENANCY_OCID=${TENANCY_OCID}
                         export WKT_USER_OCID=${USER_OCID}
                         mkdir -p ${WORKSPACE}/terraform
@@ -678,6 +681,9 @@ EOF
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+				echo 'Remove any leftover lbs'
+                                ${WORKSPACE}/terraform/oke_delete_lbs_by_cluster_tag.sh ${CLUSTER_OCID} ${compartment_id}
+
                                 ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
 
                             '''
