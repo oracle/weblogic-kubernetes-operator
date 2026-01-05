@@ -102,14 +102,6 @@ pipeline {
                description: 'kube version for oke cluster',
                defaultValue: '1.33.1'
         )
-        string(name: 'IMAGE_ID',
-                       description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
-                       //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
-                       //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
-                       
-                )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
                        defaultValue: '1.30.0'
@@ -131,10 +123,6 @@ pipeline {
                    '1.11.1'
                ]
         )
-	string(name: 'BASE_CLUSTER_NAME',
-               description: 'Base OKE cluster name (BUILD_ID will be appended)',
-               defaultValue: "seqone"
-        )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
                //defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
@@ -147,15 +135,6 @@ pipeline {
                description: '',
                defaultValue: "${env.WKT_OCIR_HOST}"
         )
-        string(name: 'NODE_SHAPE',
-                       description: '',
-                       defaultValue: "VM.Standard.E3.Flex"
-        )
-        string(name: 'MOUNT_TARGET_OCID',
-                      description: 'only for debug runs on wko-oke-dev',
-		      defaultValue: "ocid1.mounttarget.oc1.phx.aaaaaby27vhqpci5obuhqllqojxwiotqnb4c2ylefuzqaaaa"
-
-                )
         choice(name: 'BASE_IMAGES_REPO',
                choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
@@ -211,6 +190,26 @@ pipeline {
         string(name: 'REMOTECONSOLE_VERSION',
                description: 'RemoteConsole version.',
                defaultValue: '2.4.7'
+        )
+        string(name: 'BASE_CLUSTER_NAME',
+               description: 'Base OKE cluster name (BUILD_ID will be appended)',
+               defaultValue: "seqone"
+        )
+        string(name: 'IMAGE_ID',
+                       description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
+                       //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
+                       //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
+                       //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
+       )
+        string(name: 'NODE_SHAPE',
+                       description: '',
+                       defaultValue: "VM.Standard.E3.Flex"
+        )
+        string(name: 'MOUNT_TARGET_OCID',
+                      description: 'only for debug runs on wko-oke-dev',
+                      defaultValue: "ocid1.mounttarget.oc1.phx.aaaaaby27vhqpci5obuhqllqojxwiotqnb4c2ylefuzqaaaa"
+
         )
     }
 
