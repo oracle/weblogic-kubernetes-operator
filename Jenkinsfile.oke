@@ -318,10 +318,6 @@ pipeline {
                         vcn_ocid=$(oci network vcn list --compartment-id=${wkt_compartment_ocid}| jq -r '.data[] | .id')
                         pub_subnet_ocid=$(oci network subnet list --compartment-id=${wkt_compartment_ocid}  | jq '.data[] | select(."display-name" == "Public-Subnet-wktiso1")' | jq -r ."id")
                         private_subnet_ocid=$(oci network subnet list --compartment-id=${wkt_compartment_ocid}  | jq '.data[] | select(."display-name" == "Private-Subnet-wktiso1")' | jq -r ."id")
-			oci ce cluster list --compartment-id ${wkt_compartment_ocid} --all --raw-output
-			CLUSTER_OCID=$(oci ce cluster list --compartment-id ${wkt_compartment_ocid} --all --query "data[?name=='$CLUSTER_NAME'].id | [0]" --raw-output)
-                        echo "Cluster OCID = $CLUSTER_OCID"
-			export CLUSTER_OCID
                         export WKT_TENANCY_OCID=${TENANCY_OCID}
                         export WKT_USER_OCID=${USER_OCID}
                         mkdir -p ${WORKSPACE}/terraform
@@ -448,6 +444,12 @@ EOF
                             fi
 
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+
+			    oci ce cluster list --compartment-id ${wkt_compartment_ocid} --all --raw-output
+                            CLUSTER_OCID=$(oci ce cluster list --compartment-id ${wkt_compartment_ocid} --all --query "data[?name=='$CLUSTER_NAME'].id | [0]" --raw-output)
+                            echo "Cluster OCID = $CLUSTER_OCID"
+                            export CLUSTER_OCID
+
                             clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == "'"${CLUSTER_NAME}"'" and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
                             echo "clusterIp : $clusterIP"
                             clusterPublicIP=${clusterIP:1:-6}
