@@ -444,7 +444,7 @@ EOF
 
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
 
-			    CLUSTER_OCID=$(oci ce cluster list --compartment-id ${compartment_id} --all --query "data[?name=='$CLUSTER_NAME' && \"lifecycle-state\"=='ACTIVE'].id | [0]"  --raw-output)
+			    CLUSTER_OCID=$(oci ce cluster list --compartment-id "$compartment_id" --all --query 'data[?name==`'"$CLUSTER_NAME"'` && "lifecycle-state"==`ACTIVE`].id | [0]' --raw-output)
                             echo "Cluster OCID = $CLUSTER_OCID"
                             export CLUSTER_OCID
 
