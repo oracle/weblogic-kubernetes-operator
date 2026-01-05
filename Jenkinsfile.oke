@@ -448,6 +448,17 @@ EOF
                             echo "Cluster OCID = $CLUSTER_OCID"
                             export CLUSTER_OCID
 
+			    if [[ -z "$CLUSTER_OCID" || "$CLUSTER_OCID" == "null" ]]; then
+                                echo "[ERROR] CLUSTER_OCID not found (cluster not ACTIVE or not visible)."
+                                # still write an empty marker file so post can detect it
+                                : > "${WORKSPACE}/cluster_ocid.txt"
+                            else
+                                echo "$CLUSTER_OCID" > "${WORKSPACE}/cluster_ocid.txt"
+                            fi
+
+                            echo "[DEBUG] cluster_ocid.txt content:"
+                            cat "${WORKSPACE}/cluster_ocid.txt" || true
+
                             clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == "'"${CLUSTER_NAME}"'" and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
                             echo "clusterIp : $clusterIP"
                             clusterPublicIP=${clusterIP:1:-6}
@@ -681,8 +692,17 @@ EOF
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+
 				echo 'Remove any leftover lbs'
-                                ${WORKSPACE}/terraform/oke_delete_lbs_by_cluster_tag.sh ${CLUSTER_OCID} ${compartment_id}
+				CLUSTER_OCID="$(cat "${WORKSPACE}/cluster_ocid.txt" 2>/dev/null || true)"
+                                echo "[DEBUG] Read CLUSTER_OCID from file: ${CLUSTER_OCID}"
+
+                                if [[ -z "${CLUSTER_OCID}" || "${CLUSTER_OCID}" == "null" ]]; then
+                                    echo "[WARN] CLUSTER_OCID is empty; skipping LB cleanup by cluster tag."
+                                else
+                                    echo 'Remove any leftover lbs'
+                                    ${WORKSPACE}/terraform/oke_delete_lbs_by_cluster_tag.sh "${CLUSTER_OCID}" "${compartment_id}"
+                                fi
 
                                 ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
 
