@@ -67,12 +67,23 @@ pipeline {
     }
 
     parameters {
-
+        string(name: 'BRANCH',
+                       description: '',
+                       defaultValue: "main"
+        )
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
-
+        choice(name: 'MAVEN_PROFILE_NAME',
+               description: 'Profile to use in mvn command to run the tests.  Possible values are oke-weekly-sequential,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+               choices: [
+                   'oke-weekly-sequential',
+                   'oke-sequential',
+                   'oke-parallel',
+                   'integration-tests'
+                ]
+        )
         string(name: 'OPERATOR_LOG_LEVEL',
                description: 'The default log level is not set',
                defaultValue: ''
@@ -81,7 +92,11 @@ pipeline {
         booleanParam(name: 'PARALLEL_RUN',
                              description: 'Runs tests in parallel. Default is false.',
                              defaultValue: false
-                )
+        )
+        string(name: 'NUMBER_OF_THREADS',
+               description: 'Number of threads to run the classes in parallel, default is 3.',
+               defaultValue: "3"
+        )
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
@@ -116,19 +131,6 @@ pipeline {
                    '1.11.1'
                ]
         )
-
-                choice(name: 'MAVEN_PROFILE_NAME',
-                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-weekly-sequential,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-                        choices: [
-                                'oke-weekly-sequential',
-                                'oke-sequential',
-                                'oke-parallel'
-                        ]
-                )
-        string(name: 'NUMBER_OF_THREADS',
-               description: 'Number of threads to run the classes in parallel, default is 3.',
-               defaultValue: "3"
-        )
 	string(name: 'BASE_CLUSTER_NAME',
                description: 'Base OKE cluster name (BUILD_ID will be appended)',
                defaultValue: "seqone"
@@ -154,10 +156,6 @@ pipeline {
 		      defaultValue: "ocid1.mounttarget.oc1.phx.aaaaaby27vhqpci5obuhqllqojxwiotqnb4c2ylefuzqaaaa"
 
                 )
-        string(name: 'BRANCH',
-                       description: '',
-                       defaultValue: "main"
-        )
         choice(name: 'BASE_IMAGES_REPO',
                choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
