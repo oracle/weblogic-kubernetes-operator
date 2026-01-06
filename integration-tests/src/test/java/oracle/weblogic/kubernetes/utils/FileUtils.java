@@ -481,14 +481,14 @@ public class FileUtils {
    * @param replacement the string to be substituted for each match
    * @throws IOException if an IO error occurs while reading from the file
    */
-  public static void replaceLiteralInFile(Path file, String search, String replacement) throws IOException {
-    String content = Files.readString(file, StandardCharsets.UTF_8);
+  public static void replaceStringInFile(String file, String search, String replacement) throws IOException {
+    String content = Files.readString(Paths.get(file), StandardCharsets.UTF_8);
     String updated = content.replace(search, replacement);
     if (content.equals(updated)) {
       getLogger().warning("search string {0} not found to replace with {1} in {2}", search, replacement, file);
       return;
     }
-    Files.writeString(file, updated, StandardCharsets.UTF_8);
+    Files.writeString(Paths.get(file), updated, StandardCharsets.UTF_8);
     getLogger().info("Replaced {0} in {1} with {2}", search, file, replacement);
   }
 
