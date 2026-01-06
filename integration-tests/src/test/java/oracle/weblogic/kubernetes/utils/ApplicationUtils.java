@@ -39,7 +39,7 @@ public class ApplicationUtils {
   public static boolean checkAppUsingHostHeader(String url, String hostHeader, Boolean... args) {
     boolean checlReadyAppAccessible = args.length == 0;
     LoggingFacade logger = getLogger();
-    StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    StringBuffer curlString = new StringBuffer("status=$(curl -v --user weblogic:welcome1 ");
     StringBuffer headerString;
     if (hostHeader != null) {
       headerString = new StringBuffer("-H 'host: ");
