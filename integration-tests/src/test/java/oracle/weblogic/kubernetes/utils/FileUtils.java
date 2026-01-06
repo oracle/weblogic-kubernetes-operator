@@ -476,25 +476,20 @@ public class FileUtils {
   /**
    * Replaces each substring in the file that matches the given regular
    * expression with the given replacement.
-   * @param filePath file in which a string has to be replaced
-   * @param regex the regular expression to which this string is to be matched
+   * @param file file in which a string has to be replaced
+   * @param search the regular expression to which this string is to be matched
    * @param replacement the string to be substituted for each match
    * @throws IOException if an IO error occurs while reading from the file
    */
-  public static void replaceStringInFile(String filePath, String regex, String replacement)
-      throws IOException {
-    LoggingFacade logger = getLogger();
-    Path src = Paths.get(filePath);
-    logger.info("Replacing {0} in {1} with {2}", regex, src.toString(), replacement);
-    String content = new String(Files.readAllBytes(src), StandardCharsets.UTF_8);
-    if (!content.matches(regex)) {
-      logger.warning("search string {0} not found to replace with {1}", regex, replacement);
+  public static void replaceLiteralInFile(Path file, String search, String replacement) throws IOException {
+    String content = Files.readString(file, StandardCharsets.UTF_8);
+    String updated = content.replace(search, replacement);
+    if (content.equals(updated)) {
+      getLogger().warning("search string {0} not found to replace with {1} in {2}", search, replacement, file);
+      return;
     }
-    long oldModified = src.toFile().lastModified();
-    Files.write(src, content.replaceAll(regex, replacement).getBytes(StandardCharsets.UTF_8));
-    if (oldModified == src.toFile().lastModified()) {
-      logger.info("No modification was done to the file");
-    }
+    Files.writeString(file, updated, StandardCharsets.UTF_8);
+    getLogger().info("Replaced {0} in {1} with {2}", search, file, replacement);
   }
 
   /**

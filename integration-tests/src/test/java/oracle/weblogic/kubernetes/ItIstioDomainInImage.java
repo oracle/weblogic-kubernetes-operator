@@ -3,8 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -192,6 +194,7 @@ class ItIstioDomainInImage {
     boolean deployRes = assertDoesNotThrow(
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+    printFile(targetHttpFile);
 
     Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
     Path targetDrFile = assertDoesNotThrow(
@@ -201,6 +204,7 @@ class ItIstioDomainInImage {
     deployRes = assertDoesNotThrow(
         () -> deployIstioDestinationRule(targetDrFile));
     assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+    printFile(targetDrFile);
 
     String host;
     int istioIngressPort;
@@ -342,5 +346,13 @@ class ItIstioDomainInImage {
                     domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
+  }
+  
+  private static void printFile(Path file) {
+    try {
+      logger.info(Files.readString(file));
+    } catch (IOException ex) {
+      logger.warning(ex.getLocalizedMessage());
+    }
   }
 }
