@@ -45,8 +45,7 @@ spec:
         - uri:
             prefix: /myear
         - uri:
-            prefix: /testwebapp            
-        - port: MANAGED_SERVER_PORT
+            prefix: /testwebapp    
       route:
         - destination:
             host: CLUSTER_SERVICE

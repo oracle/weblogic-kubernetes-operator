@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
@@ -121,7 +122,7 @@ public class IstioUtils {
                 .redirect(false))
         .execute());
     if (OKE_CLUSTER) {
-      String loadBalancerIP = getServiceExtIPAddrtOke("istio-ingressgateway", "istio-system");
+      String loadBalancerIP = getServiceExtIPAddrtOke("istio-ingressgateway", ISTIO_NAMESPACE);
       testUntil(
           assertDoesNotThrow(() -> isLoadBalancerHealthy("istio-system", "istio-ingressgateway"),
               "isLoadBalancerHealthy failed with ApiException"),

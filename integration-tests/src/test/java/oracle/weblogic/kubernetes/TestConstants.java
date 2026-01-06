@@ -360,6 +360,7 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
+  String ISTIO_NAMESPACE = "istio-system";
   String ISTIO_VERSION =
       getNonEmptySystemProperty("wko.it.istio.version", "1.23.0");
   int ISTIO_HTTP_HOSTPORT = 2480;
