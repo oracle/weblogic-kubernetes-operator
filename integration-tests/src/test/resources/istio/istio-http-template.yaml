@@ -35,12 +35,11 @@ spec:
             prefix: /management
         - uri:
             prefix: /weblogic
-        - port: 7001
       route:
         - destination:
             host: ADMIN_SERVICE
             port:
-              number: 7001
+              number: 7002
 
     - match:
         - uri:

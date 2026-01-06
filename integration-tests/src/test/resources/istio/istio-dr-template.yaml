@@ -4,17 +4,22 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
-  name: "NAMESPACE-destination-rule"
+  name: dr-admin
   namespace: "NAMESPACE"
 spec:
-  host: "*.NAMESPACE.svc.cluster.local"
+  host: DUID-admin-server.NAMESPACE.svc.cluster.local
   trafficPolicy:
-    portLevelSettings:
-    - port:
-        number: 7001
-      tls: {}
-    - port:
-        number: 8001
-      tls: {}      
     tls:
       mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: dr-cluster
+  namespace: "NAMESPACE"
+spec:
+  host: DUID-cluster-cluster-1.NAMESPACE.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+      
