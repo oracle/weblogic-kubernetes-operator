@@ -39,7 +39,7 @@ spec:
         - destination:
             host: ADMIN_SERVICE
             port:
-              number: 7002
+              number: 7001
 
     - match:
         - uri:
