@@ -306,7 +306,7 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioDestinationRule: " + KUBERNETES_CLI + " returned {0}", result.toString());
-    return result.stdout().contains("destination-rule created");
+    return result.stdout().contains("created");
   }
 
 
