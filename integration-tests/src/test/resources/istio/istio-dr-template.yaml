@@ -7,8 +7,6 @@ metadata:
   name: dr-admin
   namespace: "NAMESPACE"
 spec:
-  exportTo:
-  - "*"  
   host: ADMIN_SERVICE
   trafficPolicy:
     tls:
@@ -20,8 +18,6 @@ metadata:
   name: dr-cluster
   namespace: "NAMESPACE"
 spec:
-  exportTo:
-  - "*"  
   host: CLUSTER_SERVICE
   trafficPolicy:
     tls:
