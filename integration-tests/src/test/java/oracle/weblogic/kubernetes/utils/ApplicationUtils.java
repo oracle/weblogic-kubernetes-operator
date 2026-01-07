@@ -54,7 +54,8 @@ public class ApplicationUtils {
         .append(url)
         .append(" -o /dev/null")
         .append(" -w %{http_code});")
-        .append("echo ${status}");
+        .append("echo ${status};")
+        .append(KUBERNETES_CLI + " get endpoints,svc,pod -o wide -A");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
 
     if (checlReadyAppAccessible) {
