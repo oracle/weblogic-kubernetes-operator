@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -71,6 +72,16 @@ public class LoggingUtil {
   public static void collectLogs(String namespace, String resultDir) {
     LoggingFacade logger = getLogger();
     logger.info("Collecting logs in namespace : {0}", namespace);
+    
+    try {
+      if (!TestActions.listNamespaces().contains(namespace)) {
+        logger.warning("Namespace {0} doesn't exist");
+        return;
+      }
+    } catch (ApiException ex) {
+      logger.warning(ex.getLocalizedMessage());
+      return;
+    }
 
     // get events
     try {

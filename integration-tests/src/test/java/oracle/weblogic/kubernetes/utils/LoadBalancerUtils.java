@@ -461,7 +461,6 @@ public class LoadBalancerUtils {
           "load balancer shape can't be checked, retrying ");
     }
 
-    
     //check health status
     final String command1 = "oci lb load-balancer-health get --load-balancer-id " + lbOCID;
     logger.info("Command to retrieve Load Balancer health status  is: {0} ", command1);
@@ -472,22 +471,7 @@ public class LoadBalancerUtils {
     if (result == null || result.exitValue() != 0 || result.stdout() == null) {
       return false;
     }
-    boolean healthStatus = result.stdout().contains("OK") && isBackendHealthy(result.stdout());
-    try {
-      ExecResult exec = exec(KUBERNETES_CLI + " -n " + namespace + " describe svc " + lbServiceName
-          + " | sed -n '/Ports:/,/Endpoints:/p'");
-      logger.info(exec.stdout());
-      logger.info(exec.stderr());
-      exec = exec("oci lb listener list --load-balancer-id " + lbOCID, true);
-      logger.info(exec.stdout());
-      logger.info(exec.stderr());
-      exec = exec("oci lb backend-set list --load-balancer-id " + lbOCID, true);
-      logger.info(exec.stdout());
-      logger.info(exec.stderr());
-    } catch (Exception ex) {
-      logger.warning(ex.getLocalizedMessage());
-    }
-    return healthStatus;
+    return (result.stdout().contains("OK") && isBackendHealthy(result.stdout()));
   }
 
   private static boolean isBackendHealthy(String jsonResponse) {
