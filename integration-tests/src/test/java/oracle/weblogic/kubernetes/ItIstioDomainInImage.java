@@ -205,6 +205,15 @@ class ItIstioDomainInImage {
         () -> deployIstioDestinationRule(targetDrFile));
     assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
     printFile(targetDrFile);
+    
+    templateMap.replace("NAMESPACE", istioNamespace);
+    Path targetIstioDrFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
+    logger.info("Generated DestinationRule file path is {0}", targetIstioDrFile);
+    deployRes = assertDoesNotThrow(
+        () -> deployIstioDestinationRule(targetIstioDrFile));
+    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+    printFile(targetDrFile);
 
     String host;
     int istioIngressPort;
