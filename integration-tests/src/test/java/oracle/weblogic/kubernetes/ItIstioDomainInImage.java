@@ -179,12 +179,12 @@ class ItIstioDomainInImage {
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-    Map<String, String> templateMap  = new HashMap<>();
+    String adminService = domainUid + "-" + adminServerName + "." + domainNamespace + ".svc.cluster.local";
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
-    templateMap.put("DUID", domainUid);
-    templateMap.put("ADMIN_SERVICE",adminServerPodName);
+    templateMap.put("ADMIN_SERVICE", adminService);
     templateMap.put("CLUSTER_SERVICE", clusterService);
-    templateMap.put("MANAGED_SERVER_PORT", "8001");    
+    templateMap.put("MANAGED_SERVER_PORT", "8001");   
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(

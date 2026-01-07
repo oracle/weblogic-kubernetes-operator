@@ -7,7 +7,7 @@ metadata:
   name: dr-admin
   namespace: "NAMESPACE"
 spec:
-  host: DUID-admin-server.NAMESPACE.svc.cluster.local
+  host: ADMIN_SERVICE
   trafficPolicy:
     tls:
       mode: DISABLE
@@ -18,7 +18,7 @@ metadata:
   name: dr-cluster
   namespace: "NAMESPACE"
 spec:
-  host: DUID-cluster-cluster-1.NAMESPACE.svc.cluster.local
+  host: CLUSTER_SERVICE
   trafficPolicy:
     tls:
       mode: DISABLE
