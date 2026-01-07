@@ -3,7 +3,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
-CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=wko-okd-wls-srg
+def CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=wko-okd-wls-srg
                    H 2 * * * % MAVEN_PROFILE_NAME=wko-okd-wls-mrg
                    H 3 * * * % MAVEN_PROFILE_NAME=wko-okd-fmw-cert'''
 
