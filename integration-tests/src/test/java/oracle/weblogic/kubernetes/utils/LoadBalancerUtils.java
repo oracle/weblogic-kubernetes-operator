@@ -474,10 +474,16 @@ public class LoadBalancerUtils {
     }
     boolean healthStatus = result.stdout().contains("OK") && isBackendHealthy(result.stdout());
     try {
-      exec(KUBERNETES_CLI + " -n " + namespace + " describe svc " + lbServiceName
-          + " | sed -n '/Ports:/,/Endpoints:/p'", true);
-      exec("oci lb listener list --load-balancer-id " + lbOCID, true);
-      exec("oci lb backend-set list --load-balancer-id " + lbOCID, true);
+      ExecResult exec = exec(KUBERNETES_CLI + " -n " + namespace + " describe svc " + lbServiceName
+          + " | sed -n '/Ports:/,/Endpoints:/p'");
+      logger.info(exec.stdout());
+      logger.info(exec.stderr());
+      exec = exec("oci lb listener list --load-balancer-id " + lbOCID, true);
+      logger.info(exec.stdout());
+      logger.info(exec.stderr());
+      exec = exec("oci lb backend-set list --load-balancer-id " + lbOCID, true);
+      logger.info(exec.stdout());
+      logger.info(exec.stderr());
     } catch (Exception ex) {
       logger.warning(ex.getLocalizedMessage());
     }
