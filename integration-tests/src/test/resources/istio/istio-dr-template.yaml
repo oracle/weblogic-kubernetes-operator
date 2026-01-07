@@ -10,7 +10,7 @@ spec:
   host: ADMIN_SERVICE
   trafficPolicy:
     tls:
-      mode: DISABLE
+      mode: ISTIO_MUTUAL
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
@@ -21,5 +21,5 @@ spec:
   host: CLUSTER_SERVICE
   trafficPolicy:
     tls:
-      mode: DISABLE
+      mode: ISTIO_MUTUAL
       
