@@ -2,13 +2,13 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
-CRON_SETTINGS_MAIN = '''H 15 * * 6 % MAVEN_PROFILE_NAME=oke-arm;CLUSTER_NAME=seqarmwls12;PARALLEL_RUN=false
+def CRON_SETTINGS_MAIN = '''H 15 * * 6 % MAVEN_PROFILE_NAME=oke-arm;CLUSTER_NAME=seqarmwls12;PARALLEL_RUN=false
                         H 2 * * 5 % MAVEN_PROFILE_NAME=oke-arm;CLUSTER_NAME=seqarmwls14;PARALLEL_RUN=false;WEBLOGIC_IMAGE_TAG=14.1.1.0-generic-jdk8-ol8-241009.121334-arm64'''
 
-CRON_SETTINGS_42 = '''H 5 * * 6 % MAVEN_PROFILE_NAME=oke-arm;CLUSTER_NAME=seq42armwls12;PARALLEL_RUN=false
+def CRON_SETTINGS_42 = '''H 5 * * 6 % MAVEN_PROFILE_NAME=oke-arm;CLUSTER_NAME=seq42armwls12;PARALLEL_RUN=false
                     H 21 * * 5 % MAVEN_PROFILE_NAME=oke-arm;CLUSTER_NAME=seq42armwls14;PARALLEL_RUN=false;WEBLOGIC_IMAGE_TAG=14.1.1.0-generic-jdk8-ol8-241009.121334-arm64'''
 
-CRON_SETTINGS = "${env.JOB_NAME == 'wko-oke-arm' ? CRON_SETTINGS_42 : CRON_SETTINGS_MAIN}"
+def CRON_SETTINGS = "${env.JOB_NAME == 'wko-oke-arm' ? CRON_SETTINGS_42 : CRON_SETTINGS_MAIN}"
 
 pipeline {
     agent { label 'large-arm-iad' }
