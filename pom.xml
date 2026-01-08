@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2026, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -706,7 +706,7 @@
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <commons-cli-version>1.11.0</commons-cli-version>
     <networknt-jsonschmema-validator-version>2.0.0</networknt-jsonschmema-validator-version>
-    <commons-exec-version>1.5.0</commons-exec-version>
+    <commons-exec-version>1.6.0</commons-exec-version>
     <commons-lang3-version>3.20.0</commons-lang3-version>
     <commons-codec-version>1.20.0</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -716,7 +716,7 @@
     <mojo-build-helper-version>3.6.1</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.27.6</assertj.core.version>
-    <commons.io.version>2.20.0</commons.io.version>
+    <commons.io.version>2.21.0</commons.io.version>
     <awaitility-version>4.3.0</awaitility-version>
     <client-java-version>25.0.0-legacy</client-java-version>
     <findbugs-version>3.0.1u2</findbugs-version>
@@ -741,7 +741,7 @@
     <gson-version>2.13.2</gson-version>
     <dependency-check-version>12.1.9</dependency-check-version>
     <slf4j-version>2.0.17</slf4j-version>
-    <logback-classic-version>1.5.20</logback-classic-version>
+    <logback-classic-version>1.5.23</logback-classic-version>
     <protobuf-java-version>4.33.2</protobuf-java-version>
     <json-smart-version>2.6.0</json-smart-version>
     <nimbus-jose-jwt-version>10.6</nimbus-jose-jwt-version>
