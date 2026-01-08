@@ -324,13 +324,44 @@ public class LoggingUtil {
     String podLog;
     try {
       podLog = getPodLog(podName, namespace);
-      getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
+      getLogger().info("Last 100 lines of pod log for pod {0} in namespace {1} : {2}",
+          podName, namespace, lastNLines(podLog, 100));
     } catch (ApiException apiEx) {
       getLogger().severe("got ApiException while getting pod log: ", apiEx);
       return false;
     }
 
     return podLog.contains(expectedString);
+  }
+  
+  /**
+   * get last N lines from a String.
+   *
+   * @param input entire string
+   * @param n number of lines to get
+   * @return the last n lines
+   */
+  public static String lastNLines(String input, int n) {
+    if (input == null || n <= 0) {
+      return "";
+    }
+
+    input = input.replace("\r\n", "\n");
+    int count = 0;
+    int i = input.length() - 1;
+
+    while (i >= 0) {
+      if (input.charAt(i) == '\n') {
+        count++;
+        if (count == n) {
+          return input.substring(i + 1);
+        }
+      }
+      i--;
+    }
+
+    // fewer than n lines → return whole string
+    return input;
   }
 
   /**
