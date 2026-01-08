@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -325,7 +326,7 @@ public class LoggingUtil {
     try {
       podLog = getPodLog(podName, namespace);
       getLogger().info("Last 100 lines of pod log for pod {0} in namespace {1} : {2}",
-          podName, namespace, lastNLines(podLog, 100));
+          podName, namespace, linesContaining(podLog, expectedString));
     } catch (ApiException apiEx) {
       getLogger().severe("got ApiException while getting pod log: ", apiEx);
       return false;
@@ -363,6 +364,41 @@ public class LoggingUtil {
     // fewer than n lines → return whole string
     return input;
   }
+
+  /**
+   * Get all lines in the log containg the expected substring.
+   *
+   * @param input input entire string
+   * @param expectedMessage expected substring
+   * @return lines containing sibstring
+   */
+  public static String linesContaining(String input, String expectedMessage) {
+
+    if (input == null || expectedMessage == null || expectedMessage.isEmpty()) {
+      return "";
+    }
+
+    StringJoiner result = new StringJoiner(System.lineSeparator());
+
+    input = input.replace("\r\n", "\n");
+    int start = 0;
+    int len = input.length();
+
+    for (int i = 0; i <= len; i++) {
+      if (i == len || input.charAt(i) == '\n') {
+        String line = input.substring(start, i);
+
+        if (line.contains(expectedMessage)) {
+          result.add(line);
+        }
+
+        start = i + 1;
+      }
+    }
+
+    return result.toString();
+  }
+  
 
   /**
    * Check whether pod log contains expected string in time range from provided start time to the current moment.
