@@ -360,8 +360,8 @@ class ItPodsShutdownOption {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
             "Can't get operator's pod name");
-    String expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server managed-server2 via REST interface.";
-    expectedMsg = "managed-server2";
+    String expectedMsg = "Pod for domain with domainUID " + domainUid
+        + " in namespace " + domainNamespace + " and with server name managed-server2 deleted";
     checkPodLogContainsString(opNamespace, operatorPodName, expectedMsg);
   }
 
@@ -430,16 +430,18 @@ class ItPodsShutdownOption {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
             "Can't get operator's pod name");
-    String expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server managed-server2 via REST interface";
+    String expectedMsg = "Pod for domain with domainUID " + domainUid
+        + " in namespace " + domainNamespace + " and with server name managed-server2 deleted";
     checkPodLogContainsString(opNamespace, operatorPodName, expectedMsg);
 
     // delete ms2
-    OffsetDateTime ms2PodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", indManagedServerPodName2),
+    OffsetDateTime ms2PodCreationTime
+        = assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", indManagedServerPodName2),
             String.format("Failed to get creationTimestamp for pod %s", indManagedServerName2));
     assertDoesNotThrow(() -> deletePod(indManagedServerPodName2, domainNamespace));
     checkPodRestarted(domainUid, domainNamespace, indManagedServerPodName2, ms2PodCreationTime);
-    expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server ms-2 via REST interface.";
+    expectedMsg = "Pod for domain with domainUID " + domainUid
+        + " in namespace " + domainNamespace + " and with server name ms-2 deleted";
     assertFalse(doesPodLogContainString(opNamespace, operatorPodName, expectedMsg));
   }
 

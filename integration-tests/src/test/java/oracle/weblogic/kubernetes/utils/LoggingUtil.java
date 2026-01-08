@@ -325,8 +325,8 @@ public class LoggingUtil {
     String podLog;
     try {
       podLog = getPodLog(podName, namespace);
-      getLogger().info("Last 100 lines of pod log for pod {0} in namespace {1} : {2}",
-          podName, namespace, linesContaining(podLog, expectedString));
+      getLogger().info("Lines of pod log {0} containing expected message {1} in namespace {2} : {3}",
+          podName, expectedString, namespace, linesContaining(podLog, expectedString));
     } catch (ApiException apiEx) {
       getLogger().severe("got ApiException while getting pod log: ", apiEx);
       return false;
