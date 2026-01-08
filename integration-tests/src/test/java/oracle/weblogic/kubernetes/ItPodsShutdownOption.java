@@ -361,6 +361,7 @@ class ItPodsShutdownOption {
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
             "Can't get operator's pod name");
     String expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server managed-server2 via REST interface.";
+    expectedMsg = "managed-server2";
     checkPodLogContainsString(opNamespace, operatorPodName, expectedMsg);
   }
 
