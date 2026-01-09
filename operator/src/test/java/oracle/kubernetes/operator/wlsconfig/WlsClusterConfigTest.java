@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
-import static oracle.kubernetes.common.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -26,7 +25,7 @@ class WlsClusterConfigTest {
 
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
-    NO_WLS_SERVER_IN_CLUSTER, REPLICA_MORE_THAN_WLS_SERVERS
+    NO_WLS_SERVER_IN_CLUSTER
   };
 
   private final List<LogRecord> logRecords = new ArrayList<>();

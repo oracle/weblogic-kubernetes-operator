@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -47,7 +47,6 @@ public class MessageKeys {
   public static final String CANNOT_CREATE_TOKEN_REVIEW = "WLSKO-0059";
   public static final String APIEXCEPTION_FROM_TOKEN_REVIEW = "WLSKO-0068";
   public static final String APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW = "WLSKO-0069";
-  public static final String REPLICA_MORE_THAN_WLS_SERVERS = "WLSKO-0071";
   public static final String K8S_VERSION_TOO_LOW = "WLSKO-0073";
   public static final String VERIFY_K8S_MIN_VERSION = "WLSKO-0074";
   public static final String DOMAIN_UID_UNIQUENESS_FAILED = "WLSKO-0076";
