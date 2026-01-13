@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -69,7 +69,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -360,7 +359,8 @@ class ItPodsShutdownOption {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
             "Can't get operator's pod name");
-    String expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server managed-server2 via REST interface.";
+    String expectedMsg = "Pod for domain with domainUID " + domainUid
+        + " in namespace " + domainNamespace + " and with server name managed-server2 deleted";
     checkPodLogContainsString(opNamespace, operatorPodName, expectedMsg);
   }
 
@@ -429,17 +429,19 @@ class ItPodsShutdownOption {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
             "Can't get operator's pod name");
-    String expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server managed-server2 via REST interface";
+    String expectedMsg = "Pod for domain with domainUID " + domainUid
+        + " in namespace " + domainNamespace + " and with server name managed-server2 deleted";
     checkPodLogContainsString(opNamespace, operatorPodName, expectedMsg);
 
     // delete ms2
-    OffsetDateTime ms2PodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", indManagedServerPodName2),
+    OffsetDateTime ms2PodCreationTime
+        = assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", indManagedServerPodName2),
             String.format("Failed to get creationTimestamp for pod %s", indManagedServerName2));
     assertDoesNotThrow(() -> deletePod(indManagedServerPodName2, domainNamespace));
     checkPodRestarted(domainUid, domainNamespace, indManagedServerPodName2, ms2PodCreationTime);
-    expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server ms-2 via REST interface.";
-    assertFalse(doesPodLogContainString(opNamespace, operatorPodName, expectedMsg));
+    expectedMsg = "Pod for domain with domainUID " + domainUid
+        + " in namespace " + domainNamespace + " and with server name ms-2 deleted";
+    assertTrue(doesPodLogContainString(opNamespace, operatorPodName, expectedMsg));
   }
 
   // create custom domain resource with different shutdownobject values for adminserver/cluster/independent ms

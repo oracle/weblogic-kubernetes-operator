@@ -1,8 +1,8 @@
-// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
-CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;BASE_CLUSTER_NAME=seqweek;PARALLEL_RUN=false
+def CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;BASE_CLUSTER_NAME=seqweek;PARALLEL_RUN=false
                    H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;BASE_CLUSTER_NAME=seqone;PARALLEL_RUN=false
                    H 12 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;BASE_CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 
@@ -67,12 +67,23 @@ pipeline {
     }
 
     parameters {
-
+        string(name: 'BRANCH',
+                       description: '',
+                       defaultValue: "main"
+        )
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
-
+        choice(name: 'MAVEN_PROFILE_NAME',
+               description: 'Profile to use in mvn command to run the tests.  Possible values are oke-weekly-sequential,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+               choices: [
+                   'oke-weekly-sequential',
+                   'oke-sequential',
+                   'oke-parallel',
+                   'integration-tests'
+                ]
+        )
         string(name: 'OPERATOR_LOG_LEVEL',
                description: 'The default log level is not set',
                defaultValue: ''
@@ -81,20 +92,16 @@ pipeline {
         booleanParam(name: 'PARALLEL_RUN',
                              description: 'Runs tests in parallel. Default is false.',
                              defaultValue: false
-                )
+        )
+        string(name: 'NUMBER_OF_THREADS',
+               description: 'Number of threads to run the classes in parallel, default is 3.',
+               defaultValue: "3"
+        )
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
                defaultValue: '1.33.1'
         )
-        string(name: 'IMAGE_ID',
-                       description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
-                       //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
-                       //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
-                       
-                )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
                        defaultValue: '1.30.0'
@@ -116,23 +123,6 @@ pipeline {
                    '1.11.1'
                ]
         )
-
-                choice(name: 'MAVEN_PROFILE_NAME',
-                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-weekly-sequential,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-                        choices: [
-                                'oke-weekly-sequential',
-                                'oke-sequential',
-                                'oke-parallel'
-                        ]
-                )
-        string(name: 'NUMBER_OF_THREADS',
-               description: 'Number of threads to run the classes in parallel, default is 3.',
-               defaultValue: "3"
-        )
-	string(name: 'BASE_CLUSTER_NAME',
-               description: 'Base OKE cluster name (BUILD_ID will be appended)',
-               defaultValue: "seqone"
-        )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
                //defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
@@ -144,19 +134,6 @@ pipeline {
         string(name: 'REPO_REGISTRY',
                description: '',
                defaultValue: "${env.WKT_OCIR_HOST}"
-        )
-        string(name: 'NODE_SHAPE',
-                       description: '',
-                       defaultValue: "VM.Standard.E3.Flex"
-        )
-        string(name: 'MOUNT_TARGET_OCID',
-                      description: 'only for debug runs on wko-oke-dev',
-		      defaultValue: "ocid1.mounttarget.oc1.phx.aaaaaby27vhqpci5obuhqllqojxwiotqnb4c2ylefuzqaaaa"
-
-                )
-        string(name: 'BRANCH',
-                       description: '',
-                       defaultValue: "main"
         )
         choice(name: 'BASE_IMAGES_REPO',
                choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
@@ -213,6 +190,26 @@ pipeline {
         string(name: 'REMOTECONSOLE_VERSION',
                description: 'RemoteConsole version.',
                defaultValue: '2.4.7'
+        )
+        string(name: 'BASE_CLUSTER_NAME',
+               description: 'Base OKE cluster name (BUILD_ID will be appended)',
+               defaultValue: "seqone"
+        )
+        string(name: 'IMAGE_ID',
+                       description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
+                       //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
+                       //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
+                       //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
+       )
+        string(name: 'NODE_SHAPE',
+                       description: '',
+                       defaultValue: "VM.Standard.E3.Flex"
+        )
+        string(name: 'MOUNT_TARGET_OCID',
+                      description: 'only for debug runs on wko-oke-dev',
+                      defaultValue: "ocid1.mounttarget.oc1.phx.aaaaaby27vhqpci5obuhqllqojxwiotqnb4c2ylefuzqaaaa"
+
         )
     }
 
@@ -446,6 +443,22 @@ EOF
                             fi
 
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+
+			    CLUSTER_OCID=$(oci ce cluster list --compartment-id "$compartment_id" --all --query 'data[?name==`'"$CLUSTER_NAME"'` && "lifecycle-state"==`ACTIVE`].id | [0]' --raw-output)
+                            echo "Cluster OCID = $CLUSTER_OCID"
+                            export CLUSTER_OCID
+
+			    if [[ -z "$CLUSTER_OCID" || "$CLUSTER_OCID" == "null" ]]; then
+                                echo "[ERROR] CLUSTER_OCID not found (cluster not ACTIVE or not visible)."
+                                # still write an empty marker file so post can detect it
+                                : > "${WORKSPACE}/cluster_ocid.txt"
+                            else
+                                echo "$CLUSTER_OCID" > "${WORKSPACE}/cluster_ocid.txt"
+                            fi
+
+                            echo "[DEBUG] cluster_ocid.txt content:"
+                            cat "${WORKSPACE}/cluster_ocid.txt" || true
+
                             clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == "'"${CLUSTER_NAME}"'" and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
                             echo "clusterIp : $clusterIP"
                             clusterPublicIP=${clusterIP:1:-6}
@@ -628,6 +641,7 @@ EOF
                                 echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
 				echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
 				echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
+				echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
 
                                 echo "${WORKSPACE}/.mvn/maven.config contents:"
                                 cat "${WORKSPACE}/.mvn/maven.config"
@@ -678,6 +692,18 @@ EOF
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+
+				echo 'Remove any leftover lbs'
+				CLUSTER_OCID="$(cat "${WORKSPACE}/cluster_ocid.txt" 2>/dev/null || true)"
+                                echo "[DEBUG] Read CLUSTER_OCID from file: ${CLUSTER_OCID}"
+
+                                if [[ -z "${CLUSTER_OCID}" || "${CLUSTER_OCID}" == "null" ]]; then
+                                    echo "[WARN] CLUSTER_OCID is empty; skipping LB cleanup by cluster tag."
+                                else
+                                    echo 'Remove any leftover lbs'
+                                    ${WORKSPACE}/terraform/oke_delete_lbs_by_cluster_tag.sh "${CLUSTER_OCID}" "${compartment_id}"
+                                fi
+
                                 ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
 
                             '''

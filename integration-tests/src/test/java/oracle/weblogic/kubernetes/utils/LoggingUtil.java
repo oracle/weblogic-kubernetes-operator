@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -21,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -71,6 +73,16 @@ public class LoggingUtil {
   public static void collectLogs(String namespace, String resultDir) {
     LoggingFacade logger = getLogger();
     logger.info("Collecting logs in namespace : {0}", namespace);
+    
+    try {
+      if (!TestActions.listNamespaces().contains(namespace)) {
+        logger.warning("Namespace {0} doesn't exist");
+        return;
+      }
+    } catch (ApiException ex) {
+      logger.warning(ex.getLocalizedMessage());
+      return;
+    }
 
     // get events
     try {
@@ -313,7 +325,8 @@ public class LoggingUtil {
     String podLog;
     try {
       podLog = getPodLog(podName, namespace);
-      getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
+      getLogger().info("Lines of pod log {0} containing expected message {1} in namespace {2} : {3}",
+          podName, expectedString, namespace, linesContaining(podLog, expectedString));
     } catch (ApiException apiEx) {
       getLogger().severe("got ApiException while getting pod log: ", apiEx);
       return false;
@@ -321,6 +334,71 @@ public class LoggingUtil {
 
     return podLog.contains(expectedString);
   }
+  
+  /**
+   * get last N lines from a String.
+   *
+   * @param input entire string
+   * @param n number of lines to get
+   * @return the last n lines
+   */
+  public static String lastNLines(String input, int n) {
+    if (input == null || n <= 0) {
+      return "";
+    }
+
+    input = input.replace("\r\n", "\n");
+    int count = 0;
+    int i = input.length() - 1;
+
+    while (i >= 0) {
+      if (input.charAt(i) == '\n') {
+        count++;
+        if (count == n) {
+          return input.substring(i + 1);
+        }
+      }
+      i--;
+    }
+
+    // fewer than n lines → return whole string
+    return input;
+  }
+
+  /**
+   * Get all lines in the log containg the expected substring.
+   *
+   * @param input input entire string
+   * @param expectedMessage expected substring
+   * @return lines containing sibstring
+   */
+  public static String linesContaining(String input, String expectedMessage) {
+
+    if (input == null || expectedMessage == null || expectedMessage.isEmpty()) {
+      return "";
+    }
+
+    StringJoiner result = new StringJoiner(System.lineSeparator());
+
+    input = input.replace("\r\n", "\n");
+    int start = 0;
+    int len = input.length();
+
+    for (int i = 0; i <= len; i++) {
+      if (i == len || input.charAt(i) == '\n') {
+        String line = input.substring(start, i);
+
+        if (line.contains(expectedMessage)) {
+          result.add(line);
+        }
+
+        start = i + 1;
+      }
+    }
+
+    return result.toString();
+  }
+  
 
   /**
    * Check whether pod log contains expected string in time range from provided start time to the current moment.

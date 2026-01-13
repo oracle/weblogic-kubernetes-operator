@@ -1,10 +1,12 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -34,6 +36,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
@@ -87,7 +90,7 @@ class ItIstioDomainInImage {
   private final String adminServerPodName = domainUid + "-" + adminServerName;
   private static String testWebAppWarLoc = null;
 
-  private static final String istioNamespace = "istio-system";
+  private static final String istioNamespace = ISTIO_NAMESPACE;
   private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private static LoggingFacade logger = null;
@@ -177,12 +180,12 @@ class ItIstioDomainInImage {
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-    Map<String, String> templateMap  = new HashMap<>();
+    String adminService = domainUid + "-" + adminServerName + "." + domainNamespace + ".svc.cluster.local";
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
-    templateMap.put("DUID", domainUid);
-    templateMap.put("ADMIN_SERVICE",adminServerPodName);
+    templateMap.put("ADMIN_SERVICE", adminService);
     templateMap.put("CLUSTER_SERVICE", clusterService);
-    templateMap.put("MANAGED_SERVER_PORT", "8001");    
+    templateMap.put("MANAGED_SERVER_PORT", "8001");   
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
@@ -192,6 +195,7 @@ class ItIstioDomainInImage {
     boolean deployRes = assertDoesNotThrow(
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+    printFile(targetHttpFile);
 
     Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
     Path targetDrFile = assertDoesNotThrow(
@@ -201,6 +205,16 @@ class ItIstioDomainInImage {
     deployRes = assertDoesNotThrow(
         () -> deployIstioDestinationRule(targetDrFile));
     assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+    printFile(targetDrFile);
+    
+    templateMap.replace("NAMESPACE", istioNamespace);
+    Path targetIstioDrFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
+    logger.info("Generated DestinationRule file path is {0}", targetIstioDrFile);
+    deployRes = assertDoesNotThrow(
+        () -> deployIstioDestinationRule(targetIstioDrFile));
+    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+    printFile(targetDrFile);
 
     String host;
     int istioIngressPort;
@@ -342,5 +356,13 @@ class ItIstioDomainInImage {
                     domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
+  }
+  
+  private static void printFile(Path file) {
+    try {
+      logger.info(Files.readString(file));
+    } catch (IOException ex) {
+      logger.warning(ex.getLocalizedMessage());
+    }
   }
 }

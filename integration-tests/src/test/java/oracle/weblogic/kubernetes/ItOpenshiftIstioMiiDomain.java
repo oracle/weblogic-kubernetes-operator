@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -249,7 +250,8 @@ class ItOpenshiftIstioMiiDomain {
     // oc -n istio-system get route istio-ingressgateway -o jsonpath='{.spec.host}'
     logger.info("Run " + KUBERNETES_CLI + " to get ingress gateway route");
     CommandParams params = new CommandParams().defaults();
-    params.command(KUBERNETES_CLI + " get route -n istio-system istio-ingressgateway -o jsonpath='{.spec.host}'");
+    params.command(KUBERNETES_CLI + " get route -n " + ISTIO_NAMESPACE
+        + " istio-ingressgateway -o jsonpath='{.spec.host}'");
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertEquals(0, result.exitValue());
     assertNotNull(result.stdout());

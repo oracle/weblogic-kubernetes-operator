@@ -266,7 +266,7 @@ class ItMiiDynamicUpdatePart2 {
 
     String expectedMsgForCommitUpdateOnly =
         "Online WebLogic configuration updates complete but there are pending non-dynamic changes "
-            + "that require pod restarts to take effect";
+            + "that require Pod restarts to take effect";
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -382,8 +382,10 @@ class ItMiiDynamicUpdatePart2 {
                 logger.info("condition " + domainCondition.getType().equalsIgnoreCase(conditionType)
                     + " msg " + domainCondition.getMessage().contains(conditionMsg));
               }
-              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
-                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
+              if ((domainCondition.getType() != null
+                  && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getMessage() != null
+                  && containsNormalized(domainCondition.getMessage(), conditionMsg))) {
                 return true;
               }
             }
@@ -395,5 +397,27 @@ class ItMiiDynamicUpdatePart2 {
         conditionMsg);
     return false;
   }
+  
+  private static boolean containsNormalized(String actual, String expected) {
+    if (actual == null || expected == null) {
+      return false;
+    }
 
+    String normActual = actual
+        .replace("\\", "") // ignore backslashes
+        .replace("\r\n", "\n") // normalize CRLF
+        .replaceAll("\\s+", " ") // collapse all whitespace (incl newlines) to one space
+        .trim();
+    logger.info("Actual message {0}", normActual);
+
+    String normExpected = expected
+        .replace("\\", "")
+        .replace("\r\n", "\n")
+        .replaceAll("\\s+", " ")
+        .trim();
+    logger.info("Expected message {0}", normExpected);
+
+    return normActual.contains(normExpected);
+  }
+  
 }

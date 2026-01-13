@@ -428,12 +428,13 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
           "NAMESPACE=onprem-domain", "NAMESPACE=" + domainNamespace);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
-          "weblogic-credentials \"<user>\" <password>", "weblogic-credentials " + ADMIN_USERNAME_DEFAULT
-              + " " + ADMIN_PASSWORD_DEFAULT);
+          "weblogic-credentials \"password=<password>\" \"username=<username>\"",
+          "weblogic-credentials username=" + ADMIN_USERNAME_DEFAULT + " password=" + ADMIN_PASSWORD_DEFAULT);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
-          "\"scott\" <password>", "scott tiger");
+          "jdbc-testdatasource \"password=<password>\" \"username=scott\"", 
+          "jdbc-testdatasource password=tiger username=scott");
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
-          "runtime-encryption-secret <password>", "runtime-encryption-secret welcome1");
+          "runtime-encryption-secret \"password=<password>\"", "runtime-encryption-secret password=welcome1");
     } catch (IOException ioex) {
       logger.info("Exception while replacing user password in the script file");
     }
@@ -450,11 +451,11 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(filePath,
           "\\{\\{\\{domainHomeSourceType\\}\\}\\}", "FromModel");
       replaceStringInFile(filePath,
-          "\\{\\{\\{imageName\\}\\}\\}", imageName);
+          "{{{imageName}}}", imageName);
       replaceStringInFile(filePath,
-          "imagePullSecrets: \\[\\]", "imagePullSecrets:\n    - name: " + TEST_IMAGES_REPO_SECRET_NAME);
+          "imagePullSecrets: []", "imagePullSecrets:\n    - name: " + TEST_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(filePath,
-          "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
+          "{{{modelHome}}}", "/u01/wdt/models");
       replaceStringInFile(filePath,
           "# replicas: 99", "replicas: 5");
     } catch (IOException ioex) {

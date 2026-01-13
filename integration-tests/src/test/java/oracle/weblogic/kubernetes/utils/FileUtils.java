@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -476,25 +476,20 @@ public class FileUtils {
   /**
    * Replaces each substring in the file that matches the given regular
    * expression with the given replacement.
-   * @param filePath file in which a string has to be replaced
-   * @param regex the regular expression to which this string is to be matched
+   * @param file file in which a string has to be replaced
+   * @param search the regular expression to which this string is to be matched
    * @param replacement the string to be substituted for each match
    * @throws IOException if an IO error occurs while reading from the file
    */
-  public static void replaceStringInFile(String filePath, String regex, String replacement)
-      throws IOException {
-    LoggingFacade logger = getLogger();
-    Path src = Paths.get(filePath);
-    logger.info("Replacing {0} in {1} with {2}", regex, src.toString(), replacement);
-    String content = new String(Files.readAllBytes(src), StandardCharsets.UTF_8);
-    if (!content.matches(regex)) {
-      logger.warning("search string {0} not found to replace with {1}", regex, replacement);
+  public static void replaceStringInFile(String file, String search, String replacement) throws IOException {
+    String content = Files.readString(Paths.get(file), StandardCharsets.UTF_8);
+    String updated = content.replace(search, replacement);
+    if (content.equals(updated)) {
+      getLogger().warning("search string {0} not found to replace with {1} in {2}", search, replacement, file);
+      return;
     }
-    long oldModified = src.toFile().lastModified();
-    Files.write(src, content.replaceAll(regex, replacement).getBytes(StandardCharsets.UTF_8));
-    if (oldModified == src.toFile().lastModified()) {
-      logger.info("No modification was done to the file");
-    }
+    Files.writeString(Paths.get(file), updated, StandardCharsets.UTF_8);
+    getLogger().info("Replaced {0} in {1} with {2}", search, file, replacement);
   }
 
   /**

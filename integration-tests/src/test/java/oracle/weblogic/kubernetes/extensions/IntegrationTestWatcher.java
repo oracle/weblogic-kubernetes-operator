@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestWatcher;
 
 import static oracle.weblogic.kubernetes.TestConstants.COLLECT_LOGS_ON_SUCCESS;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SLEEP_SECONDS_AFTER_FAILURE;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_NAMESPACE;
@@ -369,6 +370,8 @@ public class IntegrationTestWatcher implements
     LoggingUtil.collectLogs("ns-webhook", resultDir.toString());
     // collect the logs in global traefik namespace
     LoggingUtil.collectLogs(TRAEFIK_NAMESPACE, resultDir.toString());    
+    // collect the logs in global istio namespace
+    LoggingUtil.collectLogs(ISTIO_NAMESPACE, resultDir.toString());
   }
 
   /**
