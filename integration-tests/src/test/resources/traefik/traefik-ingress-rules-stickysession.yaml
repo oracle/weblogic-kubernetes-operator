@@ -1,11 +1,9 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  annotations:
-    kubernetes.io/ingress.class: traefik
   name: @domain1uid@-http-ingress-rule
   namespace: @NS@
 spec:
@@ -13,10 +11,9 @@ spec:
     - web
   routes:
     - kind: Rule
-      match: Host(`@domain1uid@.@NS@.cluster-1.test`)
+      match: Host(`@domain1uid@.@NS@.cluster-1.org`)
       services:
-        - kind: Service
-          name: @domain1uid@-cluster-cluster-1
+        - name: @domain1uid@-cluster-cluster-1
           port: 8001
           sticky:
             cookie:

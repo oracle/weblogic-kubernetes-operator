@@ -1,9 +1,9 @@
 
-// Copyright (c) 2025, Oracle and/or its affiliates.
+// Copyright (c) 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
-CRON_SETTINGS = '''H 2 * * 3 % MAVEN_PROFILE_NAME=wko-okd-wls-mrg
+def CRON_SETTINGS = '''H 2 * * 3 % MAVEN_PROFILE_NAME=wko-okd-wls-mrg
                    H 4 * * 3 % MAVEN_PROFILE_NAME=wko-okd-fmw-cert'''
 
 pipeline {

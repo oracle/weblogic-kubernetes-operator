@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.IT_ISTIOMONITORINGEXPORTER_PROMETHEUS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.IT_ISTIOMONITORINGEXPORTER_PROMETHEUS_HTTP_NODEPORT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -90,7 +91,7 @@ class ItIstioMonitoringExporter {
   private final String clusterName = "cluster-1"; // do not modify
   private final int replicaCount = 2;
   private static int prometheusPort;
-  private static final String istioNamespace = "istio-system";
+  private static final String istioNamespace = ISTIO_NAMESPACE;
   private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private boolean isPrometheusDeployed = false;
@@ -242,7 +243,7 @@ class ItIstioMonitoringExporter {
       }
     } else {
       String newRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
-      assertDoesNotThrow(() -> editPrometheusCM(oldRegex, newRegex, "istio-system", "prometheus"),
+      assertDoesNotThrow(() -> editPrometheusCM(oldRegex, newRegex, ISTIO_NAMESPACE, "prometheus"),
           "Can't modify Prometheus CM, not possible to monitor " + domainUid);
     }
 

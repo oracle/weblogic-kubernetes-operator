@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -1065,12 +1065,14 @@ class ItMiiAuxiliaryImage {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg =
-        "createDomain did not find the required domainInfo section in the model file /aux/models/model.jms2.yaml";
+        "Model in Image: WDT Create Primordial Domain Failed";
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
+    expectedErrorMsg = "createDomain did not find the required domainInfo "
+        + "section in the model file /aux/models/model.jms2.yaml";
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services created

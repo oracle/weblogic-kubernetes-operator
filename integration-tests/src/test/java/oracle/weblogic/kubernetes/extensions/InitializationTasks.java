@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.INSTALL_WEBLOGIC;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
@@ -131,7 +132,8 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 /**
  * Class to build the required images for the tests.
  */
-public class InitializationTasks implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
+public class InitializationTasks implements BeforeAllCallback, 
+    ExtensionContext.Store.CloseableResource  {
   private static final AtomicBoolean started = new AtomicBoolean(false);
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
   private static String operatorImage;
@@ -331,7 +333,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           logger.info("Installing istio before any test suites are run");
           installIstio();
         }
-        if (INSTALL_WEBLOGIC && !CRIO && !ARM && !OKE_CLUSTER) {
+        if (INSTALL_WEBLOGIC && !CRIO && !ARM) {
           installOnPremWebLogic();
         }
       } finally {
@@ -388,8 +390,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         uninstallIstio();
       }
       if (!OKD && !OKE_CLUSTER && !CRIO) {
-        logger.info("Delete istio-system namespace after all test suites are run");
-        deleteNamespace("istio-system");
+        logger.info("Delete {0} namespace after all test suites are run", ISTIO_NAMESPACE);
+        deleteNamespace(ISTIO_NAMESPACE);
         deleteNamespace(ORACLE_OPERATOR_NS);
       }
       logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);

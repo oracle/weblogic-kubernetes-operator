@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -360,6 +360,7 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
+  String ISTIO_NAMESPACE = "istio-system";
   String ISTIO_VERSION =
       getNonEmptySystemProperty("wko.it.istio.version", "1.23.0");
   int ISTIO_HTTP_HOSTPORT = 2480;
