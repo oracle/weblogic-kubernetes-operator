@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
@@ -31,6 +32,9 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.steps.DeleteBadPodStep;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
@@ -51,6 +55,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CR
  * that any domains which are found have the proper pods and services.
  */
 class DomainResourcesValidation {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final String namespace;
   private final DomainProcessor processor;
   private ClusterList activeClusterResources;
@@ -106,6 +111,7 @@ class DomainResourcesValidation {
         executeMakeRightForClusterEvents(dp);
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
         getDomainPresenceInfoMap().values().forEach(DomainResourcesValidation.this::removeDeletedPodsFromDPI);
+        getDomainPresenceInfoMap().values().forEach(DomainResourcesValidation.this::removeEvictedPodsFromDPI);
         getDomainPresenceInfoMap().values().forEach(DomainPresenceInfo::clearServerPodNamesFromList);
       }
     };
@@ -143,6 +149,35 @@ class DomainResourcesValidation {
   private void removeDeletedPodsFromDPI(DomainPresenceInfo dpi) {
     dpi.getServerNames().stream().filter(s -> !dpi.getServerNamesFromPodList().contains(s)).toList()
         .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
+  }
+
+  private void removeEvictedPodsFromDPI(DomainPresenceInfo dpi) {
+    List<String> serverNames = dpi.getServerNamesFromPodList();
+    if (serverNames != null) {
+      for (String serverName : serverNames) {
+        if (dpi.getExpectedRunningServers().contains(serverName)) {
+          V1Pod pod = dpi.getServerPod(serverName);
+          if (pod != null && isBadTerminalState(pod)) {
+            LOGGER.fine("Bad pod detected: most likely evicted. Removing pod for server " + serverName);
+            Packet packet = new Packet();
+            packet.put("serverName", serverName);
+            packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, dpi);
+            DeleteBadPodStep deleteBadPodStep = new DeleteBadPodStep(null);
+            deleteBadPodStep.apply(packet);
+          }
+
+        }
+
+      }
+    }
+  }
+
+  private boolean isBadTerminalState(V1Pod pod) {
+    V1PodStatus status = pod.getStatus();
+    if (status == null) {
+      return false;
+    }
+    return "Evicted".equals(status.getPhase()) || "Succeeded".equals(status.getPhase());
   }
 
   private void addEvent(EventsV1Event event) {
