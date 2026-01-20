@@ -35,7 +35,9 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
@@ -56,6 +58,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CleanupUtil.printClusterObjects;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddToDomainResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.deleteClusterCustomResourceAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.patchClusterResourceAndVerify;
@@ -144,6 +147,16 @@ class ItMaxConcurOptions {
 
     // create and verify one MII domain
     domain = createDomainAndVerifyWithConfigMap();
+  }
+  
+  @BeforeEach
+  public void beforeEach() {
+    printClusterObjects("get clusters -A -o yaml", "cluster");
+  }
+
+  @AfterEach
+  public void afterEach() {
+    printClusterObjects("get clusters -A -o yaml", "cluster");
   }
 
   /**

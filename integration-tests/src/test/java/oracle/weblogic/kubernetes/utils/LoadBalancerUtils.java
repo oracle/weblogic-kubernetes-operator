@@ -1,8 +1,9 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.COMPARTMENT_OCID;
+import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
@@ -895,7 +897,7 @@ public class LoadBalancerUtils {
   public static boolean createTraefikIngressRoutingRules(String domainNamespace,
                                                          String traefikNamespace,
                                                          String ingressResourceFileName,
-                                                         String... domainUids) {
+                                                         String... domainUids) throws IOException {
     LoggingFacade logger = getLogger();
     logger.info("Creating Traefik ingress resource");
 
@@ -904,6 +906,7 @@ public class LoadBalancerUtils {
         traefikNamespace,
         ingressResourceFileName,
         dstFile,
+        Files.readString(INGRESS_CLASS_FILE_NAME),
         domainUids);
   }
 
@@ -920,6 +923,7 @@ public class LoadBalancerUtils {
                                                          String traefikNamespace,
                                                          String ingressResourceFileName,
                                                          Path ingressResourceFilePath,
+                                                         String ingressClassName,
                                                          String... domainUids) {
     LoggingFacade logger = getLogger();
     logger.info("Creating Traefik ingress resource");
@@ -928,14 +932,19 @@ public class LoadBalancerUtils {
     Path srcFile = Paths.get(RESOURCE_DIR, ingressResourceFileName);
     Path dstFile = ingressResourceFilePath;
 
+    
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);
       Files.createDirectories(dstFile.getParent());
       String contentOfFile = Files.readString(srcFile);
       for (int i = 1; i <= domainUids.length; i++) {
+        logger.info("Replacing {0}, {1}, {2}, {3}, {4}, {5}",
+            domainNamespace, traefikNamespace, ingressResourceFileName,
+            ingressResourceFilePath, ingressClassName, domainUids[i - 1]);
         Files.write(dstFile, contentOfFile
-            .replaceAll("@NS@", domainNamespace)
-            .replaceAll("@domain" + i + "uid@", domainUids[i - 1])
+            .replace("traefik.ingressClass", ingressClassName)
+            .replace("@NS@", domainNamespace)
+            .replace("@domain" + i + "uid@", domainUids[i - 1])
             .getBytes(StandardCharsets.UTF_8));
         contentOfFile = Files.readString(dstFile);
       }
@@ -943,6 +952,11 @@ public class LoadBalancerUtils {
 
     // create Traefik ingress resource
     String createIngressCmd = KUBERNETES_CLI + " create -f " + dstFile;
+    try {
+      logger.info(Files.readString(dstFile));
+    } catch (IOException ex) {
+      logger.warning(ex.getLocalizedMessage());
+    }
     logger.info("Command to create Traefik ingress routing rules " + createIngressCmd);
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(createIngressCmd, true),
         String.format("Failed to create Traefik ingress routing rules %s", createIngressCmd));

@@ -107,7 +107,7 @@ description: "Follow these prerequisite steps for WLS and JRF domain types."
    {{< /rawhtml >}}
 
 1. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
-To do this, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
+To do this, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{% relref "/quickstart/prepare.md" %}}) step.
 
 
    {{% notice note %}}
@@ -124,7 +124,7 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
 
    **NOTE**: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.
 
-   For more information on ingresses and load balancers, see [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
+   For more information on ingresses and load balancers, see [Ingress]({{% relref "/managing-domains/accessing-the-domain/ingress/_index.md" %}}).
 
 
 1. Obtain the WebLogic 14.1.2.0 image that is referenced by the sample's Domain resource YAML.
@@ -140,13 +140,13 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
    e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the previous licensed images as specified in the tool's command line using the `--fromImage` parameter. For JRF, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:14.1.2.0-jdk17-ol8`, and for WLS, the sample specifies `container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8`.
 
    {{% notice warning %}}
-   The example base images are General Availability (GA) images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+   The example base images are General Availability (GA) images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{% relref "/base-images/ocr-images.md" %}}) or create your images using the [WebLogic Image Tool]({{% relref "/base-images/custom-images#create-a-custom-base-image" %}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
 
      {{% /notice %}}
 
 ### Additional prerequisites for JRF domains
 
-**NOTE**: If you're using a Domain on PV, WLS domain type, skip this section and continue on to [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}})
+**NOTE**: If you're using a Domain on PV, WLS domain type, skip this section and continue on to [Build the domain creation image]({{% relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" %}})
 for the Domain on PV sample.
 
 #### JRF prerequisites
@@ -159,7 +159,7 @@ for the Domain on PV sample.
 
 **NOTE**: The requirements in this section are in addition to [Prerequisites for WLS and JRF domain types](#prerequisites-for-wls-and-jrf-domain-types).
 
-A JRF domain requires an infrastructure database, and configuring your domain to access this database. For more details, see [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md" >}}) in the user documentation. You must perform all these steps _before_ you create your domain.
+A JRF domain requires an infrastructure database, and configuring your domain to access this database. For more details, see [JRF domains]({{% relref "/managing-domains/domain-on-pv/jrf-domain.md" %}}) in the user documentation. You must perform all these steps _before_ you create your domain.
 
 ##### Set up and initialize an infrastructure database
 
@@ -206,9 +206,9 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
      This script will deploy a database in the `default` namespace with the connect string `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password MY_DBA_PASSWORD.
 
-     This step is based on the steps documented in [Run a Database]({{< relref "/samples/database/_index.md" >}}).
+     This step is based on the steps documented in [Run a Database]({{% relref "/samples/database/_index.md" %}}).
 
-     **NOTE**: If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+     **NOTE**: If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{% relref "/faq/cannot-pull-image" %}}).
 
      **WARNING:** The Oracle Database images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
@@ -235,4 +235,4 @@ For example, in this sample:
         rcu_admin_user: sys        
 ```
 
-For important JRF domain information, refer to [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md" >}}).
+For important JRF domain information, refer to [JRF domains]({{% relref "/managing-domains/domain-on-pv/jrf-domain.md" %}}).

@@ -35,15 +35,15 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
 #### Check environment
 
-1. Review the [Operator prerequisites]({{<relref "/introduction/prerequisites/introduction.md">}}) to ensure that your Kubernetes cluster supports the operator.
+1. Review the [Operator prerequisites]({{% relref "/introduction/prerequisites/introduction.md" %}}) to ensure that your Kubernetes cluster supports the operator.
 
 1. It is important to keep in mind that some supported environments
    have additional help or samples that are specific to the operator,
    or are subject to limitations, special tuning requirements,
    special licensing requirements, or restrictions.
-   See [Supported environments]({{< relref "/introduction/platforms/environments.md" >}}) for details.
+   See [Supported environments]({{% relref "/introduction/platforms/environments.md" %}}) for details.
 
-1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{< relref "/managing-operators/k8s-setup.md" >}}).
+1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{% relref "/managing-operators/k8s-setup.md" %}}).
 
 1. If it is not already installed, then install Helm.
    To install an operator, it is required to install Helm in your Kubernetes cluster.
@@ -53,7 +53,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
    For detailed instructions on installing Helm, see the [GitHub Helm Repository](https://github.com/helm/helm).
 
-1. Optionally, enable [Istio]({{< relref "/managing-domains/accessing-the-domain/istio/istio.md" >}}).
+1. Optionally, enable [Istio]({{% relref "/managing-domains/accessing-the-domain/istio/istio.md" %}}).
 
 
 #### Set up the operator Helm chart access
@@ -113,11 +113,11 @@ and their defaults in the operator source in the
 `./kubernetes/charts/weblogic-operator/values.yaml` file.
 
 - The available configuration values are explained by category in the
-[Operator Helm configuration values]({{<relref "/managing-operators/using-helm#operator-helm-configuration-values">}})
+[Operator Helm configuration values]({{% relref "/managing-operators/using-helm#operator-helm-configuration-values" %}})
 section of the operator Configuration Reference.
 
 - Helm commands are explained in more detail here, see
-[Useful Helm operations]({{<relref "/managing-operators/using-helm#useful-helm-operations">}}).
+[Useful Helm operations]({{% relref "/managing-operators/using-helm#useful-helm-operations" %}}).
 
 #### Prepare an operator namespace and service account
 
@@ -181,7 +181,7 @@ Operator GitHub container registry images can be directly referenced using an im
 `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N` where `N.N.N` refers to the operator version
 and `ghcr.io` is the DNS name of the GitHub container registry.
 You can also optionally build your own operator image,
-see the [Developer Guide]({{<relref "/developerguide/_index.md">}}).
+see the [Developer Guide]({{% relref "/developerguide/_index.md" %}}).
 
 ##### Default operator image
 
@@ -231,7 +231,7 @@ provide security credentials.
 - To reference an image pull registry secret from an operator installation, there are two options:
   - Use the `imagePullSecrets` operator Helm chart
     configuration setting when installing the operator.
-    For examples, see [imagePullSecrets]({{<relref "/managing-operators/using-helm#imagepullsecrets">}}).
+    For examples, see [imagePullSecrets]({{% relref "/managing-operators/using-helm#imagepullsecrets" %}}).
   - Or, add the pull secret name to the service account you will
     use for the operator. See [Prepare an operator namespace and service account](#prepare-an-operator-namespace-and-service-account)
     and [Add image pull secret to service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-image-pull-secret-to-service-account).
@@ -248,7 +248,7 @@ for example `--set "kubernetesPlatform=OpenShift"`.
 This accommodates OpenShift security requirements.
 
 For more information,
-see [kubernetesPlatform]({{<relref "/managing-operators/using-helm#kubernetesplatform">}}).
+see [kubernetesPlatform]({{% relref "/managing-operators/using-helm#kubernetesplatform" %}}).
 
 #### Choose a security strategy
 
@@ -260,7 +260,7 @@ There are three commonly used security strategies for deploying an operator:
 
 For a detailed description of the operator's security-related resources,
 see the operator's role-based access control (RBAC) requirements,
-which are documented [here]({{< relref "/managing-operators/rbac.md" >}}).
+which are documented [here]({{% relref "/managing-operators/rbac.md" %}}).
 
 ##### Any namespace with cluster role binding enabled
 
@@ -280,7 +280,7 @@ then an operator is still capable of managing multiple namespaces
 but a running operator will _not_ have privilege to manage a newly added namespace
 that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
-See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
+See [Ensuring the operator has permission to manage a namespace]({{% relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" %}}).
 
 **NOTE**: You will need to manually install the Domain and Cluster CRDs
 because `enableClusterRoleBinding` is not set to `true`
@@ -328,13 +328,13 @@ Since this combination of options omits installing the webhook deployment, custo
 
 Before installing your operator,
 choose the value for its `domainNamespaceSelectionStrategy` Helm chart configuration setting and its related setting (if any).
-See [Choose a domain namespace section strategy]({{<relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
+See [Choose a domain namespace section strategy]({{% relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" %}}).
 
 See [Choose a security strategy](#choose-a-security-strategy).
 
 For a description of common namespace management issues,
-see [Common mistakes and solutions]({{<relref "/managing-operators/common-mistakes.md">}}).
-For reference, see [WebLogic domain management]({{<relref "/managing-operators/using-helm#weblogic-domain-management">}}).
+see [Common mistakes and solutions]({{% relref "/managing-operators/common-mistakes.md" %}}).
+For reference, see [WebLogic domain management]({{% relref "/managing-operators/using-helm#weblogic-domain-management" %}}).
 
 #### Choose a Helm release name
 
@@ -351,7 +351,7 @@ often use `sample-weblogic-operator`.
 
 #### Be aware of advanced operator configuration options
 
-Review the settings in the [Configuration Reference]({{<relref "/managing-operators/using-helm.md">}}) for
+Review the settings in the [Configuration Reference]({{% relref "/managing-operators/using-helm.md" %}}) for
 less commonly used advanced or fine tuning Helm chart configuration options
 that might apply to your particular use case.
 These include node selectors,

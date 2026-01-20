@@ -26,14 +26,14 @@ along with the URL of the WebLogic Server Administration Server's administration
 
 **NOTES**:  
   * An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
-  * If your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WebLogic Remote Console to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+  * If your domain home type is either Domain in Image or [Model in Image]({{% relref "/samples/domains/model-in-image/_index.md" %}}), then do not use the WebLogic Remote Console to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
 
 
 {{% notice warning %}}
 Externally exposing administrative, RMI, or T3 capable WebLogic channels
 using a Kubernetes `NodePort`, load balancer,
 port forwarding, or a similar method can create an insecure configuration.
-For more information, see [External network access security]({{<relref "/security/domain-security/weblogic-channels.md">}}).
+For more information, see [External network access security]({{% relref "/security/domain-security/weblogic-channels.md" %}}).
 {{% /notice %}}
 
 
@@ -84,11 +84,11 @@ http://hostname:adminserver-NodePort/
 The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
 For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) document.
 For an example of setting up the `NodePort` on an Administration Server,
-see [Use a `NodePort` for WLST]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}).
+see [Use a `NodePort` for WLST]({{% relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" %}}).
 
 #### Configure ingress path routing rules
 
-1. Configure an ingress path routing rule. For information about ingresses, see the [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}) documentation.
+1. Configure an ingress path routing rule. For information about ingresses, see the [Ingress]({{% relref "/managing-domains/accessing-the-domain/ingress/_index.md" %}}) documentation.
 
    For an example, see the following `path-routing` YAML file for a Traefik load balancer:
 
@@ -133,7 +133,7 @@ see [Use a `NodePort` for WLST]({{< relref "/managing-domains/accessing-the-doma
 1. Forward a local port (that is external to
    Kubernetes) to the administration port of the
    Administration Server Pod according to these
-   [instructions]({{< relref "/managing-domains/accessing-the-domain/port-forward.md" >}}).
+   [instructions]({{% relref "/managing-domains/accessing-the-domain/port-forward.md" %}}).
 
    **NOTE**: If you plan to run the Remote Console
    on a different machine than the port forwarding command,

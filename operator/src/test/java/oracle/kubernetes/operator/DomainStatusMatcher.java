@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
@@ -13,7 +14,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
-import static oracle.kubernetes.utils.OperatorUtils.joinListGrammatically;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 @SuppressWarnings("unused")
@@ -113,7 +113,9 @@ public class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResourc
   }
 
   private String joinListGrammaticallyWithQuotes(List<String> strings) {
-    return joinListGrammatically(strings.stream().map(this::quote).toList());
+    return strings.stream()
+        .map(this::quote)
+        .collect(Collectors.joining(", "));
   }
 
   private String quote(String s) {

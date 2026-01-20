@@ -28,12 +28,12 @@ The domain events have been enhanced in 4.0. Here is a summary of the changes in
 * Enhanced `Failed` event to:
     * Have a better failure categorization (see [Operator-generated event types](#operator-generated-event-types) for more details).
     * Include the categorization information in the event message.
-    * Provide more information in the event message to indicate what has gone wrong, what you need to do to resolve the problem, and if the operator will [retry]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}) the failed operation.
+    * Provide more information in the event message to indicate what has gone wrong, what you need to do to resolve the problem, and if the operator will [retry]({{% relref "/managing-domains/domain-lifecycle/retry.md" %}}) the failed operation.
 * Added four event types: `Available`, `Unavailable`, `Incomplete`, and `FailureResolved`, to record
-  the transition of their corresponding [Domain resource status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}).
+  the transition of their corresponding [Domain resource status conditions]({{% relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" %}}).
 * Added seven event types: `ClusterAvailable`, `ClusterChanged`, `ClusterCompleted`, `ClusterCreated`,
   `ClusterDeleted`, `ClusterIncomplete`, and `ClusterUnavailable`, to record the transition of their
-  corresponding [Cluster resource status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-conditions" >}}).
+  corresponding [Cluster resource status conditions]({{% relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-conditions" %}}).
 
 ### Operator-generated event types
 
@@ -42,9 +42,9 @@ The operator generates these event types in a domain namespace, which indicate t
  * `Created`: A new domain is created.
  * `Changed`: A change has been made to an existing domain.
  * `Deleted`: An existing domain has been deleted.
- * `Available`: An existing domain is available, which means that a sufficient number of servers are ready such that the customer's applications are available.    For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#available" >}}).
+ * `Available`: An existing domain is available, which means that a sufficient number of servers are ready such that the customer's applications are available.    For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#available" %}}).
  * `Failed`: The domain resource encountered a problem which prevented it from becoming fully up.
-   For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#failed" >}}).
+   For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#failed" %}}).
    The possible failure could be one or more of the following conditions:
    * Invalid configurations in the domain resource.
    * A Kubernetes API call error.
@@ -53,23 +53,23 @@ The operator generates these event types in a domain namespace, which indicate t
    * A topology mismatch between the Domain resource configuration and the WebLogic domain configuration.
    * The replicas of a cluster in the Domain resource exceeds the maximum number of servers configured for the WebLogic cluster.
    * An internal error.
-   * A failure that retries will not help, or has been retried and has exceeded the [pre-defined maximum retry time]({{< relref "/managing-domains/domain-lifecycle/retry#retry-behavior" >}}).
+   * A failure that retries will not help, or has been retried and has exceeded the [pre-defined maximum retry time]({{% relref "/managing-domains/domain-lifecycle/retry#retry-behavior" %}}).
  * `Completed`:  The domain resource is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.all servers that are supposed to be started are up running.
-    For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#completed" >}}).
- * `Unavailable`: The domain resource is unavailable, which means that the domain does not have a sufficient number of servers active. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#available" >}}).
+    For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#completed" %}}).
+ * `Unavailable`: The domain resource is unavailable, which means that the domain does not have a sufficient number of servers active. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#available" %}}).
  * `Incomplete`: The domain resource is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
-    For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#completed" >}}).
- * `FailureResolved`: The failure condition that the domain was in, has been resolved. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#failed" >}}).
+    For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#completed" %}}).
+ * `FailureResolved`: The failure condition that the domain was in, has been resolved. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#failed" %}}).
  * `RollStarting`:  The operator has detected domain resource or Model in Image model
-    updates that require it to perform a rolling restart of the domain. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#rolling" >}}).
- * `RollCompleted`:  The operator has successfully completed a rolling restart of a domain. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#rolling" >}}).
+    updates that require it to perform a rolling restart of the domain. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#rolling" %}}).
+ * `RollCompleted`:  The operator has successfully completed a rolling restart of a domain. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#rolling" %}}).
  * `ClusterCreated`: A new Cluster resource is created.
  * `ClusterChanged`: A change has been made to an existing Cluster resource.
  * `ClusterDeleted`: An existing Cluster resource has been deleted.
- * `ClusterAvailable`: An existing cluster is available, which means that a sufficient number of its servers have reached the ready state. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#cluster-available" >}}).
- * `ClusterCompleted`: The cluster is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#cluster-completed" >}}).
- * `ClusterIncomplete`: The cluster is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, or introspect version. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#cluster-completed" >}}).
- * `ClusterUnavailable`: The cluster is unavailable because an insufficient number of its servers that are expected to be running are ready. For details, see the corresponding [condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#cluster-available" >}}).
+ * `ClusterAvailable`: An existing cluster is available, which means that a sufficient number of its servers have reached the ready state. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#cluster-available" %}}).
+ * `ClusterCompleted`: The cluster is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#cluster-completed" %}}).
+ * `ClusterIncomplete`: The cluster is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, or introspect version. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#cluster-completed" %}}).
+ * `ClusterUnavailable`: The cluster is unavailable because an insufficient number of its servers that are expected to be running are ready. For details, see the corresponding [condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#cluster-available" %}}).
  * `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
  * `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
  * `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace. Note that the creation of this event in a domain namespace is the operator's best effort only; the event will not be generated if the required Kubernetes privilege is removed when a namespace is no longer managed by the operator.

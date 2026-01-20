@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
@@ -121,13 +122,13 @@ public class IstioUtils {
                 .redirect(false))
         .execute());
     if (OKE_CLUSTER) {
-      String loadBalancerIP = getServiceExtIPAddrtOke("istio-ingressgateway", "istio-system");
+      String loadBalancerIP = getServiceExtIPAddrtOke("istio-ingressgateway", ISTIO_NAMESPACE);
       testUntil(
-          assertDoesNotThrow(() -> isLoadBalancerHealthy("istio-system", "istio-ingressgateway"),
+          assertDoesNotThrow(() -> isLoadBalancerHealthy(ISTIO_NAMESPACE, "istio-ingressgateway"),
               "isLoadBalancerHealthy failed with ApiException"),
           logger,
           "Istio LoadBalancer to be healthy in namespace {0}",
-          "istio-system");
+          ISTIO_NAMESPACE);
       InitializationTasks.registerLoadBalancerExternalIP(loadBalancerIP);
     }
   }
@@ -169,7 +170,7 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result;
     StringBuffer getIngressPort;
-    getIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
+    getIngressPort = new StringBuffer(KUBERNETES_CLI + " -n " + ISTIO_NAMESPACE + " get service istio-ingressgateway ");
     getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"" + portName.trim() + "\")].nodePort}'");
     logger.info("getIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getIngressPort));
     try {
@@ -195,7 +196,8 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result;
     StringBuffer getSecureIngressPort;
-    getSecureIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
+    getSecureIngressPort = new StringBuffer(KUBERNETES_CLI + " -n " 
+        + ISTIO_NAMESPACE + " get service istio-ingressgateway ");
     getSecureIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"https\")].nodePort}'");
     logger.info("getSecureIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getSecureIngressPort));
     try {
@@ -221,7 +223,8 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result;
     StringBuffer getTcpIngressPort;
-    getTcpIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
+    getTcpIngressPort = new StringBuffer(KUBERNETES_CLI + " -n " 
+        + ISTIO_NAMESPACE + " get service istio-ingressgateway ");
     getTcpIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"tcp\")].nodePort}'");
     logger.info("getTcpIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getTcpIngressPort));
     try {
@@ -306,7 +309,7 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioDestinationRule: " + KUBERNETES_CLI + " returned {0}", result.toString());
-    return result.stdout().contains("destination-rule created");
+    return result.stdout().contains("created");
   }
 
 
@@ -363,13 +366,13 @@ public class IstioUtils {
     }
     logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " returned {0}", result.toString());
     try {
-      for (var item : listPods("istio-system", null).getItems()) {
+      for (var item : listPods(ISTIO_NAMESPACE, null).getItems()) {
         if (item.getMetadata() != null && item.getMetadata().getName() != null
             && item.getMetadata().getName().contains("prometheus")) {
           logger.info("Waiting for pod {0} to be ready in namespace {1}",
-              item.getMetadata().getName(), "istio-system");
-          checkPodReady(item.getMetadata().getName(), null, "istio-system");
-          checkServiceExists("prometheus", "istio-system");
+              item.getMetadata().getName(), ISTIO_NAMESPACE);
+          checkPodReady(item.getMetadata().getName(), null, ISTIO_NAMESPACE);
+          checkServiceExists("prometheus", ISTIO_NAMESPACE);
         }
       }
     } catch (ApiException e) {

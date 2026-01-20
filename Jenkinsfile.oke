@@ -1,10 +1,10 @@
-// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
-CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;CLUSTER_NAME=seqweek;PARALLEL_RUN=false
-                   H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;CLUSTER_NAME=seqone;PARALLEL_RUN=false
-                   H 12 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;CLUSTER_NAME=parone;PARALLEL_RUN=true'''
+def CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;BASE_CLUSTER_NAME=seqweek;PARALLEL_RUN=false
+                   H 18 * * 0-4 % MAVEN_PROFILE_NAME=oke-sequential;BASE_CLUSTER_NAME=seqone;PARALLEL_RUN=false
+                   H 12 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;BASE_CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 
 pipeline {
     agent { label 'large' }
@@ -48,6 +48,8 @@ pipeline {
         wkotest_ssh_pk = "${WORKSPACE}/.ssh/wkotestkey"
 
         OKE_CLUSTER='true'
+        BASE_CLUSTER_NAME = "${env.BASE_CLUSTER_NAME ?: params.BASE_CLUSTER_NAME}"
+        CLUSTER_NAME = "${BASE_CLUSTER_NAME}-${BUILD_ID}"
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -65,12 +67,23 @@ pipeline {
     }
 
     parameters {
-
+        string(name: 'BRANCH',
+                       description: '',
+                       defaultValue: "main"
+        )
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
         )
-
+        choice(name: 'MAVEN_PROFILE_NAME',
+               description: 'Profile to use in mvn command to run the tests.  Possible values are oke-weekly-sequential,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+               choices: [
+                   'oke-weekly-sequential',
+                   'oke-sequential',
+                   'oke-parallel',
+                   'integration-tests'
+                ]
+        )
         string(name: 'OPERATOR_LOG_LEVEL',
                description: 'The default log level is not set',
                defaultValue: ''
@@ -79,20 +92,16 @@ pipeline {
         booleanParam(name: 'PARALLEL_RUN',
                              description: 'Runs tests in parallel. Default is false.',
                              defaultValue: false
-                )
+        )
+        string(name: 'NUMBER_OF_THREADS',
+               description: 'Number of threads to run the classes in parallel, default is 3.',
+               defaultValue: "3"
+        )
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
                defaultValue: '1.33.1'
         )
-        string(name: 'IMAGE_ID',
-                       description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
-                       //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
-                       //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
-                       
-                )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
                        defaultValue: '1.30.0'
@@ -114,23 +123,6 @@ pipeline {
                    '1.11.1'
                ]
         )
-
-                choice(name: 'MAVEN_PROFILE_NAME',
-                        description: 'Profile to use in mvn command to run the tests.  Possible values are oke-weekly-sequential,oke-parallel, oke-sequential. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-                        choices: [
-                                'oke-weekly-sequential',
-                                'oke-sequential',
-                                'oke-parallel'
-                        ]
-                )
-        string(name: 'NUMBER_OF_THREADS',
-               description: 'Number of threads to run the classes in parallel, default is 3.',
-               defaultValue: "3"
-        )
-        string(name: 'CLUSTER_NAME',
-                       description: 'OKE cluster name',
-                       defaultValue: "seqone"
-                )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
                //defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
@@ -143,19 +135,6 @@ pipeline {
                description: '',
                defaultValue: "${env.WKT_OCIR_HOST}"
         )
-        string(name: 'NODE_SHAPE',
-                       description: '',
-                       defaultValue: "VM.Standard.E3.Flex"
-        )
-        string(name: 'MOUNT_TARGET_OCID',
-                      description: 'only for debug runs on wko-oke-dev',
-		      defaultValue: "ocid1.mounttarget.oc1.phx.aaaaaby27vhqpci5obuhqllqojxwiotqnb4c2ylefuzqaaaa"
-
-                )
-        string(name: 'BRANCH',
-                       description: '',
-                       defaultValue: "main"
-        )
         choice(name: 'BASE_IMAGES_REPO',
                choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
@@ -165,28 +144,28 @@ pipeline {
                defaultValue: "${env.WKT_OCIR_HOST}"
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
-               description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
-               defaultValue: 'test-images/weblogic'
+               description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
+               defaultValue: "test-images/weblogic_cpu"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
-               description: '12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
-               defaultValue: '12.2.1.4'
+	       description: '14.1.2.0-generic-jdk17-ol8, 14.1.2.0-generic-jdk17-ol9, 14.1.2.0-generic-jdk21-ol8, 14.1.2.0-generic-jdk21-ol9, 12.2.1.4-generic-jdk8-ol7, 12.2.1.4-generic-jdk8-ol8, 12.2.1.4-generic-jdk8-ol9, 12.2.1.4-slim-jdk8-ol7,12.2.1.4-slim-jdk8-ol7, 12.2.1.4-slim-jdk8-ol7, 14.1.1.0-generic-jdk8-ol7, 14.1.1.0-generic-jdk8-ol8, 14.1.1.0-generic-jdk8-ol9, 14.1.1.0-generic-jdk11-ol8, 14.1.1.0-generic-jdk11-ol9, 14.1.1.0-slim-jdk11-ol7, 14.1.1.0-slim-jdk11-ol8, 14.1.1.0-slim-jdk8-ol7, 14.1.1.0-slim-jdk8-ol8',
+               defaultValue: '14.1.2.0-generic-jdk17-ol8'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
-               description: 'FWM Infra image name. Default is the image name in OCIR. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: 'test-images/fmw-infrastructure'
+               description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
+               defaultValue: "test-images/fmw-infrastructure_cpu"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
-               description: 'FWM Infra image tag',
-               defaultValue: '12.2.1.4'
+               description: '14.1.2.0-jdk17-ol8, 14.1.2.0-jdk17-ol9, 14.1.2.0-jdk21-ol8, 14.1.2.0-jdk21-ol9,12.2.1.4-jdk8-ol8, 12.2.1.4-jdk8-ol9',
+               defaultValue: '14.1.2.0-jdk17-ol8'
         )
         string(name: 'DB_IMAGE_NAME',
-               description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
-               defaultValue: 'test-images/database/enterprise'
+               description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
+               defaultValue: "test-images/database/enterprise"
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
-               defaultValue: '12.2.0.1-slim'
+               defaultValue: '19.3.0.0'
         )
         string(name: 'MONITORING_EXPORTER_BRANCH',
                description: '',
@@ -211,6 +190,26 @@ pipeline {
         string(name: 'REMOTECONSOLE_VERSION',
                description: 'RemoteConsole version.',
                defaultValue: '2.4.7'
+        )
+        string(name: 'BASE_CLUSTER_NAME',
+               description: 'Base OKE cluster name (BUILD_ID will be appended)',
+               defaultValue: "seqone"
+        )
+        string(name: 'IMAGE_ID',
+                       description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
+                       //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
+                       //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
+                       //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
+       )
+        string(name: 'NODE_SHAPE',
+                       description: '',
+                       defaultValue: "VM.Standard.E3.Flex"
+        )
+        string(name: 'MOUNT_TARGET_OCID',
+                      description: 'only for debug runs on wko-oke-dev',
+                      defaultValue: "ocid1.mounttarget.oc1.phx.aaaaaby27vhqpci5obuhqllqojxwiotqnb4c2ylefuzqaaaa"
+
         )
     }
 
@@ -304,6 +303,12 @@ pipeline {
 
 
                         sh '''
+                        chmod 600 ${jenkins_home_directory}/.oci/config
+                        chmod 600 ${jenkins_home_directory}/.oci/oci-signing-key.pem
+
+                        # OCI CLI safety check (idempotent)
+                        oci setup repair-file-permissions --file ${jenkins_home_directory}/.oci/config
+
                         TENANCY_OCID=$(grep -Po '(?<=tenancy=).*' ${jenkins_home_directory}/.oci/config)
                         USER_OCID=$(grep -Po '(?<=user=).*' ${jenkins_home_directory}/.oci/config)
                         FINGERPRINT=$(grep -Po '(?<=fingerprint=).*' ${jenkins_home_directory}/.oci/config)
@@ -319,7 +324,7 @@ pipeline {
                         cat ${jenkins_home_directory}/.oci/config
                         mkdir -p ${WORKSPACE}/.ssh
                         cd ${WORKSPACE}/.ssh
-                        ssh-keygen -b 2048 -t rsa -q  -f wkotestkey -N ""
+                        ssh-keygen -b 2048 -t rsa -q  -f wkotestkey -N "" <<< y
                         chmod 600 ${wkotest_ssh_pk}
 
                         COMPARTMENT_OCID=${compartment_id}
@@ -428,7 +433,32 @@ EOF
 
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
+			    echo "[DEBUG] BASE_CLUSTER_NAME=${BASE_CLUSTER_NAME}"
+                            echo "[DEBUG] BUILD_ID=${BUILD_ID}"
+                            echo "[DEBUG] CLUSTER_NAME=${CLUSTER_NAME}"
+
+                            if [[ "${CLUSTER_NAME}" != "${BASE_CLUSTER_NAME}-${BUILD_ID}" ]]; then
+                              echo "[FATAL] CLUSTER_NAME derivation mismatch"
+                              exit 1
+                            fi
+
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+
+			    CLUSTER_OCID=$(oci ce cluster list --compartment-id "$compartment_id" --all --query 'data[?name==`'"$CLUSTER_NAME"'` && "lifecycle-state"==`ACTIVE`].id | [0]' --raw-output)
+                            echo "Cluster OCID = $CLUSTER_OCID"
+                            export CLUSTER_OCID
+
+			    if [[ -z "$CLUSTER_OCID" || "$CLUSTER_OCID" == "null" ]]; then
+                                echo "[ERROR] CLUSTER_OCID not found (cluster not ACTIVE or not visible)."
+                                # still write an empty marker file so post can detect it
+                                : > "${WORKSPACE}/cluster_ocid.txt"
+                            else
+                                echo "$CLUSTER_OCID" > "${WORKSPACE}/cluster_ocid.txt"
+                            fi
+
+                            echo "[DEBUG] cluster_ocid.txt content:"
+                            cat "${WORKSPACE}/cluster_ocid.txt" || true
+
                             clusterIP=$(oci ce cluster list --compartment-id=${compartment_id} | jq '.data[]  | select(."name" == "'"${CLUSTER_NAME}"'" and (."lifecycle-state" == "ACTIVE"))' | jq ' ."endpoints" | ."public-endpoint"')
                             echo "clusterIp : $clusterIP"
                             clusterPublicIP=${clusterIP:1:-6}
@@ -611,6 +641,7 @@ EOF
                                 echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
 				echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
 				echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
+				echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
 
                                 echo "${WORKSPACE}/.mvn/maven.config contents:"
                                 cat "${WORKSPACE}/.mvn/maven.config"
@@ -653,13 +684,26 @@ EOF
                         always {
                             sh '''
                                 export PATH="${WORKSPACE}/bin:${PATH}"
-                                export KUBECONFIG=${kubeconfig_file}
-                                export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
-                                export AVAILABILITY_DOMAIN=${availability_domain}
+                                export OCI_CLI_CONFIG_FILE=${jenkins_home_directory}/.oci/config
                                 export OCI_CLI_PROFILE=${oci_profile}
+                                export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
+                                export KUBECONFIG=${kubeconfig_file}
+                                export AVAILABILITY_DOMAIN=${availability_domain}
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+
+				echo 'Remove any leftover lbs'
+				CLUSTER_OCID="$(cat "${WORKSPACE}/cluster_ocid.txt" 2>/dev/null || true)"
+                                echo "[DEBUG] Read CLUSTER_OCID from file: ${CLUSTER_OCID}"
+
+                                if [[ -z "${CLUSTER_OCID}" || "${CLUSTER_OCID}" == "null" ]]; then
+                                    echo "[WARN] CLUSTER_OCID is empty; skipping LB cleanup by cluster tag."
+                                else
+                                    echo 'Remove any leftover lbs'
+                                    ${WORKSPACE}/terraform/oke_delete_lbs_by_cluster_tag.sh "${CLUSTER_OCID}" "${compartment_id}"
+                                fi
+
                                 ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ${AVAILABILITY_DOMAIN}
 
                             '''

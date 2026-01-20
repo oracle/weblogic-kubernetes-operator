@@ -7,4 +7,4 @@ draft: false
 
 This section provides answers to frequently asked questions.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

@@ -73,7 +73,7 @@ For a description of model file macro references to secrets and environment vari
       AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
     ```
 
-- A JRF domain type model __must__ contain a `domainInfo.RCUDbInfo` stanza. **NOTE**: JRF support in Model in Image domains is deprecated in operator version 4.1.0; use the [Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type instead.
+- A JRF domain type model __must__ contain a `domainInfo.RCUDbInfo` stanza. **NOTE**: JRF support in Model in Image domains is deprecated in operator version 4.1.0; use the [Domain on PV]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) domain home source type instead.
 
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
@@ -81,7 +81,7 @@ For a description of model file macro references to secrets and environment vari
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
-During domain home creation, model and property files are first loaded from the `configuration.models.modelHome` directory within a pod. After the `modelHome` files are all loaded, the domain home creation then loads files from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}). If a `modelHome` file and ConfigMap file both have the same name, then both files are loaded.
+During domain home creation, model and property files are first loaded from the `configuration.models.modelHome` directory within a pod. After the `modelHome` files are all loaded, the domain home creation then loads files from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{% relref "/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" %}}). If a `modelHome` file and ConfigMap file both have the same name, then both files are loaded.
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
@@ -93,9 +93,9 @@ The loading order within each of these locations is first determined using the c
  * If two files share the same number, the loading order is determined alphabetically as a tie-breaker.
 
 **NOTE**: If `configuration.models.modelHome` files are supplied by combining multiple
-[Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}),
+[Auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}),
 then the files in this directory are populated according to their
-[Auxiliary image merge order]({{< relref "/managing-domains/model-in-image/auxiliary-images#multiple-auxiliary-images" >}})
+[Auxiliary image merge order]({{% relref "/managing-domains/model-in-image/auxiliary-images#multiple-auxiliary-images" %}})
 before the loading order is determined.
 
 For example, if you have these files in the model home directory:

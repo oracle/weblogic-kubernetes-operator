@@ -5,4 +5,4 @@ weight: 2
 description: "WebLogic domain security and the operator."
 ---
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

@@ -1,0 +1,5 @@
+{{- $title := partial "title.gotmpl" (dict "page" .) }}
+<!-- rpatrick allow pages to suppress the h1 heading -->
+{{ if not .Params.hideHeader }}
+<h1 id="{{ $title | plainify | anchorize }}">{{ $title }}</h1>
+{{ end }}

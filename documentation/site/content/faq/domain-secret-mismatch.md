@@ -26,7 +26,7 @@ secured value can be injected in to the `boot.properties` files when starting se
 When the domain directory is changed such that the domain-specific encryption key is different, the `boot.properties` entries
 generated during introspection will now be invalid.
 
-This can happen in a variety of ways, depending on the [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+This can happen in a variety of ways, depending on the [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}).
 
 #### Domain in Image
 
@@ -40,8 +40,8 @@ currently happens only when starting servers following a total shutdown. Therefo
 introspecting the image containing the original domain directory will be invalid when used with a container started with
 the updated container image containing the new or unrelated domain directory.
 
-The solution is to follow either the recommended [CI/CD guidelines]({{< relref "/managing-domains/cicd/" >}}) so that the original and new container images contain domain directories
-with consistent domain-specific encryption keys and bootstrapping security details, or to [perform a total shutdown]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) of the domain so
+The solution is to follow either the recommended [CI/CD guidelines]({{% relref "/managing-domains/cicd/" %}}) so that the original and new container images contain domain directories
+with consistent domain-specific encryption keys and bootstrapping security details, or to [perform a total shutdown]({{% relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" %}}) of the domain so
 that introspection reoccurs as servers are restarted.
 
 ##### Full domain shutdown and restart
@@ -61,10 +61,10 @@ pipeline to generate new container image tags on every build and to never reuse 
 
 The error occurs while starting servers when the domain directory change was made while other servers were still running.
 
-If completely replacing the domain directory, then you must [stop all running servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}).
+If completely replacing the domain directory, then you must [stop all running servers]({{% relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" %}}).
 
 Because all servers will already be stopped, there is no requirement that the new contents of the domain directory be related to
 the previous contents of the domain directory.  When starting servers again, the operator will perform its introspection
 of the domain directory. However, you may want to preserve the domain directory security configuration including the domain-specific
-encryption key and, in that case, you should follow a similar pattern as is described in the [CI/CD guidelines]({{< relref "/managing-domains/cicd/" >}}) for the domain
+encryption key and, in that case, you should follow a similar pattern as is described in the [CI/CD guidelines]({{% relref "/managing-domains/cicd/" %}}) for the domain
 in a container image model to preserve the original security-related domain directory files.

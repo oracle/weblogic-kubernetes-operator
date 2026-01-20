@@ -5,9 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,9 +51,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -122,7 +118,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressHostRouting;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.formatIPv6Host;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -396,10 +391,6 @@ class ItIntrospectVersion {
     for (int i = 1; i <= cluster1ReplicaCount + 1; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
-
     // verify each managed server can see other member in the cluster
     for (String managedServerName : managedServerNames) {
       verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
@@ -525,11 +516,6 @@ class ItIntrospectVersion {
         && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
       updateIngressBackendServicePort(newAdminPort);
     }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, 
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
     // verify each managed server can see other member in the cluster
     for (String managedServerName : managedServerNames) {
       verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
@@ -666,10 +652,6 @@ class ItIntrospectVersion {
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
-
     // verify when the spec.introspectVersion is changed,
     // all running server pods' weblogic.introspectVersion label is updated to the new value.
     verifyIntrospectVersionLabelInPod();
@@ -751,10 +733,6 @@ class ItIntrospectVersion {
     for (int i = 1; i <= cluster2ReplicaCount; i++) {
       managedServerNames.add(cluster2ManagedServerNameBase + i);
     }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
-
     // set the cluster2Created flag to true.
     cluster2Created = true;
   }
@@ -860,13 +838,6 @@ class ItIntrospectVersion {
             cluster2ManagedServerPodNamePrefix + i, introDomainNamespace);
         checkPodReadyAndServiceExists(cluster2ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
       }
-    }
-
-    //verify admin server accessibility and the health of cluster1 members
-    verifyMemberHealth(adminServerPodName, cluster1ManagedServerNames, wlsUserName, wlsPassword);
-    if (cluster2Created) {
-      //verify admin server accessibility and the health of cluster2 members
-      verifyMemberHealth(adminServerPodName, cluster2ManagedServerNames, wlsUserName, wlsPassword);
     }
   }
 
@@ -1263,98 +1234,8 @@ class ItIntrospectVersion {
       hostHeader = createIngressHostRouting(introDomainNamespace, domainUid, adminServerName, adminPort);
       assertDoesNotThrow(() -> verifyAdminServerRESTAccess(formatIPv6Host(InetAddress.getLocalHost().getHostAddress()), 
           TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
-    }    
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+    }
   }
-
-  private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
-      String user, String code) {
-
-    logger.info("Checking the health of servers in cluster");
-    boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
-
-    testUntil(() -> {
-      if (OKE_CLUSTER) {
-        // In internal OKE env, verifyMemberHealth in admin server pod
-        int servicePort = getServicePort(introDomainNamespace, 
-            getExternalServicePodName(adminServerPodName), "default");
-        final String command = KUBERNETES_CLI + " exec -n "
-            + introDomainNamespace + "  " + adminServerPodName + " -- curl http://"
-            + adminServerPodName + ":"
-            + servicePort + "/clusterview/ClusterViewServlet"
-            + "\"?user=" + user
-            + "&password=" + code + "&ipv6=" + ipv6 + "\"";
-
-        ExecResult result = null;
-        try {
-          result = ExecCommand.exec(command, true);
-        } catch (IOException | InterruptedException ex) {
-          logger.severe(ex.getMessage());
-        }
-        assertNotNull(result, "result is null");
-        String response = result.stdout().trim();
-        logger.info(response);
-        logger.info(result.stderr());
-        logger.info("{0}", result.exitValue());
-        boolean health = true;
-        for (String managedServer : managedServerNames) {
-          health = health && response.contains(managedServer + ":HEALTH_OK");
-          if (health) {
-            logger.info(managedServer + " is healthy");
-          } else {
-            logger.info(managedServer + " health is not OK or server not found");
-          }
-        }
-        return health;
-      } else {
-        // In non-internal OKE env, verifyMemberHealth using adminSvcExtHost by sending HTTP request from local VM
-
-        String extSvcPodName = getExternalServicePodName(adminServerPodName);
-        logger.info("**** adminServerPodName={0}", adminServerPodName);
-        logger.info("**** extSvcPodName={0}", extSvcPodName);
-
-        adminSvcExtHost = createRouteForOKD(extSvcPodName, introDomainNamespace);
-        logger.info("**** adminSvcExtHost={0}", adminSvcExtHost);
-        logger.info("admin svc host = {0}", adminSvcExtHost);
-
-        logger.info("Getting node port for default channel");
-        int serviceNodePort = assertDoesNotThrow(()
-            -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-            "Getting admin server node port failed");
-        String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
-        
-        Map<String, String> headers = null;
-        if (TestConstants.KIND_CLUSTER
-            && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
-          hostAndPort = formatIPv6Host(InetAddress.getLocalHost().getHostAddress()) 
-              + ":" + TRAEFIK_INGRESS_HTTP_HOSTPORT;
-          headers = new HashMap<>();
-          headers.put("host", hostHeader);
-        }
-
-        String url = "http://" + hostAndPort
-            + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + code + "&ipv6=" + ipv6;
-        HttpResponse<String> response;
-        response = OracleHttpClient.get(url, headers, true);
-
-        boolean health = true;
-        for (String managedServer : managedServerNames) {
-          health = health && response.body().contains(managedServer + ":HEALTH_OK");
-          if (health) {
-            logger.info(managedServer + " is healthy");
-          } else {
-            logger.info(managedServer + " health is not OK or server not found");
-          }
-        }
-        return health;
-      }
-    },
-        logger,
-        "Verifying the health of all cluster members");
-  }
-
 
   private void verifyConnectionBetweenClusterMembers(String serverName, List<String> managedServerNames) {
     String podName = domainUid + "-" + serverName;

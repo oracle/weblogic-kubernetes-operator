@@ -1,4 +1,3 @@
-### WebLogic Kubernetes Operator
 
 The WebLogic Kubernetes Operator (the “operator”) supports running your WebLogic Server and Fusion Middleware Infrastructure domains on Kubernetes, an industry standard, cloud neutral deployment platform. It lets you encapsulate your entire WebLogic Server installation and layered applications into a portable set of cloud neutral images and simple resource description files. You can run them on any on-premises or public cloud that supports Kubernetes where you've deployed the operator.
 
@@ -10,9 +9,9 @@ You can:
 * Deploy an operator that manages all WebLogic domains in all namespaces in a Kubernetes cluster, or that only manages domains in a specific subset of the namespaces, or that manages only domains that are located in the same namespace as the operator. At most, a namespace can be managed by one operator.
 * Supply WebLogic domain configuration using:
   * _Model in Image_: Includes [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) models and archives in a container image.
-     * **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+     * **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ [auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}).
   * _Domain in Image_: Includes a WebLogic domain home in a container image.
-     * **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+     * **NOTE**: The Domain in Image [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
   * _Domain on PV_: Locates WebLogic domain homes in a Kubernetes PersistentVolume (PV). This PV can reside in an NFS file system or other Kubernetes volume types.
 * Configure deployment of WebLogic domains as Kubernetes resources (using Kubernetes custom resource definitions).
 * Override certain aspects of the WebLogic domain configuration; for example, use a different database password for different deployments.
@@ -24,7 +23,7 @@ You can:
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
 {{% notice tip %}}
-The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/introduction/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{< relref "/samples/_index.md" >}}).
+The fastest way to experience the operator is to follow the [Quick Start guide]({{% relref "/quickstart/_index.md" %}}), or you can peruse our [documentation]({{% relref "/introduction/_index.md" %}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{% relref "/samples/_index.md" %}}).
 Also, you can step through the [Tutorial](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/hands-on-lab/README.md)
 using the operator to deploy and run a WebLogic domain container-packaged web application on an Oracle Container Engine for Kubernetes (OKE) cluster.
 {{% /notice %}}
@@ -33,21 +32,19 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 #### Current production release
 
 This is the [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases).
-See the [operator prerequisites]({{< relref "/introduction/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "/introduction/platforms/environments.md" >}}).
+See the [operator prerequisites]({{% relref "/introduction/prerequisites/introduction.md" %}}) and [supported environments]({{% relref "/introduction/platforms/environments.md" %}}).
 
 ***
 
 #### Recent changes and known issues
 
-See the [Release Notes](https://github.com/oracle/weblogic-kubernetes-operator/releases) for recent changes to the operator and [Known Limitations]({{< relref "/known-limitations/_index.md" >}}) for the current set of known issues.
+See the [Release Notes](https://github.com/oracle/weblogic-kubernetes-operator/releases) for recent changes to the operator and [Known Limitations]({{% relref "/known-limitations/_index.md" %}}) for the current set of known issues.
 
 #### Operator earlier versions
 
 {{% notice note %}}
 As of November 2024, version 3.4.x of the WebLogic Kubernetes Operator is no longer supported.
 {{% /notice %}}
-
-Documentation for prior releases of the operator: [3.4](https://oracle.github.io/weblogic-kubernetes-operator/3.4/), [4.0](https://oracle.github.io/weblogic-kubernetes-operator/4.0/), [4.1](https://oracle.github.io/weblogic-kubernetes-operator/4.1/), and [4.2](https://oracle.github.io/weblogic-kubernetes-operator/4.2/).
 
 #### Backward compatibility guidelines
 
@@ -59,7 +56,7 @@ maintained for one release after a replacement is available.
 
 #### Getting help
 
-See [Get help]({{< relref "/introduction/get-help.md" >}}).
+See [Get help]({{% relref "/introduction/get-help.md" %}}).
 
 #### Related projects
 

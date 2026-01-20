@@ -6,7 +6,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>4.3.4-SNAPSHOT</version>
+    <version>4.3.6-SNAPSHOT</version>
   </parent>
 
   <artifactId>common</artifactId>
@@ -25,10 +25,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

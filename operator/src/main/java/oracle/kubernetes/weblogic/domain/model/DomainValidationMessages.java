@@ -1,10 +1,8 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.text.ChoiceFormat;
-import java.text.Format;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +12,6 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.utils.OperatorUtils;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -87,24 +84,8 @@ public class DomainValidationMessages {
   }
 
   static String reservedVariableNames(String prefix, List<String> reservedNames) {
-    MessageFormat formatter = new MessageFormat("");
-    formatter.applyPattern(getBundleString(MessageKeys.RESERVED_ENVIRONMENT_VARIABLES));
-    formatter.setFormats(new Format[]{getEnvNoun(), null, null, getToBe()});
-    return formatter.format(new Object[] {
-        reservedNames.size(),
-        OperatorUtils.joinListGrammatically(reservedNames),
-        prefix + ".serverPod.env",
-        reservedNames.size()});
-  }
-
-  private static ChoiceFormat getEnvNoun() {
-    return new ChoiceFormat(new double[] {1, 2},
-                            new String[] {getBundleString("oneEnvVar"), getBundleString("multipleEnvVars")});
-  }
-
-  private static ChoiceFormat getToBe() {
-    return new ChoiceFormat(new double[] {1, 2},
-                            new String[] {getBundleString("singularToBe"), getBundleString("pluralToBe")});
+    return getMessage(MessageKeys.RESERVED_ENVIRONMENT_VARIABLES,
+        prefix + ".serverPod.env", String.join(", ", reservedNames));
   }
 
   public static String noSuchSecret(String secretName, String namespace, SecretType type) {

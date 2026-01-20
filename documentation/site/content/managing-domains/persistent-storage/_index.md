@@ -8,4 +8,4 @@ description = "Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim 
 
 This section provides general information about setting up persistent storage, which can be used for WebLogic domain homes and log files.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

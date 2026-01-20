@@ -43,10 +43,10 @@ weight: 3
    The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image", which contains traditional WebLogic configuration and a WebLogic application.
 
      - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml).
-     - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
+     - For detailed information, see [Domain resource]({{% relref "/managing-domains/domain-resource.md" %}}).
 
    {{% notice note %}}
-   The Quick Start guide's sample domain resource references a WebLogic Server version 14.1.2.0 General Availability (GA) image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. 
+   The Quick Start guide's sample domain resource references a WebLogic Server version 14.1.2.0 General Availability (GA) image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{% relref "/base-images/ocr-images.md" %}}) or create your images using the [WebLogic Image Tool]({{% relref "/base-images/custom-images#create-a-custom-base-image" %}}) (WIT) with the `--recommendedPatches` option. 
    {{% /notice %}}
 
 1.	Confirm that the operator started the servers for the domain.
@@ -78,7 +78,7 @@ weight: 3
     $ kubectl get services -n sample-domain1-ns
     ```
 
-   	 If the operator didn't start the servers for the domain, see [Domain debugging]({{< relref "/managing-domains/debugging.md" >}}).
+   	 If the operator didn't start the servers for the domain, see [Domain debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
 #### Create an ingress route for the domain.
 
@@ -94,8 +94,8 @@ weight: 3
 
 1.  To confirm that the ingress controller noticed the new ingress route and is successfully routing to the domain's server pods, send a request to the URL for the "quick start app", as shown in the following example, which will return an HTTP 200 status code.
 
-    {{< tabs groupId="config" >}}
-    {{% tab name="Single Node Cluster" %}}
+    {{< tabs groupid="config" >}}
+    {{% tab title="Single Node Cluster" %}}
         $ curl -i http://localhost:30305/quickstart/
 
         HTTP/1.1 200 OK
@@ -119,7 +119,7 @@ weight: 3
         </body>
         </html>
     {{% /tab %}}
-    {{% tab name="OKE Cluster" %}}
+    {{% tab title="OKE Cluster" %}}
         $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
 
         $ curl -i http://${LOADBALANCER_INGRESS_IP}/quickstart/
@@ -151,11 +151,11 @@ weight: 3
     {{% notice note %}} Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.
     {{% /notice %}}
 1.	To access the WebLogic Server Administration Console:
-    {{< tabs groupId="config" >}}
-    {{% tab name="Single Node Cluster" %}}
+    {{< tabs groupid="config" >}}
+    {{% tab title="Single Node Cluster" %}}
       Open a browser to http://localhost:30305/console.
     {{% /tab %}}
-    {{% tab name="OKE Cluster" %}}
+    {{% tab title="OKE Cluster" %}}
       a. Get the load balancer ingress IP address using the following command:
          $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
 
@@ -164,5 +164,5 @@ weight: 3
     {{< /tabs >}}
 
 
-    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
+    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{% relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" %}}) and [Scaling]({{% relref "/managing-domains/domain-lifecycle/scaling.md" %}}).
     {{% /notice %}}

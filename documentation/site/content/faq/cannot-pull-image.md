@@ -123,7 +123,7 @@ $ kubectl patch serviceaccount default \
 {{% notice note %}}
 You can provide multiple `imagePullSecrets` if you need to pull container images from multiple
 remote container registries or if your images require different authentication credentials.
-For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection.md">}}).
+For more information, see [Container Image Protection]({{% relref "/security/domain-security/image-protection.md" %}}).
 {{% /notice %}}
 
 #### Pushing the image to a repository

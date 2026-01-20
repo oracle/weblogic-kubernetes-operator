@@ -7,4 +7,4 @@ description: "These samples show various choices for working with domains."
 
 These samples show various choices for working with domains.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

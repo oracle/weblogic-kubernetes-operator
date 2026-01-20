@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -6,16 +6,12 @@ package oracle.kubernetes.utils;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.ResourceBundle;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 public class OperatorUtils {
 
@@ -25,47 +21,6 @@ public class OperatorUtils {
 
   // 2K chars (4K bytes)
   private static final int DEFAULT_BUF_SIZE = 0x800;
-
-  /**
-   * Converts a list of strings to a comma-separated list, using "and" for the last item.
-   *
-   * @param list the list to convert
-   * @return the resultant string
-   */
-  public static String joinListGrammatically(final List<String> list) {
-    return list.size() > 1
-        ? String.join(", ", list.subList(0, list.size() - 1))
-        .concat(getFinalSeparator(list) + " " + getBundleString("conjunction") + " ")
-        .concat(list.get(list.size() - 1))
-        : list.get(0);
-  }
-
-  @Nonnull
-  private static String getFinalSeparator(List<String> list) {
-    return list.size() > 2 ? "," : "";
-  }
-
-  private static String getBundleString(String key) {
-    return ResourceBundle.getBundle("Operator").getString(key);
-  }
-
-  /**
-   * Converts a list of strings to a comma-separated list, using "and" for the last item. If the list
-   * is longer than the specified limit, truncates the list and follows up with the number of remaining elements.
-   *
-   * @param list the list to convert
-   * @return the resultant string
-   */
-  public static String joinListGrammaticallyWithLimit(int limit, final List<String> list) {
-    if (list.size() <= limit) {
-      return joinListGrammatically(list);
-    } else {
-      final int excess = Math.min(2, list.size() - limit);
-      final List<String> truncated = new ArrayList<>(list.subList(0, list.size() - excess));
-      truncated.add(excess + " " + getBundleString("truncation"));
-      return joinListGrammatically(truncated);
-    }
-  }
 
   /**
    * Create a Map using the elements from the given map, with their keys sorted

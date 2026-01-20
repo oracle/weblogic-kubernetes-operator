@@ -36,7 +36,7 @@ Status:
 ```
 {{% /expand %}}
 
-The conditions for [Cluster resources referenced by a domain]({{< relref "managing-domains/domain-resource#domain-and-cluster-resource-attribute-references">}})
+The conditions for [Cluster resources referenced by a domain]({{% relref "managing-domains/domain-resource#domain-and-cluster-resource-attribute-references" %}})
 are also listed in the domain status under `domain.status.clusters`.
 
 {{%expand "Click here for an example of a domain status showing both domain and cluster conditions." %}}
@@ -71,11 +71,11 @@ Status:
 ### Attributes in a condition
 
 The following attributes can be found in a condition:
-- `type` - The type of the condition, such as `Failed` or `Available`. See [Types of domain status conditions]({{< relref "#types-of-domain-status-conditions">}}).
+- `type` - The type of the condition, such as `Failed` or `Available`. See [Types of domain status conditions]({{% relref "#types-of-domain-status-conditions" %}}).
 - `status` - The status of the condition, such as `True` or `False`.
 - `message` - An optional, human-readable message providing more details about the condition.
-- `reason` - The [reason]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}) for the `Failed` condition. Not applicable to other types of condition.
-- `severity` - The [severity]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}) for the `Failed` condition. Not applicable to other types of condition.
+- `reason` - The [reason]({{% relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" %}}) for the `Failed` condition. Not applicable to other types of condition.
+- `severity` - The [severity]({{% relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" %}}) for the `Failed` condition. Not applicable to other types of condition.
 - `lastTransitionTime` - A timestamp of when the condition was created or the last time time the condition transitioned from one status to another.
 
 ### Types of domain conditions
@@ -86,12 +86,12 @@ The following is a list of condition types for a Domain resource.
 
 - The desired state of the Domain resource cannot be achieved due to failures encountered in
   processing the Domain resource.
-For information about how to diagnose failures, see [debugging]({{< relref "managing-domains/debugging.md" >}}).
+For information about how to diagnose failures, see [debugging]({{% relref "managing-domains/debugging.md" %}}).
 - The `status` attribute is always `True` for a `Failed` condition.
   The `Failed` condition is removed from the domain status when the underlying failure is resolved.
 - The `message` attribute contains an error message with details of the failure.
-- The `reason` attribute is set to one of the reasons listed in [domain failure reasons]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}).
-- The `severity` attribute is set to one of the severity levels listed in [domain failure severities]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}).
+- The `reason` attribute is set to one of the reasons listed in [domain failure reasons]({{% relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" %}}).
+- The `severity` attribute is set to one of the severity levels listed in [domain failure severities]({{% relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" %}}).
 {{%expand "Click here for an example of a domain status with a Failed condition." %}}
 ```
 Status:
@@ -142,7 +142,7 @@ Status:
   that are not ready.
 
 #### `ConfigChangesPendingRestart`
-- This condition tracks the progress of [runtime updates]({{< relref "managing-domains/model-in-image/runtime-updates">}})
+- This condition tracks the progress of [runtime updates]({{% relref "managing-domains/model-in-image/runtime-updates" %}})
   to the WebLogic Deploy Tooling model of a Model in Image domain home source type.
 - The `status` attribute is `True` if all of the following are true:
   * The Domain resource attribute
@@ -155,7 +155,7 @@ Status:
     (to propagate the pending non-dynamic changes).
 - The `ConfigChangesPendingRestart` condition is removed from the domain status when pending
   non-dynamic runtime updates complete their processing due to a roll or restart.
-- For how to see which pods are awaiting restart using WebLogic pod labels, see [Online update status and labels]({{< relref "managing-domains/model-in-image/runtime-updates#online-update-status-and-labels" >}}).
+- For how to see which pods are awaiting restart using WebLogic pod labels, see [Online update status and labels]({{% relref "managing-domains/model-in-image/runtime-updates#online-update-status-and-labels" %}}).
 {{%expand "Click here for an example of a domain status with a ConfigChangesPendingRestart condition." %}}
 ```
 Status:
@@ -177,7 +177,7 @@ Status:
 #### `Rolling`
 - This condition indicates that the operator is rolling the server pods in a domain, such as after it
   has detected an update to the Domain resource or Model in Image model that requires it to
-  perform a [rolling restart]({{< relref "managing-domains/domain-lifecycle/startup#rolling-restarts" >}}) of the domain.
+  perform a [rolling restart]({{% relref "managing-domains/domain-lifecycle/startup#rolling-restarts" %}}) of the domain.
 - The `status` attribute is always `True` for a `Rolling` condition.
 - The `Rolling` condition is removed from the domain status when the rolling is completed.
 
@@ -241,4 +241,4 @@ the operator is in the process of updating the status or the operator is not run
 ### Conditions and events
 
 A corresponding event is generated when an `Available`, `Completed`, `Failure`, or `Rolling`
-condition has changed. For details, see [operator-generated event types]({{< relref "managing-domains/accessing-the-domain/domain-events#operator-generated-event-types">}}).
+condition has changed. For details, see [operator-generated event types]({{% relref "managing-domains/accessing-the-domain/domain-events#operator-generated-event-types" %}}).

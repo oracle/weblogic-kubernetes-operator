@@ -633,14 +633,17 @@ public class TestAssertions {
    * @return true if the condition type exists, false otherwise
    */
   public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
-                                                                  String domainNamespace,
-                                                                  String conditionType,
-                                                                  String domainVersion) {
+                                                                 String domainNamespace,
+                                                                 String conditionType,
+                                                                 String domainVersion) {
     LoggingFacade logger = getLogger();
     return () -> {
-      DomainResource domain =
-          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
-
+      DomainResource domain = null;
+      try {
+        domain = getDomainCustomResource(domainUid, domainNamespace, domainVersion);
+      } catch (Exception e) {
+        logger.info(e.getLocalizedMessage());
+      }
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
         logger.info(Yaml.dump(domainConditionList));

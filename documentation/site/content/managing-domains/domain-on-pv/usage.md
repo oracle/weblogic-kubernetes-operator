@@ -12,7 +12,7 @@ This document describes how to create and deploy a typical Domain home on persis
 
 ### WebLogic Kubernetes Operator
 
-Deploy the operator and ensure that it is monitoring the desired namespace for your Domain on PV domain. See [Manage operators]({{< relref "/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
+Deploy the operator and ensure that it is monitoring the desired namespace for your Domain on PV domain. See [Manage operators]({{% relref "/managing-operators/_index.md" %}}) and [Quick Start]({{% relref "/quickstart/_index.md" %}}).
 
 
 ### Configuration
@@ -30,7 +30,7 @@ To use this feature, provide the following information:
 - [Domain WDT models](#domain-creation-models) - This is where the WDT Home, WDT model, WDT archive, and WDT variables files reside.
 - [Optional WDT models ConfigMap](#optional-wdt-models-configmap) - Optional, WDT model, WDT variables files.
 - [Using WDT model encryption](#using-wdt-model-encryption) - Optional, using WDT model encryption.
-- [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
+- [Domain resource YAML file]({{% relref "/reference/domain-resource.md"%}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
 
 
 For details about each field, see the `initializeDomainOnPV` section
@@ -84,7 +84,7 @@ The image layout follows this directory structure:
 
 You can create your own image using your familiar method or use the [WebLogic Image Tool (WIT)](https://github.com/oracle/weblogic-image-tool).
 
-For example, because the file structure is the same as an [Auxiliary Image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) that's used in the Model in Image domain home source type, you can
+For example, because the file structure is the same as an [Auxiliary Image]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}) that's used in the Model in Image domain home source type, you can
 use the same WIT command `createAuxImage`.
 
 ```
@@ -231,7 +231,7 @@ to specify any `persistentVolume` or `persistentVolumeClaim`  under the `intiali
 
 #### Domain information
 
-**For JRF-based domains, before proceeding, please be sure to read this document**, [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md">}}).
+**For JRF-based domains, before proceeding, please be sure to read this document**, [JRF domains]({{% relref "/managing-domains/domain-on-pv/jrf-domain.md" %}}).
 
 This is the section describing the WebLogic domain. For example:
 
@@ -366,7 +366,7 @@ In the rare scenario where the domain home directory is corrupted, and you do **
    $ kubectl -n sample-ns patch domain sample-domain1 --type='JSON' -p='[ { "op" : "replace", "path" : "/spec/restartVersion", "value" : "15" }]'
    ```
 
-For more information, see [Disaster Recovery]({{< relref "/managing-domains/domain-on-pv/jrf-domain#disaster-recovery-for-domain-on-pv-deployment">}}).  
+For more information, see [Disaster Recovery]({{% relref "/managing-domains/domain-on-pv/jrf-domain#disaster-recovery-for-domain-on-pv-deployment" %}}).  
 
 ### Troubleshooting
 
@@ -411,7 +411,7 @@ is a **one time only** operation. They are used only for creating the initial do
 You should use the WebLogic console, WLST, or other means to update the domain.  In order to use the updated models to recreate the domain, you must delete the domain home directory and
 also the applications directory for the JRF domain (`applications/<domain uid>` under the parent of the domain home directory) before trying to create the domain again.
 
-If you see any other error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}})
+If you see any other error, then consult [Debugging]({{% relref "/managing-domains/debugging.md" %}})
 
 ### Cleanup
 

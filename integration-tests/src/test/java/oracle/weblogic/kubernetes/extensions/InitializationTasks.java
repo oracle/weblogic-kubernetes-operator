@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.PortInuseEventWatcher;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -56,10 +55,12 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.INSTALL_WEBLOGIC;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MAVEN_PROFILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -86,7 +87,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants. WEBLOGIC_IMAGE_WLSADM_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_WLSADM_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SHIPHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -131,7 +132,8 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 /**
  * Class to build the required images for the tests.
  */
-public class InitializationTasks implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
+public class InitializationTasks implements BeforeAllCallback, 
+    ExtensionContext.Store.CloseableResource  {
   private static final AtomicBoolean started = new AtomicBoolean(false);
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
   private static String operatorImage;
@@ -147,8 +149,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       .and().with().pollInterval(10, SECONDS)
       .atMost(30, MINUTES).await();
 
-  PortInuseEventWatcher portInuseEventWatcher;
-
   @Override
   public void beforeAll(ExtensionContext context) {
     LoggingFacade logger = getLogger();
@@ -162,8 +162,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
      */
     if (!started.getAndSet(true)) {
       try {
-        portInuseEventWatcher = new PortInuseEventWatcher();
-        portInuseEventWatcher.start();
         // clean up the download directory so that we always get the latest
         // versions of the WDT and WIT tools in every run of the test suite.
         try {
@@ -317,7 +315,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         }
         
         //install webhook to prevent every operator installation trying to update crd
-        installWebHookOnlyOperator("DomainOnPvSimplification=true");
+        if (MAVEN_PROFILE_NAME == null) {
+          installWebHookOnlyOperator("DomainOnPvSimplification=true");
+        }
         //install traefik when running with podman container runtime
         if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !CRIO) {
           installTraefikLB();
@@ -333,7 +333,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           logger.info("Installing istio before any test suites are run");
           installIstio();
         }
-        if (INSTALL_WEBLOGIC && !CRIO && !ARM && !OKE_CLUSTER) {
+        if (INSTALL_WEBLOGIC && !CRIO && !ARM) {
           installOnPremWebLogic();
         }
       } finally {
@@ -390,8 +390,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         uninstallIstio();
       }
       if (!OKD && !OKE_CLUSTER && !CRIO) {
-        logger.info("Delete istio-system namespace after all test suites are run");
-        deleteNamespace("istio-system");
+        logger.info("Delete {0} namespace after all test suites are run", ISTIO_NAMESPACE);
+        deleteNamespace(ISTIO_NAMESPACE);
         deleteNamespace(ORACLE_OPERATOR_NS);
       }
       logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
@@ -409,9 +409,11 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       } catch (IOException ioe) {
         logger.severe("Failed to cleanup files @ " + RESULTS_ROOT, ioe);
       }
-      logger.info("Uninstalling webhook only operator");
-      uninstallOperator(opHelmParams);
-      deleteNamespace(webhookNamespace);
+      if (MAVEN_PROFILE_NAME == null) {
+        logger.info("Uninstalling webhook only operator");
+        uninstallOperator(opHelmParams);
+        deleteNamespace(webhookNamespace);
+      }
 
       logger.info("Cleanup images after all test suites are run");
       // delete all the images from local repo
@@ -421,6 +423,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       if (OKE_CLUSTER) {
         logger.info("Cleanup created in OCI load balancers after all test suites are run");
         // delete all load balancers in OCI
+        logger.info(lbIPs.toString());
         for (String ip : lbIPs) {
           deleteLoadBalancer(ip);
         }
@@ -450,7 +453,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
       handler.close();
     }
-    portInuseEventWatcher.interrupt();
   }
 
   private String getOcirToken() {

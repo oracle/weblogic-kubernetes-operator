@@ -135,7 +135,7 @@ Status:
 
 #### Domain debugging
 
-For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
+For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
 #### WSL2 bad timestamp
 

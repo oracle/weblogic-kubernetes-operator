@@ -29,13 +29,13 @@ such as `CustomResourceDefinitions`, `Namespaces`, and `PersistentVolumes`,
 then consider using the same dedicated namespace for each operator
 and the domains that each operator manages.
 See the `Dedicated` option for the
-[domainNamespaceSelectionStrategy]({{< relref "/managing-operators/using-helm#domainnamespaceselectionstrategy" >}})
+[domainNamespaceSelectionStrategy]({{% relref "/managing-operators/using-helm#domainnamespaceselectionstrategy" %}})
 setting.
 {{% /notice %}}
 
 ### Additional reading
 
-* See [Prepare an operator namespace and service account]({{<relref "/managing-operators/preparation#prepare-an-operator-namespace-and-service-account">}}).
-* See the operator Helm chart [serviceAccount]({{<relref "/managing-operators/using-helm#serviceaccount">}})
+* See [Prepare an operator namespace and service account]({{% relref "/managing-operators/preparation#prepare-an-operator-namespace-and-service-account" %}}).
+* See the operator Helm chart [serviceAccount]({{% relref "/managing-operators/using-helm#serviceaccount" %}})
   setting.
-* For more information about access controls, see [RBAC]({{<relref "/managing-operators/rbac.md">}}).
+* For more information about access controls, see [RBAC]({{% relref "/managing-operators/rbac.md" %}}).

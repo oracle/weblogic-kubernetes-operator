@@ -14,14 +14,14 @@ Here are some suggestions for debugging problems with a domain after your Domain
 
 When debugging, it helps to understand failure types,
 failure severities, retry behavior, and retry tuning,
-see [Domain failure retry processing]({{< relref "managing-domains/domain-lifecycle/retry.md" >}}).
+see [Domain failure retry processing]({{% relref "managing-domains/domain-lifecycle/retry.md" %}}).
 These apply to failures reported in the resource status,
 events, introspector jobs, and pods.
 
 ### Check the Domain status
 
 To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAIN_RESOURCE_NAME`.
-For more information, see [Domain conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}).
+For more information, see [Domain conditions]({{% relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" %}}).
 
 **NOTE**:
 If `.status.observedGeneration` does not equal `.metadata.generation`,
@@ -38,7 +38,7 @@ then you can optionally check the status of
 each using `kubectl -n MY_NAMESPACE describe cluster MY_CLUSTER_NAME`.
 
 The same information is reported in the Domain resource status under `domain.status.clusters`.
-For more information, see [Cluster conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-conditions" >}}).
+For more information, see [Cluster conditions]({{% relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-conditions" %}}).
 
 **NOTE**: If `.observedGeneration` for a particular cluster status
 does not equal `.metadata.generation` for the corresponding cluster resource,
@@ -52,7 +52,7 @@ or the operator is not running.
 To check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
 
 
-For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
+For more information, see [Domain events]({{% relref "/managing-domains/accessing-the-domain/domain-events.md" %}}).
 
 ### Check the introspector job
 
@@ -60,7 +60,7 @@ If your introspector job failed, then examine the `kubectl describe` of the job 
 
 {{% notice tip %}}
 To prevent the introspector job from retrying while you are debugging a failure, configure `domain.spec.failureRetryLimitMinutes` to `0`.
-For more information, see [Domain failure retry processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
+For more information, see [Domain failure retry processing]({{% relref "/managing-domains/domain-lifecycle/retry.md" %}}).
 {{% /notice %}}
 
 For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`.
@@ -125,7 +125,7 @@ If your introspector job succeeded, then there will be no introspector job or po
 If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME`, `kubectl -n MY_NAMESPACE logs POD_NAME`, and/or `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'` to debug.
 
 If you are performing an online update to a running domain's WebLogic configuration,
-then see [Online update status and labels]({{<relref "/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
+then see [Online update status and labels]({{% relref "/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels" %}}).
 
 
 ### Check the docs
@@ -134,13 +134,13 @@ Common issues that have corresponding documentation include:
 - When a Domain or Cluster YAML file is deployed and no introspector or WebLogic Server pods start,
   plus the operator log contains no mention of the domain,
   then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
-  See the operator [Namespace management]({{<relref "/managing-operators/namespace-management.md">}})
-  and operator [Common mistakes and solutions]({{<relref "/managing-operators/common-mistakes.md">}}) documentation.
+  See the operator [Namespace management]({{% relref "/managing-operators/namespace-management.md" %}})
+  and operator [Common mistakes and solutions]({{% relref "/managing-operators/common-mistakes.md" %}}) documentation.
 - If a `describe` of an introspector job or WebLogic Server pod reveals image access errors,
-  see the [Cannot pull image]({{<relref "/faq/cannot-pull-image">}}) FAQ.
+  see the [Cannot pull image]({{% relref "/faq/cannot-pull-image" %}}) FAQ.
 
 ### Check the operator
 
 If the problem is specific to the operator itself,
 or its namespace management,
-then consult the operator [Troubleshooting]({{<relref "/managing-operators/troubleshooting.md">}}) documentation.
+then consult the operator [Troubleshooting]({{% relref "/managing-operators/troubleshooting.md" %}}) documentation.

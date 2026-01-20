@@ -291,7 +291,7 @@ The operator will restart servers when any of the follow fields on the Domain th
 * `volumes`
 * `volumeMounts`
 
-For Model in Image, a change to the `introspectVersion` field, which causes the operator to initiate a new [introspection]({{< relref "/managing-domains/domain-lifecycle/introspection.md" >}}), will result in the restarting of servers if the introspection results in the generation of a modified WebLogic domain home. See the documentation on Model in Image [runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of changes to the model or associated resources, such as Secrets, that will cause the generation of a modified WebLogic domain home.
+For Model in Image, a change to the `introspectVersion` field, which causes the operator to initiate a new [introspection]({{% relref "/managing-domains/domain-lifecycle/introspection.md" %}}), will result in the restarting of servers if the introspection results in the generation of a modified WebLogic domain home. See the documentation on Model in Image [runtime updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}) for a description of changes to the model or associated resources, such as Secrets, that will cause the generation of a modified WebLogic domain home.
 
 {{% notice note %}}
 If the only change detected is the addition or modification of a customer-specified label or annotation,
@@ -314,7 +314,7 @@ Specifying a `maxUnavailable` property value of `1` protects against inadvertent
 servers are shut down at the same time during the rolling restart process.
 
 {{% notice note %}}
-If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-domain-configuration" >}}) and [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this document.
+If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{% relref "/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-domain-configuration" %}}) and [Runtime updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}) before consulting this document.
 {{% /notice %}}
 
 ### Draining a node and PodDisruptionBudget
@@ -436,5 +436,5 @@ have to specify the `serverStartPolicy` as the default value is `IfNeeded`.
 
 ### Domain lifecycle sample scripts
 
-See the [Lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/scripts.md" >}})
+See the [Lifecycle sample scripts]({{% relref "/managing-domains/domain-lifecycle/scripts.md" %}})
 for scripts that help with initiating domain lifecycle operations.

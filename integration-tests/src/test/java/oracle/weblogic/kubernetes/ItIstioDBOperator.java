@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes; 
@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAUL
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_HTTP_HOSTPORT;
+import static oracle.weblogic.kubernetes.TestConstants.ISTIO_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -132,7 +133,7 @@ class ItIstioDBOperator {
 
   Map<String, String> httpHeaders;
 
-  private static final String istioNamespace = "istio-system";
+  private static final String istioNamespace = ISTIO_NAMESPACE;
   private static final String istioIngressServiceName = "istio-ingressgateway";
 
   /**

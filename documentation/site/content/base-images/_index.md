@@ -7,4 +7,4 @@ description: "Obtain, create, and dynamically patch images for WebLogic Server o
 ---
 The following sections guide you through obtaining, creating, and dynamically updating WebLogic images.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

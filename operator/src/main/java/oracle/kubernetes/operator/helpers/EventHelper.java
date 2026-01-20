@@ -57,7 +57,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UNAVAILABLE_EV
 import static oracle.kubernetes.common.logging.MessageKeys.EXCEPTION;
 import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STARTED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN;
-import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOLUME_CLAIM_BOUND_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
@@ -107,6 +107,8 @@ public class EventHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final Random random = new Random();
+
+  private static final int MAX_NOTE_LENGTH = 1024;
 
   /**
    * Factory for {@link Step} that asynchronously create an event.
@@ -196,7 +198,7 @@ public class EventHelper {
           .type(eventItem.getType())
           .action(eventItem.getReason()) // use reason for action and reason
           .reason(eventItem.getReason())
-          .note(eventItem.getNote(eventData))
+          .note(limitLength(eventItem.getNote(eventData), MAX_NOTE_LENGTH))
           .regarding(eventItem.createRegarding(eventData));
     }
 
@@ -867,7 +869,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN;
+        return PERSISTENT_VOLUME_CLAIM_BOUND_EVENT_PATTERN;
       }
     };
 
@@ -1123,7 +1125,7 @@ public class EventHelper {
                 .type(eventItem.getType())
                 .action(eventItem.getReason()) // use reason for action and reason
                 .reason(eventItem.getReason())
-                .note(eventItem.getNote(eventData))
+                .note(limitLength(eventItem.getNote(eventData), MAX_NOTE_LENGTH))
                 .regarding(eventItem.createRegarding(eventData))
                 .metadata(CreateEventStep.createMetadata(eventData));
   }
@@ -1184,7 +1186,7 @@ public class EventHelper {
           .type(eventItem.getType())
           .action(eventItem.getReason()) // use reason for action and reason
           .reason(eventItem.getReason())
-          .note(eventItem.getNote(eventData))
+          .note(limitLength(eventItem.getNote(eventData), MAX_NOTE_LENGTH))
           .regarding(eventItem.createRegarding(eventData));
     }
 
@@ -1335,5 +1337,12 @@ public class EventHelper {
     public String getResourceNameFromInfo() {
       return Optional.ofNullable(domainUid).orElse("");
     }
+  }
+
+  private static String limitLength(String input, int maxLength) {
+    if (input == null) {
+      return null;
+    }
+    return input.length() > maxLength ? input.substring(0, maxLength) : input;
   }
 }

@@ -40,9 +40,9 @@ The operator does not support all types of WebLogic configuration changes while 
 If a change is unsupported for an online or offline update, then propagating
 the change requires entirely shutting domain the domain,
 applying the change, and finally restarting the domain. Full domain restarts are described in
-[Full domain restarts]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
+[Full domain restarts]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts" %}}).
 
-**NOTE**: If you are using WebLogic Server 14.1.2.0.0 or later, see [Using demo SSL certificates in v14.1.2.0.0 or later]({{< relref "/managing-domains/model-in-image/overview#using-demo-ssl-certificates-in-v141200-or-later" >}}).
+**NOTE**: If you are using WebLogic Server 14.1.2.0.0 or later, see [Using demo SSL certificates in v14.1.2.0.0 or later]({{% relref "/managing-domains/model-in-image/overview#using-demo-ssl-certificates-in-v141200-or-later" %}}).
 
 **NOTE**: Supported and unsupported changes are described in these sections: [Supported updates](#supported-updates) and [Unsupported updates](#unsupported-updates).
 _It is the administrator's responsibility to make the necessary changes to a domain resource to initiate the correct approach for an update._
@@ -50,7 +50,7 @@ _It is the administrator's responsibility to make the necessary changes to a dom
 {{% notice note %}}
 Custom configuration overrides, which are WebLogic configuration overrides
 specified using a domain resource YAML file `configuration.overridesConfigMap`, as described in
-[Configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}),
+[Configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md" %}}),
 are _not_ supported in combination with Model in Image.
 Model in Image will generate an error if custom overrides are specified.
 This should not be a concern because model file, secret, or model image updates are simpler
@@ -85,7 +85,7 @@ For offline updates only, there are two additional options:
     - If the files are located in the image specified in the domain resource YAML file `spec.image`,
       then change this field to reference the image.
     - If you are using
-      [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
+      [auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}})
       to supply
       model files in an image, then change the corresponding `serverPod.auxiliaryImages.image` field
       value to reference the new image or add a new `serverPod.auxiliaryImages` mount for
@@ -97,7 +97,7 @@ For offline updates only, there are two additional options:
 
 {{% notice tip %}}
 It is advisable to defer the last two modification options, or similar domain resource YAML file changes to
-[fields that cause servers to be restarted]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}),
+[fields that cause servers to be restarted]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" %}}),
 until all of your other modifications are ready.
 This is because such changes automatically and immediately result in a rerun of your introspector job,
 and, if the job succeeds, then a roll of the domain,
@@ -108,14 +108,14 @@ Model updates can include additions, changes, and deletions. For help generating
 
  - For a description of model file syntax, see the
    [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation
-   and Model in Image [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) documentation.
+   and Model in Image [Model files]({{% relref "/managing-domains/model-in-image/model-files.md" %}}) documentation.
 
  - For a description of helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
- - If you specify multiple model files in your image, volumes (including those based on images from the [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) feature), or WDT ConfigMap,
+ - If you specify multiple model files in your image, volumes (including those based on images from the [auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}) feature), or WDT ConfigMap,
    then the order in which they're loaded and merged is determined as described in
-   [Model file naming and loading order]({{< relref "/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
+   [Model file naming and loading order]({{% relref "/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" %}}).
 
  - If you are performing an online update and the update includes deletes, then
    see [Online update handling of deletes](#online-update-handling-of-deletes).
@@ -135,7 +135,7 @@ Use the following steps to initiate an offline configuration update to your mode
        - If the files are located in the image specified in the domain resource YAML file `spec.image`,
          then change this field to reference the image.
        - If you are using
-         [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
+         [auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}})
          to supply
          model files in an image, then change the corresponding `serverPod.auxiliaryImages.image` field
          value to reference the new image or add a new `serverPod.auxiliaryImages` mount for
@@ -151,7 +151,7 @@ Use the following steps to initiate an offline configuration update to your mode
        otherwise, change an attribute that instructs the operator to roll the domain.
        For examples, see
        [change the domain `spec.restartVersion`](#changing-a-domain-restartversion-or-introspectversion)
-       or change any of the other Domain resource YAML [fields that cause servers to be restarted]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}).
+       or change any of the other Domain resource YAML [fields that cause servers to be restarted]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" %}}).
 
 The operator will subsequently rerun the domain's introspector job.
 This job will reload all of your secrets and environment variables,
@@ -165,13 +165,13 @@ A domain roll begins by restarting the domain's Administration Server and
 then proceeds to restart each Managed Server in the domain.
 
 If the job reports a failure, see
-[Debugging]({{< relref "/managing-domains/debugging.md" >}})
+[Debugging]({{% relref "/managing-domains/debugging.md" %}})
 for advice.
 
 #### Offline update sample
 
 For an offline update sample which adds a data source, see the
-[Update 1 use case]({{< relref "/samples/domains/model-in-image/update1.md" >}})
+[Update 1 use case]({{% relref "/samples/domains/model-in-image/update1.md" %}})
 in the Model in Image sample.
 
 ### Online updates
@@ -183,7 +183,7 @@ Use the following steps to initiate an online configuration update to your model
     as per [Updating an existing model](#updating-an-existing-model).
  1. Modify your domain resource YAML file:
     1. **Do not** change `domain.spec.image`, `domain.spec.serverPod.env`, or any other domain resource YAML
-       [fields that cause servers to be restarted]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}});
+       [fields that cause servers to be restarted]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" %}});
        this will automatically and immediately result in a rerun of your introspector job,
        a roll if the job succeeds, plus an offline update if there are any accompanying model changes.
     1. If you are specifying a WDT ConfigMap, then set `domain.spec.configuration.model.configMap`
@@ -223,7 +223,7 @@ and runs WebLogic Deploy Tooling to process the differences:
 
 
 If the introspector job reports a failure or any other failure occurs, then
-see [Debugging]({{< relref "/managing-domains/debugging.md" >}}) for advice.
+see [Debugging]({{% relref "/managing-domains/debugging.md" %}}) for advice.
 When recovering from a failure, please keep the following points in mind:
 
  - The operator cannot automatically revert changes to resources that are under
@@ -235,7 +235,7 @@ When recovering from a failure, please keep the following points in mind:
    limit specified in `domain.spec.failureRetryLimitMinutes`.
    To correct the problem, modify and reapply your model resources (ConfigMap and/or secrets),
    plus, if the introspector job has stopped retrying, you must also change your domain resource
-   `domain.spec.introspectVersion` again. For more information, see [Domain failure retry processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
+   `domain.spec.introspectVersion` again. For more information, see [Domain failure retry processing]({{% relref "/managing-domains/domain-lifecycle/retry.md" %}}).
 
 
 
@@ -276,7 +276,7 @@ spec:
      * The MBean changes are committed in the running domain and effective immediately.
    * Expected outcome after the introspector job completes:
      * The domain `Completed` condition status is set to `True`.
-       For more information, see [Domain conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}).
+       For more information, see [Domain conditions]({{% relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" %}}).
      * The `weblogic.introspectVersion` label on all pods will be set to match the `domain.spec.introspectVersion`.
    * Actions required:
      * None.
@@ -306,7 +306,7 @@ spec:
      * None. All changes will complete after the operator initiated domain roll completes.
      * See [Online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes).
 
-1. Changing any of the domain resource [fields that cause servers to be restarted]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}) in addition to `domain.spec.introspectVersion`, `spec.configuration.secrets`, `spec.configuration.model.onlineUpdate`, or `spec.configuration.model.configMap`.
+1. Changing any of the domain resource [fields that cause servers to be restarted]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" %}}) in addition to `domain.spec.introspectVersion`, `spec.configuration.secrets`, `spec.configuration.model.onlineUpdate`, or `spec.configuration.model.configMap`.
    * Expected outcome after the introspector job completes:
      * No online update was attempted by the introspector job.
      * All model changes are treated the same as offline updates (which may result in restarts/roll after job success).
@@ -318,7 +318,7 @@ spec:
      * The expected behavior is often undefined, but in some cases there will be helpful error in the introspector job, events, and/or domain status, and the job will periodically retry until the error is corrected or its maximum error count exceeded.
    * Actions required:
      * Use offline updates if they are supported, or, if not, shutdown the entire domain and restart it.
-     * See [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
+     * See [Debugging]({{% relref "/managing-domains/debugging.md" %}}).
 
 1. Errors in the model; for example, a syntax error.
    * Expected outcome after the introspector job completes:
@@ -335,7 +335,7 @@ spec:
      * The domain status `Failed` condition will have a `Status` of `True`.
      * If there's a failed introspector job, the job will retry periodically until the error is corrected or until it exceeds its maximum error count. Other types of errors will also usually incur periodic retries.
    * Actions required:
-     * See [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
+     * See [Debugging]({{% relref "/managing-domains/debugging.md" %}}).
      * Make corrections to the domain resource and/or model.
      * If retries have halted, then alter the `spec.introspectVersion`.
 
@@ -355,7 +355,7 @@ and for the WebLogic pod labels you can use
 optionally add `--watch` to watch the pods as they change over time.
 
 The `ConfigChangesPendingRestart` condition in `domain.status` contains information about the progress
-of the online update. See [ConfigChangesPendingRestart condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#configchangespendingrestart" >}}) for details.
+of the online update. See [ConfigChangesPendingRestart condition]({{% relref "/managing-domains/accessing-the-domain/status-conditions#configchangespendingrestart" %}}) for details.
 
 Here are some of the expected WebLogic pod labels after an online update success:
 
@@ -559,7 +559,7 @@ After that update completes, then perform another online update:
 #### Online update sample
 
 For an online update sample which alters a data source and Work Manager, see the
-[Update 4 use case]({{< relref "/samples/domains/model-in-image/update4.md" >}})
+[Update 4 use case]({{% relref "/samples/domains/model-in-image/update4.md" %}})
 in the Model in Image sample.
 
 ### Appendices
@@ -627,7 +627,7 @@ documented as [unsupported](#unsupported-updates):
 #### Unsupported updates
 
 {{% notice warning %}}
-It is important to avoid applying unsupported model updates to a running domain. An attempt to use an unsupported update may not always result in a clear error message, and the expected behavior may be undefined. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change. See [Full domain restarts]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
+It is important to avoid applying unsupported model updates to a running domain. An attempt to use an unsupported update may not always result in a clear error message, and the expected behavior may be undefined. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change. See [Full domain restarts]({{% relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts" %}}).
 {{% /notice %}}
 
 The following summarizes the types of runtime update configuration that are _not_ supported in Model in Image unless a workaround or alternative is documented:
@@ -812,4 +812,4 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
      the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/`
      directory.
    - Or, see the more advanced `introspectDomain.sh` and `rollDomain.sh` among
-     the [Domain lifecycle sample scripts]({{< relref "/samples/domains/lifecycle/_index.md">}}).
+     the [Domain lifecycle sample scripts]({{% relref "/samples/domains/lifecycle/_index.md" %}}).

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
-import oracle.kubernetes.utils.OperatorUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
@@ -121,7 +120,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
     }
     description
         .appendText(commentPrefix)
-        .appendText(OperatorUtils.joinListGrammatically(expectations));
+        .appendText(String.join(", ", expectations));
   }
 
   private String expectation(String description, String value) {

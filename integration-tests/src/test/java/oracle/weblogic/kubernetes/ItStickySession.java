@@ -1,9 +1,13 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +28,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -42,8 +47,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -106,6 +113,7 @@ class ItStickySession {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
+  private static String traefikIngressClassName;
 
   // constants for Traefik
   private static HelmParams traefikHelmParams = null;
@@ -119,7 +127,7 @@ class ItStickySession {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  static void init(@Namespaces(3) List<String> namespaces) {
+  static void init(@Namespaces(3) List<String> namespaces) throws IOException {
     logger = getLogger();
 
     // get a unique Traefik namespace
@@ -139,9 +147,13 @@ class ItStickySession {
 
     // install and verify Traefik
     if (!OKD && !(TestConstants.KIND_CLUSTER
-            && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
-      traefikHelmParams =
-          installAndVerifyTraefik(traefikNamespace, 0, 0).getHelmParams();
+        && !TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT))) {
+      TraefikParams traefikParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+      traefikIngressClassName = traefikParams.getIngressClassName();
+      traefikHelmParams
+          = traefikParams.getHelmParams();
+    } else if (TestConstants.KIND_CLUSTER) {
+      traefikIngressClassName = Files.readString(INGRESS_CLASS_FILE_NAME);
     }
 
     // install and verify operator
@@ -194,7 +206,9 @@ class ItStickySession {
     } else {
       traefikns = traefikNamespace;
     }
-    createTraefikIngressRoutingRules(domainNamespace, traefikns, ingressResourceFileName, domainUid);
+    Path dstFile = Paths.get(RESULTS_ROOT, ingressResourceFileName);
+    createTraefikIngressRoutingRules(domainNamespace, traefikns,
+        ingressResourceFileName, dstFile, traefikIngressClassName, domainUid);
 
     String hostName = new StringBuffer()
         .append(domainUid)
@@ -202,7 +216,7 @@ class ItStickySession {
         .append(domainNamespace)
         .append(".")
         .append(clusterName)
-        .append(".test").toString();
+        .append(".org").toString();
 
     // get Traefik ingress service Nodeport
     int ingressServiceNodePort;

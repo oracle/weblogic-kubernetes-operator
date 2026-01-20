@@ -6,7 +6,7 @@ description: "An introduction to the operator runtime."
 ---
 
 An operator runtime is a process that runs in a container deployed into a Kubernetes Pod and that automatically manages
-[domain resources]({{<relref "/managing-domains/domain-resource.md">}}).
+[domain resources]({{% relref "/managing-domains/domain-resource.md" %}}).
 A domain resource references WebLogic domain configuration,
 a WebLogic installation image,
 Kubernetes secrets,
@@ -45,35 +45,35 @@ to a domain resource will not be detected and honored until the operator is rest
 
 Optionally, you can monitor an operator and its log using an [Elastic Stack](https://www.elastic.co/elastic-stack/)
 (previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
-For an example, see the operator [Elastic Stack]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) sample.
+For an example, see the operator [Elastic Stack]({{% relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration" %}}) sample.
 
 For advanced users, the operator provides an optional REST server that
 you can use as an alternative method for getting a list of WebLogic domains and clusters that an operator manages,
 and to initiate scaling operations (instead of directly performing such operations using the Kubernetes API or the Kubernetes command line).
-See the operator [REST services]({{<relref "/managing-operators/the-rest-api.md">}}).
+See the operator [REST services]({{% relref "/managing-operators/the-rest-api.md" %}}).
 
 References:
 - For a full overview of how an operator runtime and its domain resources work together, see the
-  [terms]({{<relref "/introduction/terms.md">}}),
-  [design philosophy]({{<relref "/introduction/design.md">}}),
-  and [architecture]({{<relref "/introduction/architecture.md">}}) documentation.
+  [terms]({{% relref "/introduction/terms.md" %}}),
+  [design philosophy]({{% relref "/introduction/design.md" %}}),
+  and [architecture]({{% relref "/introduction/architecture.md" %}}) documentation.
 - For information about using a Helm chart to install, update, or upgrade
   the operator, its CRD, or its service account,
   see the operator
-  [Prepare for installation]({{<relref "/managing-operators/preparation.md">}})
-  and [Installation]({{<relref "/managing-operators/installation.md">}}) guides.
+  [Prepare for installation]({{% relref "/managing-operators/preparation.md" %}})
+  and [Installation]({{% relref "/managing-operators/installation.md" %}}) guides.
 - All operator Helm chart configuration options are
-  documented in the operator [Configuration Reference]({{<relref "/managing-operators/using-helm.md">}}).
+  documented in the operator [Configuration Reference]({{% relref "/managing-operators/using-helm.md" %}}).
 - For a detailed description of configuring the namespaces which an operator manages,
   plus preparing a namespace for operator management,
-  see [Namespace management]({{<relref "/managing-operators/namespace-management.md">}}).
+  see [Namespace management]({{% relref "/managing-operators/namespace-management.md" %}}).
 
 {{% notice tip %}}
 For an example of installing the operator,
 setting the namespace that it monitors,
 deploying a domain resource to its monitored namespace,
 and uninstalling the operator,
-see the [Quick Start]({{< relref "/quickstart/_index.md" >}}).
+see the [Quick Start]({{% relref "/quickstart/_index.md" %}}).
 {{% /notice %}}
 
 {{% notice note %}}
@@ -81,5 +81,5 @@ There can be multiple operators in a Kubernetes cluster,
 and in that case, you must ensure that the namespaces managed by these operators do not overlap.
 _At most, a namespace can be managed by one operator._
 In addition, you cannot deploy more than operator to a particular namespace.
-See [Common mistakes and solutions]({{<relref "/managing-operators/common-mistakes.md">}}).
+See [Common mistakes and solutions]({{% relref "/managing-operators/common-mistakes.md" %}}).
 {{% /notice %}}

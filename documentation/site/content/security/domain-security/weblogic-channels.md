@@ -86,5 +86,5 @@ they are typically not suited for production systems for multiple reasons, inclu
 
 #### See also
 
-- [External WebLogic clients]({{< relref "/managing-domains/accessing-the-domain/external-clients.md" >}})
-- [Remote Console, Administration Console, WLST, and Port Forwarding access]({{< relref "/managing-domains/accessing-the-domain/_index.md" >}})
+- [External WebLogic clients]({{% relref "/managing-domains/accessing-the-domain/external-clients.md" %}})
+- [Remote Console, Administration Console, WLST, and Port Forwarding access]({{% relref "/managing-domains/accessing-the-domain/_index.md" %}})

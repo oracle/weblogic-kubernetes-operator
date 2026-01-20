@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -49,7 +49,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
@@ -935,12 +934,15 @@ public class DomainStatusUpdater {
         }
 
         private String formatServers(List<String> servers) {
-          return OperatorUtils.joinListGrammaticallyWithLimit(SERVER_DISPLAY_LIMIT, servers);
+          return servers.stream()
+              .limit(SERVER_DISPLAY_LIMIT)
+              .collect(Collectors.joining(", "));
         }
 
         private String formatClusters(List<ClusterCheck> unavailableClusters) {
-          return OperatorUtils.joinListGrammaticallyWithLimit(
-              CLUSTER_MESSAGE_LIMIT, createUnavailableClustersMessage(unavailableClusters));
+          return createUnavailableClustersMessage(unavailableClusters).stream()
+              .limit(CLUSTER_MESSAGE_LIMIT)
+              .collect(Collectors.joining(", "));
         }
 
         @Nonnull

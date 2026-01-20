@@ -7,7 +7,7 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 {{< table_of_contents >}}
 
-**Before you begin**: Complete the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
+**Before you begin**: Complete the steps in [Prerequisites]({{% relref "/samples/domains/domain-home-on-pv/prerequisites.md" %}}).
 
 ### Overview
 
@@ -289,7 +289,7 @@ The model files:
     - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
     - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/domain-on-pv/model-files.md" >}}) in the user documentation.
+An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{% relref "/managing-domains/domain-on-pv/model-files.md" %}}) in the user documentation.
 
 #### Create the image with WIT
 
@@ -316,7 +316,7 @@ Run the following commands to create the image and verify that it worked:
     --wdtArchive ./archive.zip
   ```
 
-If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
+If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{% relref "/samples/domains/domain-home-on-pv/prerequisites.md" %}}).
 
 This command runs the WebLogic Image Tool to create the domain creation image and does the following:
 
@@ -360,4 +360,4 @@ $ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary/weblogic-deploy
   drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
 ```
 
-**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{% relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" %}}).

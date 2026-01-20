@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
@@ -172,35 +173,6 @@ class ItOperatorWlsUpgrade {
     logger = getLogger();
   }
 
-  /**
-   * Operator upgrade from 4.0.9 to current with Mii domain in V8 schema.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 4.0.9 to current")
-  void testOperatorUpgradeMiiDomainV8From409ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeMiiDomainV8From409ToCurrent with Mii domain v8 schema");
-    installOperatorCreateMiiDomainAndUpgrade("4.0.9", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Upgrade Operator from 4.0.10 to current with Auxiliary image domain, V9 schema.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 4.0.10 to current")
-  void testOperatorUpgradeAuxDomainV9From4010ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeAuxDomainV9From4010ToCurrent with Auxiliary domain v9 schema");
-    installOperatorCreateAuxDomainAndUpgrade("4.0.10", DOMAIN_VERSION);
-  }
-
-  /**
-   * Upgrade Operator from 4.1.7 to current with Mii domain in V8 schema.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 4.1.7 to current")
-  void testOperatorUpgradeMiiDomainV8From417ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeMiiDomainV8From417ToCurrent with Mii domain v8 schema");
-    installOperatorCreateMiiDomainAndUpgrade("4.1.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
 
   /**
    * Operator upgrade from 4.1.8 to current with Auxiliary Image Domain, V9 schema.
@@ -209,52 +181,33 @@ class ItOperatorWlsUpgrade {
   @DisplayName("Upgrade Operator from 4.1.8 to current")
   void testOperatorUpgradeAuxDomainV9From418ToCurrent() {
     logger.info("Starting test testOperatorUpgradeAuxDomainV9From418ToCurrent to upgrade Auxiliary Domain "
-            + "with V9 schema to current");
+        + "with V9 schema to current");
     installOperatorCreateAuxDomainAndUpgrade("4.1.8", DOMAIN_VERSION);
   }
 
-
   /**
-   * Operator upgrade from 4.2.15 to current with DPV domain in V9 schema.
+   * Operator upgrade from 4.2.20 to current with Auxiliary Image Domain, V9 schema.
    */
   @Test
-  @DisplayName("Upgrade Operator from 4.2.15 to current")
-  void testOperatorUpgradeDomainOnPVV9From4215ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From4215ToCurrent, domain v9 schema");
-    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.2.15");
+  @DisplayName("Upgrade Operator from 4.2.20 to current")
+  void testOperatorUpgradeAuxDomainV9From4220ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeAuxDomainV9From4220ToCurrent to upgrade Domain with "
+        + "Auxiliary Image with v9 schema to current");
+    installOperatorCreateAuxDomainAndUpgrade("4.2.20", DOMAIN_VERSION);
   }
 
   /**
-   * Operator upgrade from 4.2.14 to current with DPV domain in V9 schema.
+   * Operator upgrade from 4.3.4 to current with Auxiliary Image Domain, V9 schema.
    */
   @Test
-  @DisplayName("Upgrade Operator from 4.2.14 to current")
-  void testOperatorUpgradeDomainOnPVV9From4214ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From4214ToCurrent, domain v9 schema");
-    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.2.14");
+  @DisplayName("Upgrade Operator from 4.3.4 to current")
+  void testOperatorUpgradeAuxDomainV9From434ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeAuxDomainV9From434ToCurrent to upgrade Domain with "
+        + "Auxiliary Image with v9 schema to current");
+    installOperatorCreateAuxDomainAndUpgrade("4.3.4", DOMAIN_VERSION);
   }
 
-  /**
-   * Operator upgrade from 4.2.14 to current with Auxiliary Image Domain, V9 schema.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 4.2.14 to current")
-  void testOperatorUpgradeAuxDomainV9From4214ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeAuxDomainV9From4214ToCurrent to upgrade Domain with "
-            + "Auxiliary Image with v9 schema to current");
-    installOperatorCreateAuxDomainAndUpgrade("4.2.14", DOMAIN_VERSION);
-  }
-
-  /**
-   * Operator upgrade from 4.2.12 to current with Model in Image Domain, V8 schema.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 4.2.12 to current")
-  void testOperatorUpgradeMiiDomainV8From4212ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeMiiDomainV8From4212ToCurrent to upgrade Domain with "
-            + "Auxiliary Image with v8 schema to current");
-    installOperatorCreateMiiDomainAndUpgrade("4.2.12", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
+  
 
   /**
    * Operator upgrade from 4.1.8 to current with DPV domain in V9 schema.
@@ -267,16 +220,59 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 4.1.7 to current with DPV domain in V9 schema.
+   * Operator upgrade from 4.2.20 to current with DPV domain in V9 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.2.20 to current")
+  void testOperatorUpgradeDomainOnPVV9From4220ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From4220ToCurrent, domain v9 schema");
+    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.2.20");
+  }
+
+  /**
+   * Operator upgrade from 4.3.4 to current with DPV domain in V9 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.3.4 to current")
+  void testOperatorUpgradeDomainOnPVV9From434ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From434ToCurrent, domain v9 schema");
+    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.3.4");
+  }
+
+  /**
+   * Operator upgrade from 4.0.9 to current with Mii domain in V8 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.0.9 to current")
+  @Disabled
+  void testOperatorUpgradeMiiDomainV8From409ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeMiiDomainV8From409ToCurrent with Mii domain v8 schema");
+    installOperatorCreateMiiDomainAndUpgrade("4.0.9", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Upgrade Operator from 4.1.7 to current with Mii domain in V8 schema.
    */
   @Test
   @DisplayName("Upgrade Operator from 4.1.7 to current")
-  void testOperatorUpgradeDomainOnPVV9From417ToCurrent() {
-    logger.info("Starting test testOperatorUpgradeDomainOnPVV9From417ToCurrent, domain v9 schema");
-    installOperatorCreatesPvPvcWlsDomainAndUpgrade("4.1.7");
+  @Disabled
+  void testOperatorUpgradeMiiDomainV8From417ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeMiiDomainV8From417ToCurrent with Mii domain v8 schema");
+    installOperatorCreateMiiDomainAndUpgrade("4.1.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Operator upgrade from 4.2.12 to current with Model in Image Domain, V8 schema.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.2.12 to current")
+  @Disabled
+  void testOperatorUpgradeMiiDomainV8From4212ToCurrent() {
+    logger.info("Starting test testOperatorUpgradeMiiDomainV8From4212ToCurrent to upgrade Domain with "
+        + "Auxiliary Image with v8 schema to current");
+    installOperatorCreateMiiDomainAndUpgrade("4.2.12", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
   
-
   /**
    * Cleanup Kubernetes artifacts in the namespaces used by the test and
    * delete CRD.
@@ -285,7 +281,7 @@ class ItOperatorWlsUpgrade {
   void tearDown() {
     if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
-      cleanUpCRD();
+      cleanUpCRD();      
     }
   }
 

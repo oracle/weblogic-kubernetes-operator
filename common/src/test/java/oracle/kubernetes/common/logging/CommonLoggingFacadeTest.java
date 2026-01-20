@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -392,7 +392,7 @@ class CommonLoggingFacadeTest {
   @Test
   void verifyGetFormattedMessage_withArgs_returnsFormattedMessage() {
     assertThat(loggingFacade.formatMessage(MessageKeys.CYCLING_SERVERS, "domain1", "list1"),
-        is("Cycling of servers for Domain with UID domain1 in the list list1 now"));
+        is("Rolling of servers for Domain with UID domain1 in the list list1 now"));
   }
 
   @Test

@@ -6,6 +6,11 @@ prop() {
     grep "${1}" ${propsFile}| grep -v "#" | cut -d'=' -f2
 }
 
+debug() {
+  echo "[DEBUG] $1"
+}
+
+
 
 generateTFVarFile() {
     tfVarsFiletfVarsFile=${terraformVarDir}/${clusterTFVarsFile}.tfvars
@@ -34,6 +39,7 @@ generateTFVarFile() {
     sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@REGIONSHORT@:${region_short}:g" ${tfVarsFiletfVarsFile}
     echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
+    cat ${tfVarsFiletfVarsFile}
 }
 
 setupTerraform() {
@@ -76,6 +82,9 @@ createCluster () {
 }
 
 createRoleBindings () {
+    debug "createRoleBindings(): okeclustername=${okeclustername}"
+    SA_NAME="${okeclustername}-sa"
+    debug "createRoleBindings(): SA_NAME=${SA_NAME}"
     ${KUBERNETES_CLI:-kubectl} -n kube-system create serviceaccount $okeclustername-sa
     ${KUBERNETES_CLI:-kubectl} create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:$okeclustername-sa
     TOKENNAME=`${KUBERNETES_CLI:-kubectl} -n kube-system get serviceaccount/$okeclustername-sa -o jsonpath='{.secrets[0].name}'`
@@ -155,7 +164,38 @@ checkKubernetesCliConnection() {
 
 }
 
+assertClusterNameConsistency() {
+  echo "[DEBUG] Running cluster name consistency check"
+
+  tf_var_name=$(terraform output -raw DEBUG_var_cluster_name)
+  tf_local_name=$(terraform output -raw DEBUG_local_cluster_name)
+
+  echo "[DEBUG] tf_var_name    = ${tf_var_name}"
+  echo "[DEBUG] tf_local_name  = ${tf_local_name}"
+  echo "[DEBUG] shell_name     = ${okeclustername}"
+
+  if [[ -z "${tf_var_name}" || -z "${tf_local_name}" ]]; then
+    echo "[FATAL] Terraform outputs missing"
+    exit 1
+  fi
+
+  if [[ "${tf_var_name}" != "${tf_local_name}" ]] ||
+     [[ "${tf_var_name}" != "${okeclustername}" ]]; then
+    echo "[ERROR] Cluster name mismatch detected!"
+    echo "Shell: ${okeclustername}"
+    echo "Var:   ${tf_var_name}"
+    echo "Local: ${tf_local_name}"
+    exit 1
+  fi
+
+  echo "[DEBUG] Cluster name consistency check PASSED"
+}
+
+
 checkClusterRunning() {
+	debug "checkClusterRunning(): okeclustername=${okeclustername}"
+debug "checkClusterRunning(): KUBECONFIG=${KUBECONFIG}"
+
     kubeconfig_file=${terraformVarDir}/${okeclustername}_kubeconfig
     export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
     echo "Kubeconfig file : $KUBECONFIG"
@@ -232,6 +272,10 @@ compartment_ocid=$(prop 'compartment.ocid')
 sub_compartment_ocid=$(prop 'sub.comp.ocid')
 compartment_name=$(prop 'compartment.name')
 okeclustername=$(prop 'okeclustername')
+CLUSTER_NAME=$(prop 'okeclustername')
+# Generate unique OKE cluster name per Jenkins run
+export okeclustername
+echo "Using OKE cluster name: ${okeclustername}"
 ociapi_pubkey_fingerprint=$(prop 'ociapi.pubkey.fingerprint')
 ocipk_path=$(prop 'ocipk.path')
 vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
@@ -248,9 +292,16 @@ terraformDir=$(prop 'terraform.installdir')
 mount_target_ocid=$(prop 'mounttarget.ocid')
 region_short=$(echo "$region" | sed 's/.*-\([a-z]*\)-.*/\1/')
 
+debug "oke.create.sh: okeclustername=${okeclustername}"
+
+
 # generate terraform configuration file with name $(clusterTFVarsFile).tfvar
 #generateTFVarFile
 generateTFVarFile
+
+
+debug "oke.create.sh: okeclustername=${okeclustername}"
+
 
 # cleanup previously installed terraform binaries
 rm -rf ${terraformDir}
@@ -266,8 +317,23 @@ sudo yum reinstall ca-certificates -y
 sudo iptables -A OUTPUT -p tcp --dport 6443 -j ACCEPT
 export TF_LOG=ERROR
 # run terraform init,plan,apply to create OKE cluster based on the provided tfvar file ${clusterTFVarsFile).tfvar
+debug "before createCluster(): okeclustername=${okeclustername}"
+debug "before createCluster(): tfvars file=${clusterTFVarsFile}.tfvars"
+
+set -o errexit
+set -o pipefail
+
+
 createCluster
+assertClusterNameConsistency
+
+
+debug "after createCluster(): okeclustername=${okeclustername}"
+debug "aftercreateCluster(): tfvars file=${clusterTFVarsFile}.tfvars"
+
 #check status of OKE cluster nodes, destroy if can not access them
+debug "Setting KUBECONFIG for cluster ${okeclustername}"
+
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
 
 checkClusterRunning

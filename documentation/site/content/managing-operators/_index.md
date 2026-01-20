@@ -9,4 +9,4 @@ description: "Install, configure, and manage the operator."
 
 The following sections guide you through installing, configuring, and managing the operator.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

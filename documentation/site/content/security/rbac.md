@@ -5,4 +5,4 @@ weight: 5
 description: "Operator role-based authorization."
 ---
 
-This document is now located in the operator user guide, see [RBAC]({{< relref "/managing-operators/rbac.md" >}}).
+This document is now located in the operator user guide, see [RBAC]({{% relref "/managing-operators/rbac.md" %}}).

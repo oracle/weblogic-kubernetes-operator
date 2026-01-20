@@ -8,4 +8,4 @@ description = "Gain an overall understanding of the operator and learn where you
 
 Gain an overall understanding of the operator and learn where you can get help.
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

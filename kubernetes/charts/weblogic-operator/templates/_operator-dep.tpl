@@ -35,11 +35,9 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
-      {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
       securityContext:
         seccompProfile:
           type: RuntimeDefault
-      {{- end }}
       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -171,14 +169,14 @@ spec:
         livenessProbe:
           exec:
             command: ["/operator/livenessProbe.sh"]
-          initialDelaySeconds: 40
-          periodSeconds: 10
-          failureThreshold: 5
+          initialDelaySeconds: {{ .livenessProbeInitialDelaySeconds | default 40 }}
+          periodSeconds: {{ .livenessProbePeriodSeconds | default 10 }}
+          failureThreshold: {{ .livenessProbeFailureThreshold | default 5 }}
         readinessProbe:
           exec:
             command: ["/operator/readinessProbe.sh"]
-          initialDelaySeconds: 2
-          periodSeconds: 10
+          initialDelaySeconds: {{ .readinessProbeInitialDelaySeconds | default 2 }}
+          periodSeconds: {{ .readinessProbePeriodSeconds | default 10 }}
         {{- end }}
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
@@ -318,11 +316,9 @@ spec:
           {{- end }}
         spec:
           serviceAccountName: {{ .serviceAccount | quote }}
-          {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
           securityContext:
             seccompProfile:
               type: RuntimeDefault
-          {{- end }}
           {{- with .nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 12 }}
@@ -430,13 +426,13 @@ spec:
             livenessProbe:
               exec:
                 command: ["/operator/livenessProbe.sh"]
-              initialDelaySeconds: 40
-              periodSeconds: 5
+              initialDelaySeconds: {{ .livenessProbeInitialDelaySeconds | default 40 }}
+              periodSeconds: {{ .livenessProbePeriodSeconds | default 5 }}
             readinessProbe:
               exec:
                 command: ["/operator/readinessProbe.sh"]
-              initialDelaySeconds: 2
-              periodSeconds: 10
+              initialDelaySeconds: {{ .readinessProbeInitialDelaySeconds | default 2 }}
+              periodSeconds: {{ .readinessProbePeriodSeconds | default 10 }}
             {{- end }}
           {{- if .elkIntegrationEnabled }}
           - name: "logstash"

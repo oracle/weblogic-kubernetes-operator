@@ -33,7 +33,7 @@ pullsecret="docker-store"
 namespace="default"
 pdbid="devpdb.k8s"
 
-while getopts ":a:p:i:s:n:h:l:" opt; do
+while getopts ":a:p:i:s:n:h:" opt; do
   case $opt in
     a) syssecret="${OPTARG}"
     ;;

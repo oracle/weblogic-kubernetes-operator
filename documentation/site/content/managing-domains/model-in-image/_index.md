@@ -6,4 +6,4 @@ pre = "<b> </b>"
 description = "Create and deploy a typical Model in Image domain."
 +++
 
-{{% children style="h4" description="true" %}}
+{{% children type="list" description="true" %}}

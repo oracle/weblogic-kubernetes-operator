@@ -10,8 +10,8 @@ The `main` branch is protected and contains source for the latest completed feat
 
 Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `main` when these smaller work items are completed.
 
-All commits to `main` must pass the [integration test suite]({{< relref "/developerguide/integration-tests.md" >}}).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/).
+All commits to `main` must pass the [integration test suite]({{% relref "/developerguide/integration-tests.md" %}}).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/).
 
-Please submit pull requests to the `main` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests in [Contribute to the operator]({{< relref "/developerguide/contributing#contributing-to-the-weblogic-kubernetes-operator-repository" >}}).
+Please submit pull requests to the `main` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests in [Contribute to the operator]({{% relref "/developerguide/contributing#contributing-to-the-weblogic-kubernetes-operator-repository" %}}).
 
 We will create git tags for each release candidate and generally available (GA) release of the operator.

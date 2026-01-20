@@ -145,6 +145,7 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -153,6 +154,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest extends DomainTestUtils {
@@ -502,6 +504,37 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(WDT_MODEL_ENCRYPTION_PASSPHRASE_VOLUME)
                     .mountPath(WDT_MODEL_ENCRYPTION_PASSPHRASE_MOUNT_PATH).readOnly(true)));
+
+  }
+
+  @Test
+  void whenJobCreatedWithAnnotationsAndLabelsThePodHastheMetaData() {
+    Map<String, String> annotations = new HashMap<>();
+    annotations.put("annotation1", "value1");
+    annotations.put("annotation2", "value2");
+    Map<String, String> labels = new HashMap<>();
+    labels.put("label1", "value1");
+    labels.put("label2", "value2");
+
+    getConfigurator()
+            .withIntrospectorAnnotations(annotations)
+            .withIntrospectorLabels(labels)
+            .withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+    V1Job job = jobs.get(0);
+
+    assertNotNull(job.getSpec().getTemplate().getMetadata());
+    assertNotNull(job.getSpec().getTemplate().getMetadata().getAnnotations());
+    assertNotNull(job.getSpec().getTemplate().getMetadata().getLabels());
+
+    annotations.forEach((key, value) ->
+            assertThat(job.getSpec().getTemplate().getMetadata().getAnnotations(), hasEntry(key, value))
+    );
+    labels.forEach((key, value) ->
+            assertThat(job.getSpec().getTemplate().getMetadata().getLabels(), hasEntry(key, value))
+    );
 
   }
 

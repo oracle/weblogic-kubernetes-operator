@@ -133,6 +133,12 @@ module "c1" {
     cp = {id = var.control_plane_subnet_id }
   }
 
+  # Tag everything this module creates (cluster, workers, network artifacts, service LBs, etc.)
+  freeform_tags = {
+    "oke.cluster.name" = var.cluster_name
+  }
+
+
   # bastion host
   create_bastion              = true           # *true/false
   bastion_allowed_cidrs       = []             # e.g. ["0.0.0.0/0"] to allow traffic from all sources

@@ -158,7 +158,7 @@ For example, if a WebLogic Server instance is named `My_Server`
 and the domain UID is `MyUid`, then its listen
 address within the namespace will be `myuid-my-server`.
 For more information on Kubernetes resource compliant naming,
-please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+please see [Meet Kubernetes resource name restrictions]({{% relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" %}}).
 {{% /notice %}}
 
 
@@ -170,7 +170,7 @@ Here are the steps:
 
 - In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port that remote applications will use to access the load balancer. See [Adding a WebLogic custom channel](#adding-a-weblogic-custom-channel) for samples and details.
 
-- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{<relref "/managing-domains/accessing-the-domain/oci-lb">}}).
+- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{% relref "/managing-domains/accessing-the-domain/ingress/_index.md" %}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{% relref "/managing-domains/accessing-the-domain/oci-lb" %}}).
 
 - __Important__: Ensure that the load balancer configures the HTTP flow to be 'sticky' - for example, a Traefik load balancer has a `sticky sessions` option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.
 
@@ -354,7 +354,7 @@ Here are the high-level steps:
 
 A Kubernetes `NodePort` exposes a port on each worker node in the Kubernetes cluster (they are not typically exposed on masters), where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes `NodePort` is one approach for giving external WebLogic applications access to JMS or EJBs.
 
-If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the `spec.adminServer.adminService.channels` Domain field to have the operator create a `NodePort` for you. See [Reference - Domain]({{<relref "/reference/domain-resource/_index.md">}}). Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a `NodePort`, then the `NodePort` must be exposed 'manually' - see the following sample and table.
+If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the `spec.adminServer.adminService.channels` Domain field to have the operator create a `NodePort` for you. See [Reference - Domain]({{% relref "/reference/domain-resource/_index.md" %}}). Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a `NodePort`, then the `NodePort` must be exposed 'manually' - see the following sample and table.
 
 {{% notice note %}}
 Setting up a `NodePort` usually also requires setting up a custom network channel. See [Adding a WebLogic custom channel](#adding-a-weblogic-custom-channel).
@@ -418,7 +418,7 @@ Similarly, this also means that it's necessary to enable unknown host access on 
 
 To enable an 'unknown host' source WebLogic Server to initiate EJB, JMS, or JTA communication with a target WebLogic Server:
   * Set the `weblogic.rjvm.allowUnknownHost` Java system property to `true` on each target WebLogic Server instance.
-    * For operator hosted WebLogic Server instances, you can set this property by including `-Dweblogic.rjvm.allowUnknownHost=true` in the `JAVA_OPTIONS` [Domain environment variable]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
+    * For operator hosted WebLogic Server instances, you can set this property by including `-Dweblogic.rjvm.allowUnknownHost=true` in the `JAVA_OPTIONS` [Domain environment variable]({{% relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" %}}) defined in the domain resource's `spec.serverPod.env` attribute.
   * Also apply patch 30656708 on each target WebLogic Server instance for versions 12.2.1.4 (PS4) or earlier.
 
 ### Cross-domain transactions
@@ -436,7 +436,7 @@ in the WebLogic Server cluster.
 RMI forwarding makes cross-domain transactions possible without requiring each server in a cluster
 to be individually addressable.
 
-It requires the use of a proxy, such as a load balancer or an [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}),
+It requires the use of a proxy, such as a load balancer or an [Ingress]({{% relref "/managing-domains/accessing-the-domain/ingress/_index.md" %}}),
 that is configured to route messages to servers in the target WebLogic Server domain.
 
 When a T3 message, such as transaction coordination RMI calls issued by the WebLogic Server TM,
@@ -482,7 +482,7 @@ WebLogic Server domain:
   domain UID of the target WebLogic Server domain.
   Multiple Java system properties with different values of `<prefix>` can be specified.
 - For WebLogic Server domains running in Kubernetes managed by the operator, you can set this property by including the system property in the `JAVA_OPTIONS`
-  [Domain environment variable]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
+  [Domain environment variable]({{% relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" %}}) defined in the domain resource's `spec.serverPod.env` attribute.
 
 For example, if the URL of the proxy for domain1 is `t3://proxy-host:31234`, specify
 Java system property `-Dweblogic.rjvm.domain.proxy.domain1=t3://proxy-host:31234`
@@ -583,7 +583,7 @@ In the previous example, `DOMAIN_UID` and `NAMESPACE` are assumed to already be 
 Alternatively, you can substitute the macros with DNS-1123 acceptable values
 (changed to lowercase and underscores converted to dashes).
 For more information on Kubernetes resource compliant naming,
-please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+please see [Meet Kubernetes resource name restrictions]({{% relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" %}}).
 {{% /notice %}}
 
 ### Security notes
@@ -594,7 +594,7 @@ please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-do
 
 - You can configure a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted applications. See [When is a WebLogic custom channel needed?](#when-is-a-weblogic-custom-channel-needed).
 
-- For a detailed description of external network access security, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).
+- For a detailed description of external network access security, see [External network access security]({{% relref "/security/domain-security/weblogic-channels.md" %}}).
 
 ### Optional reading
 

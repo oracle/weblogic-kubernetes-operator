@@ -16,7 +16,7 @@ Oracle recommends obtaining these WebLogic images from the Oracle Container Regi
 or creating custom images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/).
 Note that all of the OCR images that are described in this document are built using the WebLogic Image Tool (WIT).
 You can also use WIT to build your own WebLogic Server or Fusion Middleware Infrastructure images.
-For more information, see [Create custom images]({{< relref "/base-images/custom-images.md" >}}).
+For more information, see [Create custom images]({{% relref "/base-images/custom-images.md" %}}).
 
 This document describes how to obtain and inspect container images
 with WebLogic Server or Fusion Middleware Infrastructure
@@ -55,7 +55,7 @@ See the following sections for information about OCR images:
   - Suitable for production use.
 
   {{% notice warning %}}
-  WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with the latest set of recommended patches applied, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
+  WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with the latest set of recommended patches applied, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`]({{% relref "/base-images/custom-images#create-a-custom-base-image" %}}) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
   {{% /notice %}}
 
 #### WebLogic distribution installer type
@@ -80,7 +80,7 @@ and usually, the type can be determined by examining the image name and tag:
   - If there are requirements to monitor the WebLogic configuration, then:
     - You should address them using Prometheus and Grafana, or other alternatives.
     - Note that you can use the open source
-      [WebLogic Remote Console]({{< relref "/managing-domains/accessing-the-domain/remote-admin-console.md" >}})
+      [WebLogic Remote Console]({{% relref "/managing-domains/accessing-the-domain/remote-admin-console.md" %}})
       as an alternative for the WebLogic Server Administration Console.
 
 - `.../weblogic...:...dev...`:
@@ -165,7 +165,7 @@ For example, to use Docker to pull an image from OCR:
         GA images are suitable for demonstration and development purposes _only_ where the environments
         are not available from the public Internet; they are _not_
         acceptable for production use. In production, you should always use CPU (patched) images
-        from OCR or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}})
+        from OCR or create your images using the [WebLogic Image Tool]({{% relref "/base-images/custom-images#create-a-custom-base-image" %}})
         (WIT) with the `--recommendedPatches` option.  
 
      1. Click **Continue**.
@@ -212,7 +212,7 @@ For example, to use Docker to pull an image from OCR:
 - If you are using a multi-node Kubernetes cluster,
   or your Kubernetes cluster is remote from your locally created or pulled domain image,
   then additional steps are usually required to ensure that your Kubernetes cluster can access the image.
-  See [Access domain images]({{< relref "/base-images/access-images.md" >}}).
+  See [Access domain images]({{% relref "/base-images/access-images.md" %}}).
 - The operator requires domain images to contain WebLogic Server 12.2.1.4.0 or later.
 
 ### Inspect images
@@ -279,26 +279,26 @@ Please review the following guidance to ensure that you are using recently patch
 
   To determine the patches and versions of software within a particular image, see [Inspect images](#inspect-images).
 
-  For information about licensed access to WebLogic patches and CPU images, see [Supported environments]({{< relref "/introduction/platforms/environments.md" >}}).
+  For information about licensed access to WebLogic patches and CPU images, see [Supported environments]({{% relref "/introduction/platforms/environments.md" %}}).
 
 ### Use or create WebLogic images depending on the domain home source type
 
-For information relevant to your chosen [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}), refer to the following documentation:
+For information relevant to your chosen [domain home source type]({{% relref "/managing-domains/choosing-a-model/_index.md" %}}), refer to the following documentation:
 
-* Model in Image domains that use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}):
-  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
-  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
-  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
-  * [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
+* Model in Image domains that use [auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}):
+  * [Understand Oracle Container Registry images]({{% relref "/base-images/ocr-images#understand-oracle-container-registry-images" %}})
+  * [Obtain images from the Oracle Container Registry]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}})
+  * [Create a custom image with patches applied]({{% relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" %}})
+  * [Auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}})
 
 * Model in Image domains that _do not_ use auxiliary images:
-**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ Auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ Auxiliary images. See [Auxiliary images]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}).
 
 * Domain in Image domains: **NOTE**: The Domain in Image domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
-  * [Create a custom image with your domain inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-domain-inside-the-image" >}})
+  * [Create a custom image with your domain inside the image]({{% relref "/base-images/custom-images#create-a-custom-image-with-your-domain-inside-the-image" %}})
 
 * Domain on Persistent Volume (PV) domains:
-  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
-  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
-  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
-  * [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images.md" >}})
+  * [Understand Oracle Container Registry images]({{% relref "/base-images/ocr-images#understand-oracle-container-registry-images" %}})
+  * [Obtain images from the Oracle Container Registry]({{% relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" %}})
+  * [Create a custom image with patches applied]({{% relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" %}})
+  * [Domain creation images]({{% relref "/managing-domains/domain-on-pv/domain-creation-images.md" %}})

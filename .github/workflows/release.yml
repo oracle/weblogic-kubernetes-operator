@@ -20,7 +20,7 @@ jobs:
           echo "IMAGE_NAME=${{ env.BASE_IMAGE_NAME }}:$VERSION" >> $GITHUB_ENV
 
       - name: Checkout branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up JDK
         uses: oracle-actions/setup-java@v1
@@ -29,7 +29,7 @@ jobs:
           release: 25
 
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -83,7 +83,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
           path: gh-pages

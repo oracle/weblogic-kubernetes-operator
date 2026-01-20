@@ -15,7 +15,7 @@ Also, the domain credentials secret must be created in the namespace where the `
 
 {{% notice note %}}
 For an example of a WebLogic Domain YAML file using `webLogicCredentialsSecret`,
-see [Container Image Protection]({{<relref "/security/domain-security/image-protection.md">}}).
+see [Container Image Protection]({{% relref "/security/domain-security/image-protection.md" %}}).
 {{% /notice %}}
 
 The samples supplied with the operator use a naming convention that follows
@@ -73,7 +73,7 @@ in the registry. The `imagePullSecrets` setting on the `Domain` can be used to s
 Kubernetes `Secret` that holds the registry credentials.
 
 {{% notice info %}}
-For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection.md">}}).
+For more information, see [Container Image Protection]({{% relref "/security/domain-security/image-protection.md" %}}).
 {{% /notice %}}
 
 ### Domain configuration override or runtime update secrets
@@ -86,9 +86,9 @@ specified using `configuration.secrets` in the WebLogic `Domain` resource.
 
 {{% notice info %}}
 For more information, see
-[Configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides">}})
+[Configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides" %}})
 and
-[Runtime updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md">}}).
+[Runtime updates]({{% relref "/managing-domains/model-in-image/runtime-updates.md" %}}).
 {{% /notice %}}
 
 ### Operator image pull secret
@@ -99,7 +99,7 @@ alternatively, the image pull secret can be specified on the operator's service 
 
 {{% notice info %}}
 For more information, see
-[Customizing operator image name, pull secret, and private registry]({{<relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
+[Customizing operator image name, pull secret, and private registry]({{% relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry" %}}).
 {{% /notice %}}
 
 ### Operator external REST interface secret
@@ -109,7 +109,7 @@ accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
 is used to hold the certificates and private key.
 
 {{% notice info %}}
-For more information, see [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
+For more information, see [REST Services]({{% relref "/managing-operators/the-rest-api.md" %}}).
 {{% /notice %}}
 
 ### Operator internal REST interface secret

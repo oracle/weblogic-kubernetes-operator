@@ -26,21 +26,14 @@ jobs:
 
     steps:
       - name: Checkout main branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 32
           ref: main
           path: branch-main
 
-      - name: Checkout 4.2 branch
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 32
-          ref: release/4.2
-          path: branch-4.2
-
       - name: Checkout gh-pages
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
           path: gh-pages
@@ -48,7 +41,7 @@ jobs:
 
       - name: Build and publish site
         run: |
-          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.133.0/hugo_0.133.0_Linux-64bit.tar.gz"
+          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.153.0/hugo_0.153.0_Linux-64bit.tar.gz"
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
@@ -63,20 +56,11 @@ jobs:
           cat $GITHUB_WORKSPACE/branch-main/documentation/site/layouts/shortcodes/latestVersion.html
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
           
-          cd $GITHUB_WORKSPACE/branch-4.2/documentation
-          echo "Building 4.2 documentation..."
-          latest_42_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.2 | cut -c12- | sort --version-sort | tail -1)
-          echo "Latest 4.2 tag is $latest_42_tag..."
-          echo $latest_42_tag >| $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
-          cat $GITHUB_WORKSPACE/branch-4.2/documentation/site/layouts/shortcodes/latestVersion.html
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK/4.2" -b https://oracle.github.io/weblogic-kubernetes-operator/4.2
-
           echo "Copying static files into place..."
           cp -R domains "$GITHUB_WORKSPACE/WORK"
           
           cd $GITHUB_WORKSPACE/gh-pages
           find . -maxdepth 1 -mindepth 1 -not -name '[0-9]*' -not -name '.git*' -exec rm -Rf {} \;
-          rm -Rf 4.2
 
           cp -R $GITHUB_WORKSPACE/WORK/* .
           git config --global user.name "github-actions[bot]"

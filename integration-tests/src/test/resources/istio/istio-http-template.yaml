@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: networking.istio.io/v1alpha3
@@ -35,7 +35,6 @@ spec:
             prefix: /management
         - uri:
             prefix: /weblogic
-        - port: 7001
       route:
         - destination:
             host: ADMIN_SERVICE
@@ -46,8 +45,7 @@ spec:
         - uri:
             prefix: /myear
         - uri:
-            prefix: /testwebapp            
-        - port: MANAGED_SERVER_PORT
+            prefix: /testwebapp    
       route:
         - destination:
             host: CLUSTER_SERVICE

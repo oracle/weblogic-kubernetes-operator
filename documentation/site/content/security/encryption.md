@@ -11,7 +11,7 @@ description: "WebLogic domain encryption and the operator."
 The operator has an introspection job that handles WebLogic domain encryption.
 The introspection job also addresses the use of Kubernetes Secrets with configuration overrides.
 For additional information on the configuration handling, see
-[Configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}).
+[Configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md" %}}).
 
 The introspection job also creates a `boot.properties` file that is made available
 to the pods in the WebLogic domain. The credential used for the
@@ -20,7 +20,7 @@ WebLogic domain is kept in a Kubernetes `Secret` which follows the naming patter
 the unique identifier of the domain, for example, `mydomain-weblogic-credentials`.
 
 {{% notice info %}}
-For more information about the WebLogic credentials secret, see [Secrets]({{<relref "/security/secrets.md">}}).
+For more information about the WebLogic credentials secret, see [Secrets]({{% relref "/security/secrets.md" %}}).
 {{% /notice %}}
 
 ### Encryption of Kubernetes Secrets
@@ -33,4 +33,4 @@ and [using a KMS provider for data encryption](https://kubernetes.io/docs/tasks/
 {{% /notice %}}
 
 ### Additional reading
-* [Encryption of values for WebLogic configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md#override-template-macros">}})
+* [Encryption of values for WebLogic configuration overrides]({{% relref "/managing-domains/configoverrides/_index.md#override-template-macros" %}})

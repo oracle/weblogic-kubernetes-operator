@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
 
+  String MAVEN_PROFILE_NAME = getNonEmptySystemProperty("maven.profile.name", null);
   String OLD_DOMAIN_VERSION = "v8";
   Boolean SKIP_CLEANUP =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.cleanup", "false"));
@@ -105,16 +106,16 @@ public interface TestConstants {
   // Default image names, tags to be used to downlaod base images 
   // It depends on the default value of BASE_IMAGES_REPO. 
   // Following defaults are assumining OCIR as default for BASE_IMAGES_REPO.
-  String WEBLOGIC_IMAGE_NAME_DEFAULT = "test-images/weblogic";
+  String WEBLOGIC_IMAGE_NAME_DEFAULT = "test-images/weblogic_cpu";
   String WEBLOGIC_IMAGE_TAG_DEFAULT = "14.1.2.0-generic-jdk17-ol8";
-  String FMWINFRA_IMAGE_NAME_DEFAULT = "test-images/fmw-infrastructure";
+  String FMWINFRA_IMAGE_NAME_DEFAULT = "test-images/fmw-infrastructure_cpu";
   String FMWINFRA_IMAGE_TAG_DEFAULT = "14.1.2.0-jdk17-ol8";
   String FMWINFRA_IMAGE_TAG_12213 = "12.2.1.3";
   String DB_IMAGE_NAME_DEFAULT = "test-images/database/enterprise";
   String DB_PREBUILT_IMAGE_NAME_DEFAULT = "test-images/database/express";
   String DB_IMAGE_TAG_DEFAULT = "19.3.0.0";
   public static final String DB_IMAGE_TAG_DEFAULT_12C = "12.2.0.1-slim";
-  public static final String DB_PDB_ID_DEFAULT_19C = "orclpdb1";
+  public static final String DB_PDB_ID_DEFAULT_19C = "devpdb";
   public static final String DB_PDB_ID_DEFAULT_12C = "devpdb.k8s";
 
   // repository to push the domain images created during test execution
@@ -136,7 +137,7 @@ public interface TestConstants {
   String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
        WEBLOGIC_IMAGE_TAG_DEFAULT);
   //WebLogic base image tag with added user "wlsadm" for 14.1.2.0-jdk17-ol8
-  String WEBLOGIC_IMAGE_WLSADM_TAG = "14.1.2.0-with-wlsadm-jdk17-ol8";
+  String WEBLOGIC_IMAGE_WLSADM_TAG = "14.1.2.0-with-wlsadm-jdk21-ol8";
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
@@ -359,6 +360,7 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
+  String ISTIO_NAMESPACE = "istio-system";
   String ISTIO_VERSION =
       getNonEmptySystemProperty("wko.it.istio.version", "1.23.0");
   int ISTIO_HTTP_HOSTPORT = 2480;

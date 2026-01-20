@@ -19,7 +19,7 @@ As part of the Elastic Stack integration, Logstash configuration occurs for each
 * Set `createLogStashConfigMap` to `true` to use the default Logstash configuration, or set it to `false` and create a ConfigMap named `weblogic-operator-logstash-cm` in the operator's namespace with your own Logstash pipeline configuration.
 * Optionally, create a secret named `logstash-certs-secret` in the operator's namespace with certificates for communicating with secured Elasticsearch. The certificates will be placed under the `/usr/share/logstash/config/certs/` directory in the Logstash container.
 
-For additional details, see [Elastic Stack integration]({{< relref "/managing-operators/using-helm#elastic-stack-integration" >}}) Helm commands.
+For additional details, see [Elastic Stack integration]({{% relref "/managing-operators/using-helm#elastic-stack-integration" %}}) Helm commands.
 
 #### Sample to configure Elasticsearch and Kibana
 
