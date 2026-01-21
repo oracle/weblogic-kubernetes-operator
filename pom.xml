@@ -741,7 +741,7 @@
     <gson-version>2.13.2</gson-version>
     <dependency-check-version>12.1.9</dependency-check-version>
     <slf4j-version>2.0.17</slf4j-version>
-    <logback-classic-version>1.5.24</logback-classic-version>
+    <logback-classic-version>1.5.25</logback-classic-version>
     <protobuf-java-version>4.33.2</protobuf-java-version>
     <json-smart-version>2.6.0</json-smart-version>
     <nimbus-jose-jwt-version>10.7</nimbus-jose-jwt-version>
