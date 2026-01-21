@@ -62,6 +62,7 @@ pipeline {
         MAVEN_PROFILE_NAME = "oke-arm"
         availability_domain = "mFEn:PHX-AD-1"
         PARALLEL_RUN = "false"
+	oke_run = "okemodule"
     }
 
     parameters {
