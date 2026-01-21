@@ -12,7 +12,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-oke-dev' ? '' : CRON_SETTINGS)
+        parameterizedCron(env.JOB_NAME == 'wko-oke-arm' ? CRON_SETTINGS : '')
     }
     tools {
         maven 'maven-3.8.7'
@@ -46,7 +46,7 @@ pipeline {
         wkotest_ssh_pk = "${WORKSPACE}/.ssh/wkotestkey"
 
         OKE_CLUSTER='true'
-        BASE_CLUSTER_NAME = "${env.BASE_CLUSTER_NAME ? '' : params.BASE_CLUSTER_NAME}"
+        BASE_CLUSTER_NAME = "${env.BASE_CLUSTER_NAME ?: params.BASE_CLUSTER_NAME}"
         CLUSTER_NAME = "${BASE_CLUSTER_NAME}-${BUILD_ID}"
 
         outdir = "${WORKSPACE}/staging"
@@ -62,7 +62,7 @@ pipeline {
         MAVEN_PROFILE_NAME = "oke-arm"
         availability_domain = "mFEn:PHX-AD-1"
         PARALLEL_RUN = "false"
-	oke_run = "okemodule"
+	    oke_run = "okemodule"
     }
 
     parameters {
@@ -96,7 +96,7 @@ pipeline {
         )
         string(name: 'BASE_CLUSTER_NAME',
                        description: 'OKE arm cluster name',
-                       defaultValue: "seqarmone"
+                       defaultValue: "seqarm"
         )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
