@@ -212,7 +212,7 @@ pipeline {
                             export PATH=${runtime_path}
                             env|sort
                             echo $PATH
-                            ls /tmp/tools/hudson.model.JDK/jdk21-arm
+                            ls /tmp/tools/hudson.model.JDK
                             java -version
                             mvn --version
                             echo $OSTYPE
