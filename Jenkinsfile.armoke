@@ -667,6 +667,10 @@ EOF
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
                                     export DOCKER_BUILD_KIT=1
                                     export DOCKER_CLI_EXPERIMENTAL=enabled
+				    docker images
+				    docker login phx.oci.io -u ${OCIR_USER} -p ${OCIR_PASS}
+				    docker pull phx.ocir.io/devweblogic/test-images/weblogic_cpu:14.1.2.0-jdk17-ol8
+				    docker images
                                     export no_proxy="${NO_PROXY},localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,login.oracle.com"
                                     export NO_PROXY="${no_proxy}"
                                     if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"; then
