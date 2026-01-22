@@ -211,7 +211,6 @@ pipeline {
                     steps {
                         sh '''
 			    cat /etc/os-release
-			    ip addr show
 			    hostname -I
                             export PATH=${runtime_path}
                             env|sort
