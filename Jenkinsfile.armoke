@@ -669,7 +669,7 @@ EOF
                                     export DOCKER_CLI_EXPERIMENTAL=enabled
 				    docker images
 				    docker login phx.ocir.io -u ${OCIR_USER} -p ${OCIR_PASS}
-				    docker pull phx.ocir.io/devweblogic/test-images/weblogic_cpu:14.1.2.0-jdk17-ol8
+				    docker pull phx.ocir.io/devweblogic/test-images/weblogic_cpu:14.1.2.0-generic-jdk17-ol8-arm64
 				    docker images
                                     export no_proxy="${NO_PROXY},localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,login.oracle.com"
                                     export NO_PROXY="${no_proxy}"
