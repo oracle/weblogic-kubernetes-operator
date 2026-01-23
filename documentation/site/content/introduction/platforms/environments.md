@@ -72,8 +72,6 @@ Container Services for use with Kubernetes* on Oracle Cloud Infrastructure Compu
 any other Oracle Cloud Infrastructure "Authorized Cloud Environments"
 as described in the [Overview](#overview).
 
-WebLogic Kubernetes Operator is certified for use on OKE with Kubernetes 1.25.0+, 1.26.2+, and 1.27.2+.
-
 #### Oracle Cloud Native Environment
 
 [Oracle Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
@@ -174,13 +172,7 @@ See also the [Tanzu Kubernetes Grid sample]({{% relref "/samples/tanzu-kubernete
 
 #### OpenShift
 
-OpenShift can be a cloud platform or can be deployed on premises.
-
-- Operator v4.0.5 is certified for use on:
-  - OpenShift Container Platform 4.11.30 with Kubernetes 1.24+, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
-  - OpenShift Container Platform 4.12.2 with Kubernetes 1.25+, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
-- Operator v4.2.16 is certified for use on:
-  - OpenShift Container Platform 4.17.2 with Kubernetes v1.30.5+, RedHat OpenShift Mesh v3.0.1, and Istio 1.24.4.
+OpenShift can be a cloud platform or can be deployed on premises. The WebLogic Kubernetes Operator is supported on any version of OpenShift where the underlying Kubernetes version is supported.
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{% relref "/security/openshift.md" %}}) documentation.
