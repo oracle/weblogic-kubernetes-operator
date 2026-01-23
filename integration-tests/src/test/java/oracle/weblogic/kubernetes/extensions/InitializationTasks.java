@@ -185,9 +185,7 @@ public class InitializationTasks implements BeforeAllCallback,
         operatorImage = Operator.getImageName();
         logger.info("Operator image name {0}", operatorImage);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
-        if (!ARM) {
-          assertTrue(Operator.buildImage(operatorImage), "image build failed for Operator");
-        }
+        assertTrue(Operator.buildImage(operatorImage), "image build failed for Operator");
 
         // login to BASE_IMAGES_REPO 
         logger.info(WLSIMG_BUILDER + " login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
@@ -278,9 +276,7 @@ public class InitializationTasks implements BeforeAllCallback,
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
 
           List<String> images = new ArrayList<>();
-          if (!ARM) {
-            images.add(operatorImage);
-          }
+          images.add(operatorImage);
           // add images only if SKIP_BUILD_IMAGES_IF_EXISTS is not set
           if (!SKIP_BUILD_IMAGES_IF_EXISTS) {
             images.add(miiBasicImage);
