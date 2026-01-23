@@ -315,7 +315,8 @@ public class InitializationTasks implements BeforeAllCallback,
           installWebHookOnlyOperator("DomainOnPvSimplification=true");
         }
         //install traefik when running with podman container runtime
-        if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT) && !CRIO) {
+        if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)
+            && !CRIO && !OKE_CLUSTER) {
           installTraefikLB();
         }
         //install Oracle Database operator as a one time task
