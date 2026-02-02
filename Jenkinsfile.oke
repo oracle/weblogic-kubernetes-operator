@@ -7,7 +7,7 @@ def CRON_SETTINGS = '''H 3 * * 5 % MAVEN_PROFILE_NAME=oke-weekly-sequential;BASE
                    H 12 * * 0-4 % MAVEN_PROFILE_NAME=oke-parallel;BASE_CLUSTER_NAME=parone;PARALLEL_RUN=true'''
 
 pipeline {
-    agent { label 'large' }
+    agent { label 'large-ol9u4' }
     options {
         timeout(time: 1800, unit: 'MINUTES')
         //disableConcurrentBuilds()
@@ -233,9 +233,10 @@ pipeline {
                             java -version
                             mvn --version
                             python --version
-                            docker version
+                            podman version
                             ulimit -a
                             ulimit -aH
+			    curl --noproxy '*' -s -v http://169.254.169.254/opc/v1/instance/ || true
                         '''
                     }
                 }
@@ -517,6 +518,7 @@ EOF
                         kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofssnew.yaml
                         kubectl delete csiDriver fss.csi.oraclecloud.com
                         kubectl create -f ${WORKSPACE}/integration-tests/src/test/resources/oke/fss_csi_driver.yaml
+			kubectl get nodes -o wide || true
 
                         '''
                     }
@@ -642,6 +644,7 @@ EOF
 				echo "-Djdk.httpclient.allowRestrictedHeaders=\"host\""                                      >> ${WORKSPACE}/.mvn/maven.config
 				echo "-DOPERATOR_LOG_LEVEL=\"${OPERATOR_LOG_LEVEL}\""                                        >> ${WORKSPACE}/.mvn/maven.config
 				echo "-Dwko.it.install.weblogic=\"true\""                                                    >> ${WORKSPACE}/.mvn/maven.config
+				echo "-DWLSIMG_BUILDER=\"podman\""                                                           >> ${WORKSPACE}/.mvn/maven.config
 
                                 echo "${WORKSPACE}/.mvn/maven.config contents:"
                                 cat "${WORKSPACE}/.mvn/maven.config"
