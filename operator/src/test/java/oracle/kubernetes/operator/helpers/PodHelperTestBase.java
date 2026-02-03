@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -964,6 +964,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     configureDomain().withHostAliases(hostAlias);
 
     assertThat(getCreatedPod().getSpec().getHostAliases(), hasItem(hostAlias));
+  }
+
+  @Test
+  void whenPodCreatedWithSetHostnameAsFQDN_addToPod() {
+    configureDomain().withSetHostnameAsFQDN(Boolean.TRUE);
+
+    assertThat(getCreatedPod().getSpec().getSetHostnameAsFQDN(), is(Boolean.TRUE));
   }
 
   @Test

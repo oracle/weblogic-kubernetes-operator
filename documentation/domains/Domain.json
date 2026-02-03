@@ -1152,6 +1152,10 @@
           "description": "Settings for the liveness probe associated with a WebLogic Server instance. If not specified, the operator will create a probe that executes a script provided by the operator. The operator will also fill in any missing tuning-related fields, if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different script to execute.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
+        "setHostnameAsFQDN": {
+          "description": "If specified and set to true, the pod\u0027s hostname will be configured as the pod\u0027s FQDN, rather than the leaf name.",
+          "type": "boolean"
+        },
         "topologySpreadConstraints": {
           "description": "TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed.",
           "type": "array",

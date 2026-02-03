@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -262,6 +262,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .runtimeClassName(getServerSpec().getRuntimeClassName())
         .tolerations(getTolerations())
         .hostAliases(getHostAliases())
+        .setHostnameAsFQDN(getSetHostnameAsFQDN())
         .restartPolicy(getServerSpec().getRestartPolicy())
         .securityContext(getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
@@ -293,6 +294,10 @@ public abstract class BasePodStepContext extends StepContextBase {
   private List<V1HostAlias> getHostAliases() {
     List<V1HostAlias> hostAliases = getServerSpec().getHostAliases();
     return hostAliases.isEmpty() ? null : hostAliases;
+  }
+
+  private Boolean getSetHostnameAsFQDN() {
+    return getServerSpec().getSetHostnameAsFQDN();
   }
 
   /**

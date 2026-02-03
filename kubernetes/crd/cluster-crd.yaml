@@ -1,11 +1,11 @@
-# Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: b4e0b203e63b69d89d05eca5b61f618aadd53828966a3acb9df94e8d0b4a70b5
+    weblogic.sha256: 211c69c65454b309810f070a8ef182bbd4ce06087d06825a4dbe27b190ba0f55
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -607,6 +607,10 @@ spec:
                         - port
                         type: object
                     type: object
+                  setHostnameAsFQDN:
+                    description: If specified and set to true, the pod's hostname
+                      will be configured as the pod's FQDN, rather than the leaf name.
+                    type: boolean
                   topologySpreadConstraints:
                     description: TopologySpreadConstraints describes how a group of
                       pods ought to spread across topology domains. Scheduler will

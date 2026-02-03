@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.processing;
@@ -169,6 +169,8 @@ public interface EffectiveServerSpec {
   List<V1Toleration> getTolerations();
 
   List<V1HostAlias> getHostAliases();
+
+  Boolean getSetHostnameAsFQDN();
 
   V1ResourceRequirements getResources();
 

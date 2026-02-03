@@ -217,6 +217,11 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+    getDomainSpec().setSetHostnameAsFQDN(setHostnameAsFQDN);
+    return this;
+  }
+
   /**
    * Sets the log home value.
    *
