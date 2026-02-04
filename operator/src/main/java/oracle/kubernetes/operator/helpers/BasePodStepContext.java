@@ -247,6 +247,10 @@ public abstract class BasePodStepContext extends StepContextBase {
     return resourceRequirements;
   }
 
+  abstract String getPodName();
+
+  abstract String getDomainUid();
+
   protected V1PodSpec createPodSpec() {
     V1PodSpec podSpec = new V1PodSpec()
         .containers(getContainers())
@@ -266,6 +270,10 @@ public abstract class BasePodStepContext extends StepContextBase {
         .restartPolicy(getServerSpec().getRestartPolicy())
         .securityContext(getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
+
+    if (Boolean.TRUE.equals(podSpec.getSetHostnameAsFQDN())) {
+      podSpec.setSubdomain(getPodName());
+    }
 
     for (V1Volume additionalVolume : getFluentdVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -296,7 +304,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     return hostAliases.isEmpty() ? null : hostAliases;
   }
 
-  private Boolean getSetHostnameAsFQDN() {
+  Boolean getSetHostnameAsFQDN() {
     return getServerSpec().getSetHostnameAsFQDN();
   }
 

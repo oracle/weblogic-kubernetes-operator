@@ -215,6 +215,10 @@ public class JobStepContext extends BasePodStepContext {
         .orElse(new ArrayList<>());
   }
 
+  String getPodName() {
+    return getJobName();
+  }
+
   String getJobName() {
     return createJobName(getDomainUid());
   }
@@ -232,7 +236,7 @@ public class JobStepContext extends BasePodStepContext {
   @Override
   protected Map<String, String> augmentSubVars(Map<String, String> vars) {
     // For other introspector job pod content, we use the values that would apply administration server; however,
-    // since we won't know the name of the administation server from the domain configuration until introspection
+    // since we won't know the name of the administration server from the domain configuration until introspection
     // has run, we will use the hardcoded value "introspector" as the server name.
     vars.put("SERVER_NAME", "introspector");
     return vars;
