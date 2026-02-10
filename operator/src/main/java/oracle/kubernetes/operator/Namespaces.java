@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -295,9 +295,9 @@ public class Namespaces {
       List<Step> steps = new ArrayList<>();
       if (!domainNamespaces.isStopping(ns).get()) {
         steps.add(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(ns).namespace(ns)));
+        steps.add(createEventStep(
+                new EventData(STOP_MANAGING_NAMESPACE).resourceName(ns).namespace(getOperatorNamespace())));
       }
-      steps.add(createEventStep(
-          new EventData(STOP_MANAGING_NAMESPACE).resourceName(ns).namespace(getOperatorNamespace())));
       return Step.chain(steps.toArray(new Step[0]));
     }
 
