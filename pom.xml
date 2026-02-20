@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>4.3.7</version>
+  <version>4.3.8-SNAPSHOT</version>
 
   <modules>
     <module>operator</module>
