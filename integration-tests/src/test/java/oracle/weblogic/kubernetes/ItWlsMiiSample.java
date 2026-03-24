@@ -271,6 +271,9 @@ class ItWlsMiiSample {
 
     Map<String, String> podSnapshotBefore = null;
     if ("-update4".equals(arg)) {
+      String modelImageName = envMap.getOrDefault("MODEL_IMAGE_NAME", DOMAIN_CREATION_IMAGE_NAME);
+      waitForStableDomainPods(envMap.get("DOMAIN_NAMESPACE"), envMap.get("DOMAIN_UID1"),
+          modelImageName + ":" + MODEL_IMAGE_WLS_TAG, 300);
       podSnapshotBefore = getPodTimestamps(envMap.get("DOMAIN_NAMESPACE"));
     }
 
@@ -303,6 +306,80 @@ class ItWlsMiiSample {
     previousTestSuccessful = true;
   }
 
+  private void waitForStableDomainPods(String namespace, String domainUid, String expectedImage, int timeoutSeconds) {
+    long deadline = System.currentTimeMillis() + timeoutSeconds * 1000L;
+    String command = KUBERNETES_CLI + " get pods -n " + namespace
+        + " -l weblogic.serverName,weblogic.domainUID=" + domainUid
+        + " -o=jsonpath='{range .items[*]}{.metadata.name}{\"|\"}"
+        + "{.status.containerStatuses[?(@.name==\"weblogic-server\")].ready}{\"|\"}"
+        + "{.metadata.deletionTimestamp}{\"|\"}"
+        + "{.metadata.annotations.weblogic\\.awaitingPodRoll}{\"|\"}"
+        + "{.spec.initContainers[0].image}{\"\\n\"}{end}'";
+
+    while (System.currentTimeMillis() < deadline) {
+      ExecResult result = Command.withParams(new CommandParams()
+          .command(command)
+          .redirect(true)).executeAndReturnResult();
+
+      boolean stable = result != null && result.exitValue() == 0 && result.stdout() != null
+          && !result.stdout().isBlank();
+      StringBuilder unstableDetails = new StringBuilder();
+
+      if (stable) {
+        String[] lines = result.stdout().replace("'", "").split("\n");
+        for (String line : lines) {
+          String trimmed = line.trim();
+          if (trimmed.isEmpty()) {
+            continue;
+          }
+
+          String[] parts = trimmed.split("\\|", -1);
+          if (parts.length < 5) {
+            stable = false;
+            unstableDetails.append(" malformed=").append(trimmed);
+            continue;
+          }
+
+          String podName = parts[0];
+          String ready = parts[1];
+          String deletionTimestamp = parts[2];
+          String awaitingPodRoll = parts[3];
+          String image = parts[4];
+
+          if (!"true".equals(ready) || !deletionTimestamp.isEmpty()
+              || !awaitingPodRoll.isEmpty() || !expectedImage.equals(image)) {
+            stable = false;
+            unstableDetails.append(" ").append(podName)
+                .append("[ready=").append(ready)
+                .append(",deleting=").append(deletionTimestamp.isEmpty() ? "<none>" : deletionTimestamp)
+                .append(",awaitingPodRoll=").append(awaitingPodRoll.isEmpty() ? "<none>" : awaitingPodRoll)
+                .append(",image=").append(image.isEmpty() ? "<none>" : image)
+                .append("]");
+          }
+        }
+      } else {
+        unstableDetails.append(" unable to read pod state");
+      }
+
+      if (stable) {
+        return;
+      }
+
+      logger.info("Waiting for stable pods before update4 snapshot. Expected image {0}. Details:{1}",
+          expectedImage, unstableDetails);
+
+      try {
+        Thread.sleep(5000);
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+        assertTrue(false, "Interrupted while waiting for stable pods before update4 snapshot");
+      }
+    }
+
+    assertTrue(false, "Timed out waiting for stable pods before update4 snapshot in namespace "
+        + namespace + " for domain " + domainUid + " using expected image " + expectedImage);
+  }
+
   private Map<String, String> getPodTimestamps(String namespace) {
     ExecResult result = Command.withParams(new CommandParams()
         .command(KUBERNETES_CLI + " get pods -n " + namespace
@@ -313,7 +390,7 @@ class ItWlsMiiSample {
     if (result != null && result.exitValue() == 0 && result.stdout() != null) {
       String[] lines = result.stdout().replace("'", "").split("\n");
       for (String line : lines) {
-        String[] parts = line.trim().split(":");
+        String[] parts = line.trim().split(":", 2);
         if (parts.length == 2) {
           timestamps.put(parts[0], parts[1]);
         }

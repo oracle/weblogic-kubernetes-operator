@@ -87,7 +87,10 @@ else
 
   helm install ${TRAEFIK_NAME} traefik/traefik \
     --namespace $TRAEFIK_NAMESPACE \
-    --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
+    --set "providers.kubernetesCRD.namespaces[0]=$TRAEFIK_NAMESPACE" \
+    --set "providers.kubernetesCRD.namespaces[1]=$DOMAIN_NAMESPACE" \
+    --set "providers.kubernetesIngress.namespaces[0]=$TRAEFIK_NAMESPACE" \
+    --set "providers.kubernetesIngress.namespaces[1]=$DOMAIN_NAMESPACE" \
     --set "ports.web.nodePort=${TRAEFIK_HTTP_NODEPORT}" \
     --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}" \
     --set "image.registry=${TRAEFIK_IMAGE_REGISTRY}" \
