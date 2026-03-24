@@ -100,11 +100,11 @@ pipeline {
 
         string(name: 'OKE_KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.33.1'
+               defaultValue: '1.35.0'
         )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.30.0'
+                       defaultValue: '1.35.0'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -200,7 +200,8 @@ pipeline {
                        //defaultValue OKE1.26.2: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
                        //1.27.2 oke defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaypr5r5drojwytghw6e6mvpjsscrnkuwtmqlmvmix7kjb2zcnc7wa'
                        //1.30.1: 'ocid1.image.oc1.phx.aaaaaaaak36p3gcd7m5fypfs5j5flxaqxykon4dkjqd3j45zkq57cq52ovoq'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
+                       //1.33.1: 'ocid1.image.oc1.phx.aaaaaaaa6fbid3anokvq3rjxt22globuvoi4j6adgbyroehadb4tc4tb6b2a'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaeq6df4utijfvhyjhxwzc5nuqgg5fqmcu5zfwu34torgsdf5epzpq'
        )
         string(name: 'NODE_SHAPE',
                        description: '',
