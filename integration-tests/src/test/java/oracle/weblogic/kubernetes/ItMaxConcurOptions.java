@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -121,6 +122,7 @@ class ItMaxConcurOptions {
   private static final int maxClusterConcurrentShutdown = 2;
 
   private static DomainResource domain = null;
+  private static List<String> ns;
 
   /**
    * Install Operator.
@@ -130,6 +132,7 @@ class ItMaxConcurOptions {
   @BeforeAll
   static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
+    ns = namespaces;
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -222,6 +225,7 @@ class ItMaxConcurOptions {
       // verify that the Operator shutdown 2 managed servers concurrently in each cluster
       verifyShutdownConcurrently(managedServerC1PodNamePrefix,
           managedServerC1NamePrefix, replicaCount, maxClusterConcurrentShutdown);
+      LoggingUtil.generateLog(this, ns);
     } finally {
       restoreTestEnv(new ArrayList<>());
     }
@@ -242,6 +246,7 @@ class ItMaxConcurOptions {
     // verify that the Operator rolling restarts 2 managed servers in each cluster concurrently
     rollingRestartDomainAndVerify(managedServerC1PodNamePrefix, maxClusterUnavailable, true);
     rollingRestartDomainAndVerify(managedServerC2PodNamePrefix, maxClusterUnavailable, true);
+    LoggingUtil.generateLog(this, ns);
   }
 
   /**
@@ -277,6 +282,7 @@ class ItMaxConcurOptions {
       rollingRestartDomainAndVerify(managedServerC1PodNamePrefix, maxClusterUnavailable, false);
       // verify that the Operator rolling-restarts 2 managed server in cluster-2 concurrently
       rollingRestartDomainAndVerify(managedServerC2PodNamePrefix, maxClusterUnavailable, true);
+      LoggingUtil.generateLog(this, ns);
     } finally {
       restoreTestEnv(clusterList);
     }
@@ -331,6 +337,7 @@ class ItMaxConcurOptions {
       // verify two managed servers in cluster-1 are shutdown concurrently
       verifyShutdownConcurrently(managedServerC1PodNamePrefix,
           managedServerC1NamePrefix, replicaCount, newReplicaCount);
+      LoggingUtil.generateLog(this, ns);
     } finally {
       restoreTestEnv(clusterList);
     }
@@ -392,6 +399,7 @@ class ItMaxConcurOptions {
 
       // verify that the Operator starts up 2 managed servers in cluster-2 one by one
       verifyServersStartedSequentially(managedServerC2PodNamePrefix, 2, newReplicaCount);
+      LoggingUtil.generateLog(this, ns);
     } finally {
       restoreTestEnv(clusterList);
     }
