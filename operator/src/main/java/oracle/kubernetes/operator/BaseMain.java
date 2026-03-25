@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +44,7 @@ import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.OperatorLoggingFormatter;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.PathSupport;
 import oracle.kubernetes.operator.work.Cancellable;
@@ -56,57 +59,90 @@ public abstract class BaseMain {
 
   static {
     try {
-      Map<String, String> env  = System.getenv();
-      final String loggingLevel = env.get("JAVA_LOGGING_LEVEL");
-      Level level = Level.WARNING;
-      if (loggingLevel != null) {
-
-        if (Arrays.stream(new String[]{"OFF", "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", "FINEST", "ALL"})
-                .anyMatch(l -> l.equals(loggingLevel))) {
-          level = Level.parse(loggingLevel);
-        } else {
-          System.err.println("Invalid JAVA_LOGGING_LEVEL='" + loggingLevel + "', using WARNING");
-        }
-
-        Logger rootLogger = Logger.getLogger("");
-        rootLogger.setLevel(level);
-
-        // Console Handler
-        ConsoleHandler consoleHandler = new ConsoleHandler();
-        consoleHandler.setLevel(level);
-        consoleHandler.setFormatter(new oracle.kubernetes.operator.logging.OperatorLoggingFormatter());
-        rootLogger.addHandler(consoleHandler);
-
-        String logDir = env.get("OPERATOR_LOGDIR");
-        if (logDir != null && !(logDir = logDir.trim()).isEmpty()) {
-          Files.createDirectories(PathSupport.getPath(new File(logDir)));
-          Path logPath = Paths.get(logDir).normalize();
-          // File handler
-          if (logPath.startsWith("..") || logPath.toString().contains("/../")) {
-            System.err.println("Invalid OPERATOR_LOGDIR (path traversal attempt): " + logDir);
-          } else {
-            int limit = getIntegerOrDefault(env.getOrDefault("JAVA_LOGGING_MAXSIZE", "20000000"), 20_000_000);
-            int count = getIntegerOrDefault(env.getOrDefault("JAVA_LOGGING_COUNT", "10"), 10);
-
-            limit = Math.min(limit, 100_000_000);
-            count = Math.min(count, 100);
-
-            FileHandler fileHandler = new FileHandler(logPath.resolve("operator%g.log").toString(), limit, count, true);
-            fileHandler.setLevel(level);
-            fileHandler.setFormatter(new oracle.kubernetes.operator.logging.OperatorLoggingFormatter());
-            rootLogger.addHandler(fileHandler);
-            Logger logger = Logger.getLogger("Operator", "Operator");
-            logger.setLevel(level);
-            logger.addHandler(consoleHandler);
-          }
-        }
-      }
-
+      configureLogging(System.getenv());
     } catch (Throwable t) {  // Catch ALL exceptions
       System.err.println("FATAL: Failed to initialize logging: " + t);
       t.printStackTrace();
       throw new RuntimeException("Logging initialization failed", t);
     }
+  }
+
+  static void configureLogging(Map<String, String> env) throws IOException {
+    final String loggingLevel = env.get("JAVA_LOGGING_LEVEL");
+    if (loggingLevel == null) {
+      return;
+    }
+
+    Level level = parseLoggingLevel(loggingLevel);
+    Formatter formatter = new OperatorLoggingFormatter();
+    Logger rootLogger = Logger.getLogger("");
+    Logger operatorLogger = Logger.getLogger("Operator", "Operator");
+
+    rootLogger.setLevel(level);
+    operatorLogger.setLevel(level);
+    operatorLogger.setUseParentHandlers(true);
+
+    replaceRootConsoleHandlers(rootLogger, level, formatter);
+    configureFileLogging(env, rootLogger, level, formatter);
+  }
+
+  private static Level parseLoggingLevel(String loggingLevel) {
+    if (Arrays.stream(new String[]{"OFF", "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", "FINEST", "ALL"})
+        .anyMatch(loggingLevel::equals)) {
+      return Level.parse(loggingLevel);
+    }
+
+    System.err.println("Invalid JAVA_LOGGING_LEVEL='" + loggingLevel + "', using WARNING");
+    return Level.WARNING;
+  }
+
+  private static void replaceRootConsoleHandlers(Logger rootLogger, Level level, Formatter formatter) {
+    removeRootHandlers(rootLogger, ConsoleHandler.class);
+
+    ConsoleHandler consoleHandler = new ConsoleHandler();
+    consoleHandler.setLevel(level);
+    consoleHandler.setFormatter(formatter);
+    rootLogger.addHandler(consoleHandler);
+  }
+
+  private static void configureFileLogging(
+      Map<String, String> env, Logger rootLogger, Level level, Formatter formatter) throws IOException {
+    String logDir = env.get("OPERATOR_LOGDIR");
+    if (logDir == null || (logDir = logDir.trim()).isEmpty()) {
+      removeRootHandlers(rootLogger, FileHandler.class);
+      return;
+    }
+
+    Path logPath = Paths.get(logDir).normalize();
+    if (logPath.startsWith("..") || logPath.toString().contains("/../")) {
+      System.err.println("Invalid OPERATOR_LOGDIR (path traversal attempt): " + logDir);
+      removeRootHandlers(rootLogger, FileHandler.class);
+      return;
+    }
+    Files.createDirectories(PathSupport.getPath(logPath.toFile()));
+
+    int limit = getIntegerOrDefault(env.getOrDefault("JAVA_LOGGING_MAXSIZE", "20000000"), 20_000_000);
+    int count = getIntegerOrDefault(env.getOrDefault("JAVA_LOGGING_COUNT", "10"), 10);
+
+    limit = Math.min(limit, 100_000_000);
+    count = Math.min(count, 100);
+
+    removeRootHandlers(rootLogger, FileHandler.class);
+
+    FileHandler fileHandler = new FileHandler(logPath.resolve("operator%g.log").toString(), limit, count, true);
+    fileHandler.setLevel(level);
+    fileHandler.setFormatter(formatter);
+    rootLogger.addHandler(fileHandler);
+  }
+
+  private static void removeRootHandlers(Logger rootLogger, Class<? extends Handler> handlerType) {
+    Arrays.stream(rootLogger.getHandlers())
+        .filter(handlerType::isInstance)
+        .forEach(
+            handler -> {
+              rootLogger.removeHandler(handler);
+              handler.close();
+            });
   }
 
   private static int getIntegerOrDefault(String val, int def) {
