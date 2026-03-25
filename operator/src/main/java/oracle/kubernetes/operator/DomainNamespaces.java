@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -26,8 +26,11 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.watcher.ClusterWatcher;
 import oracle.kubernetes.operator.watcher.ConfigMapWatcher;
@@ -54,6 +57,9 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
  */
 @SuppressWarnings("SameParameterValue")
 public class DomainNamespaces {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
 
@@ -235,7 +241,10 @@ public class DomainNamespaces {
     }
 
     void startWatcher(String namespace, String resourceVersion, DomainProcessor domainProcessor) {
-      watchers.computeIfAbsent(namespace, n -> createWatcher(n, resourceVersion, selector.apply(domainProcessor)));
+      watchers.computeIfAbsent(namespace, n -> {
+        LOGGER.fine(MessageKeys.BEGIN_MANAGING_NAMESPACE, namespace);   // ← logs ONLY on first creation
+        return createWatcher(n, resourceVersion, selector.apply(domainProcessor));
+      });
       getWatcher(namespace).withResourceVersion(resourceVersion).resume();
     }
 
