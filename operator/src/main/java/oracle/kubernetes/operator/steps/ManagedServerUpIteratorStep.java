@@ -109,9 +109,31 @@ public class ManagedServerUpIteratorStep extends Step {
 
   // Adds an empty map to both the packet and the domain presence info to track servers that need to be rolled
   private void initialServersToRoll(Packet packet) {
+    final Map<String, Fiber.StepAndPacket> existingPacketRolls = packet.getValue(ProcessingConstants.SERVERS_TO_ROLL);
+    final Map<String, Fiber.StepAndPacket> existingPresenceRolls = DomainPresenceInfo.fromPacket(packet)
+        .map(DomainPresenceInfo::getServersToRoll)
+        .orElse(null);
+
+    if (hasDeferredRolls(existingPacketRolls) || hasDeferredRolls(existingPresenceRolls)) {
+      LOGGER.info("Debug: resetting deferred roll map for domain with UID: {0}; packetId={1}; "
+              + "packetRolls={2}; presenceRolls={3}",
+          getDomainUid(packet),
+          System.identityHashCode(packet),
+          getDeferredRollNames(existingPacketRolls),
+          getDeferredRollNames(existingPresenceRolls));
+    }
+
     final Map<String, Fiber.StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
     packet.put(ProcessingConstants.SERVERS_TO_ROLL, serversToRoll);
     DomainPresenceInfo.fromPacket(packet).ifPresent(dpi -> dpi.setServersToRoll(serversToRoll));
+  }
+
+  private boolean hasDeferredRolls(Map<String, Fiber.StepAndPacket> serversToRoll) {
+    return serversToRoll != null && !serversToRoll.isEmpty();
+  }
+
+  private List<String> getDeferredRollNames(Map<String, Fiber.StepAndPacket> serversToRoll) {
+    return Optional.ofNullable(serversToRoll).map(Map::keySet).map(ArrayList::new).orElseGet(ArrayList::new);
   }
 
 

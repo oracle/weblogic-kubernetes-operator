@@ -30,13 +30,28 @@ public class ManagedServerUpAfterStep extends Step {
 
   @Override
   public @Nonnull Result apply(Packet packet) {
-    if (getServersToRoll(packet).isEmpty()) {
+    Map<String, Fiber.StepAndPacket> serversToRoll = getServersToRoll(packet);
+    if (serversToRoll.isEmpty()) {
       return doNext(packet);
-    } else if (MakeRightDomainOperation.isInspectionRequired(packet)) {
+    }
+
+    LOGGER.info("Debug: deferred roll decision for domain with UID: {0}; packetId={1}; "
+            + "inspectionRequired={2}; serversToRoll={3}",
+        getDomainUid(packet),
+        System.identityHashCode(packet),
+        MakeRightDomainOperation.isInspectionRequired(packet),
+        serversToRoll.keySet());
+
+    if (MakeRightDomainOperation.isInspectionRequired(packet)) {
+      LOGGER.info("Debug: rerunning introspection before consuming deferred roll queue for domain with UID: {0}; "
+              + "packetId={1}; serversToRoll={2}",
+          getDomainUid(packet),
+          System.identityHashCode(packet),
+          serversToRoll.keySet());
       return doNext(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet), packet);
     } else {
       logServersToRoll(packet);
-      return doNext(RollingHelper.rollServers(getServersToRoll(packet), getNext()), packet);
+      return doNext(RollingHelper.rollServers(serversToRoll, getNext()), packet);
     }
   }
 

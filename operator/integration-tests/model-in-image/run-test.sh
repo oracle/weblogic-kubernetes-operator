@@ -206,11 +206,11 @@ waitForDomain() {
 waitForStableDomainPods() {
   local timeout_secs="${1:-300}"
   local sleep_secs=5
-  local expected_image="${MODEL_IMAGE_NAME:-wdt-domain-image}:${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}"
+  local expected_image="${MODEL_IMAGE_NAME:-wdt-domain-image}:${MODEL_IMAGE_TAG:-${IMAGE_TYPE:-${WDT_DOMAIN_TYPE}}-v2}"
   local image_jsonpath='{.spec.initContainers[0].image}'
 
   if [ "${DO_LEGACY:-false}" = "true" ]; then
-    expected_image="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
+    # Legacy single-image domains run the server container from the model image.
     image_jsonpath='{.spec.containers[?(@.name=="weblogic-server")].image}'
   fi
 

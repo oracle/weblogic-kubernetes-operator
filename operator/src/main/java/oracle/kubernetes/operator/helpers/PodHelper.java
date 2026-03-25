@@ -809,14 +809,31 @@ public class PodHelper {
 
       private void removeFromServersMarkedForRollMap() {
         synchronized (packet) {
-          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> m.remove(getServerName()));
+          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> {
+            m.remove(getServerName());
+            LOGGER.info("Debug: completed deferred roll request for managed server {0}; packetId={1}; "
+                    + "remainingDeferredRolls={2}",
+                getServerName(),
+                System.identityHashCode(packet),
+                m.keySet());
+          });
         }
       }
     }
 
     private void deferProcessing(Step deferredStep) {
       synchronized (packet) {
-        Optional.ofNullable(getServersToRoll()).ifPresent(r -> r.put(getServerName(), createRollRequest(deferredStep)));
+        Optional.ofNullable(getServersToRoll()).ifPresentOrElse(r -> {
+          r.put(getServerName(), createRollRequest(deferredStep));
+          LOGGER.info("Debug: deferred roll request recorded for managed server {0}; packetId={1}; "
+                  + "deferredRollsNow={2}",
+              getServerName(),
+              System.identityHashCode(packet),
+              r.keySet());
+        }, () -> LOGGER.warning("Debug: missing deferred roll map while marking managed server {0} for roll; "
+                + "packetId={1}",
+            getServerName(),
+            System.identityHashCode(packet)));
       }
     }
 
