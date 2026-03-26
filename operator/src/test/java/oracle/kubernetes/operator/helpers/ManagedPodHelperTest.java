@@ -1311,10 +1311,11 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
   private Map<String, StepAndPacket> computePodsToRoll() {
     Map<String, StepAndPacket> rolling = new HashMap<>();
+    domainPresenceInfo.setServersToRoll(rolling);
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
-    return rolling;
+    return domainPresenceInfo.getServersToRoll();
   }
 
   @Test
