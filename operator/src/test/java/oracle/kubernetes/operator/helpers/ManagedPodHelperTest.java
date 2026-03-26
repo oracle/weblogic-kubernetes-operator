@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesObject;
@@ -1314,6 +1315,22 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
     return rolling;
+  }
+
+  @Test
+  void whenManagedPodNeedsRoll_recordDeferredRollRequestInPresenceQueue() {
+    initializeExistingPod();
+    configureServer().withRestartVersion("123");
+
+    Map<String, StepAndPacket> packetRolls = new HashMap<>();
+    Map<String, StepAndPacket> durableRolls = new ConcurrentHashMap<>();
+    domainPresenceInfo.setServersToRoll(durableRolls);
+    testSupport.addToPacket(SERVERS_TO_ROLL, packetRolls);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(durableRolls, hasKey(SERVER_NAME));
+    assertThat(packetRolls, is(anEmptyMap()));
   }
 
   @Override

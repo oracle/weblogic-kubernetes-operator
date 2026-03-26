@@ -808,33 +808,36 @@ public class PodHelper {
       }
 
       private void removeFromServersMarkedForRollMap() {
-        synchronized (packet) {
-          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> {
+        DomainPresenceInfo.fromPacket(packet).ifPresent(info -> {
+          synchronized (info) {
+            Map<String, Fiber.StepAndPacket> m = serversMarkedForRoll(packet);
             m.remove(getServerName());
             LOGGER.info("Debug: completed deferred roll request for managed server {0}; packetId={1}; "
                     + "remainingDeferredRolls={2}",
                 getServerName(),
                 System.identityHashCode(packet),
                 m.keySet());
-          });
-        }
+          }
+        });
       }
     }
 
     private void deferProcessing(Step deferredStep) {
-      synchronized (packet) {
-        Optional.ofNullable(getServersToRoll()).ifPresentOrElse(r -> {
+      DomainPresenceInfo.fromPacket(packet).ifPresentOrElse(info -> {
+        synchronized (info) {
+          Map<String, Fiber.StepAndPacket> r = getServersToRoll(info);
           r.put(getServerName(), createRollRequest(deferredStep));
+          packet.put(SERVERS_TO_ROLL, r);
           LOGGER.info("Debug: deferred roll request recorded for managed server {0}; packetId={1}; "
                   + "deferredRollsNow={2}",
               getServerName(),
               System.identityHashCode(packet),
               r.keySet());
-        }, () -> LOGGER.warning("Debug: missing deferred roll map while marking managed server {0} for roll; "
-                + "packetId={1}",
-            getServerName(),
-            System.identityHashCode(packet)));
-      }
+        }
+      }, () -> LOGGER.warning("Debug: missing deferred roll map while marking managed server {0} for roll; "
+              + "packetId={1}",
+          getServerName(),
+          System.identityHashCode(packet)));
     }
 
     // Patch the pod to indicate a pending roll.
@@ -847,8 +850,8 @@ public class PodHelper {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Fiber.StepAndPacket> getServersToRoll() {
-      return (Map<String, Fiber.StepAndPacket>) packet.get(SERVERS_TO_ROLL);
+    private Map<String, Fiber.StepAndPacket> getServersToRoll(DomainPresenceInfo info) {
+      return info.getServersToRoll();
     }
 
     @Override

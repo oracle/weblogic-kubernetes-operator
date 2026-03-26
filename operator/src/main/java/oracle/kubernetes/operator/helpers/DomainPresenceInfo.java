@@ -85,7 +85,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private final List<String> serverNamesFromPodList = Collections.synchronizedList(new ArrayList<>());
-  private Map<String, Fiber.StepAndPacket> serversToRoll = Collections.emptyMap();
+  private Map<String, Fiber.StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
 
   /**
    * Create presence for a domain.

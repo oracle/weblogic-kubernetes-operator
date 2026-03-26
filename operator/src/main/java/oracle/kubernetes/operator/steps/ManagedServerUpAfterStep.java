@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
@@ -50,22 +51,67 @@ public class ManagedServerUpAfterStep extends Step {
           serversToRoll.keySet());
       return doNext(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet), packet);
     } else {
-      logServersToRoll(packet);
-      return doNext(RollingHelper.rollServers(serversToRoll, getNext()), packet);
+      Map<String, Fiber.StepAndPacket> serversToRollSnapshot = consumeServersToRoll(packet);
+      if (serversToRollSnapshot.isEmpty()) {
+        return doNext(packet);
+      }
+
+      logServersToRoll(packet, serversToRollSnapshot);
+      return doNext(RollingHelper.rollServers(serversToRollSnapshot, getNext()), packet);
     }
   }
 
   @SuppressWarnings("unchecked")
   @NotNull Map<String, Fiber.StepAndPacket> getServersToRoll(Packet packet) {
-    return Optional.ofNullable((Map<String, Fiber.StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL))
-          .orElseGet(Collections::emptyMap);
+    return DomainPresenceInfo.fromPacket(packet)
+        .map(info -> getServersToRoll(packet, info))
+        .orElseGet(() -> Optional.ofNullable((Map<String, Fiber.StepAndPacket>) packet.get(
+            ProcessingConstants.SERVERS_TO_ROLL)).orElseGet(Collections::emptyMap));
   }
 
-  void logServersToRoll(Packet packet) {
+  @SuppressWarnings("unchecked")
+  private Map<String, Fiber.StepAndPacket> getServersToRoll(Packet packet, DomainPresenceInfo info) {
+    synchronized (info) {
+      Map<String, Fiber.StepAndPacket> serversToRoll = info.getServersToRoll();
+      Map<String, Fiber.StepAndPacket> packetServersToRoll = Optional.ofNullable(
+          (Map<String, Fiber.StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL))
+          .orElse(Collections.emptyMap());
+      if (serversToRoll.isEmpty() && !packetServersToRoll.isEmpty()) {
+        serversToRoll = packetServersToRoll;
+        info.setServersToRoll(serversToRoll);
+      }
+
+      packet.put(ProcessingConstants.SERVERS_TO_ROLL, serversToRoll);
+      return serversToRoll;
+    }
+  }
+
+  Map<String, Fiber.StepAndPacket> consumeServersToRoll(Packet packet) {
+    return DomainPresenceInfo.fromPacket(packet)
+        .map(info -> consumeServersToRoll(packet, info))
+        .orElseGet(() -> new ConcurrentHashMap<>(getServersToRoll(packet)));
+  }
+
+  private Map<String, Fiber.StepAndPacket> consumeServersToRoll(Packet packet, DomainPresenceInfo info) {
+    synchronized (info) {
+      Map<String, Fiber.StepAndPacket> serversToRoll = getServersToRoll(packet, info);
+      if (serversToRoll.isEmpty()) {
+        return Collections.emptyMap();
+      }
+
+      Map<String, Fiber.StepAndPacket> serversToRollSnapshot = new ConcurrentHashMap<>(serversToRoll);
+      Map<String, Fiber.StepAndPacket> nextServersToRoll = new ConcurrentHashMap<>();
+      info.setServersToRoll(nextServersToRoll);
+      packet.put(ProcessingConstants.SERVERS_TO_ROLL, nextServersToRoll);
+      return serversToRollSnapshot;
+    }
+  }
+
+  void logServersToRoll(Packet packet, Map<String, Fiber.StepAndPacket> serversToRoll) {
     if (LOGGER.isFineEnabled()) {
       LOGGER.fine("Rolling servers for domain with UID: {0}: {1}",
             getDomainUid(packet),
-            getRollingServerNames(packet));
+            getRollingServerNames(serversToRoll));
     }
   }
 
@@ -74,7 +120,7 @@ public class ManagedServerUpAfterStep extends Step {
     return info.getDomainUid();
   }
 
-  private Set<String> getRollingServerNames(Packet packet) {
-    return getServersToRoll(packet).keySet();
+  private Set<String> getRollingServerNames(Map<String, Fiber.StepAndPacket> serversToRoll) {
+    return serversToRoll.keySet();
   }
 }
