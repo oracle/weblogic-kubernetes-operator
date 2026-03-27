@@ -1,8 +1,9 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Optional;
@@ -10,22 +11,30 @@ import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.HelmAccess;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_INTROSPECTJOB_RECHECK_SKEW;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_TIME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_PRESENCE_INFO;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.FALSE;
+import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 
 /**
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
 public interface MakeRightDomainOperation extends MakeRightOperation<DomainPresenceInfo> {
+  final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   /**
    * Defines the operation as pertaining to the deletion of a domain.
    * @return The make right domain operation for deletion
@@ -72,23 +81,76 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
 
   private static boolean wasInspectionRun(Packet packet) {
     // check if introspection has run since Completed=False set
-    OffsetDateTime lastTransitionTime = Optional.ofNullable((DomainPresenceInfo) packet.get(DOMAIN_PRESENCE_INFO))
-        .map(DomainPresenceInfo::getDomain)
-        .map(DomainResource::getStatus).map(DomainStatus::getConditions).orElse(Collections.emptyList()).stream()
-        .filter(condition -> COMPLETED.equals(condition.getType()) && FALSE.equals(condition.getStatus())).findFirst()
-        .map(DomainCondition::getLastTransitionTime).orElse(null);
+    DomainStatus status = Optional.ofNullable((DomainPresenceInfo) packet.get(DOMAIN_PRESENCE_INFO))
+            .map(DomainPresenceInfo::getDomain)
+            .map(DomainResource::getStatus)
+            .orElse(null);
+
+    OffsetDateTime lastTransitionTime = Optional.ofNullable(status)
+            .map(DomainStatus::getConditions)
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(condition -> COMPLETED.equals(condition.getType()) && FALSE.equals(condition.getStatus()))
+            .findFirst()
+            .map(DomainCondition::getLastTransitionTime)
+            .orElse(null);
 
     if (lastTransitionTime != null) {
       String time = packet.getValue(INTROSPECTION_TIME);
       if (time != null) {
         OffsetDateTime lastIntrospectionTime = OffsetDateTime.parse(time);
-        if (lastIntrospectionTime.isAfter(lastTransitionTime.minusSeconds(3))) {
+        Duration d = Duration.between(lastTransitionTime.toInstant(), lastIntrospectionTime.toInstant());
+        int skew = getIntEnvOrDefault(OPERATOR_INTROSPECTJOB_RECHECK_SKEW,3, 3, 10);
+        LOGGER.finest("skew=" + skew + " differences " + d.toMillis() + " last introspection time="
+                + lastIntrospectionTime);
+        if (d.compareTo(Duration.ofSeconds(10)) > 0) {
+          // check condition where domain is rolling, do not run introspection again.
+          boolean isRolling = Optional.ofNullable(status)
+                  .map(DomainStatus::getConditions)
+                  .orElse(Collections.emptyList())
+                  .stream()
+                  .anyMatch(condition -> ROLLING.equals(condition.getType())
+                          && TRUE.equals(condition.getStatus()));
+
+          LOGGER.finest("Large transition timing detected: MakeRightDomainOperation.wasInspectionRun skew="
+                  + skew + " introspectionPodCreation - completedFalse = " + d.toMillis() + "ms"
+                  + " isRolling=" + isRolling);
+
+          return true;
+        }
+        if (lastIntrospectionTime.isAfter(lastTransitionTime.minusSeconds(skew))) {
           return true;
         }
       }
     }
 
     return fromPacket(packet).map(MakeRightDomainOperation::wasInspectionRun).orElse(false);
+  }
+
+  private static int getIntEnvOrDefault(String key, int def, int min, int max) {
+    String raw = HelmAccess.getHelmVariable(key);
+    if (raw == null) {
+      return def;
+    }
+
+    String s = raw.trim();
+    if (s.isEmpty()) {
+      return def;
+    }
+
+    try {
+      int v = Integer.parseInt(s);
+      if (v < min) {
+        return min;
+      }
+      if (v > max) {
+        return max;
+      }
+      return v;
+    } catch (NumberFormatException e) {
+      LOGGER.warning("Invalid integer for " + key + "='" + raw + "', using default " + def);
+      return def;
+    }
   }
 
   static void recordInspection(Packet packet) {

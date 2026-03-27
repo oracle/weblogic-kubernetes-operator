@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorDeployment" }}
@@ -96,6 +96,8 @@ spec:
           value: {{ .javaLoggingFileCount | default 10 | quote }}
         - name: "JVM_OPTIONS"
           value: {{ .jvmOptions | default "-XshowSettings:vm -XX:MaxRAMPercentage=70" | quote }}
+        - name: "OPERATOR_INTROSPECTJOB_RECHECK_SKEW"
+          value: {{ .introspectionJobRecheckSkew | default 3 | quote }}
         {{- if and .operatorLogDir .operatorLogMount }}
            {{- if not (hasPrefix (toString .operatorLogMount) (toString .operatorLogDir)) }}
             {{- fail (printf "Error: Invalid Configuration: operatorLogDir %s must start with operatorlogMount %s" .operatorLogDir .operatorLogMount) }}
