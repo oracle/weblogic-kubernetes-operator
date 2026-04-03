@@ -393,6 +393,10 @@ pipeline {
                             cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
 nodes:
   - role: control-plane
     image: ${kind_image}
@@ -497,10 +501,11 @@ EOF
 
                             # Configure local registry access on each node using hosts.toml
                             for node in $(kind get nodes --name "${kind_name}"); do
-                                podman exec ${node} mkdir -p /etc/containerd/certs.d/localhost:${registry_port}
-                                podman exec ${node} bash -c "cat > /etc/containerd/certs.d/localhost:${registry_port}/hosts.toml <<TOML
-[host.\"http://${registry_host}:${registry_port}\"]
-TOML"
+                                REGISTRY_DIR="/etc/containerd/certs.d/localhost:${registry_port}"
+                                podman exec "${node}" mkdir -p "${REGISTRY_DIR}"
+                                cat <<EOF | podman exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
+[host."http://${registry_host}:${registry_port}"]
+EOF
                             done
 
                             podman info
