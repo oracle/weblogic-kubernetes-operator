@@ -33,7 +33,7 @@ def kind_k8s_map = [
 ]
 
 def _kind_image = null
-def CRON_SETTINGS = '''H 4 * * 1-5 % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.34.3'''
+def CRON_SETTINGS = '''H 4 * * 1-5 % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.34'''
 
 pipeline {
     agent { label 'large-ol9u4' }
