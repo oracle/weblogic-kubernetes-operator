@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
@@ -260,6 +260,11 @@ externalServiceNameSuffix: "-ext"
 # The default value is true.
 clusterSizePaddingValidationEnabled: true
 
+# apiServerConnectTimeoutSeconds specifies the connect timeout, in seconds, used by the operator's
+# Kubernetes API server client.
+# The default value is 10.
+apiServerConnectTimeoutSeconds: 10
+
 # tokenReviewAuthentication, if set to true, specifies whether the operator's REST API should use
 #   1. Kubernetes token review API for authenticating users, and
 #   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
@@ -296,4 +301,3 @@ clusterSizePaddingValidationEnabled: true
 
 # operatorLogMount specifies the operator logging volumeMount.  The operator will mount this path with the operatorLogPVC
 #operatorLogMount:
-

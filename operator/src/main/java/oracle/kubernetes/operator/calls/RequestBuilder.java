@@ -1,10 +1,14 @@
-// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -53,13 +57,24 @@ import io.kubernetes.client.util.generic.options.GetOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import io.kubernetes.client.util.generic.options.PatchOptions;
 import io.kubernetes.client.util.generic.options.UpdateOptions;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_TOO_MANY_REQUESTS;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
+
 public class RequestBuilder<A extends KubernetesObject, L extends KubernetesListObject> {
+  private static final Random R = new Random();
+  private static final int HIGH = 200;
+  private static final int LOW = 10;
+  private static final int SCALE = 100;
+  private static final int MAX = 10000;
   private static final KubernetesApiFactory DEFAULT_KUBERNETES_API_FACTORY = new KubernetesApiFactory() {
   };
 
@@ -263,8 +278,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   public A create(A object, CreateOptions createOptions, UnaryOperator<ApiClient> clientSelector) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = create(object, createOptions, response, clientSelector);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -380,8 +394,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
                   UnaryOperator<ApiClient> clientSelector) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = delete(name, deleteOptions, response, clientSelector);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -420,8 +433,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
                   UnaryOperator<ApiClient> clientSelector) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = delete(namespace, name, deleteOptions, response, clientSelector);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -535,8 +547,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   public A get(String name, GetOptions getOptions, UnaryOperator<ApiClient> clientSelector) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = get(name, getOptions, response, clientSelector);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -575,8 +586,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
                UnaryOperator<ApiClient> clientSelector) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = get(namespace, name, getOptions, response, clientSelector);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -681,8 +691,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   public L list(ListOptions listOptions, UnaryOperator<ApiClient> clientSelector) throws ApiException {
     DirectResponseStep<L> response = new DirectResponseStep<>();
     RequestStep<A, L, L> step = list(listOptions, response, clientSelector);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -718,8 +727,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
                 UnaryOperator<ApiClient> clientSupplier) throws ApiException {
     DirectResponseStep<L> response = new DirectResponseStep<>();
     RequestStep<A, L, L> step = list(namespace, listOptions, response, clientSupplier);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -929,8 +937,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
                  UnaryOperator<ApiClient> clientSupplier) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = patch(name, patchType, patch, patchOptions, response, clientSupplier);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -976,8 +983,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
                  PatchOptions patchOptions, UnaryOperator<ApiClient> clientSupplier) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = patch(namespace, name, patchType, patch, patchOptions, response, clientSupplier);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -1060,8 +1066,7 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
                         UpdateOptions updateOptions, UnaryOperator<ApiClient> clientSupplier) throws ApiException {
     DirectResponseStep<A> response = new DirectResponseStep<>();
     RequestStep<A, L, A> step = updateStatus(object, status, updateOptions, response, clientSupplier);
-    step.apply(new Packet());
-    return response.get();
+    return executeSynchronously(step, response);
   }
 
   /**
@@ -1272,9 +1277,82 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
     public VersionInfoObject versionCode() throws ApiException {
       DirectResponseStep<VersionInfoObject> response = new DirectResponseStep<>();
       RequestStep<KubernetesObject, KubernetesListObject, VersionInfoObject> step = versionCode(response);
-      step.apply(new Packet());
-      return response.get();
+      return executeSynchronously(step, response);
     }
 
+  }
+
+  private static <R extends KubernetesType> R executeSynchronously(
+      RequestStep<?, ?, R> step, DirectResponseStep<R> response) throws ApiException {
+    ApiException apiException = null;
+    RuntimeException runtimeException = null;
+
+    for (int retryCount = 0; retryCount <= getCallMaxRetryCount(); retryCount++) {
+      try {
+        step.apply(new Packet());
+        return response.get();
+      } catch (ApiException e) {
+        if (!mayRetry(e) || retryCount == getCallMaxRetryCount()) {
+          throw e;
+        }
+        apiException = e;
+      } catch (IllegalStateException e) {
+        if (!isRetryableIoFailure(e)) {
+          throw e;
+        }
+        if (retryCount == getCallMaxRetryCount()) {
+          throw createApiException(e);
+        }
+        runtimeException = e;
+      }
+
+      sleepBeforeRetry(retryCount + 1, apiException, runtimeException);
+    }
+
+    if (apiException != null) {
+      throw apiException;
+    }
+    if (runtimeException != null) {
+      throw createApiException(runtimeException);
+    }
+    return null;
+  }
+
+  private static void sleepBeforeRetry(int retryCount, ApiException apiException, RuntimeException runtimeException)
+      throws ApiException {
+    try {
+      TimeUnit.MILLISECONDS.sleep(getNextWaitTime(retryCount));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw Optional.ofNullable(apiException).orElseGet(() -> createApiException(runtimeException));
+    }
+  }
+
+  private static int getCallMaxRetryCount() {
+    return TuningParameters.getInstance().getCallBuilderTuning().getCallMaxRetryCount();
+  }
+
+  private static boolean mayRetry(ApiException e) {
+    return mayRetryOnStatusValue(e.getCode());
+  }
+
+  private static boolean mayRetryOnStatusValue(int statusCode) {
+    return statusCode == RequestStep.FIBER_TIMEOUT
+        || statusCode == HTTP_TOO_MANY_REQUESTS
+        || statusCode == HTTP_INTERNAL_ERROR
+        || statusCode == HTTP_UNAVAILABLE
+        || statusCode == HTTP_GATEWAY_TIMEOUT;
+  }
+
+  private static boolean isRetryableIoFailure(IllegalStateException e) {
+    return e.getCause() instanceof IOException;
+  }
+
+  private static int getNextWaitTime(int retryCount) {
+    return Math.min((2 << retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
+  }
+
+  private static ApiException createApiException(RuntimeException e) {
+    return new ApiException(e.getCause() != null ? e.getCause() : e);
   }
 }

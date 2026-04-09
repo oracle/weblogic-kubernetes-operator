@@ -1,4 +1,4 @@
-// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.calls;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.monitoring.Monitoring;
@@ -15,6 +16,7 @@ import io.kubernetes.client.util.ClientBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 public class Client {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -38,7 +40,7 @@ public class Client {
       }
       try {
         LOGGER.fine(MessageKeys.CREATING_API_CLIENT);
-        ApiClient client = factory.get();
+        ApiClient client = configureApiClient(factory.get());
         String proxy = System.getenv("HTTPS_PROXY");
         if (proxy != null) {
           String[] components = proxy.split(":");
@@ -61,5 +63,20 @@ public class Client {
     public ApiClient get() throws IOException {
       return ClientBuilder.standard().build();
     }
+  }
+
+  /**
+   * Applies operator-managed settings to a Kubernetes API client.
+   * @param client the client to configure
+   * @return the configured client
+   */
+  public static ApiClient configureApiClient(ApiClient client) {
+    return client.setHttpClient(client.getHttpClient().newBuilder()
+        .connectTimeout(getApiServerConnectTimeoutSeconds(), TimeUnit.SECONDS)
+        .build());
+  }
+
+  private static int getApiServerConnectTimeoutSeconds() {
+    return TuningParameters.getInstance().getCallBuilderTuning().getApiServerConnectTimeoutSeconds();
   }
 }
