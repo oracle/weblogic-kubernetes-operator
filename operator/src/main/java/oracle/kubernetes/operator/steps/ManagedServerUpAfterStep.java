@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -30,13 +30,22 @@ public class ManagedServerUpAfterStep extends Step {
 
   @Override
   public @Nonnull Result apply(Packet packet) {
-    if (getServersToRoll(packet).isEmpty()) {
+    Map<String, Fiber.StepAndPacket> serversToRoll = getServersToRoll(packet);
+    boolean inspectionRequired = !serversToRoll.isEmpty() && MakeRightDomainOperation.isInspectionRequired(packet);
+
+    LOGGER.finest(
+        "ROLL-DECISION domainUid={0} serversToRoll={1} inspectionRequired={2}",
+        getDomainUid(packet),
+        serversToRoll.keySet(),
+        inspectionRequired);
+
+    if (serversToRoll.isEmpty()) {
       return doNext(packet);
-    } else if (MakeRightDomainOperation.isInspectionRequired(packet)) {
+    } else if (inspectionRequired) {
       return doNext(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet), packet);
     } else {
       logServersToRoll(packet);
-      return doNext(RollingHelper.rollServers(getServersToRoll(packet), getNext()), packet);
+      return doNext(RollingHelper.rollServers(serversToRoll, getNext()), packet);
     }
   }
 

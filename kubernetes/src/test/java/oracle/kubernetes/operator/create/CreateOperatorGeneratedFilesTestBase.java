@@ -276,6 +276,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .name("JVM_OPTIONS")
                                                 .value("-XX:MaxRAMPercentage=70"))
                                         .addEnvItem(
+                                                newEnvVar()
+                                                        .name("OPERATOR_INTROSPECTJOB_RECHECK_SKEW")
+                                                        .value("3"))
+                                        .addEnvItem(
                                             newEnvVar()
                                                 .name("OPERATOR_LOGDIR")
                                                 .value("/logs"))
