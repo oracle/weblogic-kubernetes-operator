@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -78,6 +78,7 @@ public class ConfigMapHelper {
 
   private static final String SCRIPT_LOCATION = "/scripts";
   private static final String UPDATEDOMAINRESULT = "UPDATEDOMAINRESULT";
+  private static final String NOOPMARKER = "NOOPMARKER";
   private static final ConfigMapComparator COMPARATOR = new ConfigMapComparator();
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
@@ -106,6 +107,9 @@ public class ConfigMapHelper {
           int index = line.indexOf(updateResultToken);
           int beg = index + 1 + updateResultToken.length();
           map.put(UPDATEDOMAINRESULT, line.substring(beg - 1));
+        }
+        if (line.contains("Nothing changed no op")) {
+          map.put(NOOPMARKER, "true");
         }
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           String filename = extractFilename(line);
@@ -602,7 +606,9 @@ public class ConfigMapHelper {
     private void updatePacket() {
       ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, SystemClock.now()));
-      packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+      if (data.get(NOOPMARKER) == null) {
+        packet.computeIfAbsent(ProcessingConstants.DOMAIN_TOPOLOGY, k -> wlsDomainConfig);
+      }
 
       copyFileToPacketIfPresent(DOMAINZIP_HASH, DOMAINZIP_HASH);
       copyFileToPacketIfPresent(SECRETS_MD_5, SECRETS_MD_5);

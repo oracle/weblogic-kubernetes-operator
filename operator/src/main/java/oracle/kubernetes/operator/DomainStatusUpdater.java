@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -78,7 +78,10 @@ import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClus
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.MINIMUM_CLUSTER_COUNT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -1317,8 +1320,24 @@ public class DomainStatusUpdater {
       // A server is complete if it is ready, is in the WLS running state and
       // does not need to roll to accommodate changes to the domain.
       private boolean isServerComplete(@Nonnull String serverName) {
-        return isServerReady(serverName)
-            && isNotMarkedForRoll(serverName);
+        boolean ready = isServerReady(serverName);
+        boolean markedForRoll = !isNotMarkedForRoll(serverName);
+        boolean restartVersionCurrent = isRestartVersionCurrent(serverName);
+        boolean complete = ready && !markedForRoll && restartVersionCurrent;
+
+        if (!complete && shouldLogServerCompletionDecision(serverName, ready, markedForRoll, restartVersionCurrent)) {
+          LOGGER.finest(
+              "ROLL-CHECK server={0} ready={1} markedForRoll={2} restartVersionCurrent={3}"
+                      + " current={4} expected={5}",
+              serverName,
+              ready,
+              markedForRoll,
+              restartVersionCurrent,
+              getCurrentRestartVersionSummary(serverName),
+              getExpectedRestartVersionSummary(serverName));
+        }
+
+        return complete;
       }
 
       // returns true if the server pod does not have an annotation indicating that it needs to be rolled
@@ -1328,6 +1347,56 @@ public class DomainStatusUpdater {
             .map(V1ObjectMeta::getAnnotations)
             .map(Map::keySet).orElse(Collections.emptySet()).stream()
             .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
+      }
+
+      private boolean shouldLogServerCompletionDecision(
+          String serverName, boolean ready, boolean markedForRoll, boolean restartVersionCurrent) {
+        return ready || markedForRoll || !restartVersionCurrent || expectedRunningServers.contains(serverName);
+      }
+
+      private boolean isRestartVersionCurrent(String serverName) {
+        EffectiveServerSpec serverSpec = getExpectedServerSpec(serverName);
+        if (serverSpec == null) {
+          return true;
+        }
+
+        Map<String, String> currentLabels = getServerPodLabels(serverName);
+        return Objects.equals(serverSpec.getDomainRestartVersion(), currentLabels.get(DOMAINRESTARTVERSION_LABEL))
+            && Objects.equals(serverSpec.getClusterRestartVersion(), currentLabels.get(CLUSTERRESTARTVERSION_LABEL))
+            && Objects.equals(serverSpec.getServerRestartVersion(), currentLabels.get(SERVERRESTARTVERSION_LABEL));
+      }
+
+      private EffectiveServerSpec getExpectedServerSpec(String serverName) {
+        return getInfo().getServer(serverName, getClusterName(serverName));
+      }
+
+      private Map<String, String> getServerPodLabels(String serverName) {
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .orElse(Collections.emptyMap());
+      }
+
+      private String getCurrentRestartVersionSummary(String serverName) {
+        Map<String, String> labels = getServerPodLabels(serverName);
+        return formatRestartVersionSummary(
+            labels.get(DOMAINRESTARTVERSION_LABEL),
+            labels.get(CLUSTERRESTARTVERSION_LABEL),
+            labels.get(SERVERRESTARTVERSION_LABEL));
+      }
+
+      private String getExpectedRestartVersionSummary(String serverName) {
+        EffectiveServerSpec serverSpec = getExpectedServerSpec(serverName);
+        return serverSpec == null
+            ? "<unavailable>"
+            : formatRestartVersionSummary(
+                serverSpec.getDomainRestartVersion(),
+                serverSpec.getClusterRestartVersion(),
+                serverSpec.getServerRestartVersion());
+      }
+
+      private String formatRestartVersionSummary(String domainRestart, String clusterRestart, String serverRestart) {
+        return "domain=" + domainRestart + ",cluster=" + clusterRestart + ",server=" + serverRestart;
       }
 
       private boolean isShutDown(@Nonnull String serverName) {
@@ -1672,4 +1741,3 @@ public class DomainStatusUpdater {
     }
   }
 }
-
