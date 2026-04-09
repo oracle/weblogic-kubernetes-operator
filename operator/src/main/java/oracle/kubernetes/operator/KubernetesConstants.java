@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -46,7 +46,7 @@ public interface KubernetesConstants {
   String SCRIPT_CONFIG_MAP_NAME = "weblogic-scripts-cm";
   String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";
   String OPERATOR_ENABLE_REST_ENDPOINT_ENV = "ENABLE_REST_ENDPOINT";
-
+  String OPERATOR_INTROSPECTJOB_RECHECK_SKEW = "OPERATOR_INTROSPECTJOB_RECHECK_SKEW";
   String OPERATOR_NAMESPACE_ENV = "OPERATOR_NAMESPACE";
   String OPERATOR_POD_NAME_ENV = "OPERATOR_POD_NAME";
   String WEBHOOK_NAMESPACE_ENV = "WEBHOOK_NAMESPACE";
