@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -2066,6 +2066,12 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenPodHasUnknownCustomerAnnotations_ignoreIt() {
     verifyPodNotReplacedWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation", "value"));
+  }
+
+  @Test
+  void whenPodHasDeletionCostAnnotation_ignoreIt() {
+    verifyPodNotReplacedWhen(
+        pod -> pod.getMetadata().putAnnotationsItem("controller.kubernetes.io/pod-deletion-cost", "10"));
   }
 
   @Test
