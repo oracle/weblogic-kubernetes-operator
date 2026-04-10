@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.tuning;
@@ -45,6 +45,7 @@ public class TuningParameters {
   public static final String CALL_REQUEST_LIMIT = "callRequestLimit";
   public static final String CALL_MAX_RETRY_COUNT = "callMaxRetryCount";
   public static final String CALL_TIMEOUT_SECONDS = "callTimeoutSeconds";
+  public static final String API_SERVER_CONNECT_TIMEOUT_SECONDS = "apiServerConnectTimeoutSeconds";
 
   public static final String READINESS_INITIAL_DELAY_SECONDS = "readinessProbeInitialDelaySeconds";
   public static final String READINESS_TIMEOUT_SECONDS = "readinessProbeTimeoutSeconds";
@@ -375,6 +376,11 @@ public class TuningParameters {
     @Override
     public int getCallTimeoutSeconds() {
       return getParameter(CALL_TIMEOUT_SECONDS, 10);
+    }
+
+    @Override
+    public int getApiServerConnectTimeoutSeconds() {
+      return getParameter(API_SERVER_CONNECT_TIMEOUT_SECONDS, 10);
     }
   }
 

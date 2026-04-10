@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -45,6 +45,7 @@ import jakarta.ws.rs.core.Response.Status;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.OperatorMain;
+import oracle.kubernetes.operator.calls.Client;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
@@ -112,7 +113,7 @@ public class RestBackendImpl implements RestBackend {
       if (userInfo != null) {
         builder.setAuthentication(new AccessTokenAuthentication(accessToken));
       }
-      ApiClient client = builder.build();
+      ApiClient client = Client.configureApiClient(builder.build());
       gson = client.getJSON().getGson();
       clientSupplier = c -> client;
     } catch (IOException e) {

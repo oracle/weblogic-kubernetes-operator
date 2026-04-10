@@ -127,7 +127,8 @@ abstract class CreateOperatorGeneratedFilesTestBase {
             .putDataItem("domainNamespaces", getInputs().getDomainNamespaces())
             .putDataItem("introspectorJobNameSuffix", "-introspector")
             .putDataItem("externalServiceNameSuffix", "-ext")
-            .putDataItem("clusterSizePaddingValidationEnabled", "true");
+            .putDataItem("clusterSizePaddingValidationEnabled", "true")
+            .putDataItem("apiServerConnectTimeoutSeconds", "10");
 
     if (StringUtils.isNotEmpty(getInputs().getDomainNamespaceLabelSelector())) {
       v1ConfigMap.putDataItem("domainNamespaceLabelSelector", getInputs().getDomainNamespaceLabelSelector());
