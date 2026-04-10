@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -80,6 +81,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings({"ConstantConditions", "SameParameterValue"})
 class ManagedServersUpStepTest {
 
+  private static final String POD_DELETION_COST = "controller.kubernetes.io/pod-deletion-cost";
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace";
   private static final String UID = "uid1";
@@ -105,6 +107,11 @@ class ManagedServersUpStepTest {
 
   private static V1Pod createPod(String serverName) {
     return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
+  }
+
+  private static V1Pod createPod(String serverName, String deletionCost) {
+    return createPod(serverName).metadata(withNames(new V1ObjectMeta().namespace(NS), serverName)
+        .putAnnotationsItem(POD_DELETION_COST, deletionCost));
   }
 
   private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
@@ -524,6 +531,40 @@ class ManagedServersUpStepTest {
   }
 
   @Test
+  void whenScalingDownCluster_deletionCostInfluencesWhichIfNeededServerIsStopped() {
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    setCluster1Replicas(4);
+    addWlsCluster("cluster1", "server1", "server2", "server3", "server4", "server5");
+    info.setServerPod("server1", createPod("server1", "-100"));
+    addServer(info, "server2");
+    info.setServerPod("server3", createPod("server3", "100"));
+    addServer(info, "server4");
+    addServer(info, "server5");
+
+    invokeStep();
+
+    assertThat(getServers(), containsInAnyOrder("server2", "server3", "server4", "server5"));
+    assertThat(getServerShutdownNames(),
+        contains("server1"));
+  }
+
+  @Test
+  void whenScalingDownCluster_positiveDeletionCostPreferredOverDefaultZero() {
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    setCluster1Replicas(3);
+    addWlsCluster("cluster1", "server1", "server2", "server3", "server4");
+    addServer(info, "server1");
+    addServer(info, "server2");
+    info.setServerPod("server3", createPod("server3", "100"));
+    addServer(info, "server4");
+
+    invokeStep();
+
+    assertThat(getServers(), containsInAnyOrder("server1", "server2", "server3"));
+    assertThat(getServerShutdownNames(), contains("server4"));
+  }
+
+  @Test
   void whenShuttingDown_withNullWlsDomainConfig_ensureNoException() {
     configurator.setShuttingDown(true);
 
@@ -691,6 +732,12 @@ class ManagedServersUpStepTest {
 
   private void addWlsServer(String serverName) {
     configSupport.addWlsServer(serverName);
+  }
+
+  private List<String> getServerShutdownNames() {
+    return Optional.ofNullable(info.getServerShutdownInfo()).orElse(Collections.emptyList()).stream()
+        .map(DomainPresenceInfo.ServerShutdownInfo::getServerName)
+        .collect(Collectors.toList());
   }
 
   private void setDefaultReplicas(int replicas) {
