@@ -453,7 +453,7 @@ public class OperatorUtils {
 
     operatorImage = getOperatorImageName();
     if (ARM) {
-      operatorImage = OPERATOR_RELEASE_IMAGE;
+      String x = OPERATOR_RELEASE_IMAGE;
     }
 
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");

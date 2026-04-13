@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -255,10 +255,12 @@ public class JobHelper {
         }
 
         if (isInProgressJobOutdated(job)) {
+          LOGGER.finest("JobHelper.onSuccess in progress job outdated");
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processExistingIntrospectorJob(getNext()), packet);
         } else if (isIntrospectionNeeded(packet)) {
+          LOGGER.finest("JobHelper.onSuccess needed introspection");
           return doNext(createIntrospectionSteps(getNext()), packet);
         } else {
           return doNext(packet);

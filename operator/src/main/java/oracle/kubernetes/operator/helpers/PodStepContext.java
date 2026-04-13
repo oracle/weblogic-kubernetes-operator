@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1493,13 +1493,40 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if (!canUseCurrentPod(currentPod)) {
+      }
+
+      boolean canUseCurrentPod = canUseCurrentPod(currentPod);
+      if (!canUseCurrentPod) {
+        LOGGER.finest(
+            "POD-ROLL-CHECK server={0} action=replace currentRestart={1}/{2}/{3} desiredRestart={4}/{5}/{6} "
+                + "awaitingPodRoll={7} currentHash={8} desiredHash={9}",
+            getServerName(),
+            getLabel(currentPod, LabelConstants.DOMAINRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.CLUSTERRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.SERVERRESTARTVERSION_LABEL),
+            getServerSpec().getDomainRestartVersion(),
+            getServerSpec().getClusterRestartVersion(),
+            getServerSpec().getServerRestartVersion(),
+            PodHelper.isWaitingToRoll(currentPod),
+            AnnotationHelper.getHash(currentPod),
+            AnnotationHelper.getHash(getPodModel()));
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
       } else if (PodHelper.shouldRestartEvictedPod(currentPod)) {
         return doNext(cycleEvictedPodStep(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
+        LOGGER.finest(
+            "POD-ROLL-CHECK server={0} action=keep currentRestart={1}/{2}/{3} desiredRestart={4}/{5}/{6} "
+                + "awaitingPodRoll={7}",
+            getServerName(),
+            getLabel(currentPod, LabelConstants.DOMAINRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.CLUSTERRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.SERVERRESTARTVERSION_LABEL),
+            getServerSpec().getDomainRestartVersion(),
+            getServerSpec().getClusterRestartVersion(),
+            getServerSpec().getServerRestartVersion(),
+            PodHelper.isWaitingToRoll(currentPod));
         logPodExists();
         return doNext(packet);
       }

@@ -47,10 +47,9 @@ cleanupLB() {
   oci lb load-balancer list \
     --compartment-id "$compartment_ocid" \
     --all \
-    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].id" \
+    --query "data[?\"defined-tags\".\"Oracle-Tags\".\"CreatedBy\"=='${clusterName}'].id | []" \
     --raw-output | while read -r lb_id; do
-
-      [ -z "$lb_id" ] && continue
+      [[ -z "$lb_id" || "$lb_id" == "null" || "$lb_id" == "[]" ]] && continue
       echo "Deleting LB $lb_id"
       oci lb load-balancer delete \
         --load-balancer-id "$lb_id" \
@@ -73,16 +72,18 @@ verifyNoLeftoverLBs() {
   leftover=$(oci lb load-balancer list \
     --compartment-id "$compartment_ocid" \
     --all \
-    --query "data[?\"freeform-tags\".\"oke.cluster.name\"=='${clusterName}'].id" \
+    --query "data[?\"defined-tags\".\"Oracle-Tags\".\"CreatedBy\"=='${clusterName}'].id | []" \
     --raw-output)
 
-  if [[ -n "$leftover" ]]; then
-    echo "[ERROR] Leftover Load Balancers detected for cluster ${clusterName}:"
-    echo "$leftover"
-    exit 1
+  # Treat [] / null / empty as "no leftovers"
+  if [[ -z "$leftover" || "$leftover" == "null" || "$leftover" == "[]" ]]; then
+    echo "No leftover Load Balancers found for cluster ${clusterName}"
+    return 0
   fi
 
-  echo "No leftover Load Balancers found for cluster ${clusterName}"
+  echo "[ERROR] Leftover Load Balancers detected for cluster ${clusterName}:"
+  echo "$leftover"
+  exit 1
 }
 
 

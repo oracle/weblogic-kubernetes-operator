@@ -2,6 +2,18 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
+    '0.31.0': [
+        '1.35.0':  'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f',
+        '1.35':    'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f',
+        '1.34.3':  'kindest/node:v1.34.3@sha256:08497ee19eace7b4b5348db5c6a1591d7752b164530a36f855cb0f2bdcbadd48',
+        '1.34':    'kindest/node:v1.34.3@sha256:08497ee19eace7b4b5348db5c6a1591d7752b164530a36f855cb0f2bdcbadd48',
+        '1.33.7':  'kindest/node:v1.33.7@sha256:d26ef333bdb2cbe9862a0f7c3803ecc7b4303d8cea8e814b481b09949d353040',
+        '1.33':    'kindest/node:v1.33.7@sha256:d26ef333bdb2cbe9862a0f7c3803ecc7b4303d8cea8e814b481b09949d353040',
+        '1.32.11': 'kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8',
+        '1.32':    'kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8',
+        '1.31.14': 'kindest/node:v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b',
+        '1.31':    'kindest/node:v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b'
+    ],
     '0.22.0': [
         '1.29.2':  'kindest/node:v1.29.2@sha256:51a1434a5397193442f0be2a297b488b6c919ce8a3931be0ce822606ea5ca245',
         '1.29':    'kindest/node:v1.29.2@sha256:51a1434a5397193442f0be2a297b488b6c919ce8a3931be0ce822606ea5ca245',
@@ -21,7 +33,7 @@ def kind_k8s_map = [
 ]
 
 def _kind_image = null
-def CRON_SETTINGS = '''H 4 * * 1-5 % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.24.17'''
+def CRON_SETTINGS = '''H 4 * * 1-5 % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.34'''
 
 pipeline {
     agent { label 'large-ol9u4' }
@@ -83,20 +95,31 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
+                   '0.31.0',
                    '0.22.0'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.22.0: 1.29, 1.29.2, 1.28, 1.28.7, 1.27, 1.27.11, 1.26, 1.26.14, 1.25, 1.25.16, 1.24, 1.24.17, 1.23, 1.23.17 ',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.31.0: 1.35.0, 1.35, 1.34.3, 1.34, 1.33.7, 1.33, 1.32.11, 1.32, 1.31.14, 1.31. Kind 0.22.0: 1.29, 1.29.2, 1.28, 1.28.7, 1.27, 1.27.11, 1.26, 1.26.14, 1.25, 1.25.16, 1.24, 1.24.17, 1.23, 1.23.17 ',
                choices: [
                     // The first item in the list is the default value...
+                    '1.35.0',
+                    '1.35',
+                    '1.34.3',
+                    '1.34',
+                    '1.33.7',
+                    '1.33',
+                    '1.32.11',
+                    '1.32',
+                    '1.31.14',
+                    '1.31',
                     '1.29.2',
                     '1.29',
                     '1.28.7',
                     '1.28',
                     '1.27.11',
                     '1.27',
-		    '1.26.4',
+                    '1.26.14',
                     '1.26',
                     '1.25.16',
                     '1.25',
@@ -382,8 +405,8 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 containerdConfigPatches:
 - |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${registry_port}"]
-    endpoint = ["http://${registry_host}:${registry_port}"]
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
 nodes:
   - role: control-plane
     image: ${kind_image}
@@ -481,6 +504,15 @@ EOF
 
                             export KUBECONFIG=${kubeconfig_file}
                             kubectl cluster-info --context "kind-${kind_name}"
+
+                            # Configure local registry access on each node using hosts.toml
+                            for node in $(kind get nodes --name "${kind_name}"); do
+                                REGISTRY_DIR="/etc/containerd/certs.d/localhost:${registry_port}"
+                                podman exec "${node}" mkdir -p "${REGISTRY_DIR}"
+                                cat <<EOF | podman exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
+[host."http://${registry_host}:${registry_port}"]
+EOF
+                            done
 
                             podman info
                             kubectl describe node

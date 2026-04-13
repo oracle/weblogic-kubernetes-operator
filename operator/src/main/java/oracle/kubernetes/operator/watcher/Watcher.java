@@ -18,11 +18,13 @@ import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.WatchTuning;
+import oracle.kubernetes.operator.calls.Client;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 
 /**
  * This class handles the Watching interface and drives the watch support for a specific type of
@@ -200,7 +202,14 @@ public abstract class Watcher<T> {
         }
       }
     } catch (Throwable ex) {
+      resetApiClientIfUnauthorized(ex);
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
+    }
+  }
+
+  private void resetApiClientIfUnauthorized(Throwable ex) {
+    if (ex instanceof ApiException apiException && apiException.getCode() == HTTP_UNAUTHORIZED) {
+      Client.reset();
     }
   }
 

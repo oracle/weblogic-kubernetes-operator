@@ -117,7 +117,7 @@ public class Image {
           .withParams(new CommandParams()
               .command(cmdToExecute))
           .execute();
-      cmdToExecute = String.format("%s buildx build --pull  --platform linux/amd64,linux/arm64 %s -t %s  %s",
+      cmdToExecute = String.format("%s buildx build --pull  --platform linux/arm64 %s -t %s  %s",
           WLSIMG_BUILDER, imageBuildDir, image, extraArgs);
       boolean result = Command
           .withParams(new CommandParams()

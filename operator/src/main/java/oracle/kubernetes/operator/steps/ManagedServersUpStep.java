@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -6,11 +6,13 @@ package oracle.kubernetes.operator.steps;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
@@ -40,6 +42,7 @@ import static oracle.kubernetes.operator.helpers.PodHelper.getPodServerName;
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
+  private static final String POD_DELETION_COST = "controller.kubernetes.io/pod-deletion-cost";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory =
@@ -67,11 +70,10 @@ public class ManagedServersUpStep extends Step {
           wlsDomainConfig ->
               factory.shutdownInfos.add(new ServerShutdownInfo(wlsDomainConfig.getAdminServerName(), null)));
     }
-
     List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
-      insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
+      insert(steps, new ServerDownIteratorStep(serversToStop, null));
     }
 
     if (hasWorkToDo(steps, next)) {
@@ -99,7 +101,35 @@ public class ManagedServersUpStep extends Step {
   private static List<ServerShutdownInfo> getServersToStop(
           DomainPresenceInfo info, List<ServerShutdownInfo> shutdownInfos) {
     return shutdownInfos.stream()
-            .filter(ssi -> isNotAlreadyStoppedOrServiceOnly(info, ssi)).toList();
+            .filter(ssi -> isNotAlreadyStoppedOrServiceOnly(info, ssi))
+            .sorted(createShutdownPriorityComparator(info))
+            .toList();
+  }
+
+  private static Comparator<ServerShutdownInfo> createShutdownPriorityComparator(DomainPresenceInfo info) {
+    return Comparator.comparingInt((ServerShutdownInfo ssi) -> getPodDeletionCost(info, ssi.getServerName()).orElse(0))
+        .thenComparing(ssi -> OperatorUtils.getSortingString(ssi.getServerName()));
+  }
+
+  private static OptionalInt getPodDeletionCost(DomainPresenceInfo info, String serverName) {
+    return Optional.ofNullable(info.getServerPod(serverName))
+        .map(V1Pod::getMetadata)
+        .map(meta -> meta.getAnnotations() == null ? null : meta.getAnnotations().get(POD_DELETION_COST))
+        .flatMap(ManagedServersUpStep::parseDeletionCost)
+        .map(OptionalInt::of)
+        .orElseGet(OptionalInt::empty);
+  }
+
+  private static Optional<Integer> parseDeletionCost(String value) {
+    if (value == null) {
+      return Optional.empty();
+    }
+
+    try {
+      return Optional.of(Integer.parseInt(value));
+    } catch (NumberFormatException ignored) {
+      return Optional.empty();
+    }
   }
 
   private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {
@@ -181,11 +211,21 @@ public class ManagedServersUpStep extends Step {
     // We depend on 'getServerConfigs()' returning an ascending 'numero-lexi'
     // sorted list so that a cluster's "lowest named" servers have precedence
     // when the  cluster's replica  count is lower than  the WL cluster size.
+    List<ServerConfig> clusterPendingServers = new ArrayList<>();
     wlsClusterConfig.getServerConfigs()
         .forEach(wlsServerConfig -> {
-          factory.addServerIfAlways(wlsServerConfig, wlsClusterConfig, pendingServers);
+          factory.addServerIfAlways(wlsServerConfig, wlsClusterConfig, clusterPendingServers);
           clusteredServers.add(wlsServerConfig.getName());
         });
+    clusterPendingServers.sort(createIfNeededSelectionComparator(factory.info));
+    pendingServers.addAll(clusterPendingServers);
+  }
+
+  private Comparator<ServerConfig> createIfNeededSelectionComparator(DomainPresenceInfo info) {
+    return Comparator.<ServerConfig>comparingInt(
+            sc -> getPodDeletionCost(info, sc.wlsServerConfig.getName()).orElse(0))
+        .reversed()
+        .thenComparing(sc -> OperatorUtils.getSortingString(sc.wlsServerConfig.getName()));
   }
 
   // an interface to provide a hook for unit testing.
