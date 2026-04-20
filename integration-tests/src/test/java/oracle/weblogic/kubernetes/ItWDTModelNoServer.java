@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -38,7 +38,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceDomainConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -111,11 +110,13 @@ class ItWDTModelNoServer {
   }
 
   /**
-   * Test in the WDT model file there is no AdminServerName and no Server section defined.
-   * Verify AdminServer Pod "domainUid-adminserver" is running and the defined WebLogic cluster is up and running.
+   * Test in the WDT model file with 
+   *   no AdminServerName and no Server section defined.
+   * Verify AdminServer Pod "domainUid-adminserver" is running 
+   *   and the defined WebLogic cluster is up and running.
    */
   @Test
-  @DisplayName("Test in the WDT model file there is no AdminServerName and no Server section defined")
+  @DisplayName("Test WDT model file with no AdminServerName and no Server section defined")
   void testWdtModelNoAdminServerNameNoServer() {
 
     String domainUid = getUniqueName(domainUidPrefix);
@@ -389,40 +390,8 @@ class ItWDTModelNoServer {
   }
 
   /**
-   * Test in the WDT model file a configured cluster is defined but no managed server associated with it in Server.
-   * Create a domain-in-image type of domain using this WDT model file.
-   * Verify the operator will generate validation error in the log.
-   */
-  @Test
-  @DisplayName("Test in the WDT model file there is configured cluster set but no managed servers in Server section")
-  void testWdtModelConfiguredClusterNoManagedServersInServerWithDII() {
-
-    String domainUid = getUniqueName(domainUidPrefix);
-    String clusterResName = domainUid + "-" + clusterName;
-    String wdtModelFile = "model-configuredcluster-noserver.yaml";
-    imageName = createAndVerifyDomainImage(wdtModelFile);
-
-    String wlSecretName = "weblogic-credentials";
-
-    try {
-      createDomainInImageUsingWdt(domainUid, domainNamespace,
-          wdtModelFile, null, null, wlSecretName, clusterResName, clusterName, replicaCount);
-
-      // verify the error msg is logged in the operator log
-      String expectedErrorMsg = "The WebLogic configured cluster \\\""
-          + clusterName
-          + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
-      String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-      checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-    } finally {
-      // delete the domain and cluster
-      deleteClusterCustomResource(clusterResName, domainNamespace);
-      deleteDomainResource(domainNamespace, domainUid);
-    }
-  }
-
-  /**
-   * Test in the WDT model file a configured cluster is defined but no managed server associated with it in Server.
+   * Test in the WDT model file a configured cluster is defined but no 
+   * managed server associated with it in Server.
    * Create a domain-on-pv type of domain using this WDT model file.
    * Verify the operator will generate validation error in the log.
    */
