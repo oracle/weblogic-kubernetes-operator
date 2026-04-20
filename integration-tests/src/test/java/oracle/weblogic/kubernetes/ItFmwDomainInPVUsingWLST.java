@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -70,11 +70,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Tests to create JRF domain in persistent volume using WLST.
  */
-@Tag("kind-parallel")
-@Tag("okd-fmw-cert")
+@Tag("kind-xparallel")
+@Tag("kind-fmw-cert")
 @IntegrationTest
-@Tag("olcne-sequential")
-@Tag("oke-weekly-sequential")
 class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;
