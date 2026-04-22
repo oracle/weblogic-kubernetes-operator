@@ -135,6 +135,41 @@ To check for Kubernetes events that may have been logged to the operator's names
 $ kubectl -n OP_NAMESPACE get events --sort-by='.lastTimestamp'
 ```
 
+### Check the operator metrics endpoint
+
+The operator exposes a Prometheus-compatible metrics endpoint on port `8083` at path `/metrics`.
+The operator deployment is annotated for scraping using `prometheus.io/scrape: 'true'` and
+`prometheus.io/port: '8083'`.
+
+To check the metrics endpoint from the operator namespace:
+
+```text
+$ kubectl -n OP_NAMESPACE port-forward deployment/weblogic-operator 8083:8083
+```
+
+Then, in a different terminal:
+
+```text
+$ curl http://localhost:8083/metrics
+```
+
+The operator metrics output includes standard JVM and process metrics from the Prometheus Java client.
+It also includes operator-specific metrics that identify the namespaces and domains that are actively managed
+by the operator at the time of the scrape:
+
+- `wko_managed_namespace_count`
+  The number of namespaces actively managed by the operator.
+- `wko_managed_namespace_info{namespace="..."}` 
+  A presence metric with value `1` for each namespace actively managed by the operator.
+- `wko_managed_domain_count`
+  The total number of domains actively managed by the operator across all active namespaces.
+- `wko_managed_domain_info{namespace="...",domain_uid="..."}`
+  A presence metric with value `1` for each domain actively managed by the operator.
+
+These metrics reflect the operator's current runtime state. For example, if the operator uses
+the `RegExp` namespace selection strategy, then the metrics report the namespaces and domains that are
+currently being managed after the regular expression has been resolved, not the configured regular expression itself.
+
 ### Check for conversion webhook events
 
 To check for Kubernetes events that may have been logged to the conversion webhook's namespace:
