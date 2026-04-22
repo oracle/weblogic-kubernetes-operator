@@ -19,6 +19,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     name: Publish
@@ -26,14 +29,14 @@ jobs:
 
     steps:
       - name: Checkout main branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 32
           ref: main
           path: branch-main
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: gh-pages
           path: gh-pages
