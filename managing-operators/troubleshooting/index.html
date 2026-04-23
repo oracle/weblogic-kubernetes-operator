@@ -23,29 +23,29 @@
     <meta itemprop="description" content="General advice for debugging and monitoring the operator.">
     <meta itemprop="datePublished" content="2019-02-23T16:47:21-05:00">
     <meta itemprop="dateModified" content="2019-02-23T16:47:21-05:00">
-    <meta itemprop="wordCount" content="2258">
+    <meta itemprop="wordCount" content="2457">
     <title>Troubleshooting :: WebLogic Kubernetes Operator</title>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1776831440" rel="icon" type="image/png">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1776831440" rel="stylesheet">
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1776831440" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1776831440" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1776831440" defer></script>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1776903470" rel="icon" type="image/png">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1776903470" rel="stylesheet">
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1776903470" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1776903470" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1776903470" defer></script>
     <script>
       window.relearn = window.relearn || {};
-      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1776831440";
+      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1776903470";
     </script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1776831440" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1776831440" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1776831440" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1776831440" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1776903470" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1776903470" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1776903470" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1776903470" defer></script>
     <script>
       window.relearn = window.relearn || {};
       window.relearn.contentLangs=['en'];
     </script>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1776831440" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1776831440" rel="stylesheet"></noscript>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1776831440" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1776831440" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1776831440" rel="stylesheet" id="R-format-style">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1776903470" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1776903470" rel="stylesheet"></noscript>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1776903470" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1776903470" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1776903470" rel="stylesheet" id="R-format-style">
     <script>
       window.relearn = window.relearn || {};
       // configuration
@@ -121,6 +121,7 @@
     <li><a href="#check-the-conversion-webhook-deployment">Check the conversion webhook deployment</a></li>
     <li><a href="#check-common-operator-issues">Check common operator issues</a></li>
     <li><a href="#check-for-operator-events">Check for operator events</a></li>
+    <li><a href="#check-the-operator-metrics-endpoint">Check the operator metrics endpoint</a></li>
     <li><a href="#check-for-conversion-webhook-events">Check for conversion webhook events</a></li>
     <li><a href="#check-the-operator-log">Check the operator log</a></li>
     <li><a href="#check-the-conversion-webhook-log">Check the conversion webhook log</a></li>
@@ -187,6 +188,7 @@
     <li><a href="#check-the-conversion-webhook-deployment">Check the conversion webhook deployment</a></li>
     <li><a href="#check-common-operator-issues">Check common operator issues</a></li>
     <li><a href="#check-for-operator-events">Check for operator events</a></li>
+    <li><a href="#check-the-operator-metrics-endpoint">Check the operator metrics endpoint</a></li>
     <li><a href="#check-for-conversion-webhook-events">Check for conversion webhook events</a></li>
     <li><a href="#check-the-operator-log">Check the operator log</a></li>
     <li><a href="#check-the-conversion-webhook-log">Check the conversion webhook log</a></li>
@@ -311,6 +313,30 @@ FAQs
 <h3 id="check-for-operator-events">Check for operator events<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
 <p>To check for Kubernetes events that may have been logged to the operator&rsquo;s namespace:</p>
 <div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE get events --sort-by=&#39;.lastTimestamp&#39;</span></span></code></pre></div>
+<h3 id="check-the-operator-metrics-endpoint">Check the operator metrics endpoint<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<p>The operator exposes a Prometheus-compatible metrics endpoint on port <code>8083</code> at path <code>/metrics</code>.
+The operator deployment is annotated for scraping using <code>prometheus.io/scrape: 'true'</code> and
+<code>prometheus.io/port: '8083'</code>.</p>
+<p>To check the metrics endpoint from the operator namespace:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE port-forward deployment/weblogic-operator 8083:8083</span></span></code></pre></div>
+<p>Then, in a different terminal:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ curl http://localhost:8083/metrics</span></span></code></pre></div>
+<p>The operator metrics output includes standard JVM and process metrics from the Prometheus Java client.
+It also includes operator-specific metrics that identify the namespaces and domains that are actively managed
+by the operator at the time of the scrape:</p>
+<ul>
+<li><code>wko_managed_namespace_count</code>
+The number of namespaces actively managed by the operator.</li>
+<li><code>wko_managed_namespace_info{namespace=&quot;...&quot;}</code>
+A presence metric with value <code>1</code> for each namespace actively managed by the operator.</li>
+<li><code>wko_managed_domain_count</code>
+The total number of domains actively managed by the operator across all active namespaces.</li>
+<li><code>wko_managed_domain_info{namespace=&quot;...&quot;,domain_uid=&quot;...&quot;}</code>
+A presence metric with value <code>1</code> for each domain actively managed by the operator.</li>
+</ul>
+<p>These metrics reflect the operator&rsquo;s current runtime state. For example, if the operator uses
+the <code>RegExp</code> namespace selection strategy, then the metrics report the namespaces and domains that are
+currently being managed after the regular expression has been resolved, not the configured regular expression itself.</p>
 <h3 id="check-for-conversion-webhook-events">Check for conversion webhook events<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
 <p>To check for Kubernetes events that may have been logged to the conversion webhook&rsquo;s namespace:</p>
 <div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n WH_NAMESPACE get events --sort-by=&#39;.lastTimestamp&#39;</span></span></code></pre></div>
@@ -650,8 +676,8 @@ Elastic Stack (Elasticsearch, Logstash, and Kibana)
 </div>
       </div>
     </aside>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1776831440" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1776831440" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1776903470" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1776903470" defer></script>
     <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>
