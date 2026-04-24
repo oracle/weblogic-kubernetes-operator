@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -110,7 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @IntegrationTest
 @Tag("oke-weekly-sequential")
-@Tag("kind-parallel")
+@Tag("kind-parallel2")
 public class ItHorizontalPodAutoscalerCustomMetrics {
   private static final String MONEXP_MODEL_FILE = "model.monexp.custommetrics.yaml";
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
