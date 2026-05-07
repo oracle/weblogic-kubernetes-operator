@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
@@ -306,7 +306,9 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     Step introspectionAndDomainPresenceSteps = Step.chain(ConfigMapHelper.readExistingIntrospectorConfigMap(),
         DomainPresenceStep.createDomainPresenceStep(domainUpStrategy, managedServerStrategy));
 
-    return new UpHeadStep(introspectionAndDomainPresenceSteps);
+    return new UpHeadStep(Step.chain(
+        createDomainValidationStep(info.getDomain()),
+        introspectionAndDomainPresenceSteps));
   }
 
   private Step getCreateEventStep() {
@@ -395,10 +397,15 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     @Override
     public Result onFailure(Packet packet, KubernetesApiResponse<DomainResource> callResponse) {
       if (callResponse.getHttpStatusCode() == HTTP_NOT_FOUND) {
-        DomainPresenceInfo.fromPacket(packet).ifPresent(i -> i.setDeleting(true));
+        DomainPresenceInfo.fromPacket(packet).ifPresent(this::markDomainAsNotFound);
         return doNext(createDomainDownPlan(), packet);
       }
       return super.onFailure(packet, callResponse);
+    }
+
+    private void markDomainAsNotFound(DomainPresenceInfo info) {
+      info.setDeleting(true);
+      info.setDomain(null);
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks;
@@ -8,6 +8,7 @@ import java.util.Collections;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.webhooks.resource.ClusterUpdateAdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.DomainUpdateAdmissionChecker;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -18,6 +19,7 @@ import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.util.Arrays.asList;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
@@ -54,8 +56,50 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
   }
 
   @Test
+  void whenDomainUidChangedToDuplicateDomainUid_returnFalse() {
+    String duplicateDomainUid = "duplicate-domain";
+    testSupport.defineResources(createDomainWithNameAndDomainUid("other-domain", duplicateDomainUid));
+    proposedDomain.getSpec().withDomainUid(duplicateDomainUid);
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+  }
+
+  @Test
   void whenSpecAdded_returnTrue() {
     existingDomain.withSpec(null);
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
+  void whenHostPathPersistentVolumeAddedAndLocalDeveloperModeDisabled_returnFalse() {
+    configureInitializeDomainOnPVHostPath(proposedDomain, "/shared");
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+  }
+
+  @Test
+  void whenHostPathPersistentVolumeChangedAndLocalDeveloperModeDisabled_returnFalse() {
+    configureInitializeDomainOnPVHostPath(existingDomain, "/old");
+    configureInitializeDomainOnPVHostPath(proposedDomain, "/new");
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+  }
+
+  @Test
+  void whenHostPathPersistentVolumeUnchangedAndOtherSpecChanged_returnTrue() {
+    configureInitializeDomainOnPVHostPath(existingDomain, "/shared");
+    configureInitializeDomainOnPVHostPath(proposedDomain, "/shared");
+    proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
+  void whenHostPathPersistentVolumeAddedAndLocalDeveloperModeEnabled_returnTrue() throws NoSuchFieldException {
+    mementos.add(TuningParametersStub.install());
+    TuningParametersStub.setParameter(DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE, "true");
+    configureInitializeDomainOnPVHostPath(proposedDomain, "/shared");
+
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
   }
 

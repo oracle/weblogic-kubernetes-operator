@@ -214,6 +214,8 @@ public class MessageKeys {
   public static final String WALLET_KEY_NOT_FOUND = "WLSDO-0065";
   public static final String POD_UNSCHEDULABLE = "WLSDO-0066";
   public static final String POD_UNSCHEDULABLE_MESSAGE = "WLSDO-0067";
+  public static final String INIT_PV_DOMAIN_PV_SOURCE_NOT_ALLOWED = "WLSDO-0068";
+  public static final String DUPLICATE_DOMAIN_UID = "WLSDO-0069";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";

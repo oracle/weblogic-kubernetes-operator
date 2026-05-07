@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.tuning.TuningParameters.API_SERVER_CONNECT_TIMEOUT_SECONDS;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_NAMESPACE_RECHECK_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE;
 import static oracle.kubernetes.operator.tuning.TuningParameters.FEATURE_GATES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -63,6 +64,7 @@ class TuningParametersTest {
   void whenNoTuningParametersConfigured_facadesReturnDefaultValues() {
     assertThat(getTuningParameters().getNamespaceRecheckIntervalSeconds(), equalTo(DEFAULT_NAMESPACE_RECHECK_SECONDS));
     assertThat(getTuningParameters().isRestartEvictedPods(), is(true));
+    assertThat(getTuningParameters().isDomainOnPVLocalDeveloperMode(), is(false));
     assertThat(getTuningParameters().getCallBuilderTuning().getApiServerConnectTimeoutSeconds(), equalTo(10));
   }
 
@@ -70,10 +72,12 @@ class TuningParametersTest {
   void whenTuningParametersConfigured_facadesReturnConfiguredValues() {
     configureParameter("domainNamespaceRecheckIntervalSeconds", "12");
     configureParameter("restartEvictedPods", "false");
+    configureParameter(DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE, "true");
     configureParameter(API_SERVER_CONNECT_TIMEOUT_SECONDS, "17");
 
     assertThat(getTuningParameters().getNamespaceRecheckIntervalSeconds(), equalTo(12));
     assertThat(getTuningParameters().isRestartEvictedPods(), is(false));
+    assertThat(getTuningParameters().isDomainOnPVLocalDeveloperMode(), is(true));
     assertThat(getTuningParameters().getCallBuilderTuning().getApiServerConnectTimeoutSeconds(), equalTo(17));
   }
 

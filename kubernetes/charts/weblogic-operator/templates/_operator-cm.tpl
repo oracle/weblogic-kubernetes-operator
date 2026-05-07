@@ -39,6 +39,9 @@ data:
   {{- if .featureGates }}
   featureGates: {{ .featureGates | quote }}
   {{- end }}
+  {{- if (and .domainOnPV (hasKey .domainOnPV "localDeveloperMode")) }}
+  domainOnPVLocalDeveloperMode: {{ .domainOnPV.localDeveloperMode | quote }}
+  {{- end }}
   {{- if .introspectorJobNameSuffix }}
   introspectorJobNameSuffix: {{ .introspectorJobNameSuffix | quote }}
   {{- end }}
