@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -20,11 +20,11 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.utils.SafeYamlUtils;
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * The configuration to be applied to the WebLogic Monitoring Exporter sidecars in the domain.
@@ -49,7 +49,7 @@ public class MonitoringExporterConfiguration {
   }
 
   public static String convertToJson(String yaml) {
-    final Object loadedYaml = new Yaml().load(yaml);
+    final Object loadedYaml = SafeYamlUtils.load(yaml);
     return new Gson().toJson(loadedYaml, LinkedHashMap.class);
   }
 

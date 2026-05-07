@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -90,10 +90,12 @@ import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.KubernetesConstants.OLD_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -356,6 +358,8 @@ public class WebhookMainTest extends CrdHelperTestBase {
     assertThat(getRules(generatedConfiguration).size(), equalTo(2));
     assertThat(allRuleOperationsMatch(generatedConfiguration, Arrays.asList(CREATE, UPDATE)), equalTo(true));
     assertThat(oneRuleForDomain(generatedConfiguration), equalTo(true));
+    assertThat(getApiVersionsFor(DOMAIN_PLURAL, generatedConfiguration),
+        containsInAnyOrder(DOMAIN_VERSION, OLD_DOMAIN_VERSION));
     assertThat(oneRuleForCluster(generatedConfiguration), equalTo(true));
   }
 
@@ -728,6 +732,13 @@ public class WebhookMainTest extends CrdHelperTestBase {
   @Nonnull
   private List<V1RuleWithOperations> getMatchRules(V1ValidatingWebhookConfiguration configuration, String resource) {
     return getRules(configuration).stream().filter(r -> isResourceEquals(resource, r)).toList();
+  }
+
+  private List<String> getApiVersionsFor(String resource, V1ValidatingWebhookConfiguration configuration) {
+    return getMatchRules(configuration, resource).stream()
+        .findFirst()
+        .map(V1RuleWithOperations::getApiVersions)
+        .orElse(Collections.emptyList());
   }
 
   private boolean areOperationsMatch(List<String> operations, V1RuleWithOperations r) {

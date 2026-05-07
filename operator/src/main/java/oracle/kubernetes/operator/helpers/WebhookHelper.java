@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -38,6 +38,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.OLD_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
@@ -141,7 +142,8 @@ public class WebhookHelper {
     }
 
     private V1RuleWithOperations createRuleForDomain() {
-      return createRule().apiVersions(createList(DOMAIN_VERSION)).resources(createList(DOMAIN_RESOURCES));
+      return createRule().apiVersions(Arrays.asList(DOMAIN_VERSION, OLD_DOMAIN_VERSION))
+          .resources(createList(DOMAIN_RESOURCES));
     }
 
     @Nonnull
