@@ -77,5 +77,5 @@ public interface RestBackend {
 
   Object createOrReplaceCluster(Map<String, Object> body);
 
-  List<Map<String, Object>> listClusters(String namespace);
+  List<Map<String, Object>> listClusters(String namespace, String domainName, String domainUid);
 }

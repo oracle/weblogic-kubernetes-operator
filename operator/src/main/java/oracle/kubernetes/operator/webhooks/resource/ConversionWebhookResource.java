@@ -137,7 +137,9 @@ public class ConversionWebhookResource extends BaseResource {
           .map(d -> schemaConversionUtils.convertDomainSchema(d, () -> {
             String namespace = Optional.ofNullable((Map<String, Object>) d.get("metadata"))
                 .map(m -> (String) m.get("namespace")).orElse("default");
-            return be.listClusters(namespace);
+            Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) d.get("metadata"))
+                .orElse(Map.of());
+            return be.listClusters(namespace, (String) metadata.get("name"), (String) metadata.get("uid"));
           }))
           .toList();
 

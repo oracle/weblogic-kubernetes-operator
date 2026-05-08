@@ -854,7 +854,7 @@ class WebhookRestTest extends RestTestBase {
       return body;
     }
 
-    public List<Map<String, Object>> listClusters(String namespace) {
+    public List<Map<String, Object>> listClusters(String namespace, String domainName, String domainUid) {
       return null;
     }
   }

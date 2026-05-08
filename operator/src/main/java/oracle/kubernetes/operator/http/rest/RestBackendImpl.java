@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -66,6 +67,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 import static oracle.kubernetes.common.logging.MessageKeys.INVALID_DOMAIN_UID;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /**
@@ -92,6 +94,7 @@ public class RestBackendImpl implements RestBackend {
   private AuthorizationProxy atz = new AuthorizationProxy();
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
+  private final Predicate<String> domainNamespacePredicate;
   private V1UserInfo userInfo;
   private Gson gson;
   private UnaryOperator<ApiClient> clientSupplier;
@@ -104,8 +107,10 @@ public class RestBackendImpl implements RestBackend {
    *     the WebLogic operator REST api.
    * @param domainNamespaces a function that returns the names of the managed Kubernetes namepaces.
    */
-  RestBackendImpl(String principal, String accessToken, Supplier<Collection<String>> domainNamespaces) {
+  RestBackendImpl(String principal, String accessToken, Supplier<Collection<String>> domainNamespaces,
+                  Predicate<String> domainNamespacePredicate) {
     this.domainNamespaces = domainNamespaces;
+    this.domainNamespacePredicate = domainNamespacePredicate;
     this.principal = principal;
     userInfo = authenticate(accessToken);
     try {
@@ -119,6 +124,15 @@ public class RestBackendImpl implements RestBackend {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  // Intended for unit tests
+  RestBackendImpl(Supplier<Collection<String>> domainNamespaces, Predicate<String> domainNamespacePredicate) {
+    this.domainNamespaces = domainNamespaces;
+    this.domainNamespacePredicate = domainNamespacePredicate;
+    this.principal = null;
+    gson = new Gson();
+    clientSupplier = c -> c;
   }
 
   private void authorize(String domainUid, Operation operation) {
@@ -440,6 +454,7 @@ public class RestBackendImpl implements RestBackend {
     Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) cluster.get("metadata"))
         .orElse(Collections.emptyMap());
     String namespace = (String) metadata.getOrDefault("namespace", "default");
+    verifyManagedNamespace(namespace);
     String name = (String) metadata.get("name");
     Object currentCluster = null;
     try {
@@ -467,6 +482,7 @@ public class RestBackendImpl implements RestBackend {
       }
     }
 
+    verifyOperatorCreatedCluster(currentCluster, name);
     metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
         .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
     try {
@@ -481,17 +497,83 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  private void verifyOperatorCreatedCluster(Object currentCluster, String name) {
+    Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
+        .get("metadata")).orElse(Collections.emptyMap());
+    Map<String, Object> labels = Optional.ofNullable((Map<String, Object>) metadata.get("labels"))
+        .orElse(Collections.emptyMap());
+    if (!"true".equals(labels.get(CREATEDBYOPERATOR_LABEL))) {
+      WebApplicationException e = createWebApplicationException(
+          Status.FORBIDDEN, "Cluster '" + name + "' was not created by this operator");
+      LOGGER.throwing(e);
+      throw e;
+    }
+  }
+
   @Override
   @SuppressWarnings("unchecked")
-  public List<Map<String, Object>> listClusters(String namespace) {
+  public List<Map<String, Object>> listClusters(String namespace, String domainName, String domainUid) {
+    verifyManagedNamespace(namespace);
+    DomainResource domain = verifyLiveDomain(namespace, domainName, domainUid);
+    List<String> referencedClusterResources = getReferencedClusterResourceNames(domain);
     try {
       ClusterList l = RequestBuilder.CLUSTER.list(namespace, new ListOptions(), clientSupplier);
       Map<String, Object> clusterList = l != null ? toMap(l) : null;
       return Optional.of(clusterList).map(cl -> (List<Map<String, Object>>) cl.get("items"))
-          .orElse(Collections.emptyList());
+          .orElse(Collections.emptyList()).stream()
+          .filter(c -> referencedClusterResources.contains(getClusterName(c)))
+          .toList();
     } catch (ApiException e) {
       throw handleApiException(e);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private String getClusterName(Map<String, Object> cluster) {
+    return Optional.ofNullable((Map<String, Object>) cluster.get("metadata"))
+        .map(m -> (String) m.get("name")).orElse(null);
+  }
+
+  private DomainResource verifyLiveDomain(String namespace, String domainName, String domainUid) {
+    if (domainName == null || domainUid == null) {
+      throwInvalidConversionDomain(domainName);
+    }
+
+    try {
+      DomainResource domain = RequestBuilder.DOMAIN.get(namespace, domainName, new GetOptions(), clientSupplier);
+      V1ObjectMeta metadata = Optional.ofNullable(domain).map(DomainResource::getMetadata).orElse(null);
+      if (metadata == null
+          || !Objects.equals(domainUid, metadata.getUid())) {
+        throwInvalidConversionDomain(domainName);
+      }
+      return domain;
+    } catch (ApiException e) {
+      if (e.getCode() == KubernetesConstants.HTTP_NOT_FOUND) {
+        throwInvalidConversionDomain(domainName);
+      }
+      throw handleApiException(e);
+    }
+  }
+
+  private void throwInvalidConversionDomain(String domainName) {
+    WebApplicationException e = createWebApplicationException(
+        Status.FORBIDDEN, "Conversion Domain '" + domainName + "' does not match the live Domain");
+    LOGGER.throwing(e);
+    throw e;
+  }
+
+  private void verifyManagedNamespace(String namespace) {
+    if (!isManagedNamespace(namespace)) {
+      WebApplicationException e = createWebApplicationException(
+          Status.FORBIDDEN, "Namespace '" + namespace + "' is not managed by this operator");
+      LOGGER.throwing(e);
+      throw e;
+    }
+  }
+
+  private boolean isManagedNamespace(String namespace) {
+    return domainNamespacePredicate != null && domainNamespacePredicate.test(namespace);
   }
 
 
