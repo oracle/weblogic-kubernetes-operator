@@ -273,6 +273,9 @@ spec:
       {{- if .featureGates }}
       featureGates: {{ .featureGates | quote }}
       {{- end }}
+      {{- if (and .domainOnPV (hasKey .domainOnPV "localDeveloperMode")) }}
+      domainOnPVLocalDeveloperMode: {{ .domainOnPV.localDeveloperMode | quote }}
+      {{- end }}
       {{- if .domainNamespaceSelectionStrategy }}
       domainNamespaceSelectionStrategy: {{ .domainNamespaceSelectionStrategy | quote }}
       {{- end }}
