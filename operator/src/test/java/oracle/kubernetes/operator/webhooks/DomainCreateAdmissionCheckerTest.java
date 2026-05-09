@@ -50,6 +50,13 @@ class DomainCreateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
   }
 
   @Test
+  void whenNewDomainCreatesNfsPersistentVolumeAndLocalDeveloperModeDisabled_returnTrue() {
+    configureInitializeDomainOnPVNfs(proposedDomain, "/shared", "nfs-server");
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
   void whenNewDomainCreatesHostPathPersistentVolumeAndLocalDeveloperModeEnabled_returnTrue()
       throws NoSuchFieldException {
     mementos.add(TuningParametersStub.install());

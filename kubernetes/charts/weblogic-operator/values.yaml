@@ -138,7 +138,7 @@ createLogStashConfigMap: true
 
 # domainOnPV contains options for the Domain on PV feature.
 domainOnPV:
-  # localDeveloperMode enables operator-created PersistentVolumes from
+  # localDeveloperMode enables operator-created hostPath PersistentVolumes from
   # 'spec.configuration.initializeDomainOnPV.persistentVolume' for local development environments.
   # This mode is not recommended for shared or production clusters.
   localDeveloperMode: false

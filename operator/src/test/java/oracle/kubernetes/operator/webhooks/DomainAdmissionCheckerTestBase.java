@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -65,6 +66,17 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
                     .storageClassName("manual")
                     .capacity(Collections.singletonMap("storage", new Quantity("5Gi")))
                     .hostPath(new V1HostPathVolumeSource().path(path))))));
+  }
+
+  void configureInitializeDomainOnPVNfs(DomainResource domain, String path, String server) {
+    domain.getSpec().withConfiguration(new Configuration()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
+            new PersistentVolume()
+                .metadata(new V1ObjectMeta().name("pv"))
+                .spec(new PersistentVolumeSpec()
+                    .storageClassName("manual")
+                    .capacity(Collections.singletonMap("storage", new Quantity("5Gi")))
+                    .nfs(new V1NFSVolumeSource().path(path).server(server))))));
   }
 
   DomainResource createDomainWithNameAndDomainUid(String name, String domainUid) {

@@ -732,7 +732,7 @@
           "type": "boolean"
         },
         "persistentVolume": {
-          "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. Operator-created PersistentVolumes that specify hostPath or NFS sources require the operator Helm chart\u0027s domainOnPV.localDeveloperMode setting. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
+          "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. Operator-created PersistentVolumes that specify hostPath sources require the operator Helm chart\u0027s domainOnPV.localDeveloperMode setting. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
           "$ref": "#/definitions/PersistentVolume"
         },
         "domain": {
@@ -1015,7 +1015,7 @@
           "type": "string"
         },
         "nfs": {
-          "description": "nfs represents an NFS mount on the host. Provisioned by an admin. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs. Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling. Operator-created PersistentVolumes with NFS sources require the operator Helm chart\u0027s domainOnPV.localDeveloperMode setting.",
+          "description": "nfs represents an NFS mount on the host. Provisioned by an admin. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs. Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.NFSVolumeSource"
         },
         "persistentVolumeReclaimPolicy": {

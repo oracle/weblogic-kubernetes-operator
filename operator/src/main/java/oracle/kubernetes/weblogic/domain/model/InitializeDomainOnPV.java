@@ -17,7 +17,7 @@ public class InitializeDomainOnPV {
       + " domain. Omit this section if you have manually created a persistent volume. The operator will"
       + " perform this one-time create operation only if the persistent volume does not already exist. The operator"
       + " will not recreate or update the PersistentVolume when it exists. Operator-created PersistentVolumes that"
-      + " specify hostPath or NFS sources require the operator Helm chart's domainOnPV.localDeveloperMode setting."
+      + " specify hostPath sources require the operator Helm chart's domainOnPV.localDeveloperMode setting."
       + " More info:"
       + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv")
   PersistentVolume persistentVolume;

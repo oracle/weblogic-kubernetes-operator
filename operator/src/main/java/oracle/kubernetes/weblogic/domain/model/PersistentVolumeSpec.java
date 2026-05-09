@@ -31,8 +31,7 @@ public class PersistentVolumeSpec {
   @Description("nfs represents an NFS mount on the host. Provisioned by an admin. More info: "
       + "https://kubernetes.io/docs/concepts/storage/volumes#nfs. "
       + "Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do "
-      + "not support ownership management or SELinux relabeling. Operator-created PersistentVolumes with NFS sources"
-      + " require the operator Helm chart's domainOnPV.localDeveloperMode setting.")
+      + "not support ownership management or SELinux relabeling.")
   private V1NFSVolumeSource nfs;
 
   @Description("PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from "

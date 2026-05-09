@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
-import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
@@ -22,7 +21,7 @@ public class DomainOnPVLocalDeveloperMode {
   }
 
   /**
-   * Returns true when operator-created initializeDomainOnPV volumes may use local developer PV sources.
+   * Returns true when operator-created initializeDomainOnPV volumes may use hostPath sources.
    *
    * @return true if local developer mode is enabled
    */
@@ -33,23 +32,17 @@ public class DomainOnPVLocalDeveloperMode {
   }
 
   public static boolean hasRestrictedPVSource(DomainResource domain) {
-    return getHostPath(domain).isPresent() || getNfs(domain).isPresent();
+    return getHostPath(domain).isPresent();
   }
 
   public static boolean hasNewOrChangedRestrictedPVSource(DomainResource existingDomain,
                                                           DomainResource proposedDomain) {
-    return hasNewOrChangedHostPath(existingDomain, proposedDomain)
-        || hasNewOrChangedNfs(existingDomain, proposedDomain);
+    return hasNewOrChangedHostPath(existingDomain, proposedDomain);
   }
 
   private static boolean hasNewOrChangedHostPath(DomainResource existingDomain, DomainResource proposedDomain) {
     Optional<V1HostPathVolumeSource> proposed = getHostPath(proposedDomain);
     return proposed.isPresent() && !Objects.equals(getHostPath(existingDomain).orElse(null), proposed.get());
-  }
-
-  private static boolean hasNewOrChangedNfs(DomainResource existingDomain, DomainResource proposedDomain) {
-    Optional<V1NFSVolumeSource> proposed = getNfs(proposedDomain);
-    return proposed.isPresent() && !Objects.equals(getNfs(existingDomain).orElse(null), proposed.get());
   }
 
   /**
@@ -61,8 +54,6 @@ public class DomainOnPVLocalDeveloperMode {
   public static String createFailureMessage(DomainResource domain) {
     return getHostPath(domain)
         .map(hostPath -> DomainValidationMessages.persistentVolumeSourceNotAllowed(getPVName(domain), "hostPath"))
-        .or(() -> getNfs(domain)
-            .map(nfs -> DomainValidationMessages.persistentVolumeSourceNotAllowed(getPVName(domain), "nfs")))
         .orElse(null);
   }
 
@@ -76,10 +67,6 @@ public class DomainOnPVLocalDeveloperMode {
 
   private static Optional<V1HostPathVolumeSource> getHostPath(DomainResource domain) {
     return getPVSpec(domain).map(PersistentVolumeSpec::getHostPath);
-  }
-
-  private static Optional<V1NFSVolumeSource> getNfs(DomainResource domain) {
-    return getPVSpec(domain).map(PersistentVolumeSpec::getNfs);
   }
 
   private static Optional<PersistentVolumeSpec> getPVSpec(DomainResource domain) {

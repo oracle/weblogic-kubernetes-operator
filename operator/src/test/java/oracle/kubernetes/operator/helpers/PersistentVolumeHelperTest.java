@@ -15,6 +15,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -220,6 +221,18 @@ class PersistentVolumeHelperTest {
   }
 
   @Test
+  void onRunWithNoNfsPersistentVolumeAndLocalDeveloperModeDisabled_createIt() {
+    consoleHandlerMemento.ignoreMessage(getPvCreateLogMessage());
+    configureDomainWithNfsPersistentVolume();
+
+    runPersistentVolumeHelper();
+
+    assertThat(
+        getPersistentVolumeResource(),
+        is(persistentVolumeWithName("Test")));
+  }
+
+  @Test
   void onRunWithExistingRestrictedPersistentVolumeAndLocalDeveloperModeDisabled_logPvExists() {
     configureDomainWithHostPathPersistentVolume();
     V1PersistentVolume existingPv = createPvModel(testSupport.getPacket());
@@ -234,6 +247,13 @@ class PersistentVolumeHelperTest {
   private void configureDomainWithHostPathPersistentVolume() {
     PersistentVolume pv = createPv();
     pv.getSpec().hostPath(new V1HostPathVolumeSource().path("/shared"));
+    configureDomain().withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
+        pv));
+  }
+
+  private void configureDomainWithNfsPersistentVolume() {
+    PersistentVolume pv = createPv();
+    pv.getSpec().nfs(new V1NFSVolumeSource().path("/shared").server("nfs-server"));
     configureDomain().withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
         pv));
   }

@@ -86,6 +86,21 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
   }
 
   @Test
+  void whenNfsPersistentVolumeAddedAndLocalDeveloperModeDisabled_returnTrue() {
+    configureInitializeDomainOnPVNfs(proposedDomain, "/shared", "nfs-server");
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
+  void whenNfsPersistentVolumeChangedAndLocalDeveloperModeDisabled_returnTrue() {
+    configureInitializeDomainOnPVNfs(existingDomain, "/old", "nfs-server");
+    configureInitializeDomainOnPVNfs(proposedDomain, "/new", "nfs-server");
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
   void whenHostPathPersistentVolumeUnchangedAndOtherSpecChanged_returnTrue() {
     configureInitializeDomainOnPVHostPath(existingDomain, "/shared");
     configureInitializeDomainOnPVHostPath(proposedDomain, "/shared");
