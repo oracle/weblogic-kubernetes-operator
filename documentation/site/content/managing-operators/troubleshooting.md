@@ -220,6 +220,55 @@ $ kubectl logs -n YOUR_CONVERSION_WEBHOOK_NS -c weblogic-operator-webhook deploy
 
 An operator's settings are automatically maintained by Helm in a Kubernetes ConfigMap named `weblogic-operator-cm` in the same namespace as the operator. To view the contents of this ConfigMap, call `kubectl -n sample-weblogic-operator-ns get cm weblogic-operator-cm -o yaml`.
 
+### Domain on PV hostPath PersistentVolume denied after upgrade
+
+Beginning with operator version 4.3.9, operator-created PersistentVolumes that specify a `hostPath`
+source under `domain.spec.configuration.initializeDomainOnPV.persistentVolume` require the operator
+Helm chart value `domainOnPV.localDeveloperMode=true`. This mode is intended only for local development
+clusters.
+
+If you upgrade the operator and then apply a Domain on PV resource that uses an operator-created
+`hostPath` PersistentVolume, the validating webhook may deny the request with an error similar to
+the following:
+
+```text
+admission webhook "weblogic.validating.webhook" denied the request:
+Persistent volume sample-domain1-pv-rwm1 is invalid, the 'spec.hostPath' source is not allowed in
+'spec.configuration.initializeDomainOnPV.persistentVolume' unless the operator Helm chart value
+'domainOnPV.localDeveloperMode' is enabled.
+```
+
+To enable this setting for a local development cluster, update the Helm release:
+
+```text
+$ helm upgrade OPERATOR_RELEASE_NAME weblogic-operator/weblogic-operator \
+  --namespace OP_NAMESPACE \
+  --reuse-values \
+  --set domainOnPV.localDeveloperMode=true \
+  --wait
+```
+
+The Helm upgrade updates the operator and webhook ConfigMaps, but if this is the only change, Kubernetes
+may not restart the already running operator or validating webhook Pods because their Deployment pod
+templates did not change. Restart the operator and webhook deployments so that they use the updated
+ConfigMap values:
+
+```text
+$ kubectl -n OP_NAMESPACE rollout restart deployment/weblogic-operator
+$ kubectl -n OP_NAMESPACE rollout status deployment/weblogic-operator
+$ kubectl -n OP_NAMESPACE rollout restart deployment/weblogic-operator-webhook
+$ kubectl -n OP_NAMESPACE rollout status deployment/weblogic-operator-webhook
+```
+
+You can verify the live setting with:
+
+```text
+$ kubectl -n OP_NAMESPACE get cm weblogic-operator-cm \
+  -o jsonpath='{.data.domainOnPVLocalDeveloperMode}{"\n"}'
+$ kubectl -n OP_NAMESPACE get cm weblogic-webhook-cm \
+  -o jsonpath='{.data.domainOnPVLocalDeveloperMode}{"\n"}'
+```
+
 ### Force the operator to restart
 
 {{% notice note %}}
