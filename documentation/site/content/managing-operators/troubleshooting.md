@@ -225,7 +225,9 @@ An operator's settings are automatically maintained by Helm in a Kubernetes Conf
 Beginning with operator version 4.3.9, operator-created PersistentVolumes that specify a `hostPath`
 source under `domain.spec.configuration.initializeDomainOnPV.persistentVolume` require the operator
 Helm chart value `domainOnPV.localDeveloperMode=true`. This mode is intended only for local development
-clusters.
+clusters and must not be used in production or shared multi-tenant clusters. If multiple Domain
+resources use the same `hostPath` and the same domain home location, their domain creation jobs can
+race and overwrite the same files.
 
 If you upgrade the operator and then apply a Domain on PV resource that uses an operator-created
 `hostPath` PersistentVolume, the validating webhook may deny the request with an error similar to

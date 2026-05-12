@@ -140,7 +140,8 @@ createLogStashConfigMap: true
 domainOnPV:
   # localDeveloperMode enables operator-created hostPath PersistentVolumes from
   # 'spec.configuration.initializeDomainOnPV.persistentVolume' for local development environments.
-  # This mode is not recommended for shared or production clusters.
+  # Do not use this mode in shared or production clusters. Multiple domains that use the same
+  # hostPath and domain home can race and overwrite the same files.
   localDeveloperMode: false
 
 # javaLoggingLevel specifies the Java logging level for the operator. This affects the operator pod's
