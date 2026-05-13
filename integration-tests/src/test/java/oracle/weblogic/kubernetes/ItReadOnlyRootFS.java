@@ -93,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @IntegrationTest
-@Tag("kind-parallel")
+@Tag("kind-parallel2")
 @Tag("oke-parallel")
 class ItReadOnlyRootFS {
 

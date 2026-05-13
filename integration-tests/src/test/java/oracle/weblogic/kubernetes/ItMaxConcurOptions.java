@@ -96,7 +96,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Tag("kind-parallel")
+@Tag("kind-parallel2")
 @Tag("olcne-sequential")
 @Tag("okd-wls-mrg")
 class ItMaxConcurOptions {
