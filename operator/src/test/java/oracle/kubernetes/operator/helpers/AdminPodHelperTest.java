@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -561,6 +562,18 @@ class AdminPodHelperTest extends PodHelperTestBase {
         allOf(
             hasInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"),
             hasInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle")));
+  }
+
+  @Test
+  void whenPvDomainGlobalInitContainerImageChanges_rollAdminPod() {
+    getConfigurator()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitContainer(createContainer("container1", "busybox:1.35", "sh", "-c", "echo admin server"));
+    initializeExistingPod();
+
+    getDomain().getSpec().getInitContainers().get(0).setImage("busybox:1.36");
+
+    verifyPodReplaced();
   }
 
   @Test

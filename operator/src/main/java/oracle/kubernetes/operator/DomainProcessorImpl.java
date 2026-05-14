@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -385,19 +385,23 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
     final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
     if (isNewDomain(cachedInfo)) {
-      return true;
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "new domain");
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)) {
-      return false;
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, false, "out-of-date event");
     } else if (isDeleting(operation)) {
-      return true;
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "deleting");
     } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
-      return liveInfo.isMustDomainProcessingRestart();
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, liveInfo.isMustDomainProcessingRestart(),
+          "domain processing halted");
     } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)
         || liveInfo.isDomainGenerationChanged(cachedInfo)) {
-      return true;
+      return logDomainMakeRightDecision(
+          operation, liveInfo, cachedInfo, true, "explicit recheck or generation changed");
     } else {
+      boolean shouldContinue = logDomainMakeRightDecision(
+          operation, liveInfo, cachedInfo, false, "no generation change");
       cachedInfo.setDomain(liveInfo.getDomain());
-      return false;
+      return shouldContinue;
     }
   }
 
@@ -415,6 +419,32 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       cachedInfo.setCluster(liveInfo.getCluster());
       return false;
     }
+  }
+
+  private boolean logDomainMakeRightDecision(
+      MakeRightDomainOperation operation,
+      DomainPresenceInfo liveInfo,
+      DomainPresenceInfo cachedInfo,
+      boolean shouldContinue,
+      String reason) {
+    LOGGER.finer(
+        "MAKE-RIGHT-DECISION domainUid={0} namespace={1} action={2} reason={3} event={4} "
+            + "explicitRecheck={5} interrupt={6} liveGeneration={7} cachedGeneration={8} "
+            + "liveResourceVersion={9} cachedResourceVersion={10} observedGeneration={11}",
+        liveInfo.getDomainUid(),
+        liveInfo.getNamespace(),
+        shouldContinue ? "continue" : "skip",
+        reason,
+        operation.getEventData(),
+        operation.isExplicitRecheck(),
+        operation.isWillInterrupt(),
+        getGeneration(liveInfo.getDomain()),
+        getGeneration(Optional.ofNullable(cachedInfo).map(DomainPresenceInfo::getDomain).orElse(null)),
+        getResourceVersion(liveInfo.getDomain()),
+        getResourceVersion(Optional.ofNullable(cachedInfo).map(DomainPresenceInfo::getDomain).orElse(null)),
+        getObservedGeneration(liveInfo.getDomain()));
+
+    return shouldContinue;
   }
 
   private boolean isExplicitRecheckWithoutRetriableFailure(
@@ -975,13 +1005,43 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleModifiedDomain(DomainResource domain) {
     if (!domain.isGenerationLaterThanObservedGeneration()) {
+      LOGGER.finer(
+          "Ignoring Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
+              + "observedGeneration={3} resourceVersion={4}",
+          domain.getDomainUid(),
+          domain.getNamespace(),
+          getGeneration(domain),
+          getObservedGeneration(domain),
+          getResourceVersion(domain));
       return;
     }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
+    LOGGER.finer(
+        "Accepted Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
+            + "observedGeneration={3} resourceVersion={4}",
+        domain.getDomainUid(),
+        domain.getNamespace(),
+        getGeneration(domain),
+        getObservedGeneration(domain),
+        getResourceVersion(domain));
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
         .withEventData(new EventData(DOMAIN_CHANGED))
         .execute();
+  }
+
+  private static Long getGeneration(DomainResource domain) {
+    return Optional.ofNullable(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getGeneration).orElse(null);
+  }
+
+  private static Long getObservedGeneration(DomainResource domain) {
+    return Optional.ofNullable(domain).map(DomainResource::getStatus).map(DomainStatus::getObservedGeneration)
+        .orElse(null);
+  }
+
+  private static String getResourceVersion(DomainResource domain) {
+    return Optional.ofNullable(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getResourceVersion)
+        .orElse(null);
   }
 
   private void handleDeletedDomain(DomainResource domain) {

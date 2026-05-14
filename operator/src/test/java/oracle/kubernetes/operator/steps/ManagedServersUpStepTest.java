@@ -481,6 +481,19 @@ class ManagedServersUpStepTest {
   }
 
   @Test
+  void whenConfiguredClusterServerStartPolicyNever_stopServerAndMaintainReplicaCount() {
+    setCluster1Replicas(1);
+    configurator.configureServer("ms1").withServerStartPolicy(ServerStartPolicy.NEVER);
+    addWlsCluster("cluster1", "ms1", "ms2");
+    addServer(info, "ms1");
+
+    invokeStep();
+
+    assertThat(getServers(), contains("ms2"));
+    assertThat(getServerShutdownNames(), contains("ms1"));
+  }
+
+  @Test
   void withStartPolicyAlways_addNonManagedServers() {
     startAllServers();
     addWlsServer("ms1");

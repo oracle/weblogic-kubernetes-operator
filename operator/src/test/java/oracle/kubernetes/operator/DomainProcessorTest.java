@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -1438,6 +1438,22 @@ class DomainProcessorTest {
     }
     assertServerPodNotPresent(newInfo, getManagedServerName(2));
     assertThat(newInfo.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  void whenRunningConfiguredClusterServerChangedToNever_stopThatServerAndMaintainReplicas()
+      throws JsonProcessingException {
+    establishPreviousIntrospection(null, Collections.singletonList(1));
+    defineServerShutdownWithHttpOkResponse();
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(1);
+    domainConfigurator.configureServer(getManagedServerName(1)).withServerStartPolicy(ServerStartPolicy.NEVER);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    processor.dispatchDomainWatch(new Response<>("MODIFIED", newDomain));
+
+    DomainPresenceInfo updatedInfo = processor.getExistingDomainPresenceInfo(NS, UID);
+    assertServerPodNotPresent(updatedInfo, getManagedServerName(1));
+    assertServerPodAndServicePresent(updatedInfo, getManagedServerName(2));
   }
 
   @Test

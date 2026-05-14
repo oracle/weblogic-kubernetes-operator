@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.StepAndPacket;
@@ -553,6 +554,18 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         allOf(
             hasInitContainer("container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"),
             hasInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle")));
+  }
+
+  @Test
+  void whenPvDomainGlobalInitContainerImageChanges_rollManagedPod() {
+    getConfigurator()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitContainer(createContainer("container1", "busybox:1.35", "sh", "-c", "echo managed server"));
+    initializeExistingPod();
+
+    getDomain().getSpec().getInitContainers().get(0).setImage("busybox:1.36");
+
+    verifyPodReplaced();
   }
 
   @Test
