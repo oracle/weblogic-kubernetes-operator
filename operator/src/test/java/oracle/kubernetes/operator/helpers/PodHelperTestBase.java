@@ -489,7 +489,62 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   private V1ContainerPort createContainerPort(String portName) {
-    return new V1ContainerPort().name(portName).containerPort(8001).protocol("TCP");
+    return createContainerPort(portName, "TCP");
+  }
+
+  private V1ContainerPort createContainerPort(String portName, String protocol) {
+    return new V1ContainerPort().name(portName).containerPort(8001).protocol(protocol);
+  }
+
+  @Test
+  void whenLongNapNameTruncatesAtHyphen_podContainerCreatedWithValidPortName() {
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-public-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItem(createContainerPort("adminserver-01")));
+  }
+
+  @Test
+  void whenMultipleLongNapNamesTruncateAtHyphen_podContainerCreatedWithUniqueValidPortNames() {
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-public-channel", "admin", 8001, 8001));
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-other-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort("adminserver-01"),
+            createContainerPort("adminserver-02")));
+  }
+
+  @Test
+  void whenLongNapNameConflictsWithShortGeneratedName_podContainerCreatedWithUniqueValidPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("adminserver-01", "admin", 8001, 8001));
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-public-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort("adminserver-01"),
+            createContainerPort("adminserver-02")));
+  }
+
+  @Test
+  void whenNapNamesConflictAfterLegalizing_podContainerCreatedWithUniqueValidPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("my_channel", "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("my-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort("my-channel"),
+            createContainerPort("my-channel-01")));
+  }
+
+  @Test
+  void whenLongSipNapNameExceedsMaxUdpPortNameLength_podContainerCreatedWithTruncatedUdpPortName() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "sip", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+            createContainerPort("udp-very-lon-01", "UDP")));
   }
 
   @Test

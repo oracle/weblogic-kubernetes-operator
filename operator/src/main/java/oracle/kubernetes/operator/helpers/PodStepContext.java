@@ -330,7 +330,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
-    String name = createContainerPortName(ports, LegalNames.toDns1123LegalName(nap.getName()));
+    String name = createContainerPortName(ports, nap.getName());
     addContainerPort(ports, name, nap.getListenPort(), "TCP");
 
     if (isSipProtocol(nap)) {
@@ -345,37 +345,55 @@ public abstract class PodStepContext extends BasePodStepContext {
       // add if needed
       if (ports.stream().noneMatch(p -> p.getProtocol().equals(protocol) && p.getContainerPort().equals(listenPort)
           && Objects.equals(p.getName(), finalName))) {
-        ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
+        ports.add(new V1ContainerPort().name(finalName).containerPort(listenPort).protocol(protocol));
       }
     }
   }
 
   private String createContainerPortName(List<V1ContainerPort> ports, String name) {
+    name = toLegalContainerPortName(name);
     //Container port names can be a maximum of 15 characters in length
-    if (name.length() > LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+    if (name.length() > LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH || hasContainerPortNamed(ports, name)) {
       String portNamePrefix = getPortNamePrefix(name);
-      // Find ports with the name having the same first 12 characters
-      List<V1ContainerPort> containerPortsWithSamePrefix = ports.stream().filter(port ->
-              portNamePrefix.equals(getPortNamePrefix(port.getName()))).toList();
-      int index = containerPortsWithSamePrefix.size() + 1;
-      String indexStr = String.valueOf(index);
-      // zero fill to the left for single digit index (e.g. 01)
-      if (index < 10) {
-        indexStr = "0" + index;
-      } else if (index >= 100) {
-        LOGGER.severe(MessageKeys.ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH, getDomainUid(), getServerName(),
-                name, LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
-        return name;
+      for (int index = 1; index < 100; index++) {
+        String indexStr = String.valueOf(index);
+        // zero fill to the left for single digit index (e.g. 01)
+        if (index < 10) {
+          indexStr = "0" + index;
+        }
+        String indexedName = portNamePrefix + "-" + indexStr;
+        if (!hasContainerPortNamed(ports, indexedName)) {
+          return indexedName;
+        }
       }
-      name = portNamePrefix + "-" + indexStr;
+      LOGGER.severe(MessageKeys.ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH, getDomainUid(), getServerName(),
+              name, LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
     }
     return  name;
+  }
+
+  private String toLegalContainerPortName(String name) {
+    String legalName = LegalNames.toDns1123LegalName(name)
+        .replaceAll("[^a-z0-9-]", "-")
+        .replaceAll("-+", "-")
+        .replaceAll("^-|-$", "");
+    if (legalName.isEmpty()) {
+      return "port";
+    } else if (legalName.chars().noneMatch(Character::isLetter)) {
+      return "port-" + legalName;
+    }
+    return legalName;
+  }
+
+  private boolean hasContainerPortNamed(List<V1ContainerPort> ports, String name) {
+    return ports.stream().map(V1ContainerPort::getName).anyMatch(name::equals);
   }
 
   @Nonnull
   private String getPortNamePrefix(String name) {
     // Use first 12 characters of port name as prefix due to 15 character port name limit
-    return name.length() > 12 ? name.substring(0, 12) : name;
+    return name.substring(0, Math.min(name.length(), LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH - 3))
+        .replaceAll("-$", "");
   }
 
   Integer getListenPort() {
