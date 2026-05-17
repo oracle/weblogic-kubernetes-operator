@@ -578,6 +578,34 @@ class ManagedServersUpStepTest {
   }
 
   @Test
+  void whenLifecycleStopPatchesNeverBeforePodDeleted_stopAnnotatedServerAndKeepRemainingReplica() {
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    setCluster1Replicas(1);
+    addWlsCluster("cluster1", "server1", "server2");
+    configurator.configureServer("server1").withServerStartPolicy(ServerStartPolicy.NEVER);
+    info.setServerPod("server1", createPod("server1", "-100"));
+    addServer(info, "server2");
+
+    invokeStep();
+
+    assertThat(getServers(), contains("server2"));
+    assertThat(getServerShutdownNames(), contains("server1"));
+  }
+
+  @Test
+  void whenLifecycleStopWaitsForPodDeletionBeforeSettingNever_reselectsTargetServer() {
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    setCluster1Replicas(1);
+    addWlsCluster("cluster1", "server1", "server2");
+    addServer(info, "server2");
+
+    invokeStep();
+
+    assertThat(getServers(), contains("server1"));
+    assertThat(getServerShutdownNames(), contains("server2"));
+  }
+
+  @Test
   void whenShuttingDown_withNullWlsDomainConfig_ensureNoException() {
     configurator.setShuttingDown(true);
 
