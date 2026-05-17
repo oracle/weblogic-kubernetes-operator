@@ -77,6 +77,16 @@ class RestBackendImplTest {
   }
 
   @Test
+  void whenListingClustersWithoutDomainUid_returnForbidden() {
+    testSupport.defineResources(createExistingDomain());
+
+    WebApplicationException exception =
+        assertThrows(WebApplicationException.class, () -> createBackend().listClusters(MANAGED_NS, DOMAIN_NAME, null));
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
+  }
+
+  @Test
   void whenListingClustersForMatchingDomain_listClusters() {
     testSupport.defineResources(createExistingDomain(), createExistingCluster());
 
@@ -87,14 +97,14 @@ class RestBackendImplTest {
   void whenCreatingClusterInUnmanagedNamespace_returnForbidden() {
     WebApplicationException exception =
         assertThrows(WebApplicationException.class,
-            () -> createBackend().createOrReplaceCluster(createClusterMap(UNMANAGED_NS)));
+            () -> createBackend().createOrReplaceCluster(createClusterMap(UNMANAGED_NS), DOMAIN_NAME, DOMAIN_UID));
 
     assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
   }
 
   @Test
   void whenCreatingClusterInManagedNamespace_createCluster() {
-    createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS));
+    createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS), DOMAIN_NAME, DOMAIN_UID);
 
     ClusterResource clusterResource =
         testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain-cluster-1");
@@ -107,18 +117,44 @@ class RestBackendImplTest {
 
     WebApplicationException exception =
         assertThrows(WebApplicationException.class,
-            () -> createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS)));
+            () -> createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS), DOMAIN_NAME, DOMAIN_UID));
 
     assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
   }
 
   @Test
-  void whenReplacingClusterCreatedByOperator_replaceCluster() {
+  void whenReplacingClusterCreatedByOperatorWithoutMatchingDomain_returnForbidden() {
     ClusterResource existingCluster = createExistingCluster();
     existingCluster.getMetadata().putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
     testSupport.defineResources(existingCluster);
 
-    createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS));
+    WebApplicationException exception =
+        assertThrows(WebApplicationException.class,
+            () -> createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS), DOMAIN_NAME, DOMAIN_UID));
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
+  }
+
+  @Test
+  void whenReplacingClusterCreatedByOperatorNotReferencedByDomain_returnForbidden() {
+    ClusterResource existingCluster = createExistingCluster();
+    existingCluster.getMetadata().putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
+    testSupport.defineResources(existingCluster, createExistingDomain("other-cluster"));
+
+    WebApplicationException exception =
+        assertThrows(WebApplicationException.class,
+            () -> createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS), DOMAIN_NAME, DOMAIN_UID));
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
+  }
+
+  @Test
+  void whenReplacingClusterCreatedByOperatorForMatchingDomain_replaceCluster() {
+    ClusterResource existingCluster = createExistingCluster();
+    existingCluster.getMetadata().putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
+    testSupport.defineResources(existingCluster, createExistingDomain());
+
+    createBackend().createOrReplaceCluster(createClusterMap(MANAGED_NS), DOMAIN_NAME, DOMAIN_UID);
 
     ClusterResource clusterResource =
         testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain-cluster-1");
@@ -156,8 +192,12 @@ class RestBackendImplTest {
   }
 
   private DomainResource createExistingDomain() {
+    return createExistingDomain("sample-domain-cluster-1");
+  }
+
+  private DomainResource createExistingDomain(String clusterResourceName) {
     return new DomainResource().withMetadata(
         new V1ObjectMeta().name(DOMAIN_NAME).namespace(MANAGED_NS).uid(DOMAIN_UID))
-        .withSpec(new DomainSpec().withCluster(new V1LocalObjectReference().name("sample-domain-cluster-1")));
+        .withSpec(new DomainSpec().withCluster(new V1LocalObjectReference().name(clusterResourceName)));
   }
 }

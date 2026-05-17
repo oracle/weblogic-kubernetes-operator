@@ -377,7 +377,10 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private List<String> getReferencedClusterResourceNames(DomainResource domain) {
-    return domain.getSpec().getClusters().stream()
+    return Optional.ofNullable(domain)
+        .map(DomainResource::getSpec)
+        .map(DomainSpec::getClusters)
+        .orElse(Collections.emptyList()).stream()
         .map(V1LocalObjectReference::getName)
         .toList();
   }
@@ -450,7 +453,7 @@ public class RestBackendImpl implements RestBackend {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Object createOrReplaceCluster(Map<String, Object> cluster) {
+  public Object createOrReplaceCluster(Map<String, Object> cluster, String domainName, String domainUid) {
     Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) cluster.get("metadata"))
         .orElse(Collections.emptyMap());
     String namespace = (String) metadata.getOrDefault("namespace", "default");
@@ -483,6 +486,8 @@ public class RestBackendImpl implements RestBackend {
     }
 
     verifyOperatorCreatedCluster(currentCluster, name);
+    DomainResource domain = verifyLiveDomain(namespace, domainName, domainUid);
+    verifyClusterReferencedByDomain(domain, name);
     metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
         .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
     try {
@@ -494,6 +499,15 @@ public class RestBackendImpl implements RestBackend {
       return result;
     } catch (ApiException e) {
       throw handleApiException(e);
+    }
+  }
+
+  private void verifyClusterReferencedByDomain(DomainResource domain, String name) {
+    if (!getReferencedClusterResourceNames(domain).contains(name)) {
+      WebApplicationException e = createWebApplicationException(
+          Status.FORBIDDEN, "Cluster '" + name + "' is not referenced by the conversion Domain");
+      LOGGER.throwing(e);
+      throw e;
     }
   }
 

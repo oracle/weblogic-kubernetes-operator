@@ -848,7 +848,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   abstract class RestBackendStub implements RestBackend {
-    public Object createOrReplaceCluster(Map<String, Object> body) {
+    public Object createOrReplaceCluster(Map<String, Object> body, String domainName, String domainUid) {
       ClusterResource cluster = readCluster(writeMap(body));
       testSupport.defineResources(cluster);
       return body;
