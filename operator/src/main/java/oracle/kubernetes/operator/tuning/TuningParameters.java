@@ -84,6 +84,7 @@ public class TuningParameters {
   public static final String CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT = "crdPresenceFailureRetryMaxCount";
   public static final String HTTP_REQUEST_FAILURE_COUNT_THRESHOLD = "httpRequestFailureCountThreshold";
   public static final String SHUTDOWN_WITH_HTTP_POLLING_INTERVAL = "shutdownWithHttpPollingInterval";
+  public static final String DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE = "domainOnPVLocalDeveloperMode";
   public static final int DEFAULT_HTTP_REQUEST_FAILURE_COUNT_THRESHOLD = 10;
   public static final int DEFAULT_SHUTDOWN_WITH_HTTP_POLLING_INTERVAL = 3;
 
@@ -213,6 +214,10 @@ public class TuningParameters {
 
   public boolean isRestartEvictedPods() {
     return getParameter(RESTART_EVICTED_PODS, true);
+  }
+
+  public boolean isDomainOnPVLocalDeveloperMode() {
+    return getParameter(DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE, false);
   }
 
   /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -24,7 +24,8 @@ public class PersistentVolumeSpec {
       + "and WILL NOT WORK in a multi-node cluster. More info: "
       + "https://kubernetes.io/docs/concepts/storage/volumes#hostpath. "
       + "Represents a host path mapped into a pod. Host path volumes do not support ownership management "
-      + "or SELinux relabeling.")
+      + "or SELinux relabeling. Operator-created PersistentVolumes with hostPath sources require the operator"
+      + " Helm chart's domainOnPV.localDeveloperMode setting.")
   private V1HostPathVolumeSource hostPath;
 
   @Description("nfs represents an NFS mount on the host. Provisioned by an admin. More info: "

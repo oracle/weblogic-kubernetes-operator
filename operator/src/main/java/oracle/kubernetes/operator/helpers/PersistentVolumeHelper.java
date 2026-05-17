@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -29,6 +29,7 @@ import oracle.kubernetes.weblogic.domain.model.PersistentVolumeSpec;
 
 import static oracle.kubernetes.common.logging.MessageKeys.PV_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.PV_EXISTS;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -157,12 +158,21 @@ public class PersistentVolumeHelper {
         DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
         V1PersistentVolume persistentVolume = callResponse.getObject();
         if (persistentVolume == null) {
+          if (isRestrictedPVCreationDisabled()) {
+            return doNext(createDomainInvalidFailureSteps(DomainOnPVLocalDeveloperMode.createFailureMessage(
+                info.getDomain())), packet);
+          }
           return doNext(createNewPersistentVolume(getNext()), packet);
         } else {
           logPersistentVolumeExists(info.getDomain().getDomainUid(),
               info.getDomain().getInitPvDomainPersistentVolume());
         }
         return doNext(packet);
+      }
+
+      private boolean isRestrictedPVCreationDisabled() {
+        return DomainOnPVLocalDeveloperMode.hasRestrictedPVSource(info.getDomain())
+            && !DomainOnPVLocalDeveloperMode.isEnabled();
       }
 
       protected void logPersistentVolumeExists(String domainUid, PersistentVolume pv) {

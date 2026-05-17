@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 506e9a89dc1c6d1f955e632d709896acfb1b689b88fc444046eee58b93ed331b
+    weblogic.sha256: f7e1e9cee52e65c6959e9f8805ce12c4bf59bdd2e11f6ed96bae6842e95cccf6
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -129,7 +129,9 @@ spec:
                           volume. The operator will perform this one-time create operation
                           only if the persistent volume does not already exist. The
                           operator will not recreate or update the PersistentVolume
-                          when it exists. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv'
+                          when it exists. Operator-created PersistentVolumes that
+                          specify hostPath sources require the operator Helm chart''s
+                          domainOnPV.localDeveloperMode setting. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv'
                         properties:
                           metadata:
                             description: The PersistentVolume metadata. Must include
@@ -259,7 +261,9 @@ spec:
                                   info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath.
                                   Represents a host path mapped into a pod. Host path
                                   volumes do not support ownership management or SELinux
-                                  relabeling.'
+                                  relabeling. Operator-created PersistentVolumes with
+                                  hostPath sources require the operator Helm chart''s
+                                  domainOnPV.localDeveloperMode setting.'
                                 properties:
                                   path:
                                     type: string
