@@ -1462,12 +1462,39 @@ public abstract class PodStepContext extends BasePodStepContext {
                 .ifPresent(match -> container.setStartupProbe(match.getStartupProbe()))));
     }
 
+    private void restoreLegacyGeneratedPortNames(V1Pod recipe, V1Pod currentPod) {
+      List<V1ContainerPort> recipePorts = getContainer(recipe)
+          .map(V1Container::getPorts).orElse(Collections.emptyList());
+      List<V1ContainerPort> currentPorts = getContainer(currentPod)
+          .map(V1Container::getPorts).orElse(Collections.emptyList());
+      for (int i = 0; i < Math.min(recipePorts.size(), currentPorts.size()); i++) {
+        V1ContainerPort currentPort = currentPorts.get(i);
+        V1ContainerPort recipePort = recipePorts.get(i);
+        if (isSameContainerPort(recipePort, currentPort) && isValidContainerPortName(currentPort.getName())) {
+          recipePort.setName(currentPort.getName());
+        }
+      }
+    }
+
+    private boolean isSameContainerPort(V1ContainerPort recipePort, V1ContainerPort currentPort) {
+      return Objects.equals(recipePort.getContainerPort(), currentPort.getContainerPort())
+          && Objects.equals(recipePort.getProtocol(), currentPort.getProtocol());
+    }
+
+    private boolean isValidContainerPortName(String name) {
+      return name != null
+          && name.length() <= LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH
+          && !name.contains("--")
+          && name.matches("[a-z]([-a-z0-9]*[a-z0-9])?");
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
       // for each combination, start with pod recipe, apply all adjustments, and generate hash
       // return true if any adjusted hash matches required hash
       List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments = List.of(
+          Pair.of("restoreLegacyGeneratedPortNames", this::restoreLegacyGeneratedPortNames),
           Pair.of("restoreMetricsExporterSidecarPortTcpMetrics", this::restoreMetricsExporterSidecarPortTcpMetrics),
           Pair.of("removePodNameJavaOpt", this::removePodNameJavaOpt),
           Pair.of("restoreMetricsExporterSidecarJavaOpts", this::restoreMetricsExporterSidecarJavaOpts),
