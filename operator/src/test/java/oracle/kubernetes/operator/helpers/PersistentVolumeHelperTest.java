@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,6 +14,8 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -54,6 +56,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PV;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.READ_WRITE_MANY;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
@@ -180,6 +184,78 @@ class PersistentVolumeHelperTest {
     assertThat(
             getPersistentVolumeResource(),
             is(persistentVolumeWithName("Test")));
+  }
+
+  @Test
+  void onRunWithNoRestrictedPersistentVolumeAndLocalDeveloperModeDisabled_reportInDomainStatus() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    configureDomainWithHostPathPersistentVolume();
+
+    runPersistentVolumeHelper();
+
+    assertThat(getDomain(), hasStatus().withReason(DOMAIN_INVALID)
+        .withMessageContaining("spec.hostPath", "domainOnPV.localDeveloperMode"));
+  }
+
+  @Test
+  void onRunWithNoRestrictedPersistentVolumeAndLocalDeveloperModeDisabled_doNotCreateIt() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    configureDomainWithHostPathPersistentVolume();
+
+    runPersistentVolumeHelper();
+
+    assertThat(getPersistentVolumeResource(), is((V1PersistentVolume) null));
+  }
+
+  @Test
+  void onRunWithNoRestrictedPersistentVolumeAndLocalDeveloperModeEnabled_createIt() {
+    consoleHandlerMemento.ignoreMessage(getPvCreateLogMessage());
+    TuningParametersStub.setParameter(DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE, "true");
+    configureDomainWithHostPathPersistentVolume();
+
+    runPersistentVolumeHelper();
+
+    assertThat(
+        getPersistentVolumeResource(),
+        is(persistentVolumeWithName("Test")));
+  }
+
+  @Test
+  void onRunWithNoNfsPersistentVolumeAndLocalDeveloperModeDisabled_createIt() {
+    consoleHandlerMemento.ignoreMessage(getPvCreateLogMessage());
+    configureDomainWithNfsPersistentVolume();
+
+    runPersistentVolumeHelper();
+
+    assertThat(
+        getPersistentVolumeResource(),
+        is(persistentVolumeWithName("Test")));
+  }
+
+  @Test
+  void onRunWithExistingRestrictedPersistentVolumeAndLocalDeveloperModeDisabled_logPvExists() {
+    configureDomainWithHostPathPersistentVolume();
+    V1PersistentVolume existingPv = createPvModel(testSupport.getPacket());
+    existingPv.getMetadata().setNamespace(null);
+    testSupport.defineResources(existingPv);
+
+    runPersistentVolumeHelper();
+
+    assertThat(logRecords, containsFine(getPvExistsLogMessage()));
+  }
+
+  private void configureDomainWithHostPathPersistentVolume() {
+    PersistentVolume pv = createPv();
+    pv.getSpec().hostPath(new V1HostPathVolumeSource().path("/shared"));
+    configureDomain().withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
+        pv));
+  }
+
+  private void configureDomainWithNfsPersistentVolume() {
+    PersistentVolume pv = createPv();
+    pv.getSpec().nfs(new V1NFSVolumeSource().path("/shared").server("nfs-server"));
+    configureDomain().withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
+        pv));
   }
 
   @Test

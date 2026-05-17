@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 
 @SuppressWarnings("SameParameterValue")
@@ -43,10 +44,28 @@ class OperatorChartIT extends OperatorChartItBase {
     assertThat(getEnvironmentVariable(installArgs, "JVM_OPTIONS"), equalTo("-override"));
   }
 
+  @Test
+  void whenLocalDeveloperModeEnabled_webhookConfigMapHasValue() throws Exception {
+    final InstallArgs installArgs =
+        newInstallArgs(Map.of("domainOnPV", Map.of("localDeveloperMode", true)));
+
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"),
+        hasEntry("domainOnPVLocalDeveloperMode", "true"));
+  }
+
   private String getEnvironmentVariable(InstallArgs installArgs, String name) throws Exception {
     final Map<String, Object> container = getOperatorDeploymentContainer(installArgs);
     final List<String> values = JsonPath.parse(container).read("$.env[?(@.name=='" + name + "')].value");
     return values.stream().findFirst().orElse(null);
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> getConfigMapData(InstallArgs installArgs, String name) throws Exception {
+    return (Map<String, Object>) getChart(installArgs).getDocuments("ConfigMap").stream()
+        .filter(configMap -> name.equals(JsonPath.read(configMap, "$.metadata.name")))
+        .findFirst()
+        .map(configMap -> configMap.get("data"))
+        .orElse(Collections.emptyMap());
   }
 
   @SuppressWarnings("unchecked")

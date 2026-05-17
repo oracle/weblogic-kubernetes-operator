@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.resource;
@@ -15,8 +15,10 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
 
 import static java.lang.System.lineSeparator;
 
@@ -55,9 +57,37 @@ public abstract class AdmissionChecker {
     return failures.isEmpty();
   }
 
+  boolean hasUniqueDomainUid(DomainResource proposedDomain) {
+    try {
+      Optional<DomainResource> duplicate = getDomains(proposedDomain.getNamespace()).stream()
+          .filter(domain -> hasSameDomainUid(domain, proposedDomain))
+          .filter(domain -> hasDifferentResourceName(domain, proposedDomain))
+          .findFirst();
+      duplicate.ifPresent(domain -> messages.add(DomainValidationMessages.duplicateDomainUid(
+          proposedDomain.getDomainUid(), domain.getMetadata().getName(), proposedDomain.getNamespace())));
+      return duplicate.isEmpty();
+    } catch (ApiException e) {
+      messages.add(e.getMessage());
+      return false;
+    }
+  }
+
   public static List<ClusterResource> getClusters(String namespace) throws ApiException {
     return Optional.of(RequestBuilder.CLUSTER.list(namespace))
         .map(ClusterList::getItems).orElse(Collections.emptyList());
+  }
+
+  static List<DomainResource> getDomains(String namespace) throws ApiException {
+    return Optional.of(RequestBuilder.DOMAIN.list(namespace))
+        .map(DomainList::getItems).orElse(Collections.emptyList());
+  }
+
+  private boolean hasSameDomainUid(DomainResource domain, DomainResource proposedDomain) {
+    return proposedDomain.getDomainUid().equals(domain.getDomainUid());
+  }
+
+  private boolean hasDifferentResourceName(DomainResource domain, DomainResource proposedDomain) {
+    return !proposedDomain.getMetadata().getName().equals(domain.getMetadata().getName());
   }
 
   String createMessage() {

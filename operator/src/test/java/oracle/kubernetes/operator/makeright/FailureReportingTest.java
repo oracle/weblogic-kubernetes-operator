@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
@@ -64,6 +64,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_
 import static oracle.kubernetes.operator.DomainFailureMessages.createReplicaFailureMessage;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
@@ -150,6 +151,32 @@ class FailureReportingTest {
     executeMakeRight(test -> {});
 
     assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  void whenRereadDomainHasInvalidSpec_dontRunUpPlan() {
+    DomainResource updatedDomain = DomainProcessorTestSetup.createTestDomain();
+    new DomainCommonConfigurator(updatedDomain).withWebLogicCredentialsSecret("missing-secret");
+    updatedDomain.getMetadata().setCreationTimestamp(SystemClock.now().minusSeconds(20));
+    testSupport.deleteResources(domain);
+    testSupport.defineResources(updatedDomain);
+
+    executeMakeRight(test -> {});
+
+    assertThat(terminalStep.wasRun(), is(false));
+    assertThat(info.getDomain(), hasCondition(FAILED)
+        .withReason(DOMAIN_INVALID)
+        .withMessageContaining("missing-secret"));
+  }
+
+  @Test
+  void whenRereadDomainNotFound_clearDomainBeforeDownPlan() {
+    testSupport.failOnRead(KubernetesTestSupport.DOMAIN, domain.getMetadata().getName(), NS, HTTP_NOT_FOUND);
+
+    executeMakeRight(test -> {});
+
+    assertThat(info.getDomain(), nullValue());
+    assertThat(info.isNotDeleting(), is(false));
   }
 
   @Test
