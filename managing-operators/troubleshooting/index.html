@@ -23,29 +23,29 @@
     <meta itemprop="description" content="General advice for debugging and monitoring the operator.">
     <meta itemprop="datePublished" content="2019-02-23T16:47:21-05:00">
     <meta itemprop="dateModified" content="2019-02-23T16:47:21-05:00">
-    <meta itemprop="wordCount" content="2733">
+    <meta itemprop="wordCount" content="3279">
     <title>Troubleshooting :: WebLogic Kubernetes Operator</title>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1779079473" rel="icon" type="image/png">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1779079473" rel="stylesheet">
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1779079473" defer></script>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1779137379" rel="icon" type="image/png">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1779137379" rel="stylesheet">
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1779137379" defer></script>
     <script>
       window.relearn = window.relearn || {};
-      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1779079473";
+      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1779137379";
     </script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1779079473" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1779137379" defer></script>
     <script>
       window.relearn = window.relearn || {};
       window.relearn.contentLangs=['en'];
     </script>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779079473" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779079473" rel="stylesheet"></noscript>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1779079473" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1779079473" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1779079473" rel="stylesheet" id="R-format-style">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779137379" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779137379" rel="stylesheet"></noscript>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1779137379" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1779137379" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1779137379" rel="stylesheet" id="R-format-style">
     <script>
       window.relearn = window.relearn || {};
       // configuration
@@ -120,6 +120,7 @@
     <li><a href="#check-the-operator-deployment">Check the operator deployment</a></li>
     <li><a href="#check-the-conversion-webhook-deployment">Check the conversion webhook deployment</a></li>
     <li><a href="#check-common-operator-issues">Check common operator issues</a></li>
+    <li><a href="#helm-4-server-side-apply-field-ownership-conflicts">Helm 4 server-side apply field ownership conflicts</a></li>
     <li><a href="#check-for-operator-events">Check for operator events</a></li>
     <li><a href="#check-the-operator-metrics-endpoint">Check the operator metrics endpoint</a></li>
     <li><a href="#check-for-conversion-webhook-events">Check for conversion webhook events</a></li>
@@ -188,6 +189,7 @@
     <li><a href="#check-the-operator-deployment">Check the operator deployment</a></li>
     <li><a href="#check-the-conversion-webhook-deployment">Check the conversion webhook deployment</a></li>
     <li><a href="#check-common-operator-issues">Check common operator issues</a></li>
+    <li><a href="#helm-4-server-side-apply-field-ownership-conflicts">Helm 4 server-side apply field ownership conflicts</a></li>
     <li><a href="#check-for-operator-events">Check for operator events</a></li>
     <li><a href="#check-the-operator-metrics-endpoint">Check the operator metrics endpoint</a></li>
     <li><a href="#check-for-conversion-webhook-events">Check for conversion webhook events</a></li>
@@ -312,6 +314,86 @@ FAQs
 </a>
 .</li>
 </ul>
+<h3 id="helm-4-server-side-apply-field-ownership-conflicts">Helm 4 server-side apply field ownership conflicts<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<p>If a Helm chart manages WebLogic <code>Domain</code> or <code>Cluster</code> resources, a Helm 4 upgrade
+may fail when Helm uses Kubernetes Server-Side Apply and another field manager
+owns the same resource fields.</p>
+<p>For example, an upgrade of a chart that contains a legacy <code>weblogic.oracle/v8</code>
+<code>Domain</code> resource may fail with an error similar to:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Error: UPGRADE FAILED: conflict occurred while applying object MY_NAMESPACE/MY_DOMAIN weblogic.oracle/v8, Kind=Domain:
+</span></span><span style="display:flex;"><span>Apply failed with 1 conflict: conflict with &#34;kubectl-client-side-apply&#34; using weblogic.oracle/v8: .spec.clusters</span></span></code></pre></div>
+<p>The conflicting manager name may differ, for example, <code>before-first-apply</code>,
+<code>kubectl-client-side-apply</code>, or another tool that uses Kubernetes apply semantics.
+This issue is not caused by the WebLogic Kubernetes Operator reconciliation
+logic. The Kubernetes API server rejects the Helm update before the operator
+processes the resource.</p>
+<p>Kubernetes Server-Side Apply tracks ownership of individual resource fields in
+<code>metadata.managedFields</code>. If Helm 4 applies a field that is already owned by
+another field manager, Kubernetes rejects the update unless conflicts are forced.
+The Helm 4 documentation describes Server-Side Apply as a Helm 4 feature for
+resolving cases where multiple tools manage the same Kubernetes resources; the
+Helm 4 <code>helm upgrade</code> command documents the <code>--server-side</code> option and the
+<code>--force-conflicts</code> option for conflict handling. For more information, see
+
+
+<a href="https://helm.sh/docs/overview/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Helm 4 Overview
+</a>
+ and
+
+
+<a href="https://helm.sh/docs/helm/helm_upgrade/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+helm upgrade
+</a>
+.
+This is most likely when all of the following are true:</p>
+<ul>
+<li>A Helm chart manages WebLogic <code>Domain</code> or <code>Cluster</code> resources.</li>
+<li>Helm 4 is using Server-Side Apply for the install or upgrade.</li>
+<li>The same resource fields were previously created or modified by another apply
+manager, such as <code>kubectl apply</code>, <code>kubectl apply --server-side</code>, a GitOps tool,
+or an older workflow that caused Kubernetes to assign ownership to
+<code>before-first-apply</code>.</li>
+</ul>
+<p>For legacy <code>weblogic.oracle/v8</code> Domain resources, conflicts can appear on fields
+such as <code>.spec.clusters</code>. Beginning with <code>weblogic.oracle/v9</code>, cluster lifecycle
+settings are represented by separate <code>Cluster</code> resources, so equivalent conflicts
+may appear on <code>Cluster</code> fields such as <code>.spec.replicas</code>.</p>
+<p>This scenario is separate from installing or upgrading the WebLogic Kubernetes
+Operator Helm chart itself. A typical operator Helm upgrade does not manage user
+Domain resources.</p>
+<p>If the Helm chart is intended to be the source of truth for the affected <code>Domain</code>
+or <code>Cluster</code> resource fields, run the Helm 4 upgrade with conflict forcing:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm upgrade RELEASE_NAME CHART_PATH <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --namespace NAMESPACE <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --server-side<span style="color:#f92672">=</span>true <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --force-conflicts</span></span></code></pre></div>
+<p>This allows Helm to take ownership of the conflicted fields for future
+Server-Side Apply operations.</p>
+<p>If you do not want Helm to take Server-Side Apply ownership of those fields,
+disable Server-Side Apply for the Helm 4 upgrade:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm upgrade RELEASE_NAME CHART_PATH <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --namespace NAMESPACE <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --server-side<span style="color:#f92672">=</span>false</span></span></code></pre></div>
+<p>Avoid managing the same <code>Domain</code> or <code>Cluster</code> spec fields with multiple
+Server-Side Apply managers. For example, do not use both Helm Server-Side Apply
+and another Server-Side Apply based GitOps or <code>kubectl apply --server-side</code>
+workflow for the same fields unless you intentionally coordinate field ownership.</p>
+<p>For legacy <code>weblogic.oracle/v8</code> Domain resources, migrate authored manifests to
+<code>weblogic.oracle/v9</code> and manage cluster lifecycle settings through separate
+<code>Cluster</code> resources. Do not continue using v8 manifests as the normal update path
+after conversion. This reduces the amount of mutable cluster lifecycle
+configuration in the Domain resource and aligns with the current operator schema.
+Note that Server-Side Apply conflicts can still occur if multiple managers apply
+the same v9 Domain or Cluster fields.</p>
 <h3 id="check-for-operator-events">Check for operator events<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
 <p>To check for Kubernetes events that may have been logged to the operator&rsquo;s namespace:</p>
 <div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE get events --sort-by=&#39;.lastTimestamp&#39;</span></span></code></pre></div>
@@ -711,8 +793,8 @@ Elastic Stack (Elasticsearch, Logstash, and Kibana)
 </div>
       </div>
     </aside>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1779079473" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1779137379" defer></script>
     <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>

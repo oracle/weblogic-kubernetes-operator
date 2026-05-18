@@ -90,7 +90,7 @@
       <link>https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html</link>
       <pubDate>Sat, 23 Feb 2019 08:14:59 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html</guid>
-      <description>The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.&#xA;NGINX SSL passthrough ingress service does not work with Kubernetes headless service ISSUE: When installing NGINX ingress controller with SSL passthrough enabled --set &#34;controller.extraArgs.enable-ssl-passthrough=true&#34;, any ingress rule created subsequently, using SSL passthrough to the individual server service, will fail.</description>
+      <description>The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.&#xA;Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .</description>
     </item>
   </channel>
 </rss>

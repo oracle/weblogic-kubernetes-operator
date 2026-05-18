@@ -6,48 +6,48 @@
     <meta name="generator" content="Hugo 0.153.0">
     <meta name="generator" content="Relearn 8.3.0">
     <meta name="description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-NGINX SSL passthrough ingress service does not work with Kubernetes headless service ISSUE: When installing NGINX ingress controller with SSL passthrough enabled --set &#34;controller.extraArgs.enable-ssl-passthrough=true&#34;, any ingress rule created subsequently, using SSL passthrough to the individual server service, will fail.">
+Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta name="author" content="">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Known limitations :: WebLogic Kubernetes Operator">
     <meta name="twitter:description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-NGINX SSL passthrough ingress service does not work with Kubernetes headless service ISSUE: When installing NGINX ingress controller with SSL passthrough enabled --set &#34;controller.extraArgs.enable-ssl-passthrough=true&#34;, any ingress rule created subsequently, using SSL passthrough to the individual server service, will fail.">
+Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html">
     <meta property="og:site_name" content="WebLogic Kubernetes Operator">
     <meta property="og:title" content="Known limitations :: WebLogic Kubernetes Operator">
     <meta property="og:description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-NGINX SSL passthrough ingress service does not work with Kubernetes headless service ISSUE: When installing NGINX ingress controller with SSL passthrough enabled --set &#34;controller.extraArgs.enable-ssl-passthrough=true&#34;, any ingress rule created subsequently, using SSL passthrough to the individual server service, will fail.">
+Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta property="og:locale" content="en_us">
     <meta property="og:type" content="website">
     <meta itemprop="name" content="Known limitations :: WebLogic Kubernetes Operator">
     <meta itemprop="description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-NGINX SSL passthrough ingress service does not work with Kubernetes headless service ISSUE: When installing NGINX ingress controller with SSL passthrough enabled --set &#34;controller.extraArgs.enable-ssl-passthrough=true&#34;, any ingress rule created subsequently, using SSL passthrough to the individual server service, will fail.">
+Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta itemprop="datePublished" content="2019-02-23T08:14:59-05:00">
     <meta itemprop="dateModified" content="2019-02-23T08:14:59-05:00">
-    <meta itemprop="wordCount" content="290">
+    <meta itemprop="wordCount" content="340">
     <title>Known limitations :: WebLogic Kubernetes Operator</title>
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.xml" rel="alternate" type="application/rss+xml" title="Known limitations :: WebLogic Kubernetes Operator">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1779079473" rel="icon" type="image/png">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1779079473" rel="stylesheet">
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1779079473" defer></script>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1779137379" rel="icon" type="image/png">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1779137379" rel="stylesheet">
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1779137379" defer></script>
     <script>
       window.relearn = window.relearn || {};
-      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1779079473";
+      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1779137379";
     </script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1779079473" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1779137379" defer></script>
     <script>
       window.relearn = window.relearn || {};
       window.relearn.contentLangs=['en'];
     </script>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779079473" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779079473" rel="stylesheet"></noscript>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1779079473" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1779079473" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1779079473" rel="stylesheet" id="R-format-style">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779137379" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1779137379" rel="stylesheet"></noscript>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1779137379" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1779137379" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1779137379" rel="stylesheet" id="R-format-style">
     <script>
       window.relearn = window.relearn || {};
       // configuration
@@ -118,6 +118,7 @@ NGINX SSL passthrough ingress service does not work with Kubernetes headless ser
   <ul>
     <li>
       <ul>
+        <li><a href="#helm-4-server-side-apply-field-ownership-conflicts">Helm 4 server-side apply field ownership conflicts</a></li>
         <li><a href="#nginx-ssl-passthrough-ingress-service-does-not-work-with-kubernetes-headless-service">NGINX SSL passthrough ingress service does not work with Kubernetes headless service</a></li>
       </ul>
     </li>
@@ -162,6 +163,18 @@ NGINX SSL passthrough ingress service does not work with Kubernetes headless ser
 
 
 <p>The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.</p>
+<h4 id="helm-4-server-side-apply-field-ownership-conflicts">Helm 4 server-side apply field ownership conflicts<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p>When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed
+<code>Domain</code> or <code>Cluster</code> resources, Kubernetes may reject the update if another
+field manager owns the same resource fields. For details and workarounds, see
+
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/#helm-4-server-side-apply-field-ownership-conflicts"
+   
+   >
+Helm 4 server-side apply field ownership conflicts
+</a>
+.</p>
 <h4 id="nginx-ssl-passthrough-ingress-service-does-not-work-with-kubernetes-headless-service">NGINX SSL passthrough ingress service does not work with Kubernetes headless service<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
 <p><strong>ISSUE</strong>:
 When installing NGINX ingress controller with SSL passthrough enabled <code>--set &quot;controller.extraArgs.enable-ssl-passthrough=true&quot;</code>, any ingress rule created subsequently, using SSL passthrough to the individual server service, will fail.</p>
@@ -301,8 +314,8 @@ https://github.com/kubernetes/ingress-nginx/issues/1718
 </div>
       </div>
     </aside>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1779079473" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1779079473" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1779137379" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1779137379" defer></script>
     <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>
