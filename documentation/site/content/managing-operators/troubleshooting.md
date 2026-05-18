@@ -127,6 +127,88 @@ For information about installing and uninstalling the webhook, see
 - See [Common mistakes and solutions]({{% relref "/managing-operators/common-mistakes.md" %}}).
 - Check the [FAQs]({{% relref "/faq/_index.md" %}}).
 
+### Helm 4 server-side apply field ownership conflicts
+
+If a Helm chart manages WebLogic `Domain` or `Cluster` resources, a Helm 4 upgrade
+may fail when Helm uses Kubernetes Server-Side Apply and another field manager
+owns the same resource fields.
+
+For example, an upgrade of a chart that contains a legacy `weblogic.oracle/v8`
+`Domain` resource may fail with an error similar to:
+
+```text
+Error: UPGRADE FAILED: conflict occurred while applying object MY_NAMESPACE/MY_DOMAIN weblogic.oracle/v8, Kind=Domain:
+Apply failed with 1 conflict: conflict with "kubectl-client-side-apply" using weblogic.oracle/v8: .spec.clusters
+```
+
+The conflicting manager name may differ, for example, `before-first-apply`,
+`kubectl-client-side-apply`, or another tool that uses Kubernetes apply semantics.
+This issue is not caused by the WebLogic Kubernetes Operator reconciliation
+logic. The Kubernetes API server rejects the Helm update before the operator
+processes the resource.
+
+Kubernetes Server-Side Apply tracks ownership of individual resource fields in
+`metadata.managedFields`. If Helm 4 applies a field that is already owned by
+another field manager, Kubernetes rejects the update unless conflicts are forced.
+The Helm 4 documentation describes Server-Side Apply as a Helm 4 feature for
+resolving cases where multiple tools manage the same Kubernetes resources; the
+Helm 4 `helm upgrade` command documents the `--server-side` option and the
+`--force-conflicts` option for conflict handling. For more information, see
+[Helm 4 Overview](https://helm.sh/docs/overview/) and
+[helm upgrade](https://helm.sh/docs/helm/helm_upgrade/).
+This is most likely when all of the following are true:
+
+* A Helm chart manages WebLogic `Domain` or `Cluster` resources.
+* Helm 4 is using Server-Side Apply for the install or upgrade.
+* The same resource fields were previously created or modified by another apply
+  manager, such as `kubectl apply`, `kubectl apply --server-side`, a GitOps tool,
+  or an older workflow that caused Kubernetes to assign ownership to
+  `before-first-apply`.
+
+For legacy `weblogic.oracle/v8` Domain resources, conflicts can appear on fields
+such as `.spec.clusters`. Beginning with `weblogic.oracle/v9`, cluster lifecycle
+settings are represented by separate `Cluster` resources, so equivalent conflicts
+may appear on `Cluster` fields such as `.spec.replicas`.
+
+This scenario is separate from installing or upgrading the WebLogic Kubernetes
+Operator Helm chart itself. A typical operator Helm upgrade does not manage user
+Domain resources.
+
+If the Helm chart is intended to be the source of truth for the affected `Domain`
+or `Cluster` resource fields, run the Helm 4 upgrade with conflict forcing:
+
+```shell
+$ helm upgrade RELEASE_NAME CHART_PATH \
+  --namespace NAMESPACE \
+  --server-side=true \
+  --force-conflicts
+```
+
+This allows Helm to take ownership of the conflicted fields for future
+Server-Side Apply operations.
+
+If you do not want Helm to take Server-Side Apply ownership of those fields,
+disable Server-Side Apply for the Helm 4 upgrade:
+
+```shell
+$ helm upgrade RELEASE_NAME CHART_PATH \
+  --namespace NAMESPACE \
+  --server-side=false
+```
+
+Avoid managing the same `Domain` or `Cluster` spec fields with multiple
+Server-Side Apply managers. For example, do not use both Helm Server-Side Apply
+and another Server-Side Apply based GitOps or `kubectl apply --server-side`
+workflow for the same fields unless you intentionally coordinate field ownership.
+
+For legacy `weblogic.oracle/v8` Domain resources, migrate authored manifests to
+`weblogic.oracle/v9` and manage cluster lifecycle settings through separate
+`Cluster` resources. Do not continue using v8 manifests as the normal update path
+after conversion. This reduces the amount of mutable cluster lifecycle
+configuration in the Domain resource and aligns with the current operator schema.
+Note that Server-Side Apply conflicts can still occur if multiple managers apply
+the same v9 Domain or Cluster fields.
+
 ### Check for operator events
 
 To check for Kubernetes events that may have been logged to the operator's namespace:
