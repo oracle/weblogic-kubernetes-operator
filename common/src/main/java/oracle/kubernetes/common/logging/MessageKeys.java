@@ -64,6 +64,7 @@ public class MessageKeys {
   public static final String DOMAIN_STATUS = "WLSKO-0102";
   public static final String INVALID_MANAGE_SERVER_COUNT = "WLSKO-0103";
   public static final String SCALE_COUNT_GREATER_THAN_CONFIGURED = "WLSKO-0104";
+  public static final String MULTIPLE_DOMAINS_FOR_UID = "WLSKO-0105";
   public static final String MATCHING_DOMAIN_NOT_FOUND = "WLSKO-0106";
   public static final String INVALID_DOMAIN_UID = "WLSKO-0107";
   public static final String NULL_DOMAIN_UID = "WLSKO-0108";
