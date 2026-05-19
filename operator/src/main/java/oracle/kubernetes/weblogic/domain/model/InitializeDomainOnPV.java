@@ -1,4 +1,4 @@
-// Copyright (c) 2023, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -16,7 +16,9 @@ public class InitializeDomainOnPV {
   @Description("An optional field that describes the configuration to create a PersistentVolume for `Domain on PV`"
       + " domain. Omit this section if you have manually created a persistent volume. The operator will"
       + " perform this one-time create operation only if the persistent volume does not already exist. The operator"
-      + " will not recreate or update the PersistentVolume when it exists. More info:"
+      + " will not recreate or update the PersistentVolume when it exists. Operator-created PersistentVolumes that"
+      + " specify hostPath sources require the operator Helm chart's domainOnPV.localDeveloperMode setting."
+      + " More info:"
       + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv")
   PersistentVolume persistentVolume;
 

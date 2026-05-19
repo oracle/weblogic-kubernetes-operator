@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Helm uninstall/install an operator that monitors DOMAIN_NAMESPACE.
@@ -67,6 +67,7 @@ helm install $OPER_NAME kubernetes/charts/weblogic-operator \
   --set       serviceAccount=$OPER_SA \
   --set       "domainNamespaces={$DOMAIN_NAMESPACE}" \
   --set       "javaLoggingLevel=INFO" \
+  --set       domainOnPV.localDeveloperMode=true \
   --set       featureGates=DomainOnPvSimplification=true \
   --wait
 
@@ -80,4 +81,3 @@ for evar in DOMAIN_NAMESPACE OPER_NAMESPACE OPER_NAME OPER_IMAGE OPER_SA ; do
 done
 
 echo "@@ log command: ${KUBERNETES_CLI} logs -n $OPER_NAMESPACE -c weblogic-operator deployments/weblogic-operator"
-

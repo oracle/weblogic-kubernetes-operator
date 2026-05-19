@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -37,6 +37,7 @@ public class OperatorParams {
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
   private static final String WEBHOOK_ONLY = "webhookOnly";
+  private static final String DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE = "domainOnPV.localDeveloperMode";
 
   private static final String OPERATOR_ONLY = "operatorOnly";
   private static final String CPU_REQUESTS = "cpuRequests";
@@ -71,6 +72,7 @@ public class OperatorParams {
   private String kubernetesPlatform;
   private boolean createLogStashConfigMap = true;
   private boolean webhookOnly;
+  private boolean domainOnPVLocalDeveloperMode;
   private boolean operatorOnly;
   private boolean openshiftIstioInjection;
   private String cpuRequests;
@@ -255,6 +257,11 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams domainOnPVLocalDeveloperMode(boolean domainOnPVLocalDeveloperMode) {
+    this.domainOnPVLocalDeveloperMode = domainOnPVLocalDeveloperMode;
+    return this;
+  }
+
   /**
    * Loads Helm values into a value map.
    * @return Map of values
@@ -307,7 +314,10 @@ public class OperatorParams {
     }
     if (webhookOnly) {
       values.put(WEBHOOK_ONLY, webhookOnly);
-    }    
+    }
+    if (domainOnPVLocalDeveloperMode) {
+      values.put(DOMAIN_ON_PV_LOCAL_DEVELOPER_MODE, domainOnPVLocalDeveloperMode);
+    }
 
     if (operatorOnly) {
       values.put(OPERATOR_ONLY, operatorOnly);

@@ -1,12 +1,14 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.util.List;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.extended.controller.reconciler.Result;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
@@ -48,10 +50,14 @@ public class DeleteDomainStep extends Step {
   }
 
   private List<DomainPresenceInfo.ServerShutdownInfo> getShutdownInfos(DomainPresenceInfo info) {
-    return info.getServerPods()
+    return getServerPodsForShutdown(info)
         .map(PodHelper::getPodServerName)
         .map(this::createShutdownInfo)
         .toList();
+  }
+
+  private Stream<V1Pod> getServerPodsForShutdown(DomainPresenceInfo info) {
+    return info.getDomain() == null ? Stream.empty() : info.getServerPods();
   }
 
   private DomainPresenceInfo.ServerShutdownInfo createShutdownInfo(String serverName) {

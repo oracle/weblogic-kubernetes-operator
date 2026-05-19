@@ -135,6 +135,21 @@ public class RestBackendImpl implements RestBackend {
     clientSupplier = c -> c;
   }
 
+  // Intended for unit tests
+  RestBackendImpl(
+      String principal,
+      String accessToken,
+      Supplier<Collection<String>> domainNamespaces,
+      Gson gson,
+      UnaryOperator<ApiClient> clientSupplier) {
+    this.domainNamespaces = domainNamespaces;
+    this.domainNamespacePredicate = namespace -> domainNamespaces.get().contains(namespace);
+    this.principal = principal;
+    userInfo = authenticate(accessToken);
+    this.gson = gson;
+    this.clientSupplier = clientSupplier;
+  }
+
   private void authorize(String domainUid, Operation operation) {
     if (!useAuthenticateWithTokenReview()) {
       return;
@@ -311,8 +326,22 @@ public class RestBackendImpl implements RestBackend {
 
   private Optional<DomainResource> getDomain(String domainUid) {
     authorize(null, Operation.LIST);
-    
-    return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
+
+    List<DomainResource> matchingDomains =
+        getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).toList();
+    if (matchingDomains.size() > 1) {
+      throw createWebApplicationException(
+          Status.CONFLICT,
+          MessageKeys.MULTIPLE_DOMAINS_FOR_UID,
+          domainUid,
+          getDomainNamespaces(matchingDomains));
+    }
+
+    return matchingDomains.stream().findFirst();
+  }
+
+  private String getDomainNamespaces(List<DomainResource> domains) {
+    return domains.stream().map(DomainResource::getNamespace).collect(Collectors.joining(", "));
   }
 
   private Optional<ClusterResource> getClusterResource(DomainResource domain, String clusterName) {

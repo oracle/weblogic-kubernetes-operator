@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -30,7 +30,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
@@ -48,6 +50,7 @@ public class DomainValidationSteps {
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
   private static final String CLUSTERS = "clusters";
+  private static final String DOMAINS = "domains";
 
   private DomainValidationSteps() {
   }
@@ -58,9 +61,12 @@ public class DomainValidationSteps {
    */
   public static Step createDomainValidationSteps(String namespace) {
     return Step.chain(
+          new ClearValidationResourceListsStep(),
           createListSecretsStep(namespace),
           createListConfigMapsStep(namespace),
           createListClustersStep(namespace),
+          createListDomainsStep(namespace),
+          new DomainUidUniquenessStep(),
           new DomainValidationStep());
   }
 
@@ -74,6 +80,18 @@ public class DomainValidationSteps {
 
   private static Step createListSecretsStep(String domainNamespace) {
     return RequestBuilder.SECRET.list(domainNamespace, new ListSecretsResponseStep());
+  }
+
+  static class ClearValidationResourceListsStep extends Step {
+
+    @Override
+    public @Nonnull Result apply(Packet packet) {
+      packet.remove(SECRETS);
+      packet.remove(CONFIGMAPS);
+      packet.remove(CLUSTERS);
+      packet.remove(DOMAINS);
+      return doNext(packet);
+    }
   }
 
   static class ListSecretsResponseStep extends DefaultResponseStep<V1SecretList> {
@@ -129,6 +147,53 @@ public class DomainValidationSteps {
 
     static List<ClusterResource> getClusters(Packet packet) {
       return Optional.ofNullable(packet.<List<ClusterResource>>getValue(CLUSTERS)).orElse(new ArrayList<>());
+    }
+  }
+
+  private static Step createListDomainsStep(String domainNamespace) {
+    return RequestBuilder.DOMAIN.list(domainNamespace, new ListDomainsResponseStep());
+  }
+
+  static class ListDomainsResponseStep extends DefaultResponseStep<DomainList> {
+
+    @Override
+    public Result onSuccess(Packet packet, KubernetesApiResponse<DomainList> callResponse) {
+      List<DomainResource> list = getDomains(packet);
+      list.addAll(callResponse.getObject().getItems());
+      packet.put(DOMAINS, list);
+
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    static List<DomainResource> getDomains(Packet packet) {
+      return Optional.ofNullable(packet.<List<DomainResource>>getValue(DOMAINS)).orElse(new ArrayList<>());
+    }
+  }
+
+  static class DomainUidUniquenessStep extends Step {
+
+    @Override
+    public @Nonnull Result apply(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+      DomainResource domain = info.getDomain();
+      return findDuplicateDomain(domain, packet)
+          .map(duplicate -> failValidation(domain, duplicate, packet))
+          .orElseGet(() -> doNext(packet));
+    }
+
+    private Optional<DomainResource> findDuplicateDomain(DomainResource domain, Packet packet) {
+      return ListDomainsResponseStep.getDomains(packet).stream()
+          .filter(other -> Objects.equals(domain.getNamespace(), other.getNamespace()))
+          .filter(other -> Objects.equals(domain.getDomainUid(), other.getDomainUid()))
+          .filter(other -> !Objects.equals(domain.getMetadata().getName(), other.getMetadata().getName()))
+          .findFirst();
+    }
+
+    private Result failValidation(DomainResource domain, DomainResource duplicate, Packet packet) {
+      String message = DomainValidationMessages.duplicateDomainUid(
+          domain.getDomainUid(), duplicate.getMetadata().getName(), domain.getNamespace());
+      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), message);
+      return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(message), packet);
     }
   }
 
