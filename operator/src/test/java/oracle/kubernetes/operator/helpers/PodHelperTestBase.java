@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import javax.annotation.Nonnull;
@@ -489,7 +490,140 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   private V1ContainerPort createContainerPort(String portName) {
-    return new V1ContainerPort().name(portName).containerPort(8001).protocol("TCP");
+    return createContainerPort(portName, "TCP");
+  }
+
+  private V1ContainerPort createContainerPort(String portName, String protocol) {
+    return new V1ContainerPort().name(portName).containerPort(8001).protocol(protocol);
+  }
+
+  @Test
+  void whenLongNapNameTruncatesAtHyphen_podContainerCreatedWithValidPortName() {
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-public-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItem(createContainerPort("adminserver-01")));
+  }
+
+  @Test
+  void whenMultipleLongNapNamesTruncateAtHyphen_podContainerCreatedWithUniqueValidPortNames() {
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-public-channel", "admin", 8001, 8001));
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-other-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort("adminserver-01"),
+            createContainerPort("adminserver-02")));
+  }
+
+  @Test
+  void whenLongNapNameConflictsWithShortGeneratedName_podContainerCreatedWithUniqueValidPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("adminserver-01", "admin", 8001, 8001));
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-public-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort("adminserver-01"),
+            createContainerPort("adminserver-02")));
+  }
+
+  @Test
+  void whenNapNamesConflictAfterLegalizing_podContainerCreatedWithUniqueValidPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("my_channel", "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("my-channel", "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort("my-channel"),
+            createContainerPort("my-channel-01")));
+  }
+
+  @Test
+  void whenLongNapNameHasExistingShortPrefix_podContainerCreatedWithUniqueValidPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(TRUNCATED_PORT_NAME_PREFIX, "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "admin", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX),
+            createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01")));
+  }
+
+  @Test
+  void afterUpgradeWithValidLegacyPortNames_patchIt() throws NoSuchFieldException {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(TRUNCATED_PORT_NAME_PREFIX, "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "admin", 8001, 8001));
+    usePortNameHash();
+    V1Pod existingPod = createPodModel();
+    getWebLogicContainer(existingPod).getPorts().stream()
+        .filter(port -> (TRUNCATED_PORT_NAME_PREFIX + "-01").equals(port.getName()))
+        .findFirst()
+        .ifPresent(port -> port.setName(TRUNCATED_PORT_NAME_PREFIX + "-02"));
+    existingPod.getMetadata().getAnnotations()
+        .put(AnnotationHelper.SHA256_ANNOTATION, AnnotationHelper.createHash(existingPod));
+    existingPod.getMetadata().getLabels().put(OPERATOR_VERSION, "4.3.8");
+
+    initializeExistingPod(existingPod);
+
+    verifyPodPatched();
+  }
+
+  @Test
+  void afterUpgradeWithInvalidLegacyPortNames_replaceIt() throws NoSuchFieldException {
+    getServerTopology()
+        .addNetworkAccessPoint(new NetworkAccessPoint("adminserver-public-channel", "admin", 8001, 8001));
+    usePortNameHash();
+    V1Pod existingPod = createPodModel();
+    getWebLogicContainer(existingPod).getPorts().stream()
+        .filter(port -> "adminserver-01".equals(port.getName()))
+        .findFirst()
+        .ifPresent(port -> port.setName("adminserver--01"));
+    existingPod.getMetadata().getAnnotations()
+        .put(AnnotationHelper.SHA256_ANNOTATION, AnnotationHelper.createHash(existingPod));
+    existingPod.getMetadata().getLabels().put(OPERATOR_VERSION, "4.3.8");
+
+    initializeExistingPod(existingPod);
+
+    verifyPodReplaced();
+  }
+
+  private void usePortNameHash() throws NoSuchFieldException {
+    hashMemento.revert();
+    mementos.add(hashMemento = StaticStubSupport.install(AnnotationHelper.class, "hashFunction", new PortNameHash()));
+  }
+
+  private V1Container getWebLogicContainer(V1Pod pod) {
+    return pod.getSpec().getContainers().stream()
+        .filter(container -> WLS_CONTAINER_NAME.equals(container.getName()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private static class PortNameHash implements Function<Object, String> {
+    @Override
+    public String apply(Object object) {
+      return Optional.of((V1Pod) object)
+          .map(V1Pod::getSpec)
+          .map(V1PodSpec::getContainers)
+          .flatMap(containers -> containers.stream()
+              .filter(container -> WLS_CONTAINER_NAME.equals(container.getName()))
+              .findFirst())
+          .map(V1Container::getPorts)
+          .orElse(Collections.emptyList())
+          .stream()
+          .map(V1ContainerPort::getName)
+          .toList()
+          .toString();
+    }
+  }
+
+  @Test
+  void whenLongSipNapNameExceedsMaxUdpPortNameLength_podContainerCreatedWithTruncatedUdpPortName() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "sip", 8001, 8001));
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+            createContainerPort("udp-very-lon-01", "UDP")));
   }
 
   @Test
