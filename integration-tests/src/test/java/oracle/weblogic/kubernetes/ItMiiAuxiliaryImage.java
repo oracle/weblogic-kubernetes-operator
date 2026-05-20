@@ -115,8 +115,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("kind-parallel")
-@Tag("toolkits-srg")
+@Tag("kind-parallel2")
 @Tag("okd-wls-srg")
 @Tag("oke-arm")
 @Tag("oke-parallel")

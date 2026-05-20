@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
@@ -127,7 +127,9 @@ abstract class CreateOperatorGeneratedFilesTestBase {
             .putDataItem("domainNamespaces", getInputs().getDomainNamespaces())
             .putDataItem("introspectorJobNameSuffix", "-introspector")
             .putDataItem("externalServiceNameSuffix", "-ext")
-            .putDataItem("clusterSizePaddingValidationEnabled", "true");
+            .putDataItem("clusterSizePaddingValidationEnabled", "true")
+            .putDataItem("domainOnPVLocalDeveloperMode", "false")
+            .putDataItem("apiServerConnectTimeoutSeconds", "10");
 
     if (StringUtils.isNotEmpty(getInputs().getDomainNamespaceLabelSelector())) {
       v1ConfigMap.putDataItem("domainNamespaceLabelSelector", getInputs().getDomainNamespaceLabelSelector());
@@ -275,6 +277,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newEnvVar()
                                                 .name("JVM_OPTIONS")
                                                 .value("-XX:MaxRAMPercentage=70"))
+                                        .addEnvItem(
+                                                newEnvVar()
+                                                        .name("OPERATOR_INTROSPECTJOB_RECHECK_SKEW")
+                                                        .value("3"))
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("OPERATOR_LOGDIR")

@@ -203,6 +203,58 @@ waitForDomain() {
   fi
 }
 
+waitForStableDomainPods() {
+  local timeout_secs="${1:-300}"
+  local sleep_secs=5
+  local expected_image="${MODEL_IMAGE_NAME:-wdt-domain-image}:${MODEL_IMAGE_TAG:-${IMAGE_TYPE:-${WDT_DOMAIN_TYPE}}-v2}"
+  local image_jsonpath='{.spec.initContainers[0].image}'
+
+  if [ "${DO_LEGACY:-false}" = "true" ]; then
+    # Legacy single-image domains run the server container from the model image.
+    image_jsonpath='{.spec.containers[?(@.name=="weblogic-server")].image}'
+  fi
+
+  local start_secs=$SECONDS
+  while true; do
+    local pod_state="$(${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get pods \
+      -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
+      -o=jsonpath="{range .items[*]}{.metadata.name}{'|'}{.status.containerStatuses[?(@.name=='weblogic-server')].ready}{'|'}{.metadata.deletionTimestamp}{'|'}{.metadata.annotations.weblogic\\.awaitingPodRoll}{'|'}${image_jsonpath}{'\n'}{end}")"
+
+    local all_stable=true
+    local unstable_details=""
+
+    if [ -z "$pod_state" ]; then
+      all_stable=false
+      unstable_details=" no domain pods found"
+    else
+      while IFS='|' read -r pod_name pod_ready deletion_timestamp awaiting_roll pod_image; do
+        [ -z "$pod_name" ] && continue
+
+        if [ "$pod_ready" != "true" ] \
+          || [ -n "$deletion_timestamp" ] \
+          || [ -n "$awaiting_roll" ] \
+          || [ "$pod_image" != "$expected_image" ]; then
+          all_stable=false
+          unstable_details+=" ${pod_name}[ready=${pod_ready},deleting=${deletion_timestamp:-<none>},awaitingRoll=${awaiting_roll:-<none>},image=${pod_image:-<none>}]"
+        fi
+      done <<< "$pod_state"
+    fi
+
+    if [ "$all_stable" = "true" ]; then
+      trace "Pods for domain '$DOMAIN_UID' are stable before no-roll snapshot."
+      return 0
+    fi
+
+    if [ $((SECONDS - start_secs)) -ge "$timeout_secs" ]; then
+      trace "Error: Timed out waiting for stable pods for domain '$DOMAIN_UID'. Expected image '$expected_image'. Details:${unstable_details}"
+      return 1
+    fi
+
+    trace "Info: Waiting for stable pods for domain '$DOMAIN_UID'. Expected image '$expected_image'. Details:${unstable_details}"
+    sleep "$sleep_secs"
+  done
+}
+
 # 
 # Clean
 #
@@ -634,6 +686,7 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=true"
 
+  waitForStableDomainPods 300
   dumpInfo
   podInfoBefore="$(getPodInfo | grep -v introspectVersion)"
 
@@ -688,4 +741,3 @@ if [ "$DO_UPDATE4" = "true" ]; then
 fi
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."
-

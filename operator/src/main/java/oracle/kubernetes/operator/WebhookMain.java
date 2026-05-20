@@ -1,8 +1,9 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -15,6 +16,7 @@ import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.GetOptions;
@@ -54,7 +56,8 @@ public class WebhookMain extends BaseMain {
   private final WebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
   private final AtomicInteger crdPresenceCheckCount = new AtomicInteger(0);
-  private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
+  private final RestConfig restConfig = new RestConfigImpl(null, null, WebhookMain::isDomainNamespace,
+      new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
 
@@ -106,6 +109,23 @@ public class WebhookMain extends BaseMain {
 
     delegate.logStartup();
     return new WebhookMain(delegate);
+  }
+
+  private static boolean isDomainNamespace(String namespace) {
+    Collection<String> configuredNamespaces = Namespaces.getConfiguredDomainNamespaces();
+    if (configuredNamespaces != null) {
+      return configuredNamespaces.contains(namespace);
+    }
+
+    try {
+      V1Namespace namespaceResource = RequestBuilder.NAMESPACE.get(null, namespace);
+      return Namespaces.isDomainNamespace(namespaceResource);
+    } catch (ApiException e) {
+      if (e.getCode() == KubernetesConstants.HTTP_NOT_FOUND) {
+        return false;
+      }
+      throw new RuntimeException(e);
+    }
   }
 
   WebhookMain(WebhookMainDelegate conversionWebhookMainDelegate) {

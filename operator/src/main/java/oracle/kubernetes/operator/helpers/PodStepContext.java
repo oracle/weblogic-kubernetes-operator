@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -330,7 +330,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
-    String name = createContainerPortName(ports, LegalNames.toDns1123LegalName(nap.getName()));
+    String name = createContainerPortName(ports, nap.getName());
     addContainerPort(ports, name, nap.getListenPort(), "TCP");
 
     if (isSipProtocol(nap)) {
@@ -345,37 +345,55 @@ public abstract class PodStepContext extends BasePodStepContext {
       // add if needed
       if (ports.stream().noneMatch(p -> p.getProtocol().equals(protocol) && p.getContainerPort().equals(listenPort)
           && Objects.equals(p.getName(), finalName))) {
-        ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
+        ports.add(new V1ContainerPort().name(finalName).containerPort(listenPort).protocol(protocol));
       }
     }
   }
 
   private String createContainerPortName(List<V1ContainerPort> ports, String name) {
+    name = toLegalContainerPortName(name);
     //Container port names can be a maximum of 15 characters in length
-    if (name.length() > LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+    if (name.length() > LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH || hasContainerPortNamed(ports, name)) {
       String portNamePrefix = getPortNamePrefix(name);
-      // Find ports with the name having the same first 12 characters
-      List<V1ContainerPort> containerPortsWithSamePrefix = ports.stream().filter(port ->
-              portNamePrefix.equals(getPortNamePrefix(port.getName()))).toList();
-      int index = containerPortsWithSamePrefix.size() + 1;
-      String indexStr = String.valueOf(index);
-      // zero fill to the left for single digit index (e.g. 01)
-      if (index < 10) {
-        indexStr = "0" + index;
-      } else if (index >= 100) {
-        LOGGER.severe(MessageKeys.ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH, getDomainUid(), getServerName(),
-                name, LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
-        return name;
+      for (int index = 1; index < 100; index++) {
+        String indexStr = String.valueOf(index);
+        // zero fill to the left for single digit index (e.g. 01)
+        if (index < 10) {
+          indexStr = "0" + index;
+        }
+        String indexedName = portNamePrefix + "-" + indexStr;
+        if (!hasContainerPortNamed(ports, indexedName)) {
+          return indexedName;
+        }
       }
-      name = portNamePrefix + "-" + indexStr;
+      LOGGER.severe(MessageKeys.ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH, getDomainUid(), getServerName(),
+              name, LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
     }
     return  name;
+  }
+
+  private String toLegalContainerPortName(String name) {
+    String legalName = LegalNames.toDns1123LegalName(name)
+        .replaceAll("[^a-z0-9-]", "-")
+        .replaceAll("-+", "-")
+        .replaceAll("^-|-$", "");
+    if (legalName.isEmpty()) {
+      return "port";
+    } else if (legalName.chars().noneMatch(Character::isLetter)) {
+      return "port-" + legalName;
+    }
+    return legalName;
+  }
+
+  private boolean hasContainerPortNamed(List<V1ContainerPort> ports, String name) {
+    return ports.stream().map(V1ContainerPort::getName).anyMatch(name::equals);
   }
 
   @Nonnull
   private String getPortNamePrefix(String name) {
     // Use first 12 characters of port name as prefix due to 15 character port name limit
-    return name.length() > 12 ? name.substring(0, 12) : name;
+    return name.substring(0, Math.min(name.length(), LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH - 3))
+        .replaceAll("-$", "");
   }
 
   Integer getListenPort() {
@@ -1444,12 +1462,39 @@ public abstract class PodStepContext extends BasePodStepContext {
                 .ifPresent(match -> container.setStartupProbe(match.getStartupProbe()))));
     }
 
+    private void restoreLegacyGeneratedPortNames(V1Pod recipe, V1Pod currentPod) {
+      List<V1ContainerPort> recipePorts = getContainer(recipe)
+          .map(V1Container::getPorts).orElse(Collections.emptyList());
+      List<V1ContainerPort> currentPorts = getContainer(currentPod)
+          .map(V1Container::getPorts).orElse(Collections.emptyList());
+      for (int i = 0; i < Math.min(recipePorts.size(), currentPorts.size()); i++) {
+        V1ContainerPort currentPort = currentPorts.get(i);
+        V1ContainerPort recipePort = recipePorts.get(i);
+        if (isSameContainerPort(recipePort, currentPort) && isValidContainerPortName(currentPort.getName())) {
+          recipePort.setName(currentPort.getName());
+        }
+      }
+    }
+
+    private boolean isSameContainerPort(V1ContainerPort recipePort, V1ContainerPort currentPort) {
+      return Objects.equals(recipePort.getContainerPort(), currentPort.getContainerPort())
+          && Objects.equals(recipePort.getProtocol(), currentPort.getProtocol());
+    }
+
+    private boolean isValidContainerPortName(String name) {
+      return name != null
+          && name.length() <= LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH
+          && !name.contains("--")
+          && name.matches("[a-z]([-a-z0-9]*[a-z0-9])?");
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
       // for each combination, start with pod recipe, apply all adjustments, and generate hash
       // return true if any adjusted hash matches required hash
       List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments = List.of(
+          Pair.of("restoreLegacyGeneratedPortNames", this::restoreLegacyGeneratedPortNames),
           Pair.of("restoreMetricsExporterSidecarPortTcpMetrics", this::restoreMetricsExporterSidecarPortTcpMetrics),
           Pair.of("removePodNameJavaOpt", this::removePodNameJavaOpt),
           Pair.of("restoreMetricsExporterSidecarJavaOpts", this::restoreMetricsExporterSidecarJavaOpts),
@@ -1493,13 +1538,40 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if (!canUseCurrentPod(currentPod)) {
+      }
+
+      boolean canUseCurrentPod = canUseCurrentPod(currentPod);
+      if (!canUseCurrentPod) {
+        LOGGER.finest(
+            "POD-ROLL-CHECK server={0} action=replace currentRestart={1}/{2}/{3} desiredRestart={4}/{5}/{6} "
+                + "awaitingPodRoll={7} currentHash={8} desiredHash={9}",
+            getServerName(),
+            getLabel(currentPod, LabelConstants.DOMAINRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.CLUSTERRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.SERVERRESTARTVERSION_LABEL),
+            getServerSpec().getDomainRestartVersion(),
+            getServerSpec().getClusterRestartVersion(),
+            getServerSpec().getServerRestartVersion(),
+            PodHelper.isWaitingToRoll(currentPod),
+            AnnotationHelper.getHash(currentPod),
+            AnnotationHelper.getHash(getPodModel()));
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
       } else if (PodHelper.shouldRestartEvictedPod(currentPod)) {
         return doNext(cycleEvictedPodStep(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
+        LOGGER.finest(
+            "POD-ROLL-CHECK server={0} action=keep currentRestart={1}/{2}/{3} desiredRestart={4}/{5}/{6} "
+                + "awaitingPodRoll={7}",
+            getServerName(),
+            getLabel(currentPod, LabelConstants.DOMAINRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.CLUSTERRESTARTVERSION_LABEL),
+            getLabel(currentPod, LabelConstants.SERVERRESTARTVERSION_LABEL),
+            getServerSpec().getDomainRestartVersion(),
+            getServerSpec().getClusterRestartVersion(),
+            getServerSpec().getServerRestartVersion(),
+            PodHelper.isWaitingToRoll(currentPod));
         logPodExists();
         return doNext(packet);
       }

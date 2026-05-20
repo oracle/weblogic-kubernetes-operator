@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorConfigMap" }}
@@ -39,6 +39,9 @@ data:
   {{- if .featureGates }}
   featureGates: {{ .featureGates | quote }}
   {{- end }}
+  {{- if (and .domainOnPV (hasKey .domainOnPV "localDeveloperMode")) }}
+  domainOnPVLocalDeveloperMode: {{ .domainOnPV.localDeveloperMode | quote }}
+  {{- end }}
   {{- if .introspectorJobNameSuffix }}
   introspectorJobNameSuffix: {{ .introspectorJobNameSuffix | quote }}
   {{- end }}
@@ -56,6 +59,9 @@ data:
   {{- end }}
   {{- if .kubernetesPlatform }}
   kubernetesPlatform: {{ .kubernetesPlatform | quote }}
+  {{- end }}
+  {{- if (hasKey . "apiServerConnectTimeoutSeconds") }}
+  apiServerConnectTimeoutSeconds: {{ .apiServerConnectTimeoutSeconds | quote }}
   {{- end }}
 kind: "ConfigMap"
 metadata:

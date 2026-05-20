@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -59,10 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test is used for creating Operator(s) and domain which uses pod templates.
  */
 @IntegrationTest
-@Tag("kind-parallel")
-@Tag("okd-wls-mrg")
-@Tag("oke-arm")
-@Tag("oke-parallel")
+@Tag("kind-xparallel")
 class ItPodTemplates {
 
   // domain constants

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -76,13 +76,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The test class creates WebLogic domains with three models. domain-on-pv ( using WDT ) domain-in-image ( using WDT )
- * model-in-image.
+ * The test class creates WebLogic domains with three models. 
+ * domain-on-pv (using WDT) domain-in-image (using WDT) and model-in-image.
  * Start all three domain with a single operator
  * Upgrade the Operator to latest version
  * Make sure all the domain can be re-managed after the Operator upgrade
- * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain after upgrade to 
- * current version.
+ * Verify the basic lifecycle operations of the WebLogic server pods by 
+ * scaling the domain after upgrade to current version.
  */
 @IntegrationTest
 @Tag("kind-upgrade")
@@ -135,7 +135,7 @@ class ItMultiDomainModelsUpgradeAndScale {
     opNamespace = namespaces.get(0);
 
     // get unique namespaces for three different type of domains
-    logger.info("Getting unique namespaces for three different type of domains");
+    logger.info("Getting unique namespaces for 3 different type of domains");
     assertNotNull(namespaces.get(1));
     miiDomainNamespace = namespaces.get(1);
     assertNotNull(namespaces.get(2));
@@ -145,11 +145,12 @@ class ItMultiDomainModelsUpgradeAndScale {
   }
   
   /**
-   * Create 3 different types of domains with operator 4.2.0 (domain-on-pv, domain-in-image and model-in-image).
+   * Create 3 different types of domains with operator 4.2.0 
+   * (domain-on-pv,domain-in-image and model-in-image).
    *
    */
   @Test
-  @DisplayName("create three different type of domains in Operator 4.2.0 and upgrade")
+  @DisplayName("create 3 different type of domains in Operator 4.2.0 and upgrade")
   void testInstallAndUpgradeOperatorFrom420() {
     // install and verify operator
     installOldOperator("4.2.0", opNamespace,
@@ -164,7 +165,8 @@ class ItMultiDomainModelsUpgradeAndScale {
   }
 
   /**
-   * Create 3 different types of domains with operator 4.3.4 (domain-on-pv, domain-in-image and model-in-image).
+   * Create 3 different types of domains with operator 4.3.4 
+   * (domain-on-pv, domain-in-image and model-in-image).
    *
    */
   @Test
@@ -183,8 +185,8 @@ class ItMultiDomainModelsUpgradeAndScale {
   }
 
   /**
-   * Scale the cluster by patching domain resource for three different type of domains i.e. domain-on-pv,
-   * domain-in-image and model-in-image
+   * Scale the cluster by patching domain resource for 3 different 
+   * type of domains i.e. domain-on-pv, domain-in-image and model-in-image
    *
    */
   private void scaleClustersByPatchingClusterResource() {

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -119,8 +119,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Tag("kind-parallel")
-@Tag("okd-wls-mrg")
+@Tag("kind-xparallel")
 class ItUsabilityOperatorHelmChart {
 
   private static final String LIST_STRATEGY = "List";

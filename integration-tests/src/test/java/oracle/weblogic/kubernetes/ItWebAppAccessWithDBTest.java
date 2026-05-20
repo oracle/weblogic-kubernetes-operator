@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -70,10 +71,15 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Verify WebApp can be accessed via NGINX ingress controller if db is installed.
+ * Verify WebApp can be accessed via NGINX ingress controller 
+ * if db is installed.
+ * Currently the tests is disablesd since it uses Domain in Image Model
+ * which is deprected in WebLogic Kubernates Operator 
+ * TBD: Need to modify the usecase with other supported model such as
+ * ModelInImage(mii), DomainOnPvi(dopv) or Auxiliary Image(aux)
  */
-@Tag("oke-gate")
-@Tag("kind-parallel")
+@Disabled("Temporarily disabling dii tests in this class")
+@Tag("kind-xparallel")
 @IntegrationTest
 class ItWebAppAccessWithDBTest {
 
@@ -101,11 +107,12 @@ class ItWebAppAccessWithDBTest {
   private static String dbUrl = "";
 
   /**
-   * Install operator and NGINX. Create model in image domain with multiple clusters.
+   * Install operator and NGINX. 
+   * Create model in image domain with multiple clusters.
    * Create ingress for the domain.
    *
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   * @param namespaces list of namespaces created by IntegrationTestWatcher 
+   *                   by the JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   static void initAll(@Namespaces(4) List<String> namespaces) {
@@ -177,19 +184,16 @@ class ItWebAppAccessWithDBTest {
 
   /**
    * Test that if db is started, access to app passes in Weblogic versions
-   * Test that if WLS is 12.2.1.4 test passes without db is started.
    * Create domain in Image with app.
    * Verify access to app via nginx.
    */
   @Test
-  @DisplayName("Test that if db is  started, access to app successful.")
+  @DisplayName("Test that if db is started, access to app successful.")
   void testAccesToWebApp() {
-
     wdtImage = createAndVerifyDomainInImage();
     logger.info("Create wdt domain and verify that it's running");
     createAndVerifyDomain(wdtImage, domainUid, domainNamespace, "Image", replicaCount,
         false, null, null);
-
     if (!OKD) {
       ingressHostList
           = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,

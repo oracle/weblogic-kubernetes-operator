@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -64,11 +64,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Tag("kind-parallel")
-@Tag("toolkits-srg")
+@Tag("kind-parallel2")
 @Tag("okd-wls-mrg")
 @Tag("oke-sequential")
-@Tag("oke-arm")
 @Tag("olcne-srg")
 class ItMiiDynamicUpdatePart1 {
 

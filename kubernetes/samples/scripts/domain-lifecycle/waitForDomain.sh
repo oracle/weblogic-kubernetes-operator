@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -eu
@@ -233,7 +233,7 @@ getDomainValue() {
   fi
   # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get ${DOMAIN_RTYPE} ${DOMAIN_UID} -o=jsonpath=\"$ljpath\" 2>&1"
   # echo "DEBUG   = '$attvalue'"
-  eval "$__retvar='$attvalue'"
+  printf -v "$__retvar" '%s' "$attvalue"
   set -e
 }
 
@@ -258,7 +258,7 @@ getClusterValue() {
   fi
   # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get cluster.v1.weblogic.oracle ${cname} -o=jsonpath=\"$ljpath\" 2>&1"
   # echo "DEBUG   = '$attvalue'"
-  eval "$__retvar='$attvalue'"
+  printf -v "$__retvar" '%s' "$attvalue"
   set -e
 }
 
@@ -287,7 +287,7 @@ getDomainAIImages() {
   fi
   set -e
   attvalue=$(echo "$attvalue" | sortlist)
-  eval "$__retvar='$attvalue'"
+  printf -v "$__retvar" '%s' "$attvalue"
 }
 
 getDomainInfo() {
@@ -566,7 +566,7 @@ main() {
     #
     # Exit 1 if domain resource is reporting a failure and "IGNORE_FAILURES" is "false" (the default)
     #
-    if [ "${IGNORE_FAILURES}" = "false" ] && [ ! -z "${domain_info_condition_failed_str}" ]; then
+    if [[ "$IGNORE_FAILURES" == "false" && -n "${domain_info_condition_failed_str:-}" ]]; then
       echo
       trace "Error: The domain resource has a failure condition: '${domain_info_condition_failed_str}'. If you want this script to ignore failure conditions and keep trying regardless, then specify '-i' on the commmand line."
       exit 1

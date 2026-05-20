@@ -732,7 +732,7 @@
           "type": "boolean"
         },
         "persistentVolume": {
-          "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
+          "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. Operator-created PersistentVolumes that specify hostPath sources require the operator Helm chart\u0027s domainOnPV.localDeveloperMode setting. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
           "$ref": "#/definitions/PersistentVolume"
         },
         "domain": {
@@ -1023,7 +1023,7 @@
           "type": "string"
         },
         "hostPath": {
-          "description": "HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath. Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
+          "description": "HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath. Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling. Operator-created PersistentVolumes with hostPath sources require the operator Helm chart\u0027s domainOnPV.localDeveloperMode setting.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.HostPathVolumeSource"
         },
         "capacity": {

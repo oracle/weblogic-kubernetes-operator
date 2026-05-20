@@ -1,10 +1,11 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.resource;
 
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.helpers.DomainOnPVLocalDeveloperMode;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -49,6 +50,17 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
 
   @Override
   public boolean isProposedChangeAllowed() {
-    return hasNoFatalValidationErrors(proposedDomain);
+    return hasNoFatalValidationErrors(proposedDomain)
+        && hasUniqueDomainUid(proposedDomain)
+        && isRestrictedPVSourceAllowed();
+  }
+
+  private boolean isRestrictedPVSourceAllowed() {
+    if (!DomainOnPVLocalDeveloperMode.isEnabled()
+        && DomainOnPVLocalDeveloperMode.hasRestrictedPVSource(proposedDomain)) {
+      messages.add(DomainOnPVLocalDeveloperMode.createFailureMessage(proposedDomain));
+      return false;
+    }
+    return true;
   }
 }

@@ -250,6 +250,7 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public Result onFailure(Step conflict, Packet packet, KubernetesApiResponse<T> callResponse) {
+    resetApiClientIfUnauthorized(callResponse);
     RetryStrategy retryStrategy = getOrCreateRetryStrategy(packet);
     if (retryStrategy != null) {
       Result result = retryStrategy.doPotentialRetry(conflict, packet, callResponse);
@@ -258,6 +259,14 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
       }
     }
     return onFailureNoRetry(packet, callResponse);
+  }
+
+  private void resetApiClientIfUnauthorized(KubernetesApiResponse<T> callResponse) {
+    if (Optional.ofNullable(callResponse)
+        .map(KubernetesApiResponse::getHttpStatusCode)
+        .orElse(-1) == HTTP_UNAUTHORIZED) {
+      Client.reset();
+    }
   }
 
   private RetryStrategy getOrCreateRetryStrategy(Packet packet) {
