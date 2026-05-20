@@ -675,9 +675,22 @@ public class RestBackendImpl implements RestBackend {
 
   private WebApplicationException handleApiException(ApiException e) {
     LOGGER.throwing(e);
-    return createWebApplicationException(e.getCode(),
-            Optional.ofNullable(new Gson().fromJson(e.getResponseBody(), V1Status.class))
-                    .map(this::messageFromStatus).orElse(null));
+    return createWebApplicationException(e.getCode(), messageFromApiException(e), e);
+  }
+
+  private String messageFromApiException(ApiException e) {
+    return Optional.ofNullable(statusFromResponseBody(e))
+        .map(this::messageFromStatus)
+        .or(() -> Optional.ofNullable(e.getResponseBody()))
+        .orElse(e.getMessage());
+  }
+
+  private V1Status statusFromResponseBody(ApiException e) {
+    try {
+      return new Gson().fromJson(e.getResponseBody(), V1Status.class);
+    } catch (RuntimeException parseFailure) {
+      return null;
+    }
   }
 
   private String messageFromStatus(V1Status status) {
@@ -697,6 +710,14 @@ public class RestBackendImpl implements RestBackend {
   private WebApplicationException createWebApplicationException(int status, String msg) {
     return new WebApplicationException(
             Optional.ofNullable(msg).map(m -> Response.status(status, m)).orElse(Response.status(status)).build());
+  }
+
+  private WebApplicationException createWebApplicationException(int status, String msg, Throwable cause) {
+    Response response = Optional.ofNullable(msg)
+        .map(m -> Response.status(status, m))
+        .orElse(Response.status(status))
+        .build();
+    return new WebApplicationException(msg, cause, response);
   }
 
   protected boolean useAuthenticateWithTokenReview() {

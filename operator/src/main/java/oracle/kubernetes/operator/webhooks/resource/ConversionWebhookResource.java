@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.ApiException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -82,12 +83,11 @@ public class ConversionWebhookResource extends BaseResource {
       conversionResponse = createConversionResponse(conversionReview.getRequest(), be);
     } catch (Exception e) {
 
-      // TEST
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      e.printStackTrace(pw);
-      String exceptionString = sw.toString();
-      LOGGER.severe(exceptionString);
+      if (hasApiException(e)) {
+        LOGGER.severe(Optional.ofNullable(e.getMessage()).orElse(e.toString()), e);
+      } else {
+        LOGGER.severe(getStackTrace(e));
+      }
 
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
@@ -104,6 +104,24 @@ public class ConversionWebhookResource extends BaseResource {
       LOGGER.fine("Conversion webhook response: " + response);
     }
     return response;
+  }
+
+  private boolean hasApiException(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null) {
+      if (current instanceof ApiException) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
+  }
+
+  private String getStackTrace(Throwable throwable) {
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    throwable.printStackTrace(pw);
+    return sw.toString();
   }
 
   private String getConversionRequest(ConversionReviewModel conversionReview) {
