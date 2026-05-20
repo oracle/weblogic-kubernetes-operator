@@ -79,6 +79,13 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  void whenThrowableWrapsApiException_extractApiExceptionAttributes() throws JsonProcessingException {
+    logRecord.setThrown(new RuntimeException("wrapped", new ApiException(420, Collections.emptyMap(), "a response")));
+
+    assertThat(getFormattedMessage(), allOf(hasEntry("code", "420"), hasEntry("body", "a response")));
+  }
+
+  @Test
   void whenPacketLacksDomainPresence_domainUidIsEmpty() {
     assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo(""));
   }

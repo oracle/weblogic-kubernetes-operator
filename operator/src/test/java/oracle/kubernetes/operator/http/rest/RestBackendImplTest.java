@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.http.rest;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Set;
 
 import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.ws.rs.WebApplicationException;
@@ -30,11 +32,13 @@ import org.junit.jupiter.api.Test;
 
 import static jakarta.ws.rs.core.Response.Status.CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -126,6 +130,19 @@ class RestBackendImplTest {
     ClusterResource clusterResource =
         testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain-cluster-1");
     assertThat(clusterResource, notNullValue());
+  }
+
+  @Test
+  void whenHandlingApiException_preserveApiExceptionAsCause() throws Exception {
+    ApiException apiException = new ApiException(HTTP_INTERNAL_ERROR, null,
+        "{\"message\":\"cluster list failed\"}");
+
+    WebApplicationException exception = invokeHandleApiException(apiException);
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_INTERNAL_ERROR));
+    assertThat(exception.getMessage(), containsString("cluster list failed"));
+    assertThat(exception.getCause(), instanceOf(ApiException.class));
+    assertThat(((ApiException) exception.getCause()).getResponseBody(), containsString("cluster list failed"));
   }
 
   @Test
@@ -222,6 +239,12 @@ class RestBackendImplTest {
 
   private List<Map<String, Object>> listClusters(String namespace) {
     return createConversionBackend().listClusters(namespace, CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+  }
+
+  private WebApplicationException invokeHandleApiException(ApiException apiException) throws Exception {
+    Method method = RestBackendImpl.class.getDeclaredMethod("handleApiException", ApiException.class);
+    method.setAccessible(true);
+    return (WebApplicationException) method.invoke(createConversionBackend(), apiException);
   }
 
   private Map<String, Object> createClusterMap(String namespace) {
