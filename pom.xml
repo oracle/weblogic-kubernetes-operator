@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>4.3.8-SNAPSHOT</version>
+  <version>4.3.9-SNAPSHOT</version>
 
   <modules>
     <module>operator</module>
@@ -723,7 +723,7 @@
     <kotlin-stdlib-version>2.3.0</kotlin-stdlib-version>
     <okhttp-version>5.3.2</okhttp-version>
     <okio-version>3.16.4</okio-version>
-    <bc-jdk18on-version>1.83</bc-jdk18on-version>
+    <bc-jdk18on-version>1.84</bc-jdk18on-version>
     <junit.jupiter.version>6.0.3</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>

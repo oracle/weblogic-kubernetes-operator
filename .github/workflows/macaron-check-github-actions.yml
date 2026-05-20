@@ -1,0 +1,42 @@
+# Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+# Description: Macaron check-github-action
+#
+name: Macaron check-github-actions
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - ".github/actions/**"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/**"
+      - ".github/actions/**"
+  workflow_dispatch:
+  schedule:
+    - cron: "20 15 * * 3"
+
+permissions:
+  contents: read
+
+jobs:
+  macaron-check-github-actions:
+    name: Macaron policy verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          persist-credentials: false
+
+      - name: Run Macaron check-github-actions policy
+        uses: oracle/macaron@18a806a336ebce3ae45d8795723d088a134cd983
+        with:
+          repo_path: ./
+          policy_file: check-github-actions
+          policy_purl: pkg:github.com/${{ github.repository }}@.*

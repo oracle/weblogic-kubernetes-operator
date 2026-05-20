@@ -64,6 +64,7 @@ public class MessageKeys {
   public static final String DOMAIN_STATUS = "WLSKO-0102";
   public static final String INVALID_MANAGE_SERVER_COUNT = "WLSKO-0103";
   public static final String SCALE_COUNT_GREATER_THAN_CONFIGURED = "WLSKO-0104";
+  public static final String MULTIPLE_DOMAINS_FOR_UID = "WLSKO-0105";
   public static final String MATCHING_DOMAIN_NOT_FOUND = "WLSKO-0106";
   public static final String INVALID_DOMAIN_UID = "WLSKO-0107";
   public static final String NULL_DOMAIN_UID = "WLSKO-0108";
@@ -214,6 +215,8 @@ public class MessageKeys {
   public static final String WALLET_KEY_NOT_FOUND = "WLSDO-0065";
   public static final String POD_UNSCHEDULABLE = "WLSDO-0066";
   public static final String POD_UNSCHEDULABLE_MESSAGE = "WLSDO-0067";
+  public static final String INIT_PV_DOMAIN_PV_SOURCE_NOT_ALLOWED = "WLSDO-0068";
+  public static final String DUPLICATE_DOMAIN_UID = "WLSDO-0069";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";

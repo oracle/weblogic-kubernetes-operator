@@ -127,6 +127,88 @@ For information about installing and uninstalling the webhook, see
 - See [Common mistakes and solutions]({{% relref "/managing-operators/common-mistakes.md" %}}).
 - Check the [FAQs]({{% relref "/faq/_index.md" %}}).
 
+### Helm 4 server-side apply field ownership conflicts
+
+If a Helm chart manages WebLogic `Domain` or `Cluster` resources, a Helm 4 upgrade
+may fail when Helm uses Kubernetes Server-Side Apply and another field manager
+owns the same resource fields.
+
+For example, an upgrade of a chart that contains a legacy `weblogic.oracle/v8`
+`Domain` resource may fail with an error similar to:
+
+```text
+Error: UPGRADE FAILED: conflict occurred while applying object MY_NAMESPACE/MY_DOMAIN weblogic.oracle/v8, Kind=Domain:
+Apply failed with 1 conflict: conflict with "kubectl-client-side-apply" using weblogic.oracle/v8: .spec.clusters
+```
+
+The conflicting manager name may differ, for example, `before-first-apply`,
+`kubectl-client-side-apply`, or another tool that uses Kubernetes apply semantics.
+This issue is not caused by the WebLogic Kubernetes Operator reconciliation
+logic. The Kubernetes API server rejects the Helm update before the operator
+processes the resource.
+
+Kubernetes Server-Side Apply tracks ownership of individual resource fields in
+`metadata.managedFields`. If Helm 4 applies a field that is already owned by
+another field manager, Kubernetes rejects the update unless conflicts are forced.
+The Helm 4 documentation describes Server-Side Apply as a Helm 4 feature for
+resolving cases where multiple tools manage the same Kubernetes resources; the
+Helm 4 `helm upgrade` command documents the `--server-side` option and the
+`--force-conflicts` option for conflict handling. For more information, see
+[Helm 4 Overview](https://helm.sh/docs/overview/) and
+[helm upgrade](https://helm.sh/docs/helm/helm_upgrade/).
+This is most likely when all of the following are true:
+
+* A Helm chart manages WebLogic `Domain` or `Cluster` resources.
+* Helm 4 is using Server-Side Apply for the install or upgrade.
+* The same resource fields were previously created or modified by another apply
+  manager, such as `kubectl apply`, `kubectl apply --server-side`, a GitOps tool,
+  or an older workflow that caused Kubernetes to assign ownership to
+  `before-first-apply`.
+
+For legacy `weblogic.oracle/v8` Domain resources, conflicts can appear on fields
+such as `.spec.clusters`. Beginning with `weblogic.oracle/v9`, cluster lifecycle
+settings are represented by separate `Cluster` resources, so equivalent conflicts
+may appear on `Cluster` fields such as `.spec.replicas`.
+
+This scenario is separate from installing or upgrading the WebLogic Kubernetes
+Operator Helm chart itself. A typical operator Helm upgrade does not manage user
+Domain resources.
+
+If the Helm chart is intended to be the source of truth for the affected `Domain`
+or `Cluster` resource fields, run the Helm 4 upgrade with conflict forcing:
+
+```shell
+$ helm upgrade RELEASE_NAME CHART_PATH \
+  --namespace NAMESPACE \
+  --server-side=true \
+  --force-conflicts
+```
+
+This allows Helm to take ownership of the conflicted fields for future
+Server-Side Apply operations.
+
+If you do not want Helm to take Server-Side Apply ownership of those fields,
+disable Server-Side Apply for the Helm 4 upgrade:
+
+```shell
+$ helm upgrade RELEASE_NAME CHART_PATH \
+  --namespace NAMESPACE \
+  --server-side=false
+```
+
+Avoid managing the same `Domain` or `Cluster` spec fields with multiple
+Server-Side Apply managers. For example, do not use both Helm Server-Side Apply
+and another Server-Side Apply based GitOps or `kubectl apply --server-side`
+workflow for the same fields unless you intentionally coordinate field ownership.
+
+For legacy `weblogic.oracle/v8` Domain resources, migrate authored manifests to
+`weblogic.oracle/v9` and manage cluster lifecycle settings through separate
+`Cluster` resources. Do not continue using v8 manifests as the normal update path
+after conversion. This reduces the amount of mutable cluster lifecycle
+configuration in the Domain resource and aligns with the current operator schema.
+Note that Server-Side Apply conflicts can still occur if multiple managers apply
+the same v9 Domain or Cluster fields.
+
 ### Check for operator events
 
 To check for Kubernetes events that may have been logged to the operator's namespace:
@@ -134,6 +216,41 @@ To check for Kubernetes events that may have been logged to the operator's names
 ```text
 $ kubectl -n OP_NAMESPACE get events --sort-by='.lastTimestamp'
 ```
+
+### Check the operator metrics endpoint
+
+The operator exposes a Prometheus-compatible metrics endpoint on port `8083` at path `/metrics`.
+The operator deployment is annotated for scraping using `prometheus.io/scrape: 'true'` and
+`prometheus.io/port: '8083'`.
+
+To check the metrics endpoint from the operator namespace:
+
+```text
+$ kubectl -n OP_NAMESPACE port-forward deployment/weblogic-operator 8083:8083
+```
+
+Then, in a different terminal:
+
+```text
+$ curl http://localhost:8083/metrics
+```
+
+The operator metrics output includes standard JVM and process metrics from the Prometheus Java client.
+It also includes operator-specific metrics that identify the namespaces and domains that are actively managed
+by the operator at the time of the scrape:
+
+- `wko_managed_namespace_count`
+  The number of namespaces actively managed by the operator.
+- `wko_managed_namespace_info{namespace="..."}` 
+  A presence metric with value `1` for each namespace actively managed by the operator.
+- `wko_managed_domain_count`
+  The total number of domains actively managed by the operator across all active namespaces.
+- `wko_managed_domain_info{namespace="...",domain_uid="..."}`
+  A presence metric with value `1` for each domain actively managed by the operator.
+
+These metrics reflect the operator's current runtime state. For example, if the operator uses
+the `RegExp` namespace selection strategy, then the metrics report the namespaces and domains that are
+currently being managed after the regular expression has been resolved, not the configured regular expression itself.
 
 ### Check for conversion webhook events
 
@@ -184,6 +301,57 @@ $ kubectl logs -n YOUR_CONVERSION_WEBHOOK_NS -c weblogic-operator-webhook deploy
 ### Operator ConfigMap
 
 An operator's settings are automatically maintained by Helm in a Kubernetes ConfigMap named `weblogic-operator-cm` in the same namespace as the operator. To view the contents of this ConfigMap, call `kubectl -n sample-weblogic-operator-ns get cm weblogic-operator-cm -o yaml`.
+
+### Domain on PV hostPath PersistentVolume denied after upgrade
+
+Beginning with operator version 4.3.9, operator-created PersistentVolumes that specify a `hostPath`
+source under `domain.spec.configuration.initializeDomainOnPV.persistentVolume` require the operator
+Helm chart value `domainOnPV.localDeveloperMode=true`. This mode is intended only for local development
+clusters and must not be used in production or shared multi-tenant clusters. If multiple Domain
+resources use the same `hostPath` and the same domain home location, their domain creation jobs can
+race and overwrite the same files.
+
+If you upgrade the operator and then apply a Domain on PV resource that uses an operator-created
+`hostPath` PersistentVolume, the validating webhook may deny the request with an error similar to
+the following:
+
+```text
+admission webhook "weblogic.validating.webhook" denied the request:
+Persistent volume sample-domain1-pv-rwm1 is invalid, the 'spec.hostPath' source is not allowed in
+'spec.configuration.initializeDomainOnPV.persistentVolume' unless the operator Helm chart value
+'domainOnPV.localDeveloperMode' is enabled.
+```
+
+To enable this setting for a local development cluster, update the Helm release:
+
+```text
+$ helm upgrade OPERATOR_RELEASE_NAME weblogic-operator/weblogic-operator \
+  --namespace OP_NAMESPACE \
+  --reuse-values \
+  --set domainOnPV.localDeveloperMode=true \
+  --wait
+```
+
+The Helm upgrade updates the operator and webhook ConfigMaps, but if this is the only change, Kubernetes
+may not restart the already running operator or validating webhook Pods because their Deployment pod
+templates did not change. Restart the operator and webhook deployments so that they use the updated
+ConfigMap values:
+
+```text
+$ kubectl -n OP_NAMESPACE rollout restart deployment/weblogic-operator
+$ kubectl -n OP_NAMESPACE rollout status deployment/weblogic-operator
+$ kubectl -n OP_NAMESPACE rollout restart deployment/weblogic-operator-webhook
+$ kubectl -n OP_NAMESPACE rollout status deployment/weblogic-operator-webhook
+```
+
+You can verify the live setting with:
+
+```text
+$ kubectl -n OP_NAMESPACE get cm weblogic-operator-cm \
+  -o jsonpath='{.data.domainOnPVLocalDeveloperMode}{"\n"}'
+$ kubectl -n OP_NAMESPACE get cm weblogic-webhook-cm \
+  -o jsonpath='{.data.domainOnPVLocalDeveloperMode}{"\n"}'
+```
 
 ### Force the operator to restart
 

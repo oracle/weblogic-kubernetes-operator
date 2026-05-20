@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -41,6 +41,10 @@ public class DomainValidationMessages {
    */
   static String duplicateClusterName(@Nonnull String clusterName) {
     return getMessage(MessageKeys.DUPLICATE_CLUSTER_NAME_FOUND, clusterName);
+  }
+
+  public static String duplicateDomainUid(String domainUid, String domainName, String namespace) {
+    return getMessage(MessageKeys.DUPLICATE_DOMAIN_UID, domainUid, domainName, namespace);
   }
 
   /**
@@ -150,6 +154,10 @@ public class DomainValidationMessages {
 
   public static String persistentVolumeStorageClassNotSpecified(String name) {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_STORAGE_CLASS_NOT_SPECIFIED, name);
+  }
+
+  public static String persistentVolumeSourceNotAllowed(String name, String source) {
+    return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_SOURCE_NOT_ALLOWED, name, source);
   }
 
   public static String persistentVolumeClaimNameNotSpecified() {

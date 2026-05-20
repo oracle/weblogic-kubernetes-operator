@@ -27,7 +27,8 @@ def kind_k8s_map = [
 ]
 def _kind_image = null
 def CRON_SETTINGS = '''H 1 * * 1-5 % MAVEN_PROFILE_NAME=kind-parallel
-                   H 2 * * 1-5 % MAVEN_PROFILE_NAME=kind-sequential'''
+                       H 2 * * 1-5 % MAVEN_PROFILE_NAME=kind-sequential
+                       H 3 * * 1-5 % MAVEN_PROFILE_NAME=kind-parallel2'''
 
 pipeline {
     agent { label 'large-ol9u4' }
@@ -78,6 +79,7 @@ pipeline {
                 description: 'Profile to use in mvn command to run the tests. Possible values are wls-srg (the default), integration-tests, toolkits-srg, kind-sequential and kind-upgrade. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
 		        'kind-parallel',
+		        'kind-parallel2',
                         'wls-srg',
                         'integration-tests',
                         'kind-sequential',

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -473,6 +473,7 @@ public class OperatorUtils {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
+        .domainOnPVLocalDeveloperMode(true)
         .javaLoggingLevel(loggingLevel)
         .serviceAccount(opServiceAccount);
     if (System.getProperty("OPERATOR_LOG_LEVEL") != null && !System.getProperty("OPERATOR_LOG_LEVEL").isBlank()) {
@@ -681,6 +682,7 @@ public class OperatorUtils {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
+        .domainOnPVLocalDeveloperMode(true)
         .javaLoggingLevel(loggingLevel)
         .serviceAccount(opServiceAccount);
     if (System.getProperty("OPERATOR_LOG_LEVEL") != null && !System.getProperty("OPERATOR_LOG_LEVEL").isBlank()) {
