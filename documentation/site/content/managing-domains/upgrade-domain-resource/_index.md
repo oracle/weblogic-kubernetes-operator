@@ -21,6 +21,12 @@ Auxiliary Images [Configuration]({{% relref "/managing-domains/model-in-image/au
 
 The 4.0 operator provides a seamless upgrade of the Domain resources with the `weblogic.oracle/v8` version of the schema. When you create a Domain using a domain resource YAML file with `weblogic.oracle/v8` schema in a namespace managed by the 4.0 operator, the `WebLogic Domain resource conversion webhook` explained in the [Upgrade operator from version 3.x to 4.x]({{% relref "/managing-operators/conversion-webhook.md" %}}) document, performs an automated upgrade of the domain resource to the `weblogic.oracle/v9` schema. The conversion webhook runtime converts the `weblogic.oracle/v8` configuration to the equivalent configuration in operator 4.0. Similarly, when [upgrading the operator version]({{% relref "/managing-operators/installation#upgrade-the-operator" %}}), Domain resources with `weblogic.oracle/v8` schema are seamlessly upgraded.
 
+The conversion webhook is intended as a compatibility bridge for existing
+`weblogic.oracle/v8` Domain resources. For ongoing changes, Oracle recommends
+updating your authored manifests and automation to use the current
+`weblogic.oracle/v9` Domain schema and separate `Cluster` resources instead of
+repeatedly applying legacy v8 manifests.
+
 ### Upgrade the `weblogic.oracle/v8` schema domain resource manually
 
 {{% notice note %}}

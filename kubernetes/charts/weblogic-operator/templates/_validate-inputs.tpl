@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.validateInputs" -}}
@@ -59,5 +59,10 @@
 {{- $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 25) -}}
 {{- $ignore := include "utils.verifyExternalServiceNameSuffix" (list $scope "externalServiceNameSuffix" 10) -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "clusterSizePaddingValidationEnabled") -}}
+{{- if $scope.domainOnPV -}}
+{{-   $ignore := include "utils.pushValidationContext" (list $scope "domainOnPV") -}}
+{{-   $ignore := include "utils.verifyOptionalBoolean" (list $scope "localDeveloperMode") -}}
+{{-   $ignore := include "utils.popValidationContext" $scope -}}
+{{- end -}}
 {{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}

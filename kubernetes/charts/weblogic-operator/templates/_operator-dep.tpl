@@ -255,28 +255,30 @@ spec:
 
 {{- end }}
 ---
-  {{ $chartVersion := .Chart.Version }}
-  {{ $releaseNamespace := .Release.Namespace }}
-  {{- if not .operatorOnly }}
+{{ $chartVersion := .Chart.Version }}
+{{ $releaseNamespace := .Release.Namespace }}
+{{ if not .operatorOnly }}
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  labels:
+    weblogic.webhookName: {{ .Release.Namespace | quote }}
+  name: "weblogic-webhook-cm"
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  serviceaccount: {{ .serviceAccount | quote }}
+  {{- if .featureGates }}
+  featureGates: {{ .featureGates | quote }}
+  {{- end }}
+  {{- if (and .domainOnPV (hasKey .domainOnPV "localDeveloperMode")) }}
+  domainOnPVLocalDeveloperMode: {{ .domainOnPV.localDeveloperMode | quote }}
+  {{- end }}
+  {{- if .domainNamespaceSelectionStrategy }}
+  domainNamespaceSelectionStrategy: {{ .domainNamespaceSelectionStrategy | quote }}
+  {{- end }}
+---
   {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion $releaseNamespace) | trim }}
   {{- if ne $webhookExists "true" }}
-    # webhook does not exist or chart version is newer, create a new webhook
-    apiVersion: "v1"
-    kind: "ConfigMap"
-    metadata:
-      labels:
-        weblogic.webhookName: {{ .Release.Namespace | quote }}
-      name: "weblogic-webhook-cm"
-      namespace: {{ .Release.Namespace | quote }}
-    data:
-      serviceaccount: {{ .serviceAccount | quote }}
-      {{- if .featureGates }}
-      featureGates: {{ .featureGates | quote }}
-      {{- end }}
-      {{- if .domainNamespaceSelectionStrategy }}
-      domainNamespaceSelectionStrategy: {{ .domainNamespaceSelectionStrategy | quote }}
-      {{- end }}
----
     # webhook does not exist or chart version is newer, create a new webhook
     apiVersion: "apps/v1"
     kind: "Deployment"

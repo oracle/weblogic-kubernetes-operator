@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # script parameters
@@ -12,6 +12,8 @@ access_token=""
 no_op=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
 log_file_name="scalingAction.log"
+service_account_token_file="/var/run/secrets/kubernetes.io/serviceaccount/token"
+service_account_ca_file="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
@@ -27,6 +29,80 @@ timestamp() {
 
 trace() {
   echo "@[$(timestamp)][$wls_domain_namespace][$wls_domain_uid][$wls_cluster_name][INFO]" "$@" >> ${log_file_name}
+}
+
+trace_error_response() {
+  local operation="$1"
+  local resource_description="$2"
+  local url="$3"
+  local http_status="$4"
+  local curl_exit_code="$5"
+  local response_file="$6"
+  local stderr_file="$7"
+
+  trace "$operation $resource_description failed: HTTP status=$http_status, curl exit code=$curl_exit_code"
+  trace "$operation URL: $url"
+  if [ -s "$stderr_file" ]; then
+    trace "$operation curl stderr: $(cat "$stderr_file")"
+  fi
+  if [ -s "$response_file" ]; then
+    trace "$operation response body: $(cat "$response_file")"
+  fi
+}
+
+kubernetes_api_request() {
+  local method="$1"
+  local url="$2"
+  local resource_description="$3"
+  local content_type="$4"
+  local data="$5"
+  local response_file="/tmp/scalingAction-response-$$.json"
+  local stderr_file="/tmp/scalingAction-response-$$.err"
+  local http_status
+  local curl_exit_code
+
+  if [ -n "$content_type" ]; then
+    http_status=$(curl \
+      -sS \
+      -X "$method" \
+      -w "%{http_code}" \
+      -o "$response_file" \
+      --stderr "$stderr_file" \
+      --cacert "$service_account_ca_file" \
+      -H "Accept: application/json" \
+      -H "Content-Type: $content_type" \
+      -H "User-Agent: WebLogic scalingAction.sh" \
+      -H "Authorization: Bearer $access_token" \
+      -d "$data" \
+      "$url")
+  else
+    http_status=$(curl \
+      -sS \
+      -X "$method" \
+      -w "%{http_code}" \
+      -o "$response_file" \
+      --stderr "$stderr_file" \
+      --cacert "$service_account_ca_file" \
+      -H "Accept: application/json" \
+      -H "User-Agent: WebLogic scalingAction.sh" \
+      -H "Authorization: Bearer $access_token" \
+      "$url")
+  fi
+  curl_exit_code=$?
+  if [ -z "$http_status" ]; then
+    http_status="000"
+  fi
+
+  if [ "$curl_exit_code" -ne 0 ] || [ "$http_status" -lt 200 ] || [ "$http_status" -ge 300 ]; then
+    trace_error_response "$method" "$resource_description" "$url" "$http_status" "$curl_exit_code" \
+      "$response_file" "$stderr_file"
+    rm -f "$response_file" "$stderr_file"
+    return 1
+  fi
+
+  cat "$response_file"
+  rm -f "$response_file" "$stderr_file"
+  return 0
 }
 
 print_usage() {
@@ -45,9 +121,25 @@ print_usage() {
 
 # Retrieve Service Account Token for Authorization
 initialize_access_token() {
+  if ! command -v curl > /dev/null 2>&1; then
+    trace "The curl command was not found. Cannot call the Kubernetes API."
+    exit 1
+  fi
   if [ -z "$access_token" ]
   then
-    access_token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    if [ ! -f "$service_account_token_file" ]; then
+      trace "Service account token file '$service_account_token_file' was not found. Cannot call the Kubernetes API."
+      exit 1
+    fi
+    access_token=$(cat "$service_account_token_file")
+    if [ -z "$access_token" ]; then
+      trace "Service account token file '$service_account_token_file' is empty. Cannot call the Kubernetes API."
+      exit 1
+    fi
+  fi
+  if [ ! -f "$service_account_ca_file" ]; then
+    trace "Service account CA file '$service_account_ca_file' was not found. Cannot verify the Kubernetes API server certificate."
+    exit 1
   fi
 }
 
@@ -68,16 +160,13 @@ jq_available() {
 
 # Retrieve Custom Resource Domain
 get_custom_resource_domain() {
-  local DOMAIN=$(curl \
-    -v \
-    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-    -H "Accept: application/json" \
-    -H "User-Agent: WebLogic scalingAction.sh" \
-    -H "Authorization: Bearer $access_token" \
-    "$kubernetes_master"/apis/weblogic.oracle/"$domain_api_version"/namespaces/"$wls_domain_namespace"/domains/"$wls_domain_uid")
+  local domain_url="$kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$wls_domain_uid"
+  local DOMAIN
+  DOMAIN=$(kubernetes_api_request "GET" "$domain_url" \
+    "Domain '$wls_domain_uid' in namespace '$wls_domain_namespace'" "" "")
   if [ $? -ne 0 ]; then
-    trace "Failed to retrieve WebLogic Domain Custom Resource Definition"
-    exit 1
+    trace "Failed to retrieve Domain '$wls_domain_uid' in namespace '$wls_domain_namespace'. Check that --wls_domain_namespace is correct and that the pod service account can get domains in that namespace."
+    return 1
   fi
   echo "$DOMAIN"
 }
@@ -87,15 +176,13 @@ get_custom_resource_domain() {
 # $1 Cluster Custom Resource name
 get_custom_resource_cluster() {
   local cluster_resource_name="$1"
-  local clusterJson=$(curl \
-    -v -f \
-    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-    -H "Accept: application/json" \
-    -H "User-Agent: WebLogic scalingAction.sh" \
-    -H "Authorization: Bearer $access_token" \
-    "$kubernetes_master"/apis/weblogic.oracle/"$cluster_api_version"/namespaces/"$wls_domain_namespace"/clusters/"$cluster_resource_name")
+  local cluster_url="$kubernetes_master/apis/weblogic.oracle/$cluster_api_version/namespaces/$wls_domain_namespace/clusters/$cluster_resource_name"
+  local clusterJson
+  clusterJson=$(kubernetes_api_request "GET" "$cluster_url" \
+    "Cluster '$cluster_resource_name' in namespace '$wls_domain_namespace'" "" "")
   if [ $? -ne 0 ]; then
-    trace "Failed to retrieve WebLogic Cluster Custom Resource Definition with cluster resource name '$cluster_resource_name'"
+    trace "Failed to retrieve Cluster '$cluster_resource_name' in namespace '$wls_domain_namespace'."
+    return 1
   fi
   echo "$clusterJson"
 }
@@ -111,6 +198,9 @@ get_cluster_resource_if_cluster_name_matches() {
   local clusterJson
   local cluster_name
   clusterJson=$(get_custom_resource_cluster "$cluster_resource_name")
+  if [ $? -ne 0 ]; then
+    return 1
+  fi
   if [ -n "$clusterJson" ]; then
     cluster_name=$(get_cluster_name_from_cluster "$clusterJson")
     if [[ "$cluster_name" == "$wls_cluster_name" ]]; then
@@ -129,6 +219,10 @@ find_cluster_resource_with_cluster_name() {
   local cluster_resource_names
   local clusterJson
   cluster_resource_names=$(get_cluster_resource_names_from_domain "$domainJson")
+  if [ -z "$cluster_resource_names" ]; then
+    trace "Domain '$wls_domain_uid' in namespace '$wls_domain_namespace' does not reference any Cluster resources. Check spec.clusters and --wls_domain_namespace."
+    return 1
+  fi
   # Try cluster resources with name that ends with the WebLogic cluster name first.
   # This can help save the number of GET cluster Kubernetes API calls when Cluster
   # resource name follows the naming pattern *"$wls_cluster_name, especially when
@@ -137,6 +231,9 @@ find_cluster_resource_with_cluster_name() {
   do
     if [[ "$name" == *"$wls_cluster_name" ]]; then
       clusterJson=$(get_cluster_resource_if_cluster_name_matches "$name" "$wls_cluster_name")
+      if [ $? -ne 0 ]; then
+        return 1
+      fi
       if [ -n "$clusterJson" ]; then
         echo "$clusterJson"
         return
@@ -148,6 +245,9 @@ find_cluster_resource_with_cluster_name() {
   do
     if [[ "$name" != *"$wls_cluster_name" ]]; then
       clusterJson=$(get_cluster_resource_if_cluster_name_matches "$name" "$wls_cluster_name")
+      if [ $? -ne 0 ]; then
+        return 1
+      fi
       if [ -n "$clusterJson" ]; then
         echo "$clusterJson"
         return
@@ -479,6 +579,11 @@ then
   print_usage
 fi
 
+if [ "$scaling_action" != "scaleUp" ] && [ "$scaling_action" != "scaleDown" ]; then
+  trace "Invalid action '$scaling_action'. Expected 'scaleUp' or 'scaleDown'."
+  print_usage
+fi
+
 # Initialize the client access token
 initialize_access_token
 
@@ -488,10 +593,18 @@ logScalingParameters
 # Retrieve the Domain configuration
 domain_api_version="v9"
 DOMAIN=$(get_custom_resource_domain)
+if [ $? -ne 0 ] || [ -z "$DOMAIN" ]; then
+  trace "Unable to continue without Domain '$wls_domain_uid' in namespace '$wls_domain_namespace'. Exiting."
+  exit 1
+fi
 
 # API version of cluster resource hard coded to "v1" in this release
 cluster_api_version="v1"
 CLUSTER=$(find_cluster_resource_with_cluster_name "$DOMAIN" "$wls_cluster_name")
+if [ $? -ne 0 ]; then
+  trace "Unable to resolve Cluster resource for WebLogic cluster '$wls_cluster_name'. Exiting."
+  exit 1
+fi
 
 if [ -z "${CLUSTER}" ]; then
   trace "Cluster resource for ${wls_cluster_name} not found. Exiting."
@@ -517,19 +630,14 @@ cluster_resource_name=$(get_cluster_resource_name_from_cluster "$CLUSTER")
 trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | oldReplica: $current_replica_count | newReplica: $new_replica "
 
 # send scaling request
-result=$(curl \
-  -v -f -X PATCH \
-  --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-  -H "Content-Type: application/merge-patch+json" \
-  -H "Accept: application/json" \
-  -H "User-Agent: WebLogic scalingAction.sh" \
-  -H "Authorization: Bearer $access_token" \
-  -d "{\"spec\":{\"replicas\":$new_replica}}" \
-  "$kubernetes_master"/apis/weblogic.oracle/"$cluster_api_version"/namespaces/"$wls_domain_namespace"/clusters/"$cluster_resource_name"/scale)
+scale_url="$kubernetes_master/apis/weblogic.oracle/$cluster_api_version/namespaces/$wls_domain_namespace/clusters/$cluster_resource_name/scale"
+result=$(kubernetes_api_request "PATCH" "$scale_url" \
+  "Cluster scale '$cluster_resource_name' in namespace '$wls_domain_namespace'" \
+  "application/merge-patch+json" "{\"spec\":{\"replicas\":$new_replica}}")
 
 if [ $? -ne 0 ]
 then
-  trace "Failed scaling request"
+  trace "Failed scaling request for Cluster '$cluster_resource_name' in namespace '$wls_domain_namespace'. Check namespace, Cluster resource name, and service account RBAC for patch clusters/scale."
   trace "$result"
   exit 1
 fi

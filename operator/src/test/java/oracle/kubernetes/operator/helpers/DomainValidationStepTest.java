@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -157,6 +157,19 @@ class DomainValidationStepTest {
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
+  }
+
+  @Test
+  void whenAnotherDomainHasSameDomainUid_updateStatus() {
+    DomainResource otherDomain = createTestDomain("other-domain");
+    otherDomain.getSpec().withDomainUid(UID);
+    testSupport.defineResources(otherDomain);
+
+    testSupport.runSteps(domainValidationSteps);
+
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
+    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("Domain UID", UID, "other-domain", NS));
   }
 
   @Test
