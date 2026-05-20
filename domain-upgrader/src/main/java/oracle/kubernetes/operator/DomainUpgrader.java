@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -50,7 +50,7 @@ public class DomainUpgrader {
 
     File inputFile = new File(domainUpgrader.inputFileName);
     File outputDir = new File(domainUpgrader.outputDir);
-    File outputFile = new File(domainUpgrader.outputDir + File.separator + domainUpgrader.outputFileName);
+    Path outputFile = getOutputFilePath(domainUpgrader);
 
     if (!inputFile.exists()) {
       throw new DomainUpgraderException(LOGGER.formatMessage(MessageKeys.INPUT_FILE_NON_EXISTENT,
@@ -61,16 +61,34 @@ public class DomainUpgrader {
       throw new DomainUpgraderException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_NON_EXISTENT, outputDir));
     }
 
-    if (outputFile.exists() && !domainUpgrader.overwriteExistingFile) {
-      throw new DomainUpgraderException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_EXISTS, outputFile.getName()));
+    if (Files.exists(outputFile) && !domainUpgrader.overwriteExistingFile) {
+      throw new DomainUpgraderException(
+          LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_EXISTS, outputFile.getFileName()));
     }
 
-    convertDomain(domainUpgrader);
-    LOGGER.info(DOMAIN_UPGRADE_SUCCESS, outputFile.getName());
+    convertDomain(domainUpgrader, outputFile);
+    LOGGER.info(DOMAIN_UPGRADE_SUCCESS, outputFile.getFileName());
   }
 
-  private static void convertDomain(DomainUpgrader upgrader) {
-    try (Writer writer = Files.newBufferedWriter(Path.of(upgrader.outputDir + "/" + upgrader.outputFileName))) {
+  private static Path getOutputFilePath(DomainUpgrader upgrader) {
+    if (isInvalidOutputFileName(upgrader.outputFileName)) {
+      throw new DomainUpgraderException("Invalid output file name: " + upgrader.outputFileName);
+    }
+
+    return Path.of(upgrader.outputDir).toAbsolutePath().normalize()
+        .resolve(upgrader.outputFileName).normalize();
+  }
+
+  private static boolean isInvalidOutputFileName(String outputFileName) {
+    Path path = Path.of(outputFileName);
+    return path.isAbsolute()
+        || path.getNameCount() != 1
+        || ".".equals(outputFileName)
+        || "..".equals(outputFileName);
+  }
+
+  private static void convertDomain(DomainUpgrader upgrader, Path outputFile) {
+    try (Writer writer = Files.newBufferedWriter(outputFile)) {
       writer.write(schemaConversionUtils.convertDomainSchema(Files.readString(Path.of(upgrader.inputFileName))));
     } catch (IOException e) {
       throw new DomainUpgraderException(e);

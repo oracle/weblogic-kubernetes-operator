@@ -31,6 +31,7 @@ import jakarta.json.JsonPatchBuilder;
 import jakarta.json.JsonValue;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.common.utils.SafeYamlUtils;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -49,7 +50,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
@@ -596,7 +596,7 @@ public class ConfigMapHelper {
     }
 
     public static String convertToJson(String yaml) {
-      return new Gson().toJson(new Yaml().load(yaml), LinkedHashMap.class);
+      return new Gson().toJson(SafeYamlUtils.load(yaml), LinkedHashMap.class);
     }
 
     boolean isTopologyNotValid() {
