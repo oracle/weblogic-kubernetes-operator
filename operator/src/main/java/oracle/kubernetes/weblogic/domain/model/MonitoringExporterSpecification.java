@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -10,13 +10,13 @@ import javax.annotation.Nullable;
 import com.google.gson.Gson;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.common.utils.SafeYamlUtils;
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.PreserveUnknown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.yaml.snakeyaml.Yaml;
 
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
@@ -91,7 +91,7 @@ public class MonitoringExporterSpecification {
   }
 
   private Map<String, Object> parse(String yaml) {
-    return new Yaml().load(yaml);
+    return (Map<String, Object>) SafeYamlUtils.load(yaml);
   }
 
   public V1ResourceRequirements getResources() {
