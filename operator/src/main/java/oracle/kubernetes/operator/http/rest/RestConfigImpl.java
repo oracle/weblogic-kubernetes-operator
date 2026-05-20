@@ -1,9 +1,10 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
@@ -16,6 +17,7 @@ public class RestConfigImpl implements RestConfig {
 
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
+  private final Predicate<String> domainNamespacePredicate;
   private final Certificates certificates;
 
   /**
@@ -23,7 +25,7 @@ public class RestConfigImpl implements RestConfig {
    * @param certificates Certificates.
    */
   public RestConfigImpl(Certificates certificates) {
-    this(null, null, certificates);
+    this(null, null, null, certificates);
   }
 
   /**
@@ -34,7 +36,22 @@ public class RestConfigImpl implements RestConfig {
    * @param certificates Certificates
    */
   public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces, Certificates certificates) {
+    this(principal, domainNamespaces,
+        namespace -> domainNamespaces != null && domainNamespaces.get().contains(namespace), certificates);
+  }
+
+  /**
+   * Constructs a RestConfigImpl.
+   *  @param principal is the name of the Kubernetes User or Service Account to use when calling the
+   *     Kubernetes REST API.
+   * @param domainNamespaces returns a list of the Kubernetes Namespaces covered by this Operator.
+   * @param domainNamespacePredicate returns true for namespaces covered by this Operator.
+   * @param certificates Certificates
+   */
+  public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces,
+                        Predicate<String> domainNamespacePredicate, Certificates certificates) {
     this.domainNamespaces = domainNamespaces;
+    this.domainNamespacePredicate = domainNamespacePredicate;
     this.principal = principal;
     this.certificates = certificates;
   }
@@ -101,7 +118,7 @@ public class RestConfigImpl implements RestConfig {
 
   @Override
   public RestBackend getBackend(String accessToken) {
-    return new RestBackendImpl(principal, accessToken, domainNamespaces);
+    return new RestBackendImpl(principal, accessToken, domainNamespaces, domainNamespacePredicate);
   }
 
   @Override

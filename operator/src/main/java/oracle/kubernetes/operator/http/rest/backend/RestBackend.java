@@ -75,7 +75,7 @@ public interface RestBackend {
    */
   void scaleCluster(String domainUid, String cluster, int managedServerCount);
 
-  Object createOrReplaceCluster(Map<String, Object> body);
+  Object createOrReplaceCluster(Map<String, Object> body, String domainName, String domainUid);
 
-  List<Map<String, Object>> listClusters(String namespace);
+  List<Map<String, Object>> listClusters(String namespace, String domainName, String domainUid);
 }
