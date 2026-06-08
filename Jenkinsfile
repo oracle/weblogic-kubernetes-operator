@@ -3,6 +3,7 @@
 //
 def kind_k8s_map = [
     '0.31.0': [
+        '1.36.1':  'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5',
         '1.35.0':  'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f',
         '1.35':    'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f',
         '1.34.3':  'kindest/node:v1.34.3@sha256:08497ee19eace7b4b5348db5c6a1591d7752b164530a36f855cb0f2bdcbadd48',
@@ -88,6 +89,7 @@ pipeline {
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.31.0: 1.35.0, 1.35, 1.34.3, 1.34, 1.33.7, 1.33, 1.32.11, 1.32, 1.31.14, 1.31. Kind 0.30.0: 1.34.0, 1.34, 1.33.4, 1.33, 1.32.8, 1.32, 1.31.12, 1.31 ',
                choices: [
                     // The first item in the list is the default value...
+                    '1.36.1',
                     '1.35.0',
                     '1.35',
                     '1.34.3',
