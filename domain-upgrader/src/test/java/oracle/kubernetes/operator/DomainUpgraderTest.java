@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -71,6 +71,17 @@ class DomainUpgraderTest {
               DomainUpgrader.main(path.toString(), "-f converted.yaml");
             });
     assertThat(thrown.getMessage().contains("already exists"), is(true));
+  }
+
+  @Test
+  void withOutputFilePath_domainUpgradeThrowsUpgradeException() throws URISyntaxException {
+    Path path = Paths.get(getClass().getClassLoader().getResource(DOMAIN_V8_AUX_IMAGE30_YAML).toURI());
+
+    DomainUpgrader.DomainUpgraderException thrown =
+        Assertions.assertThrows(DomainUpgrader.DomainUpgraderException.class, () ->
+            DomainUpgrader.main(path.toString(), "-f", "../converted.yaml"));
+
+    assertThat(thrown.getMessage().contains("Invalid output file name"), is(true));
   }
 
   protected static class ExitException extends SecurityException {

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.ApiException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -82,12 +83,11 @@ public class ConversionWebhookResource extends BaseResource {
       conversionResponse = createConversionResponse(conversionReview.getRequest(), be);
     } catch (Exception e) {
 
-      // TEST
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      e.printStackTrace(pw);
-      String exceptionString = sw.toString();
-      LOGGER.severe(exceptionString);
+      if (hasApiException(e)) {
+        LOGGER.severe(Optional.ofNullable(e.getMessage()).orElse(e.toString()), e);
+      } else {
+        LOGGER.severe(getStackTrace(e));
+      }
 
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
@@ -104,6 +104,24 @@ public class ConversionWebhookResource extends BaseResource {
       LOGGER.fine("Conversion webhook response: " + response);
     }
     return response;
+  }
+
+  private boolean hasApiException(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null) {
+      if (current instanceof ApiException) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
+  }
+
+  private String getStackTrace(Throwable throwable) {
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    throwable.printStackTrace(pw);
+    return sw.toString();
   }
 
   private String getConversionRequest(ConversionReviewModel conversionReview) {
@@ -133,18 +151,17 @@ public class ConversionWebhookResource extends BaseResource {
                                                       RestBackend be) {
     SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
-    List<SchemaConversionUtils.Resources> convertedResources = conversionRequest.getDomains().stream()
-          .map(d -> schemaConversionUtils.convertDomainSchema(d, () -> {
-            String namespace = Optional.ofNullable((Map<String, Object>) d.get("metadata"))
-                .map(m -> (String) m.get("namespace")).orElse("default");
-            return be.listClusters(namespace);
-          }))
-          .toList();
-
     List<Object> convertedDomains = new ArrayList<>();
-    for (SchemaConversionUtils.Resources cr : convertedResources) {
+    for (Map<String, Object> domain : conversionRequest.getDomains()) {
+      Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) domain.get("metadata"))
+          .orElse(Map.of());
+      String namespace = Optional.ofNullable((String) metadata.get("namespace")).orElse("default");
+      String domainName = (String) metadata.get("name");
+      String domainUid = (String) metadata.get("uid");
+      SchemaConversionUtils.Resources cr = schemaConversionUtils.convertDomainSchema(domain,
+          () -> be.listClusters(namespace, domainName, domainUid));
       convertedDomains.add(cr.domain());
-      cr.clusters().forEach(be::createOrReplaceCluster);
+      cr.clusters().forEach(cluster -> be.createOrReplaceCluster(cluster, domainName, domainUid));
     }
 
     return new ConversionResponse()

@@ -115,7 +115,9 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
       logRecord.getThrown().printStackTrace(pw);
       pw.close();
       throwableProcessing.setThrowable(sw.toString());
-      if (logRecord.getThrown() instanceof ApiException ae) {
+      Optional<ApiException> apiException = getApiException(logRecord.getThrown());
+      if (apiException.isPresent()) {
+        ApiException ae = apiException.get();
         throwableProcessing.setCode(String.valueOf(ae.getCode()));
         if (ae.getResponseHeaders() != null) {
           throwableProcessing.setHeaders(ae.getResponseHeaders());
@@ -126,5 +128,16 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
         }
       }
     }
+  }
+
+  private Optional<ApiException> getApiException(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null) {
+      if (current instanceof ApiException ae) {
+        return Optional.of(ae);
+      }
+      current = current.getCause();
+    }
+    return Optional.empty();
   }
 }
