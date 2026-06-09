@@ -5,9 +5,7 @@ package oracle.kubernetes.common.logging;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,18 +23,6 @@ public abstract class BaseLoggingFacade {
   @SuppressWarnings("this-escape")
   protected BaseLoggingFacade(Logger logger) {
     this.logger = logger;
-
-    final Logger parentLogger = Logger.getAnonymousLogger().getParent();
-    final Handler[] handlers = parentLogger.getHandlers();
-    for (final Handler handler : handlers) {
-      if (handler instanceof ConsoleHandler) {
-        parentLogger.removeHandler(handler);
-      }
-    }
-
-    ConsoleHandler handler = new ConsoleHandler();
-    handler.setFormatter(getLoggingFormatter());
-    logger.addHandler(handler);
   }
 
   /**
