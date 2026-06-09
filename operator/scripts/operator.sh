@@ -39,12 +39,20 @@ else
   DEBUG=""
 fi
 
+if [ -f /operator/logging.sh ]; then
+  . /operator/logging.sh
+else
+  . "$(dirname "$0")/logging.sh"
+fi
+
 if [ "${MOCK_WLS}" == 'true' ]; then
   MOCKING_WLS="-DmockWLS=true"
 fi
 
+configure_logging
+
 # Start operator
-java $JVM_OPTIONS $MOCKING_WLS $DEBUG -jar /operator/weblogic-kubernetes-operator.jar &
+java $JVM_OPTIONS $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID
 
