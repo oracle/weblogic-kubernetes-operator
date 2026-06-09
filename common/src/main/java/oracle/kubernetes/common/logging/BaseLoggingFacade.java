@@ -35,8 +35,13 @@ public abstract class BaseLoggingFacade {
     }
 
     ConsoleHandler handler = new ConsoleHandler();
+    handler.setLevel(getConfiguredHandlerLevel(logger));
     handler.setFormatter(getLoggingFormatter());
     logger.addHandler(handler);
+  }
+
+  private static Level getConfiguredHandlerLevel(Logger logger) {
+    return logger.getLevel() == null ? Level.INFO : logger.getLevel();
   }
 
   /**

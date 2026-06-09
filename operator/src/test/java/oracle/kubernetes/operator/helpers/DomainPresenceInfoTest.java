@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -124,6 +125,16 @@ class DomainPresenceInfoTest {
   @Test
   void whenServerStartupInfoDefined_expectedRunningServersIncludesDefinedServers() {
     info.setServerStartupInfo(STARTUP_INFOS);
+
+    assertThat(info.getExpectedRunningServers(), hasItems(MANAGED_SERVER_NAMES));
+  }
+
+  @Test
+  void whenServerStartupInfoDefined_expectedRunningServersUsesSnapshot() {
+    List<ServerStartupInfo> startupInfos = new ArrayList<>(STARTUP_INFOS);
+
+    info.setServerStartupInfo(startupInfos);
+    startupInfos.clear();
 
     assertThat(info.getExpectedRunningServers(), hasItems(MANAGED_SERVER_NAMES));
   }

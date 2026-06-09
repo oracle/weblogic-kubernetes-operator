@@ -833,7 +833,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param serverStartupInfo Server startup info
    */
   public void setServerStartupInfo(Collection<ServerStartupInfo> serverStartupInfo) {
-    this.serverStartupInfo.set(serverStartupInfo);
+    this.serverStartupInfo.set(toSnapshot(serverStartupInfo));
   }
 
   /**
@@ -842,7 +842,11 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param serverShutdownInfo Server shutdown info
    */
   public void setServerShutdownInfo(Collection<ServerShutdownInfo> serverShutdownInfo) {
-    this.serverShutdownInfo.set(serverShutdownInfo);
+    this.serverShutdownInfo.set(toSnapshot(serverShutdownInfo));
+  }
+
+  private static <T> Collection<T> toSnapshot(Collection<T> collection) {
+    return collection == null ? null : List.copyOf(collection);
   }
 
   /**
