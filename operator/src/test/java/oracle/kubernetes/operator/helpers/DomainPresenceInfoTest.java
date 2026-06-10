@@ -132,8 +132,8 @@ class DomainPresenceInfoTest {
   @Test
   void whenServerStartupInfoDefined_expectedRunningServersUsesSnapshot() {
     List<ServerStartupInfo> startupInfos = new ArrayList<>(STARTUP_INFOS);
-
     info.setServerStartupInfo(startupInfos);
+
     startupInfos.clear();
 
     assertThat(info.getExpectedRunningServers(), hasItems(MANAGED_SERVER_NAMES));

@@ -36,11 +36,19 @@ else
   DEBUG=""
 fi
 
+if [ -f /operator/logging.sh ]; then
+  . /operator/logging.sh
+else
+  . "$(dirname "$0")/logging.sh"
+fi
+
 # Container memory optimization flags
 HEAP="-XshowSettings:vm"
 
+configure_logging
+
 # Start operator
-java -cp /operator/weblogic-kubernetes-operator.jar $HEAP $MOCKING_WLS $DEBUG oracle.kubernetes.operator.WebhookMain &
+java -cp /operator/weblogic-kubernetes-operator.jar $HEAP $MOCKING_WLS $DEBUG $LOGGING oracle.kubernetes.operator.WebhookMain &
 PID=$!
 wait $PID
 
