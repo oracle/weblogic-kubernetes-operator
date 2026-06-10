@@ -393,10 +393,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
       return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, liveInfo.isMustDomainProcessingRestart(),
           "domain processing halted");
-    } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)
-        || liveInfo.isDomainGenerationChanged(cachedInfo)) {
-      return logDomainMakeRightDecision(
-          operation, liveInfo, cachedInfo, true, "explicit recheck or generation changed");
+    } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)) {
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "explicit recheck");
+    } else if (liveInfo.isDomainGenerationChanged(cachedInfo)) {
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "generation changed");
+    } else if (isGenerationLaterThanObservedGeneration(liveInfo)) {
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "generation not yet observed");
     } else {
       boolean shouldContinue = logDomainMakeRightDecision(
           operation, liveInfo, cachedInfo, false, "no generation change");
@@ -413,12 +415,30 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return true;
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)) {
       return false;
-    } else if (operation.isExplicitRecheck() || liveInfo.isClusterGenerationChanged(cachedInfo)) {
+    } else if (operation.isExplicitRecheck()
+        || liveInfo.isClusterGenerationChanged(cachedInfo)
+        || isGenerationLaterThanObservedGeneration(liveInfo)) {
       return true;
     } else {
       cachedInfo.setCluster(liveInfo.getCluster());
       return false;
     }
+  }
+
+  private boolean isGenerationLaterThanObservedGeneration(DomainPresenceInfo info) {
+    DomainResource domain = Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).orElse(null);
+    Long generation = getGeneration(domain);
+    Long observedGeneration = getObservedGeneration(domain);
+    return generation != null && observedGeneration != null && generation.compareTo(observedGeneration) > 0;
+  }
+
+  private boolean isGenerationLaterThanObservedGeneration(ClusterPresenceInfo info) {
+    ClusterResource cluster = Optional.ofNullable(info).map(ClusterPresenceInfo::getCluster).orElse(null);
+    Long generation = Optional.ofNullable(cluster).map(ClusterResource::getMetadata).map(V1ObjectMeta::getGeneration)
+        .orElse(null);
+    Long observedGeneration = Optional.ofNullable(cluster).map(ClusterResource::getStatus)
+        .map(s -> s.getObservedGeneration()).orElse(null);
+    return generation != null && observedGeneration != null && generation.compareTo(observedGeneration) > 0;
   }
 
   private boolean logDomainMakeRightDecision(
@@ -427,8 +447,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       DomainPresenceInfo cachedInfo,
       boolean shouldContinue,
       String reason) {
-    LOGGER.finer(
-        "MAKE-RIGHT-DECISION domainUid={0} namespace={1} action={2} reason={3} event={4} "
+    LOGGER.fine(
+        "WKO-MAKERIGHT-TRACE decision domainUid={0} namespace={1} action={2} reason={3} event={4} "
             + "explicitRecheck={5} interrupt={6} liveGeneration={7} cachedGeneration={8} "
             + "liveResourceVersion={9} cachedResourceVersion={10} observedGeneration={11}",
         liveInfo.getDomainUid(),
@@ -1005,8 +1025,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleModifiedDomain(DomainResource domain) {
     if (!domain.isGenerationLaterThanObservedGeneration()) {
-      LOGGER.finer(
-          "Ignoring Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
+      LOGGER.fine(
+          "WKO-MAKERIGHT-TRACE ignoring Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
               + "observedGeneration={3} resourceVersion={4}",
           domain.getDomainUid(),
           domain.getNamespace(),
@@ -1016,8 +1036,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return;
     }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    LOGGER.finer(
-        "Accepted Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
+    LOGGER.fine(
+        "WKO-MAKERIGHT-TRACE accepted Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
             + "observedGeneration={3} resourceVersion={4}",
         domain.getDomainUid(),
         domain.getNamespace(),

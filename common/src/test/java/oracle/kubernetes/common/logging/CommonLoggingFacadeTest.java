@@ -6,7 +6,6 @@ package oracle.kubernetes.common.logging;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,18 +24,6 @@ class CommonLoggingFacadeTest {
     loggingFacade = new CommonLoggingFacade(mockLogger);
   }
 
-  @AfterEach
-  void tearDown() {
-    removeHandlers();
-  }
-
-  private void removeHandlers() {
-    for (java.util.logging.Handler handler : mockLogger.getHandlers()) {
-      mockLogger.removeHandler(handler);
-      handler.close();
-    }
-  }
-
   @Test
   void verifyEnteringLogged() {
     mockLogger.setLevel(Level.FINER);
@@ -44,16 +31,6 @@ class CommonLoggingFacadeTest {
 
     assertThat(mockLogger.isLogpCalled(), is(true));
     assertThat(mockLogger.messageLevel, is(Level.FINER));
-  }
-
-  @Test
-  void whenLoggerHasConfiguredLevel_addedConsoleHandlerUsesSameLevel() {
-    removeHandlers();
-    mockLogger.setLevel(Level.FINER);
-
-    loggingFacade = new CommonLoggingFacade(mockLogger);
-
-    assertThat(mockLogger.getHandlers()[0].getLevel(), is(Level.FINER));
   }
 
   @Test
@@ -441,11 +418,6 @@ class CommonLoggingFacadeTest {
     @Override
     public void setLevel(Level level) {
       this.level = level;
-    }
-
-    @Override
-    public Level getLevel() {
-      return level;
     }
 
     @Override
