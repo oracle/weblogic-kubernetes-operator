@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -428,6 +428,20 @@ class DomainProcessorTest {
     processor.registerDomainPresenceInfo(originalInfo);
 
     processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainGenerationCachedButObservedGenerationStale_runMakeRight() {
+    DomainResource cachedDomain = DomainProcessorTestSetup.createTestDomain(2L);
+    cachedDomain.getStatus().setObservedGeneration(1L);
+    DomainResource modifiedDomain = DomainProcessorTestSetup.createTestDomain(2L);
+    modifiedDomain.getStatus().setObservedGeneration(1L);
+    modifiedDomain.getMetadata().setCreationTimestamp(cachedDomain.getMetadata().getCreationTimestamp());
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(cachedDomain));
+
+    processor.dispatchDomainWatch(new Response<>("MODIFIED", modifiedDomain));
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
@@ -2944,6 +2958,25 @@ class DomainProcessorTest {
     processor.dispatchClusterWatch(item);
 
     assertThat(logRecords, containsFine(WATCH_CLUSTER));
+  }
+
+  @Test
+  void whenClusterGenerationCachedButObservedGenerationStale_runMakeRight() {
+    processor.registerDomainPresenceInfo(originalInfo);
+    ClusterResource cachedCluster = createClusterResource(NS, CLUSTER);
+    cachedCluster.getMetadata().generation(2L);
+    cachedCluster.withStatus(new ClusterStatus().withObservedGeneration(1L));
+    configureDomain(domain).configureCluster(originalInfo, cachedCluster.getClusterName());
+    testSupport.defineResources(cachedCluster);
+    originalInfo.addClusterResource(cachedCluster);
+    processor.registerClusterPresenceInfo(new ClusterPresenceInfo(cachedCluster));
+    ClusterResource modifiedCluster = createClusterResource(NS, CLUSTER);
+    modifiedCluster.getMetadata().generation(2L);
+    modifiedCluster.withStatus(new ClusterStatus().withObservedGeneration(1L));
+
+    processor.dispatchClusterWatch(new Response<>("MODIFIED", modifiedCluster));
+
+    assertThat(testSupport.getNumItemsRun(), greaterThan(0));
   }
 
   @Test
