@@ -258,7 +258,29 @@ pipeline {
                 stage('Build WebLogic Kubernetes Operator') {
                     steps {
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            sh '''
+                                mkdir -m777 -p "${WORKSPACE}/maven-diagnostics"
+                                env | sort | grep -Ei '^(JAVA_TOOL_OPTIONS|M2_|MAVEN_|MVN_|PATH)=' \
+                                    > "${WORKSPACE}/maven-diagnostics/maven-env-build.txt" || true
+                                if mvn -B help:effective-settings -DshowPasswords=false \
+                                    -Doutput="${WORKSPACE}/maven-diagnostics/effective-settings-build.xml"; then
+                                    awk '
+                                      /<mirrors>/,/<\\/mirrors>/ { print }
+                                      /<repositories>/,/<\\/repositories>/ { print }
+                                      /<pluginRepositories>/,/<\\/pluginRepositories>/ { print }
+                                    ' "${WORKSPACE}/maven-diagnostics/effective-settings-build.xml" \
+                                      > "${WORKSPACE}/maven-diagnostics/effective-settings-build-summary.xml" || true
+                                    cat "${WORKSPACE}/maven-diagnostics/effective-settings-build-summary.xml"
+                                else
+                                    echo "Unable to generate Maven effective settings diagnostic"
+                                fi
+                            '''
                             sh "mvn -DtrimStackTrace=false clean install"
+                        }
+                    }
+                    post {
+                        always {
+                            archiveArtifacts(artifacts: 'maven-diagnostics/**/*', allowEmptyArchive: true)
                         }
                     }
                 }
@@ -610,6 +632,21 @@ EOF
                                     export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    mkdir -m777 -p "${result_root}/diagnostics/maven"
+                                    env | sort | grep -Ei '^(JAVA_TOOL_OPTIONS|M2_|MAVEN_|MVN_|PATH)=' \
+                                        > "${result_root}/diagnostics/maven/maven-env-integration-tests.txt" || true
+                                    if mvn -B help:effective-settings -DshowPasswords=false \
+                                        -Doutput="${result_root}/diagnostics/maven/effective-settings-integration-tests.xml"; then
+                                        awk '
+                                          /<mirrors>/,/<\\/mirrors>/ { print }
+                                          /<repositories>/,/<\\/repositories>/ { print }
+                                          /<pluginRepositories>/,/<\\/pluginRepositories>/ { print }
+                                        ' "${result_root}/diagnostics/maven/effective-settings-integration-tests.xml" \
+                                          > "${result_root}/diagnostics/maven/effective-settings-integration-tests-summary.xml" || true
+                                        cat "${result_root}/diagnostics/maven/effective-settings-integration-tests-summary.xml"
+                                    else
+                                        echo "Unable to generate Maven effective settings diagnostic"
+                                    fi
                                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                         echo "integration-tests failed"
                                         exit 1
