@@ -85,6 +85,8 @@ public abstract class BaseMain {
       TuningParameters.initializeInstance(executor, new File(deploymentHome, "config"));
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
+
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
   }
