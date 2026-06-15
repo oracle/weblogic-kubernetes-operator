@@ -86,7 +86,6 @@ public abstract class BaseMain {
     } catch (IOException e) {
       // DEBUG REMOVE
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
   }

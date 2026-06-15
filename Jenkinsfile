@@ -257,25 +257,27 @@ pipeline {
 
                 stage('Build WebLogic Kubernetes Operator') {
                     steps {
-                        withMaven(mavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
-                            sh '''
-                                mkdir -m777 -p "${WORKSPACE}/maven-diagnostics"
-                                env | sort | grep -Ei '^(JAVA_TOOL_OPTIONS|M2_|MAVEN_|MVN_|PATH)=' \
-                                    > "${WORKSPACE}/maven-diagnostics/maven-env-build.txt" || true
-                                if mvn -B help:effective-settings -DshowPasswords=false \
-                                    -Doutput="${WORKSPACE}/maven-diagnostics/effective-settings-build.xml"; then
-                                    awk '
-                                      /<mirrors>/,/<\\/mirrors>/ { print }
-                                      /<repositories>/,/<\\/repositories>/ { print }
-                                      /<pluginRepositories>/,/<\\/pluginRepositories>/ { print }
-                                    ' "${WORKSPACE}/maven-diagnostics/effective-settings-build.xml" \
-                                      > "${WORKSPACE}/maven-diagnostics/effective-settings-build-summary.xml" || true
-                                    cat "${WORKSPACE}/maven-diagnostics/effective-settings-build-summary.xml"
-                                else
-                                    echo "Unable to generate Maven effective settings diagnostic"
-                                fi
-                            '''
-                            sh "mvn -DtrimStackTrace=false clean install"
+                        withMaven(publisherStrategy: 'EXPLICIT') {
+                            configFileProvider([configFile(fileId: 'wkt-maven-settings-xml', variable: 'WKT_MAVEN_SETTINGS')]) {
+                                sh '''
+                                    mkdir -m777 -p "${WORKSPACE}/maven-diagnostics"
+                                    env | sort | grep -Ei '^(JAVA_TOOL_OPTIONS|M2_|MAVEN_|MVN_|PATH)=' \
+                                        > "${WORKSPACE}/maven-diagnostics/maven-env-build.txt" || true
+                                    if mvn -s "${WKT_MAVEN_SETTINGS}" -B help:effective-settings -DshowPasswords=false \
+                                        -Doutput="${WORKSPACE}/maven-diagnostics/effective-settings-build.xml"; then
+                                        awk '
+                                          /<mirrors>/,/<\\/mirrors>/ { print }
+                                          /<repositories>/,/<\\/repositories>/ { print }
+                                          /<pluginRepositories>/,/<\\/pluginRepositories>/ { print }
+                                        ' "${WORKSPACE}/maven-diagnostics/effective-settings-build.xml" \
+                                          > "${WORKSPACE}/maven-diagnostics/effective-settings-build-summary.xml" || true
+                                        cat "${WORKSPACE}/maven-diagnostics/effective-settings-build-summary.xml"
+                                    else
+                                        echo "Unable to generate Maven effective settings diagnostic"
+                                    fi
+                                '''
+                                sh 'mvn -s "${WKT_MAVEN_SETTINGS}" -DtrimStackTrace=false clean install'
+                            }
                         }
                     }
                     post {
@@ -314,8 +316,10 @@ pipeline {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                     }
                     steps {
-                        withMaven(mavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
-                            sh 'export PATH=${runtime_path} && mvn -pl kubernetes -P helm-installation-test verify'
+                        withMaven(publisherStrategy: 'EXPLICIT') {
+                            configFileProvider([configFile(fileId: 'wkt-maven-settings-xml', variable: 'WKT_MAVEN_SETTINGS')]) {
+                                sh 'export PATH=${runtime_path} && mvn -s "${WKT_MAVEN_SETTINGS}" -pl kubernetes -P helm-installation-test verify'
+                            }
                         }
                     }
                 }
@@ -619,7 +623,7 @@ EOF
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
                         '''
-                        withMaven(mavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                        withMaven(publisherStrategy: 'EXPLICIT') {
                             configFileProvider([configFile(fileId: 'wkt-maven-settings-xml', variable: 'WKT_MAVEN_SETTINGS')]) {
                                 withCredentials([
                                     usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
@@ -652,7 +656,7 @@ EOF
                                     fi
                                     env | sort | grep -Ei '^(JAVA_TOOL_OPTIONS|M2_|MAVEN_|MVN_|PATH)=' \
                                         > "${result_root}/diagnostics/maven/maven-env-integration-tests.txt" || true
-                                    if mvn -B help:effective-settings -DshowPasswords=false \
+                                    if mvn -s "${WKT_MAVEN_SETTINGS}" -B help:effective-settings -DshowPasswords=false \
                                         -Doutput="${result_root}/diagnostics/maven/effective-settings-integration-tests.xml"; then
                                         awk '
                                           /<mirrors>/,/<\\/mirrors>/ { print }
@@ -664,7 +668,7 @@ EOF
                                     else
                                         echo "Unable to generate Maven effective settings diagnostic"
                                     fi
-                                    if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
+                                    if ! time mvn -s "${WKT_MAVEN_SETTINGS}" -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                         echo "integration-tests failed"
                                         exit 1
                                     fi
