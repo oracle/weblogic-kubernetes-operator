@@ -620,9 +620,10 @@ EOF
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
                         '''
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
-                            withCredentials([
-                                usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
-                            ]) {
+                            configFileProvider([configFile(fileId: 'wkt-maven-settings-xml', variable: 'WKT_MAVEN_SETTINGS')]) {
+                                withCredentials([
+                                    usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
+                                ]) {
                                 sh '''
                                     export PATH=${runtime_path}
                                     export KUBECONFIG=${kubeconfig_file}
@@ -633,6 +634,22 @@ EOF
                                     export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
                                     mkdir -m777 -p "${result_root}/diagnostics/maven"
+                                    sed -E \
+                                      -e 's#(<password>)[^<]*(</password>)#\\1****\\2#g' \
+                                      -e 's#(<passphrase>)[^<]*(</passphrase>)#\\1****\\2#g' \
+                                      -e 's#(<privateKey>)[^<]*(</privateKey>)#\\1****\\2#g' \
+                                      "${WKT_MAVEN_SETTINGS}" \
+                                      > "${result_root}/diagnostics/maven/wkt-maven-settings-xml-redacted.xml"
+                                    echo "===== BEGIN Jenkins managed file wkt-maven-settings-xml (redacted) ====="
+                                    cat "${result_root}/diagnostics/maven/wkt-maven-settings-xml-redacted.xml"
+                                    echo "===== END Jenkins managed file wkt-maven-settings-xml (redacted) ====="
+                                    if grep -q '<mirrorOf>central</mirrorOf>' "${result_root}/diagnostics/maven/wkt-maven-settings-xml-redacted.xml" \
+                                        && grep -q 'https://artifacthub-phx.oci.oraclecorp.com/artifactory/repo1' \
+                                          "${result_root}/diagnostics/maven/wkt-maven-settings-xml-redacted.xml"; then
+                                        echo "wkt-maven-settings-xml contains the expected repo1 mirror for central"
+                                    else
+                                        echo "WARNING: wkt-maven-settings-xml does not contain the expected repo1 mirror for central"
+                                    fi
                                     env | sort | grep -Ei '^(JAVA_TOOL_OPTIONS|M2_|MAVEN_|MVN_|PATH)=' \
                                         > "${result_root}/diagnostics/maven/maven-env-integration-tests.txt" || true
                                     if mvn -B help:effective-settings -DshowPasswords=false \
@@ -652,6 +669,7 @@ EOF
                                         exit 1
                                     fi
                                 '''
+                                }
                             }
                         }
                     }
