@@ -257,7 +257,7 @@ pipeline {
 
                 stage('Build WebLogic Kubernetes Operator') {
                     steps {
-                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                        withMaven(mavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             sh '''
                                 mkdir -m777 -p "${WORKSPACE}/maven-diagnostics"
                                 env | sort | grep -Ei '^(JAVA_TOOL_OPTIONS|M2_|MAVEN_|MVN_|PATH)=' \
@@ -314,7 +314,7 @@ pipeline {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                     }
                     steps {
-                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                        withMaven(mavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             sh 'export PATH=${runtime_path} && mvn -pl kubernetes -P helm-installation-test verify'
                         }
                     }
@@ -619,7 +619,7 @@ EOF
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
                         '''
-                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                        withMaven(mavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             configFileProvider([configFile(fileId: 'wkt-maven-settings-xml', variable: 'WKT_MAVEN_SETTINGS')]) {
                                 withCredentials([
                                     usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')

@@ -87,7 +87,6 @@ public abstract class BaseMain {
       // DEBUG REMOVE
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
   }
