@@ -24,9 +24,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.http.metrics.MetricsServer;
@@ -43,6 +45,11 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.VirtualScheduledExecutorService;
 import oracle.kubernetes.utils.SystemClock;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
+
 /** An abstract base main class for the operator and the webhook. */
 public abstract class BaseMain {
 
@@ -52,6 +59,8 @@ public abstract class BaseMain {
   static final String GIT_BRANCH_KEY = "git.branch";
   static final String GIT_COMMIT_KEY = "git.commit.id.abbrev";
   static final String GIT_BUILD_TIME_KEY = "git.build.time";
+  private static final String SHUTDOWN_RESTART_LIMIT_EXCEEDED_DETAILS_UNAVAILABLE =
+      "restart limit details are unavailable";
 
   static final ThreadFactory threadFactory = Thread.ofVirtual().factory();
   static final ScheduledExecutorService executor = new VirtualScheduledExecutorService();
@@ -64,6 +73,7 @@ public abstract class BaseMain {
 
   private final AtomicReference<BaseServer> restServer = new AtomicReference<>();
   private final AtomicReference<BaseServer> metricsServer = new AtomicReference<>();
+  private final AtomicBoolean shutdownRestartLimitExceededEventCreated = new AtomicBoolean(false);
 
   static {
     try {
@@ -242,9 +252,31 @@ public abstract class BaseMain {
         () -> {
           File marker = new File(delegate.getDeploymentHome(), CoreDelegate.SHUTDOWN_MARKER_NAME);
           if (isFileExists(marker)) {
+            createShutdownRestartLimitExceededEventIfNeeded();
             releaseShutdownSignal();
           }
         }, 5, 2, TimeUnit.SECONDS);
+  }
+
+  private void createShutdownRestartLimitExceededEventIfNeeded() {
+    File marker = delegate.getShutdownRestartLimitExceededMarker();
+    if (isFileExists(marker) && !getOperatorPodName().isEmpty()
+        && shutdownRestartLimitExceededEventCreated.compareAndSet(false, true)) {
+      delegate.runSteps(createEventStep(new EventData(OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED,
+          readShutdownRestartLimitExceededDetails(marker))
+          .namespace(getOperatorNamespace())
+          .resourceName(getOperatorPodName())));
+    }
+  }
+
+  private String readShutdownRestartLimitExceededDetails(File marker) {
+    try {
+      String details = Files.readString(PathSupport.getPath(marker)).trim();
+      return details.isEmpty() ? SHUTDOWN_RESTART_LIMIT_EXCEEDED_DETAILS_UNAVAILABLE : details;
+    } catch (IOException ioe) {
+      LOGGER.fine(MessageKeys.EXCEPTION, ioe);
+      return SHUTDOWN_RESTART_LIMIT_EXCEEDED_DETAILS_UNAVAILABLE;
+    }
   }
 
   private static boolean isFileExists(File file) {

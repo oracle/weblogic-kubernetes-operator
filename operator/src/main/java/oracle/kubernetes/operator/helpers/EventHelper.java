@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -59,6 +59,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_ST
 import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOLUME_CLAIM_BOUND_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
@@ -85,6 +86,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.EventConstants.PERSISTENT_VOLUME_CLAIM_BOUND_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
@@ -799,6 +801,42 @@ public class EventHelper {
         return generateOperatorNSEventName(eventData);
       }
     },
+    OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN;
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        addCreatedByOperatorLabel(metadata);
+      }
+
+      @Override
+      public V1ObjectReference createRegarding(EventData eventData) {
+        return createOperatorEventInvolvedObject();
+      }
+
+      @Override
+      public String getNote(EventData eventData) {
+        return getMessageFromEventDataMessage(eventData);
+      }
+
+      @Override
+      protected String generateEventName(EventData eventData) {
+        return generateOperatorNSEventName(eventData);
+      }
+    },
     CONVERSION_WEBHOOK_FAILED {
       @Override
       protected String getType() {
@@ -920,6 +958,11 @@ public class EventHelper {
     private static String getMessageFromEventDataWithPod(EventData eventData) {
       return LOGGER.formatMessage(eventData.eventItem.getPattern(),
           eventData.getPodName(), Optional.ofNullable(eventData.message).orElse(""));
+    }
+
+    private static String getMessageFromEventDataMessage(EventData eventData) {
+      return LOGGER.formatMessage(eventData.eventItem.getPattern(),
+          Optional.ofNullable(eventData.message).orElse(""));
     }
 
     private static void addCreatedByOperatorLabel(V1ObjectMeta metadata) {

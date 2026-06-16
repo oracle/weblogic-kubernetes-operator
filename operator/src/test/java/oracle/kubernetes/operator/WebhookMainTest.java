@@ -76,6 +76,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
@@ -83,9 +84,12 @@ import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESP
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_STARTED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.operator.EventConstants.OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
+import static oracle.kubernetes.operator.EventTestUtils.getFormattedMessage;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
@@ -96,6 +100,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.KubernetesConstants.OLD_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -133,6 +139,8 @@ public class WebhookMainTest extends CrdHelperTestBase {
 
   private static final String WEBHOOK_POD_NAME = "my-webhook-1234";
   private static final String WEBHOOK_NAMESPACE = "webhook-namespace";
+  private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
+  private static final String OPERATOR_NAMESPACE = "operator-namespace";
 
   private static final String GIT_BUILD_VERSION = "3.1.0";
   private static final String GIT_BRANCH = "master";
@@ -634,6 +642,25 @@ public class WebhookMainTest extends CrdHelperTestBase {
     main.waitForDeath();
 
     assertThat(main.getShutdownSignalAvailablePermits(), equalTo(0));
+  }
+
+  @Test
+  void whenShutdownMarkerAndRestartLimitMarkerExist_createOperatorNamespaceEvent() throws NoSuchFieldException {
+    mementos.add(StaticStubSupport.install(
+            BaseMain.class, "executor", testSupport.getScheduledExecutorService()));
+    HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OPERATOR_NAMESPACE);
+    HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
+    String details = "container starts=4, limit=3, windowSeconds=1800";
+    inMemoryFileSystem.defineFile(delegate.getShutdownMarker(), "shutdown");
+    inMemoryFileSystem.defineFile(delegate.getShutdownRestartLimitExceededMarker(), details);
+    testSupport.presetFixedDelay();
+
+    main.waitForDeath();
+
+    assertThat("Found OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT,
+            getFormattedMessage(SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN, details)), is(true));
   }
 
   @Test
