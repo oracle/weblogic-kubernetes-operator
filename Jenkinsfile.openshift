@@ -231,12 +231,12 @@ pipeline {
                 }
 
                 stage('Run Helm installation tests') {
-                    environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}"
-                    }
                     steps {
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
-                            sh 'export PATH=${runtime_path} && mvn -pl kubernetes -P helm-installation-test verify'
+                            sh '''
+                              export PATH="${WORKSPACE}/bin:${PATH}"
+                              mvn -pl kubernetes -P helm-installation-test verify
+                            '''
                         }
                     }
                 }
@@ -429,7 +429,7 @@ pipeline {
                                     echo "NO_PROXY:" $NO_PROXY
                                     echo "no_proxy:" $no_proxy
 
-                                    export PATH=${runtime_path}
+                                    export PATH="${WORKSPACE}/bin:${PATH}"
                                     export OKD="true"
                                     export NFS_SERVER=${OKD_NFS_SERVER}
                                     echo "NFS_SERVER is: " $NFS_SERVER
