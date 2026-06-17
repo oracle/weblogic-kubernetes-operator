@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -19,6 +19,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_
 public interface CoreDelegate {
 
   String SHUTDOWN_MARKER_NAME = "marker.shutdown";
+  String SHUTDOWN_RESTART_LIMIT_EXCEEDED_MARKER_NAME = "marker.shutdown-restart-limit-exceeded";
 
   SemanticVersion getProductVersion();
 
@@ -36,6 +37,10 @@ public interface CoreDelegate {
 
   default File getShutdownMarker() {
     return new File(getDeploymentHome(), SHUTDOWN_MARKER_NAME);
+  }
+
+  default File getShutdownRestartLimitExceededMarker() {
+    return new File(getDeploymentHome(), SHUTDOWN_RESTART_LIMIT_EXCEEDED_MARKER_NAME);
   }
 
   default boolean createNewFile(File file) throws IOException {

@@ -259,6 +259,7 @@ public class MessageKeys {
   public static final String PERSISTENT_VOLUME_CLAIM_EVENT_ERROR = "WLSEO-0038";
   public static final String PERSISTENT_VOLUME_CLAIM_EVENT_SUGGESTION = "WLSEO-0039";
   public static final String PERSISTENT_VOLUME_CLAIM_BOUND_EVENT_PATTERN = "WLSEO-0040";
+  public static final String SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN = "WLSEO-0041";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";
