@@ -305,12 +305,12 @@ pipeline {
                 }
 
                 stage('Run Helm installation tests') {
-                    environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}"
-                    }
                     steps {
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
-                            sh 'export PATH=${runtime_path} && mvn -pl kubernetes -P helm-installation-test verify'
+                            sh '''
+                              export PATH="${WORKSPACE}/bin:${PATH}"
+                              mvn -pl kubernetes -P helm-installation-test verify
+                            '''
                         }
                     }
                 }
@@ -625,7 +625,7 @@ EOF
                                 usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
                             ]) {
                                 sh '''
-                                    export PATH=${runtime_path}
+                                    export PATH="${WORKSPACE}/bin:${PATH}"
                                     export KUBECONFIG=${kubeconfig_file}
                                     export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export BASE_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
