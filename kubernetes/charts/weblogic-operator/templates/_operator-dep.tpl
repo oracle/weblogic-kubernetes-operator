@@ -273,8 +273,17 @@ data:
   {{- if (and .domainOnPV (hasKey .domainOnPV "localDeveloperMode")) }}
   domainOnPVLocalDeveloperMode: {{ .domainOnPV.localDeveloperMode | quote }}
   {{- end }}
-  {{- if .domainNamespaceSelectionStrategy }}
+  {{- if and .domainNamespaceSelectionStrategy (ne .domainNamespaceSelectionStrategy "Dedicated") }}
   domainNamespaceSelectionStrategy: {{ .domainNamespaceSelectionStrategy | quote }}
+  {{- end }}
+  {{- if and .domainNamespaces (ne .domainNamespaceSelectionStrategy "Dedicated") }}
+  domainNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  {{- end }}
+  {{- if and .domainNamespaceLabelSelector (ne .domainNamespaceSelectionStrategy "Dedicated") }}
+  domainNamespaceLabelSelector: {{ .domainNamespaceLabelSelector | quote }}
+  {{- end }}
+  {{- if and .domainNamespaceRegExp (ne .domainNamespaceSelectionStrategy "Dedicated") }}
+  domainNamespaceRegExp: {{ .domainNamespaceRegExp | quote }}
   {{- end }}
 ---
   {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion $releaseNamespace) | trim }}
@@ -349,6 +358,10 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: "metadata.namespace"
+            {{- if eq .domainNamespaceSelectionStrategy "Dedicated" }}
+            - name: "WEBHOOK_DEDICATED_MODE"
+              value: "true"
+            {{- end }}
             - name: "WEBHOOK_POD_NAME"
               valueFrom:
                 fieldRef:
