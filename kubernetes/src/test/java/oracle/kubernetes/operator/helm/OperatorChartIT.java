@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -13,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 
 @SuppressWarnings("SameParameterValue")
 class OperatorChartIT extends OperatorChartItBase {
@@ -53,8 +55,70 @@ class OperatorChartIT extends OperatorChartItBase {
         hasEntry("domainOnPVLocalDeveloperMode", "true"));
   }
 
+  @Test
+  void whenListStrategyConfigured_webhookConfigMapHasDomainNamespaces() throws Exception {
+    final InstallArgs installArgs =
+        newInstallArgs(Map.of(
+            "domainNamespaceSelectionStrategy", "List",
+            "domainNamespaces", List.of("domain-ns-b", "domain-ns-a")));
+
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"),
+        hasEntry("domainNamespaces", "domain-ns-a,domain-ns-b"));
+  }
+
+  @Test
+  void whenLabelSelectorStrategyConfigured_webhookConfigMapHasDomainNamespaceLabelSelector() throws Exception {
+    final InstallArgs installArgs =
+        newInstallArgs(Map.of(
+            "domainNamespaceSelectionStrategy", "LabelSelector",
+            "domainNamespaceLabelSelector", "environment=dev"));
+
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"),
+        hasEntry("domainNamespaceLabelSelector", "environment=dev"));
+  }
+
+  @Test
+  void whenRegExpStrategyConfigured_webhookConfigMapHasDomainNamespaceRegExp() throws Exception {
+    final InstallArgs installArgs =
+        newInstallArgs(Map.of(
+            "domainNamespaceSelectionStrategy", "RegExp",
+            "domainNamespaceRegExp", "^domain-ns-[0-9]+$"));
+
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"),
+        hasEntry("domainNamespaceRegExp", "^domain-ns-[0-9]+$"));
+  }
+
+  @Test
+  void whenDedicatedStrategyConfigured_webhookConfigMapHasNoDomainNamespaceSelectionData() throws Exception {
+    final InstallArgs installArgs =
+        newInstallArgs(Map.of(
+            "domainNamespaceSelectionStrategy", "Dedicated",
+            "domainNamespaces", List.of("domain-ns-a"),
+            "domainNamespaceLabelSelector", "environment=dev",
+            "domainNamespaceRegExp", "^domain-ns-[0-9]+$"));
+
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"), not(hasKey("domainNamespaceSelectionStrategy")));
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"), not(hasKey("domainNamespaces")));
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"), not(hasKey("domainNamespaceLabelSelector")));
+    assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"), not(hasKey("domainNamespaceRegExp")));
+  }
+
+  @Test
+  void whenDedicatedStrategyConfigured_webhookDeploymentHasDedicatedMode() throws Exception {
+    final InstallArgs installArgs =
+        newInstallArgs(Map.of("domainNamespaceSelectionStrategy", "Dedicated"));
+
+    assertThat(getWebhookEnvironmentVariable(installArgs, "WEBHOOK_DEDICATED_MODE"), equalTo("true"));
+  }
+
   private String getEnvironmentVariable(InstallArgs installArgs, String name) throws Exception {
     final Map<String, Object> container = getOperatorDeploymentContainer(installArgs);
+    final List<String> values = JsonPath.parse(container).read("$.env[?(@.name=='" + name + "')].value");
+    return values.stream().findFirst().orElse(null);
+  }
+
+  private String getWebhookEnvironmentVariable(InstallArgs installArgs, String name) throws Exception {
+    final Map<String, Object> container = getWebhookDeploymentContainer(installArgs);
     final List<String> values = JsonPath.parse(container).read("$.env[?(@.name=='" + name + "')].value");
     return values.stream().findFirst().orElse(null);
   }
@@ -77,16 +141,33 @@ class OperatorChartIT extends OperatorChartItBase {
     return (Map<String, Object>) c.get(0);
   }
 
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> getWebhookDeploymentContainer(InstallArgs installArgs) throws Exception {
+    final Map<String, Object> webhookDeployment = getWebhookDeployment(installArgs);
+
+    final List<Object> c = JsonPath.parse(webhookDeployment)
+        .read("$.spec.template.spec.containers[?(@.name=='weblogic-operator-webhook')]");
+    return (Map<String, Object>) c.get(0);
+  }
+
   private Map<String,Object> getOperatorDeployment(InstallArgs installArgs) throws Exception {
+    return getDeployment(installArgs, "weblogic-operator");
+  }
+
+  private Map<String,Object> getWebhookDeployment(InstallArgs installArgs) throws Exception {
+    return getDeployment(installArgs, "weblogic-operator-webhook");
+  }
+
+  private Map<String,Object> getDeployment(InstallArgs installArgs, String name) throws Exception {
     return getChart(installArgs).getDocuments("Deployment").stream()
-        .filter(this::nameIsWebLogicOperator)
+        .filter(document -> nameIs(document, name))
         .findFirst()
         .orElse(Collections.emptyMap());
   }
 
   @SuppressWarnings("unchecked")
-  private boolean nameIsWebLogicOperator(Map<String,Object> document) {
+  private boolean nameIs(Map<String,Object> document, String name) {
     Map<String,Object> metadata = (Map<String,Object>) document.get("metadata");
-    return "weblogic-operator".equals(metadata.get("name"));
+    return name.equals(metadata.get("name"));
   }
 }
