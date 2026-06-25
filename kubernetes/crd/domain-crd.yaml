@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: cc6e0882c891bb1512ae82c2147ab6e873589f1f18c7c1c4eba5729fdce9e55b
+    weblogic.sha256: 729710cfdc9d7a39027546f07910e0591c6f64cc3fdc888f995355d2efe0f619
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -5293,11 +5293,14 @@ spec:
                 type: string
               maxClusterConcurrentStartup:
                 default: 0
-                description: The maximum number of cluster member Managed Server instances
-                  that the operator will start in parallel for a given cluster, if
-                  `maxConcurrentStartup` is not specified for a specific cluster under
-                  the `clusters` field. A value of 0 means there is no configured
-                  limit. Defaults to 0.
+                description: The default maximum number of cluster member Managed
+                  Server instances that can be in the process of starting at the same
+                  time for a given cluster, if `maxConcurrentStartup` is not specified
+                  for a specific cluster under the `clusters` field. The operator
+                  creates Managed Server Pods one at a time and waits until each Pod
+                  is scheduled on a node before creating the next Pod. A value of
+                  0 removes the readiness-based startup limit; it does not remove
+                  the one-pod-at-a-time scheduling step. Defaults to 0.
                 minimum: 0
                 type: integer
               replicas:
@@ -17811,13 +17814,18 @@ spec:
                       - NEVER
                       - IF_NEEDED
                     maxConcurrentStartup:
-                      description: The maximum number of Managed Servers instances
-                        that the operator will start in parallel for this cluster
-                        in response to a change in the `replicas` count. If more Managed
-                        Server instances must be started, the operator will wait until
+                      description: The maximum number of Managed Server instances
+                        that can be in the process of starting at the same time for
+                        this cluster in response to a change in the `replicas` count.
+                        The operator creates Managed Server Pods one at a time and
+                        waits until each Pod is scheduled on a node before creating
+                        the next Pod. If this value is greater than 0 and more Managed
+                        Server instances must be started, the operator waits until
                         a Managed Server Pod is in the `Ready` state before starting
-                        the next Managed Server instance. A value of 0 means all Managed
-                        Server instances will start in parallel. Defaults to 0.
+                        the next Managed Server instance. A value of 0 removes the
+                        readiness-based startup limit; it does not remove the one-pod-at-a-time
+                        scheduling step. Defaults to `domain.spec.maxClusterConcurrentStartup`,
+                        which defaults to 0.
                       type: number
                       minimum: 0
                     restartVersion:
@@ -17849,11 +17857,14 @@ spec:
                 - IfNotPresent
                 type: string
               maxClusterConcurrentStartup:
-                description: The maximum number of cluster member Managed Server instances
-                  that the operator will start in parallel for a given cluster, if
-                  `maxConcurrentStartup` is not specified for a specific cluster under
-                  the `clusters` field. A value of 0 means there is no configured
-                  limit. Defaults to 0.
+                description: The default maximum number of cluster member Managed
+                  Server instances that can be in the process of starting at the same
+                  time for a given cluster, if `maxConcurrentStartup` is not specified
+                  for a specific cluster under the `clusters` field. The operator
+                  creates Managed Server Pods one at a time and waits until each Pod
+                  is scheduled on a node before creating the next Pod. A value of
+                  0 removes the readiness-based startup limit; it does not remove
+                  the one-pod-at-a-time scheduling step. Defaults to 0.
                 minimum: 0
                 type: number
               replicas:
