@@ -31,8 +31,19 @@ class OperatorChartIT extends OperatorChartItBase {
   }
 
   @Test
-  void byDefault_operatorDeploymentContainerHasJavaLoggingLevel() throws Exception {
+  void byDefault_operatorDeploymentContainerHasJavaLoggingSettings() throws Exception {
     assertThat(getEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "JAVA_LOGGING_LEVEL"), equalTo("INFO"));
+    assertThat(getEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "JAVA_LOGGING_MAXSIZE"), equalTo("20000000"));
+    assertThat(getEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "JAVA_LOGGING_COUNT"), equalTo("10"));
+    assertThat(getEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "OPERATOR_LOGDIR"), equalTo("/logs"));
+  }
+
+  @Test
+  void byDefault_webhookDeploymentContainerHasJavaLoggingSettings() throws Exception {
+    assertThat(getWebhookEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "JAVA_LOGGING_LEVEL"), equalTo("INFO"));
+    assertThat(getWebhookEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "JAVA_LOGGING_MAXSIZE"), equalTo("20000000"));
+    assertThat(getWebhookEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "JAVA_LOGGING_COUNT"), equalTo("10"));
+    assertThat(getWebhookEnvironmentVariable(NO_VALUES_INSTALL_ARGS, "OPERATOR_LOGDIR"), equalTo("/logs"));
   }
 
   @Test
@@ -47,12 +58,26 @@ class OperatorChartIT extends OperatorChartItBase {
   }
 
   @Test
-  void whenLocalDeveloperModeEnabled_webhookConfigMapHasValue() throws Exception {
+  void whenLocalDeveloperModeEnabled_operatorAndWebhookConfigMapsHaveValue() throws Exception {
     final InstallArgs installArgs =
         newInstallArgs(Map.of("domainOnPV", Map.of("localDeveloperMode", true)));
 
+    assertThat(getConfigMapData(installArgs, "weblogic-operator-cm"),
+        hasEntry("domainOnPVLocalDeveloperMode", "true"));
     assertThat(getConfigMapData(installArgs, "weblogic-webhook-cm"),
         hasEntry("domainOnPVLocalDeveloperMode", "true"));
+  }
+
+  @Test
+  void byDefault_operatorAndWebhookDeploymentContainersMountWritableWorkDirectories() throws Exception {
+    assertWritableEmptyDirMounted(getOperatorDeployment(NO_VALUES_INSTALL_ARGS),
+        getOperatorDeploymentContainer(NO_VALUES_INSTALL_ARGS), "deployment-volume", "/deployment");
+    assertWritableEmptyDirMounted(getWebhookDeployment(NO_VALUES_INSTALL_ARGS),
+        getWebhookDeploymentContainer(NO_VALUES_INSTALL_ARGS), "deployment-volume", "/deployment");
+    assertWritableEmptyDirMounted(getOperatorDeployment(NO_VALUES_INSTALL_ARGS),
+        getOperatorDeploymentContainer(NO_VALUES_INSTALL_ARGS), "tmp-volume", "/tmp");
+    assertWritableEmptyDirMounted(getWebhookDeployment(NO_VALUES_INSTALL_ARGS),
+        getWebhookDeploymentContainer(NO_VALUES_INSTALL_ARGS), "tmp-volume", "/tmp");
   }
 
   @Test
@@ -121,6 +146,22 @@ class OperatorChartIT extends OperatorChartItBase {
     final Map<String, Object> container = getWebhookDeploymentContainer(installArgs);
     final List<String> values = JsonPath.parse(container).read("$.env[?(@.name=='" + name + "')].value");
     return values.stream().findFirst().orElse(null);
+  }
+
+  private void assertWritableEmptyDirMounted(Map<String,Object> deployment, Map<String, Object> container,
+                                            String volumeName, String mountPath) {
+    assertThat(getVolumeMountPath(container, volumeName), equalTo(mountPath));
+    assertThat(getEmptyDirVolumes(deployment, volumeName), hasSize(1));
+  }
+
+  private String getVolumeMountPath(Map<String, Object> container, String volumeName) {
+    final List<String> values = JsonPath.parse(container)
+        .read("$.volumeMounts[?(@.name=='" + volumeName + "')].mountPath");
+    return values.stream().findFirst().orElse(null);
+  }
+
+  private List<Object> getEmptyDirVolumes(Map<String,Object> deployment, String volumeName) {
+    return JsonPath.parse(deployment).read("$.spec.template.spec.volumes[?(@.name=='" + volumeName + "')].emptyDir");
   }
 
   @SuppressWarnings("unchecked")
