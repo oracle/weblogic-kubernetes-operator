@@ -24,6 +24,7 @@ import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.http.rest.RestConfig;
@@ -42,6 +43,7 @@ import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_DEDICATED_MODE_ENV;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createClusterCrdStep;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.WEBHOOK_STARTUP_FAILED;
@@ -111,7 +113,11 @@ public class WebhookMain extends BaseMain {
     return new WebhookMain(delegate);
   }
 
-  private static boolean isDomainNamespace(String namespace) {
+  static boolean isDomainNamespace(String namespace) {
+    if (isDedicatedWebhookMode()) {
+      return getWebhookNamespace().equals(namespace);
+    }
+
     Collection<String> configuredNamespaces = Namespaces.getConfiguredDomainNamespaces();
     if (configuredNamespaces != null) {
       return configuredNamespaces.contains(namespace);
@@ -126,6 +132,10 @@ public class WebhookMain extends BaseMain {
       }
       throw new RuntimeException(e);
     }
+  }
+
+  private static boolean isDedicatedWebhookMode() {
+    return Boolean.parseBoolean(HelmAccess.getHelmVariable(WEBHOOK_DEDICATED_MODE_ENV));
   }
 
   WebhookMain(WebhookMainDelegate conversionWebhookMainDelegate) {

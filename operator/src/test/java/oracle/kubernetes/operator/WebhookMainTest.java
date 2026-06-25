@@ -102,6 +102,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.KubernetesConstants.OLD_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_DEDICATED_MODE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -254,6 +255,22 @@ public class WebhookMainTest extends CrdHelperTestBase {
     WebhookMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(WEBHOOK_CONFIG_NAMESPACE).withParams(getWebhookNamespace()));
+  }
+
+  @Test
+  void whenDedicatedWebhookModeConfigured_acceptWebhookNamespace() {
+    HelmAccessStub.defineVariable(WEBHOOK_DEDICATED_MODE_ENV, "true");
+
+    assertThat(WebhookMain.isDomainNamespace(WEBHOOK_NAMESPACE), is(true));
+  }
+
+  @Test
+  void whenDedicatedWebhookModeConfigured_ignoreConfiguredNamespaceSelectionStrategy() {
+    HelmAccessStub.defineVariable(WEBHOOK_DEDICATED_MODE_ENV, "true");
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+    TuningParametersStub.setParameter("domainNamespaces", "other-namespace");
+
+    assertThat(WebhookMain.isDomainNamespace("other-namespace"), is(false));
   }
 
   @Test
