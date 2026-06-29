@@ -596,6 +596,7 @@ diff_model() {
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
+    wdtReportCommandLogOnFailure "compareModel" "${WDT_COMPARE_MODEL_LOG}"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -873,6 +874,7 @@ generateMergedModel() {
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Model in Image: the WDT validate model tool detected an error with the fully merged model:"
+    wdtReportCommandLogOnFailure "validateModel" "${WDT_VALIDATE_MODEL_LOG}"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -968,6 +970,7 @@ wdtCreatePrimordialDomain() {
     else
       trace SEVERE "Model in Image: WDT Create Primordial Domain Failed, ret=${ret}"
     fi
+    wdtReportCommandLogOnFailure "createDomain" "${WDT_CREATE_DOMAIN_LOG}"
     cat ${WDT_OUTPUT}
     exitOrLoop
   else
@@ -1056,6 +1059,7 @@ wdtUpdateModelDomain() {
     else
       trace SEVERE "WDT Update Domain command Failed:"
     fi
+    wdtReportCommandLogOnFailure "updateDomain" "${WDT_UPDATE_DOMAIN_LOG}"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -1194,6 +1198,7 @@ wdtHandleOnlineUpdate() {
        "(the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true')." \
        "Depending on the type of failure, the model may have an unsupported change," \
        "you may need to try an offline update, or you may need to shutdown the entire domain and then restart it."
+    wdtReportCommandLogOnFailure "updateDomain" "${WDT_UPDATE_DOMAIN_LOG}"
     cat ${WDT_OUTPUT}
     write_updatedresult ${ret}
     exitOrLoop
