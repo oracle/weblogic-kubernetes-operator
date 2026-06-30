@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks;
@@ -7,28 +7,40 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Scale;
 import io.kubernetes.client.openapi.models.V1ScaleSpec;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.operator.Namespaces;
+import oracle.kubernetes.operator.WebhookMain;
+import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.http.rest.RestBackendImpl;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestTestBase;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
@@ -60,7 +72,10 @@ import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_DEDICATED_MODE_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_1;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_2;
@@ -91,6 +106,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class WebhookRestTest extends RestTestBase {
   private static final String CONVERSION_REVIEW_RESPONSE = "conversion-review-response.yaml";
   private static final String CONVERSION_REVIEW_REQUEST = "conversion-review-request.yaml";
+  private static final String CONVERSION_DOMAIN_NAMESPACE = "sample-domain1-ns";
+  private static final String CONVERSION_CLUSTER_NAME = "sample-domain1-cluster-1";
   private static final String VALIDATING_REVIEW_RESPONSE_ACCEPT = "domain-validating-webhook-response-accept.yaml";
   private static final String VALIDATING_REVIEW_REQUEST_1 = "domain-validating-webhook-request-1.yaml";
   private static final String VALIDATING_REVIEW_REQUEST_2 = "domain-validating-webhook-request-2.yaml";
@@ -212,6 +229,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   final RestBackendStub restBackend = createStrictStub(RestBackendStub.class, this);
+  private Supplier<RestBackend> restBackendSupplier = () -> restBackend;
 
   @Override
   protected Application configure() {
@@ -222,7 +240,7 @@ class WebhookRestTest extends RestTestBase {
   // is initialized. We therefore populate the ResourceConfig with this supplier method, so that
   // it will return the initialized and configured field.
   private RestBackend getRestBackend() {
-    return restBackend;
+    return restBackendSupplier.get();
   }
 
   // test cases for conversion webhook
@@ -237,6 +255,93 @@ class WebhookRestTest extends RestTestBase {
     ClusterResource clusterResource = testSupport
         .getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain1-cluster-1");
     assertThat(clusterResource,  notNullValue());
+  }
+
+  @Test
+  void whenV8ConversionWebhookRequestUsesListSelectionStrategy_createsCluster() throws Exception {
+    verifyV8ConversionCreatesCluster(() -> {
+      TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+      TuningParametersStub.setParameter("domainNamespaces", CONVERSION_DOMAIN_NAMESPACE);
+    });
+  }
+
+  @Test
+  void whenV8ConversionWebhookRequestUsesLabelSelectorSelectionStrategy_createsCluster() throws Exception {
+    verifyV8ConversionCreatesCluster(() -> {
+      TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "LabelSelector");
+      TuningParametersStub.setParameter("domainNamespaceLabelSelector", "weblogic-operator=enabled");
+      testSupport.defineResources(createNamespace(
+          CONVERSION_DOMAIN_NAMESPACE, Map.of("weblogic-operator", "enabled")));
+    });
+  }
+
+  @Test
+  void whenV8ConversionWebhookRequestUsesRegExpSelectionStrategy_createsCluster() throws Exception {
+    verifyV8ConversionCreatesCluster(() -> {
+      TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "RegExp");
+      TuningParametersStub.setParameter("domainNamespaceRegExp", "sample-domain.*");
+    });
+  }
+
+  @Test
+  void whenV8ConversionWebhookRequestUsesDedicatedWebhookMode_createsCluster() throws Exception {
+    verifyV8ConversionCreatesCluster(() -> {
+      HelmAccessStub.defineVariable(WEBHOOK_DEDICATED_MODE_ENV, "true");
+      HelmAccessStub.defineVariable(WEBHOOK_NAMESPACE_ENV, CONVERSION_DOMAIN_NAMESPACE);
+      HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, CONVERSION_DOMAIN_NAMESPACE);
+    });
+  }
+
+  private void verifyV8ConversionCreatesCluster(NamespaceSelectionConfiguration configuration) throws Exception {
+    List<Memento> mementos = new ArrayList<>();
+    try {
+      mementos.add(HelmAccessStub.install());
+      mementos.add(TuningParametersStub.install());
+      configuration.configure();
+      restBackendSupplier = this::createConversionBackend;
+
+      String responseString = sendConversionWebhookRequestAsString(getAsString(CONVERSION_REVIEW_REQUEST));
+      ConversionReviewModel responseReview = readConversionReview(responseString);
+
+      assertThat(getResult(responseReview).getStatus(), equalTo("Success"));
+      ClusterResource clusterResource =
+          testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, CONVERSION_CLUSTER_NAME);
+      assertThat(clusterResource, notNullValue());
+    } finally {
+      restBackendSupplier = () -> restBackend;
+      mementos.forEach(Memento::revert);
+    }
+  }
+
+  private RestBackend createConversionBackend() {
+    try {
+      Constructor<RestBackendImpl> constructor =
+          RestBackendImpl.class.getDeclaredConstructor(Supplier.class, Predicate.class);
+      Supplier<Collection<String>> domainNamespaces = Collections::emptyList;
+      Predicate<String> domainNamespacePredicate = this::isDomainNamespace;
+      constructor.setAccessible(true);
+      return constructor.newInstance(domainNamespaces, domainNamespacePredicate);
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private boolean isDomainNamespace(String namespace) {
+    try {
+      Method method = WebhookMain.class.getDeclaredMethod("isDomainNamespace", String.class);
+      method.setAccessible(true);
+      return (boolean) method.invoke(null, namespace);
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private V1Namespace createNamespace(String namespace, Map<String, String> labels) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(namespace).labels(labels));
+  }
+
+  private interface NamespaceSelectionConfiguration {
+    void configure();
   }
 
   @Test
