@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1RuleWithOperations;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
@@ -181,6 +182,10 @@ public class WebhookMainTest extends CrdHelperTestBase {
     return new AdmissionregistrationV1ServiceReference().namespace(getWebhookNamespace());
   }
 
+  private V1Namespace createNamespace(String namespace, Map<String, String> labels) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(namespace).labels(labels));
+  }
+
   static {
     buildProperties = new PropertiesBuilder()
               .withProperty(GIT_BUILD_VERSION_KEY, GIT_BUILD_VERSION)
@@ -271,6 +276,46 @@ public class WebhookMainTest extends CrdHelperTestBase {
     TuningParametersStub.setParameter("domainNamespaces", "other-namespace");
 
     assertThat(WebhookMain.isDomainNamespace("other-namespace"), is(false));
+  }
+
+  @Test
+  void whenListSelectionStrategyConfigured_acceptListedNamespacesOnly() {
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+    TuningParametersStub.setParameter("domainNamespaces", "ns1,ns2");
+
+    assertThat(WebhookMain.isDomainNamespace("ns1"), is(true));
+    assertThat(WebhookMain.isDomainNamespace("other-namespace"), is(false));
+  }
+
+  @Test
+  void whenLabelSelectorSelectionStrategyConfigured_acceptNamespacesWithMatchingLabelsOnly() {
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "LabelSelector");
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", "weblogic-operator=enabled");
+    testSupport.defineResources(
+        createNamespace("labeled-namespace", Map.of("weblogic-operator", "enabled")),
+        createNamespace("unlabeled-namespace", Map.of("weblogic-operator", "disabled")));
+
+    assertThat(WebhookMain.isDomainNamespace("labeled-namespace"), is(true));
+    assertThat(WebhookMain.isDomainNamespace("unlabeled-namespace"), is(false));
+    assertThat(WebhookMain.isDomainNamespace("missing-namespace"), is(false));
+  }
+
+  @Test
+  void whenRegexpSelectionStrategyConfigured_acceptNamespacesWithMatchingNamesOnly() {
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "RegExp");
+    TuningParametersStub.setParameter("domainNamespaceRegExp", "sample-domain.*");
+
+    assertThat(WebhookMain.isDomainNamespace("sample-domain1-ns"), is(true));
+    assertThat(WebhookMain.isDomainNamespace("other-namespace"), is(false));
+  }
+
+  @Test
+  void whenDedicatedSelectionStrategyConfigured_acceptOperatorNamespaceOnly() {
+    HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OPERATOR_NAMESPACE);
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "Dedicated");
+
+    assertThat(WebhookMain.isDomainNamespace(OPERATOR_NAMESPACE), is(true));
+    assertThat(WebhookMain.isDomainNamespace(WEBHOOK_NAMESPACE), is(false));
   }
 
   @Test

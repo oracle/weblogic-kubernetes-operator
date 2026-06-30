@@ -114,18 +114,50 @@ public class WebhookMain extends BaseMain {
   }
 
   static boolean isDomainNamespace(String namespace) {
+    if (namespace == null) {
+      return false;
+    }
+
     if (isDedicatedWebhookMode()) {
       return getWebhookNamespace().equals(namespace);
     }
 
-    Collection<String> configuredNamespaces = Namespaces.getConfiguredDomainNamespaces();
-    if (configuredNamespaces != null) {
-      return configuredNamespaces.contains(namespace);
-    }
+    return Namespaces.getSelection(new NamespaceStrategyVisitor<>() {
+      @Override
+      public Boolean getListStrategySelection() {
+        return isConfiguredDomainNamespace(namespace);
+      }
 
+      @Override
+      public Boolean getDedicatedStrategySelection() {
+        return isConfiguredDomainNamespace(namespace);
+      }
+
+      @Override
+      public Boolean getRegexpStrategySelection() {
+        return Namespaces.isDomainNamespace(createNamespace(namespace));
+      }
+
+      @Override
+      public Boolean getLabelSelectorStrategySelection() {
+        return isLabeledDomainNamespace(namespace);
+      }
+    });
+  }
+
+  private static boolean isConfiguredDomainNamespace(String namespace) {
+    Collection<String> configuredNamespaces = Namespaces.getConfiguredDomainNamespaces();
+    return configuredNamespaces != null && configuredNamespaces.contains(namespace);
+  }
+
+  private static V1Namespace createNamespace(String namespace) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(namespace));
+  }
+
+  private static boolean isLabeledDomainNamespace(String namespace) {
     try {
-      V1Namespace namespaceResource = RequestBuilder.NAMESPACE.get(null, namespace);
-      return Namespaces.isDomainNamespace(namespaceResource);
+      V1Namespace namespaceResource = RequestBuilder.NAMESPACE.get(namespace);
+      return Optional.ofNullable(namespaceResource).map(Namespaces::isDomainNamespace).orElse(false);
     } catch (ApiException e) {
       if (e.getCode() == KubernetesConstants.HTTP_NOT_FOUND) {
         return false;
