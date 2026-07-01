@@ -8,7 +8,7 @@ import java.net.HttpURLConnection;
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:14.1.2.0-generic-jdk17-ol8";
-  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.11";
+  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.12";
   String DEFAULT_FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:v1.19-debian-elasticsearch7-1";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
   String LATEST_IMAGE_SUFFIX = ":latest";
@@ -50,6 +50,7 @@ public interface KubernetesConstants {
   String OPERATOR_NAMESPACE_ENV = "OPERATOR_NAMESPACE";
   String OPERATOR_POD_NAME_ENV = "OPERATOR_POD_NAME";
   String WEBHOOK_NAMESPACE_ENV = "WEBHOOK_NAMESPACE";
+  String WEBHOOK_DEDICATED_MODE_ENV = "WEBHOOK_DEDICATED_MODE";
   String OPERATOR_POD_UID_ENV = "OPERATOR_POD_UID";
   String WEBHOOK_POD_NAME_ENV = "WEBHOOK_POD_NAME";
   String WEBHOOK_POD_UID_ENV = "WEBHOOK_POD_UID";

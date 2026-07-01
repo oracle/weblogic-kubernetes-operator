@@ -661,7 +661,7 @@ EOF
                                 usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
                             ]) {
                                 sh '''
-                                    export PATH=${runtime_path}
+                                    export PATH="${WORKSPACE}/bin:${PATH}"
                                     export OKE_CLUSTER="true"
                                     export OKE_CLUSTER_PRIVATEIP="true"
                                     export OKD="false"
