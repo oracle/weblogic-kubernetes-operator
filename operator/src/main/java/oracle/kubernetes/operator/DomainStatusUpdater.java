@@ -258,7 +258,7 @@ public class DomainStatusUpdater {
    * @param failureMessage failure message
    */
   public static Step createKubernetesFailureSteps(KubernetesApiResponse<?> callResponse, String failureMessage) {
-    LOGGER.severe(MessageKeys.CALL_FAILED, callResponse.getStatus());
+    LOGGER.severe(MessageKeys.CALL_FAILED, callResponse.getHttpStatusCode(), failureMessage);
 
     return new FailureStep(KUBERNETES, failureMessage);
   }
