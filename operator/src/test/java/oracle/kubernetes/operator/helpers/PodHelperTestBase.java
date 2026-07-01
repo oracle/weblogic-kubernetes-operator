@@ -118,9 +118,11 @@ import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_I
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
+import static oracle.kubernetes.common.logging.MessageKeys.CALL_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
@@ -414,10 +416,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private String[] getMessageKeys() {
     return new String[] {
       getCreatedMessageKey(),
-        getExistsMessageKey(),
-        getPatchedMessageKey(),
-        getReplacedMessageKey(),
-        getDomainValidationFailedKey()
+      getExistsMessageKey(),
+      getPatchedMessageKey(),
+      getReplacedMessageKey(),
+      getDomainValidationFailedKey()
     };
   }
 
@@ -1864,12 +1866,41 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
             getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
+  @Test
+  void whenPodCreationFailsDueToQuotaExceeded_logHttpStatusAndFailureDetails() {
+    getConsoleHandlerMemento().collectLogMessages(logRecords, CALL_FAILED);
+    testSupport.failOnCreate(POD, NS, createQuotaExceededStatus(), HTTP_FORBIDDEN);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsSevere(CALL_FAILED).withParams(
+        HTTP_FORBIDDEN, getExpectedPodCreateFailureMessage(getQuotaExceededMessage())));
+  }
+
+  @Test
+  void whenPodCreationFailsDueToRbacForbidden_logHttpStatusAndFailureDetails() {
+    getConsoleHandlerMemento().collectLogMessages(logRecords, CALL_FAILED);
+    String forbiddenMessage = "pod " + getPodName() + " is forbidden: service account cannot create pods";
+    V1Status forbiddenStatus = new V1Status().reason("Forbidden").message(forbiddenMessage);
+    testSupport.failOnCreate(POD, NS, forbiddenStatus, HTTP_FORBIDDEN);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsSevere(CALL_FAILED).withParams(
+        HTTP_FORBIDDEN, getExpectedPodCreateFailureMessage(forbiddenMessage)));
+  }
+
+  private String getExpectedPodCreateFailureMessage(String kubernetesMessage) {
+    return "Failure invoking 'create' on pod " + getPodName() + " in namespace " + NS + ": " + kubernetesMessage;
+  }
+
   private V1Status createQuotaExceededStatus() {
     return new V1Status().message(getQuotaExceededMessage());
   }
 
   private String getQuotaExceededMessage() {
-    return "pod " + getPodName() + " is forbidden: quota exceeded";
+    return "pods \"" + getPodName() + "\" is forbidden: exceeded quota: test-cpu-mem-quota, "
+        + "requested: limits.memory=2548Mi, used: limits.memory=50208Mi, limited: limits.memory=50Gi";
   }
 
   @Test
