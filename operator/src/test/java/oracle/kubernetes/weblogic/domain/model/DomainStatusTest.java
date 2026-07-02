@@ -339,6 +339,21 @@ class DomainStatusTest {
   }
 
   @Test
+  void whenRetryableFailureRemovedPreservingTimes_nonFailureConditionUpdatesRetainRetryTimes() {
+    OffsetDateTime initialTime = SystemClock.now();
+    DomainCondition failure = new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true)
+        .withLastTransitionTime(initialTime);
+    domainStatus.addCondition(failure);
+
+    domainStatus.removeFailuresAndPreserveRetryTimes(KUBERNETES);
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus(false));
+    domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+
+    assertThat(domainStatus.getInitialFailureTime(), equalTo(initialTime));
+    assertThat(domainStatus.getLastFailureTime(), equalTo(initialTime));
+  }
+
+  @Test
   void whenNoFailures_numDeadlineIncreasesIsZero() {
     assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(0));
   }

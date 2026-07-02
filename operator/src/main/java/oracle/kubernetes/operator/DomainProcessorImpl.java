@@ -391,8 +391,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else if (isDeleting(operation)) {
       return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "deleting");
     } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
-      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, liveInfo.isMustDomainProcessingRestart(),
-          "domain processing halted");
+      boolean shouldRestart = liveInfo.isMustDomainProcessingRestart()
+          || isGenerationLaterThanObservedGeneration(liveInfo);
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, shouldRestart,
+          shouldRestart ? "domain processing halted; unprocessed generation" : "domain processing halted");
     } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)) {
       return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "explicit recheck");
     } else if (liveInfo.isDomainGenerationChanged(cachedInfo)) {
