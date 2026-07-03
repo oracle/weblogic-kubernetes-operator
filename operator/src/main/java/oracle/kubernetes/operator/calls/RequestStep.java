@@ -52,6 +52,7 @@ public abstract class RequestStep<
   private final String resourceSingular;
   private final String operationName;
   private final UnaryOperator<ApiClient> clientSelector;
+  private final boolean usesOperatorClient;
 
   /**
    * Construct request step.
@@ -85,6 +86,7 @@ public abstract class RequestStep<
     this.apiTypeClass = apiTypeClass;
     this.apiListTypeClass = apiListTypeClass;
     this.clientSelector = clientSelector;
+    this.usesOperatorClient = RequestBuilder.isOperatorClientSelector(clientSelector);
 
     Optional.ofNullable(next).ifPresent(n -> n.setPrevious(this));
   }
@@ -126,6 +128,10 @@ public abstract class RequestStep<
 
   String getOperationName() {
     return operationName;
+  }
+
+  boolean usesOperatorClient() {
+    return usesOperatorClient;
   }
 
   String getName() {

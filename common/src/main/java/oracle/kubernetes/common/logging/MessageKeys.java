@@ -152,6 +152,10 @@ public class MessageKeys {
   public static final String PVC_NOT_BOUND_ERROR = "WLSKO-0239";
   public static final String FLUENTBIT_CONFIGMAP_CREATED = "WLSKO-0240";
   public static final String FLUENTBIT_CONFIGMAP_REPLACED = "WLSKO-0241";
+  public static final String K8S_API_AUTHENTICATION_FAILURE = "WLSKO-0242";
+  public static final String K8S_API_AUTHENTICATION_RECOVERED = "WLSKO-0243";
+  public static final String K8S_API_AUTHENTICATION_LIVENESS_FAILURE = "WLSKO-0244";
+  public static final String K8S_API_AUTHENTICATION_FAILURE_ONGOING = "WLSKO-0245";
 
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
