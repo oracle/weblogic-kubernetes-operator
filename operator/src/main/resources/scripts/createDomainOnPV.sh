@@ -250,6 +250,7 @@ createDomainFromWDTModel() {
     # We need to prevent retries with a "FatalIntrospectorError".  We are not retrying create domain for now.
     #
     trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create domain failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
+    wdtReportCommandLogOnFailure "createDomain" "${WDT_CREATE_DOMAIN_LOG}"
     cat ${WDT_OUTPUT}
     exitOrLoop
   else
