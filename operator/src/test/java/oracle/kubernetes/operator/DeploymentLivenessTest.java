@@ -16,6 +16,8 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.calls.KubernetesApiAuthenticationHealth;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +25,15 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.io.FileMatchers.aReadableFile;
 import static org.hamcrest.io.FileMatchers.anExistingDirectory;
 import static org.hamcrest.io.FileMatchers.anExistingFile;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DeploymentLivenessTest {
@@ -38,6 +44,8 @@ class DeploymentLivenessTest {
 
   @BeforeEach
   void setUp() throws Exception {
+    KubernetesApiAuthenticationHealth.reportSuccessfulResponse();
+    mementos.add(SystemClockTestSupport.installClock());
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectAllLogMessages(logRecords)
@@ -46,6 +54,8 @@ class DeploymentLivenessTest {
 
   @AfterEach
   void tearDown() throws Exception {
+    KubernetesApiAuthenticationHealth.reportSuccessfulResponse();
+    logRecords.clear();
     mementos.forEach(Memento::revert);
 
     // delete probesHome dir (java requires a dir be empty before deletion)
@@ -93,6 +103,46 @@ class DeploymentLivenessTest {
     assertThat(coreDelegate.deploymentHome, anExistingDirectory());
 
     assertThat(logRecords, containsWarning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE));
+  }
+
+  @Test
+  void whenApiAuthenticationFailsForFifteenMinutes_stopUpdatingLivenessAndCreateDiagnostic() {
+    KubernetesApiAuthenticationHealth.reportUnauthorizedResponse("test 401 details");
+    SystemClockTestSupport.increment(15 * 60);
+
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
+    deploymentLiveness.run();
+
+    File aliveFile = new File(coreDelegate.deploymentHome, ".alive");
+    File diagnosticFile = new File(coreDelegate.deploymentHome, ".api-authentication-failure");
+    assertFalse(aliveFile.exists());
+    assertThat(diagnosticFile, anExistingFile());
+    assertThat(diagnosticFile, aReadableFile());
+    assertThat(logRecords, containsWarning(MessageKeys.K8S_API_AUTHENTICATION_FAILURE));
+    assertThat(logRecords, containsSevere(MessageKeys.K8S_API_AUTHENTICATION_LIVENESS_FAILURE)
+        .withParams(15 * 60, 1L, "test 401 details"));
+  }
+
+  @Test
+  void whenApiAuthenticationRecovers_resumeLivenessAndRemoveDiagnostic() {
+    KubernetesApiAuthenticationHealth.reportUnauthorizedResponse("test 401 details");
+    SystemClockTestSupport.increment(15 * 60);
+    DeploymentLiveness deploymentLiveness = new DeploymentLiveness(Collections.emptyList(), coreDelegate);
+    deploymentLiveness.run();
+
+    KubernetesApiAuthenticationHealth.reportSuccessfulResponse();
+    deploymentLiveness.run();
+
+    File aliveFile = new File(coreDelegate.deploymentHome, ".alive");
+    File diagnosticFile = new File(coreDelegate.deploymentHome, ".api-authentication-failure");
+    assertThat(aliveFile, anExistingFile());
+    assertFalse(diagnosticFile.exists());
+    assertThat(logRecords, containsWarning(MessageKeys.K8S_API_AUTHENTICATION_FAILURE));
+    assertThat(logRecords, containsSevere(MessageKeys.K8S_API_AUTHENTICATION_LIVENESS_FAILURE)
+        .withParams(15 * 60, 1L, "test 401 details"));
+    assertThat(logRecords, containsInfo(MessageKeys.K8S_API_AUTHENTICATION_RECOVERED).withParams(15L * 60, 1L));
+    assertThat(logRecords, containsFine("Liveness file created"));
+    assertThat(logRecords, containsFine("Liveness file last modified time set"));
   }
 
   abstract static class CoreDelegateStub implements CoreDelegate {

@@ -19,6 +19,7 @@ import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.calls.Client;
+import oracle.kubernetes.operator.calls.KubernetesApiAuthenticationHealth;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
@@ -185,6 +186,7 @@ public abstract class Watcher<T> {
             new ListOptions()
                 .resourceVersion(resourceVersion)
                 .timeoutSeconds(getWatchLifetime()))) {
+      KubernetesApiAuthenticationHealth.reportSuccessfulResponse();
       while (hasNext(watch)) {
         Watch.Response<T> item = watch.next();
         setIsDraining(isStopping());
@@ -209,6 +211,11 @@ public abstract class Watcher<T> {
 
   private void resetApiClientIfUnauthorized(Throwable ex) {
     if (ex instanceof ApiException apiException && apiException.getCode() == HTTP_UNAUTHORIZED) {
+      KubernetesApiAuthenticationHealth.reportUnauthorizedResponse(
+          getClass().getSimpleName() + " in namespace " + getNamespace() + ": "
+              + Optional.ofNullable(apiException.getResponseBody())
+                  .filter(responseBody -> !responseBody.isBlank())
+                  .orElseGet(apiException::getMessage));
       Client.reset();
     }
   }
@@ -225,6 +232,7 @@ public abstract class Watcher<T> {
     try {
       return watch.hasNext();
     } catch (Exception ex) {
+      resetApiClientIfUnauthorized(ex);
       return false;
     }
   }

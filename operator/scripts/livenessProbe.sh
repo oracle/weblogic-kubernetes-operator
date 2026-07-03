@@ -7,8 +7,17 @@
 RETVAL=$(test -f /operator/debug-config/livenessProbeSuccessOverride ; echo $?)
 
 FILE=/deployment/.alive
+AUTH_FAILURE_FILE=/deployment/.api-authentication-failure
+
+exitWithFailureDetails() {
+  if [ "$RETVAL" -ne 0 ] && [ -f "$AUTH_FAILURE_FILE" ]; then
+    cat "$AUTH_FAILURE_FILE" >&2
+  fi
+  exit "$RETVAL"
+}
+
 if [ ! -f ${FILE} ]; then
-  exit $RETVAL
+  exitWithFailureDetails
 fi
 OLDTIME=60
 CURTIME=$(date +%s)
@@ -16,6 +25,6 @@ FILETIME=$(stat $FILE -c %Y)
 TIMEDIFF=$(expr $CURTIME - $FILETIME)
 
 if [ $TIMEDIFF -gt $OLDTIME ]; then
-  exit $RETVAL
+  exitWithFailureDetails
 fi
 exit 0
