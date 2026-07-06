@@ -9,9 +9,11 @@ The following sections describe known limitations for WebLogic Kubernetes Operat
 
 #### Helm 4 server-side apply field ownership conflicts
 
-When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed
-`Domain` or `Cluster` resources, Kubernetes may reject the update if another
-field manager owns the same resource fields. For details and workarounds, see
+Helm 4 uses Kubernetes Server-Side Apply by default for a new Helm release and
+uses the previous release's apply method for an upgrade. When installing or
+upgrading the WebLogic Kubernetes Operator with Server-Side Apply, Kubernetes
+may reject an operator chart resource if another field manager owns the same
+resource fields. For details and workarounds, see
 [Helm 4 server-side apply field ownership conflicts]({{% relref "/managing-operators/troubleshooting#helm-4-server-side-apply-field-ownership-conflicts" %}}).
 
 #### NGINX SSL passthrough ingress service does not work with Kubernetes headless service
