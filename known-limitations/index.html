@@ -6,48 +6,48 @@
     <meta name="generator" content="Hugo 0.153.0">
     <meta name="generator" content="Relearn 8.3.0">
     <meta name="description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
+Helm 4 server-side apply field ownership conflicts Helm 4 uses Kubernetes Server-Side Apply by default for a new Helm release and uses the previous release’s apply method for an upgrade. When installing or upgrading the WebLogic Kubernetes Operator with Server-Side Apply, Kubernetes may reject an operator chart resource if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta name="author" content="">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Known limitations :: WebLogic Kubernetes Operator">
     <meta name="twitter:description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
+Helm 4 server-side apply field ownership conflicts Helm 4 uses Kubernetes Server-Side Apply by default for a new Helm release and uses the previous release’s apply method for an upgrade. When installing or upgrading the WebLogic Kubernetes Operator with Server-Side Apply, Kubernetes may reject an operator chart resource if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html">
     <meta property="og:site_name" content="WebLogic Kubernetes Operator">
     <meta property="og:title" content="Known limitations :: WebLogic Kubernetes Operator">
     <meta property="og:description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
+Helm 4 server-side apply field ownership conflicts Helm 4 uses Kubernetes Server-Side Apply by default for a new Helm release and uses the previous release’s apply method for an upgrade. When installing or upgrading the WebLogic Kubernetes Operator with Server-Side Apply, Kubernetes may reject an operator chart resource if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta property="og:locale" content="en_us">
     <meta property="og:type" content="website">
     <meta itemprop="name" content="Known limitations :: WebLogic Kubernetes Operator">
     <meta itemprop="description" content="The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.
-Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
+Helm 4 server-side apply field ownership conflicts Helm 4 uses Kubernetes Server-Side Apply by default for a new Helm release and uses the previous release’s apply method for an upgrade. When installing or upgrading the WebLogic Kubernetes Operator with Server-Side Apply, Kubernetes may reject an operator chart resource if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .">
     <meta itemprop="datePublished" content="2019-02-23T08:14:59-05:00">
     <meta itemprop="dateModified" content="2019-02-23T08:14:59-05:00">
-    <meta itemprop="wordCount" content="340">
+    <meta itemprop="wordCount" content="360">
     <title>Known limitations :: WebLogic Kubernetes Operator</title>
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.xml" rel="alternate" type="application/rss+xml" title="Known limitations :: WebLogic Kubernetes Operator">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1783313055" rel="icon" type="image/png">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1783313055" rel="stylesheet">
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1783313055" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1783313055" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1783313055" defer></script>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1783377520" rel="icon" type="image/png">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1783377520" rel="stylesheet">
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1783377520" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1783377520" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1783377520" defer></script>
     <script>
       window.relearn = window.relearn || {};
-      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1783313055";
+      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1783377520";
     </script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1783313055" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1783313055" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1783313055" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1783313055" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1783377520" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1783377520" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1783377520" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1783377520" defer></script>
     <script>
       window.relearn = window.relearn || {};
       window.relearn.contentLangs=['en'];
     </script>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1783313055" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1783313055" rel="stylesheet"></noscript>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1783313055" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1783313055" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1783313055" rel="stylesheet" id="R-format-style">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1783377520" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1783377520" rel="stylesheet"></noscript>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1783377520" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1783377520" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1783377520" rel="stylesheet" id="R-format-style">
     <script>
       window.relearn = window.relearn || {};
       // configuration
@@ -164,9 +164,11 @@ Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes S
 
 <p>The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.</p>
 <h4 id="helm-4-server-side-apply-field-ownership-conflicts">Helm 4 server-side apply field ownership conflicts<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
-<p>When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed
-<code>Domain</code> or <code>Cluster</code> resources, Kubernetes may reject the update if another
-field manager owns the same resource fields. For details and workarounds, see
+<p>Helm 4 uses Kubernetes Server-Side Apply by default for a new Helm release and
+uses the previous release&rsquo;s apply method for an upgrade. When installing or
+upgrading the WebLogic Kubernetes Operator with Server-Side Apply, Kubernetes
+may reject an operator chart resource if another field manager owns the same
+resource fields. For details and workarounds, see
 
 
 <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/#helm-4-server-side-apply-field-ownership-conflicts"
@@ -314,8 +316,8 @@ https://github.com/kubernetes/ingress-nginx/issues/1718
 </div>
       </div>
     </aside>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1783313055" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1783313055" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1783377520" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1783377520" defer></script>
     <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>

@@ -3,7 +3,7 @@
   <channel>
     <title>Known limitations :: WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html</link>
-    <description>The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.&#xA;Helm 4 server-side apply field ownership conflicts When Helm 4 uses Kubernetes Server-Side Apply to install or upgrade Helm-managed Domain or Cluster resources, Kubernetes may reject the update if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .</description>
+    <description>The following sections describe known limitations for WebLogic Kubernetes Operator. Each issue may contain a workaround or an associated issue number.&#xA;Helm 4 server-side apply field ownership conflicts Helm 4 uses Kubernetes Server-Side Apply by default for a new Helm release and uses the previous release’s apply method for an upgrade. When installing or upgrading the WebLogic Kubernetes Operator with Server-Side Apply, Kubernetes may reject an operator chart resource if another field manager owns the same resource fields. For details and workarounds, see Helm 4 server-side apply field ownership conflicts .</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate></lastBuildDate>
