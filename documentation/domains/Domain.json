@@ -1129,6 +1129,13 @@
           "description": "Settings for the readiness probe associated with a WebLogic Server instance. If not specified, the operator will create an HTTP probe accessing the /weblogic/ready path. If an HTTP probe is specified then the operator will fill in `path`, `port`, and `scheme`, if they are missing. The operator will also fill in any missing tuning-related fields if they are unspecified. Tuning-related fields will be inherited from the domain and cluster scopes unless a more specific scope defines a different action, such as a different HTTP path to access.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
+        "schedulingGates": {
+          "description": "SchedulingGates is an opaque list of values that if specified will block scheduling the Pod. If schedulingGates is not empty, the Pod will stay in the SchedulingGated state and the scheduler will not attempt to schedule the Pod. SchedulingGates can only be set at Pod creation time, and can be removed only afterwards. Updating or removing this field in the Domain or Cluster resource affects newly created Pods only; to release an existing scheduling-gated Pod, remove its gates from the Pod.",
+          "type": "array",
+          "items": {
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSchedulingGate"
+          }
+        },
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. If no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.28.2/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"

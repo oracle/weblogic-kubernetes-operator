@@ -37,7 +37,9 @@ import io.kubernetes.client.openapi.models.V1Lifecycle;
 import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodBuilder;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
@@ -551,8 +553,14 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   V1Pod createPodModel() {
     final V1Pod podRecipe = createPodRecipe();
-    sha256Hash = AnnotationHelper.createHash(podRecipe);
+    sha256Hash = AnnotationHelper.createHash(withSchedulingGatesRemoved(podRecipe));
     return withNonHashedElements(podRecipe);
+  }
+
+  private V1Pod withSchedulingGatesRemoved(V1Pod pod) {
+    V1Pod copy = new V1PodBuilder(pod).build();
+    Optional.ofNullable(copy).map(V1Pod::getSpec).ifPresent(spec -> spec.setSchedulingGates(null));
+    return copy;
   }
 
   @Override
@@ -691,6 +699,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected V1PodSpec createSpec() {
     V1PodSpec podSpec = createPodSpec()
         .readinessGates(getReadinessGates())
+        .schedulingGates(getSchedulingGates())
         .initContainers(getInitContainers());
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
@@ -742,6 +751,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1PodReadinessGate> getReadinessGates() {
     List<V1PodReadinessGate> readinessGates = getServerSpec().getReadinessGates();
     return readinessGates.isEmpty() ? null : readinessGates;
+  }
+
+  private List<V1PodSchedulingGate> getSchedulingGates() {
+    List<V1PodSchedulingGate> schedulingGates = getServerSpec().getSchedulingGates();
+    return schedulingGates.isEmpty() ? null : schedulingGates;
   }
 
   private List<V1Volume> getVolumes(String domainUid) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -1032,6 +1033,20 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
+  }
+
+  @Test
+  void whenSchedulingGatedPodPendingPastTimeLimit_doNotReportServerPodFailure() {
+    TuningParametersStub.setParameter(TuningParameters.MAX_PENDING_WAIT_TIME_SECONDS, Long.toString(20));
+    defineScenario().withServers("ms1", "ms2")
+        .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
+        .build();
+    getPod("ms1").getSpec().schedulingGates(List.of(new V1PodSchedulingGate().name("gate.example.com/hold")));
+
+    SystemClockTestSupport.increment(21);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(FAILED).withReason(SERVER_POD)));
   }
 
   @Test

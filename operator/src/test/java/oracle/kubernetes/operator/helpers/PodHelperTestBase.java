@@ -53,6 +53,7 @@ import io.kubernetes.client.openapi.models.V1PodAffinity;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
@@ -948,6 +949,17 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenPodCreated_hasSha256HashAnnotationForRecipe() {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
+  }
+
+  @Test
+  void whenPodCreated_hashIgnoresSchedulingGates() {
+    V1Pod podWithoutSchedulingGates = createPodModel();
+
+    configureServer().withSchedulingGates(List.of(new V1PodSchedulingGate().name("gate.example.com/hold")));
+
+    assertThat(
+        AnnotationHelper.getHash(createPodModel()),
+        equalTo(AnnotationHelper.getHash(podWithoutSchedulingGates)));
   }
 
   // Returns the YAML for a 3.3 Mii pod with aux image.
@@ -2799,6 +2811,26 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         getCreatedPod().getSpec().getTopologySpreadConstraints(),
         is(topologySpreadConstraints));
+  }
+
+  @Test
+  void whenServerHasSchedulingGates_createPodWithThem() {
+    List<V1PodSchedulingGate> schedulingGates = List.of(new V1PodSchedulingGate().name("gate.example.com/hold"));
+    configureServer().withSchedulingGates(schedulingGates);
+
+    assertThat(
+        getCreatedPod().getSpec().getSchedulingGates(),
+        is(schedulingGates));
+  }
+
+  @Test
+  void whenSchedulingGateRemovedFromPod_doNotReplacePod() {
+    configureServer().withSchedulingGates(List.of(new V1PodSchedulingGate().name("gate.example.com/hold")));
+    V1Pod existingPod = createPodModel();
+    existingPod.getSpec().setSchedulingGates(null);
+    initializeExistingPod(existingPod);
+
+    verifyPodNotReplaced();
   }
 
   @Test
