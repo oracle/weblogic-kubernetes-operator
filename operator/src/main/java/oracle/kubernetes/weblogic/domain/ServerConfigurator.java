@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
@@ -123,6 +124,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withAffinity(V1Affinity affinity);
 
   ServerConfigurator withTopologySpreadConstraints(List<V1TopologySpreadConstraint> topologySpreadConstraints);
+
+  ServerConfigurator withSchedulingGates(List<V1PodSchedulingGate> schedulingGates);
 
   ServerConfigurator withNodeName(String nodeName);
 

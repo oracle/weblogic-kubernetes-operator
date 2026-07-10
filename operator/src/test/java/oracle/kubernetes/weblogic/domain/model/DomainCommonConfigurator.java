@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -822,6 +823,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withSchedulingGates(List<V1PodSchedulingGate> schedulingGates) {
+      server.setSchedulingGates(schedulingGates);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withNodeName(String nodeName) {
       server.setNodeName(nodeName);
       return this;
@@ -1014,6 +1021,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withAffinity(V1Affinity affinity) {
       clusterSpec.setAffinity(affinity);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withSchedulingGates(List<V1PodSchedulingGate> schedulingGates) {
+      clusterSpec.setSchedulingGates(schedulingGates);
       return this;
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -8,6 +8,7 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -119,6 +120,8 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withRestartPolicy(String restartPolicy);
 
   ClusterConfigurator withAffinity(V1Affinity affinity);
+
+  ClusterConfigurator withSchedulingGates(List<V1PodSchedulingGate> schedulingGates);
 
   ClusterConfigurator withNodeName(String nodeName);
 

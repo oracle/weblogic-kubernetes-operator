@@ -265,6 +265,19 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   }
 
   /**
+   * Counts the number of non-clustered managed servers and managed servers in the specified cluster that are
+   * scheduling-gated.
+   * @param clusterName cluster name of the pod server
+   * @param adminServerName Name of the admin server
+   * @return Number of scheduling-gated managed servers
+   */
+  public long getNumSchedulingGatedManagedServers(String clusterName, String adminServerName) {
+    return getManagedServersInNoOtherCluster(clusterName, adminServerName)
+          .filter(PodHelper::isSchedulingGated)
+          .count();
+  }
+
+  /**
    * Counts the number of non-clustered servers (including admin) and servers in the specified cluster that are ready.
    * @param clusterName cluster name of the pod server
    * @return Number of ready servers
