@@ -1419,7 +1419,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean isNotReadyInTime(V1Pod pod) {
-        return !PodHelper.isReady(pod) && hasBeenUnreadyExceededWaitTime(pod);
+        return !PodHelper.isSchedulingGated(pod) && !PodHelper.isReady(pod) && hasBeenUnreadyExceededWaitTime(pod);
       }
 
       private boolean hasPodNotRunningInTime() {
@@ -1435,7 +1435,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean isNotRunningInTime(V1Pod pod) {
-        return PodHelper.isPending(pod) && hasBeenPendingExceededWaitTime(pod);
+        return !PodHelper.isSchedulingGated(pod) && PodHelper.isPending(pod) && hasBeenPendingExceededWaitTime(pod);
       }
 
       private boolean hasBeenUnreadyExceededWaitTime(V1Pod pod) {

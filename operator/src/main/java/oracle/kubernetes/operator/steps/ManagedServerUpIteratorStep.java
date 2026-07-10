@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -147,6 +147,11 @@ public class ManagedServerUpIteratorStep extends Step {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       V1Pod managedPod = info.getServerPod(serverName);
       boolean isWaitingToRoll = PodHelper.isWaitingToRoll(managedPod);
+      if (PodHelper.isSchedulingGated(managedPod)) {
+        LOGGER.fine("Managed server pod {0} is scheduling-gated; not waiting for ready in this make-right cycle",
+            serverName);
+        return doNext(packet);
+      }
       if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)
               && !isWaitingToRoll)) {
         // requeue to wait for managed pod to be ready
@@ -215,6 +220,9 @@ public class ManagedServerUpIteratorStep extends Step {
       } else if (hasServerAvailableToStart(packet)) {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
+      } else if (hasSchedulingGatedManagedServer(packet)) {
+        LOGGER.fine("Managed server startup for cluster {0} is paused by a scheduling-gated pod", clusterName);
+        return doNext(packet);
       } else {
         return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
       }
@@ -223,8 +231,19 @@ public class ManagedServerUpIteratorStep extends Step {
     private boolean hasServerAvailableToStart(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
-      return (getNumServersStarted() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
+      return (getNumServersStarted() <= getNumStartedOrSchedulingGatedManagedServers(info, adminServerName)
               && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName))));
+    }
+
+    private long getNumStartedOrSchedulingGatedManagedServers(DomainPresenceInfo info, String adminServerName) {
+      return info.getNumScheduledManagedServers(clusterName, adminServerName)
+          + info.getNumSchedulingGatedManagedServers(clusterName, adminServerName);
+    }
+
+    private boolean hasSchedulingGatedManagedServer(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+      String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
+      return info.getNumSchedulingGatedManagedServers(clusterName, adminServerName) > 0;
     }
 
     private boolean canStartConcurrently(long numReady) {
