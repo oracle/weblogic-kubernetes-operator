@@ -613,6 +613,10 @@
     <lastmod>2020-06-30T08:55:00-05:00</lastmod>
   </url>
   <url>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html</loc>
+    <lastmod>2026-07-09T00:00:00-05:00</lastmod>
+  </url>
+  <url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/debugging/index.html</loc>
     <lastmod>2020-03-11T16:45:16-05:00</lastmod>
   </url>

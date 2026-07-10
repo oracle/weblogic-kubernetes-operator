@@ -6,7 +6,7 @@
     <description>This section provides answers to frequently asked questions.&#xA;Answers for newcomersAnswers to commonly asked newcomer questions.&#xA;Cannot pull imageMy domain will not start and I see errors like `ImagePullBackoff` or `Cannot pull image`.&#xA;Boot identity not validOne or more WebLogic Server instances in my domain will not start and I see errors in the server log like this: `Boot identity not valid`.&#xA;Domain secret mismatchOne or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log reports errors like this: Domain secret mismatch.</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 30 Jun 2020 08:55:00 -0500</lastBuildDate>
+    <lastBuildDate>Thu, 09 Jul 2026 00:00:00 -0500</lastBuildDate>
     <atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Answers for newcomers</title>
@@ -77,6 +77,13 @@
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/index.html</guid>
       <description>How do I constrain scheduling WebLogic Server pods to particular nodes?</description>
+    </item>
+    <item>
+      <title>Using Pod scheduling gates</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html</link>
+      <pubDate>Thu, 09 Jul 2026 00:00:00 -0500</pubDate>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html</guid>
+      <description>How does the operator handle Kubernetes Pod scheduling gates?</description>
     </item>
   </channel>
 </rss>

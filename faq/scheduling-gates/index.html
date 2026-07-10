@@ -5,48 +5,26 @@
     <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <meta name="generator" content="Hugo 0.153.0">
     <meta name="generator" content="Relearn 8.3.0">
-    <meta name="description" content="CertificatesOperator SSL/TLS certificate handling.
-Domain securityWebLogic domain security and the operator.
-EncryptionWebLogic domain encryption and the operator.
-Service accountsKubernetes ServiceAccounts for the operator.
-RBACOperator role-based authorization.
-SecretsKubernetes Secrets for the operator.
-OpenShiftOpenShift information for the operator.">
+    <meta name="description" content="How does the operator handle Kubernetes Pod scheduling gates?">
     <meta name="author" content="">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Security :: WebLogic Kubernetes Operator">
-    <meta name="twitter:description" content="CertificatesOperator SSL/TLS certificate handling.
-Domain securityWebLogic domain security and the operator.
-EncryptionWebLogic domain encryption and the operator.
-Service accountsKubernetes ServiceAccounts for the operator.
-RBACOperator role-based authorization.
-SecretsKubernetes Secrets for the operator.
-OpenShiftOpenShift information for the operator.">
-    <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html">
+    <meta name="twitter:title" content="Using Pod scheduling gates :: WebLogic Kubernetes Operator">
+    <meta name="twitter:description" content="How does the operator handle Kubernetes Pod scheduling gates?">
+    <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html">
     <meta property="og:site_name" content="WebLogic Kubernetes Operator">
-    <meta property="og:title" content="Security :: WebLogic Kubernetes Operator">
-    <meta property="og:description" content="CertificatesOperator SSL/TLS certificate handling.
-Domain securityWebLogic domain security and the operator.
-EncryptionWebLogic domain encryption and the operator.
-Service accountsKubernetes ServiceAccounts for the operator.
-RBACOperator role-based authorization.
-SecretsKubernetes Secrets for the operator.
-OpenShiftOpenShift information for the operator.">
+    <meta property="og:title" content="Using Pod scheduling gates :: WebLogic Kubernetes Operator">
+    <meta property="og:description" content="How does the operator handle Kubernetes Pod scheduling gates?">
     <meta property="og:locale" content="en_us">
-    <meta property="og:type" content="website">
-    <meta itemprop="name" content="Security :: WebLogic Kubernetes Operator">
-    <meta itemprop="description" content="CertificatesOperator SSL/TLS certificate handling.
-Domain securityWebLogic domain security and the operator.
-EncryptionWebLogic domain encryption and the operator.
-Service accountsKubernetes ServiceAccounts for the operator.
-RBACOperator role-based authorization.
-SecretsKubernetes Secrets for the operator.
-OpenShiftOpenShift information for the operator.">
-    <meta itemprop="datePublished" content="2019-02-23T17:34:48-05:00">
-    <meta itemprop="dateModified" content="2019-02-23T17:34:48-05:00">
-    <meta itemprop="wordCount" content="36">
-    <title>Security :: WebLogic Kubernetes Operator</title>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/security/index.xml" rel="alternate" type="application/rss+xml" title="Security :: WebLogic Kubernetes Operator">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="Frequently asked questions">
+    <meta property="article:published_time" content="2026-07-09T00:00:00-05:00">
+    <meta property="article:modified_time" content="2026-07-09T00:00:00-05:00">
+    <meta itemprop="name" content="Using Pod scheduling gates :: WebLogic Kubernetes Operator">
+    <meta itemprop="description" content="How does the operator handle Kubernetes Pod scheduling gates?">
+    <meta itemprop="datePublished" content="2026-07-09T00:00:00-05:00">
+    <meta itemprop="dateModified" content="2026-07-09T00:00:00-05:00">
+    <meta itemprop="wordCount" content="175">
+    <title>Using Pod scheduling gates :: WebLogic Kubernetes Operator</title>
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1783691442" rel="icon" type="image/png">
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1783691442" rel="stylesheet">
     <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1783691442" defer></script>
@@ -72,9 +50,9 @@ OpenShiftOpenShift information for the operator.">
       window.relearn = window.relearn || {};
       // configuration
       window.relearn.min = `.min`;
-      window.relearn.path='\/security\/index.html';
-      window.relearn.relBasePath='..';
-      window.relearn.relBaseUri='..';
+      window.relearn.path='\/faq\/scheduling-gates\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..';
       window.relearn.absBaseUri='https:\/\/oracle.github.io\/weblogic-kubernetes-operator';
       window.relearn.disableInlineCopyToClipboard=true;
       window.relearn.enableBlockCodeWrap=true;
@@ -120,7 +98,7 @@ OpenShiftOpenShift information for the operator.">
       window.relearn.markVariant();
     </script>
   </head>
-  <body class="mobile-support html" data-url="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html">
+  <body class="mobile-support html" data-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html">
     <div id="R-body" class="default-animation">
       <div id="R-body-overlay"></div>
       <nav id="R-topbar">
@@ -138,14 +116,14 @@ OpenShiftOpenShift information for the operator.">
               </div>
             </div>
           </div>
-          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><span itemprop="name">WebLogic Kubernetes Operator</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">Security</span><meta itemprop="position" content="2"></li>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><span itemprop="name">WebLogic Kubernetes Operator</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html"><span itemprop="name">Frequently asked questions</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">Using Pod scheduling gates</span><meta itemprop="position" content="3"></li>
           </ol>
           <div class="topbar-area topbar-area-end" data-area="end">
             <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
-<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/reference/domain-resource/index.html" title="Domain resource (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></span>
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/index.html" title="Scheduling pods to particular nodes (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></span>
             </div>
             <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
-<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/index.html" title="Certificates (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></span>
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html" title="Deprecated functionality (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></span>
             </div>
             <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
 <span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button></span>
@@ -160,7 +138,7 @@ OpenShiftOpenShift information for the operator.">
         </div>
       </nav>
       <div id="R-main-overlay"></div>
-      <main id="R-body-inner" class="highlightable security" tabindex="-1">
+      <main id="R-body-inner" class="highlightable faq" tabindex="-1">
         <div class="flex-block-wrapper">
 <article class="default">
   <header class="headline">
@@ -168,19 +146,19 @@ OpenShiftOpenShift information for the operator.">
 
 
 
-<h1 id="security">Security</h1>
+<h1 id="using-pod-scheduling-gates">Using Pod scheduling gates</h1>
 
 
 
-<div class="children children-type-list children-sort-">
-  <div class="children-title children-title-1"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/index.html">Certificates</a></div><p>Operator SSL/TLS certificate handling.</p>
-  <div class="children-title children-title-1"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/index.html">Domain security</a></div><p>WebLogic domain security and the operator.</p>
-  <div class="children-title children-title-1"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/encryption/index.html">Encryption</a></div><p>WebLogic domain encryption and the operator.</p>
-  <div class="children-title children-title-1"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/index.html">Service accounts</a></div><p>Kubernetes ServiceAccounts for the operator.</p>
-  <div class="children-title children-title-1"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/rbac/index.html">RBAC</a></div><p>Operator role-based authorization.</p>
-  <div class="children-title children-title-1"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/secrets/index.html">Secrets</a></div><p>Kubernetes Secrets for the operator.</p>
-  <div class="children-title children-title-1"><a href="https://oracle.github.io/weblogic-kubernetes-operator/security/openshift/index.html">OpenShift</a></div><p>OpenShift information for the operator.</p>
-</div>
+<blockquote>
+<p>How does the operator handle Kubernetes Pod <code>schedulingGates</code>?</p>
+</blockquote>
+<p>The operator supports <code>schedulingGates</code> under <code>serverPod</code> for WebLogic Server Pods. You can configure the field at the domain, Administration Server, cluster, or Managed Server scope. For a Cluster resource, configure it under <code>spec.serverPod.schedulingGates</code>.</p>
+<p>When <code>schedulingGates</code> is configured, the operator includes it only when creating a new Pod. Kubernetes then keeps that Pod in the <code>SchedulingGated</code> state until the gate is removed from the Pod. The operator continues to honor normal startup ordering and concurrency limits, including starting the Administration Server before Managed Servers.</p>
+<p>Changing or removing <code>schedulingGates</code> in the Domain or Cluster resource does not update existing Pods and does not cause the operator to replace them. This matches Kubernetes immutability rules for scheduling gates. To release an existing scheduling-gated Pod, remove the gate from the Pod itself, for example:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl patch pod &lt;pod-name&gt; -n &lt;namespace&gt; --type<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    -p<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;[{&#34;op&#34;:&#34;remove&#34;,&#34;path&#34;:&#34;/spec/schedulingGates&#34;}]&#39;</span></span></span></code></pre></div>
+<p>A scheduling-gated Pod may remain <code>Pending</code> while the gate exists. The operator does not report the Pod as failed for exceeding <code>maxPendingWaitTimeSeconds</code> while it is still scheduling-gated.</p>
 
   <footer class="footline">
   </footer>
@@ -240,15 +218,19 @@ OpenShiftOpenShift information for the operator.">
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/samples/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/samples/index.html"><b> </b>Samples</a><ul id="R-subsections-88c2b1e6419b221ce89c4be4a8ae2a6b" class="collapsible-menu"></ul></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/index.html"><b> </b>Developer Guide</a><ul id="R-subsections-6d5a8d333894e1a8a4ced31c7a69170c" class="collapsible-menu"></ul></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/reference/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/reference/index.html"><b> </b>Reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu"></ul></li>
-            <li class="active parent " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><b> </b>Security</a><ul id="R-subsections-66815ecaaecfc1c209e5637d03b258b2" class="collapsible-menu">
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/index.html">Certificates</a></li>
-            <li class="alwaysopen " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/index.html">Domain security</a><ul id="R-subsections-2dd495df9fbf3257de27d4c132703b8e" class="collapsible-menu"></ul></li>
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/encryption/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/encryption/index.html">Encryption</a></li>
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/index.html">Service accounts</a></li>
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/rbac/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/rbac/index.html">RBAC</a></li>
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/secrets/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/secrets/index.html">Secrets</a></li>
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/openshift/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/openshift/index.html">OpenShift</a></li></ul></li>
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html">Frequently asked questions</a><ul id="R-subsections-24e4fc446616bf2bbeac7b1dba804bb8" class="collapsible-menu"></ul></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/security/index.html"><b> </b>Security</a><ul id="R-subsections-66815ecaaecfc1c209e5637d03b258b2" class="collapsible-menu"></ul></li>
+            <li class="parent " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html">Frequently asked questions</a><ul id="R-subsections-24e4fc446616bf2bbeac7b1dba804bb8" class="collapsible-menu">
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/index.html">Answers for newcomers</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/cannot-pull-image/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/cannot-pull-image/index.html">Cannot pull image</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/boot-identity-not-valid/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/boot-identity-not-valid/index.html">Boot identity not valid</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/domain-secret-mismatch/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/domain-secret-mismatch/index.html">Domain secret mismatch</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/index.html">Node heating problem</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/index.html">Disabling Fast Application Notifications</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html">Coherence requirements</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/index.html">Pod memory and CPU resources</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/index.html">Handling security validations</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/index.html">Scheduling pods to particular nodes</a></li>
+            <li class="active " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html">Using Pod scheduling gates</a></li></ul></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html">Deprecated functionality</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html">Known limitations</a></li>
           </ul>
