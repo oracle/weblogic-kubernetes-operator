@@ -222,7 +222,31 @@ public class DomainStatusUpdater {
    * @param hasEventData true if the make right operation is associated with an event.
    */
   public static Step createStatusInitializationStep(boolean hasEventData) {
-    return new StatusInitializationStep(hasEventData);
+    return createStatusInitializationStep(hasEventData, false);
+  }
+
+  /**
+   * Creates the step that initializes status for a make-right operation.
+   *
+   * @param hasEventData whether the operation was triggered by an event
+   * @param retryOnFailure whether the operation is a scheduled failure retry
+   * @return the status initialization step
+   */
+  public static Step createStatusInitializationStep(boolean hasEventData, boolean retryOnFailure) {
+    return createStatusInitializationStep(hasEventData, retryOnFailure, false);
+  }
+
+  /**
+   * Creates the step that initializes status for a make-right operation.
+   *
+   * @param hasEventData whether the operation was triggered by an event
+   * @param retryOnFailure whether the operation is a scheduled failure retry
+   * @param restartingAbortedDomain whether a new Domain generation is restarting previously aborted processing
+   * @return the status initialization step
+   */
+  public static Step createStatusInitializationStep(
+      boolean hasEventData, boolean retryOnFailure, boolean restartingAbortedDomain) {
+    return new StatusInitializationStep(hasEventData, retryOnFailure, restartingAbortedDomain);
   }
 
   /**
@@ -258,7 +282,7 @@ public class DomainStatusUpdater {
    * @param failureMessage failure message
    */
   public static Step createKubernetesFailureSteps(KubernetesApiResponse<?> callResponse, String failureMessage) {
-    LOGGER.severe(MessageKeys.CALL_FAILED, callResponse.getStatus());
+    LOGGER.severe(MessageKeys.CALL_FAILED, callResponse.getHttpStatusCode(), failureMessage);
 
     return new FailureStep(KUBERNETES, failureMessage);
   }
@@ -438,6 +462,7 @@ public class DomainStatusUpdater {
   static class DomainStatusUpdaterContext {
     @Nonnull
     private final DomainPresenceInfo info;
+    private final DomainResource domain;
     final boolean isMakeRight;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
     private DomainStatus newStatus;
@@ -447,6 +472,7 @@ public class DomainStatusUpdater {
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      domain = info.getDomain();
       isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
       this.packet = packet;
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
@@ -493,7 +519,7 @@ public class DomainStatusUpdater {
     }
 
     DomainResource getDomain() {
-      return info.getDomain();
+      return domain;
     }
 
     void modifyStatus(DomainStatus status) {
@@ -622,10 +648,14 @@ public class DomainStatusUpdater {
 
   public static class StatusInitializationStep extends DomainStatusUpdaterStep {
     private final boolean hasEventData;
+    private final boolean retryOnFailure;
+    private final boolean restartingAbortedDomain;
 
-    StatusInitializationStep(boolean hasEventData) {
+    StatusInitializationStep(boolean hasEventData, boolean retryOnFailure, boolean restartingAbortedDomain) {
       super();
       this.hasEventData = hasEventData;
+      this.retryOnFailure = retryOnFailure;
+      this.restartingAbortedDomain = restartingAbortedDomain;
     }
 
     @Override
@@ -636,8 +666,15 @@ public class DomainStatusUpdater {
           status.addCondition(new DomainCondition(AVAILABLE).withStatus(false));
         }
       } else {
-        status.markFailuresForRemoval(KUBERNETES);
-        status.removeMarkedFailures();
+        if (retryOnFailure) {
+          status.removeFailuresAndPreserveRetryTimes(KUBERNETES);
+        } else {
+          status.markFailuresForRemoval(KUBERNETES);
+          if (restartingAbortedDomain) {
+            status.markFailuresForRemoval(ABORTED);
+          }
+          status.removeMarkedFailures();
+        }
       }
     }
   }
@@ -723,6 +760,9 @@ public class DomainStatusUpdater {
           DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
           updateStatusDetails(status, info);
           setStatusConditions(status);
+          if (endOfProcessing && !status.hasConditionWithType(FAILED)) {
+            status.clearFailureTimes();
+          }
         }
       }
 

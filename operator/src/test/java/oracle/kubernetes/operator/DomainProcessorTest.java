@@ -540,6 +540,17 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainGenerationIsLaterThanObservedAndProcessingAborted_runUpdateThread() {
+    processor.registerDomainPresenceInfo(originalInfo);
+    newDomain.getOrCreateStatus().setObservedGeneration(1L);
+    newDomain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
   void whenDomainChangedSpecAndProcessingAbortedButRestartVersionChanged_runUpdateThread() {
     processor.registerDomainPresenceInfo(originalInfo);
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
@@ -1699,6 +1710,30 @@ class DomainProcessorTest {
     testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false));
 
     assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(KUBERNETES));
+  }
+
+  @Test
+  void runStatusInitializationStepForRetryWithKubernetesFailure_preserveInitialFailureTime() {
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true));
+    OffsetDateTime initialFailureTime = newDomain.getStatus().getInitialFailureTime();
+    testSupport.addDomainPresenceInfo(newInfo);
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false, true));
+
+    assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(KUBERNETES));
+    assertThat(newInfo.getDomain().getStatus().getInitialFailureTime(), equalTo(initialFailureTime));
+  }
+
+  @Test
+  void runStatusInitializationStepForUnprocessedGeneration_removeAbortedAndKubernetesFailures() {
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true));
+    newDomain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    testSupport.addDomainPresenceInfo(newInfo);
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false, false, true));
+
+    assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(KUBERNETES));
+    assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(ABORTED));
   }
 
   @Test

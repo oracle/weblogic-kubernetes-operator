@@ -391,8 +391,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else if (isDeleting(operation)) {
       return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "deleting");
     } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
-      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, liveInfo.isMustDomainProcessingRestart(),
-          "domain processing halted");
+      boolean shouldRestart = liveInfo.isMustDomainProcessingRestart()
+          || isGenerationLaterThanObservedGeneration(liveInfo);
+      return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, shouldRestart,
+          shouldRestart ? "domain processing halted; unprocessed generation" : "domain processing halted");
     } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)) {
       return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "explicit recheck");
     } else if (liveInfo.isDomainGenerationChanged(cachedInfo)) {
@@ -447,10 +449,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       DomainPresenceInfo cachedInfo,
       boolean shouldContinue,
       String reason) {
-    LOGGER.fine(
+    LOGGER.finer(
         "WKO-MAKERIGHT-TRACE decision domainUid={0} namespace={1} action={2} reason={3} event={4} "
             + "explicitRecheck={5} interrupt={6} liveGeneration={7} cachedGeneration={8} "
-            + "liveResourceVersion={9} cachedResourceVersion={10} observedGeneration={11}",
+            + "liveResourceVersion={9} cachedResourceVersion={10} observedGeneration={11} "
+            + "retryOnFailure={12} retryableFailure={13} statusReason={14}",
         liveInfo.getDomainUid(),
         liveInfo.getNamespace(),
         shouldContinue ? "continue" : "skip",
@@ -462,7 +465,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         getGeneration(Optional.ofNullable(cachedInfo).map(DomainPresenceInfo::getDomain).orElse(null)),
         getResourceVersion(liveInfo.getDomain()),
         getResourceVersion(Optional.ofNullable(cachedInfo).map(DomainPresenceInfo::getDomain).orElse(null)),
-        getObservedGeneration(liveInfo.getDomain()));
+        getObservedGeneration(liveInfo.getDomain()),
+        operation.isRetryOnFailure(),
+        liveInfo.hasRetryableFailure(),
+        Optional.ofNullable(liveInfo.getDomain()).map(DomainResource::getStatus).map(DomainStatus::getReason)
+            .orElse(null));
 
     return shouldContinue;
   }
@@ -1025,7 +1032,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleModifiedDomain(DomainResource domain) {
     if (!domain.isGenerationLaterThanObservedGeneration()) {
-      LOGGER.fine(
+      LOGGER.finer(
           "WKO-MAKERIGHT-TRACE ignoring Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
               + "observedGeneration={3} resourceVersion={4}",
           domain.getDomainUid(),
@@ -1036,7 +1043,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return;
     }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    LOGGER.fine(
+    LOGGER.finer(
         "WKO-MAKERIGHT-TRACE accepted Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
             + "observedGeneration={3} resourceVersion={4}",
         domain.getDomainUid(),
