@@ -6,11 +6,12 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BASE_IMAGE_NAME: ghcr.io/oracle/weblogic-kubernetes-operator
+  BASE_IMAGE_NAME: oracle/weblogic-kubernetes-operator
 
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   build:
@@ -75,7 +76,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.PUBLISH_SECRET }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push container image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
