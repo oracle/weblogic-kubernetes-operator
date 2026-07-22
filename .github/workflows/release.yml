@@ -22,7 +22,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "IMAGE_NAME=${{ env.BASE_IMAGE_NAME }}:$VERSION" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:$VERSION" >> $GITHUB_ENV
 
       - name: Checkout branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -99,7 +99,7 @@ jobs:
           curl -fL -o helm.tar.gz "https://get.helm.sh/helm-v3.12.1-linux-amd64.tar.gz"
           tar -xf helm.tar.gz
           export PATH="$PWD/linux-amd64:$PATH"
-          sed -i 's#4.3.0-RELEASE-MARKER#${{ env.BASE_IMAGE_NAME }}:${{ env.VERSION }}#g' $GITHUB_WORKSPACE/kubernetes/charts/weblogic-operator/values.yaml
+          sed -i 's#4.3.0-RELEASE-MARKER#${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ env.VERSION }}#g' $GITHUB_WORKSPACE/kubernetes/charts/weblogic-operator/values.yaml
           mkdir $GITHUB_WORKSPACE/WORK
           helm package --app-version $VERSION --version $VERSION $GITHUB_WORKSPACE/kubernetes/charts/weblogic-operator -d $GITHUB_WORKSPACE/WORK
           cp $GITHUB_WORKSPACE/WORK/*.tgz $GITHUB_WORKSPACE/gh-pages/charts/
