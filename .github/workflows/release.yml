@@ -8,15 +8,16 @@ env:
   REGISTRY: ghcr.io
   BASE_IMAGE_NAME: oracle/weblogic-kubernetes-operator
 
-
 permissions:
   contents: write
-  packages: write
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: "Set environmental variables"
         run: |
