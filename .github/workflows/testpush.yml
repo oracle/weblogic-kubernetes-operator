@@ -1,54 +1,54 @@
 name: Verify GHCR publish secret
 
-  on:
-    workflow_dispatch:
+on:
+  workflow_dispatch:
 
-  permissions:
-    contents: read
+permissions:
+  contents: read
 
-  jobs:
-    verify:
-      name: Verify GHCR push scope
-      runs-on: ubuntu-latest
-      env:
-        IMAGE_REPOSITORY: oracle/weblogic-kubernetes-operator
-        GHCR_USERNAME: ${{ github.actor }}
-        GHCR_PASSWORD: ${{ secrets.PUBLISH_SECRET }}
+jobs:
+  verify:
+    name: Verify GHCR push scope
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_REPOSITORY: oracle/weblogic-kubernetes-operator
+      GHCR_USERNAME: ${{ github.actor }}
+      GHCR_PASSWORD: ${{ secrets.PUBLISH_SECRET }}
 
-      steps:
-        - name: Verify GHCR push scope without uploading
-          shell: bash
-          run: |
-            set -euo pipefail
-            set +x
+    steps:
+      - name: Verify GHCR push scope without uploading
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
 
-            TOKEN="$(
-              curl --fail --silent --show-error \
-                --user "$GHCR_USERNAME:$GHCR_PASSWORD" \
-                --get 'https://ghcr.io/token' \
-                --data-urlencode 'service=ghcr.io' \
-                --data-urlencode "scope=repository:${IMAGE_REPOSITORY}:pull,push" |
-              jq -er '.token // .access_token'
-            )"
+          TOKEN="$(
+            curl --fail --silent --show-error \
+              --user "$GHCR_USERNAME:$GHCR_PASSWORD" \
+              --get 'https://ghcr.io/token' \
+              --data-urlencode 'service=ghcr.io' \
+              --data-urlencode "scope=repository:${IMAGE_REPOSITORY}:pull,push" |
+            jq -er '.token // .access_token'
+          )"
 
-            GHCR_TOKEN="$TOKEN" node <<'NODE'
-            const claims = JSON.parse(
-              Buffer.from(process.env.GHCR_TOKEN.split('.')[1], 'base64url').toString('utf8')
+          GHCR_TOKEN="$TOKEN" node <<'NODE'
+          const claims = JSON.parse(
+            Buffer.from(process.env.GHCR_TOKEN.split('.')[1], 'base64url').toString('utf8')
+          );
+
+          const canPush = (claims.access || []).some(
+            ({ name, actions }) =>
+              name === 'oracle/weblogic-kubernetes-operator' &&
+              actions.includes('push')
+          );
+
+          if (!canPush) {
+            throw new Error(
+              'PUBLISH_SECRET was not granted push permission for the Operator package.'
             );
+          }
 
-            const canPush = (claims.access || []).some(
-              ({ name, actions }) =>
-                name === 'oracle/weblogic-kubernetes-operator' &&
-                actions.includes('push')
-            );
-
-            if (!canPush) {
-              throw new Error(
-                'PUBLISH_SECRET was not granted push permission for the Operator package.'
-              );
-            }
-
-            console.log(
-              'SUCCESS: PUBLISH_SECRET has GHCR push permission for the Operator package.'
-            );
-            NODE
+          console.log(
+            'SUCCESS: PUBLISH_SECRET has GHCR push permission for the Operator package.'
+          );
+          NODE
