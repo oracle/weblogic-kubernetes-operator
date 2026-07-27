@@ -33,6 +33,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 
 /**
  * A step which will bring up the specified managed servers in parallel.
@@ -148,20 +149,80 @@ public class ManagedServerUpIteratorStep extends Step {
       V1Pod managedPod = info.getServerPod(serverName);
       boolean isWaitingToRoll = PodHelper.isWaitingToRoll(managedPod);
       if (PodHelper.isSchedulingGated(managedPod)) {
-        LOGGER.fine("Managed server pod {0} is scheduling-gated; not waiting for ready in this make-right cycle",
-            serverName);
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=ready-wait phase=decision decision=continue-scheduling-gated "
+                + "domainUid={0} namespace={1} server={2} pod={3} node={4} ready={5} dpi={6} fiber={7}",
+            info.getDomainUid(),
+            info.getNamespace(),
+            serverName,
+            getPodName(managedPod),
+            getNodeName(managedPod),
+            PodHelper.isReady(managedPod),
+            getIdentity(info),
+            packet.getFiber());
         return doNext(packet);
       }
       if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)
               && !isWaitingToRoll)) {
         if (info.hasRetryableFailure()) {
+          LOGGER.fine(
+              "WKO-POD-STARTUP-TRACE component=ready-wait phase=decision decision=continue-retryable-failure "
+                  + "domainUid={0} namespace={1} server={2} pod={3} node={4} ready={5} dpi={6} fiber={7}",
+              info.getDomainUid(),
+              info.getNamespace(),
+              serverName,
+              getPodName(managedPod),
+              getNodeName(managedPod),
+              PodHelper.isReady(managedPod),
+              getIdentity(info),
+              packet.getFiber());
           return doNext(packet);
         }
         // requeue to wait for managed pod to be ready
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=ready-wait phase=decision decision=requeue "
+                + "domainUid={0} namespace={1} server={2} pod={3} node={4} ready={5} "
+                + "deletingOrShutdown={6} waitingToRoll={7} dpi={8} fiber={9}",
+            info.getDomainUid(),
+            info.getNamespace(),
+            serverName,
+            getPodName(managedPod),
+            getNodeName(managedPod),
+            PodHelper.isReady(managedPod),
+            managedPod != null && isPodMarkedForShutdown(managedPod),
+            isWaitingToRoll,
+            getIdentity(info),
+            packet.getFiber());
         return doRequeue();
       }
 
+      LOGGER.fine(
+          "WKO-POD-STARTUP-TRACE component=ready-wait phase=decision decision=continue "
+              + "domainUid={0} namespace={1} server={2} pod={3} node={4} ready={5} "
+              + "deletingOrShutdown={6} waitingToRoll={7} dpi={8} fiber={9}",
+          info.getDomainUid(),
+          info.getNamespace(),
+          serverName,
+          getPodName(managedPod),
+          getNodeName(managedPod),
+          PodHelper.isReady(managedPod),
+          isPodMarkedForShutdown(managedPod),
+          isWaitingToRoll,
+          getIdentity(info),
+          packet.getFiber());
       return doNext(packet);
+    }
+
+    private String getPodName(V1Pod pod) {
+      return pod == null ? null : PodHelper.getPodName(pod);
+    }
+
+    private String getNodeName(V1Pod pod) {
+      return pod == null || pod.getSpec() == null ? null : pod.getSpec().getNodeName();
+    }
+
+    private String getIdentity(Object object) {
+      return Integer.toHexString(System.identityHashCode(object));
     }
 
     protected boolean isPodReady(V1Pod result) {
@@ -198,10 +259,15 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   static class StartManagedServersStep extends Step {
+    private static final long TRACE_HEARTBEAT_NANOS = TimeUnit.SECONDS.toNanos(10);
+
     final Queue<Fiber.StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
     final int maxConcurrency;
     final AtomicInteger numStarted = new AtomicInteger(0);
+    private String lastTraceState;
+    private long lastTraceNanos;
+    private long traceStateStartNanos;
 
     StartManagedServersStep(String clusterName, int maxConcurrency,
                             Collection<Fiber.StepAndPacket> startDetails, Step next) {
@@ -217,16 +283,18 @@ public class ManagedServerUpIteratorStep extends Step {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-
       if (startDetailsQueue.isEmpty()) {
+        traceGateDecision(packet, "complete", null, true);
         return doNext(packet);
       } else if (hasServerAvailableToStart(packet)) {
+        traceGateDecision(packet, "start", getNextServerName(), true);
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
       } else if (hasSchedulingGatedManagedServer(packet)) {
-        LOGGER.fine("Managed server startup for cluster {0} is paused by a scheduling-gated pod", clusterName);
+        traceGateDecision(packet, "complete-scheduling-gated", getNextServerName(), true);
         return doNext(packet);
       } else {
+        traceGateWait(packet);
         return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
       }
     }
@@ -249,6 +317,85 @@ public class ManagedServerUpIteratorStep extends Step {
       return info.getNumSchedulingGatedManagedServers(clusterName, adminServerName) > 0;
     }
 
+    private StartupGateState getStartupGateState(Packet packet) {
+      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+      String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
+      return new StartupGateState(
+          info,
+          getNumServersStarted(),
+          info.getNumScheduledManagedServers(clusterName, adminServerName),
+          info.getNumSchedulingGatedManagedServers(clusterName, adminServerName),
+          info.getNumReadyManagedServers(clusterName, adminServerName));
+    }
+
+    private String getNextServerName() {
+      return java.util.Optional.ofNullable(startDetailsQueue.peek())
+          .map(Fiber.StepAndPacket::packet)
+          .map(p -> (String) p.get(SERVER_NAME))
+          .orElse(null);
+    }
+
+    private void traceGateWait(Packet packet) {
+      if (!LOGGER.isFineEnabled()) {
+        return;
+      }
+      StartupGateState state = getStartupGateState(packet);
+      traceGateDecision(
+          packet,
+          state,
+          state.isWaitingForScheduling() ? "wait-scheduled" : "wait-ready",
+          getNextServerName(),
+          false);
+    }
+
+    private void traceGateDecision(Packet packet, String decision, String nextServer, boolean force) {
+      if (!LOGGER.isFineEnabled()) {
+        return;
+      }
+      traceGateDecision(packet, getStartupGateState(packet), decision, nextServer, force);
+    }
+
+    private void traceGateDecision(
+        Packet packet, StartupGateState state, String decision, String nextServer, boolean force) {
+      long now = System.nanoTime();
+      String traceState = decision + ":" + state.numStarted() + ":" + state.numScheduled() + ":"
+          + state.numSchedulingGated() + ":" + state.numReady() + ":" + startDetailsQueue.size();
+      boolean stateChanged = !traceState.equals(lastTraceState);
+      if (stateChanged) {
+        lastTraceState = traceState;
+        traceStateStartNanos = now;
+      }
+      if (!force && !stateChanged && now - lastTraceNanos < TRACE_HEARTBEAT_NANOS) {
+        return;
+      }
+
+      lastTraceNanos = now;
+      LOGGER.fine(
+          "WKO-POD-STARTUP-TRACE component=start-gate phase=decision decision={0} "
+              + "domainUid={1} namespace={2} cluster={3} nextServer={4} dpi={5} fiber={6} "
+              + "numStarted={7} numScheduled={8} numSchedulingGated={9} numReady={10} "
+              + "numNotReady={11} maxConcurrentStartup={12} queueRemaining={13} stateAgeMs={14}",
+          decision,
+          state.info().getDomainUid(),
+          state.info().getNamespace(),
+          clusterName,
+          nextServer,
+          Integer.toHexString(System.identityHashCode(state.info())),
+          packet.getFiber(),
+          state.numStarted(),
+          state.numScheduled(),
+          state.numSchedulingGated(),
+          state.numReady(),
+          state.numStarted() - state.numReady(),
+          maxConcurrency,
+          startDetailsQueue.size(),
+          TimeUnit.NANOSECONDS.toMillis(now - traceStateStartNanos));
+    }
+
+    private int getNumServersStarted() {
+      return numStarted.get();
+    }
+
     private boolean canStartConcurrently(long numReady) {
       return (ignoreConcurrencyLimits() || numNotReady(numReady) < this.maxConcurrency);
     }
@@ -257,12 +404,20 @@ public class ManagedServerUpIteratorStep extends Step {
       return getNumServersStarted() - numReady;
     }
 
-    private int getNumServersStarted() {
-      return numStarted.get();
-    }
-
     private boolean ignoreConcurrencyLimits() {
       return this.maxConcurrency == 0;
+    }
+
+    private record StartupGateState(
+        DomainPresenceInfo info,
+        int numStarted,
+        long numScheduled,
+        long numSchedulingGated,
+        long numReady) {
+
+      private boolean isWaitingForScheduling() {
+        return numStarted > numScheduled + numSchedulingGated;
+      }
     }
   }
 

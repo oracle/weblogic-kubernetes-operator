@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -13,6 +13,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.Fiber.FiberExecutor;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +25,8 @@ import static oracle.kubernetes.operator.work.Cancellable.createCancellable;
  * Allows at most one running Fiber per key value.
  */
 public class FiberGate {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final ScheduledExecutorService scheduledExecutorService;
 
   /** A map of domain UIDs to the fiber charged with running processing on that domain. **/
@@ -96,15 +100,35 @@ public class FiberGate {
     private class FiberExecutorImpl implements FiberExecutor {
       @Override
       public Cancellable schedule(Fiber fiber, Duration duration) {
+        long delayMillis = TimeUnit.MILLISECONDS.convert(duration);
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=fiber-gate phase=requeue-scheduled "
+                + "domainUid={0} fiber={1} delayMs={2} thread={3}",
+            domainUid,
+            fiber,
+            delayMillis,
+            Thread.currentThread().getName());
         ScheduledFuture<?> future = scheduledExecutorService.schedule(
-                () -> scheduledExecution(fiber), TimeUnit.MILLISECONDS.convert(duration), TimeUnit.MILLISECONDS);
+                () -> scheduledExecution(fiber), delayMillis, TimeUnit.MILLISECONDS);
         return createCancellable(future);
       }
 
       private void scheduledExecution(Fiber fiber) {
         Fiber scheduledReplacement = Fiber.copyWithNewStepsAndPacket(fiber, stepSupplier.get(), packetSupplier.get());
-        if (gateMap.compute(domainUid,
-            (k, v) -> (v == null || v == fiber) ? scheduledReplacement : v) == scheduledReplacement) {
+        Fiber selected = gateMap.compute(
+            domainUid, (k, v) -> (v == null || v == fiber) ? scheduledReplacement : v);
+        boolean accepted = selected == scheduledReplacement;
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=fiber-gate phase=requeue-fired "
+                + "domainUid={0} sourceFiber={1} replacementFiber={2} selectedFiber={3} "
+                + "accepted={4} thread={5}",
+            domainUid,
+            fiber,
+            scheduledReplacement,
+            selected,
+            accepted,
+            Thread.currentThread().getName());
+        if (accepted) {
           scheduledExecutorService.execute(scheduledReplacement);
         }
       }
@@ -112,6 +136,14 @@ public class FiberGate {
       @Override
       public void execute(@NotNull Fiber fiber) {
         Fiber existing = gateMap.put(domainUid, fiber);
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=fiber-gate phase=start domainUid={0} fiber={1} "
+                + "replacedFiber={2} action={3} thread={4}",
+            domainUid,
+            fiber,
+            existing,
+            existing == null ? "new" : "replace",
+            Thread.currentThread().getName());
         if (existing != null) {
           existing.cancel();
         }
@@ -136,7 +168,14 @@ public class FiberGate {
       try {
         callback.onCompletion(packet);
       } finally {
-        gateMap.remove(domainUid, fiber);
+        boolean removed = gateMap.remove(domainUid, fiber);
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=fiber-gate phase=complete outcome=success "
+                + "domainUid={0} fiber={1} removed={2} thread={3}",
+            domainUid,
+            fiber,
+            removed,
+            Thread.currentThread().getName());
       }
     }
 
@@ -146,7 +185,15 @@ public class FiberGate {
       try {
         callback.onThrowable(packet, throwable);
       } finally {
-        gateMap.remove(domainUid, fiber);
+        boolean removed = gateMap.remove(domainUid, fiber);
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=fiber-gate phase=complete outcome=throw "
+                + "domainUid={0} fiber={1} removed={2} throwable={3} thread={4}",
+            domainUid,
+            fiber,
+            removed,
+            throwable.getClass().getName(),
+            Thread.currentThread().getName());
       }
     }
   }

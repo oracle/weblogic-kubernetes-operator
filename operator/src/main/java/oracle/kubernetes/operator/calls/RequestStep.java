@@ -1,10 +1,12 @@
-// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -30,6 +32,10 @@ import io.kubernetes.client.util.generic.options.GetOptions;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import io.kubernetes.client.util.generic.options.PatchOptions;
 import io.kubernetes.client.util.generic.options.UpdateOptions;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +46,9 @@ import org.jetbrains.annotations.NotNull;
 public abstract class RequestStep<
     A extends KubernetesObject, L extends KubernetesListObject, R extends KubernetesType>
     extends Step {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final AtomicLong TRACE_CALL_ID = new AtomicLong();
+
   public static final String RESPONSE_COMPONENT_NAME = "response";
   public static final String CONTINUE = "continue";
   public static final int FIBER_TIMEOUT = 0;
@@ -111,15 +120,102 @@ public abstract class RequestStep<
 
   @Override
   public @Nonnull Result apply(Packet packet) {
-    KubernetesApi<A, L> client
-            = RequestBuilder.createKubernetesApi(apiTypeClass, apiListTypeClass, apiGroup, apiVersion,
-            resourcePlural, clientSelector);
-    KubernetesApiResponse<R> result = execute(client, packet);
+    boolean traceEnabled = LOGGER.isFineEnabled();
+    long callId = traceEnabled ? TRACE_CALL_ID.incrementAndGet() : 0;
+    long startNanos = traceEnabled ? System.nanoTime() : 0;
+    if (traceEnabled) {
+      logCallStart(packet, callId);
+    }
+    KubernetesApiResponse<R> result;
+    try {
+      KubernetesApi<A, L> client
+              = RequestBuilder.createKubernetesApi(apiTypeClass, apiListTypeClass, apiGroup, apiVersion,
+              resourcePlural, clientSelector);
+      result = execute(client, packet);
+    } catch (RuntimeException | Error throwable) {
+      if (traceEnabled) {
+        logCallThrowable(packet, callId, startNanos, throwable);
+      }
+      throw throwable;
+    }
+    if (traceEnabled) {
+      logCallEnd(packet, callId, startNanos, result);
+    }
 
     // update packet
     packet.put(RESPONSE_COMPONENT_NAME, result);
 
     return doNext(packet);
+  }
+
+  private void logCallStart(Packet packet, long callId) {
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=kubernetes-api phase=start callId={0} operation={1} resource={2} "
+            + "namespace={3} name={4} domainUid={5} server={6} dpi={7} fiber={8} "
+            + "thread={9} operatorClient={10}",
+        callId,
+        operationName,
+        resourceSingular,
+        getNamespace(),
+        getName(),
+        getDomainUid(packet),
+        packet.getValue(ProcessingConstants.SERVER_NAME),
+        getDpiIdentity(packet),
+        packet.getFiber(),
+        Thread.currentThread().getName(),
+        usesOperatorClient);
+  }
+
+  private void logCallEnd(
+      Packet packet, long callId, long startNanos, KubernetesApiResponse<R> result) {
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=kubernetes-api phase=end callId={0} operation={1} resource={2} "
+            + "namespace={3} name={4} domainUid={5} server={6} dpi={7} fiber={8} thread={9} "
+            + "operatorClient={10} elapsedMs={11} status={12} success={13}",
+        callId,
+        operationName,
+        resourceSingular,
+        getNamespace(),
+        getName(),
+        getDomainUid(packet),
+        packet.getValue(ProcessingConstants.SERVER_NAME),
+        getDpiIdentity(packet),
+        packet.getFiber(),
+        Thread.currentThread().getName(),
+        usesOperatorClient,
+        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos),
+        result == null ? null : result.getHttpStatusCode(),
+        result != null && result.isSuccess());
+  }
+
+  private void logCallThrowable(Packet packet, long callId, long startNanos, Throwable throwable) {
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=kubernetes-api phase=throw callId={0} operation={1} resource={2} "
+            + "namespace={3} name={4} domainUid={5} server={6} dpi={7} fiber={8} thread={9} "
+            + "operatorClient={10} elapsedMs={11} throwable={12}",
+        callId,
+        operationName,
+        resourceSingular,
+        getNamespace(),
+        getName(),
+        getDomainUid(packet),
+        packet.getValue(ProcessingConstants.SERVER_NAME),
+        getDpiIdentity(packet),
+        packet.getFiber(),
+        Thread.currentThread().getName(),
+        usesOperatorClient,
+        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos),
+        throwable.getClass().getName());
+  }
+
+  private String getDomainUid(Packet packet) {
+    return DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomainUid).orElse(null);
+  }
+
+  private String getDpiIdentity(Packet packet) {
+    return DomainPresenceInfo.fromPacket(packet)
+        .map(info -> Integer.toHexString(System.identityHashCode(info)))
+        .orElse(null);
   }
 
   String getResourceSingular() {

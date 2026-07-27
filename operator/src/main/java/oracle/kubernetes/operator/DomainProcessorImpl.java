@@ -83,7 +83,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.PERSISTENT_VOLUME_CLAIM_BOUND;
 import static oracle.kubernetes.operator.helpers.EventHelper.createClusterResourceEventData;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
-import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodStatusMessage;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
@@ -449,11 +448,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       DomainPresenceInfo cachedInfo,
       boolean shouldContinue,
       String reason) {
-    LOGGER.finer(
-        "WKO-MAKERIGHT-TRACE decision domainUid={0} namespace={1} action={2} reason={3} event={4} "
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE WKO-MAKERIGHT-TRACE component=makeright phase=decision "
+            + "domainUid={0} namespace={1} action={2} reason={3} event={4} "
             + "explicitRecheck={5} interrupt={6} liveGeneration={7} cachedGeneration={8} "
             + "liveResourceVersion={9} cachedResourceVersion={10} observedGeneration={11} "
-            + "retryOnFailure={12} retryableFailure={13} statusReason={14}",
+            + "retryOnFailure={12} retryableFailure={13} statusReason={14} "
+            + "liveDpi={15} cachedDpi={16} thread={17}",
         liveInfo.getDomainUid(),
         liveInfo.getNamespace(),
         shouldContinue ? "continue" : "skip",
@@ -469,7 +470,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         operation.isRetryOnFailure(),
         liveInfo.hasRetryableFailure(),
         Optional.ofNullable(liveInfo.getDomain()).map(DomainResource::getStatus).map(DomainStatus::getReason)
-            .orElse(null));
+            .orElse(null),
+        getIdentity(liveInfo),
+        getIdentity(cachedInfo),
+        Thread.currentThread().getName());
 
     return shouldContinue;
   }
@@ -656,12 +660,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     String serverName = getPodLabel(pod, LabelConstants.SERVERNAME_LABEL);
+    V1Pod previousPod = info.getServerPod(serverName);
     switch (watchType) {
       case ADDED:
         info.setServerPodFromEvent(serverName, pod);
+        logPodDpiUpdate(info, watchType, serverName, pod, previousPod, null);
         break;
       case MODIFIED:
         boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
+        logPodDpiUpdate(info, watchType, serverName, pod, previousPod, null);
         boolean isEvicted = PodHelper.isEvicted(pod);
         if (isEvicted && !podPreviouslyEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
@@ -673,6 +680,24 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         boolean isReady = PodHelper.isReady(pod);
         boolean isLabeledForShutdown = PodHelper.isPodAlreadyAnnotatedForShutdown(pod);
         if ((isEvicted || isReady != isLabeledForShutdown || PodHelper.isFailed(pod)) && !PodHelper.isDeleting(pod)) {
+          LOGGER.fine(
+              "WKO-POD-STARTUP-TRACE WKO-MAKERIGHT-TRACE component=pod-watch "
+                  + "phase=make-right-trigger event={0} reason=pod-state domainUid={1} namespace={2} "
+                  + "server={3} pod={4} resourceVersion={5} node={6} ready={7} "
+                  + "evicted={8} failed={9} labeledForShutdown={10} dpi={11} thread={12}",
+              watchType,
+              domainUid,
+              getPodNamespace(pod),
+              serverName,
+              getPodName(pod),
+              getPodResourceVersion(pod),
+              getPodNodeName(pod),
+              isReady,
+              isEvicted,
+              PodHelper.isFailed(pod),
+              isLabeledForShutdown,
+              getIdentity(info),
+              Thread.currentThread().getName());
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         boolean isUnschedulable = PodHelper.hasUnSchedulableCondition(pod);
@@ -682,15 +707,83 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
+        logPodDpiUpdate(info, watchType, serverName, pod, previousPod, removed);
         if (removed && isNotDeleting(info) && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);
         }
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE WKO-MAKERIGHT-TRACE component=pod-watch "
+                + "phase=make-right-trigger event={0} reason=pod-deleted domainUid={1} namespace={2} "
+                + "server={3} pod={4} resourceVersion={5} node={6} dpi={7} thread={8}",
+            watchType,
+            domainUid,
+            getPodNamespace(pod),
+            serverName,
+            getPodName(pod),
+            getPodResourceVersion(pod),
+            getPodNodeName(pod),
+            getIdentity(info),
+            Thread.currentThread().getName());
         createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         break;
 
       case ERROR:
       default:
     }
+  }
+
+  private void logPodDpiUpdate(
+      DomainPresenceInfo info,
+      String watchType,
+      String serverName,
+      V1Pod eventPod,
+      V1Pod previousPod,
+      Boolean removed) {
+    if (!LOGGER.isFineEnabled()) {
+      return;
+    }
+    V1Pod cachedPod = info.getServerPod(serverName);
+    String clusterName = PodHelper.getPodClusterName(eventPod);
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=domain-presence phase=pod-event-applied event={0} "
+            + "domainUid={1} namespace={2} cluster={3} server={4} pod={5} dpi={6} "
+            + "eventResourceVersion={7} previousResourceVersion={8} cachedResourceVersion={9} "
+            + "eventNode={10} cachedNode={11} eventReady={12} cachedReady={13} "
+            + "eventIsCached={14} removed={15} numScheduledManagedServers={16} thread={17}",
+        watchType,
+        info.getDomainUid(),
+        info.getNamespace(),
+        clusterName,
+        serverName,
+        getPodName(eventPod),
+        getIdentity(info),
+        getPodResourceVersion(eventPod),
+        getPodResourceVersion(previousPod),
+        getPodResourceVersion(cachedPod),
+        getPodNodeName(eventPod),
+        getPodNodeName(cachedPod),
+        PodHelper.isReady(eventPod),
+        PodHelper.isReady(cachedPod),
+        cachedPod == eventPod,
+        removed,
+        info.getNumScheduledManagedServers(clusterName, info.getAdminServerName()),
+        Thread.currentThread().getName());
+  }
+
+  private static String getIdentity(Object object) {
+    return object == null ? null : Integer.toHexString(System.identityHashCode(object));
+  }
+
+  private static String getPodResourceVersion(V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse(null);
+  }
+
+  private static String getPodNodeName(V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getSpec).map(spec -> spec.getNodeName()).orElse(null);
+  }
+
+  private static String getPodName(V1Pod pod) {
+    return pod == null ? null : PodHelper.getPodName(pod);
   }
 
   /**
@@ -1032,25 +1125,29 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleModifiedDomain(DomainResource domain) {
     if (!domain.isGenerationLaterThanObservedGeneration()) {
-      LOGGER.finer(
-          "WKO-MAKERIGHT-TRACE ignoring Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
-              + "observedGeneration={3} resourceVersion={4}",
+      LOGGER.fine(
+          "WKO-POD-STARTUP-TRACE WKO-MAKERIGHT-TRACE component=domain-watch phase=ignored "
+              + "event=MODIFIED domainUid={0} namespace={1} generation={2} "
+              + "observedGeneration={3} resourceVersion={4} thread={5}",
           domain.getDomainUid(),
           domain.getNamespace(),
           getGeneration(domain),
           getObservedGeneration(domain),
-          getResourceVersion(domain));
+          getResourceVersion(domain),
+          Thread.currentThread().getName());
       return;
     }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    LOGGER.finer(
-        "WKO-MAKERIGHT-TRACE accepted Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
-            + "observedGeneration={3} resourceVersion={4}",
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE WKO-MAKERIGHT-TRACE component=domain-watch phase=accepted "
+            + "event=MODIFIED domainUid={0} namespace={1} generation={2} "
+            + "observedGeneration={3} resourceVersion={4} thread={5}",
         domain.getDomainUid(),
         domain.getNamespace(),
         getGeneration(domain),
         getObservedGeneration(domain),
-        getResourceVersion(domain));
+        getResourceVersion(domain),
+        Thread.currentThread().getName());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
         .withEventData(new EventData(DOMAIN_CHANGED))

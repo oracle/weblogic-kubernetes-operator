@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -24,11 +25,15 @@ import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
  * Watches for changes to pods.
  */
 public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final String namespace;
   private final WatchListener<V1Pod> listener;
 
@@ -106,19 +111,72 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
    * @param item item
    */
   public void receivedResponse(Watch.Response<V1Pod> item) {
-    listener.receivedResponse(item);
-
+    boolean traceEnabled = LOGGER.isFineEnabled();
+    long startNanos = traceEnabled ? System.nanoTime() : 0;
     V1Pod pod = item.object;
-    switch (item.type) {
-      case "ADDED", "MODIFIED":
-        copyOf(getOnModifiedCallbacks(PodHelper.getPodName(pod))).forEach(c -> c.accept(pod));
-        break;
-      case "DELETED":
-        getOnDeleteCallbacks(PodHelper.getPodName(pod)).forEach(c -> c.accept(pod));
-        break;
-      case "ERROR":
-      default:
+    if (traceEnabled) {
+      LOGGER.fine(
+          "WKO-POD-STARTUP-TRACE component=pod-watcher phase=received watcher={0} event={1} "
+              + "domainUid={2} namespace={3} server={4} pod={5} resourceVersion={6} node={7} "
+              + "ready={8} thread={9}",
+          Integer.toHexString(System.identityHashCode(this)),
+          item.type,
+          getDomainUid(item),
+          namespace,
+          PodHelper.getPodServerName(pod),
+          getPodName(pod),
+          getResourceVersion(pod),
+          getNodeName(pod),
+          PodHelper.isReady(pod),
+          Thread.currentThread().getName());
     }
+    try {
+      listener.receivedResponse(item);
+
+      switch (item.type) {
+        case "ADDED", "MODIFIED":
+          copyOf(getOnModifiedCallbacks(PodHelper.getPodName(pod))).forEach(c -> c.accept(pod));
+          break;
+        case "DELETED":
+          getOnDeleteCallbacks(PodHelper.getPodName(pod)).forEach(c -> c.accept(pod));
+          break;
+        case "ERROR":
+        default:
+      }
+    } finally {
+      if (traceEnabled) {
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=pod-watcher phase=complete watcher={0} event={1} "
+                + "domainUid={2} namespace={3} server={4} pod={5} resourceVersion={6} node={7} "
+                + "ready={8} thread={9} elapsedMs={10}",
+            Integer.toHexString(System.identityHashCode(this)),
+            item.type,
+            getDomainUid(item),
+            namespace,
+            PodHelper.getPodServerName(pod),
+            getPodName(pod),
+            getResourceVersion(pod),
+            getNodeName(pod),
+            PodHelper.isReady(pod),
+            Thread.currentThread().getName(),
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos));
+      }
+    }
+  }
+
+  private String getPodName(V1Pod pod) {
+    return pod == null ? null : PodHelper.getPodName(pod);
+  }
+
+  private String getResourceVersion(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(metadata -> metadata.getResourceVersion())
+        .orElse(null);
+  }
+
+  private String getNodeName(V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getSpec).map(spec -> spec.getNodeName()).orElse(null);
   }
 
   // make a copy to avoid concurrent modification
