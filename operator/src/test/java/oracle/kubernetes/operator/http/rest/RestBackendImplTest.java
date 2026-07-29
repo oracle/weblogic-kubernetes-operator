@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.google.gson.Gson;
@@ -31,12 +32,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static jakarta.ws.rs.core.Response.Status.CONFLICT;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
@@ -113,6 +116,17 @@ class RestBackendImplTest {
   }
 
   @Test
+  void whenListingClustersForMatchingDomain_excludeUnreferencedClusters() {
+    testSupport.defineResources(
+        createExistingDomain(), createExistingCluster(), createExistingCluster("unreferenced-cluster"));
+
+    List<Map<String, Object>> clusters = listClusters(MANAGED_NS);
+
+    assertThat(clusters.size(), equalTo(1));
+    assertThat(getClusterName(clusters.get(0)), equalTo("sample-domain-cluster-1"));
+  }
+
+  @Test
   void whenCreatingClusterInUnmanagedNamespace_returnForbidden() {
     WebApplicationException exception =
         assertThrows(WebApplicationException.class,
@@ -130,6 +144,51 @@ class RestBackendImplTest {
     ClusterResource clusterResource =
         testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain-cluster-1");
     assertThat(clusterResource, notNullValue());
+  }
+
+  @Test
+  void whenCreatingClusterWithoutDomainUid_returnForbiddenWithoutCreatingCluster() {
+    WebApplicationException exception = assertThrows(WebApplicationException.class,
+        () -> createConversionBackend().createOrReplaceCluster(
+            createClusterMap(MANAGED_NS), CONVERSION_DOMAIN_NAME, null));
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
+    assertThat(testSupport.<ClusterResource>getResources(CLUSTER), empty());
+  }
+
+  @Test
+  void whenCreateConversionIsRetriedBeforeDomainIsLive_returnConflictWithoutChangingCluster() {
+    RestBackendImpl backend = createConversionBackend();
+    Map<String, Object> cluster = createClusterMap(MANAGED_NS);
+    backend.createOrReplaceCluster(cluster, CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+    ClusterResource original = testSupport.getResourceWithName(CLUSTER, "sample-domain-cluster-1");
+
+    WebApplicationException exception = assertThrows(WebApplicationException.class,
+        () -> backend.createOrReplaceCluster(
+            createClusterMap(MANAGED_NS), CONVERSION_DOMAIN_NAME, "new-domain-uid"));
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_CONFLICT));
+    assertThat(exception.getMessage(), containsString("Cluster 'sample-domain-cluster-1' already exists"));
+    assertThat(exception.getMessage(), containsString("conversion Domain 'sample-domain' is not live"));
+    assertThat(exception.getMessage(), containsString("delete the existing Cluster before recreating the Domain"));
+    assertThat(testSupport.<ClusterResource>getResources(CLUSTER).size(), equalTo(1));
+    ClusterResource retried = testSupport.getResourceWithName(CLUSTER, "sample-domain-cluster-1");
+    assertThat(retried.getMetadata().getUid(),
+        equalTo(original.getMetadata().getUid()));
+  }
+
+  @Test
+  void whenCreateConversionRetryHasDifferentConfiguration_returnConflictWithoutChangingCluster() {
+    RestBackendImpl backend = createConversionBackend();
+    backend.createOrReplaceCluster(
+        createClusterMap(MANAGED_NS, 1), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+
+    WebApplicationException exception = assertThrows(WebApplicationException.class,
+        () -> backend.createOrReplaceCluster(
+            createClusterMap(MANAGED_NS, 2), CONVERSION_DOMAIN_NAME, "new-domain-uid"));
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_CONFLICT));
+    assertThat(getConversionClusterReplicas("sample-domain-cluster-1"), equalTo(1));
   }
 
   @Test
@@ -158,7 +217,7 @@ class RestBackendImplTest {
   }
 
   @Test
-  void whenReplacingClusterCreatedByOperatorWithoutMatchingDomain_returnForbidden() {
+  void whenReplacingClusterCreatedByOperatorWithoutMatchingDomain_returnConflict() {
     ClusterResource existingCluster = createExistingCluster();
     existingCluster.getMetadata().putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
     testSupport.defineResources(existingCluster);
@@ -168,7 +227,8 @@ class RestBackendImplTest {
             () -> createConversionBackend().createOrReplaceCluster(
                 createClusterMap(MANAGED_NS), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID));
 
-    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_CONFLICT));
+    assertThat(exception.getMessage(), containsString("Cluster 'sample-domain-cluster-1' already exists"));
   }
 
   @Test
@@ -181,6 +241,20 @@ class RestBackendImplTest {
         assertThrows(WebApplicationException.class,
             () -> createConversionBackend().createOrReplaceCluster(
                 createClusterMap(MANAGED_NS), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID));
+
+    assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
+  }
+
+  @Test
+  void whenReplacingClusterForDifferentLiveDomainUid_returnForbidden() {
+    ClusterResource existingCluster = createExistingCluster();
+    existingCluster.getMetadata().putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
+    testSupport.defineResources(existingCluster, createExistingDomain());
+
+    WebApplicationException exception =
+        assertThrows(WebApplicationException.class,
+            () -> createConversionBackend().createOrReplaceCluster(
+                createClusterMap(MANAGED_NS), CONVERSION_DOMAIN_NAME, "different-domain-uid"));
 
     assertThat(exception.getResponse().getStatus(), equalTo(HTTP_FORBIDDEN));
   }
@@ -248,12 +322,20 @@ class RestBackendImplTest {
   }
 
   private Map<String, Object> createClusterMap(String namespace) {
+    return createClusterMap(namespace, null);
+  }
+
+  private Map<String, Object> createClusterMap(String namespace, Integer replicas) {
     Map<String, Object> metadata = new HashMap<>();
     metadata.put("name", "sample-domain-cluster-1");
     metadata.put("namespace", namespace);
+    metadata.put("labels", Map.of(CREATEDBYOPERATOR_LABEL, "true"));
 
     Map<String, Object> spec = new HashMap<>();
     spec.put("clusterName", "cluster-1");
+    if (replicas != null) {
+      spec.put("replicas", replicas);
+    }
 
     Map<String, Object> cluster = new HashMap<>();
     cluster.put("apiVersion", "weblogic.oracle/v1");
@@ -264,8 +346,24 @@ class RestBackendImplTest {
   }
 
   private ClusterResource createExistingCluster() {
+    return createExistingCluster("sample-domain-cluster-1");
+  }
+
+  private ClusterResource createExistingCluster(String name) {
     return new ClusterResource().withMetadata(
-        new V1ObjectMeta().name("sample-domain-cluster-1").namespace(MANAGED_NS));
+        new V1ObjectMeta().name(name).namespace(MANAGED_NS));
+  }
+
+  @SuppressWarnings("unchecked")
+  private String getClusterName(Map<String, Object> cluster) {
+    return (String) ((Map<String, Object>) cluster.get("metadata")).get("name");
+  }
+
+  private Integer getConversionClusterReplicas(String name) {
+    return Optional.ofNullable(testSupport.<ClusterResource>getResourceWithName(CLUSTER, name))
+        .map(ClusterResource::getSpec)
+        .map(ClusterSpec::getReplicas)
+        .orElse(null);
   }
 
   private DomainResource createExistingDomain() {

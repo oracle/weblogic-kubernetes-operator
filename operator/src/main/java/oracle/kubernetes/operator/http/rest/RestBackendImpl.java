@@ -487,18 +487,9 @@ public class RestBackendImpl implements RestBackend {
         .orElse(Collections.emptyMap());
     String namespace = (String) metadata.getOrDefault("namespace", "default");
     verifyManagedNamespace(namespace);
+    verifyConversionDomainIdentity(domainName, domainUid);
     String name = (String) metadata.get("name");
-    Object currentCluster = null;
-    try {
-      ClusterResource cr = RequestBuilder.CLUSTER.get(namespace, name, new GetOptions(), clientSupplier);
-      if (cr != null) {
-        currentCluster = toMap(cr);
-      }
-    } catch (ApiException apiException) {
-      if (apiException.getCode() != KubernetesConstants.HTTP_NOT_FOUND) {
-        throw handleApiException(apiException);
-      }
-    }
+    Object currentCluster = getCurrentCluster(namespace, name);
 
     if (currentCluster == null) {
       try {
@@ -514,9 +505,7 @@ public class RestBackendImpl implements RestBackend {
       }
     }
 
-    verifyOperatorCreatedCluster(currentCluster, name);
-    DomainResource domain = verifyLiveDomain(namespace, domainName, domainUid);
-    verifyClusterReferencedByDomain(domain, name);
+    validateExistingCluster(currentCluster, namespace, name, domainName, domainUid);
     metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
         .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
     try {
@@ -529,6 +518,54 @@ public class RestBackendImpl implements RestBackend {
     } catch (ApiException e) {
       throw handleApiException(e);
     }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void validateClusterConversion(Map<String, Object> cluster, String domainName, String domainUid) {
+    Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) cluster.get("metadata"))
+        .orElse(Collections.emptyMap());
+    String namespace = (String) metadata.getOrDefault("namespace", "default");
+    verifyManagedNamespace(namespace);
+    verifyConversionDomainIdentity(domainName, domainUid);
+    String name = (String) metadata.get("name");
+    Object currentCluster = getCurrentCluster(namespace, name);
+    if (currentCluster != null) {
+      validateExistingCluster(currentCluster, namespace, name, domainName, domainUid);
+    }
+  }
+
+  private Object getCurrentCluster(String namespace, String name) {
+    try {
+      ClusterResource cr = RequestBuilder.CLUSTER.get(namespace, name, new GetOptions(), clientSupplier);
+      return cr != null ? toMap(cr) : null;
+    } catch (ApiException apiException) {
+      if (apiException.getCode() == KubernetesConstants.HTTP_NOT_FOUND) {
+        return null;
+      }
+      throw handleApiException(apiException);
+    }
+  }
+
+  private void validateExistingCluster(
+      Object currentCluster, String namespace, String name, String domainName, String domainUid) {
+    verifyOperatorCreatedCluster(currentCluster, name);
+    DomainResource domain = getLiveDomain(namespace, domainName, domainUid);
+    if (domain == null) {
+      throwClusterConflict(namespace, name, domainName);
+    }
+    verifyDomainUid(domain, domainName, domainUid);
+    verifyClusterReferencedByDomain(domain, name);
+  }
+
+  private void throwClusterConflict(String namespace, String clusterName, String domainName) {
+    WebApplicationException e = createWebApplicationException(
+        Status.CONFLICT,
+        "Cluster '" + clusterName + "' already exists in namespace '" + namespace
+            + "', but conversion Domain '" + domainName
+            + "' is not live; delete the existing Cluster before recreating the Domain");
+    LOGGER.throwing(e);
+    throw e;
   }
 
   private void verifyClusterReferencedByDomain(DomainResource domain, String name) {
@@ -579,23 +616,37 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private DomainResource verifyLiveDomain(String namespace, String domainName, String domainUid) {
+    DomainResource domain = getLiveDomain(namespace, domainName, domainUid);
+    if (domain == null) {
+      throwInvalidConversionDomain(domainName);
+    }
+    verifyDomainUid(domain, domainName, domainUid);
+    return domain;
+  }
+
+  private DomainResource getLiveDomain(String namespace, String domainName, String domainUid) {
+    verifyConversionDomainIdentity(domainName, domainUid);
+
+    try {
+      return RequestBuilder.DOMAIN.get(namespace, domainName, new GetOptions(), clientSupplier);
+    } catch (ApiException e) {
+      if (e.getCode() == KubernetesConstants.HTTP_NOT_FOUND) {
+        return null;
+      }
+      throw handleApiException(e);
+    }
+  }
+
+  private void verifyConversionDomainIdentity(String domainName, String domainUid) {
     if (domainName == null || domainUid == null) {
       throwInvalidConversionDomain(domainName);
     }
+  }
 
-    try {
-      DomainResource domain = RequestBuilder.DOMAIN.get(namespace, domainName, new GetOptions(), clientSupplier);
-      V1ObjectMeta metadata = Optional.ofNullable(domain).map(DomainResource::getMetadata).orElse(null);
-      if (metadata == null
-          || !Objects.equals(domainUid, metadata.getUid())) {
-        throwInvalidConversionDomain(domainName);
-      }
-      return domain;
-    } catch (ApiException e) {
-      if (e.getCode() == KubernetesConstants.HTTP_NOT_FOUND) {
-        throwInvalidConversionDomain(domainName);
-      }
-      throw handleApiException(e);
+  private void verifyDomainUid(DomainResource domain, String domainName, String domainUid) {
+    V1ObjectMeta metadata = Optional.ofNullable(domain).map(DomainResource::getMetadata).orElse(null);
+    if (metadata == null || !Objects.equals(domainUid, metadata.getUid())) {
+      throwInvalidConversionDomain(domainName);
     }
   }
 

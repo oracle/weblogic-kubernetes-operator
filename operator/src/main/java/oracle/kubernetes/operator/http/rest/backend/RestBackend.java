@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest.backend;
@@ -74,6 +74,15 @@ public interface RestBackend {
    * @param managedServerCount - the desired number of WebLogic managed servers.
    */
   void scaleCluster(String domainUid, String cluster, int managedServerCount);
+
+  /**
+   * Validates a Cluster resource generated from a Domain conversion without changing Kubernetes state.
+   *
+   * @param body generated Cluster resource
+   * @param domainName conversion Domain resource name
+   * @param domainUid conversion Domain resource UID
+   */
+  void validateClusterConversion(Map<String, Object> body, String domainName, String domainUid);
 
   Object createOrReplaceCluster(Map<String, Object> body, String domainName, String domainUid);
 
