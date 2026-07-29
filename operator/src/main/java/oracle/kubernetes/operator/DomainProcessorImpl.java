@@ -449,7 +449,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       DomainPresenceInfo cachedInfo,
       boolean shouldContinue,
       String reason) {
-    LOGGER.fine(
+    LOGGER.finer(
         "WKO-MAKERIGHT-TRACE decision domainUid={0} namespace={1} action={2} reason={3} event={4} "
             + "explicitRecheck={5} interrupt={6} liveGeneration={7} cachedGeneration={8} "
             + "liveResourceVersion={9} cachedResourceVersion={10} observedGeneration={11} "
@@ -1032,7 +1032,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleModifiedDomain(DomainResource domain) {
     if (!domain.isGenerationLaterThanObservedGeneration()) {
-      LOGGER.fine(
+      LOGGER.finer(
           "WKO-MAKERIGHT-TRACE ignoring Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
               + "observedGeneration={3} resourceVersion={4}",
           domain.getDomainUid(),
@@ -1043,7 +1043,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return;
     }
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    LOGGER.fine(
+    LOGGER.finer(
         "WKO-MAKERIGHT-TRACE accepted Domain MODIFIED watch event domainUid={0} namespace={1} generation={2} "
             + "observedGeneration={3} resourceVersion={4}",
         domain.getDomainUid(),
