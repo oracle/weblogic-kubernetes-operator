@@ -76,6 +76,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_
 import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_DEDICATED_MODE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_1;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_2;
@@ -89,6 +90,8 @@ import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomain;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeClusterToMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
@@ -290,6 +293,140 @@ class WebhookRestTest extends RestTestBase {
       HelmAccessStub.defineVariable(WEBHOOK_NAMESPACE_ENV, CONVERSION_DOMAIN_NAMESPACE);
       HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, CONVERSION_DOMAIN_NAMESPACE);
     });
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void whenV8CreateConversionIsRetriedBeforeDomainIsLive_reportsExistingCluster() throws Exception {
+    List<Memento> mementos = new ArrayList<>();
+    try {
+      mementos.add(HelmAccessStub.install());
+      mementos.add(TuningParametersStub.install());
+      TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+      TuningParametersStub.setParameter("domainNamespaces", CONVERSION_DOMAIN_NAMESPACE);
+      restBackendSupplier = this::createConversionBackend;
+      ConversionReviewModel request = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST));
+
+      ConversionReviewModel firstResponse = sendConversionWebhookRequestAsReview(request);
+      ClusterResource original = testSupport.getResourceWithName(
+          KubernetesTestSupport.CLUSTER, CONVERSION_CLUSTER_NAME);
+      Map<String, Object> metadata =
+          (Map<String, Object>) request.getRequest().getDomains().get(0).get("metadata");
+      metadata.put("uid", "retry-domain-uid");
+      ConversionReviewModel retryResponse = sendConversionWebhookRequestAsReview(request);
+      ClusterResource retried = testSupport.getResourceWithName(
+          KubernetesTestSupport.CLUSTER, CONVERSION_CLUSTER_NAME);
+
+      assertThat(getStatus(firstResponse), equalTo("Success"));
+      assertThat(getStatus(retryResponse), equalTo("Failed"));
+      assertThat(getResult(retryResponse).getMessage(), containsString("HTTP 409"));
+      assertThat(getResult(retryResponse).getMessage(), containsString(CONVERSION_CLUSTER_NAME));
+      assertThat(getResult(retryResponse).getMessage(),
+          containsString("delete the existing Cluster before recreating the Domain"));
+      assertThat(testSupport.<ClusterResource>getResources(KubernetesTestSupport.CLUSTER).size(), equalTo(1));
+      assertThat(retried.getMetadata().getUid(), equalTo(original.getMetadata().getUid()));
+    } finally {
+      restBackendSupplier = () -> restBackend;
+      mementos.forEach(Memento::revert);
+    }
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void v8DomainConversionLifecycle_handlesCreateUpdateDeleteAndRecreate() throws Exception {
+    List<Memento> mementos = new ArrayList<>();
+    try {
+      mementos.add(HelmAccessStub.install());
+      mementos.add(TuningParametersStub.install());
+      TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+      TuningParametersStub.setParameter("domainNamespaces", CONVERSION_DOMAIN_NAMESPACE);
+      restBackendSupplier = this::createConversionBackend;
+      ConversionReviewModel createRequest = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST));
+
+      ConversionReviewModel createResponse = sendConversionWebhookRequestAsReview(createRequest);
+      Map<String, Object> convertedDomain = (Map<String, Object>) getConvertedObject(createResponse).get(0);
+      DomainResource liveDomain = readDomain(writeMap(convertedDomain));
+      testSupport.defineResources(liveDomain);
+
+      assertThat(getStatus(createResponse), equalTo("Success"));
+      assertThat(getConversionCluster().getSpec().getReplicas(), equalTo(2));
+
+      getFirstV8Cluster(createRequest).put("replicas", 3);
+      ConversionReviewModel updateResponse = sendConversionWebhookRequestAsReview(createRequest);
+
+      assertThat(getStatus(updateResponse), equalTo("Success"));
+      assertThat(getConversionCluster().getSpec().getReplicas(), equalTo(3));
+
+      ClusterResource originalCluster = getConversionCluster();
+      testSupport.deleteResources(liveDomain);
+      getMetadata(createRequest).put("uid", "recreated-domain-uid");
+      ConversionReviewModel recreateConflict = sendConversionWebhookRequestAsReview(createRequest);
+
+      assertThat(getStatus(recreateConflict), equalTo("Failed"));
+      assertThat(getResult(recreateConflict).getMessage(), containsString("HTTP 409"));
+      assertThat(getResult(recreateConflict).getMessage(), containsString(CONVERSION_CLUSTER_NAME));
+
+      testSupport.deleteResources(originalCluster);
+      ConversionReviewModel recreateResponse = sendConversionWebhookRequestAsReview(createRequest);
+
+      assertThat(getStatus(recreateResponse), equalTo("Success"));
+      assertThat(getConversionCluster(), notNullValue());
+    } finally {
+      restBackendSupplier = () -> restBackend;
+      mementos.forEach(Memento::revert);
+    }
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void whenLaterGeneratedClusterConflicts_conversionDoesNotCreateEarlierCluster() throws Exception {
+    List<Memento> mementos = new ArrayList<>();
+    try {
+      mementos.add(HelmAccessStub.install());
+      mementos.add(TuningParametersStub.install());
+      TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+      TuningParametersStub.setParameter("domainNamespaces", CONVERSION_DOMAIN_NAMESPACE);
+      restBackendSupplier = this::createConversionBackend;
+      ConversionReviewModel request = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST));
+      Map<String, Object> secondCluster = readMap(writeMap(getFirstV8Cluster(request)));
+      secondCluster.put("clusterName", "cluster-2");
+      Map<String, Object> domain = request.getRequest().getDomains().get(0);
+      Map<String, Object> spec = (Map<String, Object>) domain.get("spec");
+      ((List<Map<String, Object>>) spec.get("clusters")).add(secondCluster);
+      ClusterResource conflictingCluster = new ClusterResource().withMetadata(new V1ObjectMeta()
+          .name("sample-domain1-cluster-2")
+          .namespace(CONVERSION_DOMAIN_NAMESPACE)
+          .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"));
+      testSupport.defineResources(conflictingCluster);
+
+      ConversionReviewModel response = sendConversionWebhookRequestAsReview(request);
+
+      assertThat(getStatus(response), equalTo("Failed"));
+      assertThat(getResult(response).getMessage(), containsString("HTTP 409"));
+      assertThat(getResult(response).getMessage(), containsString("sample-domain1-cluster-2"));
+      assertThat(testSupport.getResourceWithName(
+          KubernetesTestSupport.CLUSTER, CONVERSION_CLUSTER_NAME), equalTo(null));
+      assertThat(testSupport.<ClusterResource>getResources(KubernetesTestSupport.CLUSTER).size(), equalTo(1));
+    } finally {
+      restBackendSupplier = () -> restBackend;
+      mementos.forEach(Memento::revert);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> getFirstV8Cluster(ConversionReviewModel review) {
+    Map<String, Object> domain = review.getRequest().getDomains().get(0);
+    Map<String, Object> spec = (Map<String, Object>) domain.get("spec");
+    return ((List<Map<String, Object>>) spec.get("clusters")).get(0);
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> getMetadata(ConversionReviewModel review) {
+    return (Map<String, Object>) review.getRequest().getDomains().get(0).get("metadata");
+  }
+
+  private ClusterResource getConversionCluster() {
+    return testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, CONVERSION_CLUSTER_NAME);
   }
 
   private void verifyV8ConversionCreatesCluster(NamespaceSelectionConfiguration configuration) throws Exception {
@@ -953,6 +1090,9 @@ class WebhookRestTest extends RestTestBase {
   }
 
   abstract class RestBackendStub implements RestBackend {
+    public void validateClusterConversion(Map<String, Object> body, String domainName, String domainUid) {
+    }
+
     public Object createOrReplaceCluster(Map<String, Object> body, String domainName, String domainUid) {
       ClusterResource cluster = readCluster(writeMap(body));
       testSupport.defineResources(cluster);
