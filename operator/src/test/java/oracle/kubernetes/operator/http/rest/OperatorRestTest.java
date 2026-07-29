@@ -362,6 +362,10 @@ class OperatorRestTest extends RestTestBase {
       getClusterStateStream(domainUid, cluster).forEach(cs -> cs.setScale(managedServerCount));
     }
 
+    @Override
+    public void validateClusterConversion(Map<String, Object> body, String domainName, String domainUid) {
+    }
+
     Stream<ClusterState> getClusterStateStream(String domainUid, String cluster) {
       return domainClusters.get(domainUid).stream().filter(cs -> cs.hasClusterName(cluster));
     }

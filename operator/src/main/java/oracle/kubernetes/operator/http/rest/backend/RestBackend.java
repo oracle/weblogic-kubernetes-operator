@@ -75,6 +75,15 @@ public interface RestBackend {
    */
   void scaleCluster(String domainUid, String cluster, int managedServerCount);
 
+  /**
+   * Validates a Cluster resource generated from a Domain conversion without changing Kubernetes state.
+   *
+   * @param body generated Cluster resource
+   * @param domainName conversion Domain resource name
+   * @param domainUid conversion Domain resource UID
+   */
+  void validateClusterConversion(Map<String, Object> body, String domainName, String domainUid);
+
   Object createOrReplaceCluster(Map<String, Object> body, String domainName, String domainUid);
 
   List<Map<String, Object>> listClusters(String namespace, String domainName, String domainUid);

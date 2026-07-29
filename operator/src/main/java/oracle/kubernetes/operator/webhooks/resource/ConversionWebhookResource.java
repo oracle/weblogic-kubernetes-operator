@@ -151,7 +151,7 @@ public class ConversionWebhookResource extends BaseResource {
                                                       RestBackend be) {
     SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
-    List<Object> convertedDomains = new ArrayList<>();
+    List<ConvertedResources> conversions = new ArrayList<>();
     for (Map<String, Object> domain : conversionRequest.getDomains()) {
       Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) domain.get("metadata"))
           .orElse(Map.of());
@@ -160,13 +160,26 @@ public class ConversionWebhookResource extends BaseResource {
       String domainUid = (String) metadata.get("uid");
       SchemaConversionUtils.Resources cr = schemaConversionUtils.convertDomainSchema(domain,
           () -> be.listClusters(namespace, domainName, domainUid));
-      convertedDomains.add(cr.domain());
-      cr.clusters().forEach(cluster -> be.createOrReplaceCluster(cluster, domainName, domainUid));
+      conversions.add(new ConvertedResources(cr, domainName, domainUid));
     }
+
+    conversions.forEach(conversion -> conversion.resources().clusters().forEach(cluster ->
+        be.validateClusterConversion(cluster, conversion.domainName(), conversion.domainUid())));
+
+    List<Object> convertedDomains = new ArrayList<>();
+    conversions.forEach(conversion -> {
+      convertedDomains.add(conversion.resources().domain());
+      conversion.resources().clusters().forEach(cluster ->
+          be.createOrReplaceCluster(cluster, conversion.domainName(), conversion.domainUid()));
+    });
 
     return new ConversionResponse()
             .uid(conversionRequest.getUid())
             .result(new Result().status("Success"))
             .convertedObjects(convertedDomains);
+  }
+
+  private record ConvertedResources(
+      SchemaConversionUtils.Resources resources, String domainName, String domainUid) {
   }
 }
