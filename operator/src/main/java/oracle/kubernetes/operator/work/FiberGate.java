@@ -13,6 +13,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -79,6 +81,7 @@ public class FiberGate {
   private class FiberRequest {
 
     private final String domainUid;
+    private final String namespace;
     private final Fiber fiber;
     private final Supplier<Step> stepSupplier;
     private final Supplier<Packet> packetSupplier;
@@ -89,8 +92,11 @@ public class FiberGate {
       this.stepSupplier = stepSupplier;
       this.packetSupplier = packetSupplier;
 
-      fiber = new Fiber(new FiberExecutorImpl(), stepSupplier.get(), packetSupplier.get(),
-          new FiberGateCompletionCallback(callback, domainUid));
+      Step step = stepSupplier.get();
+      Packet packet = packetSupplier.get();
+      namespace = getNamespace(packet);
+      fiber = new Fiber(new FiberExecutorImpl(), step, packet,
+          new FiberGateCompletionCallback(callback, domainUid, namespace));
     }
 
     void invoke() {
@@ -103,8 +109,9 @@ public class FiberGate {
         long delayMillis = TimeUnit.MILLISECONDS.convert(duration);
         LOGGER.fine(
             "WKO-POD-STARTUP-TRACE component=fiber-gate phase=requeue-scheduled "
-                + "domainUid={0} fiber={1} delayMs={2} thread={3}",
+                + "domainUid={0} namespace={1} fiber={2} delayMs={3} thread={4}",
             domainUid,
+            namespace,
             fiber,
             delayMillis,
             Thread.currentThread().getName());
@@ -120,9 +127,10 @@ public class FiberGate {
         boolean accepted = selected == scheduledReplacement;
         LOGGER.fine(
             "WKO-POD-STARTUP-TRACE component=fiber-gate phase=requeue-fired "
-                + "domainUid={0} sourceFiber={1} replacementFiber={2} selectedFiber={3} "
-                + "accepted={4} thread={5}",
+                + "domainUid={0} namespace={1} sourceFiber={2} replacementFiber={3} selectedFiber={4} "
+                + "accepted={5} thread={6}",
             domainUid,
+            namespace,
             fiber,
             scheduledReplacement,
             selected,
@@ -137,9 +145,10 @@ public class FiberGate {
       public void execute(@NotNull Fiber fiber) {
         Fiber existing = gateMap.put(domainUid, fiber);
         LOGGER.fine(
-            "WKO-POD-STARTUP-TRACE component=fiber-gate phase=start domainUid={0} fiber={1} "
-                + "replacedFiber={2} action={3} thread={4}",
+            "WKO-POD-STARTUP-TRACE component=fiber-gate phase=start domainUid={0} namespace={1} fiber={2} "
+                + "replacedFiber={3} action={4} thread={5}",
             domainUid,
+            namespace,
             fiber,
             existing,
             existing == null ? "new" : "replace",
@@ -156,10 +165,12 @@ public class FiberGate {
 
     private final CompletionCallback callback;
     private final String domainUid;
+    private final String namespace;
 
-    public FiberGateCompletionCallback(CompletionCallback callback, String domainUid) {
+    public FiberGateCompletionCallback(CompletionCallback callback, String domainUid, String namespace) {
       this.callback = callback;
       this.domainUid = domainUid;
+      this.namespace = namespace;
     }
 
     @Override
@@ -171,8 +182,9 @@ public class FiberGate {
         boolean removed = gateMap.remove(domainUid, fiber);
         LOGGER.fine(
             "WKO-POD-STARTUP-TRACE component=fiber-gate phase=complete outcome=success "
-                + "domainUid={0} fiber={1} removed={2} thread={3}",
+                + "domainUid={0} namespace={1} fiber={2} removed={3} thread={4}",
             domainUid,
+            getNamespace(packet, namespace),
             fiber,
             removed,
             Thread.currentThread().getName());
@@ -188,13 +200,29 @@ public class FiberGate {
         boolean removed = gateMap.remove(domainUid, fiber);
         LOGGER.fine(
             "WKO-POD-STARTUP-TRACE component=fiber-gate phase=complete outcome=throw "
-                + "domainUid={0} fiber={1} removed={2} throwable={3} thread={4}",
+                + "domainUid={0} namespace={1} fiber={2} removed={3} throwable={4} thread={5}",
             domainUid,
+            getNamespace(packet, namespace),
             fiber,
             removed,
             throwable.getClass().getName(),
             Thread.currentThread().getName());
       }
     }
+  }
+
+  private static String getNamespace(Packet packet) {
+    return getNamespace(packet, null);
+  }
+
+  private static String getNamespace(Packet packet, String defaultNamespace) {
+    Object domainPresenceInfo = packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
+    Object clusterPresenceInfo = packet.get(ProcessingConstants.CLUSTER_PRESENCE_INFO);
+    if (domainPresenceInfo instanceof ResourcePresenceInfo presenceInfo) {
+      return presenceInfo.getNamespace();
+    } else if (clusterPresenceInfo instanceof ResourcePresenceInfo presenceInfo) {
+      return presenceInfo.getNamespace();
+    }
+    return defaultNamespace;
   }
 }

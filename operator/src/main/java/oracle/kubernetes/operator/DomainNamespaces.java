@@ -120,6 +120,11 @@ public class DomainNamespaces {
    * Requests all active namespaced-watchers to stop.
    */
   void stopAllWatchers() {
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=watcher-control phase=stop-all-request "
+            + "namespaces={0} thread={1}",
+        namespaceStoppingMap.keySet(),
+        Thread.currentThread().getName());
     namespaceStoppingMap.forEach((key, value) -> value.set(true));
   }
 
@@ -128,6 +133,11 @@ public class DomainNamespaces {
    * @param ns a namespace name
    */
   void stopNamespace(String ns) {
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=watcher-control phase=stop-namespace-request "
+            + "namespace={0} thread={1}",
+        ns,
+        Thread.currentThread().getName());
     namespaceStoppingMap.remove(ns).set(true);
     namespaceStatuses.remove(ns);
     clusterWatchers.removeWatcher(ns);
@@ -241,11 +251,14 @@ public class DomainNamespaces {
     }
 
     void startWatcher(String namespace, String resourceVersion, DomainProcessor domainProcessor) {
-      watchers.computeIfAbsent(namespace, n -> {
+      boolean watcherPresentBefore = watchers.containsKey(namespace);
+      W watcher = watchers.computeIfAbsent(namespace, n -> {
         LOGGER.fine(MessageKeys.BEGIN_MANAGING_NAMESPACE, namespace);   // ← logs ONLY on first creation
         return createWatcher(n, resourceVersion, selector.apply(domainProcessor));
       });
-      getWatcher(namespace).withResourceVersion(resourceVersion).resume();
+      logWatcherControl(
+          "start-or-resume-request", null, namespace, watcher, resourceVersion, watcherPresentBefore);
+      watcher.withResourceVersion(resourceVersion).resume();
     }
 
     W createWatcher(String ns, String resourceVersion, WatchListener<T> listener) {
@@ -334,55 +347,81 @@ public class DomainNamespaces {
     @Override
     public Consumer<V1ConfigMapList> getConfigMapListProcessing() {
       return l -> Optional.ofNullable(configMapWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("configmap", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<EventsV1EventList> getEventListProcessing() {
       return l -> Optional.ofNullable(eventWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("event", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<EventsV1EventList> getOperatorEventListProcessing() {
       return l -> Optional.ofNullable(operatorEventWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("operator-event", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<V1JobList> getJobListProcessing() {
       return l -> Optional.ofNullable(jobWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("job", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<V1PodList> getPodListProcessing() {
       return l -> Optional.ofNullable(podWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("pod", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<V1ServiceList> getServiceListProcessing() {
       return l -> Optional.ofNullable(serviceWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("service", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
       return l -> Optional.ofNullable(podDisruptionBudgetWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("poddisruptionbudget", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<DomainList> getDomainListProcessing() {
       return l -> Optional.ofNullable(domainWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("domain", w, getResourceVersion(l)));
     }
 
     @Override
     public Consumer<ClusterList> getClusterListProcessing() {
       return l -> Optional.ofNullable(clusterWatchers.getWatcher(ns))
-          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+          .ifPresent(w -> resumeWatcher("cluster", w, getResourceVersion(l)));
     }
+
+    private void resumeWatcher(String resource, Watcher<?> watcher, String resourceVersion) {
+      logWatcherControl("resume-request", resource, ns, watcher, resourceVersion, true);
+      watcher.withResourceVersion(resourceVersion).resume();
+    }
+  }
+
+  private void logWatcherControl(
+      String phase,
+      String resource,
+      String namespace,
+      Watcher<?> watcher,
+      String resourceVersion,
+      boolean watcherPresentBefore) {
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=watcher-control phase={0} resource={1} namespace={2} "
+            + "requestedWatcherType={3} requestedWatcher={4} resourceVersion={5} "
+            + "watcherPresentBefore={6} thread={7}",
+        phase,
+        resource,
+        namespace,
+        watcher == null ? null : watcher.getClass().getSimpleName(),
+        watcher == null ? null : Integer.toHexString(System.identityHashCode(watcher)),
+        resourceVersion,
+        watcherPresentBefore,
+        Thread.currentThread().getName());
   }
 }

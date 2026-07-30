@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -6,17 +6,20 @@ package oracle.kubernetes.operator.watcher;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.calls.Client;
 import oracle.kubernetes.operator.calls.KubernetesApiAuthenticationHealth;
@@ -50,6 +53,7 @@ public abstract class Watcher<T> {
   private WatchListener<T> listener;
   private Thread thread = null;
   private long lastInitialize = 0;
+  private long watchAttempt;
 
   /**
    * Constructs a watcher without specifying a listener. Needed when the listener is the watch
@@ -98,8 +102,18 @@ public abstract class Watcher<T> {
     return resourceVersion;
   }
 
+  /**
+   * Updates the resource version used to initiate the next watch.
+   *
+   * @param resourceVersion the oldest version to return for the watch
+   * @return this watcher
+   */
   public Watcher<T> withResourceVersion(String resourceVersion) {
+    String previousResourceVersion = this.resourceVersion;
     this.resourceVersion = resourceVersion;
+    if (isPodWatcherTraceEnabled()) {
+      trace("resource-version-update", "previousResourceVersion=" + previousResourceVersion);
+    }
     return this;
   }
 
@@ -114,6 +128,9 @@ public abstract class Watcher<T> {
 
   /** Kick off the watcher processing that runs in a separate thread. */
   protected void start(ThreadFactory factory) {
+    if (isPodWatcherTraceEnabled()) {
+      trace("start-request", "");
+    }
     thread = starter.startWatcher(factory, this::doWatch);
   }
 
@@ -130,14 +147,27 @@ public abstract class Watcher<T> {
   }
 
   private void doWatch() {
-    setIsDraining(false);
+    boolean tracePodWatcher = isPodWatcherTraceEnabled();
+    if (tracePodWatcher) {
+      trace("thread-enter", "");
+    }
+    try {
+      setIsDraining(false);
 
-    while (!isDraining()) {
-      if (isStopping()) {
-        setIsDraining(true);
-      } else {
-        setIsDraining(false);
-        watchForEvents();
+      while (!isDraining()) {
+        if (isStopping()) {
+          if (tracePodWatcher) {
+            trace("drain-observed", "reason=stopping");
+          }
+          setIsDraining(true);
+        } else {
+          setIsDraining(false);
+          watchForEvents();
+        }
+      }
+    } finally {
+      if (tracePodWatcher) {
+        trace("thread-exit", "watchAttempts=" + watchAttempt);
       }
     }
   }
@@ -156,14 +186,24 @@ public abstract class Watcher<T> {
     return this.stopping.get();
   }
 
-  // Set the stopping state to true to pause watches.
+  /** Sets the stopping state to true to pause watches. */
   public void pause() {
-    this.stopping.set(true);
+    if (isPodWatcherTraceEnabled()) {
+      boolean previouslyStopping = this.stopping.getAndSet(true);
+      trace("pause", "previouslyStopping=" + previouslyStopping);
+    } else {
+      this.stopping.set(true);
+    }
   }
 
-  // Set the stopping state to false to resume watches.
+  /** Sets the stopping state to false to resume watches. */
   public void resume() {
-    this.stopping.set(false);
+    if (isPodWatcherTraceEnabled()) {
+      boolean previouslyStopping = this.stopping.getAndSet(false);
+      trace("resume", "previouslyStopping=" + previouslyStopping);
+    } else {
+      this.stopping.set(false);
+    }
   }
 
   @SuppressWarnings("try")
@@ -181,19 +221,40 @@ public abstract class Watcher<T> {
     } else {
       lastInitialize = now;
     }
+
+    boolean tracePodWatcher = isPodWatcherTraceEnabled();
+    long attempt = tracePodWatcher ? ++watchAttempt : 0;
+    long startNanos = tracePodWatcher ? System.nanoTime() : 0;
+    int eventCount = 0;
+    String outcome = "not-opened";
+    if (tracePodWatcher) {
+      trace("watch-open-start", "attempt=" + attempt + " watchLifetimeSeconds=" + getWatchLifetime());
+    }
     try (Watchable<T> watch =
         initiateWatch(
             new ListOptions()
                 .resourceVersion(resourceVersion)
                 .timeoutSeconds(getWatchLifetime()))) {
+      outcome = "opened";
+      if (tracePodWatcher) {
+        trace("watch-open-complete", "attempt=" + attempt + " watchNull=" + (watch == null));
+      }
       KubernetesApiAuthenticationHealth.reportSuccessfulResponse();
-      while (hasNext(watch)) {
+      while (hasNext(watch, attempt)) {
         Watch.Response<T> item = watch.next();
         setIsDraining(isStopping());
         if (isDraining()) {
+          if (tracePodWatcher) {
+            trace(
+                "event-skipped",
+                "reason=draining attempt=" + attempt + " event=" + item.type + getPodEventDetails(item));
+          }
           continue;
         }
 
+        if (tracePodWatcher) {
+          eventCount++;
+        }
         try (ThreadLoggingContext ignored =
                  ThreadLoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
           if (isError(item)) {
@@ -203,9 +264,23 @@ public abstract class Watcher<T> {
           }
         }
       }
+      outcome = "stream-ended";
     } catch (Throwable ex) {
+      outcome = "failure";
       resetApiClientIfUnauthorized(ex);
+      if (tracePodWatcher) {
+        traceFailure("watch-failure", attempt, ex);
+      }
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
+    } finally {
+      if (tracePodWatcher) {
+        trace(
+            "watch-close",
+            "outcome=" + outcome
+                + " attempt=" + attempt
+                + " eventCount=" + eventCount
+                + " elapsedMs=" + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos));
+      }
     }
   }
 
@@ -228,13 +303,96 @@ public abstract class Watcher<T> {
     return tuning.getWatchMinimumDelay();
   }
 
-  private boolean hasNext(Watchable<T> watch) {
+  private boolean hasNext(Watchable<T> watch, long attempt) {
     try {
       return watch.hasNext();
     } catch (Exception ex) {
       resetApiClientIfUnauthorized(ex);
+      if (isPodWatcherTraceEnabled()) {
+        traceFailure("has-next-failure", attempt, ex);
+      }
       return false;
     }
+  }
+
+  private boolean isPodWatcherTraceEnabled() {
+    return this instanceof PodWatcher && LOGGER.isFineEnabled();
+  }
+
+  private String getPodEventDetails(Watch.Response<T> item) {
+    if (!(item.object instanceof V1Pod pod)) {
+      return "";
+    }
+    V1ObjectMeta metadata = pod.getMetadata();
+    return " domainUid=" + getLabel(metadata, LabelConstants.DOMAINUID_LABEL)
+        + " server=" + getLabel(metadata, LabelConstants.SERVERNAME_LABEL)
+        + " pod=" + Optional.ofNullable(metadata).map(V1ObjectMeta::getName).orElse(null)
+        + " podResourceVersion=" + Optional.ofNullable(metadata).map(V1ObjectMeta::getResourceVersion).orElse(null)
+        + " node=" + Optional.ofNullable(pod.getSpec()).map(s -> s.getNodeName()).orElse(null);
+  }
+
+  private String getLabel(V1ObjectMeta metadata, String labelName) {
+    return Optional.ofNullable(metadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(labelName))
+        .orElse(null);
+  }
+
+  private void traceFailure(String phase, long attempt, Throwable throwable) {
+    ApiException apiException = findApiException(throwable);
+    trace(
+        phase,
+        "attempt=" + attempt
+            + " throwable=" + throwable.getClass().getName()
+            + " cause=" + getRootCause(throwable).getClass().getName()
+            + " apiCode=" + (apiException == null ? null : apiException.getCode())
+            + " message=" + getExceptionMessage(throwable));
+  }
+
+  private ApiException findApiException(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null && current.getCause() != current) {
+      if (current instanceof ApiException apiException) {
+        return apiException;
+      }
+      current = current.getCause();
+    }
+    return current instanceof ApiException apiException ? apiException : null;
+  }
+
+  private Throwable getRootCause(Throwable throwable) {
+    Throwable current = throwable;
+    while (current.getCause() != null && current.getCause() != current) {
+      current = current.getCause();
+    }
+    return current;
+  }
+
+  private String getExceptionMessage(Throwable throwable) {
+    String message = Optional.ofNullable(throwable.getMessage()).orElse("");
+    String singleLineMessage = message.replace('\n', ' ').replace('\r', ' ');
+    return singleLineMessage.length() <= 512 ? singleLineMessage : singleLineMessage.substring(0, 512);
+  }
+
+  private void trace(String phase, String details) {
+    if (!LOGGER.isFineEnabled()) {
+      return;
+    }
+    Thread watchThread = thread;
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=watcher-lifecycle phase=" + phase
+            + " watcherType=" + getClass().getSimpleName()
+            + " watcher=" + Integer.toHexString(System.identityHashCode(this))
+            + " namespace=" + getNamespace()
+            + " resourceVersion=" + resourceVersion
+            + " stopping=" + isStopping()
+            + " draining=" + isDraining()
+            + " stopSignal=" + Integer.toHexString(System.identityHashCode(stopping))
+            + " watchThreadId=" + (watchThread == null ? null : watchThread.threadId())
+            + " watchThreadAlive=" + (watchThread != null && watchThread.isAlive())
+            + " watchThreadState=" + (watchThread == null ? null : watchThread.getState())
+            + " currentThreadId=" + Thread.currentThread().threadId()
+            + (details.isEmpty() ? "" : " " + details));
   }
 
   /**
@@ -267,17 +425,32 @@ public abstract class Watcher<T> {
 
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.finer(MessageKeys.WATCH_EVENT, item.type, item.object);
+    String previousResourceVersion = resourceVersion;
     trackResourceVersion(item.object);
+    if (this instanceof PodWatcher) {
+      trace(
+          "event-received",
+          "event=" + item.type
+              + " previousResourceVersion=" + previousResourceVersion
+              + " listenerPresent=" + (listener != null));
+    }
     if (listener != null) {
       listener.receivedResponse(item);
     }
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
+    String previousResourceVersion = resourceVersion;
+    Integer statusCode = Optional.ofNullable(item.status).map(V1Status::getCode).orElse(null);
     if (Optional.ofNullable(item.status).map(V1Status::getCode).orElse(0) != HTTP_GONE) {
       resourceVersion = IGNORED;
     } else {
       resourceVersion = Optional.of(item.status).map(V1Status::getMessage).map(this::resourceVersion).orElse(IGNORED);
+    }
+    if (isPodWatcherTraceEnabled()) {
+      trace(
+          "error-event",
+          "statusCode=" + statusCode + " previousResourceVersion=" + previousResourceVersion);
     }
   }
 

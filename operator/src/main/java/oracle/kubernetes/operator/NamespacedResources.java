@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -16,12 +16,16 @@ import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.operator.calls.RequestBuilder;
+import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.ClusterWatcher;
 import oracle.kubernetes.operator.watcher.ConfigMapWatcher;
@@ -44,6 +48,8 @@ import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSele
  * A Class to manage listing Kubernetes resources associated with a namespace and doing processing on them.
  */
 class NamespacedResources {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final String namespace;
   private final String domainUid;
   private final List<Processors> processors = new ArrayList<>();
@@ -75,7 +81,7 @@ class NamespacedResources {
   }
 
   private Step getPauseWatchersStep(Watcher<?> watcher) {
-    return new PauseWatchersStep<>(watcher);
+    return new PauseWatchersStep<>(namespace, domainUid, watcher);
   }
 
   private Step getConfigMapListSteps() {
@@ -162,7 +168,7 @@ class NamespacedResources {
     return Step.chain(getPauseWatchersStep(getPodWatcher()),
         RequestBuilder.POD.list(namespace,
             new ListOptions().labelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL + "," + getDomainUidLabel()),
-            new ListResponseStep<>(processing)));
+            new PodListResponseStep(processing)));
   }
 
   private PodWatcher getPodWatcher() {
@@ -233,17 +239,105 @@ class NamespacedResources {
   }
 
   static class PauseWatchersStep<T> extends Step {
+    private final String namespace;
+    private final String domainUid;
     private final Watcher<T> watcher;
 
-    PauseWatchersStep(Watcher<T> watcher) {
+    PauseWatchersStep(String namespace, String domainUid, Watcher<T> watcher) {
+      this.namespace = namespace;
+      this.domainUid = domainUid;
       this.watcher = watcher;
     }
 
     @Override
     public @Nonnull Result apply(Packet packet) {
+      if (LOGGER.isFineEnabled()) {
+        LOGGER.fine(
+            "WKO-POD-STARTUP-TRACE component=watcher-control phase=pause-request "
+                + "namespace={0} domainUid={1} requestedWatcherType={2} requestedWatcher={3} "
+                + "fiber={4} thread={5}",
+            namespace,
+            domainUid,
+            watcher == null ? null : watcher.getClass().getSimpleName(),
+            getIdentity(watcher),
+            packet.getFiber(),
+            Thread.currentThread().getName());
+      }
       Optional.ofNullable(watcher).ifPresent(Watcher::pause);
       return doNext(packet);
     }
+  }
+
+  private class PodListResponseStep extends ListResponseStep<V1PodList> {
+
+    PodListResponseStep(List<Consumer<V1PodList>> processors) {
+      super(processors);
+    }
+
+    @Override
+    public Result onSuccess(Packet packet, KubernetesApiResponse<V1PodList> callResponse) {
+      logPodListResponse(packet, callResponse.getObject());
+      return super.onSuccess(packet, callResponse);
+    }
+  }
+
+  private void logPodListResponse(Packet packet, V1PodList list) {
+    if (!LOGGER.isFineEnabled()) {
+      return;
+    }
+
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=pod-list phase=response namespace={0} domainUid={1} "
+            + "listResourceVersion={2} itemCount={3} fiber={4} thread={5}",
+        namespace,
+        domainUid,
+        Optional.ofNullable(list).map(V1PodList::getMetadata).map(m -> m.getResourceVersion()).orElse(null),
+        Optional.ofNullable(list).map(V1PodList::getItems).map(List::size).orElse(0),
+        packet.getFiber(),
+        Thread.currentThread().getName());
+
+    Optional.ofNullable(list).map(V1PodList::getItems).orElse(List.of())
+        .forEach(pod -> logPodListItem(packet, pod));
+  }
+
+  private void logPodListItem(Packet packet, V1Pod pod) {
+    String nodeName = Optional.ofNullable(pod).map(V1Pod::getSpec).map(s -> s.getNodeName()).orElse(null);
+    LOGGER.fine(
+        "WKO-POD-STARTUP-TRACE component=pod-list phase=item namespace={0} requestedDomainUid={1} "
+            + "domainUid={2} cluster={3} server={4} pod={5} resourceVersion={6} "
+            + "creationTimestamp={7} node={8} scheduled={9} podScheduledTransitionTime={10} "
+            + "ready={11} deleting={12} fiber={13} thread={14}",
+        namespace,
+        domainUid,
+        PodHelper.getPodDomainUid(pod),
+        PodHelper.getPodClusterName(pod),
+        PodHelper.getPodServerName(pod),
+        PodHelper.getPodName(pod),
+        Optional.ofNullable(pod).map(V1Pod::getMetadata).map(m -> m.getResourceVersion()).orElse(null),
+        Optional.ofNullable(pod).map(V1Pod::getMetadata).map(m -> m.getCreationTimestamp()).orElse(null),
+        nodeName,
+        nodeName != null,
+        getPodScheduledTransitionTime(pod),
+        PodHelper.isReady(pod),
+        Optional.ofNullable(pod).map(V1Pod::getMetadata).map(m -> m.getDeletionTimestamp()).isPresent(),
+        packet.getFiber(),
+        Thread.currentThread().getName());
+  }
+
+  private Object getPodScheduledTransitionTime(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .map(s -> s.getConditions())
+        .orElse(List.of())
+        .stream()
+        .filter(c -> KubernetesConstants.POD_SCHEDULED.equals(c.getType()))
+        .findFirst()
+        .map(c -> c.getLastTransitionTime())
+        .orElse(null);
+  }
+
+  private static String getIdentity(Object object) {
+    return object == null ? null : Integer.toHexString(System.identityHashCode(object));
   }
 
   private static class ListResponseStep<L extends KubernetesListObject> extends DefaultResponseStep<L> {
