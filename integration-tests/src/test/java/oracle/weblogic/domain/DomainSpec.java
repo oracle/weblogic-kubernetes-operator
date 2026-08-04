@@ -123,10 +123,10 @@ public class DomainSpec {
 
   @ApiModelProperty("The default maximum number of cluster member Managed Server instances that can be"
       + " in the process of starting at the same time for a given cluster, if `maxConcurrentStartup`"
-      + " is not specified for a specific cluster under the `clusters` field. The operator creates Managed"
-      + " Server Pods one at a time and waits until each Pod is scheduled on a node before creating the next Pod."
-      + " A value of 0 removes the readiness-based startup limit; it does not remove the one-pod-at-a-time"
-      + " scheduling step. Defaults to 0.")
+      + " is not specified for a specific cluster under the `clusters` field. The operator does not wait for one"
+      + " Managed Server Pod to be scheduled before creating another. When this value is greater than 0 and the"
+      + " limit is reached, the operator waits until a Managed Server Pod is in the `Ready` state before starting"
+      + " another. A value of 0 means there is no limit. Defaults to 0.")
   private Integer maxClusterConcurrentStartup;
 
   @ApiModelProperty("The default maximum number of WebLogic Server instances that a cluster will"

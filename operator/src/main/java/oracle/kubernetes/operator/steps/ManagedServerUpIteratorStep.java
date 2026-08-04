@@ -48,8 +48,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /** The interval in msec that the operator will wait to ensure that started pods have been scheduled on a node. */
-  static final int SCHEDULING_DETECTION_DELAY = 100;
+  /** The interval in msec that the operator will wait before rechecking the startup concurrency limit. */
+  static final int STARTUP_CONCURRENCY_CHECK_DELAY = 100;
 
   private final Collection<ServerStartupInfo> startupInfos;
 
@@ -286,35 +286,20 @@ public class ManagedServerUpIteratorStep extends Step {
       if (startDetailsQueue.isEmpty()) {
         traceGateDecision(packet, "complete", null, true);
         return doNext(packet);
-      } else if (hasServerAvailableToStart(packet)) {
+      } else if (hasStartupSlot(packet)) {
         traceGateDecision(packet, "start", getNextServerName(), true);
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
-      } else if (hasSchedulingGatedManagedServer(packet)) {
-        traceGateDecision(packet, "complete-scheduling-gated", getNextServerName(), true);
-        return doNext(packet);
       } else {
         traceGateWait(packet);
-        return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
+        return doDelay(this, packet, STARTUP_CONCURRENCY_CHECK_DELAY, TimeUnit.MILLISECONDS);
       }
     }
 
-    private boolean hasServerAvailableToStart(Packet packet) {
+    boolean hasStartupSlot(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
-      return (getNumServersStarted() <= getNumStartedOrSchedulingGatedManagedServers(info, adminServerName)
-              && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName))));
-    }
-
-    private long getNumStartedOrSchedulingGatedManagedServers(DomainPresenceInfo info, String adminServerName) {
-      return info.getNumScheduledManagedServers(clusterName, adminServerName)
-          + info.getNumSchedulingGatedManagedServers(clusterName, adminServerName);
-    }
-
-    private boolean hasSchedulingGatedManagedServer(Packet packet) {
-      DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
-      String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
-      return info.getNumSchedulingGatedManagedServers(clusterName, adminServerName) > 0;
+      return canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName));
     }
 
     private StartupGateState getStartupGateState(Packet packet) {
@@ -323,8 +308,6 @@ public class ManagedServerUpIteratorStep extends Step {
       return new StartupGateState(
           info,
           getNumServersStarted(),
-          info.getNumScheduledManagedServers(clusterName, adminServerName),
-          info.getNumSchedulingGatedManagedServers(clusterName, adminServerName),
           info.getNumReadyManagedServers(clusterName, adminServerName));
     }
 
@@ -340,12 +323,7 @@ public class ManagedServerUpIteratorStep extends Step {
         return;
       }
       StartupGateState state = getStartupGateState(packet);
-      traceGateDecision(
-          packet,
-          state,
-          state.isWaitingForScheduling() ? "wait-scheduled" : "wait-ready",
-          getNextServerName(),
-          false);
+      traceGateDecision(packet, state, "wait-ready", getNextServerName(), false);
     }
 
     private void traceGateDecision(Packet packet, String decision, String nextServer, boolean force) {
@@ -358,8 +336,8 @@ public class ManagedServerUpIteratorStep extends Step {
     private void traceGateDecision(
         Packet packet, StartupGateState state, String decision, String nextServer, boolean force) {
       long now = System.nanoTime();
-      String traceState = decision + ":" + state.numStarted() + ":" + state.numScheduled() + ":"
-          + state.numSchedulingGated() + ":" + state.numReady() + ":" + startDetailsQueue.size();
+      String traceState =
+          decision + ":" + state.numStarted() + ":" + state.numReady() + ":" + startDetailsQueue.size();
       boolean stateChanged = !traceState.equals(lastTraceState);
       if (stateChanged) {
         lastTraceState = traceState;
@@ -371,10 +349,10 @@ public class ManagedServerUpIteratorStep extends Step {
 
       lastTraceNanos = now;
       LOGGER.fine(
-          "WKO-POD-STARTUP-TRACE component=start-gate phase=decision decision={0} "
+          "WKO-POD-STARTUP-TRACE component=start-concurrency phase=decision decision={0} "
               + "domainUid={1} namespace={2} cluster={3} nextServer={4} dpi={5} fiber={6} "
-              + "numStarted={7} numScheduled={8} numSchedulingGated={9} numReady={10} "
-              + "numNotReady={11} maxConcurrentStartup={12} queueRemaining={13} stateAgeMs={14}",
+              + "numStarted={7} numReady={8} numNotReady={9} maxConcurrentStartup={10} "
+              + "queueRemaining={11} stateAgeMs={12}",
           decision,
           state.info().getDomainUid(),
           state.info().getNamespace(),
@@ -383,8 +361,6 @@ public class ManagedServerUpIteratorStep extends Step {
           Integer.toHexString(System.identityHashCode(state.info())),
           packet.getFiber(),
           state.numStarted(),
-          state.numScheduled(),
-          state.numSchedulingGated(),
           state.numReady(),
           state.numStarted() - state.numReady(),
           maxConcurrency,
@@ -411,13 +387,7 @@ public class ManagedServerUpIteratorStep extends Step {
     private record StartupGateState(
         DomainPresenceInfo info,
         int numStarted,
-        long numScheduled,
-        long numSchedulingGated,
         long numReady) {
-
-      private boolean isWaitingForScheduling() {
-        return numStarted > numScheduled + numSchedulingGated;
-      }
     }
   }
 
