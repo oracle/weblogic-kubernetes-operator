@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1RuleWithOperations;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
@@ -76,6 +77,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
@@ -83,9 +85,12 @@ import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESP
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_STARTED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.operator.EventConstants.OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
+import static oracle.kubernetes.operator.EventTestUtils.getFormattedMessage;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
@@ -96,6 +101,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.KubernetesConstants.OLD_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_DEDICATED_MODE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -133,6 +141,8 @@ public class WebhookMainTest extends CrdHelperTestBase {
 
   private static final String WEBHOOK_POD_NAME = "my-webhook-1234";
   private static final String WEBHOOK_NAMESPACE = "webhook-namespace";
+  private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
+  private static final String OPERATOR_NAMESPACE = "operator-namespace";
 
   private static final String GIT_BUILD_VERSION = "3.1.0";
   private static final String GIT_BRANCH = "master";
@@ -170,6 +180,10 @@ public class WebhookMainTest extends CrdHelperTestBase {
 
   private AdmissionregistrationV1ServiceReference createServiceReference() {
     return new AdmissionregistrationV1ServiceReference().namespace(getWebhookNamespace());
+  }
+
+  private V1Namespace createNamespace(String namespace, Map<String, String> labels) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(namespace).labels(labels));
   }
 
   static {
@@ -246,6 +260,62 @@ public class WebhookMainTest extends CrdHelperTestBase {
     WebhookMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(WEBHOOK_CONFIG_NAMESPACE).withParams(getWebhookNamespace()));
+  }
+
+  @Test
+  void whenDedicatedWebhookModeConfigured_acceptWebhookNamespace() {
+    HelmAccessStub.defineVariable(WEBHOOK_DEDICATED_MODE_ENV, "true");
+
+    assertThat(WebhookMain.isDomainNamespace(WEBHOOK_NAMESPACE), is(true));
+  }
+
+  @Test
+  void whenDedicatedWebhookModeConfigured_ignoreConfiguredNamespaceSelectionStrategy() {
+    HelmAccessStub.defineVariable(WEBHOOK_DEDICATED_MODE_ENV, "true");
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+    TuningParametersStub.setParameter("domainNamespaces", "other-namespace");
+
+    assertThat(WebhookMain.isDomainNamespace("other-namespace"), is(false));
+  }
+
+  @Test
+  void whenListSelectionStrategyConfigured_acceptListedNamespacesOnly() {
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
+    TuningParametersStub.setParameter("domainNamespaces", "ns1,ns2");
+
+    assertThat(WebhookMain.isDomainNamespace("ns1"), is(true));
+    assertThat(WebhookMain.isDomainNamespace("other-namespace"), is(false));
+  }
+
+  @Test
+  void whenLabelSelectorSelectionStrategyConfigured_acceptNamespacesWithMatchingLabelsOnly() {
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "LabelSelector");
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", "weblogic-operator=enabled");
+    testSupport.defineResources(
+        createNamespace("labeled-namespace", Map.of("weblogic-operator", "enabled")),
+        createNamespace("unlabeled-namespace", Map.of("weblogic-operator", "disabled")));
+
+    assertThat(WebhookMain.isDomainNamespace("labeled-namespace"), is(true));
+    assertThat(WebhookMain.isDomainNamespace("unlabeled-namespace"), is(false));
+    assertThat(WebhookMain.isDomainNamespace("missing-namespace"), is(false));
+  }
+
+  @Test
+  void whenRegexpSelectionStrategyConfigured_acceptNamespacesWithMatchingNamesOnly() {
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "RegExp");
+    TuningParametersStub.setParameter("domainNamespaceRegExp", "sample-domain.*");
+
+    assertThat(WebhookMain.isDomainNamespace("sample-domain1-ns"), is(true));
+    assertThat(WebhookMain.isDomainNamespace("other-namespace"), is(false));
+  }
+
+  @Test
+  void whenDedicatedSelectionStrategyConfigured_acceptOperatorNamespaceOnly() {
+    HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OPERATOR_NAMESPACE);
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "Dedicated");
+
+    assertThat(WebhookMain.isDomainNamespace(OPERATOR_NAMESPACE), is(true));
+    assertThat(WebhookMain.isDomainNamespace(WEBHOOK_NAMESPACE), is(false));
   }
 
   @Test
@@ -634,6 +704,25 @@ public class WebhookMainTest extends CrdHelperTestBase {
     main.waitForDeath();
 
     assertThat(main.getShutdownSignalAvailablePermits(), equalTo(0));
+  }
+
+  @Test
+  void whenShutdownMarkerAndRestartLimitMarkerExist_createOperatorNamespaceEvent() throws NoSuchFieldException {
+    mementos.add(StaticStubSupport.install(
+            BaseMain.class, "executor", testSupport.getScheduledExecutorService()));
+    HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OPERATOR_NAMESPACE);
+    HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
+    String details = "container starts=4, limit=3, windowSeconds=1800";
+    inMemoryFileSystem.defineFile(delegate.getShutdownMarker(), "shutdown");
+    inMemoryFileSystem.defineFile(delegate.getShutdownRestartLimitExceededMarker(), details);
+    testSupport.presetFixedDelay();
+
+    main.waitForDeath();
+
+    assertThat("Found OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT,
+            getFormattedMessage(SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN, details)), is(true));
   }
 
   @Test

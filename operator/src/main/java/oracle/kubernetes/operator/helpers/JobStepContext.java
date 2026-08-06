@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -213,10 +213,6 @@ public class JobStepContext extends BasePodStepContext {
   private List<V1EnvVar> getAdminServerEnvVariables() {
     return Optional.ofNullable(getDomain().getAdminServerSpec()).map(EffectiveServerSpec::getEnvironmentVariables)
         .orElse(new ArrayList<>());
-  }
-
-  String getPodName() {
-    return getJobName();
   }
 
   String getJobName() {

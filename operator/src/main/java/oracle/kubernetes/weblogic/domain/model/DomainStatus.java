@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -196,7 +196,7 @@ public class DomainStatus {
     message = selected.getMessage();
     if (selected.isRetriableFailure()) {
       initialFailureTime = Optional.ofNullable(initialFailureTime).orElse(selected.getLastTransitionTime());
-    } else {
+    } else if (selected.hasType(FAILED)) {
       initialFailureTime = lastFailureTime = null;
     }
   }
@@ -282,6 +282,9 @@ public class DomainStatus {
   public void removeCondition(@Nonnull DomainCondition condition) {
     conditions.remove(condition);
     setStatusSummary();
+    if (conditions.stream().noneMatch(DomainCondition::isRetriableFailure)) {
+      clearFailureTimes();
+    }
   }
 
   /**
@@ -300,6 +303,27 @@ public class DomainStatus {
    */
   public void removeMarkedFailures() {
     removeConditionsMatching(DomainCondition::isMarkedForDeletion);
+  }
+
+  /**
+   * Removes failures with the specified reason while retaining the current retry time range. This is used when a
+   * scheduled retry temporarily clears a failure before attempting the operation again.
+   *
+   * @param reason the failure reason to remove
+   */
+  public void removeFailuresAndPreserveRetryTimes(DomainFailureReason reason) {
+    OffsetDateTime originalInitialFailureTime = getInitialFailureTime();
+    OffsetDateTime originalLastFailureTime = getLastFailureTime();
+    markFailuresForRemoval(reason);
+    removeMarkedFailures();
+    initialFailureTime = originalInitialFailureTime;
+    lastFailureTime = originalLastFailureTime;
+  }
+
+  /** Clears retry timing after a make-right operation succeeds. */
+  public void clearFailureTimes() {
+    initialFailureTime = null;
+    lastFailureTime = null;
   }
 
   /**

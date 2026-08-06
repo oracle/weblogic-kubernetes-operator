@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -135,6 +135,19 @@ public class PodHelper {
 
   static boolean isScheduled(@Nullable V1Pod pod) {
     return Optional.ofNullable(pod).map(V1Pod::getSpec).map(V1PodSpec::getNodeName).isPresent();
+  }
+
+  /**
+   * Returns true if the pod has scheduling gates.
+   * @param pod Kubernetes pod
+   * @return true if the pod is scheduling-gated
+   */
+  public static boolean isSchedulingGated(@Nullable V1Pod pod) {
+    return !Optional.ofNullable(pod)
+        .map(V1Pod::getSpec)
+        .map(V1PodSpec::getSchedulingGates)
+        .orElse(Collections.emptyList())
+        .isEmpty();
   }
 
   static boolean hasClusterNameOrNull(@Nullable V1Pod pod, String clusterName) {
@@ -701,6 +714,12 @@ public class PodHelper {
               (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       V1Pod adminPod = info.getServerPod(domainTopology.getAdminServerName());
 
+      if (PodHelper.isSchedulingGated(adminPod)) {
+        LOGGER.fine("Admin pod {0} is scheduling-gated; ending current make-right cycle",
+            Optional.ofNullable(adminPod).map(PodHelper::getPodName).orElse(null));
+        return doEnd();
+      }
+
       if (adminPod == null || !isPodReady(adminPod)) {
         // requeue to wait for admin pod to be ready
         return doRequeue();
@@ -797,20 +816,13 @@ public class PodHelper {
 
       @Override
       public @Nonnull Result apply(Packet packet) {
-        removeFromServersMarkedForRollMap();
+        removeFromServersMarkedForRollMap(packet);
         return doNext(packet);
       }
 
-      private Map<String, Fiber.StepAndPacket> serversMarkedForRoll(Packet packet) {
-        return DomainPresenceInfo.fromPacket(packet)
-            .map(DomainPresenceInfo::getServersToRoll)
-            .orElse(Collections.emptyMap());
-      }
-
-      private void removeFromServersMarkedForRollMap() {
-        synchronized (packet) {
-          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> m.remove(getServerName()));
-        }
+      private void removeFromServersMarkedForRollMap(Packet requestPacket) {
+        DomainPresenceInfo.fromPacket(requestPacket)
+            .ifPresent(info -> info.completeServerRoll(getServerName(), requestPacket));
       }
     }
 

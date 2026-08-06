@@ -18,6 +18,7 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.CreateOptions;
@@ -42,11 +43,13 @@ class RequestBuilderTest {
 
   @BeforeEach
   void setUp() throws Exception {
+    KubernetesApiAuthenticationHealth.reset();
     mementos.add(TuningParametersStub.install());
   }
 
   @AfterEach
   void tearDown() {
+    KubernetesApiAuthenticationHealth.reset();
     mementos.forEach(Memento::revert);
   }
 
@@ -84,18 +87,64 @@ class RequestBuilderTest {
     assertThat(attempts.get(), equalTo(2));
   }
 
+  @Test
+  void successfulOperatorClientRequestClearsAuthenticationFailure() throws Exception {
+    mementos.add(installFactory(createFactory(Function.identity())));
+    KubernetesApiAuthenticationHealth.reportUnauthorizedResponse("test 401 details");
+
+    RequestBuilder.TR.create(new V1TokenReview());
+
+    assertThat(KubernetesApiAuthenticationHealth.hasActiveFailure(), equalTo(false));
+  }
+
+  @Test
+  void successfulCallerClientRequestDoesNotClearOperatorAuthenticationFailure() throws Exception {
+    mementos.add(installFactory(createFactory(Function.identity())));
+    KubernetesApiAuthenticationHealth.reportUnauthorizedResponse("test 401 details");
+
+    RequestBuilder.TR.create(new V1TokenReview(), new CreateOptions(), client -> client);
+
+    assertThat(KubernetesApiAuthenticationHealth.hasActiveFailure(), equalTo(true));
+  }
+
+  @Test
+  void unauthorizedOperatorClientRequestStartsAuthenticationFailure() throws Exception {
+    mementos.add(installFactory(createResponseFactory(
+        ignored -> new KubernetesApiResponse<>(new V1Status().code(401), 401))));
+
+    assertThrows(ApiException.class, () -> RequestBuilder.TR.create(new V1TokenReview()));
+
+    assertThat(KubernetesApiAuthenticationHealth.hasActiveFailure(), equalTo(true));
+  }
+
+  @Test
+  void unauthorizedCallerClientRequestDoesNotStartOperatorAuthenticationFailure() throws Exception {
+    mementos.add(installFactory(createResponseFactory(
+        ignored -> new KubernetesApiResponse<>(new V1Status().code(401), 401))));
+
+    assertThrows(ApiException.class, () -> RequestBuilder.TR.create(
+        new V1TokenReview(), new CreateOptions(), client -> client));
+
+    assertThat(KubernetesApiAuthenticationHealth.hasActiveFailure(), equalTo(false));
+  }
+
   private Memento installFactory(KubernetesApiFactory factory) throws NoSuchFieldException {
     return StaticStubSupport.install(RequestBuilder.class, "kubernetesApiFactory", factory);
   }
 
   private KubernetesApiFactory createFactory(Function<V1TokenReview, V1TokenReview> createAction) {
+    return createResponseFactory(object -> new KubernetesApiResponse<>(createAction.apply(object)));
+  }
+
+  private KubernetesApiFactory createResponseFactory(
+      Function<V1TokenReview, KubernetesApiResponse<V1TokenReview>> createAction) {
     return new KubernetesApiFactory() {
       @Override
       @SuppressWarnings("unchecked")
       public <A extends KubernetesObject, L extends KubernetesListObject> KubernetesApi<A, L> create(
           Class<A> apiTypeClass, Class<L> apiListTypeClass, String apiGroup, String apiVersion, String resourcePlural,
           UnaryOperator<ApiClient> clientSelector) {
-        return new StubKubernetesApi<>((Function<A, A>) createAction);
+        return new StubKubernetesApi<>((Function<A, KubernetesApiResponse<A>>) (Function<?, ?>) createAction);
       }
     };
   }
@@ -103,9 +152,9 @@ class RequestBuilderTest {
   private static class StubKubernetesApi<A extends KubernetesObject, L extends KubernetesListObject>
       implements KubernetesApi<A, L> {
 
-    private final Function<A, A> createAction;
+    private final Function<A, KubernetesApiResponse<A>> createAction;
 
-    StubKubernetesApi(Function<A, A> createAction) {
+    StubKubernetesApi(Function<A, KubernetesApiResponse<A>> createAction) {
       this.createAction = createAction;
     }
 
@@ -131,7 +180,7 @@ class RequestBuilderTest {
 
     @Override
     public KubernetesApiResponse<A> create(A object, CreateOptions createOptions) {
-      return new KubernetesApiResponse<>(createAction.apply(object));
+      return createAction.apply(object);
     }
 
     @Override

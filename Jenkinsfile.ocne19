@@ -578,7 +578,7 @@ EOF
 
                                     export NO_PROXY="localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,${k8s_master_instance_private_ip}"
                                     export no_proxy="localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,${k8s_master_instance_private_ip}"
-                                    export PATH=${runtime_path}
+                                    export PATH="${WORKSPACE}/bin:${PATH}"
                                     export OKE_CLUSTER="false"
                                     export OCNE="true"
                                     export OKD="false"
@@ -663,5 +663,4 @@ EOF
         }
     }
 }
-
 

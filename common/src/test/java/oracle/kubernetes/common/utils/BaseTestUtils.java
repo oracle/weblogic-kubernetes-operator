@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -122,6 +122,7 @@ public class BaseTestUtils {
     private final Logger logger;
     private final TestLogHandler testHandler;
     private final List<Handler> savedHandlers;
+    private final boolean savedUseParentHandlers;
     private Level savedLogLevel;
     // log level could be null, so need a boolean to indicate if we have saved it
     private boolean loggerLevelSaved;
@@ -134,6 +135,8 @@ public class BaseTestUtils {
       this.logger = logger;
       this.testHandler = testHandler;
       this.savedHandlers = savedHandlers;
+      savedUseParentHandlers = logger.getUseParentHandlers();
+      logger.setUseParentHandlers(false);
     }
 
     /**
@@ -206,6 +209,7 @@ public class BaseTestUtils {
     public void revert() {
       logger.removeHandler(testHandler);
       restoreConsoleHandlers(logger, savedHandlers);
+      logger.setUseParentHandlers(savedUseParentHandlers);
       if (loggerLevelSaved) {
         logger.setLevel(savedLogLevel);
       }

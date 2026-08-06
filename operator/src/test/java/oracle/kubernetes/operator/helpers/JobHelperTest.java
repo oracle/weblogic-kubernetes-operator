@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -449,6 +449,17 @@ class JobHelperTest extends DomainValidationTestBase {
     Packet packet = new Packet();
     packet.put(ProcessingConstants.DOMAIN_PRESENCE_INFO, domainPresenceInfo);
     return new JobStepContext(packet).getJobModel();
+  }
+
+  @Test
+  void whenDomainEnablesSetHostnameAsFQDN_dontApplyItToIntrospectorPod() {
+    configureDomain().withSetHostnameAsFQDN(Boolean.TRUE);
+
+    V1PodSpec podSpec = getPodSpec(createJobSpec());
+
+    assertThat(podSpec.getSetHostnameAsFQDN(), nullValue());
+    assertThat(podSpec.getHostname(), nullValue());
+    assertThat(podSpec.getSubdomain(), nullValue());
   }
 
   @Test

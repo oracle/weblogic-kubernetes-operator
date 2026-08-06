@@ -1,4 +1,4 @@
-// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -147,8 +147,12 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
     @SuppressWarnings("unchecked")
     KubernetesApiResponse<T> response = (KubernetesApiResponse<T>) packet.get(RESPONSE_COMPONENT_NAME);
     if (response == null || !response.isSuccess()) {
+      resetApiClientIfUnauthorized(response);
       return onFailure(packet, response);
     } else {
+      if (previousStep != null && previousStep.usesOperatorClient()) {
+        KubernetesApiAuthenticationHealth.reportSuccessfulResponse();
+      }
       return onSuccess(packet, response);
     }
   }
@@ -250,7 +254,6 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public Result onFailure(Step conflict, Packet packet, KubernetesApiResponse<T> callResponse) {
-    resetApiClientIfUnauthorized(callResponse);
     RetryStrategy retryStrategy = getOrCreateRetryStrategy(packet);
     if (retryStrategy != null) {
       Result result = retryStrategy.doPotentialRetry(conflict, packet, callResponse);
@@ -264,7 +267,14 @@ public abstract class ResponseStep<T extends KubernetesType> extends Step {
   private void resetApiClientIfUnauthorized(KubernetesApiResponse<T> callResponse) {
     if (Optional.ofNullable(callResponse)
         .map(KubernetesApiResponse::getHttpStatusCode)
-        .orElse(-1) == HTTP_UNAUTHORIZED) {
+        .orElse(-1) == HTTP_UNAUTHORIZED
+        && previousStep != null
+        && previousStep.usesOperatorClient()) {
+      KubernetesApiAuthenticationHealth.reportUnauthorizedResponse(
+          createFailureMessage(callResponse)
+              + " (HTTP status " + callResponse.getHttpStatusCode()
+              + ", status: " + Optional.ofNullable(callResponse.getStatus()).map(Object::toString).orElse("none")
+              + ")");
       Client.reset();
     }
   }

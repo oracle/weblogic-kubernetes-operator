@@ -24,6 +24,7 @@ import io.kubernetes.client.util.generic.options.ListOptions;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.RequestBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.http.rest.RestConfig;
@@ -42,6 +43,7 @@ import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_DEDICATED_MODE_ENV;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createClusterCrdStep;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.WEBHOOK_STARTUP_FAILED;
@@ -111,21 +113,61 @@ public class WebhookMain extends BaseMain {
     return new WebhookMain(delegate);
   }
 
-  private static boolean isDomainNamespace(String namespace) {
-    Collection<String> configuredNamespaces = Namespaces.getConfiguredDomainNamespaces();
-    if (configuredNamespaces != null) {
-      return configuredNamespaces.contains(namespace);
+  static boolean isDomainNamespace(String namespace) {
+    if (namespace == null) {
+      return false;
     }
 
+    if (isDedicatedWebhookMode()) {
+      return getWebhookNamespace().equals(namespace);
+    }
+
+    return Namespaces.getSelection(new NamespaceStrategyVisitor<>() {
+      @Override
+      public Boolean getListStrategySelection() {
+        return isConfiguredDomainNamespace(namespace);
+      }
+
+      @Override
+      public Boolean getDedicatedStrategySelection() {
+        return isConfiguredDomainNamespace(namespace);
+      }
+
+      @Override
+      public Boolean getRegexpStrategySelection() {
+        return Namespaces.isDomainNamespace(createNamespace(namespace));
+      }
+
+      @Override
+      public Boolean getLabelSelectorStrategySelection() {
+        return isLabeledDomainNamespace(namespace);
+      }
+    });
+  }
+
+  private static boolean isConfiguredDomainNamespace(String namespace) {
+    Collection<String> configuredNamespaces = Namespaces.getConfiguredDomainNamespaces();
+    return configuredNamespaces != null && configuredNamespaces.contains(namespace);
+  }
+
+  private static V1Namespace createNamespace(String namespace) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(namespace));
+  }
+
+  private static boolean isLabeledDomainNamespace(String namespace) {
     try {
-      V1Namespace namespaceResource = RequestBuilder.NAMESPACE.get(null, namespace);
-      return Namespaces.isDomainNamespace(namespaceResource);
+      V1Namespace namespaceResource = RequestBuilder.NAMESPACE.get(namespace);
+      return Optional.ofNullable(namespaceResource).map(Namespaces::isDomainNamespace).orElse(false);
     } catch (ApiException e) {
       if (e.getCode() == KubernetesConstants.HTTP_NOT_FOUND) {
         return false;
       }
       throw new RuntimeException(e);
     }
+  }
+
+  private static boolean isDedicatedWebhookMode() {
+    return Boolean.parseBoolean(HelmAccess.getHelmVariable(WEBHOOK_DEDICATED_MODE_ENV));
   }
 
   WebhookMain(WebhookMainDelegate conversionWebhookMainDelegate) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -336,6 +336,21 @@ class DomainStatusTest {
 
     assertThat(domainStatus.getInitialFailureTime(), nullValue());
     assertThat(domainStatus.getLastFailureTime(), nullValue());
+  }
+
+  @Test
+  void whenRetryableFailureRemovedPreservingTimes_nonFailureConditionUpdatesRetainRetryTimes() {
+    OffsetDateTime initialTime = SystemClock.now();
+    DomainCondition failure = new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true)
+        .withLastTransitionTime(initialTime);
+    domainStatus.addCondition(failure);
+
+    domainStatus.removeFailuresAndPreserveRetryTimes(KUBERNETES);
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus(false));
+    domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+
+    assertThat(domainStatus.getInitialFailureTime(), equalTo(initialTime));
+    assertThat(domainStatus.getLastFailureTime(), equalTo(initialTime));
   }
 
   @Test

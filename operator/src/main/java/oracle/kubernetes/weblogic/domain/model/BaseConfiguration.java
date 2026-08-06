@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -213,6 +214,18 @@ public abstract class BaseConfiguration {
 
   void addReadinessGate(V1PodReadinessGate readinessGate) {
     serverPod.addReadinessGate(readinessGate);
+  }
+
+  public List<V1PodSchedulingGate> getSchedulingGates() {
+    return serverPod.getSchedulingGates();
+  }
+
+  void addSchedulingGate(V1PodSchedulingGate schedulingGate) {
+    serverPod.addSchedulingGate(schedulingGate);
+  }
+
+  void setSchedulingGates(List<V1PodSchedulingGate> schedulingGates) {
+    serverPod.setSchedulingGates(schedulingGates);
   }
 
   public String getRestartPolicy() {

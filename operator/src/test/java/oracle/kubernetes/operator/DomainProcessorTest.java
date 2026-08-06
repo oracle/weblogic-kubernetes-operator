@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -82,6 +82,7 @@ import oracle.kubernetes.operator.watcher.NoopWatcherStarter;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
@@ -184,6 +185,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -350,6 +352,18 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainPresenceIsReplaced_preservePendingRollRequests() {
+    Fiber.StepAndPacket pendingRoll = new Fiber.StepAndPacket(null, new Packet());
+    originalInfo.getServersToRoll().put(MANAGED_SERVER_NAMES[0], pendingRoll);
+    processor.registerDomainPresenceInfo(originalInfo);
+
+    processor.registerDomainPresenceInfo(newInfo);
+
+    assertThat(newInfo.getServersToRoll(), sameInstance(originalInfo.getServersToRoll()));
+    assertThat(newInfo.getServersToRoll().get(MANAGED_SERVER_NAMES[0]), sameInstance(pendingRoll));
+  }
+
+  @Test
   void whenDomainSpecNotChanged_newInfoMissingCluster_dontRunMakeRight() {
     domain.getMetadata().generation(getGeneration(newDomain));
     ClusterResource clusterResource1 = createClusterResource(NS, CLUSTER);
@@ -428,6 +442,20 @@ class DomainProcessorTest {
     processor.registerDomainPresenceInfo(originalInfo);
 
     processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainGenerationCachedButObservedGenerationStale_runMakeRight() {
+    DomainResource cachedDomain = DomainProcessorTestSetup.createTestDomain(2L);
+    cachedDomain.getStatus().setObservedGeneration(1L);
+    DomainResource modifiedDomain = DomainProcessorTestSetup.createTestDomain(2L);
+    modifiedDomain.getStatus().setObservedGeneration(1L);
+    modifiedDomain.getMetadata().setCreationTimestamp(cachedDomain.getMetadata().getCreationTimestamp());
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(cachedDomain));
+
+    processor.dispatchDomainWatch(new Response<>("MODIFIED", modifiedDomain));
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
@@ -523,6 +551,17 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).execute();
 
     assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  void whenDomainGenerationIsLaterThanObservedAndProcessingAborted_runUpdateThread() {
+    processor.registerDomainPresenceInfo(originalInfo);
+    newDomain.getOrCreateStatus().setObservedGeneration(1L);
+    newDomain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
 
   @Test
@@ -1685,6 +1724,30 @@ class DomainProcessorTest {
     testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false));
 
     assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(KUBERNETES));
+  }
+
+  @Test
+  void runStatusInitializationStepForRetryWithKubernetesFailure_preserveInitialFailureTime() {
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true));
+    OffsetDateTime initialFailureTime = newDomain.getStatus().getInitialFailureTime();
+    testSupport.addDomainPresenceInfo(newInfo);
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false, true));
+
+    assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(KUBERNETES));
+    assertThat(newInfo.getDomain().getStatus().getInitialFailureTime(), equalTo(initialFailureTime));
+  }
+
+  @Test
+  void runStatusInitializationStepForUnprocessedGeneration_removeAbortedAndKubernetesFailures() {
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true));
+    newDomain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    testSupport.addDomainPresenceInfo(newInfo);
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false, false, true));
+
+    assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(KUBERNETES));
+    assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(ABORTED));
   }
 
   @Test
@@ -2944,6 +3007,25 @@ class DomainProcessorTest {
     processor.dispatchClusterWatch(item);
 
     assertThat(logRecords, containsFine(WATCH_CLUSTER));
+  }
+
+  @Test
+  void whenClusterGenerationCachedButObservedGenerationStale_runMakeRight() {
+    processor.registerDomainPresenceInfo(originalInfo);
+    ClusterResource cachedCluster = createClusterResource(NS, CLUSTER);
+    cachedCluster.getMetadata().generation(2L);
+    cachedCluster.withStatus(new ClusterStatus().withObservedGeneration(1L));
+    configureDomain(domain).configureCluster(originalInfo, cachedCluster.getClusterName());
+    testSupport.defineResources(cachedCluster);
+    originalInfo.addClusterResource(cachedCluster);
+    processor.registerClusterPresenceInfo(new ClusterPresenceInfo(cachedCluster));
+    ClusterResource modifiedCluster = createClusterResource(NS, CLUSTER);
+    modifiedCluster.getMetadata().generation(2L);
+    modifiedCluster.withStatus(new ClusterStatus().withObservedGeneration(1L));
+
+    processor.dispatchClusterWatch(new Response<>("MODIFIED", modifiedCluster));
+
+    assertThat(testSupport.getNumItemsRun(), greaterThan(0));
   }
 
   @Test

@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -153,6 +154,8 @@ public interface EffectiveServerSpec {
   String getPriorityClassName();
 
   List<V1PodReadinessGate> getReadinessGates();
+
+  List<V1PodSchedulingGate> getSchedulingGates();
 
   String getRestartPolicy();
 

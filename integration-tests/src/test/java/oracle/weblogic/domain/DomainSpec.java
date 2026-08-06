@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -121,10 +121,12 @@ public class DomainSpec {
       + " cluster's `maxUnavailable` field. Defaults to 1.")
   private Integer maxClusterUnavailable;
 
-  @ApiModelProperty("The maximum number of cluster member Managed Server instances that the"
-      + " operator will start in parallel for a given cluster, if `maxConcurrentStartup` "
-      + " is not specified for a specific cluster under the `clusters` field. "
-      + " A value of 0 means there is no configured limit. Defaults to 0.")
+  @ApiModelProperty("The default maximum number of cluster member Managed Server instances that can be"
+      + " in the process of starting at the same time for a given cluster, if `maxConcurrentStartup`"
+      + " is not specified for a specific cluster under the `clusters` field. The operator does not wait for one"
+      + " Managed Server Pod to be scheduled before creating another. When this value is greater than 0 and the"
+      + " limit is reached, the operator waits until a Managed Server Pod is in the `Ready` state before starting"
+      + " another. A value of 0 means there is no limit. Defaults to 0.")
   private Integer maxClusterConcurrentStartup;
 
   @ApiModelProperty("The default maximum number of WebLogic Server instances that a cluster will"

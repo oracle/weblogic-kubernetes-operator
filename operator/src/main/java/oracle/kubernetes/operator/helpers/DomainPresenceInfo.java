@@ -85,7 +85,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private final List<String> serverNamesFromPodList = Collections.synchronizedList(new ArrayList<>());
-  private Map<String, Fiber.StepAndPacket> serversToRoll = Collections.emptyMap();
+  private volatile ConcurrentMap<String, Fiber.StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
 
   /**
    * Create presence for a domain.
@@ -261,6 +261,19 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   public long getNumScheduledManagedServers(String clusterName, String adminServerName) {
     return getManagedServersInNoOtherCluster(clusterName, adminServerName)
           .filter(PodHelper::isScheduled)
+          .count();
+  }
+
+  /**
+   * Counts the number of non-clustered managed servers and managed servers in the specified cluster that are
+   * scheduling-gated.
+   * @param clusterName cluster name of the pod server
+   * @param adminServerName Name of the admin server
+   * @return Number of scheduling-gated managed servers
+   */
+  public long getNumSchedulingGatedManagedServers(String clusterName, String adminServerName) {
+    return getManagedServersInNoOtherCluster(clusterName, adminServerName)
+          .filter(PodHelper::isSchedulingGated)
           .count();
   }
 
@@ -833,7 +846,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param serverStartupInfo Server startup info
    */
   public void setServerStartupInfo(Collection<ServerStartupInfo> serverStartupInfo) {
-    this.serverStartupInfo.set(serverStartupInfo);
+    this.serverStartupInfo.set(toSnapshot(serverStartupInfo));
   }
 
   /**
@@ -842,7 +855,11 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param serverShutdownInfo Server shutdown info
    */
   public void setServerShutdownInfo(Collection<ServerShutdownInfo> serverShutdownInfo) {
-    this.serverShutdownInfo.set(serverShutdownInfo);
+    this.serverShutdownInfo.set(toSnapshot(serverShutdownInfo));
+  }
+
+  private static <T> Collection<T> toSnapshot(Collection<T> collection) {
+    return collection == null ? null : List.copyOf(collection);
   }
 
   /**
@@ -951,8 +968,29 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return serversToRoll;
   }
 
-  public void setServersToRoll(Map<String, Fiber.StepAndPacket> serversToRoll) {
-    this.serversToRoll = serversToRoll;
+  /**
+   * Uses the pending-roll map from the previously cached presence so that replacing this presence does not abandon
+   * roll requests owned by an interrupted make-right cycle.
+   *
+   * @param previousPresence the presence being replaced
+   */
+  public void inheritServersToRoll(DomainPresenceInfo previousPresence) {
+    ConcurrentMap<String, Fiber.StepAndPacket> newRequests = serversToRoll;
+    serversToRoll = previousPresence.serversToRoll;
+    if (serversToRoll != newRequests) {
+      serversToRoll.putAll(newRequests);
+    }
+  }
+
+  /**
+   * Removes a completed roll request unless it has been superseded by a request from a later make-right cycle.
+   *
+   * @param serverName the name of the server whose roll completed
+   * @param requestPacket the packet associated with the completed roll request
+   */
+  public void completeServerRoll(String serverName, Packet requestPacket) {
+    serversToRoll.computeIfPresent(
+        serverName, (name, request) -> request.packet() == requestPacket ? null : request);
   }
 
   /**

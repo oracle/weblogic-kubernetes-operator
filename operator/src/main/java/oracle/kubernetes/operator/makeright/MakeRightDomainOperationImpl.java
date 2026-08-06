@@ -50,6 +50,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createLastStatusUpdateStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
@@ -219,13 +220,22 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     } else {
       result.add(getCreateEventStep());
       result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-      result.add(createStatusInitializationStep(hasEventData()));
+      result.add(createStatusInitializationStep(hasEventData(), isRetryOnFailure(), isRestartingAbortedDomain()));
       result.add(createListClusterResourcesStep(getNamespace()));
       result.add(createDomainValidationStep(getDomain()));
       result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
     }
     
     return Step.chain(result);
+  }
+
+  private boolean isRestartingAbortedDomain() {
+    DomainStatus status = Optional.ofNullable(getDomain()).map(DomainResource::getStatus).orElse(null);
+    Long generation = Optional.ofNullable(getDomain()).map(DomainResource::getMetadata)
+        .map(V1ObjectMeta::getGeneration).orElse(null);
+    Long observedGeneration = Optional.ofNullable(status).map(DomainStatus::getObservedGeneration).orElse(null);
+    return status != null && status.isAborted() && generation != null && observedGeneration != null
+        && generation.compareTo(observedGeneration) > 0;
   }
 
   private boolean domainHasDeletionTimestamp() {

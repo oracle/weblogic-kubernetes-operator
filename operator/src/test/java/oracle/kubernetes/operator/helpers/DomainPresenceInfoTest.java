@@ -1,8 +1,9 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +21,8 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Fiber;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -52,6 +55,28 @@ class DomainPresenceInfoTest {
   private static final String NAMESPACE = "ns";
   private static final String DOMAIN_UID = "domain";
   private final DomainPresenceInfo info = new DomainPresenceInfo(NAMESPACE, DOMAIN_UID);
+
+  @Test
+  void whenOlderRollCompletes_preserveRequestFromNewerMakeRightCycle() {
+    Packet olderPacket = new Packet();
+    Packet newerPacket = new Packet();
+    Fiber.StepAndPacket newerRequest = new Fiber.StepAndPacket(null, newerPacket);
+    info.getServersToRoll().put("ms1", newerRequest);
+
+    info.completeServerRoll("ms1", olderPacket);
+
+    assertThat(info.getServersToRoll().get("ms1"), sameInstance(newerRequest));
+  }
+
+  @Test
+  void whenCurrentRollCompletes_removeItsRequest() {
+    Packet requestPacket = new Packet();
+    info.getServersToRoll().put("ms1", new Fiber.StepAndPacket(null, requestPacket));
+
+    info.completeServerRoll("ms1", requestPacket);
+
+    assertThat(info.getServersToRoll(), anEmptyMap());
+  }
 
   private static DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     return new DomainPresenceInfo(domain);
@@ -124,6 +149,16 @@ class DomainPresenceInfoTest {
   @Test
   void whenServerStartupInfoDefined_expectedRunningServersIncludesDefinedServers() {
     info.setServerStartupInfo(STARTUP_INFOS);
+
+    assertThat(info.getExpectedRunningServers(), hasItems(MANAGED_SERVER_NAMES));
+  }
+
+  @Test
+  void whenServerStartupInfoDefined_expectedRunningServersUsesSnapshot() {
+    List<ServerStartupInfo> startupInfos = new ArrayList<>(STARTUP_INFOS);
+    info.setServerStartupInfo(startupInfos);
+
+    startupInfos.clear();
 
     assertThat(info.getExpectedRunningServers(), hasItems(MANAGED_SERVER_NAMES));
   }

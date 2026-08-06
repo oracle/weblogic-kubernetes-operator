@@ -247,10 +247,6 @@ public abstract class BasePodStepContext extends StepContextBase {
     return resourceRequirements;
   }
 
-  abstract String getPodName();
-
-  abstract String getDomainUid();
-
   protected V1PodSpec createPodSpec() {
     V1PodSpec podSpec = new V1PodSpec()
         .containers(getContainers())
@@ -266,14 +262,9 @@ public abstract class BasePodStepContext extends StepContextBase {
         .runtimeClassName(getServerSpec().getRuntimeClassName())
         .tolerations(getTolerations())
         .hostAliases(getHostAliases())
-        .setHostnameAsFQDN(getSetHostnameAsFQDN())
         .restartPolicy(getServerSpec().getRestartPolicy())
         .securityContext(getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
-
-    if (Boolean.TRUE.equals(podSpec.getSetHostnameAsFQDN())) {
-      podSpec.setSubdomain(getPodName());
-    }
 
     for (V1Volume additionalVolume : getFluentdVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -302,10 +293,6 @@ public abstract class BasePodStepContext extends StepContextBase {
   private List<V1HostAlias> getHostAliases() {
     List<V1HostAlias> hostAliases = getServerSpec().getHostAliases();
     return hostAliases.isEmpty() ? null : hostAliases;
-  }
-
-  Boolean getSetHostnameAsFQDN() {
-    return getServerSpec().getSetHostnameAsFQDN();
   }
 
   /**
@@ -464,4 +451,3 @@ public abstract class BasePodStepContext extends StepContextBase {
     return kubernetesPlatform;
   }
 }
-

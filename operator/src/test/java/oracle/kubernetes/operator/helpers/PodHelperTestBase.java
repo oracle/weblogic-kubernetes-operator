@@ -53,6 +53,7 @@ import io.kubernetes.client.openapi.models.V1PodAffinity;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
@@ -118,9 +119,11 @@ import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_I
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
+import static oracle.kubernetes.common.logging.MessageKeys.CALL_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
@@ -414,10 +417,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private String[] getMessageKeys() {
     return new String[] {
       getCreatedMessageKey(),
-        getExistsMessageKey(),
-        getPatchedMessageKey(),
-        getReplacedMessageKey(),
-        getDomainValidationFailedKey()
+      getExistsMessageKey(),
+      getPatchedMessageKey(),
+      getReplacedMessageKey(),
+      getDomainValidationFailedKey()
     };
   }
 
@@ -950,6 +953,17 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
+  @Test
+  void whenPodCreated_hashIgnoresSchedulingGates() {
+    V1Pod podWithoutSchedulingGates = createPodModel();
+
+    configureServer().withSchedulingGates(List.of(new V1PodSchedulingGate().name("gate.example.com/hold")));
+
+    assertThat(
+        AnnotationHelper.getHash(createPodModel()),
+        equalTo(AnnotationHelper.getHash(podWithoutSchedulingGates)));
+  }
+
   // Returns the YAML for a 3.3 Mii pod with aux image.
   abstract String getReferenceMiiAuxImagePodYaml_3_3();
 
@@ -1103,6 +1117,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenPodCreatedWithSetHostnameAsFQDN_addToPod() {
     configureDomain().withSetHostnameAsFQDN(Boolean.TRUE);
+
+    V1PodSpec podSpec = getCreatedPod().getSpec();
+    assertThat(podSpec.getSetHostnameAsFQDN(), is(Boolean.TRUE));
+    assertThat(podSpec.getHostname(), is(getPodName()));
+    assertThat(podSpec.getSubdomain(), is(getPodName()));
+  }
+
+  @Test
+  void whenPodCreatedWithoutSetHostnameAsFQDN_dontConfigureSubdomain() {
+    V1PodSpec podSpec = getCreatedPod().getSpec();
+
+    assertThat(podSpec.getSetHostnameAsFQDN(), nullValue());
+    assertThat(podSpec.getSubdomain(), nullValue());
+  }
+
+  @Test
+  void whenServerEnablesSetHostnameAsFQDN_overrideDomainSetting() {
+    configureDomain().withSetHostnameAsFQDN(Boolean.FALSE);
+    configureServer().withSetHostnameAsFQDN(Boolean.TRUE);
 
     assertThat(getCreatedPod().getSpec().getSetHostnameAsFQDN(), is(Boolean.TRUE));
   }
@@ -1871,12 +1904,41 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
             getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
+  @Test
+  void whenPodCreationFailsDueToQuotaExceeded_logHttpStatusAndFailureDetails() {
+    getConsoleHandlerMemento().collectLogMessages(logRecords, CALL_FAILED);
+    testSupport.failOnCreate(POD, NS, createQuotaExceededStatus(), HTTP_FORBIDDEN);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsSevere(CALL_FAILED).withParams(
+        HTTP_FORBIDDEN, getExpectedPodCreateFailureMessage(getQuotaExceededMessage())));
+  }
+
+  @Test
+  void whenPodCreationFailsDueToRbacForbidden_logHttpStatusAndFailureDetails() {
+    getConsoleHandlerMemento().collectLogMessages(logRecords, CALL_FAILED);
+    String forbiddenMessage = "pod " + getPodName() + " is forbidden: service account cannot create pods";
+    V1Status forbiddenStatus = new V1Status().reason("Forbidden").message(forbiddenMessage);
+    testSupport.failOnCreate(POD, NS, forbiddenStatus, HTTP_FORBIDDEN);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsSevere(CALL_FAILED).withParams(
+        HTTP_FORBIDDEN, getExpectedPodCreateFailureMessage(forbiddenMessage)));
+  }
+
+  private String getExpectedPodCreateFailureMessage(String kubernetesMessage) {
+    return "Failure invoking 'create' on pod " + getPodName() + " in namespace " + NS + ": " + kubernetesMessage;
+  }
+
   private V1Status createQuotaExceededStatus() {
     return new V1Status().message(getQuotaExceededMessage());
   }
 
   private String getQuotaExceededMessage() {
-    return "pod " + getPodName() + " is forbidden: quota exceeded";
+    return "pods \"" + getPodName() + "\" is forbidden: exceeded quota: test-cpu-mem-quota, "
+        + "requested: limits.memory=2548Mi, used: limits.memory=50208Mi, limited: limits.memory=50Gi";
   }
 
   @Test
@@ -2229,6 +2291,24 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     initializeExistingPod();
 
     configurator.withNodeSelector("key", "value");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  void whenSetHostnameAsFQDNNotConfigured_dontReplaceExistingPod() {
+    V1Pod existingPod = createPodModel();
+    existingPod.getSpec().setSetHostnameAsFQDN(null);
+    existingPod.getSpec().setSubdomain(null);
+    initializeExistingPod(existingPod);
+
+    verifyPodNotReplaced();
+  }
+
+  @Test
+  void whenConfigurationEnablesSetHostnameAsFQDN_replacePod() {
+    initializeExistingPod();
+    configureDomain().withSetHostnameAsFQDN(Boolean.TRUE);
 
     verifyPodReplaced();
   }
@@ -2806,6 +2886,26 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         getCreatedPod().getSpec().getTopologySpreadConstraints(),
         is(topologySpreadConstraints));
+  }
+
+  @Test
+  void whenServerHasSchedulingGates_createPodWithThem() {
+    List<V1PodSchedulingGate> schedulingGates = List.of(new V1PodSchedulingGate().name("gate.example.com/hold"));
+    configureServer().withSchedulingGates(schedulingGates);
+
+    assertThat(
+        getCreatedPod().getSpec().getSchedulingGates(),
+        is(schedulingGates));
+  }
+
+  @Test
+  void whenSchedulingGateRemovedFromPod_doNotReplacePod() {
+    configureServer().withSchedulingGates(List.of(new V1PodSchedulingGate().name("gate.example.com/hold")));
+    V1Pod existingPod = createPodModel();
+    existingPod.getSpec().setSchedulingGates(null);
+    initializeExistingPod(existingPod);
+
+    verifyPodNotReplaced();
   }
 
   @Test
