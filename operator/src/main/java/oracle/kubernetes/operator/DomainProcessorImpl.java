@@ -537,7 +537,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public void registerDomainPresenceInfo(DomainPresenceInfo info) {
     domains
           .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
-          .put(info.getDomainUid(), info);
+          .compute(info.getDomainUid(), (domainUid, previousInfo) -> {
+            if (previousInfo != null && previousInfo != info) {
+              info.inheritServersToRoll(previousInfo);
+            }
+            return info;
+          });
   }
 
   @Override

@@ -82,6 +82,7 @@ import oracle.kubernetes.operator.watcher.NoopWatcherStarter;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
@@ -184,6 +185,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -347,6 +349,18 @@ class DomainProcessorTest {
     assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, newDomain.getDomainUid());
     assertThat(getResourceVersion(updatedDomain), equalTo(getResourceVersion(newDomain)));
+  }
+
+  @Test
+  void whenDomainPresenceIsReplaced_preservePendingRollRequests() {
+    Fiber.StepAndPacket pendingRoll = new Fiber.StepAndPacket(null, new Packet());
+    originalInfo.getServersToRoll().put(MANAGED_SERVER_NAMES[0], pendingRoll);
+    processor.registerDomainPresenceInfo(originalInfo);
+
+    processor.registerDomainPresenceInfo(newInfo);
+
+    assertThat(newInfo.getServersToRoll(), sameInstance(originalInfo.getServersToRoll()));
+    assertThat(newInfo.getServersToRoll().get(MANAGED_SERVER_NAMES[0]), sameInstance(pendingRoll));
   }
 
   @Test

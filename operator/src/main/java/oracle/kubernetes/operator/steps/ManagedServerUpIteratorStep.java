@@ -107,11 +107,18 @@ public class ManagedServerUpIteratorStep extends Step {
     return doNext(DomainStatusUpdater.createStatusUpdateStep(new ManagedServerUpAfterStep(getNext())), packet);
   }
 
-  // Adds an empty map to both the packet and the domain presence info to track servers that need to be rolled
-  private void initialServersToRoll(Packet packet) {
-    final Map<String, Fiber.StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
+  // Makes the domain-scoped pending-roll map available to every packet created by this make-right cycle.
+  void initialServersToRoll(Packet packet) {
+    final Map<String, Fiber.StepAndPacket> serversToRoll = DomainPresenceInfo.fromPacket(packet)
+        .map(this::getPendingServersToRoll)
+        .orElseGet(ConcurrentHashMap::new);
     packet.put(ProcessingConstants.SERVERS_TO_ROLL, serversToRoll);
-    DomainPresenceInfo.fromPacket(packet).ifPresent(dpi -> dpi.setServersToRoll(serversToRoll));
+  }
+
+  private Map<String, Fiber.StepAndPacket> getPendingServersToRoll(DomainPresenceInfo info) {
+    Map<String, Fiber.StepAndPacket> serversToRoll = info.getServersToRoll();
+    serversToRoll.keySet().removeIf(serverName -> !PodHelper.isWaitingToRoll(info.getServerPod(serverName)));
+    return serversToRoll;
   }
 
 
