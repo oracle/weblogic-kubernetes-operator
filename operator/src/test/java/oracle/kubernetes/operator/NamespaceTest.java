@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -41,6 +41,10 @@ import static oracle.kubernetes.common.logging.MessageKeys.CREATING_EVENT_FORBID
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
+import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
+import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.Namespaces.SELECTION_STRATEGY_KEY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
@@ -100,6 +104,28 @@ public class NamespaceTest {
     processNamespaces();
 
     assertThat(stopping.get(), is(true));
+  }
+
+  @Test
+  void whenManagedNamespaceWatcherIsPaused_doNotCreateNamespaceStopEvents() {
+    initializeNamespaces();
+
+    domainNamespaces.isStopping(NS).set(true);
+    processNamespaces();
+
+    assertThat(containsEvent(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT), is(false));
+    assertThat(containsEvent(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT), is(false));
+  }
+
+  @Test
+  void whenDomainNamespaceRemovedFromDomainNamespaces_createNamespaceStopEvents() {
+    initializeNamespaces();
+
+    unspecifyDomainNamespace(NS);
+    processNamespaces();
+
+    assertThat(containsEvent(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT), is(true));
+    assertThat(containsEvent(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT), is(true));
   }
 
   private void initializeNamespaces() {

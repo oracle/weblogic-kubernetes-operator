@@ -538,6 +538,8 @@ $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator-webhook deplo
 $ kubectl get events -n sample-weblogic-operator-ns
 ```
 
+For recovery procedures for HTTP 403 Domain identity errors and HTTP 409 orphaned Cluster resource errors, see [Recovering from v8 Domain conversion webhook errors]({{% relref "/faq/v8-conversion-recovery.md" %}}).
+
 ### See also
 
 If you have set up either of the following, then these documents may be helpful in debugging:

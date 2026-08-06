@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
@@ -667,7 +667,7 @@ EOF
                         if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                             echo "Failed to delete kind cluster ${kind_name}"
                         fi
-                        sudo chown -R $(whoami) ${WORKSPACE}
+                        sudo chown $(whoami) ${WORKSPACE}
                     '''
                 }
             }
