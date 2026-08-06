@@ -5,26 +5,26 @@
     <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <meta name="generator" content="Hugo 0.153.0">
     <meta name="generator" content="Relearn 8.3.0">
-    <meta name="description" content="If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.">
+    <meta name="description" content="Diagnose and recover from 403 and 409 errors during conversion of a v8 Domain resource.">
     <meta name="author" content="">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Coherence requirements :: WebLogic Kubernetes Operator">
-    <meta name="twitter:description" content="If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.">
-    <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html">
+    <meta name="twitter:title" content="Recovering from v8 Domain conversion webhook errors :: WebLogic Kubernetes Operator">
+    <meta name="twitter:description" content="Diagnose and recover from 403 and 409 errors during conversion of a v8 Domain resource.">
+    <meta property="og:url" content="https://oracle.github.io/weblogic-kubernetes-operator/faq/v8-conversion-recovery/index.html">
     <meta property="og:site_name" content="WebLogic Kubernetes Operator">
-    <meta property="og:title" content="Coherence requirements :: WebLogic Kubernetes Operator">
-    <meta property="og:description" content="If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.">
+    <meta property="og:title" content="Recovering from v8 Domain conversion webhook errors :: WebLogic Kubernetes Operator">
+    <meta property="og:description" content="Diagnose and recover from 403 and 409 errors during conversion of a v8 Domain resource.">
     <meta property="og:locale" content="en_us">
     <meta property="og:type" content="article">
     <meta property="article:section" content="Frequently asked questions">
-    <meta property="article:published_time" content="2019-08-12T12:41:38-04:00">
-    <meta property="article:modified_time" content="2019-08-12T12:41:38-04:00">
-    <meta itemprop="name" content="Coherence requirements :: WebLogic Kubernetes Operator">
-    <meta itemprop="description" content="If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.">
-    <meta itemprop="datePublished" content="2019-08-12T12:41:38-04:00">
-    <meta itemprop="dateModified" content="2019-08-12T12:41:38-04:00">
-    <meta itemprop="wordCount" content="653">
-    <title>Coherence requirements :: WebLogic Kubernetes Operator</title>
+    <meta property="article:published_time" content="2026-08-05T00:00:00-05:00">
+    <meta property="article:modified_time" content="2026-08-05T00:00:00-05:00">
+    <meta itemprop="name" content="Recovering from v8 Domain conversion webhook errors :: WebLogic Kubernetes Operator">
+    <meta itemprop="description" content="Diagnose and recover from 403 and 409 errors during conversion of a v8 Domain resource.">
+    <meta itemprop="datePublished" content="2026-08-05T00:00:00-05:00">
+    <meta itemprop="dateModified" content="2026-08-05T00:00:00-05:00">
+    <meta itemprop="wordCount" content="779">
+    <title>Recovering from v8 Domain conversion webhook errors :: WebLogic Kubernetes Operator</title>
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1785987487" rel="icon" type="image/png">
     <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1785987487" rel="stylesheet">
     <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1785987487" defer></script>
@@ -50,7 +50,7 @@
       window.relearn = window.relearn || {};
       // configuration
       window.relearn.min = `.min`;
-      window.relearn.path='\/faq\/coherence-requirements\/index.html';
+      window.relearn.path='\/faq\/v8-conversion-recovery\/index.html';
       window.relearn.relBasePath='..\/..';
       window.relearn.relBaseUri='..\/..';
       window.relearn.absBaseUri='https:\/\/oracle.github.io\/weblogic-kubernetes-operator';
@@ -98,7 +98,7 @@
       window.relearn.markVariant();
     </script>
   </head>
-  <body class="mobile-support html" data-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html">
+  <body class="mobile-support html" data-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/v8-conversion-recovery/index.html">
     <div id="R-body" class="default-animation">
       <div id="R-body-overlay"></div>
       <nav id="R-topbar">
@@ -114,28 +114,25 @@
                 <div class="topbar-content-wrapper">
 <nav class="TableOfContents">
   <ul>
-    <li>
-      <ul>
-        <li><a href="#unicast-and-well-known-address">Unicast and Well Known Address</a></li>
-        <li><a href="#operating-system-library-requirements">Operating system library requirements</a></li>
-        <li><a href="#firewall-iptables-requirements">Firewall (iptables) requirements</a></li>
-        <li><a href="#make-iptables-updates-permanent-across-reboots">Make iptables updates permanent across reboots</a></li>
-      </ul>
-    </li>
+    <li><a href="#recovery">Recovery</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#recovery-1">Recovery</a></li>
   </ul>
 </nav>
                 </div>
               </div>
             </div>
           </div>
-          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><span itemprop="name">WebLogic Kubernetes Operator</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html"><span itemprop="name">Frequently asked questions</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">Coherence requirements</span><meta itemprop="position" content="3"></li>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/index.html"><span itemprop="name">WebLogic Kubernetes Operator</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.html"><span itemprop="name">Frequently asked questions</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">Recovering from v8 Domain conversion webhook errors</span><meta itemprop="position" content="3"></li>
           </ol>
           <div class="topbar-area topbar-area-end" data-area="end">
             <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
-<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/index.html" title="Disabling Fast Application Notifications (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></span>
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html" title="Using Pod scheduling gates (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></span>
             </div>
             <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
-<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/index.html" title="Pod memory and CPU resources (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></span>
+<span class="btn cstyle button link noborder notitle interactive"><a href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html" title="Deprecated functionality (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></span>
             </div>
             <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
 <span class="btn cstyle button link noborder notitle interactive"><button onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button></span>
@@ -158,115 +155,120 @@
 
 
 
-<h1 id="coherence-requirements">Coherence requirements</h1>
+<h1 id="recovering-from-v8-domain-conversion-webhook-errors">Recovering from v8 Domain conversion webhook errors</h1>
 
 
 
-<p>If you are running Coherence on Kubernetes, either inside a WebLogic domain
-or standalone, then there are some additional requirements to make sure
-that Coherence can form clusters.</p>
-<p>Note that some Fusion Middleware products, like SOA Suite, use Coherence
-and so these requirements apply to them.</p>
-<h4 id="unicast-and-well-known-address">Unicast and Well Known Address<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
-<p>When the first Coherence process starts, it will form a cluster.  The next
-Coherence process to start (for example, in a different pod), will use UDP to try
-to contact the senior member.</p>
-<p>If you create a WebLogic domain which contains a Coherence cluster
-using the samples provided in this project, then that cluster will
-be configured correctly so that it is able to form;
-you do not need to do any additional manual configuration.</p>
-<p>If you are running Coherence standalone (outside a
-WebLogic domain), then you should configure Coherence to use unicast and
-provide a &ldquo;well known address (WKA)&rdquo; so that all members can find the senior
-member.  Most Kubernetes overlay network providers do not
-support multicast.</p>
-<p>This is done by specifying Coherence well known addresses in a variable named
-<code>coherence.wka</code> as shown in the following example:</p>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>-Dcoherence.wka=my-cluster-service</code></pre></div>
-<p>In this example <code>my-cluster-service</code> should be the name of the Kubernetes
-service that is pointing to all of the members of that Coherence cluster.</p>
-<p>For more information about running Coherence in Kubernetes outside of
-a WebLogic domain, refer to the 
+<blockquote>
+<p>Why does applying a <code>weblogic.oracle/v8</code> Domain resource fail with an HTTP 403 or HTTP 409 conversion webhook error, and how do I recover?</p>
+</blockquote>
+<p>Beginning with operator 4.0, the WebLogic Domain resource conversion webhook automatically converts compatible <code>weblogic.oracle/v8</code> Domain resources to the current schema. During conversion, the webhook verifies the identity of the live Domain resource and, when applicable, creates or validates the corresponding Cluster resources.</p>
+<p>These checks prevent a conversion request from modifying Cluster resources that belong to a different Domain instance or that were left behind by an earlier, incomplete operation.</p>
+<h2 id="error-messages">Error messages<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h2>
+<p>The Kubernetes API server reports a conversion failure in the command that created, applied, retrieved, or updated the Domain resource. For example:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>Error from server: error when creating &#34;domain.yaml&#34;: conversion webhook for weblogic.oracle/v8, Kind=Domain failed: Exception: jakarta.ws.rs.WebApplicationException: HTTP 403 Conversion Domain &#39;my-domain&#39; does not match the live Domain</code></pre></div>
+<p>Or:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>Error from server: error when creating &#34;domain.yaml&#34;: conversion webhook for weblogic.oracle/v8, Kind=Domain failed: Exception: jakarta.ws.rs.WebApplicationException: HTTP 409 Cluster &#39;my-domain-cluster-1&#39; already exists in namespace &#39;my-domain-ns&#39;, but conversion Domain &#39;my-domain&#39; is not live; delete the existing Cluster before recreating the Domain</code></pre></div>
+<h2 id="http-403-conversion-domain-does-not-match-the-live-domain">HTTP 403: Conversion Domain does not match the live Domain<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h2>
+<p>The conversion webhook returns HTTP 403 when it cannot verify that the Domain in the conversion request is the same live Domain resource. This occurs when any of the following is true:</p>
+<ul>
+<li>The conversion request does not contain a Domain UID.</li>
+<li>No live Domain resource with that name exists in the namespace.</li>
+<li>A Domain with the same name exists, but its Kubernetes UID differs from the UID in the conversion request.</li>
+</ul>
+<p>This can occur when a Domain was deleted and recreated with the same name, or when Kubernetes completes an older request after that Domain has been deleted or replaced.</p>
+<h3 id="recovery">Recovery<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<ol>
+<li>
+<p>Check whether the Domain currently exists.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get domain my-domain -n my-domain-ns</span></span></code></pre></div>
+</li>
+<li>
+<p>If the Domain exists, record its UID and verify that it is the intended Domain instance.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get domain my-domain -n my-domain-ns <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.metadata.uid}{&#34;\n&#34;}&#39;</span></span></span></code></pre></div>
+</li>
+<li>
+<p>If the Domain was deleted or recreated, do not retry an operation that was started against the earlier Domain instance. Wait for deletion to complete, check for orphaned Cluster resources as described in the HTTP 409 recovery procedure, and then apply the intended Domain resource again.</p>
+</li>
+<li>
+<p>If the Domain exists and was not replaced, retry the original command after confirming that no other automation is deleting or recreating the Domain.</p>
+</li>
+</ol>
+<p>Do not attempt to set <code>metadata.uid</code> in the Domain YAML. Kubernetes assigns and manages this value.</p>
+<h2 id="http-409-existing-cluster-resource-prevents-recreation-of-the-domain">HTTP 409: Existing Cluster resource prevents recreation of the Domain<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h2>
+<p>The conversion webhook returns HTTP 409 when it finds an existing operator-created Cluster resource for the converted Domain, but the corresponding live Domain no longer exists.</p>
+<p>This protects the existing Cluster resource from being silently reused by a newly created Domain with the same name. The new Domain would have a different Kubernetes UID and might have different configuration.</p>
+<h3 id="recovery-1">Recovery<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h3>
+<ol>
+<li>
+<p>Confirm that the Domain is absent.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get domain my-domain -n my-domain-ns</span></span></code></pre></div>
+<p>Continue only if this reports <code>NotFound</code>.</p>
+</li>
+<li>
+<p>List the Cluster resources that may remain from the deleted Domain.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get cluster -n my-domain-ns <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    -o custom-columns<span style="color:#f92672">=</span>NAME:.metadata.name,DOMAIN_UID:.metadata.labels.weblogic<span style="color:#ae81ff">\\</span>.domainUID,CREATED_BY_OPERATOR:.metadata.labels.weblogic<span style="color:#ae81ff">\\</span>.createdByOperator</span></span></code></pre></div>
+</li>
+<li>
+<p>Inspect every candidate Cluster resource before deleting it. Confirm that it belongs to the deleted Domain, is not referenced by a live Domain, and has the <code>weblogic.createdByOperator: &quot;true&quot;</code> label.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get cluster my-domain-cluster-1 -n my-domain-ns -o yaml</span></span></code></pre></div>
+</li>
+<li>
+<p>Delete only the verified, orphaned Cluster resources.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl delete cluster my-domain-cluster-1 -n my-domain-ns</span></span></code></pre></div>
+</li>
+<li>
+<p>Reapply the v8 Domain resource.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f domain.yaml</span></span></code></pre></div>
+</li>
+</ol>
+<p>If the Cluster resource is not labeled <code>weblogic.createdByOperator=true</code>, do not delete it as part of this recovery procedure. Determine its owner and configuration first.</p>
+<h2 id="important-notes">Important notes<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h2>
+<ul>
+<li>Do not delete Cluster resources while their Domain is live and references them. Doing so changes the running domain configuration.</li>
+<li>Do not recreate a Domain with the same name until Kubernetes has completed deletion of the prior Domain and its operator-created resources, or until any orphaned resources have been explicitly verified and removed.</li>
+<li>The HTTP 409 message is an improved diagnostic for an orphaned-Cluster scenario. It does not mean that the webhook automatically deletes resources.</li>
+<li>The HTTP 403 check remains intentional. It prevents a stale or mismatched conversion request from operating on a different live Domain.</li>
+</ul>
+<h2 id="collecting-diagnostics">Collecting diagnostics<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h2>
+<p>Check the conversion webhook logs for the complete exception and conversion request details:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl logs -n YOUR_CONVERSION_WEBHOOK_NS <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    -c weblogic-operator-webhook <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    deployments/weblogic-operator-webhook</span></span></code></pre></div>
+<p>Also check events in both the Domain namespace and the conversion webhook namespace:</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get events -n my-domain-ns --sort-by<span style="color:#f92672">=</span>.metadata.creationTimestamp
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ kubectl get events -n YOUR_CONVERSION_WEBHOOK_NS <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    --sort-by<span style="color:#f92672">=</span>.metadata.creationTimestamp</span></span></code></pre></div>
+<p>See also:</p>
+<ul>
+<li>
 
-<a href="https://oracle.github.io/coherence-operator/"
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/conversion-webhook/"
    
-   
-target="_blank" rel="noopener noreferrer"
->
-Coherence operator documentation
+   >
+WebLogic Domain resource conversion webhook
 </a>
-.</p>
-<h4 id="operating-system-library-requirements">Operating system library requirements<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
-<p>In order for Coherence clusters to form correctly, the <code>conntrack</code> library
-must be installed.  Most Kubernetes distributions will do this for you.
-If you have issues with clusters not forming, then you should check that
-<code>conntrack</code> is installed using this command (or equivalent):</p>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rpm -qa | grep conntrack</span></span></code></pre></div>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>libnetfilter_conntrack-1.0.6-1.el7_3.x86_64
-conntrack-tools-1.4.4-4.el7.x86_64</code></pre></div>
-<p>You should see output similar to that shown previously.  If you do not, then you
-should install <code>conntrack</code> using your operating system tools.</p>
-<h4 id="firewall-iptables-requirements">Firewall (iptables) requirements<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
-<p>Some Kubernetes distributions create <code>iptables</code> rules that block some
-types of traffic that Coherence requires to form clusters.  If you are
-not able to form clusters, then you can check for this issue using the
-following command:</p>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ iptables -t nat -v  -L POST_public_allow -n</span></span></code></pre></div>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0"><code>Chain POST_public_allow (1 references)
-pkts bytes target     prot opt in     out     source               destination
-164K   11M MASQUERADE  all  --  *      !lo     0.0.0.0/0            0.0.0.0/0
-   0     0 MASQUERADE  all  --  *      !lo     0.0.0.0/0            0.0.0.0/0</code></pre></div>
-<p>If you see output similar to the previous example, for example, if you see any entries
-in this chain, then you need to remove them.  You can remove the entries
-using this command:</p>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ iptables -t nat -v -D POST_public_allow <span style="color:#ae81ff">1</span></span></span></code></pre></div>
-<p>Note that you will need to run that command for each line. So in the previous example,
-you would need to run it twice.</p>
-<p>After you are done, you can run the previous command again and verify that
-the output is now an empty list.</p>
-<p>After making this change, restart your domains and the Coherence cluster
-should now form correctly.</p>
-<h4 id="make-iptables-updates-permanent-across-reboots">Make iptables updates permanent across reboots<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
-<p>The recommended way to make <code>iptables</code> updates permanent across reboots is
-to create a <code>systemd</code> service that applies the necessary updates during
-the startup process.</p>
-<p>Here is an example; you may need to adjust this to suit your own
-environment:</p>
-<ul>
-<li>Create a <code>systemd</code> service:</li>
+</li>
+<li>
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/#troubleshooting-the-conversion-webhook"
+   
+   >
+Troubleshooting the conversion webhook
+</a>
+</li>
+<li>
+
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/"
+   
+   >
+Domain and Cluster resources
+</a>
+</li>
 </ul>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ echo <span style="color:#e6db74">&#39;Set up systemd service to fix iptables nat chain at each reboot (so Coherence will work)...&#39;</span></span></span></code></pre></div>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ mkdir -p /etc/systemd/system/</span></span></code></pre></div>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cat &gt; /etc/systemd/system/fix-iptables.service <span style="color:#e6db74">&lt;&lt; EOF
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[Unit]
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Description=Fix iptables
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">After=firewalld.service
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">After=docker.service
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[Service]
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">ExecStart=/sbin/fix-iptables.sh
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[Install]
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">WantedBy=multi-user.target
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span></span></span></code></pre></div>
-<ul>
-<li>Create the script to update <code>iptables</code>:</li>
-</ul>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cat &gt; /sbin/fix-iptables.sh <span style="color:#e6db74">&lt;&lt; EOF
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">#!/bin/bash
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">echo &#39;Fixing iptables rules for Coherence issue...&#39;
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">TIMES=$((`iptables -t nat -v -L POST_public_allow -n --line-number | wc -l` - 2))
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">COUNTER=1
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">while [ $COUNTER -le $TIMES ]; do
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  iptables -t nat -v -D POST_public_allow 1
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  ((COUNTER++))
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">done
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span></span></span></code></pre></div>
-<ul>
-<li>Start the service (or just reboot):</li>
-</ul>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ echo <span style="color:#e6db74">&#39;Start the systemd service to fix iptables nat chain...&#39;</span></span></span></code></pre></div>
-<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ systemctl enable --now fix-iptables</span></span></code></pre></div>
 
   <footer class="footline">
   </footer>
@@ -334,12 +336,12 @@ environment:</p>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/domain-secret-mismatch/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/domain-secret-mismatch/index.html">Domain secret mismatch</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/index.html">Node heating problem</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/index.html">Disabling Fast Application Notifications</a></li>
-            <li class="active " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html">Coherence requirements</a></li>
+            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/index.html">Coherence requirements</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/index.html">Pod memory and CPU resources</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/index.html">Handling security validations</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/index.html">Scheduling pods to particular nodes</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/scheduling-gates/index.html">Using Pod scheduling gates</a></li>
-            <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/v8-conversion-recovery/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/v8-conversion-recovery/index.html">Recovering from v8 Domain conversion webhook errors</a></li></ul></li>
+            <li class="active " data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/faq/v8-conversion-recovery/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/faq/v8-conversion-recovery/index.html">Recovering from v8 Domain conversion webhook errors</a></li></ul></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/index.html">Deprecated functionality</a></li>
             <li class="" data-nav-url="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html"><a class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/known-limitations/index.html">Known limitations</a></li>
           </ul>
