@@ -649,7 +649,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAllDesiredServersRunningButSomeMarkedToBeRolled_establishCompletedConditionFalse() {  
-    info.setServersToRoll(Map.of("server1", new Fiber.StepAndPacket(null, null)));
+    info.getServersToRoll().putAll(Map.of("server1", new Fiber.StepAndPacket(null, null)));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -1291,7 +1291,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAllDesiredServersRunningButSomeMarkedToBeRolled_establishClusterCompletedConditionFalse() {
-    info.setServersToRoll(Map.of("server1", new Fiber.StepAndPacket(null, null)));
+    info.getServersToRoll().putAll(Map.of("server1", new Fiber.StepAndPacket(null, null)));
     configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
     defineScenario()
         .withCluster("cluster1", "server1", "server2", "server3", "server4")

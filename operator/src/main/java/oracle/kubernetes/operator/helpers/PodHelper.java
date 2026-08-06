@@ -816,20 +816,13 @@ public class PodHelper {
 
       @Override
       public @Nonnull Result apply(Packet packet) {
-        removeFromServersMarkedForRollMap();
+        removeFromServersMarkedForRollMap(packet);
         return doNext(packet);
       }
 
-      private Map<String, Fiber.StepAndPacket> serversMarkedForRoll(Packet packet) {
-        return DomainPresenceInfo.fromPacket(packet)
-            .map(DomainPresenceInfo::getServersToRoll)
-            .orElse(Collections.emptyMap());
-      }
-
-      private void removeFromServersMarkedForRollMap() {
-        synchronized (packet) {
-          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> m.remove(getServerName()));
-        }
+      private void removeFromServersMarkedForRollMap(Packet requestPacket) {
+        DomainPresenceInfo.fromPacket(requestPacket)
+            .ifPresent(info -> info.completeServerRoll(getServerName(), requestPacket));
       }
     }
 
