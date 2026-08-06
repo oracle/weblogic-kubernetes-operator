@@ -127,6 +127,8 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withSchedulerName(String schedulerName);
 
+  ClusterConfigurator withSetHostnameAsFQDN(Boolean setHostnameAsFQDN);
+
   ClusterConfigurator withRuntimeClassName(String runtimeClassName);
 
   ClusterConfigurator withPriorityClassName(String priorityClassName);

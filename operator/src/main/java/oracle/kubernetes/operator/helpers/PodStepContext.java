@@ -246,6 +246,19 @@ public abstract class PodStepContext extends BasePodStepContext {
     return LegalNames.toPodName(getDomainUid(), getServerName());
   }
 
+  @Override
+  protected V1PodSpec createPodSpec() {
+    V1PodSpec podSpec = super.createPodSpec()
+        .setHostnameAsFQDN(getServerSpec().getSetHostnameAsFQDN());
+
+    if (Boolean.TRUE.equals(podSpec.getSetHostnameAsFQDN())) {
+      podSpec.setHostname(getPodName());
+      podSpec.setSubdomain(getPodName());
+    }
+
+    return podSpec;
+  }
+
   String getAsName() {
     return domainTopology.getAdminServerName();
   }

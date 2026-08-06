@@ -173,6 +173,8 @@ public interface EffectiveServerSpec {
 
   List<V1HostAlias> getHostAliases();
 
+  Boolean getSetHostnameAsFQDN();
+
   V1ResourceRequirements getResources();
 
   V1PodSecurityContext getPodSecurityContext();

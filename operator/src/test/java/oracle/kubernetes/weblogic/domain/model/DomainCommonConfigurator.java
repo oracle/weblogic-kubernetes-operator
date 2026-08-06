@@ -853,6 +853,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+      server.setSetHostnameAsFQDN(setHostnameAsFQDN);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withRuntimeClassName(String runtimeClassName) {
       getDomainSpec().setRuntimeClassName(runtimeClassName);
       return this;
@@ -1063,6 +1069,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withSchedulerName(String schedulerName) {
       getDomainSpec().setSchedulerName(schedulerName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+      clusterSpec.setSetHostnameAsFQDN(setHostnameAsFQDN);
       return this;
     }
 
