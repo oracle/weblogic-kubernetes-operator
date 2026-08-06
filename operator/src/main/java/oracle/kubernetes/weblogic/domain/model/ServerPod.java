@@ -196,6 +196,14 @@ class ServerPod extends KubernetesResource {
       + "if specified. This is only valid for non-hostNetwork pods.")
   private List<V1HostAlias> hostAliases = new ArrayList<>();
 
+  @Description("If specified and set to true, the pod's hostname will be configured as the pod's FQDN, "
+      + "rather than the leaf name. The operator sets the pod's hostname and subdomain to the pod name so that "
+      + "the FQDN is backed by the server's headless Service. Because the pod name is used for both values, it "
+      + "appears twice in the generated FQDN: `<pod-name>.<pod-name>.<namespace>.svc.<cluster-domain>`. Caution: "
+      + "on Linux, this complete FQDN must not exceed the 64-character hostname limit; otherwise, the pod will "
+      + "fail to start.")
+  private Boolean setHostnameAsFQDN;
+
   /**
    * Defines the requirements and limits for the pod server.
    *
@@ -609,6 +617,9 @@ class ServerPod extends KubernetesResource {
     }
     tolerations.addAll(serverPod1.tolerations);
     hostAliases.addAll(serverPod1.hostAliases);
+    if (setHostnameAsFQDN == null) {
+      setHostnameAsFQDN = serverPod1.setHostnameAsFQDN;
+    }
   }
 
   private boolean isNullOrDefaultAffinity() {
@@ -941,6 +952,14 @@ class ServerPod extends KubernetesResource {
     hostAliases.add(hostAlias);
   }
 
+  Boolean getSetHostnameAsFQDN() {
+    return setHostnameAsFQDN;
+  }
+
+  void setSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+    this.setHostnameAsFQDN = setHostnameAsFQDN;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -972,6 +991,7 @@ class ServerPod extends KubernetesResource {
         .append("hostAliases", hostAliases)
         .append("serviceAccountName", serviceAccountName)
         .append("automountServiceAccountToken", automountServiceAccountToken)
+        .append("setHostnameAsFQDN", setHostnameAsFQDN)
         .toString();
   }
 
@@ -1022,6 +1042,7 @@ class ServerPod extends KubernetesResource {
         .append(hostAliases, that.hostAliases)
         .append(serviceAccountName, that.serviceAccountName)
         .append(automountServiceAccountToken, that.automountServiceAccountToken)
+        .append(setHostnameAsFQDN, that.setHostnameAsFQDN)
         .isEquals();
   }
 
@@ -1056,6 +1077,7 @@ class ServerPod extends KubernetesResource {
         .append(hostAliases)
         .append(serviceAccountName)
         .append(automountServiceAccountToken)
+        .append(setHostnameAsFQDN)
         .toHashCode();
   }
 }

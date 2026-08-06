@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -232,7 +232,7 @@ public class JobStepContext extends BasePodStepContext {
   @Override
   protected Map<String, String> augmentSubVars(Map<String, String> vars) {
     // For other introspector job pod content, we use the values that would apply administration server; however,
-    // since we won't know the name of the administation server from the domain configuration until introspection
+    // since we won't know the name of the administration server from the domain configuration until introspection
     // has run, we will use the hardcoded value "introspector" as the server name.
     vars.put("SERVER_NAME", "introspector");
     return vars;

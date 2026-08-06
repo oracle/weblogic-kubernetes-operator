@@ -135,6 +135,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withSchedulerName(String schedulerName);
 
+  ServerConfigurator withSetHostnameAsFQDN(Boolean setHostnameAsFQDN);
+
   ServerConfigurator withRuntimeClassName(String runtimeClassName);
 
   ServerConfigurator withPriorityClassName(String priorityClassName);

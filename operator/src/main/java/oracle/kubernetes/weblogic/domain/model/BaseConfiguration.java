@@ -288,6 +288,14 @@ public abstract class BaseConfiguration {
     serverPod.addHostAlias(hostAlias);
   }
 
+  public Boolean getSetHostnameAsFQDN() {
+    return serverPod.getSetHostnameAsFQDN();
+  }
+
+  public void setSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+    serverPod.setSetHostnameAsFQDN(setHostnameAsFQDN);
+  }
+
   public V1ResourceRequirements getResources() {
     return serverPod.getResourceRequirements();
   }

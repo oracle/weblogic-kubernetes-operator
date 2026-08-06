@@ -1115,6 +1115,32 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenPodCreatedWithSetHostnameAsFQDN_addToPod() {
+    configureDomain().withSetHostnameAsFQDN(Boolean.TRUE);
+
+    V1PodSpec podSpec = getCreatedPod().getSpec();
+    assertThat(podSpec.getSetHostnameAsFQDN(), is(Boolean.TRUE));
+    assertThat(podSpec.getHostname(), is(getPodName()));
+    assertThat(podSpec.getSubdomain(), is(getPodName()));
+  }
+
+  @Test
+  void whenPodCreatedWithoutSetHostnameAsFQDN_dontConfigureSubdomain() {
+    V1PodSpec podSpec = getCreatedPod().getSpec();
+
+    assertThat(podSpec.getSetHostnameAsFQDN(), nullValue());
+    assertThat(podSpec.getSubdomain(), nullValue());
+  }
+
+  @Test
+  void whenServerEnablesSetHostnameAsFQDN_overrideDomainSetting() {
+    configureDomain().withSetHostnameAsFQDN(Boolean.FALSE);
+    configureServer().withSetHostnameAsFQDN(Boolean.TRUE);
+
+    assertThat(getCreatedPod().getSpec().getSetHostnameAsFQDN(), is(Boolean.TRUE));
+  }
+
+  @Test
   void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
     configurator.withDomainHomeSourceType(DomainSourceType.IMAGE);
     assertThat(
@@ -2265,6 +2291,24 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     initializeExistingPod();
 
     configurator.withNodeSelector("key", "value");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  void whenSetHostnameAsFQDNNotConfigured_dontReplaceExistingPod() {
+    V1Pod existingPod = createPodModel();
+    existingPod.getSpec().setSetHostnameAsFQDN(null);
+    existingPod.getSpec().setSubdomain(null);
+    initializeExistingPod(existingPod);
+
+    verifyPodNotReplaced();
+  }
+
+  @Test
+  void whenConfigurationEnablesSetHostnameAsFQDN_replacePod() {
+    initializeExistingPod();
+    configureDomain().withSetHostnameAsFQDN(Boolean.TRUE);
 
     verifyPodReplaced();
   }

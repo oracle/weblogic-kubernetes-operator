@@ -246,6 +246,10 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
     return server.getHostAliases();
   }
 
+  public Boolean getSetHostnameAsFQDN() {
+    return server.getSetHostnameAsFQDN();
+  }
+
   @Override
   public V1ResourceRequirements getResources() {
     return server.getResources();

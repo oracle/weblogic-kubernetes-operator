@@ -410,6 +410,17 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  void whenClusterEnablesSetHostnameAsFQDN_overrideDomainSetting() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().withSetHostnameAsFQDN(Boolean.FALSE);
+    getConfigurator()
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
+        .withSetHostnameAsFQDN(Boolean.TRUE);
+
+    assertThat(getCreatedPod().getSpec().getSetHostnameAsFQDN(), is(Boolean.TRUE));
+  }
+
+  @Test
   void whenDomainHasAdditionalVolumesWithVariables_createManagedPodWithThem() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/$(SERVER_NAME)/source-path1/")
