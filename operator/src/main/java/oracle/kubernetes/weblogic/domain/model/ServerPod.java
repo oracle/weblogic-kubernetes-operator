@@ -198,8 +198,10 @@ class ServerPod extends KubernetesResource {
 
   @Description("If specified and set to true, the pod's hostname will be configured as the pod's FQDN, "
       + "rather than the leaf name. The operator sets the pod's hostname and subdomain to the pod name so that "
-      + "the FQDN is backed by the server's headless Service. On Linux, the resulting FQDN must not exceed 64 "
-      + "characters; otherwise, the pod will fail to start.")
+      + "the FQDN is backed by the server's headless Service. Because the pod name is used for both values, it "
+      + "appears twice in the generated FQDN: `<pod-name>.<pod-name>.<namespace>.svc.<cluster-domain>`. Caution: "
+      + "on Linux, this complete FQDN must not exceed the 64-character hostname limit; otherwise, the pod will "
+      + "fail to start.")
   private Boolean setHostnameAsFQDN;
 
   /**

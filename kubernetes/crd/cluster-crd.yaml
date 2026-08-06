@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 324e2fae97db6829a47d5ea36eebe32a29f08cee4fe8d7d307fcf2654e758cb8
+    weblogic.sha256: 994b0c3a52b15608182407741bb269db8747369c7cad19ce00307392cece5ed7
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -626,12 +626,14 @@ spec:
                         type: object
                     type: object
                   setHostnameAsFQDN:
-                    description: If specified and set to true, the pod's hostname
-                      will be configured as the pod's FQDN, rather than the leaf name.
-                      The operator sets the pod's hostname and subdomain to the pod
-                      name so that the FQDN is backed by the server's headless Service.
-                      On Linux, the resulting FQDN must not exceed 64 characters;
-                      otherwise, the pod will fail to start.
+                    description: 'If specified and set to true, the pod''s hostname
+                      will be configured as the pod''s FQDN, rather than the leaf
+                      name. The operator sets the pod''s hostname and subdomain to
+                      the pod name so that the FQDN is backed by the server''s headless
+                      Service. Because the pod name is used for both values, it appears
+                      twice in the generated FQDN: `<pod-name>.<pod-name>.<namespace>.svc.<cluster-domain>`.
+                      Caution: on Linux, this complete FQDN must not exceed the 64-character
+                      hostname limit; otherwise, the pod will fail to start.'
                     type: boolean
                   topologySpreadConstraints:
                     description: TopologySpreadConstraints describes how a group of
