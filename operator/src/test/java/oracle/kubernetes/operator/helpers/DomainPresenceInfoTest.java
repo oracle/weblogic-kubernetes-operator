@@ -285,6 +285,19 @@ class DomainPresenceInfoTest {
   }
 
   @Test
+  void whenListClusterResourcesHasOlderCluster_preserveNewerClusterResource() {
+    ClusterResource newerCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(2L));
+    ClusterResource olderCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(1L));
+    info.addClusterResource(newerCluster);
+
+    info.adjustClusterResources(List.of(olderCluster));
+
+    assertThat(info.getClusterResource(CLUSTER_1), sameInstance(newerCluster));
+  }
+
+  @Test
   void whenNoneDefined_getClusterResourceReturnsNull() {
     assertThat(info.getClusterResource("cluster-1"), nullValue());
   }
@@ -296,6 +309,45 @@ class DomainPresenceInfoTest {
     final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
     createAndAddClusterResourceToDomainPresenceInfo(domainPresenceInfo, clusterName);
     assertThat(domainPresenceInfo.getClusterResource(clusterName), notNullValue());
+  }
+
+  @Test
+  void whenOlderClusterResourceAdded_preserveNewerClusterResource() {
+    ClusterResource newerCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(2L));
+    ClusterResource olderCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(1L));
+    info.addClusterResource(newerCluster);
+
+    info.addClusterResource(olderCluster);
+
+    assertThat(info.getClusterResource(CLUSTER_1), sameInstance(newerCluster));
+  }
+
+  @Test
+  void whenClusterResourceRecreated_acceptLowerGenerationFromNewResource() {
+    ClusterResource deletedCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(2L).uid("deleted"));
+    ClusterResource recreatedCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(1L).uid("recreated"));
+    info.addClusterResource(deletedCluster);
+
+    info.addClusterResource(recreatedCluster);
+
+    assertThat(info.getClusterResource(CLUSTER_1), sameInstance(recreatedCluster));
+  }
+
+  @Test
+  void whenSameClusterGenerationAdded_acceptUpdatedResource() {
+    ClusterResource originalCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(2L));
+    ClusterResource updatedCluster = createClusterResource(CLUSTER_1)
+        .withMetadata(new V1ObjectMeta().generation(2L));
+    info.addClusterResource(originalCluster);
+
+    info.addClusterResource(updatedCluster);
+
+    assertThat(info.getClusterResource(CLUSTER_1), sameInstance(updatedCluster));
   }
 
   @Test

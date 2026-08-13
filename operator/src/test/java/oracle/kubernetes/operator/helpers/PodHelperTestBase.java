@@ -247,6 +247,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final String TEST_PRODUCT_VERSION = "unit-test";
+  private static final String RECENT_OPERATOR_VERSION = "4.3.8";
   private static final String NOOP_EXPORTER_CONFIG = "queries:\n";
   public static final String LONG_CHANNEL_NAME = "Very_Long_Channel_Name";
   public static final String TRUNCATED_PORT_NAME_PREFIX = "very-long-ch";
@@ -2442,21 +2443,60 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void whenDomainConfigurationAddsRestartVersion_replacePod() {
+  void whenDomainConfigurationChangesRestartVersion_replacePod() {
+    configureDomain().withRestartVersion("122");
     initializeExistingPod();
+    markExistingPodAsCreatedByRecentOperator();
+    HashInvocationCounter hashInvocationCounter = startCountingHashInvocations();
 
     configureDomain().withRestartVersion("123");
 
     verifyPodReplaced();
+    assertThat(hashInvocationCounter.getInvocationCount(), is(1));
   }
 
   @Test
-  void whenServerConfigurationAddsRestartVersion_replacePod() {
+  void whenServerConfigurationChangesRestartVersion_replacePod() {
+    configureServer().withRestartVersion("122");
     initializeExistingPod();
+    markExistingPodAsCreatedByRecentOperator();
+    HashInvocationCounter hashInvocationCounter = startCountingHashInvocations();
 
     configureServer().withRestartVersion("123");
 
     verifyPodReplaced();
+    assertThat(hashInvocationCounter.getInvocationCount(), is(1));
+  }
+
+  void markExistingPodAsCreatedByRecentOperator() {
+    domainPresenceInfo.getServerPod(getServerName()).getMetadata()
+        .putLabelsItem(OPERATOR_VERSION, RECENT_OPERATOR_VERSION);
+  }
+
+  HashInvocationCounter startCountingHashInvocations() {
+    HashInvocationCounter hashInvocationCounter = new HashInvocationCounter();
+    hashMemento.revert();
+    try {
+      mementos.add(hashMemento = StaticStubSupport.install(
+          AnnotationHelper.class, "hashFunction", hashInvocationCounter));
+    } catch (NoSuchFieldException e) {
+      throw new AssertionError(e);
+    }
+    return hashInvocationCounter;
+  }
+
+  static class HashInvocationCounter implements Function<Object, String> {
+    private int invocationCount;
+
+    @Override
+    public String apply(Object object) {
+      invocationCount++;
+      return Integer.toString(object.hashCode());
+    }
+
+    int getInvocationCount() {
+      return invocationCount;
+    }
   }
 
   @Test

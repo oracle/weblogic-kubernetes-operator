@@ -950,6 +950,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         }
 
         LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
+        info.addClusterResource(cluster);
         createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, info.getDomainUid())
             .andThen(createMakeRightOperation(info)
                 .interrupt()

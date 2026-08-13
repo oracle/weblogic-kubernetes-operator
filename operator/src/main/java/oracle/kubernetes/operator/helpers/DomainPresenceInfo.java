@@ -7,7 +7,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1033,7 +1032,20 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   public void addClusterResource(ClusterResource clusterResource) {
     Optional.ofNullable(clusterResource)
         .map(ClusterResource::getClusterName)
-        .ifPresent(name -> clusters.put(name, clusterResource));
+        .ifPresent(name -> clusters.compute(name,
+            (key, current) -> isOlderGeneration(clusterResource, current) ? current : clusterResource));
+  }
+
+  private boolean isOlderGeneration(ClusterResource candidate, ClusterResource current) {
+    return current != null
+        && isSameResource(candidate, current)
+        && getGeneration(candidate).compareTo(getGeneration(current)) < 0;
+  }
+
+  private boolean isSameResource(ClusterResource first, ClusterResource second) {
+    String firstUid = Optional.ofNullable(first.getMetadata()).map(V1ObjectMeta::getUid).orElse(null);
+    String secondUid = Optional.ofNullable(second.getMetadata()).map(V1ObjectMeta::getUid).orElse(null);
+    return firstUid == null || secondUid == null || firstUid.equals(secondUid);
   }
 
   /**
@@ -1049,10 +1061,9 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param resources list of cluster resources.
    */
   public void adjustClusterResources(Collection<ClusterResource> resources) {
-    Map<String, ClusterResource> updated = new HashMap<>();
-    resources.forEach(cr -> updated.put(cr.getClusterName(), cr));
-    clusters.keySet().retainAll(updated.keySet());
-    clusters.putAll(updated);
+    Set<String> updatedNames = resources.stream().map(ClusterResource::getClusterName).collect(Collectors.toSet());
+    clusters.keySet().retainAll(updatedNames);
+    resources.forEach(this::addClusterResource);
   }
 
   /**

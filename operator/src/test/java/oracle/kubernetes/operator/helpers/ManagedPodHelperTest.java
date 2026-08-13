@@ -176,6 +176,20 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
   }
 
+  @Test
+  void whenClusterConfigurationChangesRestartVersion_replacePod() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withRestartVersion("122");
+    initializeExistingPod();
+    markExistingPodAsCreatedByRecentOperator();
+    HashInvocationCounter hashInvocationCounter = startCountingHashInvocations();
+
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withRestartVersion("123");
+
+    verifyPodReplaced();
+    assertThat(hashInvocationCounter.getInvocationCount(), is(1));
+  }
+
   private void reportUnexpectedUpdate(@Nonnull Object object) {
     throw new RuntimeException("unexpected update to pod " + getPodName((KubernetesObject) object));
   }

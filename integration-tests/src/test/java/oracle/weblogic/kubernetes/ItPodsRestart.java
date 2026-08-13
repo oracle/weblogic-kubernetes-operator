@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -49,8 +50,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -100,6 +105,8 @@ class ItPodsRestart {
 
   // domain constants
   private static final String domainUid = "domain1";
+  private static final String clusterName = "cluster-1";
+  private static final String clusterResourceName = domainUid + "-" + clusterName;
   private static final int replicaCount = 1;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
@@ -521,10 +528,10 @@ class ItPodsRestart {
    * Verifies that the domain roll starting/pod cycle starting events are logged.
    */
   @Test
-  @DisplayName("Restart pods using restartVersion flag")
+  @DisplayName("Restart all domain pods using the domain restartVersion")
   @Tag("gate")
   @Tag("crio")
-  void testRestartVersion() {
+  void testDomainRestartVersion() {
     // get the original domain resource before update
     DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
@@ -540,7 +547,7 @@ class ItPodsRestart {
     logger.info("patch the domain resource with new WebLogic secret, restartVersion and introspectVersion");
     String patchStr
         = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/restartVersion\", "
+        + "{\"op\": \"replace\", \"path\": \"/spec/restartVersion\", "
         + "\"value\": \"" + newVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
@@ -557,6 +564,55 @@ class ItPodsRestart {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     verifyDomainRollAndPodCycleEvents(timestamp);
 
+  }
+
+  /**
+   * Modify the restartVersion on the Cluster resource.
+   * Verify its managed server is restarted and the admin server is not restarted.
+   */
+  @Test
+  @DisplayName("Restart cluster pods using the Cluster resource restartVersion")
+  @Tag("gate")
+  @Tag("crio")
+  void testClusterRestartVersion() {
+    Map<String, OffsetDateTime> managedServerPod = getPodTimeStamps(managedServerPrefix + "1");
+    Map<String, OffsetDateTime> unaffectedPods = getPodTimeStamps(adminServerPodName);
+
+    patchClusterResourceWithNewRestartVersion(clusterResourceName, domainNamespace);
+
+    assertTrue(verifyRollingRestartOccurred(managedServerPod, 1, domainNamespace),
+        String.format("Rolling restart failed for cluster %s in namespace %s",
+            clusterResourceName, domainNamespace));
+    verifyPodsNotRolled(domainNamespace, unaffectedPods);
+  }
+
+  /**
+   * Modify a managed server's restartVersion on the domain resource.
+   * Verify only that managed server is restarted and back to ready state.
+   */
+  @Test
+  @DisplayName("Restart a managed server using restartVersion flag")
+  @Tag("gate")
+  @Tag("crio")
+  void testManagedServerRestartVersion() {
+    String managedServerPodName = managedServerPrefix + "1";
+    Map<String, OffsetDateTime> managedServerPod = getPodTimeStamps(managedServerPodName);
+    Map<String, OffsetDateTime> unaffectedPods = getPodTimeStamps(adminServerPodName);
+    String oldVersion = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace)
+        .getSpec().getManagedServers().get(0).getRestartVersion());
+    int newVersion = Integer.parseInt(oldVersion) + 1;
+
+    String patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/managedServers/0/restartVersion\", "
+        + "\"value\": \"" + newVersion + "\"}]";
+    logger.info("Updating managed server restartVersion using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch managed server restartVersion");
+
+    assertTrue(verifyRollingRestartOccurred(managedServerPod, 1, domainNamespace),
+        String.format("Rolling restart failed for managed server pod %s in namespace %s",
+            managedServerPodName, domainNamespace));
+    verifyPodsNotRolled(domainNamespace, unaffectedPods);
   }
 
   /**
@@ -624,6 +680,15 @@ class ItPodsRestart {
     return (Map<K,V>) podsWithTimeStamps;
   }
 
+  private Map<String, OffsetDateTime> getPodTimeStamps(String... podNames) {
+    Map<String, OffsetDateTime> result = new LinkedHashMap<>();
+    for (String podName : podNames) {
+      result.put(podName, assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", podName),
+          String.format("getPodCreationTimestamp failed for pod %s in namespace %s", podName, domainNamespace)));
+    }
+    return result;
+  }
+
 
   /**
    * Create a model in image domain and verify the server pods are ready.
@@ -665,7 +730,12 @@ class ItPodsRestart {
       srvrPod.podSecurityContext(podSecCtxt);
     }
 
-    // create the domain CR
+    // create the Cluster resource with an initial restartVersion
+    var cluster = createClusterResource(clusterResourceName, clusterName, domainNamespace, replicaCount);
+    cluster.getSpec().restartVersion("1");
+    createClusterAndVerify(cluster);
+
+    // create the Domain resource with initial domain-level and managed-server-level restartVersions
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -682,6 +752,11 @@ class ItPodsRestart {
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
+            .restartVersion("1")
+            .addManagedServersItem(new ManagedServer()
+                .serverName(MANAGED_SERVER_NAME_BASE + "1")
+                .restartVersion("1"))
+            .withCluster(new V1LocalObjectReference().name(clusterResourceName))
             .serverStartPolicy("IfNeeded")
             .serverPod(srvrPod)
             .configuration(new Configuration()

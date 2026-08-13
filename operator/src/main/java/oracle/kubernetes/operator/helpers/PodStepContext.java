@@ -1541,9 +1541,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-      return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
-          || (isPodFromRecentOperator(currentPod)
-            && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)));
+      // A restartVersion mismatch always requires replacement and cannot be resolved by a compatibility adjustment.
+      return hasCurrentRestartVersions(currentPod)
+          && (AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
+            || (isPodFromRecentOperator(currentPod)
+              && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod))));
+    }
+
+    private boolean hasCurrentRestartVersions(V1Pod currentPod) {
+      return Objects.equals(
+              getLabel(currentPod, LabelConstants.DOMAINRESTARTVERSION_LABEL),
+              getServerSpec().getDomainRestartVersion())
+          && Objects.equals(
+              getLabel(currentPod, LabelConstants.CLUSTERRESTARTVERSION_LABEL),
+              getServerSpec().getClusterRestartVersion())
+          && Objects.equals(
+              getLabel(currentPod, LabelConstants.SERVERRESTARTVERSION_LABEL),
+              getServerSpec().getServerRestartVersion());
     }
 
     private boolean canUseCurrentPod(V1Pod currentPod) {
