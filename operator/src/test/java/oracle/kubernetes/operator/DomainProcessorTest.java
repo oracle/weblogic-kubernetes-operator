@@ -3010,6 +3010,26 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenClusterRestartVersionChanged_restartClusterMembers() throws JsonProcessingException {
+    configureDomain(domain).configureCluster(originalInfo, CLUSTER).withRestartVersion("1");
+    establishPreviousIntrospection(null);
+    ClusterResource originalCluster = createClusterResource(NS, CLUSTER);
+    originalCluster.getSpec().setRestartVersion("1");
+    originalCluster.getMetadata().generation(1L);
+    originalInfo.addClusterResource(originalCluster);
+    testSupport.defineResources(originalCluster);
+
+    ClusterResource updatedCluster = createClusterResource(NS, CLUSTER);
+    updatedCluster.getSpec().setRestartVersion("2");
+    updatedCluster.getMetadata().generation(2L);
+
+    processor.dispatchClusterWatch(new Response<>("MODIFIED", updatedCluster));
+
+    assertThat(getPodLabels(ADMIN_NAME), not(hasEntry(LabelConstants.CLUSTERRESTARTVERSION_LABEL, "2")));
+    assertThat(getPodLabels(getManagedServerName(1)), hasEntry(LabelConstants.CLUSTERRESTARTVERSION_LABEL, "2"));
+  }
+
+  @Test
   void whenClusterGenerationCachedButObservedGenerationStale_runMakeRight() {
     processor.registerDomainPresenceInfo(originalInfo);
     ClusterResource cachedCluster = createClusterResource(NS, CLUSTER);
