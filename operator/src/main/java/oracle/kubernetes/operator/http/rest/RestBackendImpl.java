@@ -79,6 +79,7 @@ public class RestBackendImpl implements RestBackend {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String INITIAL_VERSION = "1";
+  static final String CONVERSION_DOMAIN_UID_ANNOTATION = "weblogic.conversionDomainKubernetesUID";
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // used by unit test
   private static TopologyRetriever instance =
@@ -492,6 +493,7 @@ public class RestBackendImpl implements RestBackend {
     Object currentCluster = getCurrentCluster(namespace, name);
 
     if (currentCluster == null) {
+      addConversionDomainUid(metadata, domainUid);
       try {
         ClusterResource cr = RequestBuilder.CLUSTER.create(toResource(cluster),
                 new CreateOptions(), clientSupplier);
@@ -500,12 +502,21 @@ public class RestBackendImpl implements RestBackend {
           LOGGER.fine("Created Cluster: " + result);
         }
         return result;
-      } catch (ApiException f) {
-        throw handleApiException(f);
+      } catch (ApiException e) {
+        if (e.getCode() != KubernetesConstants.HTTP_CONFLICT
+            || (currentCluster = getCurrentCluster(namespace, name)) == null) {
+          throw handleApiException(e);
+        }
       }
     }
 
-    validateExistingCluster(currentCluster, namespace, name, domainName, domainUid);
+    if (!validateExistingCluster(currentCluster, namespace, name, domainName, domainUid)) {
+      // The same API server Domain instance already created this Cluster. Reuse it without emitting
+      // an update event while the Domain is not yet live.
+      LOGGER.info(MessageKeys.DOMAIN_CONVERSION_CLUSTER_REUSED, namespace, name, domainName, domainUid);
+      return currentCluster;
+    }
+    getConversionDomainUid(currentCluster).ifPresent(uid -> addConversionDomainUid(metadata, uid));
     metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
         .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
     try {
@@ -547,15 +558,38 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  private void validateExistingCluster(
+  private boolean validateExistingCluster(
       Object currentCluster, String namespace, String name, String domainName, String domainUid) {
     verifyOperatorCreatedCluster(currentCluster, name);
     DomainResource domain = getLiveDomain(namespace, domainName, domainUid);
     if (domain == null) {
+      if (isFromSameConversionDomain(currentCluster, domainUid)) {
+        return false;
+      }
       throwClusterConflict(namespace, name, domainName);
     }
     verifyDomainUid(domain, domainName, domainUid);
     verifyClusterReferencedByDomain(domain, name);
+    return true;
+  }
+
+  @SuppressWarnings("unchecked")
+  private void addConversionDomainUid(Map<String, Object> metadata, String domainUid) {
+    Map<String, Object> annotations = new HashMap<>(Optional.ofNullable(
+        (Map<String, Object>) metadata.get("annotations")).orElse(Collections.emptyMap()));
+    annotations.put(CONVERSION_DOMAIN_UID_ANNOTATION, domainUid);
+    metadata.put("annotations", annotations);
+  }
+
+  private boolean isFromSameConversionDomain(Object currentCluster, String domainUid) {
+    return getConversionDomainUid(currentCluster).filter(domainUid::equals).isPresent();
+  }
+
+  @SuppressWarnings("unchecked")
+  private Optional<String> getConversionDomainUid(Object currentCluster) {
+    return Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster).get("metadata"))
+        .map(metadata -> (Map<String, Object>) metadata.get("annotations"))
+        .map(annotations -> (String) annotations.get(CONVERSION_DOMAIN_UID_ANNOTATION));
   }
 
   private void throwClusterConflict(String namespace, String clusterName, String domainName) {

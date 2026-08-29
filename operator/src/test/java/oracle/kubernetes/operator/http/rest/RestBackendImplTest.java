@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.LogRecord;
 
 import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
@@ -23,6 +24,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -35,14 +37,18 @@ import static jakarta.ws.rs.core.Response.Status.CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_CLUSTER_REUSED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
+import static oracle.kubernetes.operator.http.rest.RestBackendImpl.CONVERSION_DOMAIN_UID_ANNOTATION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RestBackendImplTest {
@@ -57,6 +63,7 @@ class RestBackendImplTest {
   private static final String PROD_NS = "prod-ns";
 
   private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   @BeforeEach
@@ -64,6 +71,8 @@ class RestBackendImplTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
+    mementos.add(TestUtils.silenceOperatorLogger()
+        .collectLogMessages(logRecords, DOMAIN_CONVERSION_CLUSTER_REUSED));
   }
 
   @AfterEach
@@ -144,6 +153,8 @@ class RestBackendImplTest {
     ClusterResource clusterResource =
         testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain-cluster-1");
     assertThat(clusterResource, notNullValue());
+    assertThat(clusterResource.getMetadata().getAnnotations().get(CONVERSION_DOMAIN_UID_ANNOTATION),
+        equalTo(CONVERSION_DOMAIN_UID));
   }
 
   @Test
@@ -157,7 +168,25 @@ class RestBackendImplTest {
   }
 
   @Test
-  void whenCreateConversionIsRetriedBeforeDomainIsLive_returnConflictWithoutChangingCluster() {
+  void whenCreateConversionIsRetriedBeforeDomainIsLive_reuseClusterWithoutUpdatingIt() {
+    int[] updateCount = {0};
+    testSupport.doOnUpdate(CLUSTER, ignored -> updateCount[0]++);
+    RestBackendImpl backend = createConversionBackend();
+    backend.createOrReplaceCluster(
+        createClusterMap(MANAGED_NS, 1), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+
+    backend.createOrReplaceCluster(
+        createClusterMap(MANAGED_NS, 1), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+
+    assertThat(testSupport.<ClusterResource>getResources(CLUSTER).size(), equalTo(1));
+    assertThat(getConversionClusterReplicas("sample-domain-cluster-1"), equalTo(1));
+    assertThat(updateCount[0], equalTo(0));
+    assertThat(logRecords, containsInfo(DOMAIN_CONVERSION_CLUSTER_REUSED)
+        .withParams(MANAGED_NS, "sample-domain-cluster-1", CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID));
+  }
+
+  @Test
+  void whenCreateConversionForDifferentDomainIsRetriedBeforeDomainIsLive_returnConflictWithoutChangingCluster() {
     RestBackendImpl backend = createConversionBackend();
     Map<String, Object> cluster = createClusterMap(MANAGED_NS);
     backend.createOrReplaceCluster(cluster, CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
@@ -175,6 +204,29 @@ class RestBackendImplTest {
     ClusterResource retried = testSupport.getResourceWithName(CLUSTER, "sample-domain-cluster-1");
     assertThat(retried.getMetadata().getUid(),
         equalTo(original.getMetadata().getUid()));
+  }
+
+  @Test
+  void whenConcurrentConversionCreatesClusterForSameDomain_reuseClusterWithoutUpdatingIt() {
+    int[] updateCount = {0};
+    testSupport.doOnUpdate(CLUSTER, ignored -> updateCount[0]++);
+    ClusterResource concurrentlyCreated = createExistingCluster()
+        .withMetadata(new V1ObjectMeta()
+            .name("sample-domain-cluster-1")
+            .namespace(MANAGED_NS)
+            .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+            .putAnnotationsItem(CONVERSION_DOMAIN_UID_ANNOTATION, CONVERSION_DOMAIN_UID))
+        .spec(new ClusterSpec().withClusterName("cluster-1").withReplicas(1));
+    testSupport.doAfterCall(CLUSTER, "read", () -> testSupport.defineResources(concurrentlyCreated));
+
+    createConversionBackend().createOrReplaceCluster(
+        createClusterMap(MANAGED_NS, 1), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+
+    assertThat(testSupport.<ClusterResource>getResources(CLUSTER).size(), equalTo(1));
+    assertThat(getConversionClusterReplicas("sample-domain-cluster-1"), equalTo(1));
+    assertThat(updateCount[0], equalTo(0));
+    assertThat(logRecords, containsInfo(DOMAIN_CONVERSION_CLUSTER_REUSED)
+        .withParams(MANAGED_NS, "sample-domain-cluster-1", CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID));
   }
 
   @Test
@@ -271,6 +323,24 @@ class RestBackendImplTest {
     ClusterResource clusterResource =
         testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain-cluster-1");
     assertThat(clusterResource, notNullValue());
+    assertThat(clusterResource.getMetadata().getAnnotations(), nullValue());
+  }
+
+  @Test
+  void whenUpdatingClusterCreatedByConversion_preserveConversionDomainUid() {
+    RestBackendImpl backend = createConversionBackend();
+    backend.createOrReplaceCluster(
+        createClusterMap(MANAGED_NS, 1), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+    testSupport.defineResources(createExistingDomain());
+
+    backend.createOrReplaceCluster(
+        createClusterMap(MANAGED_NS, 2), CONVERSION_DOMAIN_NAME, CONVERSION_DOMAIN_UID);
+
+    ClusterResource clusterResource =
+        testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain-cluster-1");
+    assertThat(clusterResource.getSpec().getReplicas(), equalTo(2));
+    assertThat(clusterResource.getMetadata().getAnnotations().get(CONVERSION_DOMAIN_UID_ANNOTATION),
+        equalTo(CONVERSION_DOMAIN_UID));
   }
 
   @Test

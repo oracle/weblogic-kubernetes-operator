@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.webhooks.model.Result;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_REQUEST;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
@@ -158,6 +159,8 @@ public class ConversionWebhookResource extends BaseResource {
       String namespace = Optional.ofNullable((String) metadata.get("namespace")).orElse("default");
       String domainName = (String) metadata.get("name");
       String domainUid = (String) metadata.get("uid");
+      LOGGER.fine(DOMAIN_CONVERSION_REQUEST, conversionRequest.getUid(), namespace, domainName,
+          domainUid, conversionRequest.getDesiredAPIVersion());
       SchemaConversionUtils.Resources cr = schemaConversionUtils.convertDomainSchema(domain,
           () -> be.listClusters(namespace, domainName, domainUid));
       conversions.add(new ConvertedResources(cr, domainName, domainUid));

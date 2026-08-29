@@ -30,6 +30,7 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
+def default_monitoring_exporter_webapp_version = '2.3.16'
 
 pipeline {
     agent { label 'large-ol9u4' }
@@ -185,7 +186,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.3.15'
+               defaultValue: default_monitoring_exporter_webapp_version
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
@@ -216,6 +217,13 @@ pipeline {
                     steps {
                         echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
                         evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
+                        script {
+                            if (env.CHANGE_ID) {
+                                // An automatic change-request build may be queued with the previous Jenkinsfile's
+                                // parameter default. Always use the default from the Jenkinsfile being tested.
+                                env.MONITORING_EXPORTER_WEBAPP_VERSION = default_monitoring_exporter_webapp_version
+                            }
+                        }
                     }
                 }
                 stage ('Echo environment') {
@@ -556,7 +564,7 @@ EOF
                             export PATH=${runtime_path}
                             export KUBECONFIG=${kubeconfig_file}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
-                            touch ${WORKSPACE}/.mvn/maven.config
+                            : > "${WORKSPACE}/.mvn/maven.config"
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
                                 PARALLEL_RUN='false'

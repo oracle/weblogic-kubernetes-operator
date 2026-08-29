@@ -133,6 +133,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZI
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
@@ -723,9 +724,33 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void monitoringExporterContainer_hasDefaultImageName() {
-    defineExporterConfiguration();
+    configureDomain().withMonitoringExporterConfiguration(NOOP_EXPORTER_CONFIG);
 
-    assertThat(getExporterContainer().getImage(), equalTo(EXPORTER_IMAGE));
+    assertThat(getExporterContainer().getImage(), equalTo(DEFAULT_EXPORTER_IMAGE));
+  }
+
+  @Test
+  void afterUpgradeDomainWithPersistedPreviousDefaultExporterImage_dontReplacePod() {
+    useProductionHash();
+    configureDomain()
+        .withMonitoringExporterConfiguration(NOOP_EXPORTER_CONFIG)
+        .withMonitoringExporterImage("ghcr.io/oracle/weblogic-monitoring-exporter:2.3.15");
+    initializeExistingPod();
+    markExistingPodAsCreatedByRecentOperator();
+
+    verifyPodPatched();
+    assertThat(logRecords, not(containsInfo(getReplacedMessageKey())));
+  }
+
+  @Test
+  void whenMonitoringExporterRestApiTimeoutChanges_dontReplacePod() {
+    useProductionHash();
+    defineExporterConfiguration();
+    initializeExistingPod();
+
+    configureDomain().withMonitoringExporterConfiguration("restApiTimeoutSeconds: 15\nqueries:\n");
+
+    verifyPodNotReplaced();
   }
 
   @Test
