@@ -289,6 +289,8 @@ public class MessageKeys {
   public static final String DOMAIN_REPLICAS_TOO_HIGH_MULTIPLE_CLUSTERS = "WLSWH-0021";
   public static final String CLUSTER_SCALE_REPLICAS_TOO_HIGH = "WLSWH-0022";
   public static final String UNSUPPORTED_INTRO_ENV_VARIABLES = "WLSWH-0023";
+  public static final String DOMAIN_CONVERSION_REQUEST = "WLSWH-0024";
+  public static final String DOMAIN_CONVERSION_CLUSTER_REUSED = "WLSWH-0025";
 
   private MessageKeys() {
   }

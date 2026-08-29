@@ -23,6 +23,7 @@ import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.SafeYamlUtils;
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -41,6 +42,12 @@ public class MonitoringExporterConfiguration {
   @Description("If true, metrics qualifiers will include the operator domain. Defaults to false.")
   @Default(boolDefault = false)
   private Boolean domainQualifier;
+
+  @Description("The timeout, in seconds, for each internal WebLogic Management REST request made by the "
+      + "WebLogic Monitoring Exporter. Defaults to 5 seconds.")
+  @Default(intDefault = 5)
+  @Range(minimum = 1)
+  private Integer restApiTimeoutSeconds;
 
   private ExporterQuery[] queries;
 
@@ -113,6 +120,7 @@ public class MonitoringExporterConfiguration {
       out.beginObject();
       writeOptionalBooleanField(out, "metricsNameSnakeCase", src.metricsNameSnakeCase);
       writeOptionalBooleanField(out, "domainQualifier", src.domainQualifier);
+      writeOptionalIntegerField(out, "restApiTimeoutSeconds", src.restApiTimeoutSeconds);
 
       writeOptionalQueryArray(out, src.queries);
 
@@ -120,6 +128,12 @@ public class MonitoringExporterConfiguration {
     }
 
     private void writeOptionalBooleanField(JsonWriter out, String name, @Nullable Boolean value) throws IOException {
+      if (value != null) {
+        out.name(name).value(value);
+      }
+    }
+
+    private void writeOptionalIntegerField(JsonWriter out, String name, @Nullable Integer value) throws IOException {
       if (value != null) {
         out.name(name).value(value);
       }
@@ -199,6 +213,9 @@ public class MonitoringExporterConfiguration {
             break;
           case "domainQualifier":
             configuration.domainQualifier = in.nextBoolean();
+            break;
+          case "restApiTimeoutSeconds":
+            configuration.restApiTimeoutSeconds = in.nextInt();
             break;
           case "queries":
             configuration.queries = readQueryArray(in);
@@ -283,6 +300,7 @@ public class MonitoringExporterConfiguration {
     return new EqualsBuilder()
           .append(metricsNameSnakeCase, that.metricsNameSnakeCase)
           .append(domainQualifier, that.domainQualifier)
+          .append(restApiTimeoutSeconds, that.restApiTimeoutSeconds)
           .append(queries, that.queries)
           .isEquals();
   }
@@ -292,6 +310,7 @@ public class MonitoringExporterConfiguration {
     return new HashCodeBuilder(17, 37)
           .append(metricsNameSnakeCase)
           .append(domainQualifier)
+          .append(restApiTimeoutSeconds)
           .append(queries)
           .toHashCode();
   }

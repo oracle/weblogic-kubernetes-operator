@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -31,6 +31,7 @@ public class RestTestBase extends JerseyTest {
 
   private final List<Memento> mementos = new ArrayList<>();
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  protected BaseTestUtils.ConsoleHandlerMemento loggerControl;
   boolean includeRequestedByHeader = true;
   String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
 
@@ -39,7 +40,8 @@ public class RestTestBase extends JerseyTest {
     setUp();
     mementos.add(testSupport.install());
     mementos.add(BaseTestUtils.silenceJsonPathLogger());
-    mementos.add(TestUtils.silenceOperatorLogger());
+    loggerControl = TestUtils.silenceOperatorLogger();
+    mementos.add(loggerControl);
   }
 
   @AfterEach

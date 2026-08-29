@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
@@ -58,6 +60,8 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_REQUEST;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
@@ -147,6 +151,7 @@ class WebhookRestTest extends RestTestBase {
   private final Scale validScale = createScale(CLUSTER_NAME_1, "2");
 
   private final ConversionReviewModel conversionReviewModel = createConversionReview();
+  private final List<LogRecord> logRecords = new ArrayList<>();
 
   private AdmissionReview createAdmissionReview() {
     return new AdmissionReview().apiVersion(V1).kind(KIND_ADMISSION_REVIEW);
@@ -297,7 +302,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   @SuppressWarnings("unchecked")
-  void whenV8CreateConversionIsRetriedBeforeDomainIsLive_reportsExistingCluster() throws Exception {
+  void whenV8CreateConversionIsRetriedBeforeDomainIsLive_reusesClusterOnlyForSameDomain() throws Exception {
     List<Memento> mementos = new ArrayList<>();
     try {
       mementos.add(HelmAccessStub.install());
@@ -305,26 +310,38 @@ class WebhookRestTest extends RestTestBase {
       TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, "List");
       TuningParametersStub.setParameter("domainNamespaces", CONVERSION_DOMAIN_NAMESPACE);
       restBackendSupplier = this::createConversionBackend;
+      loggerControl.collectLogMessages(logRecords, DOMAIN_CONVERSION_REQUEST).withLogLevel(Level.FINE);
       ConversionReviewModel request = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST));
+      int[] updateCount = {0};
+      testSupport.doOnUpdate(KubernetesTestSupport.CLUSTER, ignored -> updateCount[0]++);
 
       ConversionReviewModel firstResponse = sendConversionWebhookRequestAsReview(request);
       ClusterResource original = testSupport.getResourceWithName(
           KubernetesTestSupport.CLUSTER, CONVERSION_CLUSTER_NAME);
+      ConversionReviewModel sameDomainRetryResponse = sendConversionWebhookRequestAsReview(request);
       Map<String, Object> metadata =
           (Map<String, Object>) request.getRequest().getDomains().get(0).get("metadata");
       metadata.put("uid", "retry-domain-uid");
-      ConversionReviewModel retryResponse = sendConversionWebhookRequestAsReview(request);
+      ConversionReviewModel differentDomainRetryResponse = sendConversionWebhookRequestAsReview(request);
       ClusterResource retried = testSupport.getResourceWithName(
           KubernetesTestSupport.CLUSTER, CONVERSION_CLUSTER_NAME);
 
       assertThat(getStatus(firstResponse), equalTo("Success"));
-      assertThat(getStatus(retryResponse), equalTo("Failed"));
-      assertThat(getResult(retryResponse).getMessage(), containsString("HTTP 409"));
-      assertThat(getResult(retryResponse).getMessage(), containsString(CONVERSION_CLUSTER_NAME));
-      assertThat(getResult(retryResponse).getMessage(),
+      assertThat(getStatus(sameDomainRetryResponse), equalTo("Success"));
+      assertThat(getStatus(differentDomainRetryResponse), equalTo("Failed"));
+      assertThat(getResult(differentDomainRetryResponse).getMessage(), containsString("HTTP 409"));
+      assertThat(getResult(differentDomainRetryResponse).getMessage(), containsString(CONVERSION_CLUSTER_NAME));
+      assertThat(getResult(differentDomainRetryResponse).getMessage(),
           containsString("delete the existing Cluster before recreating the Domain"));
       assertThat(testSupport.<ClusterResource>getResources(KubernetesTestSupport.CLUSTER).size(), equalTo(1));
       assertThat(retried.getMetadata().getUid(), equalTo(original.getMetadata().getUid()));
+      assertThat(updateCount[0], equalTo(0));
+      assertThat(logRecords, containsFine(DOMAIN_CONVERSION_REQUEST).withParams(
+          "177923b2-bb51-4496-9bf1-b793fdc81a88", CONVERSION_DOMAIN_NAMESPACE, "sample-domain1",
+          "304cd5f3-04bb-4c51-a67e-6ebcce46d936", "weblogic.oracle/v9"));
+      assertThat(logRecords, containsFine(DOMAIN_CONVERSION_REQUEST).withParams(
+          "177923b2-bb51-4496-9bf1-b793fdc81a88", CONVERSION_DOMAIN_NAMESPACE, "sample-domain1",
+          "retry-domain-uid", "weblogic.oracle/v9"));
     } finally {
       restBackendSupplier = () -> restBackend;
       mementos.forEach(Memento::revert);
