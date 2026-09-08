@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -72,11 +72,11 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   private ClusterService clusterService = new ClusterService();
 
   @Description(
-      "The maximum number of Managed Servers instances that the operator will start in parallel "
-      + "for this cluster in response to a change in the `replicas` count. "
-      + "If more Managed Server instances must be started, the operator will wait until a Managed "
-      + "Server Pod is in the `Ready` state before starting the next Managed Server instance. "
-      + "A value of 0 means all Managed Server instances will start in parallel. "
+      "The maximum number of Managed Server instances that can be in the process of starting at the same time "
+      + "for this cluster in response to a change in the `replicas` count. The operator does not wait for one "
+      + "Managed Server Pod to be scheduled before creating another. When this value is greater than 0 and the "
+      + "limit is reached, the operator waits until a Managed Server Pod is in the `Ready` state before starting "
+      + "another. A value of 0 means there is no limit. "
       + "Defaults to `domain.spec.maxClusterConcurrentStartup`, which defaults to 0."
   )
   @Range(minimum = 0)

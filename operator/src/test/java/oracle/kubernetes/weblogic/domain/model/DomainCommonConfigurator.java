@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -822,6 +823,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withSchedulingGates(List<V1PodSchedulingGate> schedulingGates) {
+      server.setSchedulingGates(schedulingGates);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withNodeName(String nodeName) {
       server.setNodeName(nodeName);
       return this;
@@ -842,6 +849,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withSchedulerName(String schedulerName) {
       getDomainSpec().setSchedulerName(schedulerName);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+      server.setSetHostnameAsFQDN(setHostnameAsFQDN);
       return this;
     }
 
@@ -1018,6 +1031,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ClusterConfigurator withSchedulingGates(List<V1PodSchedulingGate> schedulingGates) {
+      clusterSpec.setSchedulingGates(schedulingGates);
+      return this;
+    }
+
+    @Override
     public ClusterConfigurator withNodeName(String nodeName) {
       clusterSpec.setNodeName(nodeName);
       return this;
@@ -1050,6 +1069,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withSchedulerName(String schedulerName) {
       getDomainSpec().setSchedulerName(schedulerName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+      clusterSpec.setSetHostnameAsFQDN(setHostnameAsFQDN);
       return this;
     }
 

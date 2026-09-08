@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -360,6 +360,10 @@ class OperatorRestTest extends RestTestBase {
     @Override
     public void scaleCluster(String domainUid, String cluster, int managedServerCount) {
       getClusterStateStream(domainUid, cluster).forEach(cs -> cs.setScale(managedServerCount));
+    }
+
+    @Override
+    public void validateClusterConversion(Map<String, Object> body, String domainName, String domainUid) {
     }
 
     Stream<ClusterState> getClusterStateStream(String domainUid, String cluster) {

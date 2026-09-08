@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -210,7 +210,7 @@ public class SchemaConversionUtils {
     DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     options.setPrettyFlow(true);
-    Yaml yaml = new Yaml(options);
+    Yaml yaml = SafeYamlUtils.createYaml(options);
     Object domain = yaml.load(domainYaml);
     Resources convertedResources = convertDomainSchema((Map<String, Object>) domain, null);
     StringBuilder result = new StringBuilder();
@@ -963,6 +963,9 @@ public class SchemaConversionUtils {
     if (toBeRestored != null && !toBeRestored.isEmpty()) {
       ReadContext context = JsonPath.parse(domain);
       toBeRestored.forEach((key, value) -> {
+        if (!isSupportedRestorePath(key) || !(value instanceof Map)) {
+          return;
+        }
         if (DOLLAR_STATUS.equals(key) && getStatus(domain) == null) {
           domain.put(STATUS, new HashMap<>());
         }
@@ -975,6 +978,17 @@ public class SchemaConversionUtils {
             }));
       });
     }
+  }
+
+  private boolean isSupportedRestorePath(String key) {
+    return DOLLAR_SPEC.equals(key)
+        || DOLLAR_STATUS.equals(key)
+        || DOLLAR_SPEC_SERVERPOD.equals(key)
+        || DOLLAR_SPEC_AS_SERVERPOD.equals(key)
+        || "$.spec.configuration".equals(key)
+        || "$.spec.adminServer".equals(key)
+        || key.matches("^\\$\\.spec\\.clusters\\[\\?\\(@\\.clusterName=='[^'\\\\]+'\\)](\\.serverPod)?$")
+        || key.matches("^\\$\\.spec\\.managedServer\\[\\?\\(@\\.serverName=='[^'\\\\]+'\\)](\\.serverPod)?$");
   }
 
   private void withAnnotation(String annoName, Map<String, Object> domain, Consumer<String> consumer) {

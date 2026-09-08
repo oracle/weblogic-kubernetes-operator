@@ -1,10 +1,11 @@
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 restPort: 8001
 query_sync:
   url: http://coordinator:8999/
   refreshInterval: 5
 metricsNameSnakeCase: true
+restApiTimeoutSeconds: 15
 queries:
 applicationRuntimes
     key name

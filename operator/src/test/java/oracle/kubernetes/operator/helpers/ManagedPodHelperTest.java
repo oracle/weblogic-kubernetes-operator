@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -105,6 +106,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   private static final String RAW_VALUE_4 = "$(SERVER_NAME)-volume";
   private static final String END_VALUE_4_DNS1123 = "ess-server1-volume";
   private static final String CLUSTER_NAME = "test-cluster";
+  private static final String CLUSTER_SCHEDULING_GATE = "gate.example.com/cluster-hold";
 
   public ManagedPodHelperTest() {
     super(SERVER_NAME, LISTEN_PORT);
@@ -172,6 +174,20 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.doOnUpdate(KubernetesTestSupport.POD, this::reportUnexpectedUpdate);
 
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
+  }
+
+  @Test
+  void whenClusterConfigurationChangesRestartVersion_replacePod() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withRestartVersion("122");
+    initializeExistingPod();
+    markExistingPodAsCreatedByRecentOperator();
+    HashInvocationCounter hashInvocationCounter = startCountingHashInvocations();
+
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withRestartVersion("123");
+
+    verifyPodReplaced();
+    assertThat(hashInvocationCounter.getInvocationCount(), is(1));
   }
 
   private void reportUnexpectedUpdate(@Nonnull Object object) {
@@ -405,6 +421,17 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         hasEntry(LabelConstants.CLUSTERNAME_LABEL, CLUSTER_NAME));
+  }
+
+  @Test
+  void whenClusterEnablesSetHostnameAsFQDN_overrideDomainSetting() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().withSetHostnameAsFQDN(Boolean.FALSE);
+    getConfigurator()
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
+        .withSetHostnameAsFQDN(Boolean.TRUE);
+
+    assertThat(getCreatedPod().getSpec().getSetHostnameAsFQDN(), is(Boolean.TRUE));
   }
 
   @Test
@@ -1260,6 +1287,42 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getExporterContainer(),
                both(hasJavaOption("-DWLS_PORT=8001")).and(hasJavaOption("-DWLS_SECURE=true")));
+  }
+
+  @Test
+  void whenClusterHasSchedulingGates_createManagedPodWithThem() {
+    List<V1PodSchedulingGate> schedulingGates = List.of(new V1PodSchedulingGate().name(CLUSTER_SCHEDULING_GATE));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withSchedulingGates(schedulingGates);
+
+    assertThat(
+        getCreatedPod().getSpec().getSchedulingGates(),
+        is(schedulingGates));
+  }
+
+  @Test
+  void whenClusterSchedulingGatesAddedForExistingManagedPod_doNotReplacePod() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    V1Pod existingPod = createPod(testSupport.getPacket());
+    getConfigurator()
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
+        .withSchedulingGates(List.of(new V1PodSchedulingGate().name(CLUSTER_SCHEDULING_GATE)));
+    initializeExistingPod(existingPod);
+
+    verifyPodNotReplaced();
+  }
+
+  @Test
+  void whenClusterSchedulingGateRemovedFromManagedPod_doNotReplacePod() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
+        .withSchedulingGates(List.of(new V1PodSchedulingGate().name(CLUSTER_SCHEDULING_GATE)));
+    V1Pod existingPod = createPod(testSupport.getPacket());
+    existingPod.getSpec().setSchedulingGates(null);
+    initializeExistingPod(existingPod);
+
+    verifyPodNotReplaced();
   }
 
   @Test

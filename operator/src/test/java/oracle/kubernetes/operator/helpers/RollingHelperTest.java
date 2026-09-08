@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -287,7 +287,7 @@ class RollingHelperTest {
     CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
     getPods().forEach(this::setPodNotReady);
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
-    DomainPresenceInfo.fromPacket(testSupport.getPacket()).ifPresent(dpi -> dpi.setServersToRoll(rolling));
+    DomainPresenceInfo.fromPacket(testSupport.getPacket()).ifPresent(dpi -> dpi.getServersToRoll().putAll(rolling));
     configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));

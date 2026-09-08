@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.RandomStringGenerator;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
@@ -45,6 +46,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVE
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_PRESENCE_INFO;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
@@ -57,6 +59,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /**
@@ -111,6 +114,18 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
 
     assertThat(getRecordedDomain().getStatus().isRolling(), is(true));
+  }
+
+  @Test
+  void whenPresenceInfoDomainChanges_statusUpdaterContextRetainsOriginalDomainSnapshot() {
+    Packet packet = new Packet();
+    packet.put(DOMAIN_PRESENCE_INFO, info);
+    DomainStatusUpdater.DomainStatusUpdaterStep updaterStep = new DomainStatusUpdater.DomainStatusUpdaterStep() { };
+    DomainStatusUpdater.DomainStatusUpdaterContext context = updaterStep.createContext(packet);
+
+    info.setDomain(DomainProcessorTestSetup.createTestDomain(2L));
+
+    assertThat(context.getDomain(), sameInstance(domain));
   }
 
   @Test

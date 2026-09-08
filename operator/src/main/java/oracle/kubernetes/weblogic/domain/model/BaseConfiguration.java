@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -215,6 +216,18 @@ public abstract class BaseConfiguration {
     serverPod.addReadinessGate(readinessGate);
   }
 
+  public List<V1PodSchedulingGate> getSchedulingGates() {
+    return serverPod.getSchedulingGates();
+  }
+
+  void addSchedulingGate(V1PodSchedulingGate schedulingGate) {
+    serverPod.addSchedulingGate(schedulingGate);
+  }
+
+  void setSchedulingGates(List<V1PodSchedulingGate> schedulingGates) {
+    serverPod.setSchedulingGates(schedulingGates);
+  }
+
   public String getRestartPolicy() {
     return serverPod.getRestartPolicy();
   }
@@ -273,6 +286,14 @@ public abstract class BaseConfiguration {
 
   void addHostAlias(V1HostAlias hostAlias) {
     serverPod.addHostAlias(hostAlias);
+  }
+
+  public Boolean getSetHostnameAsFQDN() {
+    return serverPod.getSetHostnameAsFQDN();
+  }
+
+  public void setSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+    serverPod.setSetHostnameAsFQDN(setHostnameAsFQDN);
   }
 
   public V1ResourceRequirements getResources() {

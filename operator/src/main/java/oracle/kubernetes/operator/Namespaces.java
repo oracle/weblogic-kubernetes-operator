@@ -272,7 +272,7 @@ public class Namespaces {
 
     @Override
     public @Nonnull Result apply(Packet packet) {
-      NamespaceValidationContext validationContext = new NamespaceValidationContext(packet, domainNamespaces);
+      NamespaceValidationContext validationContext = new NamespaceValidationContext(packet);
       getNonNullConfiguredDomainNamespaces().forEach(validationContext::validateConfiguredNamespace);
       List<Fiber.StepAndPacket> nsStopEventSteps = getCreateNSStopEventSteps(packet, validationContext);
       stopRemovedNamespaces(validationContext);
@@ -282,7 +282,7 @@ public class Namespaces {
     private List<Fiber.StepAndPacket> getCreateNSStopEventSteps(Packet packet,
                                                                 NamespaceValidationContext validationContext) {
       return domainNamespaces.getNamespaces().stream()
-          .filter(validationContext::isNotManaged)
+          .filter(validationContext::isNoLongerActiveDomainNamespace)
           .map(n -> createNSStopEventDetails(packet, n)).toList();
     }
 
@@ -341,15 +341,9 @@ public class Namespaces {
   private static class NamespaceValidationContext {
 
     final Collection<String> allDomainNamespaces;
-    final DomainNamespaces domainNamespaces;
 
-    NamespaceValidationContext(Packet packet, DomainNamespaces domainNamespaces) {
+    NamespaceValidationContext(Packet packet) {
       allDomainNamespaces = Optional.ofNullable(getFoundDomainNamespaces(packet)).orElse(Collections.emptyList());
-      this.domainNamespaces = domainNamespaces;
-    }
-
-    private boolean isNotManaged(String ns) {
-      return isNoLongerActiveDomainNamespace(ns) || domainNamespaces.isStopping(ns).get();
     }
 
     private boolean isNoLongerActiveDomainNamespace(String ns) {

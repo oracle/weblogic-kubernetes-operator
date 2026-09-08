@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -47,8 +47,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /** The interval in msec that the operator will wait to ensure that started pods have been scheduled on a node. */
-  static final int SCHEDULING_DETECTION_DELAY = 100;
+  /** The interval in msec that the operator will wait before rechecking the startup concurrency limit. */
+  static final int STARTUP_CONCURRENCY_CHECK_DELAY = 100;
 
   private final Collection<ServerStartupInfo> startupInfos;
 
@@ -107,11 +107,18 @@ public class ManagedServerUpIteratorStep extends Step {
     return doNext(DomainStatusUpdater.createStatusUpdateStep(new ManagedServerUpAfterStep(getNext())), packet);
   }
 
-  // Adds an empty map to both the packet and the domain presence info to track servers that need to be rolled
-  private void initialServersToRoll(Packet packet) {
-    final Map<String, Fiber.StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
+  // Makes the domain-scoped pending-roll map available to every packet created by this make-right cycle.
+  void initialServersToRoll(Packet packet) {
+    final Map<String, Fiber.StepAndPacket> serversToRoll = DomainPresenceInfo.fromPacket(packet)
+        .map(this::getPendingServersToRoll)
+        .orElseGet(ConcurrentHashMap::new);
     packet.put(ProcessingConstants.SERVERS_TO_ROLL, serversToRoll);
-    DomainPresenceInfo.fromPacket(packet).ifPresent(dpi -> dpi.setServersToRoll(serversToRoll));
+  }
+
+  private Map<String, Fiber.StepAndPacket> getPendingServersToRoll(DomainPresenceInfo info) {
+    Map<String, Fiber.StepAndPacket> serversToRoll = info.getServersToRoll();
+    serversToRoll.keySet().removeIf(serverName -> !PodHelper.isWaitingToRoll(info.getServerPod(serverName)));
+    return serversToRoll;
   }
 
 
@@ -147,8 +154,16 @@ public class ManagedServerUpIteratorStep extends Step {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       V1Pod managedPod = info.getServerPod(serverName);
       boolean isWaitingToRoll = PodHelper.isWaitingToRoll(managedPod);
+      if (PodHelper.isSchedulingGated(managedPod)) {
+        LOGGER.fine("Managed server pod {0} is scheduling-gated; not waiting for ready in this make-right cycle",
+            serverName);
+        return doNext(packet);
+      }
       if (managedPod == null || (!isPodReady(managedPod) && !isPodMarkedForShutdown(managedPod)
               && !isWaitingToRoll)) {
+        if (info.hasRetryableFailure()) {
+          return doNext(packet);
+        }
         // requeue to wait for managed pod to be ready
         return doRequeue();
       }
@@ -212,19 +227,18 @@ public class ManagedServerUpIteratorStep extends Step {
 
       if (startDetailsQueue.isEmpty()) {
         return doNext(packet);
-      } else if (hasServerAvailableToStart(packet)) {
+      } else if (hasStartupSlot(packet)) {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
       } else {
-        return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
+        return doDelay(this, packet, STARTUP_CONCURRENCY_CHECK_DELAY, TimeUnit.MILLISECONDS);
       }
     }
 
-    private boolean hasServerAvailableToStart(Packet packet) {
+    boolean hasStartupSlot(Packet packet) {
       DomainPresenceInfo info = (DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO);
       String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
-      return (getNumServersStarted() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
-              && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName))));
+      return canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName));
     }
 
     private boolean canStartConcurrently(long numReady) {

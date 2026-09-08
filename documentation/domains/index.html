@@ -1297,7 +1297,7 @@ window.onload = function() {
         },
         "maxClusterConcurrentStartup": {
           "default": 0.0,
-          "description": "The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0.",
+          "description": "The default maximum number of cluster member Managed Server instances that can be in the process of starting at the same time for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. The operator does not wait for one Managed Server Pod to be scheduled before creating another. When this value is greater than 0 and the limit is reached, the operator waits until a Managed Server Pod is in the `Ready` state before starting another. A value of 0 means there is no limit. Defaults to 0.",
           "type": "integer",
           "minimum": 0.0
         },
@@ -1561,8 +1561,8 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "image": {
-          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0",
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.3.12",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.12",
           "type": "string"
         },
         "imagePullPolicy": {

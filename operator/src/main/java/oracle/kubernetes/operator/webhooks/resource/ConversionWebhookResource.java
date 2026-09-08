@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.resource;
@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.ApiException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -30,6 +31,7 @@ import oracle.kubernetes.operator.webhooks.model.Result;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_REQUEST;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
@@ -82,12 +84,11 @@ public class ConversionWebhookResource extends BaseResource {
       conversionResponse = createConversionResponse(conversionReview.getRequest(), be);
     } catch (Exception e) {
 
-      // TEST
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      e.printStackTrace(pw);
-      String exceptionString = sw.toString();
-      LOGGER.severe(exceptionString);
+      if (hasApiException(e)) {
+        LOGGER.severe(Optional.ofNullable(e.getMessage()).orElse(e.toString()), e);
+      } else {
+        LOGGER.severe(getStackTrace(e));
+      }
 
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
@@ -104,6 +105,24 @@ public class ConversionWebhookResource extends BaseResource {
       LOGGER.fine("Conversion webhook response: " + response);
     }
     return response;
+  }
+
+  private boolean hasApiException(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null) {
+      if (current instanceof ApiException) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
+  }
+
+  private String getStackTrace(Throwable throwable) {
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    throwable.printStackTrace(pw);
+    return sw.toString();
   }
 
   private String getConversionRequest(ConversionReviewModel conversionReview) {
@@ -133,22 +152,37 @@ public class ConversionWebhookResource extends BaseResource {
                                                       RestBackend be) {
     SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
-    List<Object> convertedDomains = new ArrayList<>();
+    List<ConvertedResources> conversions = new ArrayList<>();
     for (Map<String, Object> domain : conversionRequest.getDomains()) {
       Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) domain.get("metadata"))
           .orElse(Map.of());
       String namespace = Optional.ofNullable((String) metadata.get("namespace")).orElse("default");
       String domainName = (String) metadata.get("name");
       String domainUid = (String) metadata.get("uid");
+      LOGGER.fine(DOMAIN_CONVERSION_REQUEST, conversionRequest.getUid(), namespace, domainName,
+          domainUid, conversionRequest.getDesiredAPIVersion());
       SchemaConversionUtils.Resources cr = schemaConversionUtils.convertDomainSchema(domain,
           () -> be.listClusters(namespace, domainName, domainUid));
-      convertedDomains.add(cr.domain());
-      cr.clusters().forEach(cluster -> be.createOrReplaceCluster(cluster, domainName, domainUid));
+      conversions.add(new ConvertedResources(cr, domainName, domainUid));
     }
+
+    conversions.forEach(conversion -> conversion.resources().clusters().forEach(cluster ->
+        be.validateClusterConversion(cluster, conversion.domainName(), conversion.domainUid())));
+
+    List<Object> convertedDomains = new ArrayList<>();
+    conversions.forEach(conversion -> {
+      convertedDomains.add(conversion.resources().domain());
+      conversion.resources().clusters().forEach(cluster ->
+          be.createOrReplaceCluster(cluster, conversion.domainName(), conversion.domainUid()));
+    });
 
     return new ConversionResponse()
             .uid(conversionRequest.getUid())
             .result(new Result().status("Success"))
             .convertedObjects(convertedDomains);
+  }
+
+  private record ConvertedResources(
+      SchemaConversionUtils.Resources resources, String domainName, String domainUid) {
   }
 }

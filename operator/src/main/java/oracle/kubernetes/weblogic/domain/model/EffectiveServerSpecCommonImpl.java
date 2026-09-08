@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -201,6 +202,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   @Override
+  public List<V1PodSchedulingGate> getSchedulingGates() {
+    return server.getSchedulingGates();
+  }
+
+  @Override
   public String getRestartPolicy() {
     return server.getRestartPolicy();
   }
@@ -238,6 +244,10 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   @Override
   public List<V1HostAlias> getHostAliases() {
     return server.getHostAliases();
+  }
+
+  public Boolean getSetHostnameAsFQDN() {
+    return server.getSetHostnameAsFQDN();
   }
 
   @Override

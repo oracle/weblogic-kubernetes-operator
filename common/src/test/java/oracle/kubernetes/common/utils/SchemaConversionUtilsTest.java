@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -497,6 +497,17 @@ class SchemaConversionUtilsTest {
 
     assertThat(converter.getDomain(),
         hasJsonPath("$.spec.logHomeLayout", equalTo("ByServers")));
+  }
+
+  @Test
+  void whenPreservedAnnotationUsesUnsupportedPath_dontRestoreIt() {
+    Map<String, Object> annotations = new HashMap<>();
+    getMapAtPath(v8Domain, "metadata").put("annotations", annotations);
+    annotations.put("weblogic.v9.preserved", "{\"$.metadata\":{\"name\":\"changed\"}}");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.name", equalTo("sample-domain1")));
   }
 
   @Test

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -74,6 +74,13 @@ class OperatorLoggingFormatterTest {
   @Test
   void whenThrowableIsApiException_extractAttributes() throws JsonProcessingException {
     logRecord.setThrown(new ApiException(420, Collections.emptyMap(), "a response"));
+
+    assertThat(getFormattedMessage(), allOf(hasEntry("code", "420"), hasEntry("body", "a response")));
+  }
+
+  @Test
+  void whenThrowableWrapsApiException_extractApiExceptionAttributes() throws JsonProcessingException {
+    logRecord.setThrown(new RuntimeException("wrapped", new ApiException(420, Collections.emptyMap(), "a response")));
 
     assertThat(getFormattedMessage(), allOf(hasEntry("code", "420"), hasEntry("body", "a response")));
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -20,11 +20,12 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.utils.SafeYamlUtils;
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * The configuration to be applied to the WebLogic Monitoring Exporter sidecars in the domain.
@@ -42,6 +43,12 @@ public class MonitoringExporterConfiguration {
   @Default(boolDefault = false)
   private Boolean domainQualifier;
 
+  @Description("The timeout, in seconds, for each internal WebLogic Management REST request made by the "
+      + "WebLogic Monitoring Exporter. Defaults to 5 seconds.")
+  @Default(intDefault = 5)
+  @Range(minimum = 1)
+  private Integer restApiTimeoutSeconds;
+
   private ExporterQuery[] queries;
 
   public static MonitoringExporterConfiguration createFromYaml(String yaml) {
@@ -49,7 +56,7 @@ public class MonitoringExporterConfiguration {
   }
 
   public static String convertToJson(String yaml) {
-    final Object loadedYaml = new Yaml().load(yaml);
+    final Object loadedYaml = SafeYamlUtils.load(yaml);
     return new Gson().toJson(loadedYaml, LinkedHashMap.class);
   }
 
@@ -113,6 +120,7 @@ public class MonitoringExporterConfiguration {
       out.beginObject();
       writeOptionalBooleanField(out, "metricsNameSnakeCase", src.metricsNameSnakeCase);
       writeOptionalBooleanField(out, "domainQualifier", src.domainQualifier);
+      writeOptionalIntegerField(out, "restApiTimeoutSeconds", src.restApiTimeoutSeconds);
 
       writeOptionalQueryArray(out, src.queries);
 
@@ -120,6 +128,12 @@ public class MonitoringExporterConfiguration {
     }
 
     private void writeOptionalBooleanField(JsonWriter out, String name, @Nullable Boolean value) throws IOException {
+      if (value != null) {
+        out.name(name).value(value);
+      }
+    }
+
+    private void writeOptionalIntegerField(JsonWriter out, String name, @Nullable Integer value) throws IOException {
       if (value != null) {
         out.name(name).value(value);
       }
@@ -199,6 +213,9 @@ public class MonitoringExporterConfiguration {
             break;
           case "domainQualifier":
             configuration.domainQualifier = in.nextBoolean();
+            break;
+          case "restApiTimeoutSeconds":
+            configuration.restApiTimeoutSeconds = in.nextInt();
             break;
           case "queries":
             configuration.queries = readQueryArray(in);
@@ -283,6 +300,7 @@ public class MonitoringExporterConfiguration {
     return new EqualsBuilder()
           .append(metricsNameSnakeCase, that.metricsNameSnakeCase)
           .append(domainQualifier, that.domainQualifier)
+          .append(restApiTimeoutSeconds, that.restApiTimeoutSeconds)
           .append(queries, that.queries)
           .isEquals();
   }
@@ -292,6 +310,7 @@ public class MonitoringExporterConfiguration {
     return new HashCodeBuilder(17, 37)
           .append(metricsNameSnakeCase)
           .append(domainQualifier)
+          .append(restApiTimeoutSeconds)
           .append(queries)
           .toHashCode();
   }

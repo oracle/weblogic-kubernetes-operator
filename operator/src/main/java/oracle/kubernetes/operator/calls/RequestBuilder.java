@@ -67,7 +67,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_TOO_MANY_REQUESTS;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
 
 public class RequestBuilder<A extends KubernetesObject, L extends KubernetesListObject> {
@@ -94,6 +93,10 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
   };
 
   protected static final UnaryOperator<ApiClient> CLIENT_SELECTOR = client -> client;
+
+  static boolean isOperatorClientSelector(UnaryOperator<ApiClient> clientSelector) {
+    return clientSelector == CLIENT_SELECTOR;
+  }
 
   public static <X extends KubernetesObject, Y extends KubernetesListObject>
       WatchApi<X> createWatchApi(Class<X> apiTypeClass, Class<Y> apiListTypeClass,
@@ -1291,9 +1294,12 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
     for (int retryCount = 0; retryCount <= getCallMaxRetryCount(); retryCount++) {
       try {
         step.apply(new Packet());
-        return response.get();
+        R result = response.get();
+        if (step.usesOperatorClient()) {
+          KubernetesApiAuthenticationHealth.reportSuccessfulResponse();
+        }
+        return result;
       } catch (ApiException e) {
-        resetApiClientIfUnauthorized(e);
         if (!mayRetry(e) || retryCount == getCallMaxRetryCount()) {
           throw e;
         }
@@ -1338,12 +1344,6 @@ public class RequestBuilder<A extends KubernetesObject, L extends KubernetesList
 
   private static boolean mayRetry(ApiException e) {
     return mayRetryOnStatusValue(e.getCode());
-  }
-
-  private static void resetApiClientIfUnauthorized(ApiException e) {
-    if (e.getCode() == HTTP_UNAUTHORIZED) {
-      Client.reset();
-    }
   }
 
   private static boolean mayRetryOnStatusValue(int statusCode) {

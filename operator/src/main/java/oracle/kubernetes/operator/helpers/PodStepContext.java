@@ -37,7 +37,9 @@ import io.kubernetes.client.openapi.models.V1Lifecycle;
 import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodBuilder;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
@@ -242,6 +244,19 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   String getPodName() {
     return LegalNames.toPodName(getDomainUid(), getServerName());
+  }
+
+  @Override
+  protected V1PodSpec createPodSpec() {
+    V1PodSpec podSpec = super.createPodSpec()
+        .setHostnameAsFQDN(getServerSpec().getSetHostnameAsFQDN());
+
+    if (Boolean.TRUE.equals(podSpec.getSetHostnameAsFQDN())) {
+      podSpec.setHostname(getPodName());
+      podSpec.setSubdomain(getPodName());
+    }
+
+    return podSpec;
   }
 
   String getAsName() {
@@ -551,8 +566,14 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   V1Pod createPodModel() {
     final V1Pod podRecipe = createPodRecipe();
-    sha256Hash = AnnotationHelper.createHash(podRecipe);
+    sha256Hash = AnnotationHelper.createHash(withSchedulingGatesRemoved(podRecipe));
     return withNonHashedElements(podRecipe);
+  }
+
+  private V1Pod withSchedulingGatesRemoved(V1Pod pod) {
+    V1Pod copy = new V1PodBuilder(pod).build();
+    Optional.ofNullable(copy).map(V1Pod::getSpec).ifPresent(spec -> spec.setSchedulingGates(null));
+    return copy;
   }
 
   @Override
@@ -691,6 +712,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected V1PodSpec createSpec() {
     V1PodSpec podSpec = createPodSpec()
         .readinessGates(getReadinessGates())
+        .schedulingGates(getSchedulingGates())
         .initContainers(getInitContainers());
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
@@ -742,6 +764,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1PodReadinessGate> getReadinessGates() {
     List<V1PodReadinessGate> readinessGates = getServerSpec().getReadinessGates();
     return readinessGates.isEmpty() ? null : readinessGates;
+  }
+
+  private List<V1PodSchedulingGate> getSchedulingGates() {
+    List<V1PodSchedulingGate> schedulingGates = getServerSpec().getSchedulingGates();
+    return schedulingGates.isEmpty() ? null : schedulingGates;
   }
 
   private List<V1Volume> getVolumes(String domainUid) {
@@ -1514,9 +1541,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-      return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
-          || (isPodFromRecentOperator(currentPod)
-            && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)));
+      // A restartVersion mismatch always requires replacement and cannot be resolved by a compatibility adjustment.
+      return hasCurrentRestartVersions(currentPod)
+          && (AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
+            || (isPodFromRecentOperator(currentPod)
+              && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod))));
+    }
+
+    private boolean hasCurrentRestartVersions(V1Pod currentPod) {
+      return Objects.equals(
+              getLabel(currentPod, LabelConstants.DOMAINRESTARTVERSION_LABEL),
+              getServerSpec().getDomainRestartVersion())
+          && Objects.equals(
+              getLabel(currentPod, LabelConstants.CLUSTERRESTARTVERSION_LABEL),
+              getServerSpec().getClusterRestartVersion())
+          && Objects.equals(
+              getLabel(currentPod, LabelConstants.SERVERRESTARTVERSION_LABEL),
+              getServerSpec().getServerRestartVersion());
     }
 
     private boolean canUseCurrentPod(V1Pod currentPod) {

@@ -1,7 +1,11 @@
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
+    '0.32.0': [
+        '1.36.1':  'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5',
+        '1.36':    'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5'
+    ],
     '0.31.0': [
         '1.35.0':  'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f',
         '1.35':    'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f',
@@ -26,6 +30,7 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
+def default_monitoring_exporter_webapp_version = '2.3.16'
 
 pipeline {
     agent { label 'large-ol9u4' }
@@ -80,6 +85,7 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
+                   '0.32.0',
                    '0.31.0',
                    '0.30.0'
                ]
@@ -88,6 +94,7 @@ pipeline {
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.31.0: 1.35.0, 1.35, 1.34.3, 1.34, 1.33.7, 1.33, 1.32.11, 1.32, 1.31.14, 1.31. Kind 0.30.0: 1.34.0, 1.34, 1.33.4, 1.33, 1.32.8, 1.32, 1.31.12, 1.31 ',
                choices: [
                     // The first item in the list is the default value...
+                    '1.36.1',
                     '1.35.0',
                     '1.35',
                     '1.34.3',
@@ -179,7 +186,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.3.0'
+               defaultValue: default_monitoring_exporter_webapp_version
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
@@ -210,6 +217,13 @@ pipeline {
                     steps {
                         echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
                         evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
+                        script {
+                            if (env.CHANGE_ID) {
+                                // An automatic change-request build may be queued with the previous Jenkinsfile's
+                                // parameter default. Always use the default from the Jenkinsfile being tested.
+                                env.MONITORING_EXPORTER_WEBAPP_VERSION = default_monitoring_exporter_webapp_version
+                            }
+                        }
                     }
                 }
                 stage ('Echo environment') {
@@ -288,12 +302,12 @@ pipeline {
                 }
 
                 stage('Run Helm installation tests') {
-                    environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}"
-                    }
                     steps {
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
-                            sh 'export PATH=${runtime_path} && mvn -pl kubernetes -P helm-installation-test verify'
+                            sh '''
+                              export PATH="${WORKSPACE}/bin:${PATH}"
+                              mvn -pl kubernetes -P helm-installation-test verify
+                            '''
                         }
                     }
                 }
@@ -550,7 +564,7 @@ EOF
                             export PATH=${runtime_path}
                             export KUBECONFIG=${kubeconfig_file}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
-                            touch ${WORKSPACE}/.mvn/maven.config
+                            : > "${WORKSPACE}/.mvn/maven.config"
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
                                 PARALLEL_RUN='false'
@@ -602,7 +616,7 @@ EOF
                                 usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
                             ]) {
                                 sh '''
-                                    export PATH=${runtime_path}
+                                    export PATH="${WORKSPACE}/bin:${PATH}"
                                     export KUBECONFIG=${kubeconfig_file}
                                     export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export BASE_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
@@ -661,7 +675,7 @@ EOF
                         if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                             echo "Failed to delete kind cluster ${kind_name}"
                         fi
-                        sudo chown -R $(whoami) ${WORKSPACE}
+                        sudo chown $(whoami) ${WORKSPACE}
                     '''
                 }
             }

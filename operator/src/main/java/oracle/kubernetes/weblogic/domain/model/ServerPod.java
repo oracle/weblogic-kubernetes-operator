@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -150,6 +151,13 @@ class ServerPod extends KubernetesResource {
       + "More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.")
   private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
 
+  @Description("SchedulingGates is an opaque list of values that if specified will block scheduling the Pod. "
+      + "If schedulingGates is not empty, the Pod will stay in the SchedulingGated state and the scheduler will "
+      + "not attempt to schedule the Pod. SchedulingGates can only be set at Pod creation time, and can be removed "
+      + "only afterwards. Updating or removing this field in the Domain or Cluster resource affects newly created "
+      + "Pods only; to release an existing scheduling-gated Pod, remove its gates from the Pod.")
+  private List<V1PodSchedulingGate> schedulingGates = new ArrayList<>();
+
   @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "
       + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. "
       + "See `kubectl explain pods.spec.restartPolicy`.")
@@ -187,6 +195,14 @@ class ServerPod extends KubernetesResource {
   @Description("HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file "
       + "if specified. This is only valid for non-hostNetwork pods.")
   private List<V1HostAlias> hostAliases = new ArrayList<>();
+
+  @Description("If specified and set to true, the pod's hostname will be configured as the pod's FQDN, "
+      + "rather than the leaf name. The operator sets the pod's hostname and subdomain to the pod name so that "
+      + "the FQDN is backed by the server's headless Service. Because the pod name is used for both values, it "
+      + "appears twice in the generated FQDN: `<pod-name>.<pod-name>.<namespace>.svc.<cluster-domain>`. Caution: "
+      + "on Linux, this complete FQDN must not exceed the 64-character hostname limit; otherwise, the pod will "
+      + "fail to start.")
+  private Boolean setHostnameAsFQDN;
 
   /**
    * Defines the requirements and limits for the pod server.
@@ -580,6 +596,7 @@ class ServerPod extends KubernetesResource {
       priorityClassName = serverPod1.priorityClassName;
     }
     readinessGates.addAll(serverPod1.readinessGates);
+    schedulingGates.addAll(serverPod1.schedulingGates);
     if (restartPolicy == null) {
       restartPolicy = serverPod1.restartPolicy;
     }
@@ -600,6 +617,9 @@ class ServerPod extends KubernetesResource {
     }
     tolerations.addAll(serverPod1.tolerations);
     hostAliases.addAll(serverPod1.hostAliases);
+    if (setHostnameAsFQDN == null) {
+      setHostnameAsFQDN = serverPod1.setHostnameAsFQDN;
+    }
   }
 
   private boolean isNullOrDefaultAffinity() {
@@ -848,6 +868,18 @@ class ServerPod extends KubernetesResource {
     readinessGates.add(readinessGate);
   }
 
+  List<V1PodSchedulingGate> getSchedulingGates() {
+    return schedulingGates;
+  }
+
+  void setSchedulingGates(List<V1PodSchedulingGate> schedulingGates) {
+    this.schedulingGates = schedulingGates;
+  }
+
+  void addSchedulingGate(V1PodSchedulingGate schedulingGate) {
+    schedulingGates.add(schedulingGate);
+  }
+
   String getRestartPolicy() {
     return restartPolicy;
   }
@@ -920,6 +952,14 @@ class ServerPod extends KubernetesResource {
     hostAliases.add(hostAlias);
   }
 
+  Boolean getSetHostnameAsFQDN() {
+    return setHostnameAsFQDN;
+  }
+
+  void setSetHostnameAsFQDN(Boolean setHostnameAsFQDN) {
+    this.setHostnameAsFQDN = setHostnameAsFQDN;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -942,6 +982,7 @@ class ServerPod extends KubernetesResource {
         .append("topologySpreadConstraints", topologySpreadConstraints)
         .append("priorityClassName", priorityClassName)
         .append("readinessGates", readinessGates)
+        .append("schedulingGates", schedulingGates)
         .append("restartPolicy", restartPolicy)
         .append("runtimeClassName", runtimeClassName)
         .append("nodeName", nodeName)
@@ -950,6 +991,7 @@ class ServerPod extends KubernetesResource {
         .append("hostAliases", hostAliases)
         .append("serviceAccountName", serviceAccountName)
         .append("automountServiceAccountToken", automountServiceAccountToken)
+        .append("setHostnameAsFQDN", setHostnameAsFQDN)
         .toString();
   }
 
@@ -991,6 +1033,7 @@ class ServerPod extends KubernetesResource {
         .append(topologySpreadConstraints, that.topologySpreadConstraints)
         .append(priorityClassName, that.priorityClassName)
         .append(readinessGates, that.readinessGates)
+        .append(schedulingGates, that.schedulingGates)
         .append(restartPolicy, that.restartPolicy)
         .append(runtimeClassName, that.runtimeClassName)
         .append(nodeName, that.nodeName)
@@ -999,6 +1042,7 @@ class ServerPod extends KubernetesResource {
         .append(hostAliases, that.hostAliases)
         .append(serviceAccountName, that.serviceAccountName)
         .append(automountServiceAccountToken, that.automountServiceAccountToken)
+        .append(setHostnameAsFQDN, that.setHostnameAsFQDN)
         .isEquals();
   }
 
@@ -1024,6 +1068,7 @@ class ServerPod extends KubernetesResource {
         .append(topologySpreadConstraints)
         .append(priorityClassName)
         .append(readinessGates)
+        .append(schedulingGates)
         .append(restartPolicy)
         .append(runtimeClassName)
         .append(nodeName)
@@ -1032,6 +1077,7 @@ class ServerPod extends KubernetesResource {
         .append(hostAliases)
         .append(serviceAccountName)
         .append(automountServiceAccountToken)
+        .append(setHostnameAsFQDN)
         .toHashCode();
   }
 }

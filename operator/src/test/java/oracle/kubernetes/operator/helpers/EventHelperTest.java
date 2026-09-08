@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -67,6 +67,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_ST
 import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
@@ -94,6 +95,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVE
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
@@ -125,6 +127,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
@@ -519,6 +522,20 @@ class EventHelperTest {
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.STOP_MANAGING_NAMESPACE_EVENT,
             getFormattedMessage(STOP_MANAGING_NAMESPACE_EVENT_PATTERN, NS)), is(true));
+  }
+
+  @Test
+  void whenCreateEventStepCalledForOperatorShutdownRestartLimitExceeded_eventCreatedWithExpectedDetails() {
+    String details = "container starts=4, limit=3, windowSeconds=1800";
+
+    testSupport.runSteps(createEventStep(new EventData(OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED, details)
+        .namespace(OP_NS)
+        .resourceName(OPERATOR_POD_NAME)));
+
+    assertThat("Found OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            OPERATOR_SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT,
+            getFormattedMessage(SHUTDOWN_MARKER_RESTART_LIMIT_EXCEEDED_EVENT_PATTERN, details)), is(true));
   }
 
   @Test

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -32,11 +32,14 @@ class MonitoringExporterConfigurationTest {
   }
 
   @Test
-  void deserializeFromJson() {
-    final MonitoringExporterConfiguration configuration = MonitoringExporterConfiguration.createFromYaml(CONFIG);
+  void deserializeFromDomainConfiguration() {
+    final MonitoringExporterSpecification specification = new MonitoringExporterSpecification();
+    specification.createConfiguration(CONFIG);
+    final MonitoringExporterConfiguration configuration = specification.getConfiguration();
 
     final String jsonString = configuration.asJsonString();
     assertThat(jsonString, hasJsonPath("$.metricsNameSnakeCase", equalTo(true)));
+    assertThat(jsonString, hasJsonPath("$.restApiTimeoutSeconds", equalTo(15)));
     assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.key", equalTo("name")));
     assertThat(jsonString, hasJsonPath("$.queries[0].applicationRuntimes.componentRuntimes.type",
           equalTo("WebAppComponentRuntime")));
@@ -46,6 +49,7 @@ class MonitoringExporterConfigurationTest {
   private static final String CONFIG = """
           ---
           metricsNameSnakeCase: true
+          restApiTimeoutSeconds: 15
           queries:
           - applicationRuntimes:
               key: name
@@ -69,6 +73,14 @@ class MonitoringExporterConfigurationTest {
     final MonitoringExporterConfiguration configuration = MonitoringExporterConfiguration.createFromYaml(VERSION_1);
 
     assertThat(configuration.matchesYaml(VERSION_2), is(true));
+  }
+
+  @Test
+  void configurationsWithDifferentRestApiTimeoutsDoNotMatch() {
+    final MonitoringExporterConfiguration configuration =
+        MonitoringExporterConfiguration.createFromYaml("restApiTimeoutSeconds: 15");
+
+    assertThat(configuration.matchesYaml("restApiTimeoutSeconds: 10"), is(false));
   }
 
   private static final String VERSION_1 = """
