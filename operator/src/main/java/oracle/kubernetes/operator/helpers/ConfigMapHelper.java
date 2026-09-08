@@ -643,11 +643,35 @@ public class ConfigMapHelper {
 
       @Override
       public @Nonnull Result apply(Packet packet) {
+        int previousNumConfigMaps = getNumConfigMaps(packet);
         Collection<Fiber.StepAndPacket> startDetails = splitter.split(data).stream()
               .map(c -> c.createStepAndPacket(packet))
               .toList();
-        packet.put(NUM_CONFIG_MAPS, Integer.toString(startDetails.size()));
-        return doForkJoin(getNext(), packet, startDetails);
+        int currentNumConfigMaps = startDetails.size();
+        packet.put(NUM_CONFIG_MAPS, Integer.toString(currentNumConfigMaps));
+        return doForkJoin(
+            createObsoleteConfigMapDeletionSteps(previousNumConfigMaps, currentNumConfigMaps), packet, startDetails);
+      }
+
+      private int getNumConfigMaps(Packet packet) {
+        try {
+          return Optional.ofNullable(packet.<String>getValue(NUM_CONFIG_MAPS))
+              .map(Integer::parseInt)
+              .orElse(1);
+        } catch (NumberFormatException ignored) {
+          return 1;
+        }
+      }
+
+      private Step createObsoleteConfigMapDeletionSteps(int previousCount, int currentCount) {
+        List<Step> steps = new ArrayList<>();
+        for (int i = currentCount; i < previousCount; i++) {
+          steps.add(new DeleteIntrospectorConfigMapStep(
+              info.getDomainUid(), info.getNamespace(),
+              IntrospectorConfigMapConstants.getIntrospectorConfigMapName(info.getDomainUid(), i)));
+        }
+        steps.add(getNext());
+        return steps.size() == 1 ? getNext() : Step.chain(steps);
       }
 
     }

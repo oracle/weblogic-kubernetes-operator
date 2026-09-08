@@ -45,16 +45,16 @@ When you deploy a Model in Image domain resource YAML file:
   - The operator will run a Kubernetes Job called the 'introspector job' that:
     - For an [Auxiliary Image]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}) deployment, an init container is used to copy and set up the WDT installer in the main container, and all the WDT models are also copied to the main container.
     - Sets up the call parameters for WDT to create the domain. The ordering of the models follow the pattern [Model files naming and ordering]({{% relref "/managing-domains/model-in-image/model-files#model-file-naming-and-loading-order" %}}).
-    - Runs WDT tooling to generate a domain home using the parameters from the previous step.
+    - Runs WDT tooling to generate a complete domain home using the parameters from the previous step.
     - Encrypts the domain salt key `SerializedSystemIni.dat`.
-    - Packages the domain home and passes it to the operator.  The packaged domain has two parts. The first part `primordial domain` contains the basic configuration including the encrypted salt key. The second part `domain config` contains the rest of the configuration `config/**/*.xml`.  These files are compressed but do not contain any applications, libraries, key stores, and such, because they can be restored from the WDT archives.   
+    - Packages the complete domain home and passes it to the operator in a compressed archive. Applications and libraries are restored separately from the WDT archives when each server pod starts.
 
   - After the introspector job completes:
     - The operator creates one or more ConfigMaps following the pattern `DOMAIN_UID-weblogic-domain-introspect-cm***`.  These ConfigMaps contain the packaged domains from the introspector job and other information for starting the domain.
 
   - After completion of the introspector job, the operator will start the domain:
     - For an [Auxiliary Image]({{% relref "/managing-domains/model-in-image/auxiliary-images.md" %}}) deployment, an init container is used to copy and set up the WDT installer in the main container, and all the WDT models are also copied to the main container first.    
-    - Restore the packaged domains in the server pod.
+    - Restore the packaged domain in the server pod.
     - Restore applications, libraries, key stores, and such, from the WDT archives.
     - Decrypt the domain salt key.
     - Start the domain.
@@ -81,9 +81,9 @@ The certificates are created under the domain home `security` folder.
 -rw-r-----  1 oracle oracle  2948 Feb 15 15:55 DemoIdentity.p12
 ```
 
-For Model in Image domains, whenever you change any security credentials including, but not limited to, the Administration Server credentials, RCU credentials, and such, the domain will be recreated and a new set of demo SSL certificates will be generated. The SSL certificates are valid for 6 months, then they expire.
+For Model in Image domains, changing security credentials, including the Administration Server or RCU credentials, can cause the domain to be recreated. The operator preserves the existing demo SSL certificates when it recreates an existing domain. The SSL certificates are valid for 6 months, then they expire.
 
-The demo CA certificate expires in 5 years, however, whenever the domain is recreated, the entire set of certificates are regenerated so you _must_ import the demo CA certificate again.  
+The demo CA certificate expires in 5 years. Because the operator preserves it during domain recreation, clients that already trust the certificate do not need to import a newly generated certificate after each model update.
 
 If you have any external client that needs to communicate with WebLogic Servers using SSL, then you need to import the current self-signing CA certificate, `democacert.der`,
 into your local trust store.

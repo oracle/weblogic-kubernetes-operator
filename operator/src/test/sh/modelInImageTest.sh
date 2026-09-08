@@ -1,18 +1,29 @@
 #!/usr/bin/env bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 TEST_OPERATOR_ROOT=/tmp/test/weblogic-operator
 setUp() {
   DISALLOW=
   PWD=/no/where/special
-  DOMAIN_HOME=/domain/home
+  DOMAIN_HOME=${TEST_OPERATOR_ROOT}/domain/home
 
   INTROSPECTOR_MAP=${TEST_OPERATOR_ROOT}/introspector
   rm -fR ${TEST_OPERATOR_ROOT}
-  mkdir -p ${TEST_OPERATOR_ROOT}/introspector
+  mkdir -p ${TEST_OPERATOR_ROOT}/introspector ${DOMAIN_HOME}/wlsdeploy/applications
   echo "<ignored>" > $INTROSPECTOR_MAP/domainzip.secure
   echo "<ignored>" > $INTROSPECTOR_MAP/primordial_domainzip.secure
+
+  INTROSPECTCM_WLS_VERSION=${INTROSPECTOR_MAP}/wls.version
+  CURRENT_WLS_VERSION=14.1.2.0.0
+  MII_RUNNING_SERVERS_STATES=
+  WDT_DOMAIN_TYPE=WLS
+  TAR_APPEND_ARGS=
+  TAR_CREATE_ARGS=
+  TAR_DEMO_EXTRACT_ARGS=
+  TAR_LISTING=
+  GZIP_ARGS=
+  UNZIP_APP_ARGS=
 }
 
 testRestoreDomainConfig_failsIfUnableToCDToRoot() {
@@ -122,6 +133,102 @@ testOnRestorePrimordialDomain_unTarDomain() {
   assertEquals "TAR command arguments" "-pxzf /tmp/domain.tar.gz" "$TAR_ARGS"
 }
 
+testRestoreIntrospectorArchive_concatenatesConfigMapParts() {
+  mkdir -p ${TEST_OPERATOR_ROOT}/introspectormii ${TEST_OPERATOR_ROOT}/introspectormii-1
+  echo -n "abc" > ${TEST_OPERATOR_ROOT}/introspectormii/primordial_domainzip.secure
+  echo -n "def" > ${TEST_OPERATOR_ROOT}/introspectormii-1/primordial_domainzip.secure
+
+  restoreIntrospectorArchive "primordial_domainzip.secure" "/" "/tmp/prim_domain.tar.gz"
+
+  assertEquals "abcdef" "$(cat /tmp/domain.secure)"
+}
+
+testRestoreDomainDemoPKIs_allowsArchiveWithoutDomainSpecificDemoCertificates() {
+  TAR_LISTING="tmp/test/domain/home/security/SerializedSystemIni.dat"
+
+  restoreDomainDemoPKIs "primordial_domainzip.secure"
+
+  assertEquals "archive without domain-specific demo certificates must be accepted" 0 "$?"
+  assertEquals "" "${TAR_DEMO_EXTRACT_ARGS}"
+}
+
+testRestoreDomainDemoPKIs_extractsDomainSpecificDemoCertificatesWhenPresent() {
+  TAR_LISTING="tmp/test/domain/home/security/DemoIdentity.p12
+tmp/test/domain/home/security/democacert.der"
+
+  restoreDomainDemoPKIs "primordial_domainzip.secure"
+
+  assertEquals "-pzxvf /tmp/domain.tar.gz -C /tmp -T /tmp/domain-demo-files" \
+    "${TAR_DEMO_EXTRACT_ARGS}"
+}
+
+testCreateModelDomainArchive_includesProcessedApplicationDescriptors() {
+  touch ${DOMAIN_HOME}/wlsdeploy/applications/application.xml
+  touch ${DOMAIN_HOME}/wlsdeploy/applications/application.ear
+
+  createModelDomainArchive ""
+
+  assertEquals "-prf /tmp/prim_domain.tar ${DOMAIN_HOME}/wlsdeploy/applications/application.xml" \
+    "${TAR_APPEND_ARGS}"
+  echo "${TAR_CREATE_ARGS}" | grep -q -- "--exclude=${DOMAIN_HOME}/config/deployments"
+  assertEquals "domain deployments must be excluded from the ConfigMap archive" 0 "$?"
+  assertEquals "-f /tmp/prim_domain.tar" "${GZIP_ARGS}"
+}
+
+testRestoreAppAndLibs_doesNotOverwriteProcessedApplicationDescriptors() {
+  mkdir -p ${DOMAIN_HOME}/bin ${DOMAIN_HOME}/lib
+  IMG_ARCHIVES_ROOTDIR=/models
+  DOMAIN_BIN_LIB_LIST=${TEST_OPERATOR_ROOT}/missing-binlib-list
+
+  restoreAppAndLibs
+
+  echo "${UNZIP_APP_ARGS}" | grep -q -- "wlsdeploy/applications/\*.xml"
+  assertEquals "processed application descriptors must not be overwritten" 0 "$?"
+}
+
+testCheckMiiDomainUpgradeCompatibility_rejectsMajorWlsUpgradeWithRunningServers() {
+  echo "12.2.1.4.0" > "${INTROSPECTCM_WLS_VERSION}"
+  MII_RUNNING_SERVERS_STATES="managed-server1:RUNNING"
+
+  checkMiiDomainUpgradeCompatibility
+
+  assertEquals "major WLS upgrade with running servers must be rejected" 1 "$?"
+}
+
+testCheckMiiDomainUpgradeCompatibility_allowsMajorWlsUpgradeWhenServersAreShutdown() {
+  echo "12.2.1.4.0" > "${INTROSPECTCM_WLS_VERSION}"
+
+  checkMiiDomainUpgradeCompatibility
+
+  assertEquals "major WLS upgrade with all servers shut down must be allowed" 0 "$?"
+}
+
+testCheckMiiDomainUpgradeCompatibility_rejectsMajorJrfUpgrade() {
+  echo "12.2.1.4.0" > "${INTROSPECTCM_WLS_VERSION}"
+  WDT_DOMAIN_TYPE=JRF
+
+  checkMiiDomainUpgradeCompatibility
+
+  assertEquals "major JRF upgrade must be rejected" 1 "$?"
+}
+
+testConfigureRcuSchemaPasswordUpdate_setsFlagWhenRcuPasswordChanges() {
+  WDT_DOMAIN_TYPE=JRF
+  UPDATE_RCUPWD_FLAG=
+
+  configureRcuSchemaPasswordUpdate "1,5" "false"
+
+  assertEquals "-updateRCUSchemaPassword" "${UPDATE_RCUPWD_FLAG}"
+}
+
+testConfigureRcuSchemaPasswordUpdate_doesNotSetFlagForWlsDomain() {
+  UPDATE_RCUPWD_FLAG=
+
+  configureRcuSchemaPasswordUpdate "5" "true"
+
+  assertEquals "" "${UPDATE_RCUPWD_FLAG}"
+}
+
 ######################### Mocks for the tests ###############
 
 # simulates the shell 'cd' command. Will fail on CD to forbidden location, or set PWD
@@ -157,11 +264,51 @@ tar() {
     return 1
   else
     TAR_ARGS="$*"
+    if [ "$1" = "-tzf" ]; then
+      echo "${TAR_LISTING}"
+    elif [ "$1" = "-pcf" ]; then
+      TAR_CREATE_ARGS="$*"
+    elif [ "$1" = "-prf" ]; then
+      TAR_APPEND_ARGS="$*"
+    elif [ "$1" = "-pzxvf" ]; then
+      TAR_DEMO_EXTRACT_ARGS="$*"
+    fi
   fi
 }
 
 chmod() {
   CHMOD_ARGS="$*"
+}
+
+gzip() {
+  GZIP_ARGS="$*"
+}
+
+unzip() {
+  if [ "$1" = "-o" ]; then
+    UNZIP_APP_ARGS="$*"
+  fi
+  return 0
+}
+
+sort_files() {
+  echo "archive.zip"
+}
+
+createFolder() {
+  mkdir -p "$1"
+}
+
+getWebLogicVersion() {
+  echo "${CURRENT_WLS_VERSION}"
+}
+
+versionGT() {
+  [ "$1" -gt "$2" ]
+}
+
+trace() {
+  TRACE_ARGS="$*"
 }
 
 # shellcheck source=src/main/resources/scripts/modelInImage.sh

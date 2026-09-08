@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.introspection;
@@ -366,6 +366,23 @@ class IntrospectorConfigMapTest {
   }
 
   @Test
+  void whenNewIntrospectionUsesFewerConfigMaps_deleteObsoleteMaps() {
+    testSupport.defineResources(
+          createIntrospectorConfigMap(0, Map.of(NUM_CONFIG_MAPS, "3", TOPOLOGY_YAML, TOPOLOGY_VALUE)),
+          createIntrospectorConfigMap(1, Map.of(LARGE_DATA_KEY, "old-part-1")),
+          createIntrospectorConfigMap(2, Map.of(LARGE_DATA_KEY, "old-part-2")));
+    testSupport.addToPacket(NUM_CONFIG_MAPS, "3");
+    introspectResult
+          .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
+          .addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectionConfigMaps(), hasSize(1));
+    assertThat(getIntrospectorConfigMapValue(NUM_CONFIG_MAPS), equalTo("1"));
+  }
+
+  @Test
   void whenDomainHasRestartVersion_addToPacket() {
     configureDomain().withRestartVersion(RESTART_VERSION);
     introspectResult
@@ -406,6 +423,25 @@ class IntrospectorConfigMapTest {
 
     assertThat(getIntrospectorConfigMapValue("domainzip.secure.range"), nullValue());
     assertThat(getIntrospectorConfigMapValue("primordial_domainzip.secure.range"), nullValue());
+  }
+
+  @Test
+  void whenNewModelInImageResultOmitsDomainZip_removeLegacyDomainZipFromConfigMap() {
+    configureDomain().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    testSupport.defineResources(createIntrospectorConfigMap(0, Map.of(
+          TOPOLOGY_YAML, TOPOLOGY_VALUE,
+          "domainzip.secure", "legacy-domain-configuration",
+          "primordial_domainzip.secure", "legacy-primordial-domain")));
+    introspectResult
+          .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
+          .defineFile("primordial_domainzip.secure", "complete-model-domain")
+          .addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectorConfigMapData(), allOf(
+          not(hasKey("domainzip.secure")),
+          hasEntry("primordial_domainzip.secure", "complete-model-domain")));
   }
 
   private V1ConfigMap createIntrospectorConfigMap(int mapIndex, Map<String, String> entries) {

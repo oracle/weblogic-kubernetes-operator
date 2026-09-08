@@ -539,10 +539,19 @@ restoreDomainDemoCerts() {
 }
 
 restoreIntrospectorPrimordialDomain() {
-  cd / || return 1
-  cat $(ls /weblogic-operator/introspectormii*/primordial_domainzip.secure | sort -t- -k3) > /tmp/domain.secure || return 1
-  base64 -d "/tmp/domain.secure" > $LOCAL_PRIM_DOMAIN_ZIP || return 1
-  tar -pxzf $LOCAL_PRIM_DOMAIN_ZIP || return 1
+  restoreIntrospectorArchive "primordial_domainzip.secure" "/" "${LOCAL_PRIM_DOMAIN_ZIP}" || return 1
+}
+
+# Restores an archive mounted in one or more introspector-job ConfigMap volumes.
+restoreIntrospectorArchive() {
+  local archive_name="$1"
+  local destination="$2"
+  local local_archive="$3"
+
+  cd "${destination}" || return 1
+  cat $(ls ${OPERATOR_ROOT}/introspectormii*/${archive_name} | sort -t- -k3) > /tmp/domain.secure || return 1
+  base64 -d /tmp/domain.secure > "${local_archive}" || return 1
+  tar -pxzf "${local_archive}" || return 1
 }
 
 # Restores the specified directory, targz'ed and stored in one or more config maps after base 64 encoding
@@ -560,7 +569,11 @@ restoreDomainDemoPKIs() {
   cd / || return 1
   cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
-  tar -pzxvf /tmp/domain.tar.gz -C /tmp  '*/security/Demo*' '*/security/demo*' || return 1
+  tar -tzf /tmp/domain.tar.gz > /tmp/domain-archive-files || return 1
+  grep -E '/security/(Demo|demo)' /tmp/domain-archive-files > /tmp/domain-demo-files || true
+  if [ -s /tmp/domain-demo-files ] ; then
+    tar -pzxvf /tmp/domain.tar.gz -C /tmp -T /tmp/domain-demo-files || return 1
+  fi
 }
 
 restoreSaltIni() {
@@ -568,6 +581,40 @@ restoreSaltIni() {
   cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
   tar -pzxvf /tmp/domain.tar.gz -C /tmp  '*/security/SerializedSystemIni.dat'  || return 1
+}
+
+# Creates the complete model domain archive. WDT-generated application descriptor XML files
+# are appended after excluding the rest of wlsdeploy so that they overwrite tokenized copies
+# restored from the original WDT archive in each server pod.
+createModelDomainArchive() {
+  local em_archive="$1"
+  local archive_entries=()
+  local application_descriptors=()
+
+  if [ -n "${em_archive}" ] ; then
+    archive_entries+=("${em_archive}")
+  fi
+  archive_entries+=("${DOMAIN_HOME}"/*)
+
+  tar -pcf "${LOCAL_PRIM_DOMAIN_TAR}" \
+    --exclude="${DOMAIN_HOME}/wlsdeploy" \
+    --exclude="${DOMAIN_HOME}/sysman/log" \
+    --exclude="${DOMAIN_HOME}/lib" \
+    --exclude="${DOMAIN_HOME}/backup_config" \
+    --exclude="${DOMAIN_HOME}/config/deployments" \
+    "${archive_entries[@]}" || return 1
+
+  if [ -d "${DOMAIN_HOME}/wlsdeploy/applications" ] ; then
+    while IFS= read -r descriptor ; do
+      application_descriptors+=("${descriptor}")
+    done < <(find "${DOMAIN_HOME}/wlsdeploy/applications" -maxdepth 1 -type f -name '*.xml' -print)
+  fi
+
+  if [ ${#application_descriptors[@]} -gt 0 ] ; then
+    tar -prf "${LOCAL_PRIM_DOMAIN_TAR}" "${application_descriptors[@]}" || return 1
+  fi
+
+  gzip -f "${LOCAL_PRIM_DOMAIN_TAR}" || return 1
 }
 
 # This is before WDT compareModel implementation
@@ -685,6 +732,60 @@ diff_model() {
 # createPrimordialDomain will create the primordial domain
 #
 
+checkMiiDomainUpgradeCompatibility() {
+  if [ ! -f "${INTROSPECTCM_WLS_VERSION}" ] ; then
+    trace WARNING "The existing Model in Image ConfigMap does not contain a WebLogic version;" \
+      "skipping the major-version compatibility check."
+    return 0
+  fi
+
+  local pod_version=$(getWebLogicVersion)
+  local config_version=$(cat "${INTROSPECTCM_WLS_VERSION}")
+  local major_pod_version=$(echo "${pod_version}" | cut -d'.' -f1)
+  local major_config_version=$(echo "${config_version}" | cut -d'.' -f1)
+
+  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && versionGT "${major_pod_version}" "${major_config_version}" ; then
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+      " is 'FromModel' and the 'spec.configuration.model.domainType' is 'JRF';" \
+      " the domain is configured with WebLogic Server version ${config_version}" \
+      ", and the WebLogic server version in the introspector pod is ${pod_version}." \
+      " You cannot update an existing JRF domain using a WebLogic server which has a major version" \
+      " that is higher than the existing domain. Note: The JRF domain for Model in Image has been deprecated," \
+      " you should use Domain on Persistent Volume instead."
+    return 1
+  fi
+
+  if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] \
+     && versionGT "${major_pod_version}" "${major_config_version}" \
+     && [ -n "${MII_RUNNING_SERVERS_STATES:-}" ] ; then
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+      " is 'FromModel' and the 'spec.configuration.model.domainType' is 'WLS';" \
+      " the domain is configured with WebLogic Server version ${config_version}" \
+      ", and the WebLogic server version in the introspector pod is ${pod_version}." \
+      " When updating an existing WLS domain with a new version of WebLogic Server, all servers in" \
+      " the entire domain must be shut down first. The following servers are not in SHUTDOWN state:" \
+      " ${MII_RUNNING_SERVERS_STATES}"
+    return 1
+  fi
+
+  return 0
+}
+
+configureRcuSchemaPasswordUpdate() {
+  local diff_rc="$1"
+  local security_info_updated="$2"
+
+  if [ "${WDT_DOMAIN_TYPE}" != "JRF" ] ; then
+    return
+  fi
+
+  local rcu_password_updated="false"
+  rcu_password_updated=$(contain_returncode "${diff_rc}" "${RCU_PASSWORD_CHANGED}")
+  if [ "${security_info_updated}" == "true" ] || [ "${rcu_password_updated}" == "true" ] ; then
+    UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+  fi
+}
+
 createPrimordialDomain() {
   trace "Entering createPrimordialDomain"
   local create_primordial_tgz=0
@@ -698,6 +799,7 @@ createPrimordialDomain() {
     local DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
+    checkMiiDomainUpgradeCompatibility || exitOrLoop
     restoreDomainSalt
     restoreDomainDemoCerts
 
@@ -763,6 +865,7 @@ createPrimordialDomain() {
       # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
       # getDatabaseDefaults).
       #
+      configureRcuSchemaPasswordUpdate "${diff_rc}" "${security_info_updated}"
     fi
   else
       MII_USE_ONLINE_UPDATE=false
@@ -788,8 +891,8 @@ createPrimordialDomain() {
   create_primordial_tgz=1
     #MII_USE_ONLINE_UPDATE=false
 
-  # tar up primordial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
-  # introspectDomain.py
+  # Package the complete model domain with em.ear if it is present. The archive stays under the legacy
+  # primordial-domain key so that this operator can consume ConfigMaps generated by previous releases.
 
   empath=""
   if [ "${WDT_DOMAIN_TYPE}" != "WLS" ] ; then
@@ -809,8 +912,7 @@ createPrimordialDomain() {
     chmod -R g=u ${DOMAIN_HOME} || return 1
   fi
 
-  tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \
-  --exclude ${DOMAIN_HOME}/lib --exclude ${DOMAIN_HOME}/backup_config ${empath} ${DOMAIN_HOME}/*
+  createModelDomainArchive "${empath}" || return 1
 
   # Put back the original one so that the process node manager and introspector works later
   mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
@@ -830,12 +932,16 @@ checkSecureModeForUpgrade() {
     # Only do this if the wls version in the pod is >= 14.1.2.0
     if versionGE "${cur_wl_ver}" "${exp_wl_ver}" ; then
       trace "Checking if upgrade to 14.1.2.0 or higher needs model patch"
-      mkdir /tmp/miiupgdomain
-      cd /tmp/miiupgdomain && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP}.tmp && tar -pxzf ${LOCAL_PRIM_DOMAIN_ZIP}.tmp
+      mkdir -p /tmp/miiupgdomain
+      restoreIntrospectorArchive "primordial_domainzip.secure" "/tmp/miiupgdomain" \
+        "${LOCAL_PRIM_DOMAIN_ZIP}.tmp" || exitOrLoop
       createFolder "/tmp/miiupgdomain${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
       local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
       encrypt_decrypt_domain_secret "decrypt" /tmp/miiupgdomain${DOMAIN_HOME} ${MII_PASSPHRASE}
-      cd /tmp/miiupgdomain && base64 -d ${WLSDOMAIN_CONFIG_ZIPPED} > ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp && tar -pxzf ${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp
+      if [ -f "${WLSDOMAIN_CONFIG_ZIPPED}" ] ; then
+        restoreIntrospectorArchive "domainzip.secure" "/tmp/miiupgdomain" \
+          "${LOCAL_WLSDOMAIN_CONFIG_ZIP}.tmp" || exitOrLoop
+      fi
       # reading existing domain to determine what the secure mode should be whether it is set or by default.
       # a file is written to a /tmp/mii_domain_upgrade.txt containing the status of SecureModeEnabled.
       ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/mii-domain-upgrade.py /tmp/miiupgdomain$DOMAIN_HOME || exitOrLoop
@@ -993,6 +1099,8 @@ wdtCreatePrimordialDomain() {
     fi
   fi
 
+  captureBinLibAdded
+
   local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
   gzip ${DOMAIN_HOME}/wlsdeploy/domain_model.json || exitOrLoop
@@ -1023,39 +1131,7 @@ wdtUpdateModelDomain() {
   # make sure wdt create write out the merged model to a file in the root of the domain
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  local pod_version=$(getWebLogicVersion)
-  local config_version=$(grep '<domain-version>' $DOMAIN_HOME/config/config.xml | sed -n 's/.*<domain-version>\(.*\)<\/domain-version>.*/\1/p')
-  local major_pod_version=$(echo $pod_version | cut -d'.' -f1)
-  local major_config_version=$(echo $config_version | cut -d'.' -f1)
-
-  # Legacy JRF checks
-  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-    if versionGT $major_pod_version $major_config_version  ; then
-      trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
-        " is 'FromModel' and the 'spec.configuration.model.domainType' is 'JRF';" \
-        " the domain is configured with WebLogic Server version $config_version" \
-        ", and the WebLogic server version in the introspector pod is $pod_version." \
-        " You cannot update an existing JRF domain using a WebLogic server which has a major version" \
-        " that is higher than the existing domain.  Note: The JRF domain for Model in Image has been deprecated," \
-        " you should use Domain on Persistent Volume instead."
-      exitOrLoop
-    fi
-  fi
-
-  if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
-    if versionGT $major_pod_version $major_config_version  ; then
-      if [ ! -z ${MII_RUNNING_SERVERS_STATES} ] ; then
-        trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
-          " is 'FromModel' and the 'spec.configuration.model.domainType' is 'WLS';" \
-          " the domain is configured with WebLogic Server version $config_version" \
-          ", and the WebLogic server version in the introspector pod is $pod_version." \
-          " When updating an existing WLS domain with a new version of WebLogic Server.  All servers in" \
-          " the entire domain must be shut down first. The following servers are not in SHUTDOWN state:" \
-          " ${MII_RUNNING_SERVERS_STATES}"
-        exitOrLoop
-      fi
-    fi
-  fi
+  checkMiiDomainUpgradeCompatibility || exitOrLoop
 
   local wdtArgs=""
   wdtArgs+=" -oracle_home ${ORACLE_HOME}"
@@ -1395,10 +1471,11 @@ restoreAppAndLibs() {
         # expand the archive apps, shared lib and other wlsdeploy/* directories
         # exclude directories that are already expanded separately and already included in domain config zip
         #   wlsdeploy/domainBin, wlsdeploy/domainLibraries, config/ - avoid confusion but no harm
-        #   wlsdeploy/applications/*.xml since it is included int zipped up domain config
-        #   zip, the original xml in the archive may have wdt tokenized notations.
+        #   wlsdeploy/applications/*.xml since processed descriptors are included in the complete domain
+        #   archive; the original XML in the WDT archive may contain WDT token notation.
         cd ${DOMAIN_HOME} || return 1
-        unzip -o ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/domainBin/*" "wlsdeploy/domainLibraries/*"  "config/*"
+        unzip -o ${IMG_ARCHIVES_ROOTDIR}/${file} \
+          -x "wlsdeploy/domainBin/*" "wlsdeploy/domainLibraries/*" "wlsdeploy/applications/*.xml" "config/*"
         ret=$?
         if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
@@ -1422,9 +1499,8 @@ prepareMIIServer() {
 
   trace "Model-in-Image: Creating domain home."
 
-  # primordial domain contain the basic structures, security and other fmwconfig templated info
-  # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
-  # Both are needed for the complete domain reconstruction
+  # The archive stored under the legacy primordial-domain key contains the complete domain.
+  # ConfigMaps generated by older operators also have a domainzip overlay, which is restored below when present.
 
   if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
     trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
@@ -1446,9 +1522,8 @@ prepareMIIServer() {
   fi
   encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
-  # We restore the app and libs from the archive first,  the domain zip may contain any standalone application
-  # modules under wlsdeploy/applications/*.xml.  In the next step, if any standalone application module exists collected
-  # during introspection, it will overwrite the tokenized version in the archive.
+  # Restore applications and libraries from the WDT archives. Processed standalone application descriptors
+  # are already in the complete domain archive, so restoreAppAndLibs excludes their tokenized source copies.
     
   trace "Model-in-Image: Restoring apps and libraries"
   restoreAppAndLibs || return 1

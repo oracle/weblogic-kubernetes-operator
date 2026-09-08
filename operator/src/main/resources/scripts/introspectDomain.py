@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -138,7 +138,6 @@ class OfflineWlstEnv(object):
     # Model in image attributes
 
     self.MII_DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
-    self.MII_DOMAIN_ZIP               = self.INTROSPECT_HOME + '/domainzip.secure'
     self.MII_PRIMORDIAL_DOMAIN_ZIP    = self.INTROSPECT_HOME + '/primordial_domainzip.secure'
 
     self.MII_INVENTORY_IMAGE_MD5      = self.INTROSPECT_HOME + '/inventory_image.md5'
@@ -1111,40 +1110,28 @@ class UserConfigAndKeyGenerator(Generator):
     finally:
       nmDisconnect()
 
-class MII_DomainConfigGenerator(Generator):
+class MII_DomainArchiveHashGenerator(object):
 
   def __init__(self, env):
-    Generator.__init__(self, env, env.MII_DOMAIN_ZIP)
     self.env = env
-    self.domain_home = self.env.getDomainHome()
+
   def generate(self):
-    self.open()
+    digest = md5.new()
+    archive = open("/tmp/prim_domain.tar.gz", "rb")
     try:
-      self.addDomainConfig()
-      self.close()
-      self.addGeneratedFile()
+      while 1:
+        data = archive.read(1024 * 1024)
+        if not data:
+          break
+        digest.update(data)
     finally:
-      self.close()
+      archive.close()
 
-  def addDomainConfig(self):
-    kubernetes_platform = self.env.getEnvOrDef("KUBERNETES_PLATFORM", "")
-    if (str(kubernetes_platform).upper() == 'OPENSHIFT'):
-      os.system("chmod -R g=u %s" % self.domain_home)
-
-    # Note: only certain config type is needed fmwconfig, security (except saml files) is excluded because it's in the primordial and contain
-    # all the many policies files
-
-    domain_data = self.env.readBinaryFile("/tmp/prim_domain.tar.gz")
-    b64 = ""
-    for s in base64.encodestring(domain_data).splitlines():
-      b64 = b64 + s
-
-    domainzip_hash = md5.new(domain_data).hexdigest()
     fh = open("/tmp/domainzip_hash", "w")
-    fh.write(domainzip_hash)
+    fh.write(digest.hexdigest())
     fh.close()
 
-    trace('done zipping up domain ')
+    trace('done hashing domain archive')
 
 
 class JRFOpssWalletFileGenerator(Generator):
@@ -1940,8 +1927,8 @@ class DomainIntrospector(SecretManager):
       if DOMAIN_SOURCE_TYPE == "FromModel":
         trace("cfgmap write primordial_domain")
         MII_PrimordialDomainGenerator(self.env).generate()
-        trace("cfgmap write domain zip")
-        MII_DomainConfigGenerator(self.env).generate()
+        trace("calculate domain archive hash")
+        MII_DomainArchiveHashGenerator(self.env).generate()
         trace("cfgmap write merged model")
         MII_IntrospectCMFileGenerator(self.env, self.env.MII_MERGED_MODEL_FILE,
                                       self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
