@@ -329,6 +329,10 @@ class DomainResourcesValidation {
       makeRight.withEventData(new EventData(eventItem)).interrupt().execute();
     } else if (!info.hasRetryableFailure()) {
       makeRight.execute();
+    } else if (isNotBeingProcessed(info.getNamespace(), info.getDomainUid())) {
+      // An unchanged failed domain must wait for its retry time, not reconcile on every scan.
+      // Restore a missing timer (for example after restart); an active fiber schedules its retry on completion.
+      dp.ensureFailureRetryScheduled(info);
     }
   }
 

@@ -39,6 +39,7 @@ import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -49,6 +50,7 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -86,6 +88,7 @@ import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -107,6 +110,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static java.util.logging.Level.INFO;
@@ -173,6 +178,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusNoConditionMatcher.hasNoCondition;
 import static org.hamcrest.Matchers.allOf;
@@ -1810,6 +1816,71 @@ class DomainProcessorTest {
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).interrupt().execute();
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void whenRestartedWithIntrospectionFailure_successfulRetryRecreatesDeletedServer(boolean retainFailedJob)
+      throws Exception {
+    consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
+    mementos.add(SystemClockTestSupport.installClock());
+    establishPreviousIntrospection(null);
+    testSupport.<V1Pod>getResources(POD).stream().filter(p -> PodHelper.getPodServerName(p) != null)
+        .forEach(this::setPodReady);
+    domainConfigurator.withFailureRetryIntervalSeconds(600).withIntrospectorJobActiveDeadlineSeconds(10)
+        .withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    domainConfigurator.configureIntrospector().withRequestRequirement("cpu", "10m")
+        .withLimitRequirement("cpu", "10m");
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+    newDomain.getStatus().setObservedGeneration(newDomain.getMetadata().getGeneration());
+    newDomain.getStatus().addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION)
+        .withMessage("introspector deadline exceeded before restart"));
+    OffsetDateTime initialFailureTime = newDomain.getStatus().getInitialFailureTime();
+    V1Pod introspectorPod = testSupport.getResourceWithName(POD, getJobName());
+    V1PodStatus completedPodStatus = introspectorPod.getStatus();
+    deletePod();
+    if (retainFailedJob) {
+      V1Job failedJob = createIntrospectorJob("failed-before-restart")
+          .spec(new V1JobSpec().activeDeadlineSeconds(10L).template(new V1PodTemplateSpec()
+              .spec(new V1PodSpec().addContainersItem(
+                  new V1Container().name(getJobName()).image(newDomain.getSpec().getImage())))));
+      failedJob.getMetadata().putLabelsItem(INTROSPECTION_STATE_LABEL, NEW_INTROSPECTION_STATE);
+      testSupport.defineResources(failedJob);
+      failedJob.setStatus(createTimedOutStatus());
+    }
+    // Preserve Kubernetes resources and status, but discard the old process's presence cache.
+    processor.getDomainPresenceInfoMap().clear();
+    processor.getClusterPresenceInfoMap().clear();
+    List<V1Job> retryJobs = new ArrayList<>();
+    testSupport.doOnCreate(JOB, resource -> {
+      retryJobs.add((V1Job) resource);
+      // Model removal of the failure: the next introspection succeeds without another spec change.
+      testSupport.defineResources(introspectorPod);
+      introspectorPod.setStatus(completedPodStatus);
+    });
+
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, processor);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    V1Pod deletedServer = testSupport.getResourceWithName(POD, getManagedPodName(1));
+    assertThat(deletedServer, notNullValue());
+    testSupport.deleteResources(deletedServer);
+    processor.dispatchPodWatch(new Response<>("DELETED", deletedServer));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+    testSupport.setTime(599, TimeUnit.SECONDS);
+
+    assertThat(retryJobs, empty());
+    assertThat(testSupport.getResourceWithName(POD, getManagedPodName(1)), nullValue());
+    assertThat(newDomain.getStatus().getInitialFailureTime(), equalTo(initialFailureTime));
+
+    testSupport.setTime(600, TimeUnit.SECONDS);
+
+    assertThat(retryJobs.size(), equalTo(1));
+    assertThat(testSupport.getResourceWithName(POD, getManagedPodName(1)), notNullValue());
+    DomainResource recoveredDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(recoveredDomain.getStatus(), hasNoCondition(FAILED).withReason(INTROSPECTION));
+    assertThat(recoveredDomain.getSpec().getIntrospectVersion(), equalTo(NEW_INTROSPECTION_STATE));
+    assertThat(recoveredDomain.getMetadata().getGeneration(), equalTo(newDomain.getMetadata().getGeneration()));
+    assertThat(recoveredDomain.getNextRetryTime(), nullValue());
   }
 
   private void assignUid(V1Job job) {

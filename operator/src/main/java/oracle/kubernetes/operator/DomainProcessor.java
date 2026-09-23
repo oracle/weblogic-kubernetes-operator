@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -36,6 +36,14 @@ public interface DomainProcessor {
    * @return Make-right operation
    */
   MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo);
+
+  /**
+   * Ensures an idle domain's persisted failure has a scheduled retry, without duplicating an existing timer.
+   * Resource scans use this to restore timers lost on restart, not to bypass the normal retry interval or
+   * restart Aborted domains. An active reconciliation is responsible for scheduling its own retry on completion.
+   * @param info the current domain presence
+   */
+  void ensureFailureRetryScheduled(DomainPresenceInfo info);
 
   /**
    * Ensures that a cluster event is generated for a cluster resource no matter whether it is referenced by a domain
