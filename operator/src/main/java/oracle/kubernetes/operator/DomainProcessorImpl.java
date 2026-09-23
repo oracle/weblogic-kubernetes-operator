@@ -120,6 +120,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
 
+  // Domain status owns failure history and retry timing; this map holds only the in-memory wake-ups.
+  // Normal completion and resource scans share it so there is at most one pending failure retry per domain.
+  // Starting a reconciliation supersedes that timer; its completion schedules another only if still needed.
+  private final Map<RetryKey, ScheduledFailureRetry> scheduledFailureRetries = new ConcurrentHashMap<>();
+
   // Map namespace to map of domainUID to KubernetesEventObjects; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, KubernetesEventObjects>> domainEventK8SObjects = new ConcurrentHashMap<>();
@@ -359,7 +364,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     final DomainPresenceInfo liveInfo = operation.getPresenceInfo();
     if (delegate.isNamespaceRunning(liveInfo.getNamespace())) {
       try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
-        if (shouldContinue(operation, liveInfo)) {
+        if (shouldStartDomainReconciliation(operation, liveInfo)) {
+          // Cancel only the pending timer, not the failure history or an active fiber. The accepted plan now
+          // owns further retries. Rejected events must leave the timer intact or the failure can be stranded.
+          cancelScheduledFailureRetry(liveInfo);
           logStartingDomain(liveInfo);
           new DomainPlan(operation, delegate).execute();
         } else {
@@ -382,7 +390,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
+  // Admission policy for all domain reconciliations, including retries. Scheduling a retry must not bypass
+  // stale-event, deletion, generation, or Aborted-domain handling here.
+  private boolean shouldStartDomainReconciliation(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
     final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
     if (isNewDomain(cachedInfo)) {
       return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "new domain");
@@ -402,10 +412,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else if (isGenerationLaterThanObservedGeneration(liveInfo)) {
       return logDomainMakeRightDecision(operation, liveInfo, cachedInfo, true, "generation not yet observed");
     } else {
-      boolean shouldContinue = logDomainMakeRightDecision(
+      boolean shouldStart = logDomainMakeRightDecision(
           operation, liveInfo, cachedInfo, false, "no generation change");
       cachedInfo.setDomain(liveInfo.getDomain());
-      return shouldContinue;
+      return shouldStart;
     }
   }
 
@@ -554,6 +564,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void unregisterDomainPresenceInfo(DomainPresenceInfo info) {
+    cancelScheduledFailureRetry(info);
     unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
   }
 
@@ -1149,7 +1160,101 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  private static class DomainPlan extends Plan<MakeRightDomainOperation> {
+  @Override
+  public void ensureFailureRetryScheduled(DomainPresenceInfo info) {
+    ensureFailureRetryScheduled(createMakeRightOperation(info), info);
+  }
+
+  // Shared by resource-scan recovery and normal plan completion: use the persisted due time, not a fresh
+  // interval from the scan/completion time. Synchronize timer registration, cancellation, and callback claims.
+  private synchronized void ensureFailureRetryScheduled(MakeRightDomainOperation operation, DomainPresenceInfo info) {
+    DomainResource domain = info.getDomain();
+    if (!isFailureRetryNeeded(domain) || !delegate.isNamespaceRunning(info.getNamespace())) {
+      return;
+    }
+
+    RetryKey key = new RetryKey(info.getNamespace(), info.getDomainUid());
+    OffsetDateTime nextRetryTime = domain.getNextRetryTime();
+    ScheduledFailureRetry existing = scheduledFailureRetries.get(key);
+    String resourceUid = domain.getMetadata().getUid();
+    if (existing != null && existing.nextRetryTime.equals(nextRetryTime)
+        && Objects.equals(existing.resourceUid, resourceUid)) {
+      return;
+    }
+
+    cancelScheduledFailureRetry(info);
+    ScheduledFailureRetry retry = new ScheduledFailureRetry(key, resourceUid, nextRetryTime, operation);
+    scheduledFailureRetries.put(key, retry);
+    // A retry overdue at restart is eligible immediately; restarting must not reset the waiting period.
+    long delay = Math.max(0, Duration.between(SystemClock.now(), nextRetryTime).toMillis());
+    retry.task = delegate.schedule(retry, delay, TimeUnit.MILLISECONDS);
+  }
+
+  // Keep retry policy in the status model/updater: failure reporting records Aborted when the retry window
+  // is exhausted. Do not reset that history, or introduce a different retry-limit policy in the scheduler.
+  private boolean isFailureRetryNeeded(DomainResource domain) {
+    return Optional.ofNullable(domain)
+        .filter(DomainResource::shouldRetry)
+        .map(DomainResource::getStatus)
+        .filter(status -> !status.isAborted())
+        .isPresent();
+  }
+
+  private synchronized void cancelScheduledFailureRetry(DomainPresenceInfo info) {
+    ScheduledFailureRetry retry = scheduledFailureRetries.remove(
+        new RetryKey(info.getNamespace(), info.getDomainUid()));
+    if (retry != null && retry.task != null) {
+      retry.task.cancel();
+    }
+  }
+
+  private record RetryKey(String namespace, String domainUid) {
+  }
+
+  private class ScheduledFailureRetry implements Runnable {
+    private final RetryKey key;
+    private final String resourceUid;
+    private final OffsetDateTime nextRetryTime;
+    private final MakeRightDomainOperation operation;
+    private Cancellable task;
+
+    ScheduledFailureRetry(RetryKey key, String resourceUid, OffsetDateTime nextRetryTime,
+                          MakeRightDomainOperation operation) {
+      this.key = key;
+      this.resourceUid = resourceUid;
+      this.nextRetryTime = nextRetryTime;
+      this.operation = operation;
+    }
+
+    @Override
+    public void run() {
+      synchronized (DomainProcessorImpl.this) {
+        // A canceled callback may already be queued. Only the current registration may claim this retry;
+        // an old callback must not remove or execute a replacement timer for the same domain.
+        if (!scheduledFailureRetries.remove(key, this)) {
+          return;
+        }
+        // Use current presence/status, not the snapshot that scheduled the timer. Kubernetes metadata.uid
+        // distinguishes a deleted/recreated Domain from the old resource with the same logical domainUID.
+        DomainPresenceInfo info = getExistingDomainPresenceInfo(key.namespace(), key.domainUid());
+        DomainResource domain = Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).orElse(null);
+        if (!isFailureRetryNeeded(domain) || !Objects.equals(resourceUid, domain.getMetadata().getUid())) {
+          return;
+        }
+        // A scan or watch event may have changed the failure since this retry was scheduled.
+        if (!nextRetryTime.equals(domain.getNextRetryTime())) {
+          ensureFailureRetryScheduled(operation, info);
+        } else {
+          // Re-enter normal admission and FiberGate processing. createRetry marks an explicit failure retry,
+          // so an unchanged spec is eligible and status initialization preserves the original retry window.
+          // Create it only now: createRetry also marks presence unpopulated for a fresh resource read.
+          operation.createRetry(info).execute();
+        }
+      }
+    }
+  }
+
+  private class DomainPlan extends Plan<MakeRightDomainOperation> {
 
     public DomainPlan(MakeRightDomainOperation operation, DomainProcessorDelegate delegate) {
       super(operation, delegate);
@@ -1164,11 +1269,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
       @Override
       public void onCompletion(Packet packet) {
-        retryIfNeeded(packet);
+        scheduleFailureRetryIfNeeded(packet);
       }
 
       @Override
       public void onThrowable(Packet packet, Throwable throwable) {
+        // Persist the failure first; the failure-report completion callback schedules from that status.
         reportFailure(throwable);
       }
 
@@ -1198,7 +1304,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
       @Override
       public void onCompletion(Packet packet) {
-        retryIfNeeded(packet);
+        scheduleFailureRetryIfNeeded(packet);
       }
 
       @Override
@@ -1207,30 +1313,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       }
     }
 
-    public void retryIfNeeded(Packet packet) {
-      if (shouldRetry(packet)) {
-        DomainPresenceInfo.fromPacket(packet).ifPresent(this::scheduleRetry);
-      }
-    }
-
-    @Nonnull
-    private Boolean shouldRetry(Packet packet) {
-      return DomainPresenceInfo.fromPacket(packet)
-          .map(DomainPresenceInfo::getDomain)
-          .map(DomainResource::shouldRetry)
-          .orElse(false);
-    }
-
-    private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
-      final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
-      delegate.schedule(retry::execute, delayUntilNextRetry(domainPresenceInfo), TimeUnit.SECONDS);
-    }
-    
-    private long delayUntilNextRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
-      final OffsetDateTime nextRetryTime = domainPresenceInfo.getDomain().getNextRetryTime();
-      final Duration interval = Duration.between(SystemClock.now(), nextRetryTime);
-      return interval.getSeconds();
-
+    private void scheduleFailureRetryIfNeeded(Packet packet) {
+      DomainPresenceInfo.fromPacket(packet)
+          .ifPresent(info -> ensureFailureRetryScheduled(operation, info));
     }
   }
 

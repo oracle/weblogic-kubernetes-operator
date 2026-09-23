@@ -107,7 +107,7 @@ public class JobHelper {
   }
 
   public static Step readIntrospectorResults(Step next) {
-    return UnitTestAdaptor.create(IntrospectorJobStepContext::readIntrospectorResults, next);
+    return UnitTestAdaptor.create(context -> context.readIntrospectorResults(null), next);
   }
 
   static class UnitTestAdaptor extends Step {
@@ -433,14 +433,15 @@ public class JobHelper {
 
     // Returns a chain of steps which read the job pod and decide how to handle it.
     private Step processExistingIntrospectorJob(Step next) {
-      return Step.chain(checkForFailedIntrospectionJob(), readIntrospectorResults(), next);
-    }
-
-    private Step checkForFailedIntrospectionJob() {
-      return new CheckForFailedIntrospectorStep();
+      // A replacement Job must resume after introspection, not re-read the original Job's results.
+      return new CheckForFailedIntrospectorStep(next);
     }
 
     private class CheckForFailedIntrospectorStep extends Step {
+
+      CheckForFailedIntrospectorStep(Step next) {
+        super(next);
+      }
 
       @Override
       public @Nonnull Result apply(Packet packet) {
@@ -455,14 +456,14 @@ public class JobHelper {
           if (isOutdated(domainIntrospectorJob)) {
             return doNext(cleanUpAndReintrospect(getNext()), packet);
           }
-          return doNext(createRemoveFailuresStep(getNext()), packet);
+          return doNext(createRemoveFailuresStep(readIntrospectorResults(getNext())), packet);
         }
-        return doNext(packet);
+        return doNext(readIntrospectorResults(getNext()), packet);
       }
     }
 
-    private Step readIntrospectorResults() {
-      return new ReadDomainIntrospectorPodStep();
+    private Step readIntrospectorResults(Step next) {
+      return Step.chain(new ReadDomainIntrospectorPodStep(), next);
     }
 
     private Step waitForJobPod() {
