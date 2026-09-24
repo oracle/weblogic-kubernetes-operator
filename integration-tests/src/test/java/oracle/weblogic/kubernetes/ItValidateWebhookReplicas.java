@@ -1,14 +1,20 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
+import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -52,6 +58,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -71,12 +78,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiAndReturnResult;
+import static oracle.weblogic.kubernetes.actions.impl.Cluster.getClusterCustomResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -195,6 +204,125 @@ class ItValidateWebhookReplicas {
             domainUid2, domainNamespace2);
       }
     }
+  }
+
+  /**
+   * Exercise legacy v8 clients through API-server admission and forward conversion to v9 storage.
+   * Inline overrides must win over the Domain default, and rejected requests must not change the
+   * separate Cluster resource. Direct calls to the conversion helper cannot check that ordering.
+   */
+  @Test
+  @DisplayName("V8 apply validates submitted inline Cluster replicas and preserves state on rejection")
+  void testV8InlineClusterReplicas() throws IOException {
+    String uid = "valwebrepdomain-v8";
+    Map<String, Object> inlineCluster = new HashMap<>(Map.of(
+        "clusterName", "cluster-1", "replicas", 2, "serverStartPolicy", "IF_NEEDED"));
+    Map<String, Object> spec = new HashMap<>();
+    spec.put("domainUID", uid);
+    spec.put("domainHomeSourceType", "FromModel");
+    spec.put("image", MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    spec.put("imagePullPolicy", IMAGE_PULL_POLICY);
+    spec.put("imagePullSecrets", List.of(Map.of("name", TEST_IMAGES_REPO_SECRET_NAME)));
+    spec.put("webLogicCredentialsSecret", Map.of("name", "weblogic-credentials"));
+    spec.put("serverStartPolicy", "IF_NEEDED");
+    spec.put("configuration", Map.of("model", Map.of(
+        "domainType", "WLS", "runtimeEncryptionSecret", "encryptionsecret")));
+    spec.put("replicas", 1);
+    spec.put("maxClusterConcurrentStartup", 1);
+    spec.put("clusters", List.of(inlineCluster));
+    Map<String, Object> manifest = Map.of(
+        "apiVersion", "weblogic.oracle/v8", "kind", "Domain",
+        "metadata", Map.of("name", uid, "namespace", domainNamespace,
+            "labels", Map.of("weblogic.domainUID", uid)), "spec", spec);
+    Path file = Files.createTempFile(RESULTS_TEMPFILE_DIR, uid, ".json");
+    assertV8Apply(file, manifest, false, true);
+    checkPodReadyAndServiceExists(uid + "-" + ADMIN_SERVER_NAME_BASE, uid, domainNamespace);
+    for (int i = 1; i <= 2; i++) {
+      checkPodReadyAndServiceExists(uid + "-" + MANAGED_SERVER_NAME_BASE + i, uid, domainNamespace);
+    }
+    testUntil(() -> {
+      DomainResource domain = getDomainCustomResource(uid, domainNamespace);
+      ClusterResource cluster = getClusterCustomResource(uid + "-cluster-1", domainNamespace);
+      return domain.getStatus() != null && domain.getStatus().getClusters() != null
+          && domain.getStatus().getClusters().stream().anyMatch(c -> Integer.valueOf(5).equals(c.getMaximumReplicas()))
+          && cluster.getStatus() != null && Integer.valueOf(5).equals(cluster.getStatus().getMaximumReplicas());
+    }, logger, "Wait for introspected maximum replica counts for {0}", uid);
+
+    // Customer case: a valid inline override shields the cluster from an excessive Domain default.
+    spec.put("replicas", 10);
+    spec.put("maxClusterConcurrentStartup", 2);
+    assertV8Apply(file, manifest, true, true);
+    assertV8StoredReplicas(uid, 1, 2, 1);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 10, 2, 2);
+    spec.put("maxClusterConcurrentStartup", 3);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 10, 2, 3);
+
+    // Removing the override exposes the invalid default. Neither resource may change on rejection.
+    inlineCluster.remove("replicas");
+    assertV8Apply(file, manifest, true, false);
+    assertV8Apply(file, manifest, false, false);
+    assertV8StoredReplicas(uid, 10, 2, 3);
+
+    spec.put("replicas", 1);
+    inlineCluster.put("replicas", 2);
+    assertV8Apply(file, manifest, false, true);
+    inlineCluster.put("replicas", 3);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, 3, 3);
+    inlineCluster.put("replicas", 10);
+    assertV8Apply(file, manifest, true, false);
+    assertV8Apply(file, manifest, false, false);
+    assertV8StoredReplicas(uid, 1, 3, 3);
+
+    inlineCluster.put("replicas", 0);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, 0, 3);
+    inlineCluster.put("replicas", 2);
+    spec.remove("replicas");
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 0, 2, 3);
+    spec.put("replicas", 1);
+    inlineCluster.remove("replicas");
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, null, 3);
+    inlineCluster.put("replicas", 2);
+    assertV8Apply(file, manifest, false, true);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, 2, 3);
+  }
+
+  private void assertV8Apply(Path file, Map<String, Object> manifest, boolean dryRun, boolean allowed)
+      throws IOException {
+    Files.writeString(file, new Gson().toJson(manifest));
+    testUntil(withQuickRetryPolicy, () -> {
+      ExecResult result = Command.withParams(new CommandParams().defaults().command(
+          KUBERNETES_CLI + " apply " + (dryRun ? "--dry-run=server " : "") + "-f '" + file + "'"))
+          .executeAndReturnResult();
+      assertNotNull(result);
+      // Scaling also updates Cluster status. Retry only an optimistic-concurrency conflict from
+      // conversion's existing Cluster write; never retry an unexpected admission decision.
+      if (allowed && result.exitValue() != 0 && result.stderr().contains("the object has been modified")) {
+        logger.info("Retrying v8 apply after resourceVersion conflict: {0}", result.stderr());
+        return false;
+      }
+      assertEquals(allowed, result.exitValue() == 0, result.stdout() + result.stderr());
+      if (!allowed) {
+        assertTrue(result.stderr().contains("would exceed the cluster size '5'"), result.stderr());
+      }
+      return true;
+    }, logger, "Check v8 apply admission (dryRun={0}, allowed={1})", dryRun, allowed);
+  }
+
+  private void assertV8StoredReplicas(String uid, int domainReplicas, Integer clusterReplicas, int concurrentStartup) {
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(uid, domainNamespace));
+    ClusterResource cluster = assertDoesNotThrow(() -> getClusterCustomResource(uid + "-cluster-1", domainNamespace));
+    assertEquals("weblogic.oracle/v9", domain.getApiVersion());
+    assertEquals(uid + "-cluster-1", domain.getSpec().getClusters().get(0).getName());
+    assertEquals(domainReplicas, domain.getSpec().getReplicas());
+    assertEquals(concurrentStartup, domain.getSpec().getMaxClusterConcurrentStartup());
+    assertEquals(clusterReplicas, cluster.getSpec().getReplicas());
   }
 
   /**
