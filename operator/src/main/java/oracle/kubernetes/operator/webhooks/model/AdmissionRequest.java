@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.model;
@@ -9,6 +9,7 @@ import java.util.Map;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.webhooks.resource.AdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.ClusterCreateAdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.ClusterScaleAdmissionChecker;
@@ -18,11 +19,13 @@ import oracle.kubernetes.operator.webhooks.resource.DomainUpdateAdmissionChecker
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V8;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomain;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readScale;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 
@@ -179,25 +182,46 @@ public class AdmissionRequest {
     };
   }
 
+  private static DomainAdmissionResources readDomainResourcesForAdmission(Map<String, Object> object) {
+    if (object == null || !API_VERSION_V8.equals(object.get("apiVersion"))) {
+      return new DomainAdmissionResources(readDomain(writeMap(object)), null);
+    }
+
+    // V8 admission receives inline Cluster settings, whereas the Domain model contains v9 references.
+    // Normalize a copy in memory and retain the inline Clusters as part of the submitted snapshot.
+    // Do not invoke the conversion webhook: it persists Clusters before the Domain is accepted,
+    // and admission must remain read-only, including for dry-run requests.
+    SchemaConversionUtils.Resources resources = new SchemaConversionUtils()
+        .convertDomainSchema(readMap(writeMap(object)), null);
+    return new DomainAdmissionResources(readDomain(writeMap(resources.domain())), resources.clusters().stream()
+        .map(cluster -> readCluster(writeMap(cluster))).toList());
+  }
+
+  // Null clusters means a native v9 request: its Cluster references must be resolved against Kubernetes.
+  // An empty list means a v8 request with no inline overrides; it must use the Domain's replica default.
+  private record DomainAdmissionResources(DomainResource domain, List<ClusterResource> clusters) {
+  }
+
   public enum RequestKind {
     DOMAIN {
       @Override
       public Object readOldObject(AdmissionRequest request) {
-        return readDomain(writeMap(request.getOldObject()));
+        return readDomainResourcesForAdmission(request.getOldObject()).domain();
       }
 
       @Override
       public Object readProposedObject(AdmissionRequest request) {
-        return readDomain(writeMap(request.getObject()));
+        return readDomainResourcesForAdmission(request.getObject()).domain();
       }
 
       @Override
       public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
-        DomainResource existing = (DomainResource) request.getExistingResource();
-        DomainResource proposed = (DomainResource) request.getProposedResource();
+        DomainAdmissionResources existing = readDomainResourcesForAdmission(request.getOldObject());
+        DomainAdmissionResources proposed = readDomainResourcesForAdmission(request.getObject());
         return request.isNewResource()
-            ? new DomainCreateAdmissionChecker(proposed)
-            : new DomainUpdateAdmissionChecker(existing, proposed);
+            ? new DomainCreateAdmissionChecker(proposed.domain())
+            : new DomainUpdateAdmissionChecker(existing.domain(), proposed.domain(),
+                existing.clusters(), proposed.clusters());
       }
     },
     CLUSTER {

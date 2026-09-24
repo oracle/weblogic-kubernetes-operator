@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -59,11 +60,30 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   final List<ClusterStatus> failed = new ArrayList<>();
   final List<String> warnings = new ArrayList<>();
   private Exception exception;
+  private final List<ClusterResource> existingInlineClusters;
+  private final List<ClusterResource> proposedInlineClusters;
 
   /** Construct a DomainAdmissionChecker. */
   public DomainUpdateAdmissionChecker(@Nonnull DomainResource existingDomain, @Nonnull DomainResource proposedDomain) {
+    this(existingDomain, proposedDomain, null, null);
+  }
+
+  /**
+   * Validates a Domain update with the inline Cluster snapshots submitted through the v8 API.
+   * Null snapshots preserve native v9 behavior: look up its separately managed Cluster resources.
+   *
+   * @param existingDomain normalized existing Domain
+   * @param proposedDomain normalized proposed Domain
+   * @param existingInlineClusters existing v8 inline Clusters, or null for v9
+   * @param proposedInlineClusters proposed v8 inline Clusters, or null for v9
+   */
+  public DomainUpdateAdmissionChecker(@Nonnull DomainResource existingDomain, @Nonnull DomainResource proposedDomain,
+                                     @Nullable List<ClusterResource> existingInlineClusters,
+                                     @Nullable List<ClusterResource> proposedInlineClusters) {
     this.existingDomain = existingDomain;
     this.proposedDomain = proposedDomain;
+    this.existingInlineClusters = existingInlineClusters;
+    this.proposedInlineClusters = proposedInlineClusters;
   }
 
   @Override
@@ -105,7 +125,8 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   }
 
   private boolean isSpecUnchanged() {
-    return Optional.of(existingDomain)
+    // An inline-only v8 edit can leave the normalized Domain's Cluster references unchanged.
+    return Objects.equals(existingInlineClusters, proposedInlineClusters) && Optional.of(existingDomain)
         .map(DomainResource::getSpec)
         .map(this::isProposedSpecUnchanged)
         .orElse(false);
@@ -214,7 +235,10 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   }
 
   private ClusterSpec getCluster(@Nonnull DomainResource domain, String clusterName) throws ApiException {
-    List<ClusterResource> clusters = getClusters(domain.getNamespace());
+    // A live Cluster can still contain the previous settings while a v8 update is being admitted.
+    // Validate the proposed inline snapshot, not that stale copy. V9 continues to resolve live references.
+    List<ClusterResource> clusters = proposedInlineClusters != null
+        ? proposedInlineClusters : getClusters(domain.getNamespace());
     return clusters.stream().filter(cluster -> clusterName.equals(cluster.getClusterName())
         && isReferenced(domain, cluster)).findFirst().map(ClusterResource::getSpec).orElse(null);
   }
