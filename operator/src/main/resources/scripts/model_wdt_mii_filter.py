@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -471,6 +471,9 @@ def getAdministrationPort(server, topology):
 
 
 def isAdministrationPortEnabledForServer(server, model):
+  # WLS 26.1.0 only supports AdministrationPortEnabled at the domain level.
+  if not env.wlsVersionEarlierThan("26.1.0.0.0"):
+    return isAdministrationPortEnabledForDomain(model)
   administrationPortEnabled = False
   if 'AdministrationPortEnabled' in server:
     administrationPortEnabled = server['AdministrationPortEnabled']
