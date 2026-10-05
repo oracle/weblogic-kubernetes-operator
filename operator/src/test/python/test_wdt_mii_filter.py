@@ -1,4 +1,4 @@
-# Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import ast
@@ -305,6 +305,49 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForServer(model['topology']['Server']['admin-server'], model))
 
+  def test_admin_channel_before_2610_honors_server_enabling_override(self):
+    self.check_admin_channel_override('14.1.2.0.0', False, True, True)
+
+  def test_admin_channel_before_2610_honors_server_disabling_override(self):
+    self.check_admin_channel_override('14.1.2.0.0', True, False, False)
+
+  def test_admin_channel_2610_ignores_server_enabling_override(self):
+    self.check_admin_channel_override('26.1.0.0.0', False, True, False)
+
+  def test_admin_channel_2610_ignores_server_disabling_override(self):
+    self.check_admin_channel_override('26.1.0.0.0', True, False, True)
+
+  def check_admin_channel_override(self, wls_version, domain_enabled, server_enabled, expected):
+    model = self.getModel()
+    model_wdt_mii_filter.env.wls_version = wls_version
+    model['topology']['AdministrationPortEnabled'] = domain_enabled
+    server = model['topology']['Server']['admin-server']
+    server['AdministrationPortEnabled'] = server_enabled
+    server['AdministrationPort'] = 9100
+
+    model_wdt_mii_filter.addAdminChannelPortForwardNetworkAccessPoints(server)
+
+    naps = server['NetworkAccessPoint']
+    self.assertEqual(expected, 'internal-admin' in naps)
+    if expected:
+      self.assertEqual(9100, naps['internal-admin']['ListenPort'])
+    self.assertEqual(7896, naps['internal-admin1']['ListenPort'])
+    self.assertEqual(7897, naps['internal-admin2']['ListenPort'])
+
+  def test_server_template_admin_port_override_depends_on_wls_version(self):
+    for wls_version in ['14.1.2.0.0', '26.1.0.0.0']:
+      for domain_enabled in [False, True]:
+        model = self.getModel()
+        model_wdt_mii_filter.env.wls_version = wls_version
+        model['topology']['AdministrationPortEnabled'] = domain_enabled
+        template = self.getServerTemplate(model)
+        template['AdministrationPortEnabled'] = not domain_enabled
+
+        expected = not domain_enabled
+        if wls_version == '26.1.0.0.0':
+          expected = domain_enabled
+        self.assertEqual(expected, model_wdt_mii_filter.isAdministrationPortEnabledForServer(template, model))
+
   def test_isAdministrationPortEnabledForServerFromDomainInfo(self):
     model = self.getModel()
 
@@ -356,6 +399,7 @@ class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
   def __init__(self):
     model_wdt_mii_filter.OfflineWlstEnv.__init__(self)
+    self.wls_version = '14.1.2.0.0'
 
   def encrypt(self, cleartext):
     return cleartext
@@ -367,7 +411,10 @@ class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
     return self.WLS_CRED_PASSWORD
 
   def wlsVersionEarlierThan(self, version):
-    return False
+    actual = self.wls_version.split('.')
+    required = version.split('.')
+    required.extend(['0'] * (len(actual) - len(required)))
+    return [int(part) for part in actual] < [int(part) for part in required]
 
 if __name__ == '__main__':
   unittest.main()

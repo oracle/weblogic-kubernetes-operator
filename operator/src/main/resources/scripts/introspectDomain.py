@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -2098,6 +2098,9 @@ def isAdministrationPortEnabledForDomain(domain):
   return administrationPortEnabled
 
 def isAdministrationPortEnabledForServer(server, domain, isServerTemplate=False):
+  # WLS 26.1.0 removed AdministrationPortEnabled from servers and server templates.
+  if not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "26.1.0.0.0"):
+    return isAdministrationPortEnabledForDomain(domain)
   administrationPortEnabled = false
   #"if server.isSet('AdministrationPortEnabled'):" does not work in off-line WLST!
   cd('/')
