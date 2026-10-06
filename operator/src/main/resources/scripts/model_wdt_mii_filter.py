@@ -519,6 +519,8 @@ def isSecureModeEnabledForDomain(model):
     is_production_mode_enabled = False
     if 'ProductionModeEnabled' in topology:
       is_production_mode_enabled = topology['ProductionModeEnabled']
+    if not env.wlsVersionEarlierThan("26.1.0.0.0"):
+      is_production_mode_enabled = toBoolean(is_production_mode_enabled)
     secureModeEnabled = is_production_mode_enabled and not env.wlsVersionEarlierThan("14.1.2.0")
 
   if isinstance(secureModeEnabled, str) or isinstance(secureModeEnabled, unicode):
@@ -596,6 +598,30 @@ def isGlobalListenPortEnabled(model):
               result = val
     return result
 
+def toBoolean(value):
+  if isinstance(value, str) or isinstance(value, unicode):
+    return Boolean.valueOf(value)
+  return value
+
+def isDefaultChannelEnabled(server, model, ssl_channel=False):
+  # 26.1 defaults: server override, domain override, then secure mode default.
+  topology = model['topology']
+  if ssl_channel:
+    settings = getSSLOrNone(server)
+    server_attribute = 'Enabled'
+    domain_attribute = 'SSLEnabled'
+  else:
+    settings = server
+    server_attribute = 'ListenPortEnabled'
+    domain_attribute = 'ListenPortEnabled'
+  if settings is not None and server_attribute in settings:
+    return toBoolean(settings[server_attribute])
+  if domain_attribute in topology:
+    return toBoolean(topology[domain_attribute])
+  if ssl_channel:
+    return isSecureModeEnabledForDomain(model)
+  return not isSecureModeEnabledForDomain(model)
+
 def addAdminChannelPortForwardNetworkAccessPoints(server):
   admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
   if (admin_channel_port_forwarding_enabled == 'false'):
@@ -613,7 +639,13 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
   index = 0
   for nap_name in nap_names:
     nap = naps[nap_name]
-    if nap['Protocol'] == 'admin':
+    if not env.wlsVersionEarlierThan("26.1.0.0.0"):
+      protocol = None
+      if 'Protocol' in nap:
+        protocol = nap['Protocol']
+    else:
+      protocol = nap['Protocol']
+    if protocol == 'admin':
       index += 1
       customAdminChannelPort = nap['ListenPort']
       _writeAdminChannelPortForwardNAP(name='internal-admin' + str(index), server=server,
@@ -622,6 +654,18 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
     _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
                                      listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
   elif index == 0:
+    if not env.wlsVersionEarlierThan("26.1.0.0.0"):
+      if isDefaultChannelEnabled(server, model):
+        _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+      if isDefaultChannelEnabled(server, model, ssl_channel=True):
+        ssl = getSSLOrNone(server)
+        ssl_listen_port = None
+        if ssl is not None and 'ListenPort' in ssl:
+          ssl_listen_port = ssl['ListenPort']
+        if ssl_listen_port is None:
+          ssl_listen_port = "7002"
+        _writeAdminChannelPortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
+      return
     if not env.wlsVersionEarlierThan("14.1.2.0"):
         if not secure_mode and is_listenport_enabled(server):
           _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')

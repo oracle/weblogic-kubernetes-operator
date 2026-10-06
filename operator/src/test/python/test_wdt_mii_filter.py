@@ -392,6 +392,270 @@ class WdtUpdateFilterCase(unittest.TestCase):
     except ImportError, ie:
       self.assertTrue(ie is not None)
 
+  def forwarding_channels(self, server, topology, version='26.1.0.0.0', mode=None):
+    topology.setdefault('Name', 'test-domain')
+    model = {'topology': topology}
+    if mode is not None:
+      model['domainInfo'] = {'ServerStartMode': mode}
+    mock_env = MockOfflineWlstEnv()
+    mock_env.open(model)
+    mock_env.wls_version = version
+    model_wdt_mii_filter.env = mock_env
+    model_wdt_mii_filter.addAdminChannelPortForwardNetworkAccessPoints(server)
+    return server['NetworkAccessPoint']
+
+  def test_26_secure_forwarding_uses_ssl_when_admin_disabled(self):
+    for version in ['26.1.0.0.0', '27.1.0.0.0']:
+      server = {'ListenPort': 17106}
+      naps = self.forwarding_channels(server, {'AdministrationPortEnabled': False}, version, 'secure')
+      self.assertFalse('internal-t3' in naps)
+      self.assertFalse('internal-admin' in naps)
+      self.assertEqual('t3s', naps['internal-t3s']['Protocol'])
+      self.assertEqual('7002', naps['internal-t3s']['ListenPort'])
+
+  def test_26_ssl_boolean_values(self):
+    for value in [False, 'false', 'FALSE', True, 'true', 'TRUE']:
+      server = {'ListenPort': 17130, 'SSL': {'Enabled': value, 'ListenPort': 18130}}
+      naps = self.forwarding_channels(server, {})
+      self.assertTrue('internal-t3' in naps)
+      expected = value in [True, 'true', 'TRUE']
+      self.assertEqual(expected, 'internal-t3s' in naps)
+      if expected:
+        self.assertEqual(18130, naps['internal-t3s']['ListenPort'])
+
+  def test_26_omitted_ssl_enablement_inherits_domain_and_mode(self):
+    for ssl in [None, {}, {'ListenPort': 18113}]:
+      for mode in ['dev', 'secure']:
+        server = {'ListenPort': 17113}
+        if ssl is not None:
+          server['SSL'] = ssl
+        naps = self.forwarding_channels(server, {'AdministrationPortEnabled': False}, mode=mode)
+        self.assertEqual(mode == 'secure', 'internal-t3s' in naps)
+        self.assertEqual(mode == 'dev', 'internal-t3' in naps)
+        if mode == 'secure':
+          expected_port = '7002'
+          if ssl and 'ListenPort' in ssl:
+            expected_port = 18113
+          self.assertEqual(expected_port, naps['internal-t3s']['ListenPort'])
+
+  def test_26_channel_overrides(self):
+    for value in [False, 'false', True, 'true']:
+      expected = value in [True, 'true']
+      topology = {'ListenPortEnabled': value, 'SSLEnabled': value, 'AdministrationPortEnabled': False}
+      naps = self.forwarding_channels({'ListenPort': 17107}, topology, mode='secure')
+      self.assertEqual(expected, 'internal-t3' in naps)
+      self.assertEqual(expected, 'internal-t3s' in naps)
+      server = {'ListenPort': 17107, 'ListenPortEnabled': not expected, 'SSL': {'Enabled': not expected}}
+      naps = self.forwarding_channels(server, topology, mode='secure')
+      self.assertEqual(not expected, 'internal-t3' in naps)
+      self.assertEqual(not expected, 'internal-t3s' in naps)
+
+  def test_26_production_false_string_does_not_enable_secure_mode(self):
+    for version in ['26.1.0.0.0', '27.1.0.0.0']:
+      naps = self.forwarding_channels({'ListenPort': 17101}, {'ProductionModeEnabled': 'false'}, version)
+      self.assertTrue('internal-t3' in naps)
+      self.assertFalse('internal-admin' in naps)
+      self.assertFalse('internal-t3s' in naps)
+
+  def test_26_custom_admin_channel_and_disabled_forwarding(self):
+    server = {'NetworkAccessPoint': {'custom': {'Protocol': 'admin', 'ListenPort': 19129}}}
+    naps = self.forwarding_channels(server, {})
+    self.assertEqual(19129, naps['internal-admin1']['ListenPort'])
+    self.assertFalse('internal-t3' in naps)
+    self.assertFalse('internal-t3s' in naps)
+    server = {'NetworkAccessPoint': {'custom': {'ListenPort': 19129}}}
+    naps = self.forwarding_channels(server, {'AdministrationPortEnabled': False}, mode='secure')
+    self.assertTrue('internal-t3s' in naps)
+    os.environ['ADMIN_CHANNEL_PORT_FORWARDING_ENABLED'] = 'false'
+    try:
+      naps = self.forwarding_channels({'NetworkAccessPoint': {}}, {})
+      self.assertEqual({}, naps)
+    finally:
+      del os.environ['ADMIN_CHANNEL_PORT_FORWARDING_ENABLED']
+
+  def test_26_forwarding_supports_wdt_dictionary_access(self):
+    server = {'SSL': MockWdtDictionary({'Enabled': 'true'}),
+              'NetworkAccessPoint': {'custom': MockWdtDictionary({'ListenPort': 19129})}}
+    naps = self.forwarding_channels(server, {'AdministrationPortEnabled': False}, mode='secure')
+    self.assertEqual('7002', naps['internal-t3s']['ListenPort'])
+    self.assertFalse('internal-t3' in naps)
+
+  def test_pre_26_forwarding_behavior_is_preserved(self):
+    for version in ['12.2.1.4.0', '14.1.1.0.0', '14.1.2.0.0']:
+      naps = self.forwarding_channels({'ListenPort': 17106}, {'AdministrationPortEnabled': False}, version, 'secure')
+      self.assertEqual(version == '14.1.2.0.0', 'internal-t3' in naps)
+      self.assertEqual(version != '14.1.2.0.0', 'internal-t3s' in naps)
+      naps = self.forwarding_channels({'SSL': {'Enabled': 'false', 'ListenPort': 18130}}, {}, version)
+      self.assertEqual(18130, naps['internal-t3s']['ListenPort'])
+
+class IntrospectDefaultsCase(unittest.TestCase):
+
+  def setUp(self):
+    # Load the actual helper definitions without running WLST main or importing its Java dependencies.
+    path = os.path.join(os.path.dirname(model_wdt_mii_filter.__file__), 'introspectDomain.py')
+    file = open(path)
+    source = file.read()
+    file.close()
+    source = source[source.index('def wlsVersionEarlierThan('):source.index('\ndef main(env):')]
+    self.version = MockWlsVersion()
+    self.attributes = {'SecureModeEnabled': True}
+    self.children = {}
+    self.namespace = {'LegalHelper': MockLegalHelper, 'version_helper': self.version,
+                      'false': False, 'cd': self.cd, 'ls': self.ls, 'isSet': self.isSet,
+                      'server_template_sslports': {'tpl': None},
+                      'server_template_listening_ports': {'tpl': None}}
+    exec compile(source, path, 'exec') in self.namespace
+
+  def cd(self, path):
+    pass
+
+  def isSet(self, attribute):
+    return False
+
+  def ls(self, returnType, returnMap):
+    if returnType == 'a':
+      return self.attributes
+    return self.children
+
+  def test_template_ports_are_gated_on_installed_release(self):
+    template = MockPortBean('tpl', 7100)
+    for version in ['12.2.1.4.0', '14.1.2.0.0', '26.1.0.0.0', '27.1.0.0.0']:
+      self.version.version = version
+      newer = not MockLegalHelper.versionEarlierThan(version, '26.1.0.0.0')
+      for xml_plain, xml_ssl in [(None, None), ('7001', '7002')]:
+        self.namespace['server_template_listening_ports']['tpl'] = xml_plain
+        self.namespace['server_template_sslports']['tpl'] = xml_ssl
+        expected_plain, expected_ssl = 7001, 7002
+        if newer:
+          expected_plain, expected_ssl = 7100, 8100
+        self.assertEqual(expected_plain, self.namespace['getRealListenPort'](template))
+        self.assertEqual(expected_ssl, self.namespace['getRealSSLListenPort'](template, 8100))
+      self.namespace['server_template_listening_ports']['tpl'] = '17220'
+      self.namespace['server_template_sslports']['tpl'] = '18220'
+      template.port = 17220
+      self.assertEqual(17220, self.namespace['getRealListenPort'](template))
+      self.assertEqual(18220, self.namespace['getRealSSLListenPort'](template, 18220))
+      template.port = 7100
+      self.assertEqual(7002, self.namespace['getRealSSLListenPort'](MockPortBean('AdminServer', 17101), 7002))
+
+  def test_explicit_admin_false_is_honored_only_on_26_and_later(self):
+    # Reproduce a secure bean with isSet false, while the effective admin getter is false.
+    self.children = MockChildren(['SecureMode'])
+    domain = MockDomain(True, False)
+    for version in ['14.1.2.0.0', '26.1.0.0.0', '27.1.0.0.0']:
+      self.version.version = version
+      expected = version == '14.1.2.0.0'
+      self.assertEqual(expected, self.namespace['isAdministrationPortEnabledForDomain'](domain))
+      domain.admin = True
+      self.assertTrue(self.namespace['isAdministrationPortEnabledForDomain'](domain))
+      domain.admin = False
+
+  def test_secure_fallback_is_independent_of_admin_on_26(self):
+    domain = MockDomain(True, False)
+    for version in ['14.1.2.0.0', '26.1.0.0.0', '27.1.0.0.0']:
+      self.version.version = version
+      self.assertEqual(version != '14.1.2.0.0', self.namespace['isSecureModeEnabledForDomain'](domain))
+    domain.production = False
+    self.assertFalse(self.namespace['isSecureModeEnabledForDomain'](domain))
+
+  def test_explicit_secure_false_remains_false(self):
+    self.children = MockChildren(['SecureMode'])
+    self.attributes['SecureModeEnabled'] = False
+    for version in ['14.1.2.0.0', '26.1.0.0.0']:
+      self.version.version = version
+      self.assertFalse(self.namespace['isSecureModeEnabledForDomain'](MockDomain(True, True)))
+
+  def test_omitted_nap_protocol_uses_secure_mode_with_admin_disabled_on_26(self):
+    domain = MockDomain(True, False)
+    for version in ['14.1.2.0.0', '26.1.0.0.0', '27.1.0.0.0']:
+      self.version.version = version
+      expected = 't3s'
+      if version == '14.1.2.0.0':
+        expected = 't3'
+      self.assertEqual(expected, self.namespace['getNAPProtocol'](MockNap('custom', 19129), MockPortBean('AdminServer', 17129), domain))
+
+  def test_26_old_domain_version_does_not_use_removed_server_admin_getter(self):
+    domain = MockDomain(True, False)
+    self.assertFalse(self.namespace['isAdministrationPortEnabledForServer'](MockPortBean('tpl', 7100), domain, True))
+
+  def test_26_effective_listen_enablement_wins_when_isSet_loses_false(self):
+    server = MockPortBean('AdminServer', 17115)
+    domain = MockDomain(True, True)
+    for version in ['14.1.2.0.0', '26.1.0.0.0', '27.1.0.0.0']:
+      self.version.version = version
+      for server_enabled in [False, True]:
+        server.listen_enabled = server_enabled
+        for domain_enabled in [False, True]:
+          domain.listen_enabled = domain_enabled
+          expected = server_enabled
+          if version == '14.1.2.0.0':
+            expected = domain_enabled
+          self.assertEqual(expected, self.namespace['isListenPortEnabledForServer'](server, domain))
+
+class MockWlsVersion(object):
+  version = '26.1.0.0.0'
+
+  def getReleaseBuildVersion(self):
+    return self.version
+
+class MockLegalHelper(object):
+  def versionEarlierThan(actual, required):
+    return [int(part) for part in actual.split('.')] < [int(part) for part in required.split('.')]
+
+  versionEarlierThan = staticmethod(versionEarlierThan)
+
+class MockPortBean(object):
+  def __init__(self, name, port):
+    self.name = name
+    self.port = port
+    self.listen_enabled = True
+
+  def getName(self):
+    return self.name
+
+  def getListenPort(self):
+    return self.port
+
+  def getNetworkAccessPoints(self):
+    return ['custom']
+
+  def isListenPortEnabled(self):
+    return self.listen_enabled
+
+class MockNap(MockPortBean):
+  def getProtocol(self):
+    return 't3'
+
+class MockDomain(object):
+  def __init__(self, production, admin):
+    self.production = production
+    self.admin = admin
+    self.listen_enabled = True
+
+  def getName(self):
+    return 'domain'
+
+  def getDomainVersion(self):
+    return '14.1.2.0.0'
+
+  def isProductionModeEnabled(self):
+    return self.production
+
+  def isAdministrationPortEnabled(self):
+    return self.admin
+
+  def isListenPortEnabled(self):
+    return self.listen_enabled
+
+class MockChildren(list):
+  def isEmpty(self):
+    return False
+
+class MockWdtDictionary(dict):
+  # WDT PyOrderedDict supports membership and indexing, but its inherited get() fails.
+  def get(self, key, default=None):
+    raise AssertionError('Use WDT-compatible dictionary access')
+
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
   WLS_CRED_USERNAME = 'weblogic'
