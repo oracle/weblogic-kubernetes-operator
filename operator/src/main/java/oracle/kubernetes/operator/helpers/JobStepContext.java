@@ -495,13 +495,16 @@ public class JobStepContext extends BasePodStepContext {
     if (introspectorInitContainers.isEmpty()) {
       initContainers.addAll(getAdditionalInitContainers().stream()
               .filter(container -> isAllowedInIntrospector(container.getName()))
-              .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
+              .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom())
+                  .resources(PodHelper.isNativeSidecar(c) ? c.getResources() : createResources()))
               .toList());
     } else {
       for (V1Container initContainer : introspectorInitContainers) {
         if (initContainers.stream().noneMatch(
                 container -> container.getName().equals(initContainer.getName()))) {
-          initContainer.securityContext(getInitContainerSecurityContext());
+          if (!PodHelper.isNativeSidecar(initContainer) || initContainer.getSecurityContext() == null) {
+            initContainer.securityContext(getInitContainerSecurityContext());
+          }
           initContainers.add(initContainer);
         }
       }

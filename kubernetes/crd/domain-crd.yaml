@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: c8425b0894f5c735fb96c158d9bcc01cd82908f4c13cd1d1bbb4cc5fdf5d38c3
+    weblogic.sha256: a9f42df750a398e293fcf87ef7c7fd2c5a863936b5269e9c023ea8a3e01c022c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1232,6 +1232,15 @@ spec:
                           schedules this pod onto that node, assuming that it fits
                           the resource requirements. See `kubectl explain pods.spec.nodeName`.
                         type: string
+                      terminationGracePeriodSeconds:
+                        description: Total time in seconds allowed for Pod termination,
+                          including WebLogic shutdown and sidecar cleanup. If omitted,
+                          defaults to shutdown.timeoutSeconds plus 10 seconds. This
+                          does not change the WebLogic shutdown timeout. Updating
+                          this field affects newly created Pods only and does not
+                          automatically restart existing Pods.
+                        minimum: 0
+                        type: integer
                       readinessGates:
                         description: 'If specified, all readiness gates will be evaluated
                           for Pod readiness. A Pod is ready when all its containers
@@ -5423,6 +5432,15 @@ spec:
                       this pod onto that node, assuming that it fits the resource
                       requirements. See `kubectl explain pods.spec.nodeName`.
                     type: string
+                  terminationGracePeriodSeconds:
+                    description: Total time in seconds allowed for Pod termination,
+                      including WebLogic shutdown and sidecar cleanup. If omitted,
+                      defaults to shutdown.timeoutSeconds plus 10 seconds. This does
+                      not change the WebLogic shutdown timeout. Updating this field
+                      affects newly created Pods only and does not automatically restart
+                      existing Pods.
+                    minimum: 0
+                    type: integer
                   readinessGates:
                     description: 'If specified, all readiness gates will be evaluated
                       for Pod readiness. A Pod is ready when all its containers are
@@ -8603,6 +8621,15 @@ spec:
                             it fits the resource requirements. See `kubectl explain
                             pods.spec.nodeName`.
                           type: string
+                        terminationGracePeriodSeconds:
+                          description: Total time in seconds allowed for Pod termination,
+                            including WebLogic shutdown and sidecar cleanup. If omitted,
+                            defaults to shutdown.timeoutSeconds plus 10 seconds. This
+                            does not change the WebLogic shutdown timeout. Updating
+                            this field affects newly created Pods only and does not
+                            automatically restart existing Pods.
+                          type: integer
+                          minimum: 0
                         readinessGates:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its

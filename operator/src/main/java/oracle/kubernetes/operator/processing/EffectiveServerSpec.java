@@ -159,6 +159,8 @@ public interface EffectiveServerSpec {
 
   String getRestartPolicy();
 
+  Long getTerminationGracePeriodSeconds();
+
   String getRuntimeClassName();
 
   String getNodeName();
