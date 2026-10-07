@@ -234,6 +234,7 @@
                   <directory>${project.basedir}/src/main/resources/scripts</directory>
                   <includes>
                     <include>model_wdt_mii_filter.py</include>
+                    <include>introspectDomain.py</include>
                     <include>utils.py</include>
                   </includes>
                 </resource>

@@ -100,6 +100,7 @@ sys.path.append(tmp_scriptdir)
 
 from utils import *
 from weblogic.management.configuration import LegalHelper
+import weblogic.version as version_helper
 
 
 class OfflineWlstEnv(object):
@@ -2005,6 +2006,10 @@ class DomainIntrospector(SecretManager):
     else:
       return False
 
+def wlsVersionEarlierThan(version):
+  # Use the installed release, including when reading an older domain during upgrade.
+  return LegalHelper.versionEarlierThan(str(version_helper.getReleaseBuildVersion()), version)
+
 def getRealSSLListenPort(server, sslport):
   """
   Return the real listening port that will be used in runtime,
@@ -2022,7 +2027,8 @@ def getRealSSLListenPort(server, sslport):
   :param sslport: sslport from wlst offline mbean
   :return: listening port
   """
-  if server_template_sslports.has_key(server.getName()):
+  # In 26.1 and later the offline template getter matches the runtime port.
+  if wlsVersionEarlierThan("26.1.0.0.0") and server_template_sslports.has_key(server.getName()):
     configxml_ssl_port = server_template_sslports[server.getName()]
     if configxml_ssl_port is None or configxml_ssl_port == "7002":
       return 7002
@@ -2048,7 +2054,7 @@ def getRealListenPort(template):
   :param server:  server or server template
   :return: listening port
   """
-  if server_template_listening_ports.has_key(template.getName()):
+  if wlsVersionEarlierThan("26.1.0.0.0") and server_template_listening_ports.has_key(template.getName()):
     port = server_template_listening_ports[template.getName()]
     if port is None or port == "7001":
       return 7001
@@ -2082,9 +2088,15 @@ def isSecureModeEnabledForDomain(domain):
   else:
     secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0") \
                     and domain.isAdministrationPortEnabled()
+    if not wlsVersionEarlierThan("26.1.0.0.0"):
+      # Administration enablement can be overridden independently of secure mode.
+      secureModeEnabled = domain.isProductionModeEnabled()
   return secureModeEnabled
 
 def isAdministrationPortEnabledForDomain(domain):
+  if not wlsVersionEarlierThan("26.1.0.0.0"):
+    # The 26.1 getter supplies the effective value even when isSet() loses explicit false.
+    return domain.isAdministrationPortEnabled()
   administrationPortEnabled = false
   #"if domain.isSet('AdministrationPortEnabled'):" does not work in off-line WLST!
   # Go to the domain root
@@ -2099,7 +2111,7 @@ def isAdministrationPortEnabledForDomain(domain):
 
 def isAdministrationPortEnabledForServer(server, domain, isServerTemplate=False):
   # WLS 26.1.0 removed AdministrationPortEnabled from servers and server templates.
-  if not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "26.1.0.0.0"):
+  if not wlsVersionEarlierThan("26.1.0.0.0"):
     return isAdministrationPortEnabledForDomain(domain)
   administrationPortEnabled = false
   #"if server.isSet('AdministrationPortEnabled'):" does not work in off-line WLST!
@@ -2135,6 +2147,9 @@ def getNAPProtocol(nap, server, domain, is_server_template=False):
 
 def isListenPortEnabledForServer(server, domain, is_server_template=False):
   enabled = server.isListenPortEnabled()
+  if not wlsVersionEarlierThan("26.1.0.0.0"):
+    # The effective getter honors explicit false even when offline isSet() does not.
+    return enabled
   if is_server_template:
     cd('/ServerTemplate')
   else:
