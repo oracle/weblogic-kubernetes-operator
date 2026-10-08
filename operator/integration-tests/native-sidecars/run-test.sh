@@ -14,13 +14,14 @@ if [ ! -x "$JAVA_HOME/bin/jfr" ]; then
   echo "JAVA_HOME must contain an executable bin/jfr." >&2
   exit 1
 fi
-for tool in kubectl jq; do command -v "$tool" >/dev/null; done
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+for tool in "$KUBERNETES_CLI" jq; do command -v "$tool" >/dev/null; done
 SIDECAR_IMAGE=${SIDECAR_IMAGE:-alpine:latest}
 RESULTS_DIR=${RESULTS_DIR:-/tmp/wko-native-sidecars-results}
 TEST_DIR=$(cd "$(dirname "$0")" && pwd -P)
 mkdir -p "$RESULTS_DIR"
 
-k() { kubectl --context "$KUBE_CONTEXT" -n "$TEST_NAMESPACE" "$@"; }
+k() { "$KUBERNETES_CLI" --context "$KUBE_CONTEXT" -n "$TEST_NAMESPACE" "$@"; }
 wait_for() {
   local description=$1
   shift
