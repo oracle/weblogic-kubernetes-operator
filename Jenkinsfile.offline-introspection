@@ -1,0 +1,192 @@
+// Copyright (c) 2026, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+// Use a separate Pipeline from SCM job with automatic triggers disabled.
+pipeline {
+    agent none
+
+    options {
+        skipDefaultCheckout(true)
+        disableConcurrentBuilds()
+        timeout(time: 90, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '10'))
+    }
+
+    parameters {
+        string(name: 'WLS_IMAGE', defaultValue: '', trim: true,
+               description: 'Required: full registry/repository:tag of the WLS image to pull on the agent.')
+        string(name: 'WDT_URL', defaultValue: '', trim: true,
+               description: 'Required: HTTP or HTTPS URL of a WDT distribution ZIP reachable from the agent.')
+        string(name: 'WDT_VERSION', defaultValue: '', trim: true,
+               description: 'Optional expected WDT version; otherwise read from the downloaded ZIP.')
+        string(name: 'MODEL_CASES', defaultValue: '.*', trim: true,
+               description: 'Regular expression selecting model case names; .* runs all applicable cases.')
+        string(name: 'REGISTRY_CREDENTIALS_ID', defaultValue: '', trim: true,
+               description: 'Jenkins username/password credential ID for this registry; blank for anonymous pulls.')
+    }
+
+    stages {
+        stage('Manual offline introspection') {
+            when {
+                beforeAgent true
+                triggeredBy 'UserIdCause'
+            }
+            agent { label 'large-ol9u4' }
+            tools {
+                maven 'maven-3.8.7'
+                jdk 'jdk25'
+            }
+            environment {
+                WLSIMG_BUILDER = 'podman'
+                WKO_OFFLINE_BUILD_ID = "${env.BUILD_TAG}"
+                REGISTRY_AUTH_FILE = "${env.WORKSPACE}@tmp/offline-registry-${env.BUILD_NUMBER}.json"
+            }
+
+            stages {
+                stage('Checkout') {
+                    steps {
+                        deleteDir()
+                        checkout scm
+                        sh 'git rev-parse HEAD'
+                    }
+                }
+
+                stage('Validate parameters') {
+                    steps {
+                        script {
+                            if (!(params.WLS_IMAGE ==~ /[^@\s]+\/[^@\s]+:[^\/:@\s]+/)) {
+                                error('WLS_IMAGE must be a full registry/repository:tag reference.')
+                            }
+                            def registry = params.WLS_IMAGE.tokenize('/')[0]
+                            if (!(registry.contains('.') || registry.contains(':') || registry == 'localhost')) {
+                                error('WLS_IMAGE must include an explicit registry hostname.')
+                            }
+                            try {
+                                def url = new java.net.URI(params.WDT_URL)
+                                if (!(url.scheme in ['http', 'https']) || !url.host) {
+                                    error('WDT_URL must be an absolute HTTP or HTTPS URL.')
+                                }
+                            } catch (java.net.URISyntaxException ignored) {
+                                error('WDT_URL must be an absolute HTTP or HTTPS URL.')
+                            }
+                            if (!params.MODEL_CASES) {
+                                error('MODEL_CASES must be a nonempty regular expression.')
+                            }
+                            try {
+                                java.util.regex.Pattern.compile(params.MODEL_CASES)
+                            } catch (java.util.regex.PatternSyntaxException ignored) {
+                                error('MODEL_CASES is not a valid regular expression.')
+                            }
+                            currentBuild.description = params.WLS_IMAGE
+                        }
+                    }
+                }
+
+                stage('Check agent') {
+                    steps {
+                        sh '''
+                            set -eu
+                            command -v podman >/dev/null
+                            podman version
+                            podman info --format '{{.Host.Arch}}'
+                            java -version
+                            mvn --version
+                            umask 077
+                            mkdir -p "$(dirname "$REGISTRY_AUTH_FILE")"
+                            printf '{"auths":{}}\\n' > "$REGISTRY_AUTH_FILE"
+                        '''
+                    }
+                }
+
+                stage('Pull WLS image') {
+                    steps {
+                        script {
+                            withEnv(["OFFLINE_WLS_IMAGE=${params.WLS_IMAGE}",
+                                     "OFFLINE_REGISTRY=${params.WLS_IMAGE.tokenize('/')[0]}"]) {
+                                if (params.REGISTRY_CREDENTIALS_ID) {
+                                    withCredentials([usernamePassword(
+                                        credentialsId: params.REGISTRY_CREDENTIALS_ID,
+                                        usernameVariable: 'OFFLINE_REGISTRY_USER',
+                                        passwordVariable: 'OFFLINE_REGISTRY_PASSWORD')]) {
+                                        sh '''
+                                            set +x
+                                            set -eu
+                                            printf '%s' "$OFFLINE_REGISTRY_PASSWORD" |
+                                              podman login --authfile "$REGISTRY_AUTH_FILE" \
+                                                --username "$OFFLINE_REGISTRY_USER" \
+                                                --password-stdin "$OFFLINE_REGISTRY"
+                                        '''
+                                    }
+                                }
+                                sh 'podman pull --authfile "$REGISTRY_AUTH_FILE" "$OFFLINE_WLS_IMAGE"'
+                            }
+                        }
+                    }
+                }
+
+                stage('Build operator') {
+                    steps {
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml',
+                                  publisherStrategy: 'EXPLICIT') {
+                            sh 'mvn -DtrimStackTrace=false clean install'
+                        }
+                    }
+                }
+
+                stage('Run offline models') {
+                    steps {
+                        script {
+                            withEnv(["OFFLINE_WLS_IMAGE=${params.WLS_IMAGE}",
+                                     "OFFLINE_WDT_URL=${params.WDT_URL}",
+                                     "OFFLINE_WDT_VERSION=${params.WDT_VERSION}",
+                                     "OFFLINE_MODEL_CASES=${params.MODEL_CASES}"]) {
+                                withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml',
+                                          publisherStrategy: 'EXPLICIT') {
+                                    sh '''
+                                        set +x
+                                        set -eu
+                                        mvn -pl integration-tests -Poffline-introspection verify \
+                                          -DWLSIMG_BUILDER=podman \
+                                          -Dwko.it.introspection.image="$OFFLINE_WLS_IMAGE" \
+                                          -Dwko.it.introspection.wdt.url="$OFFLINE_WDT_URL" \
+                                          -Dwko.it.introspection.wdt.version="$OFFLINE_WDT_VERSION" \
+                                          -Dwko.it.introspection.cases="$OFFLINE_MODEL_CASES" \
+                                          -Dwko.it.introspection.results="$WORKSPACE/integration-tests/target/offline-introspection"
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            post {
+                always {
+                    script {
+                        try {
+                            archiveArtifacts(
+                                artifacts: 'integration-tests/target/failsafe-reports/**,integration-tests/target/offline-introspection/**',
+                                allowEmptyArchive: true)
+                            if (fileExists('integration-tests/target/failsafe-reports/failsafe-summary.xml')) {
+                                junit(testResults: 'integration-tests/target/failsafe-reports/TEST-*.xml',
+                                      allowEmptyResults: false)
+                            }
+                        } finally {
+                            sh '''
+                                set -eu
+                                trap 'rm -f "$REGISTRY_AUTH_FILE"' EXIT
+                                if command -v podman >/dev/null 2>&1; then
+                                    containers="$(podman ps --all --quiet \
+                                      --filter "label=oracle.weblogic.offline.build=$WKO_OFFLINE_BUILD_ID")"
+                                    if [ -n "$containers" ]; then
+                                        podman rm --force $containers
+                                    fi
+                                fi
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
