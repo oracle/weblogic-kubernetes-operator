@@ -1,12 +1,10 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
 
 import java.util.Map;
 import java.util.Objects;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * The arguments needed to install a helm chart.
@@ -35,13 +33,13 @@ public class InstallArgs {
       return false;
     }
     InstallArgs rhs = ((InstallArgs) other);
-    if (!StringUtils.equals(this.chartName, rhs.chartName)) {
+    if (!Objects.equals(this.chartName, rhs.chartName)) {
       return false;
     }
-    if (!StringUtils.equals(this.releaseName, rhs.releaseName)) {
+    if (!Objects.equals(this.releaseName, rhs.releaseName)) {
       return false;
     }
-    if (!StringUtils.equals(this.namespace, rhs.namespace)) {
+    if (!Objects.equals(this.namespace, rhs.namespace)) {
       return false;
     }
     return Objects.equals(this.valueOverrides, rhs.valueOverrides);
