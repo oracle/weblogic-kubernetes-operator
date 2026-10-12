@@ -132,8 +132,7 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 /**
  * Class to build the required images for the tests.
  */
-public class InitializationTasks implements BeforeAllCallback, 
-    ExtensionContext.Store.CloseableResource  {
+public class InitializationTasks implements BeforeAllCallback, AutoCloseable {
   private static final AtomicBoolean started = new AtomicBoolean(false);
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
   private static String operatorImage;

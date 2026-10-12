@@ -203,7 +203,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <encoding>UTF-8</encoding>
                     <skipTests>${skipITs}</skipTests>
                     <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>
@@ -224,6 +223,7 @@
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
+                            <encoding>UTF-8</encoding>
                             <systemPropertyVariables>
                                 <java.util.logging.SimpleFormatter.format>
                                     &lt;%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS&gt; &lt;%4$s&gt; &lt;%2$s&gt; &lt;%5$s%6$s&gt;%n
@@ -397,6 +397,99 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>offline-introspection</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/OfflineIntrospection*IT</includes-failsafe>
+                <wko.it.introspection.wdt.version></wko.it.introspection.wdt.version>
+                <wko.it.introspection.cases>.*</wko.it.introspection.cases>
+                <wko.it.introspection.results>${project.build.directory}/offline-introspection</wko.it.introspection.results>
+                <wko.it.introspection.timeout.seconds>600</wko.it.introspection.timeout.seconds>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>oracle.kubernetes</groupId>
+                    <artifactId>weblogic-kubernetes-operator</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-required-environment-variables-are-set</id>
+                                <configuration combine.self="override">
+                                    <rules>
+                                        <requireProperty>
+                                            <property>wko.it.introspection.image</property>
+                                            <message>Specify a full WLS image reference including its tag.</message>
+                                            <regex>^[^@\s]+:[^/:@\s]+$</regex>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>wko.it.introspection.wdt.url</property>
+                                            <message>Specify the WDT ZIP URL (http://, https:// or file://).</message>
+                                            <regex>^(https?|file)://.+$</regex>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>add-offline-test-source</id>
+                                <goals><goal>add-test-source</goal></goals>
+                                <configuration>
+                                    <sources><source>src/offline-test/java</source></sources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>add-offline-test-resource</id>
+                                <goals><goal>add-test-resource</goal></goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/offline-test/resources</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <failIfNoTests>true</failIfNoTests>
+                            <systemPropertyVariables>
+                                <wko.it.introspection.image>${wko.it.introspection.image}</wko.it.introspection.image>
+                                <wko.it.introspection.wdt.url>${wko.it.introspection.wdt.url}</wko.it.introspection.wdt.url>
+                                <wko.it.introspection.wdt.version>${wko.it.introspection.wdt.version}</wko.it.introspection.wdt.version>
+                                <wko.it.introspection.cases>${wko.it.introspection.cases}</wko.it.introspection.cases>
+                                <wko.it.introspection.results>${wko.it.introspection.results}</wko.it.introspection.results>
+                                <wko.it.introspection.timeout.seconds>${wko.it.introspection.timeout.seconds}</wko.it.introspection.timeout.seconds>
+                                <wko.it.introspection.scripts>${project.basedir}/../operator/src/main/resources/scripts</wko.it.introspection.scripts>
+                            </systemPropertyVariables>
+                            <properties>
+                                <configurationParameters>
+                                    junit.jupiter.execution.parallel.enabled = false
+                                    junit.jupiter.extensions.autodetection.enabled = false
+                                </configurationParameters>
+                            </properties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>default</id>
             <activation>
