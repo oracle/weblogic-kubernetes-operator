@@ -45,7 +45,8 @@ public class JakartaRefactorUtil {
    * @throws IOException throws exception when cannot be copied
    */
   public static void copyAndRefactorDirectory(Path sourceDir, Path targetDir) throws IOException {
-    if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")) {
+    if (!WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("15.1")
+        && !WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("26.1")) {
       Files.createDirectories(targetDir);
       Files.walk(sourceDir).forEach(sourcePath -> {
         try {
