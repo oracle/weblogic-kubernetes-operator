@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -84,7 +84,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -218,15 +217,6 @@ class ItIntrospectVersion {
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
-  private static int managedServerPort;
-
-  static {
-    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
-      managedServerPort = 7100;
-    } else {
-      managedServerPort = 7001;
-    }
-  }
   
   private static int adminPort = 7001;
   private static String hostHeader;
@@ -1239,6 +1229,10 @@ class ItIntrospectVersion {
 
   private void verifyConnectionBetweenClusterMembers(String serverName, List<String> managedServerNames) {
     String podName = domainUid + "-" + serverName;
+    int managedServerPort = assertDoesNotThrow(
+        () -> getServicePort(introDomainNamespace, podName, "default"),
+        "Getting managed server default port failed");
+    assertNotEquals(-1, managedServerPort, "Managed server default port is not valid");
     boolean ipv6 = K8S_NODEPORT_HOST.contains(":");
     final String command = String.format(
         "%s exec -n %s %s -- curl \"http://%s:%s/clusterview/ClusterViewServlet?user=%s&password=%s&ipv6=%b\"",

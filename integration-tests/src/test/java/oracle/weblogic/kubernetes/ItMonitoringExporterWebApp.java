@@ -413,7 +413,8 @@ class ItMonitoringExporterWebApp {
       });
       logger.info("checking access to wl metrics via https connection");
       //set to listen only ssl
-      changeListenPort(domain3Uid, domain3Namespace, "False");
+      assertTrue(changeListenPort(domain3Uid, domain3Namespace, "False"),
+          "Failed to configure the managed server to listen only on SSL");
       clusterNames.stream().forEach(clusterName -> {
         assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
             "wls_servlet_invocation_total_count",
