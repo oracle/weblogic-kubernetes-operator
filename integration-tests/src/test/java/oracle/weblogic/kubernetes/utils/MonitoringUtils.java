@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -98,6 +98,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
@@ -1349,15 +1350,18 @@ public class MonitoringUtils {
    */
   public static boolean verifyMonExpAppAccess(String uri, String searchKey, Boolean isRegex, String domainUid,
                                               String domainNS, boolean isHttps, String clusterName) {
-    String protocol = "http";
-    String port = "8001";
-    if (isHttps) {
-      protocol = "https";
-      port = "7002";
-    }
+    String protocol = isHttps ? "https" : "http";
     String podName = domainUid + "-" + clusterName + "-managed-server1";
     if (clusterName == null) {
       podName = domainUid + "-managed-server1";
+    }
+    // The operator resolves template port defaults across WebLogic versions.
+    // Use the exposed channel instead of assuming the model's SSL port is the runtime port.
+    String channelName = isHttps ? "default-secure" : "default";
+    int port = getServicePort(domainNS, podName, channelName);
+    if (port <= 0) {
+      logger.warning("No {0} port found for service {1} in namespace {2}", channelName, podName, domainNS);
+      return false;
     }
     // access metrics
     final String command = String.format(
@@ -1381,6 +1385,9 @@ public class MonitoringUtils {
       String response = result.stdout().trim();
       logger.info("Response : exitValue {0}, stdout {1}, stderr {2}",
           result.exitValue(), response, result.stderr());
+      if (result.exitValue() != 0) {
+        return false;
+      }
       if (isRegex) {
         isFound = containsValidServletName(response, searchKey);
       } else {

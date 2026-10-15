@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -108,6 +108,8 @@ class ItMiiMultiModel {
   private static final String dsName = "TestDataSource";
   private static final String dsName2 = "TestDataSource2";
   private static final String dsName3 = "TestDataSource3";
+  private static final String jdbcResourcePath =
+      "/management/weblogic/latest/domainConfig/JDBCSystemResources/";
 
   private static LoggingFacade logger = null;
 
@@ -468,14 +470,15 @@ class ItMiiMultiModel {
       String dsName) {
 
     StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n " + namespace + " " + adminServerPodName)
-        .append(" -- /bin/bash -c \"")
+        .append(" -- /bin/bash -c \"set -o pipefail; ")
         .append("curl -k --user ")
         .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://")
+        .append(" 'http://")
         .append(adminServerPodName + ":7001")
-        .append("/management/wls/latest/datasources/id/" + dsName)
+        .append(jdbcResourcePath + dsName
+            + "/JDBCResource/JDBCConnectionPoolParams?fields=maxCapacity&links=none'")
         .append(" --noproxy '*'")
-        .append(" --silent --show-error ")
+        .append(" --silent --show-error --fail ")
         .append("| grep maxCapacity | tr -d -c 0-9 ")
         .append("\"");
 
@@ -508,10 +511,9 @@ class ItMiiMultiModel {
         .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://")
         .append(adminServerPodName + ":7001")
-        .append("/management/wls/latest/datasources")
-        .append("/id/" + dsName)
+        .append(jdbcResourcePath + dsName)
         .append(" --noproxy '*'")
-        .append(" --silent --show-error ")
+        .append(" --silent --show-error --output /dev/null --write-out '%{http_code}' ")
         .append("\"").toString();
 
     CommandParams params = Command
@@ -520,12 +522,10 @@ class ItMiiMultiModel {
         .saveResults(true)
         .redirect(true);
 
-    String expectedStr = String.format("'%s' was not found", dsName);
-
     testUntil(
-        () -> Command.withParams(params).executeAndVerify(expectedStr),
+        () -> Command.withParams(params).executeAndVerify("404"),
         logger,
-        "Get max capacity of data source");
+        "Check data source does not exist");
     return true;
   }
 

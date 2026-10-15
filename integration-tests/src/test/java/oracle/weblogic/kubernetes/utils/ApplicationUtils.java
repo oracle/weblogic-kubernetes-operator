@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -50,8 +50,11 @@ public class ApplicationUtils {
     }
     curlString.append(" -g -sk --noproxy '*' ")
         .append(" --silent --show-error ")
-        .append(headerString)
-        .append(url)
+        .append(headerString);
+    if (url.contains("/management/weblogic/")) {
+      curlString.append("-H 'X-Requested-By: MyClient' -H 'Accept: application/json' ");
+    }
+    curlString.append(url)
         .append(" -o /dev/null")
         .append(" -w %{http_code});")
         .append("echo ${status}");
@@ -494,7 +497,8 @@ public class ApplicationUtils {
   public static boolean verifyAdminServerRESTAccess(String host, int port, boolean secure, String hostHeader)
       throws IOException {
     getLogger().info("Check REST interface availability");
-    StringBuffer curlCmd = new StringBuffer("status=$(curl -vkg --noproxy '*' -m 30");
+    StringBuffer curlCmd = new StringBuffer("status=$(curl -vkg --noproxy '*' -m 30"
+        + " -H 'X-Requested-By:MyClient' -H 'Accept:application/json'");
     if (host.contains(":")) {
       host = "[" + host + "]";
     }
@@ -506,11 +510,12 @@ public class ApplicationUtils {
         .append(":")
         .append(ADMIN_PASSWORD_DEFAULT)
         .append(" ")
-        .append(secure ? " https://" : "http://")
+        .append(secure ? " 'https://" : " 'http://")
         .append(host)
         .append(":")
         .append(port)
-        .append("/management/tenant-monitoring/servers/ --show-error -w %{http_code}); ")
+        .append("/management/weblogic/latest/domainRuntime/serverRuntimes"
+            + "?links=none&fields=name,state' --show-error -w %{http_code}); ")
         .append("echo ${status}");
     getLogger().info("checkRestConsole : curl command {0}", new String(curlCmd));
     try {
@@ -518,7 +523,7 @@ public class ApplicationUtils {
       String response = result.stdout().trim();
       getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
           result.exitValue(), response, result.stderr());
-      return response.contains("RUNNING");
+      return response.contains("RUNNING") && response.endsWith("200");
     } catch (IOException | InterruptedException ex) {
       getLogger().info("Exception in checkRestConsole {0}", ex);
       return false;
@@ -544,19 +549,20 @@ public class ApplicationUtils {
     StringBuffer curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
         + namespace + " " + adminServerPodName)
         .append(" -- /bin/bash -c \"")
-        .append("curl -g --user ")
+        .append("curl -g -H 'X-Requested-By:MyClient' -H 'Accept:application/json' --user ")
         .append(userName)
         .append(":")
         .append(password)
-        .append(" http://" + adminServerPodName + ":" + adminPort)
-        .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}\"");
+        .append(" 'http://" + adminServerPodName + ":" + adminPort)
+        .append("/management/weblogic/latest/domainRuntime/serverRuntimes"
+            + "?links=none&fields=name,state' --silent --show-error -o /dev/null -w %{http_code}\"");
     logger.info("checkRestConsole : curl command {0}", new String(curlCmd));
     try {
       ExecResult result = ExecCommand.exec(new String(curlCmd), true);
       String response = result.stdout().trim();
       logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
           result.exitValue(), response, result.stderr());
-      return response.contains("200");
+      return response.equals("200");
     } catch (IOException | InterruptedException ex) {
       logger.info("Exception in checkRestConsole {0}", ex);
       return false;
