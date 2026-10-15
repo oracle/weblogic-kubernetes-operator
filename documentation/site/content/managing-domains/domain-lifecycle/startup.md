@@ -198,6 +198,45 @@ is `false`, the graceful shutdown process will wait only for non-persisted HTTP 
 or be invalidated before proceeding.
 {{% /notice %}}
 
+#### Pod termination grace and native sidecars
+
+Set `serverPod.terminationGracePeriodSeconds` to configure the total Pod termination budget. The value must be
+nonnegative and can be set at the domain, cluster, or server level; the most specific value takes precedence.
+If omitted, the operator continues to use `serverPod.shutdown.timeoutSeconds` plus 10 seconds.
+This field does not change the WebLogic shutdown timeout. Changes apply to newly created Pods and do not trigger
+a rolling restart. Existing Pods retain their original budget; use `restartVersion` when a controlled roll is needed.
+
+A user-provided [Kubernetes native sidecar](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/)
+is an entry in `serverPod.initContainers` with `restartPolicy: Always`. The cluster must support and enable
+the Kubernetes `SidecarContainers` feature, which is stable in Kubernetes 1.33. The operator preserves the native
+sidecar's resources, probes, lifecycle hooks, and security context. Existing Pods created by earlier operators
+retain their previous init-container resource settings until they are recreated.
+
+```yaml
+spec:
+  serverPod:
+    terminationGracePeriodSeconds: 120
+    initContainers:
+    - name: jfr-uploader
+      image: example.com/jfr-uploader:1.0
+      restartPolicy: Always
+      # Configure shared recording storage, resources, probes, and final upload handling.
+```
+
+Kubernetes terminates native sidecars after all regular containers have stopped, in reverse init-container order.
+The total Pod grace period is shared by WebLogic shutdown, regular containers, and native sidecar cleanup.
+Choose a budget that leaves time for final uploads, and implement the uploader's final drain on `SIGTERM` or in
+a `preStop` hook. A larger grace period by itself does not establish shutdown ordering for regular containers.
+Forced deletion or node failure can prevent cleanup.
+
+A native sidecar restart does not request a WebLogic Pod restart. Its readiness still affects the whole Pod's
+readiness and traffic eligibility. If WebLogic remains ready while a native sidecar recovers, a pending cluster
+roll continues to honor the cluster availability limit. The operator preserves the Pod's termination budget
+for native cleanup even when WebLogic has already reached `SHUTDOWN` or `UNKNOWN`.
+
+The operator-provided monitoring exporter, Fluentd, and Fluent Bit continue to run as regular containers.
+Configure native sidecars for introspector Jobs separately using `spec.introspector.serverPod.initContainers`.
+
 #### Shutdown environment variables
 
 The operator configures shutdown behavior with the use of the following environment variables. Users may

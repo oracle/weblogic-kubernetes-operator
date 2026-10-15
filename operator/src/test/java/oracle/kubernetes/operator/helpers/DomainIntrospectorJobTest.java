@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -878,6 +878,49 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getUpdatedDomain(), not(hasCondition(FAILED)));
   }
 
+  @Test
+  void whenNativeSidecarExitsWithErrorAfterMainSuccess_readMainLogAndCompleteIntrospection() {
+    consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    testSupport.defineResources(asCompletedJob(createIntrospectorJob()));
+    V1Pod jobPod = createJobPod();
+    jobPod.spec(new V1PodSpec().addInitContainersItem(
+        new V1Container().name("uploader").restartPolicy("Always")));
+    jobPod.getStatus().getContainerStatuses().getFirst().name(getJobName()).ready(false).started(false);
+    jobPod.getStatus().addInitContainerStatusesItem(new V1ContainerStatus().name("uploader").ready(false)
+        .state(new V1ContainerState().terminated(new V1ContainerStateTerminated().exitCode(143).reason("Error"))));
+    testSupport.defineResources(jobPod);
+    testSupport.definePodLog(getJobName(), NS, INFO_MESSAGE);
+    testSupport.failOnCreate(JOB, NS, HTTP_FORBIDDEN);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(getUpdatedDomain(), not(hasCondition(FAILED)));
+    assertThat(testSupport.getPodLogContainers(), org.hamcrest.Matchers.hasItem(getJobName()));
+    assertThat(testSupport.getPodLogContainers(), not(org.hamcrest.Matchers.hasItem("uploader")));
+  }
+
+  @Test
+  void whenNativeSidecarImagePullFailsAfterMainSuccess_doNotRepeatIntrospection() {
+    consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    testSupport.defineResources(asCompletedJob(createIntrospectorJob()));
+    V1Pod jobPod = createJobPod();
+    jobPod.spec(new V1PodSpec().addInitContainersItem(
+        new V1Container().name("uploader").restartPolicy("Always")));
+    jobPod.getStatus().getContainerStatuses().getFirst().name(getJobName()).ready(false).started(false);
+    jobPod.getStatus().addInitContainerStatusesItem(createImagePullContainerStatus("ImagePullBackOff")
+        .name("uploader").restartCount(3));
+    testSupport.defineResources(jobPod);
+    testSupport.definePodLog(getJobName(), NS, INFO_MESSAGE);
+    testSupport.failOnCreate(JOB, NS, HTTP_FORBIDDEN);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(getUpdatedDomain(), not(hasCondition(FAILED)));
+    assertThat(testSupport.getPodLogContainers(), org.hamcrest.Matchers.hasItem(getJobName()));
+  }
+
   private void defineCompletedIntrospection() {
     testSupport.defineResources(asCompletedJob(createIntrospectorJob()));
     testSupport.defineResources(createJobPod());
@@ -1304,7 +1347,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private V1ContainerStatus createImagePullContainerStatus(String imagePullError) {
-    return new V1ContainerStatus().state(
+    return new V1ContainerStatus().name(getJobName()).state(
           new V1ContainerState().waiting(new V1ContainerStateWaiting().reason(imagePullError)));
   }
 

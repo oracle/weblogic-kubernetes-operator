@@ -236,6 +236,14 @@ public abstract class BaseConfiguration {
     serverPod.setRestartPolicy(restartPolicy);
   }
 
+  public Long getTerminationGracePeriodSeconds() {
+    return serverPod.getTerminationGracePeriodSeconds();
+  }
+
+  void setTerminationGracePeriodSeconds(Long terminationGracePeriodSeconds) {
+    serverPod.setTerminationGracePeriodSeconds(terminationGracePeriodSeconds);
+  }
+
   public String getRuntimeClassName() {
     return serverPod.getRuntimeClassName();
   }

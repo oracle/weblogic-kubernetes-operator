@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -52,6 +52,10 @@ public class IntrospectorJobPodConfiguration implements EffectiveIntrospectorJob
 
   public List<V1Container> getInitContainers() {
     return serverPod.getInitContainers();
+  }
+
+  public void setInitContainers(@Nullable List<V1Container> initContainers) {
+    serverPod.setInitContainers(initContainers);
   }
 
   public Map<String, String> getLabels() {

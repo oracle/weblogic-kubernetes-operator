@@ -483,7 +483,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
         .getAndUpdate(
             lastKnownStatus -> {
               LastKnownStatus updatedStatus = lastKnownStatus;
-              if (PodHelper.isReady(event)) {
+              if (PodHelper.isReady(event) || PodHelper.hasReadyWebLogicWithNativeSidecars(event)) {
                 if (lastKnownStatus == null
                     || !WebLogicConstants.RUNNING_STATE.equals(lastKnownStatus.getStatus())) {
                   updatedStatus = new LastKnownStatus(WebLogicConstants.RUNNING_STATE);

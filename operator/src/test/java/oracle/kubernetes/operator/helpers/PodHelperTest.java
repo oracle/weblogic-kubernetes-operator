@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,18 +8,23 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -64,6 +69,55 @@ class PodHelperTest {
   }
 
   // --- delete pod ---
+
+  @ParameterizedTest
+  @ValueSource(strings = {"RUNNING", "SHUTDOWN", "UNKNOWN"})
+  void whenNativeSidecarExists_deleteWithLivePodGraceEvenAfterWebLogicShutdown(String serverState) {
+    pod.spec(new V1PodSpec().terminationGracePeriodSeconds(90L)
+        .addInitContainersItem(new V1Container().name("uploader").restartPolicy("Always")));
+    domainPresenceInfo.setServerPod(SERVER_NAME, pod);
+    domainPresenceInfo.updateLastKnownServerStatus(SERVER_NAME, serverState);
+    testSupport.defineResources(pod);
+    testSupport.doOnDelete(POD, context -> assertThat(context.gracePeriodSeconds(), is(90L)));
+
+    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep));
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  void whenExplicitPodGraceConfigured_preserveGraceForTraditionalSidecarsAfterShutdown() {
+    DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain()).withTerminationGracePeriodSeconds(120L);
+    pod.spec(new V1PodSpec().terminationGracePeriodSeconds(120L));
+    domainPresenceInfo.setServerPod(SERVER_NAME, pod);
+    domainPresenceInfo.updateLastKnownServerStatus(SERVER_NAME, "SHUTDOWN");
+    testSupport.defineResources(pod);
+    testSupport.doOnDelete(POD, context -> assertThat(context.gracePeriodSeconds(), is(120L)));
+
+    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep));
+  }
+
+  @Test
+  void whenNoNativeSidecarOrExplicitGrace_preserveImmediateDeletionAfterShutdown() {
+    domainPresenceInfo.setServerPod(SERVER_NAME, pod);
+    domainPresenceInfo.updateLastKnownServerStatus(SERVER_NAME, "SHUTDOWN");
+    testSupport.defineResources(pod);
+    testSupport.doOnDelete(POD, context -> assertThat(context.gracePeriodSeconds(), is(0L)));
+
+    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep));
+  }
+
+  @Test
+  void whenCustomGraceRemovedFromDomain_existingPodStillGetsItsOriginalBudget() {
+    pod.spec(new V1PodSpec().terminationGracePeriodSeconds(120L));
+    pod.getMetadata().putAnnotationsItem(PodHelper.CUSTOM_TERMINATION_GRACE_PERIOD, "true");
+    domainPresenceInfo.setServerPod(SERVER_NAME, pod);
+    domainPresenceInfo.updateLastKnownServerStatus(SERVER_NAME, "SHUTDOWN");
+    testSupport.defineResources(pod);
+    testSupport.doOnDelete(POD, context -> assertThat(context.gracePeriodSeconds(), is(120L)));
+
+    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, false, terminalStep));
+  }
   // REG: very curious. Deletion uses the namespace from the domain presence info, but the name
   // from the pod (if any) in the SKO.
 

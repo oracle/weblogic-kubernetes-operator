@@ -10,9 +10,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -24,11 +27,14 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
+import io.kubernetes.client.openapi.models.V1PodBuilder;
 import io.kubernetes.client.openapi.models.V1PodSchedulingGate;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.StepAndPacket;
@@ -37,6 +43,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
@@ -580,6 +587,86 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         allOf(
             hasInitContainer("container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"),
             hasInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle")));
+  }
+
+  @Test
+  void whenNativeSidecarConfigured_preserveIndependentResources() {
+    V1ResourceRequirements resources = new V1ResourceRequirements()
+        .putRequestsItem("cpu", new Quantity("25m"));
+    getConfigurator().withRequestRequirement("cpu", "500m")
+        .withInitContainer(createContainer("uploader", "busybox", "sleep", "infinity")
+            .restartPolicy("Always").resources(resources));
+
+    V1Container sidecar = getCreatedPodSpecInitContainers().getFirst();
+
+    assertThat(sidecar.getRestartPolicy(), equalTo("Always"));
+    assertThat(sidecar.getResources(), equalTo(resources));
+  }
+
+  @Test
+  void whenClusterOverridesDomainPodGrace_andServerOverridesCluster_useMostSpecificValue() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().withTerminationGracePeriodSeconds(120L);
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withTerminationGracePeriodSeconds(90L);
+    assertThat(PodHelper.createManagedServerPodModel(testSupport.getPacket()).getSpec()
+        .getTerminationGracePeriodSeconds(), equalTo(90L));
+
+    getConfigurator().configureServer(SERVER_NAME).withTerminationGracePeriodSeconds(60L);
+    assertThat(PodHelper.createManagedServerPodModel(testSupport.getPacket()).getSpec()
+        .getTerminationGracePeriodSeconds(), equalTo(60L));
+  }
+
+  @Test
+  void whenUpgradingLegacyNativeSidecarPod_doNotRollOrAddNewHashMarker() throws Exception {
+    useProductionHash();
+    PodHelper.setProductVersion("4.3.19");
+    getConfigurator().withRequestRequirement("cpu", "500m")
+        .withInitContainer(createContainer("uploader", "busybox", "sleep", "infinity")
+            .restartPolicy("Always").resources(new V1ResourceRequirements()
+                .putRequestsItem("cpu", new Quantity("25m"))));
+    getConfigurator().configureServer(SERVER_NAME)
+        .withSchedulingGates(List.of(new V1PodSchedulingGate().name("test.example.com/hold")));
+    Function<Object, String> legacyHash = object -> {
+      V1Pod recipe = new V1PodBuilder((V1Pod) object).build();
+      recipe.getMetadata().setAnnotations(null);
+      recipe.getSpec().getInitContainers().getFirst()
+          .setResources(new V1ResourceRequirements().putRequestsItem("cpu", new Quantity("500m")));
+      return DigestUtils.sha256Hex(Yaml.dump(recipe));
+    };
+    var legacyHashMemento = StaticStubSupport.install(AnnotationHelper.class, "hashFunction", legacyHash);
+    V1Pod legacyPod;
+    try {
+      legacyPod = PodHelper.createManagedServerPodModel(testSupport.getPacket());
+    } finally {
+      legacyHashMemento.revert();
+    }
+    legacyPod.getMetadata().getAnnotations().remove(PodStepContext.NATIVE_SIDECAR_RESOURCES);
+    legacyPod.getSpec().getInitContainers().getFirst()
+        .setResources(new V1ResourceRequirements().putRequestsItem("cpu", new Quantity("500m")));
+    legacyPod.getMetadata().getLabels().put(LabelConstants.OPERATOR_VERSION, "4.3.18");
+    initializeExistingPod(legacyPod);
+
+    String originalHash = AnnotationHelper.getHash(legacyPod);
+    verifyPodPatched();
+    verifyPodNotReplaced(); // Metadata reconciliation must not lose upgrade compatibility.
+
+    assertThat(domainPresenceInfo.getServerPod(SERVER_NAME).getMetadata().getAnnotations(),
+        not(hasKey(PodStepContext.NATIVE_SIDECAR_RESOURCES)));
+    assertThat(AnnotationHelper.getHash(domainPresenceInfo.getServerPod(SERVER_NAME)), equalTo(originalHash));
+    assertThat(domainPresenceInfo.getServerPod(SERVER_NAME).getSpec().getInitContainers().getFirst().getResources(),
+        equalTo(new V1ResourceRequirements().putRequestsItem("cpu", new Quantity("500m"))));
+  }
+
+  @Test
+  void whenNativeSidecarResourcesChangedOnNewPod_requestRoll() {
+    useProductionHash();
+    V1Container sidecar = createContainer("uploader", "busybox", "sleep", "infinity")
+        .restartPolicy("Always").resources(new V1ResourceRequirements().putRequestsItem("cpu", new Quantity("25m")));
+    getConfigurator().withInitContainer(sidecar);
+    initializeExistingPod();
+    sidecar.setResources(new V1ResourceRequirements().putRequestsItem("cpu", new Quantity("50m")));
+
+    verifyPodReplaced();
   }
 
   @Test
