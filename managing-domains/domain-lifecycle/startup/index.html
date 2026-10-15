@@ -23,29 +23,29 @@
     <meta itemprop="description" content="There are fields on the Domain that specify which WebLogic Server instances should be running, started, or restarted. To start, stop, or restart servers, modify these fields on the Domain.">
     <meta itemprop="datePublished" content="2019-02-23T17:04:41-05:00">
     <meta itemprop="dateModified" content="2019-02-23T17:04:41-05:00">
-    <meta itemprop="wordCount" content="2620">
+    <meta itemprop="wordCount" content="2949">
     <title>Startup and shutdown :: WebLogic Kubernetes Operator</title>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1792034970" rel="icon" type="image/png">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1792034970" rel="stylesheet">
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1792034970" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1792034970" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1792034970" defer></script>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png?1792096531" rel="icon" type="image/png">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete/auto-complete.min.css?1792096531" rel="stylesheet">
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete/auto-complete.min.js?1792096531" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search-lunr.min.js?1792096531" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.min.js?1792096531" defer></script>
     <script>
       window.relearn = window.relearn || {};
-      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1792034970";
+      window.relearn.index_js_url="https://oracle.github.io/weblogic-kubernetes-operator/searchindex.en.js?1792096531";
     </script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1792034970" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1792034970" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1792034970" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1792034970" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.min.js?1792096531" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.stemmer.support.min.js?1792096531" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.multi.min.js?1792096531" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr/lunr.en.min.js?1792096531" defer></script>
     <script>
       window.relearn = window.relearn || {};
       window.relearn.contentLangs=['en'];
     </script>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1792034970" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1792034970" rel="stylesheet"></noscript>
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1792034970" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1792034970" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1792034970" rel="stylesheet" id="R-format-style">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1792096531" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="https://oracle.github.io/weblogic-kubernetes-operator/fonts/fontawesome/css/fontawesome-all.min.css?1792096531" rel="stylesheet"></noscript>
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar/perfect-scrollbar.min.css?1792096531" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.min.css?1792096531" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/format-html.min.css?1792096531" rel="stylesheet" id="R-format-style">
     <script>
       window.relearn = window.relearn || {};
       // configuration
@@ -136,6 +136,7 @@
     </li>
     <li><a href="#shutdown-options">Shutdown options</a>
       <ul>
+        <li><a href="#pod-termination-grace-and-native-sidecars">Pod termination grace and native sidecars</a></li>
         <li><a href="#shutdown-environment-variables">Shutdown environment variables</a></li>
         <li><a href="#shutdown-rules"><code>shutdown</code> rules</a></li>
       </ul>
@@ -224,6 +225,7 @@
     </li>
     <li><a href="#shutdown-options">Shutdown options</a>
       <ul>
+        <li><a href="#pod-termination-grace-and-native-sidecars">Pod termination grace and native sidecars</a></li>
         <li><a href="#shutdown-environment-variables">Shutdown environment variables</a></li>
         <li><a href="#shutdown-rules"><code>shutdown</code> rules</a></li>
       </ul>
@@ -581,6 +583,45 @@ is <code>false</code>, the graceful shutdown process will wait only for non-pers
 or be invalidated before proceeding.</p>
   </div>
 </details>
+<h4 id="pod-termination-grace-and-native-sidecars">Pod termination grace and native sidecars<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
+<p>Set <code>serverPod.terminationGracePeriodSeconds</code> to configure the total Pod termination budget. The value must be
+nonnegative and can be set at the domain, cluster, or server level; the most specific value takes precedence.
+If omitted, the operator continues to use <code>serverPod.shutdown.timeoutSeconds</code> plus 10 seconds.
+This field does not change the WebLogic shutdown timeout. Changes apply to newly created Pods and do not trigger
+a rolling restart. Existing Pods retain their original budget; use <code>restartVersion</code> when a controlled roll is needed.</p>
+<p>A user-provided 
+
+<a href="https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/"
+   
+   
+target="_blank" rel="noopener noreferrer"
+>
+Kubernetes native sidecar
+</a>
+
+is an entry in <code>serverPod.initContainers</code> with <code>restartPolicy: Always</code>. The cluster must support and enable
+the Kubernetes <code>SidecarContainers</code> feature, which is stable in Kubernetes 1.33. The operator preserves the native
+sidecar&rsquo;s resources, probes, lifecycle hooks, and security context. Existing Pods created by earlier operators
+retain their previous init-container resource settings until they are recreated.</p>
+<div class="highlight actionbar-wrapper wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">terminationGracePeriodSeconds</span>: <span style="color:#ae81ff">120</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">initContainers</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">jfr-uploader</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">image</span>: <span style="color:#ae81ff">example.com/jfr-uploader:1.0</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">restartPolicy</span>: <span style="color:#ae81ff">Always</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Configure shared recording storage, resources, probes, and final upload handling.</span></span></span></code></pre></div>
+<p>Kubernetes terminates native sidecars after all regular containers have stopped, in reverse init-container order.
+The total Pod grace period is shared by WebLogic shutdown, regular containers, and native sidecar cleanup.
+Choose a budget that leaves time for final uploads, and implement the uploader&rsquo;s final drain on <code>SIGTERM</code> or in
+a <code>preStop</code> hook. A larger grace period by itself does not establish shutdown ordering for regular containers.
+Forced deletion or node failure can prevent cleanup.</p>
+<p>A native sidecar restart does not request a WebLogic Pod restart. Its readiness still affects the whole Pod&rsquo;s
+readiness and traffic eligibility. If WebLogic remains ready while a native sidecar recovers, a pending cluster
+roll continues to honor the cluster availability limit. The operator preserves the Pod&rsquo;s termination budget
+for native cleanup even when WebLogic has already reached <code>SHUTDOWN</code> or <code>UNKNOWN</code>.</p>
+<p>The operator-provided monitoring exporter, Fluentd, and Fluent Bit continue to run as regular containers.
+Configure native sidecars for introspector Jobs separately using <code>spec.introspector.serverPod.initContainers</code>.</p>
 <h4 id="shutdown-environment-variables">Shutdown environment variables<span class="btn cstyle anchor copyanchor scrollanchor link noborder notitle interactive"><button type="button" title="Copy link to clipboard"><i class="fa-fw fas fa-link fa-lg"></i></button></span></h4>
 <p>The operator configures shutdown behavior with the use of the following environment variables. Users may
 instead simply configure these environment variables directly.  When a user-configured environment variable is present,
@@ -988,8 +1029,8 @@ for scripts that help with initiating domain lifecycle operations.</p>
 </div>
       </div>
     </aside>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1792034970" defer></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1792034970" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar/perfect-scrollbar.min.js?1792096531" defer></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/theme.min.js?1792096531" defer></script>
     <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>
