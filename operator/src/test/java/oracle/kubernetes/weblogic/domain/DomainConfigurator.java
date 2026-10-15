@@ -584,6 +584,8 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withRestartPolicy(String restartPolicy);
 
+  public abstract DomainConfigurator withTerminationGracePeriodSeconds(Long seconds);
+
   /**
    * Add readiness gate to the pod configuration.
    *

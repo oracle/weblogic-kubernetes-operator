@@ -14,6 +14,8 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Result;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -54,6 +56,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.POD_SCHEDULED;
 import static oracle.kubernetes.operator.KubernetesConstants.UNSCHEDULABLE_REASON;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -63,6 +66,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
   public static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
+  static final String CUSTOM_TERMINATION_GRACE_PERIOD = "weblogic.customTerminationGracePeriod";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {
@@ -114,6 +118,34 @@ public class PodHelper {
       LOGGER.fine(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
     }
     return ready;
+  }
+
+  static boolean isNativeSidecar(V1Container container) {
+    return "Always".equals(container.getRestartPolicy());
+  }
+
+  static boolean hasNativeSidecars(V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getSpec).map(V1PodSpec::getInitContainers)
+        .orElse(Collections.emptyList()).stream().anyMatch(PodHelper::isNativeSidecar);
+  }
+
+  // Pod readiness includes sidecars. A sidecar outage must not classify a healthy WebLogic
+  // container as an unavailable server that can bypass the cluster rolling availability limit.
+  static boolean hasReadyWebLogicWithNativeSidecars(V1Pod pod) {
+    return hasNativeSidecars(pod)
+        && Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getContainerStatuses)
+            .orElse(Collections.emptyList()).stream()
+            .filter(status -> WLS_CONTAINER_NAME.equals(status.getName()))
+            .anyMatch(status -> Boolean.TRUE.equals(status.getReady()) && isContainerRunning(status));
+  }
+
+  private static boolean isContainerRunning(V1ContainerStatus status) {
+    return status.getState() != null && status.getState().getRunning() != null;
+  }
+
+  static long getTerminationGracePeriodSeconds(EffectiveServerSpec serverSpec) {
+    return Optional.ofNullable(serverSpec.getTerminationGracePeriodSeconds())
+        .orElse((long) serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME);
   }
 
   /**
@@ -951,8 +983,17 @@ public class PodHelper {
       } else {
         final String clusterName = getClusterName(oldPod);
         final String name = oldPod.getMetadata().getName();
+        EffectiveServerSpec serverSpec = info.getServer(serverName, clusterName);
+        boolean needsPodGrace = hasNativeSidecars(oldPod)
+            || Optional.ofNullable(oldPod.getMetadata()).map(V1ObjectMeta::getAnnotations)
+                .map(annotations -> annotations.containsKey(CUSTOM_TERMINATION_GRACE_PERIOD)).orElse(false)
+            || (serverSpec != null && serverSpec.getTerminationGracePeriodSeconds() != null);
         long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
-        if (isServerShutdown(getServerStateFromInfo(info, serverName))) {
+        if (needsPodGrace) {
+          // Use the budget of the live Pod: configuration changes apply to newly created Pods.
+          gracePeriodSeconds = Optional.ofNullable(oldPod.getSpec())
+              .map(V1PodSpec::getTerminationGracePeriodSeconds).orElse(gracePeriodSeconds);
+        } else if (isServerShutdown(getServerStateFromInfo(info, serverName))) {
           gracePeriodSeconds = 0;
         }
 
@@ -975,23 +1016,13 @@ public class PodHelper {
 
     private long getGracePeriodSeconds(DomainPresenceInfo info, String clusterName) {
       return Optional.ofNullable(info.getServer(serverName, clusterName))
-          .map(this::getConfiguredGracePeriodSeconds)
+          .map(PodHelper::getTerminationGracePeriodSeconds)
           .orElse(Shutdown.DEFAULT_TIMEOUT);
     }
 
     private String getServerStateFromInfo(DomainPresenceInfo info, String serverName) {
       return Optional.ofNullable(info.getLastKnownServerStatus(serverName))
           .map(LastKnownStatus::getStatus).orElse(getServerState(info.getDomain(), serverName));
-    }
-
-    // We add a 10-second fudge factor here to account for the fact that WLST takes
-    // ~6 seconds to start, so along with any other delay in connecting and issuing
-    // the shutdown, the actual server instance has the full configured timeout to
-    // gracefully shutdown before the container is destroyed by this timeout.
-    // We will remove this fudge factor when the operator connects via REST to shut down
-    // the server instance.
-    private long getConfiguredGracePeriodSeconds(EffectiveServerSpec effectiveServerSpec) {
-      return effectiveServerSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
     }
 
     private Step deletePod(String name, String namespace, boolean isMustWait, long gracePeriodSeconds, Step next) {

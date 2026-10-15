@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateRunning;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -55,6 +59,36 @@ class DomainPresenceInfoTest {
   private static final String NAMESPACE = "ns";
   private static final String DOMAIN_UID = "domain";
   private final DomainPresenceInfo info = new DomainPresenceInfo(NAMESPACE, DOMAIN_UID);
+
+  @Test
+  void whenNativeSidecarRestarts_preserveRunningWebLogicStatusWhilePodIsNotReady() {
+    V1Pod pod = nativeSidecarPod(true);
+    info.updateLastKnownServerStatus("ms1", "RUNNING");
+
+    info.setServerPodFromEvent("ms1", pod, ignored -> true);
+
+    assertThat(info.getLastKnownServerStatus("ms1").getStatus(), equalTo("RUNNING"));
+    assertThat(PodHelper.isReady(pod), equalTo(false));
+  }
+
+  @Test
+  void whenWebLogicIsNotReady_nativeSidecarDoesNotPreserveRunningStatus() {
+    info.updateLastKnownServerStatus("ms1", "RUNNING");
+
+    info.setServerPodFromEvent("ms1", nativeSidecarPod(false), ignored -> true);
+
+    assertThat(info.getLastKnownServerStatus("ms1"), nullValue());
+  }
+
+  private V1Pod nativeSidecarPod(boolean webLogicReady) {
+    return new V1Pod().metadata(new V1ObjectMeta().name("domain-ms1").namespace(NAMESPACE))
+        .spec(new V1PodSpec().addInitContainersItem(new V1Container().name("uploader").restartPolicy("Always")))
+        .status(new V1PodStatus().phase("Running")
+            .addConditionsItem(new V1PodCondition().type("Ready").status("False"))
+            .addContainerStatusesItem(new V1ContainerStatus().name("weblogic-server").ready(webLogicReady)
+                .state(new V1ContainerState().running(new V1ContainerStateRunning())))
+            .addInitContainerStatusesItem(new V1ContainerStatus().name("uploader").ready(false).restartCount(7)));
+  }
 
   @Test
   void whenOlderRollCompletes_preserveRequestFromNewerMakeRightCycle() {
