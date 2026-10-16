@@ -337,6 +337,34 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return getSko(serverName).getService().getAndSet(null);
   }
 
+  List<V1Service> getCachedServices() {
+    return Stream.concat(clusterServices.values().stream(), servers.values().stream()
+        .flatMap(s -> Stream.of(s.getService().get(), s.getExternalService().get())))
+        .filter(Objects::nonNull).toList();
+  }
+
+  // A list response must not overwrite or remove a Service changed since that list started.
+  boolean compareAndSetService(V1Service expected, V1Service replacement) {
+    V1Service service = replacement == null ? expected : replacement;
+    return switch (OperatorServiceType.getType(service)) {
+      case SERVER -> getSko(ServiceHelper.getServerName(service)).getService().compareAndSet(expected, replacement);
+      case EXTERNAL -> getSko(ServiceHelper.getServerName(service)).getExternalService()
+          .compareAndSet(expected, replacement);
+      case CLUSTER -> {
+        AtomicBoolean changed = new AtomicBoolean();
+        clusterServices.compute(ServiceHelper.getClusterName(service), (key, current) -> {
+          if (current == expected) {
+            changed.set(true);
+            return replacement;
+          }
+          return current;
+        });
+        yield changed.get();
+      }
+      default -> false;
+    };
+  }
+
   public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
     return Optional.ofNullable((DomainPresenceInfo) packet.get(ProcessingConstants.DOMAIN_PRESENCE_INFO));
   }

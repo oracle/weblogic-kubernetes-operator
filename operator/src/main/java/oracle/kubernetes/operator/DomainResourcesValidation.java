@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -31,7 +30,7 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.helpers.ServicePresenceReconciler;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DeleteBadPodStep;
@@ -58,6 +57,7 @@ class DomainResourcesValidation {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final String namespace;
   private final DomainProcessor processor;
+  private final ServicePresenceReconciler services;
   private ClusterList activeClusterResources;
   private final Set<String> modifiedClusterNames = new HashSet<>();
   private final Set<String> newClusterNames = new HashSet<>();
@@ -67,6 +67,8 @@ class DomainResourcesValidation {
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
     this.processor = processor;
+    services = new ServicePresenceReconciler(() -> getDomainPresenceInfoMap().values(),
+        this::getOrComputeDomainPresenceInfo);
   }
 
   Processors getProcessors() {
@@ -78,7 +80,12 @@ class DomainResourcesValidation {
 
       @Override
       public Consumer<V1ServiceList> getServiceListProcessing() {
-        return DomainResourcesValidation.this::addServiceList;
+        return services;
+      }
+
+      @Override
+      public void prepareServiceList() {
+        services.prepare();
       }
 
       @Override
@@ -103,6 +110,7 @@ class DomainResourcesValidation {
 
       @Override
       public void completeProcessing(Packet packet) {
+        services.complete();
         DomainProcessor dp = Optional.ofNullable((DomainProcessor)
             packet.get(ProcessingConstants.DOMAIN_PROCESSOR)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
@@ -218,17 +226,6 @@ class DomainResourcesValidation {
     return processor.getClusterPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
   }
 
-  private void addServiceList(V1ServiceList list) {
-    list.getItems().forEach(this::addService);
-  }
-
-  private void addService(V1Service service) {
-    String domainUid = ServiceHelper.getServiceDomainUid(service);
-    if (domainUid != null) {
-      ServiceHelper.addToPresence(getOrComputeDomainPresenceInfo(domainUid), service);
-    }
-  }
-
   private void addPodDisruptionBudgetList(V1PodDisruptionBudgetList list) {
     list.getItems().forEach(this::addPodDisruptionBudget);
   }
@@ -327,6 +324,10 @@ class DomainResourcesValidation {
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (eventItem != null) {
       makeRight.withEventData(new EventData(eventItem)).interrupt().execute();
+    } else if (services.hasMissingServices(info)) {
+      // A missing dependency needs repair even while an earlier plan waits for unready server Pods.
+      // Use retry admission so the existing failure history is preserved.
+      makeRight.retryOnFailure().interrupt().execute();
     } else if (!info.hasRetryableFailure()) {
       makeRight.execute();
     } else if (isNotBeingProcessed(info.getNamespace(), info.getDomainUid())) {

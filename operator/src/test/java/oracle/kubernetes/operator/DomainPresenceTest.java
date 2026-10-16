@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -42,6 +43,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -55,6 +57,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainProcessorTest.getInitContainerStatusWithImagePullError;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
@@ -63,7 +66,10 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CH
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_CALL_LIMIT;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -347,6 +353,63 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
+  }
+
+  @Test
+  void whenServicesDeletedWithoutWatchEvents_clearStaleServicesOnRelist() {
+    addDomainResource(UID1, NS);
+    V1Service internal = createServerService(UID1, NS, "admin");
+    V1Service external = OperatorServiceType.EXTERNAL.withTypeLabel(
+        createServerService(UID1, NS, "admin"));
+    external.getMetadata().setName(LegalNames.toExternalServiceName(UID1, "admin"));
+    V1Service cluster = OperatorServiceType.CLUSTER.withTypeLabel(new V1Service().metadata(
+        createNamespacedMetadata(UID1, NS).name("cluster-service")
+            .putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, CLUSTER_1)));
+    testSupport.defineResources(internal, external, cluster);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    assertThat(info.getServerService("admin"), equalTo(internal));
+    assertThat(info.getExternalService("admin"), equalTo(external));
+    assertThat(info.getClusterService(CLUSTER_1), equalTo(cluster));
+
+    testSupport.deleteResources(internal, external, cluster);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(info.getServerService("admin"), nullValue());
+    assertThat(info.getExternalService("admin"), nullValue());
+    assertThat(info.getClusterService(CLUSTER_1), nullValue());
+  }
+
+  @Test
+  void whenServiceListFails_preserveCachedService() {
+    addDomainResource(UID1, NS);
+    V1Service service = createServerService(UID1, NS, "admin");
+    info.setServerService("admin", service);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
+    testSupport.failOnList(SERVICE, NS, HTTP_FORBIDDEN);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    testSupport.verifyCompletionThrowable(ApiException.class);
+    assertThat(info.getServerService("admin"), equalTo(service));
+  }
+
+  @Test
+  void whenServiceMissingForFailedDomain_requestImmediateReconciliation() {
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(SERVER_POD));
+    testSupport.defineResources(domain);
+    info.setServerService("admin", createServerService(UID1, NS, "admin"));
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_PROCESSOR, dp);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(info.getServerService("admin"), nullValue());
+    assertThat(dp.getMakeRightOperations(UID1).isRetryOnFailure(), is(true));
+    assertThat(dp.isEstablishingDomain(UID1), is(true));
+    assertThat(domain.hasRetryableFailure(), is(true));
   }
 
   @Test
@@ -728,6 +791,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       private final Map<String, DomainPresenceInfo> dpis;
       private boolean explicitRecheck;
       private boolean deleting;
+      private boolean retrying;
       private EventData eventData;
 
       MakeRightDomainOperationStub(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
@@ -756,6 +820,17 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       @Override
       public MakeRightDomainOperation interrupt() {
         return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation retryOnFailure() {
+        retrying = true;
+        return this;
+      }
+
+      @Override
+      public boolean isRetryOnFailure() {
+        return retrying;
       }
 
       @Override

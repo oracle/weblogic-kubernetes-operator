@@ -180,6 +180,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTE
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusNoConditionMatcher.hasNoCondition;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -2096,6 +2097,67 @@ class DomainProcessorTest {
 
   private V1ObjectMeta createJobMetadata(String uid) {
     return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(uid);
+  }
+
+  @Test
+  void whenAdminServiceDeletedWithoutWatchEvent_recheckRecreatesItWithoutReplacingPods() {
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+    Map<String, V1Pod> originalPods = newInfo.getServerPods().collect(
+        Collectors.toMap(p -> p.getMetadata().getName(), p -> p));
+    V1Service service = newInfo.getServerService(ADMIN_NAME);
+    assertThat(service, notNullValue());
+    testSupport.deleteResources(service);
+    newInfo.setPopulated(false);
+
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+
+    assertThat(testSupport.getResourceWithName(SERVICE, service.getMetadata().getName()), notNullValue());
+    assertThat(newInfo.getServerService(ADMIN_NAME), not(sameInstance(service)));
+    assertThat(originalPods.size(), equalTo(NUM_ADMIN_SERVERS + MIN_REPLICAS));
+    newInfo.getServerPods().forEach(p ->
+        assertThat(p, sameInstance(originalPods.get(p.getMetadata().getName()))));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void whenRestartVersionDiscoveredByRelist_recreateMissingAdminService(boolean adminOnly) {
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+    V1Service service = newInfo.getServerService(ADMIN_NAME);
+    assertThat(service, notNullValue());
+    testSupport.deleteResources(service);
+    DomainResource updated = DomainProcessorTestSetup.createTestDomain(3L).withSpec(newDomain.getSpec());
+    if (adminOnly) {
+      configureDomain(updated).configureAdminServer().withRestartVersion("discovered-by-relist");
+    } else {
+      configureDomain(updated).withRestartVersion("discovered-by-relist");
+    }
+    testSupport.deleteResources(newDomain);
+    testSupport.defineResources(updated);
+
+    // No Domain or Service watch callbacks: the namespace list must repair the existing presence cache.
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport.getResourceWithName(SERVICE, service.getMetadata().getName()), notNullValue());
+  }
+
+  @Test
+  void whenAdminServiceDeletedByWatchForFailedDomain_recreateItWithoutReplacingPod() {
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+    V1Service service = newInfo.getServerService(ADMIN_NAME);
+    V1Pod admin = newInfo.getServerPod(ADMIN_NAME);
+    newInfo.getDomain().getStatus().addCondition(new DomainCondition(FAILED).withReason(SERVER_POD));
+    testSupport.deleteResources(service);
+
+    processor.dispatchServiceWatch(new Response<>("DELETED", service));
+
+    assertThat(testSupport.getResourceWithName(SERVICE, service.getMetadata().getName()), notNullValue());
+    assertThat(newInfo.getServerPod(ADMIN_NAME), sameInstance(admin));
   }
 
   private void establishPreviousIntrospection(Consumer<DomainResource> domainSetup) throws JsonProcessingException {
