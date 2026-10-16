@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.DomainProcessorDelegate;
@@ -38,7 +37,7 @@ import oracle.kubernetes.operator.helpers.PersistentVolumeClaimHelper;
 import oracle.kubernetes.operator.helpers.PersistentVolumeHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.helpers.ServicePresenceReconciler;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -477,6 +476,9 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     private Step getRecordExistingResourcesSteps() {
       final Processors processor = new Processors() {
+        private final ServicePresenceReconciler services =
+            new ServicePresenceReconciler(() -> List.of(info), uid -> info);
+
         @Override
         public Consumer<V1PodList> getPodListProcessing() {
           return this::processList;
@@ -495,11 +497,12 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
         @Override
         public Consumer<V1ServiceList> getServiceListProcessing() {
-          return list -> list.getItems().forEach(this::addService);
+          return services;
         }
 
-        private void addService(V1Service service) {
-          ServiceHelper.addToPresence(info, service);
+        @Override
+        public void prepareServiceList() {
+          services.prepare();
         }
 
         @Override
@@ -513,6 +516,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
         @Override
         public void completeProcessing(Packet packet) {
+          services.complete();
           info.getServerNames().stream().filter(
               s -> !info.getServerNamesFromPodList().contains(s)).toList()
               .forEach(name -> info.deleteServerPodFromEvent(name, null));

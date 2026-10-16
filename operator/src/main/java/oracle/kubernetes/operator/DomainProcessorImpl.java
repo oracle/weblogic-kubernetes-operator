@@ -816,7 +816,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       case DELETED:
         boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
         if (removed && isNotDeleting(info)) {
-          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().retryOnFailure().execute();
         }
         break;
       default:
