@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import com.google.gson.Gson;
@@ -36,12 +37,14 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.function.Executable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -98,6 +101,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -127,6 +131,7 @@ class ItValidateWebhookReplicas {
   private static int externalRestHttpsPort = 0;
 
   private String clusterName = "cluster-1";
+  private final List<Executable> cleanupActions = new ArrayList<>();
 
   /**
    * Perform initialization for all the tests in this class.
@@ -203,6 +208,17 @@ class ItValidateWebhookReplicas {
         checkPodReadyAndServiceExists(domainUid2 + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE + i,
             domainUid2, domainNamespace2);
       }
+    }
+  }
+
+  @AfterEach
+  void restoreTestResources() {
+    // Run every restoration even when a test or an earlier restoration fails.
+    try {
+      assertAll("Restore shared domain and cluster resources", cleanupActions);
+    } finally {
+      // IntegrationTest uses a single instance for all methods in this class.
+      cleanupActions.clear();
     }
   }
 
@@ -410,9 +426,6 @@ class ItValidateWebhookReplicas {
     assertTrue(response.contains(expectedErrorMsg),
         String.format("Patching domain replicas did not return the expected error msg: %s, got: %s",
             expectedErrorMsg, response));
-
-    // restore the cluster resource with replicas
-    restoreClusterResourceWithReplicas("cluster-1", domainUid, domainNamespace);
   }
 
   /**
@@ -424,6 +437,13 @@ class ItValidateWebhookReplicas {
   @DisplayName("All cluster resources in a domain have replicas set, changing domain's replicas to a number that "
       + "exceeds all cluster resources' size does not fail and the clusters are not impacted.")
   void testDomainReplicasTooHighWithClusterReplicas() {
+    cleanupActions.add(() -> {
+      V1Patch restorePatch = new V1Patch("[{\"op\":\"replace\",\"path\":\"/spec/replicas\",\"value\":1}]");
+      String restoreResponse = patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, restorePatch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH);
+      assertTrue(restoreResponse.contains("Succeeded with response code: 200"), restoreResponse);
+    });
+
     // patch the domain with replicas value more than max cluster size
     String patchStr
         = "["
@@ -453,14 +473,6 @@ class ItValidateWebhookReplicas {
         String.format("domain status cluster replica is changed, expect: %s, got: %s",
             domainStatusClusterReplicas, replicaCount));
 
-    // patch the domain with original replicas value
-    patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 1}"
-        + "]";
-    patch = new V1Patch(patchStr);
-    logger.info("Patching domain resource using patch string {0} ", patchStr);
-    patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
   /**
@@ -484,6 +496,8 @@ class ItValidateWebhookReplicas {
         logger,
         "tagImageAndPushIfNeeded for image {0} to be successful",
         newImage);
+
+    cleanupActions.add(0, () -> restoreDomainImageAndReplicas(domainUid, domainNamespace, originalImage));
 
     OffsetDateTime timestamp = now();
 
@@ -517,12 +531,6 @@ class ItValidateWebhookReplicas {
     for (int i = 1; i <= DEFAULT_MAX_CLUSTER_SIZE; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    // restore the domain image and replicas
-    restoreDomainImageAndReplicas(domainUid, domainNamespace, originalImage);
-
-    // restore the cluster resource with replicas
-    restoreClusterResourceWithReplicas("cluster-1", domainUid, domainNamespace);
   }
 
   /**
@@ -588,9 +596,6 @@ class ItValidateWebhookReplicas {
             expectedErrorMsg, response));
     assertFalse(response.contains(clusterName),
         String.format("Patching domain replicas response should not contain cluster name %s", clusterName));
-
-    // restore the domain2 cluster2
-    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-2", domainUid2, domainNamespace2);
   }
 
   /**
@@ -630,27 +635,14 @@ class ItValidateWebhookReplicas {
     assertTrue(response.contains(expectedErrorMsg),
         String.format("Patching domain replicas did not return the expected error msg: %s, got: %s",
             expectedErrorMsg, response));
-
-    // restore domain2-cluster-1 and domain2-cluster-2
-    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-1", domainUid2, domainNamespace2);
-    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-2", domainUid2, domainNamespace2);
   }
 
   private void patchClusterResourceRemoveReplicas(String clusterResName,
                                                   String domainUid,
                                                   String domainNamespace,
                                                   String managedServerToDelete) {
-    String patchStr
-        = "["
-        + "{\"op\": \"remove\", \"path\": \"/spec/replicas\"}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    logger.info("Patching the cluster resource using patching string {0}", patchStr);
-    String response = patchClusterCustomResourceReturnResponse(clusterResName, domainNamespace, patch,
-            V1Patch.PATCH_FORMAT_JSON_PATCH);
-    assertTrue(response.contains("Succeeded with response code: 200"),
-        String.format("patching cluster %s in namespace %s failed with error msg: %s",
-            clusterResName, domainNamespace, response));
+    cleanupActions.add(() -> restoreClusterResourceWithReplicas(clusterResName, domainUid, domainNamespace));
+    patchClusterReplicasAndVerify(clusterResName, domainNamespace, null);
     // verify managed server 2 is deleted
     checkPodDeleted(managedServerToDelete, domainUid, domainNamespace);
   }
@@ -658,17 +650,7 @@ class ItValidateWebhookReplicas {
   private void restoreClusterResourceWithReplicas(String clusterResName,
                                                   String domainUid,
                                                   String domainNamespace) {
-    String patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/replicas\", \"value\": " + replicaCount + "}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    logger.info("Patching the cluster resource using patching string {0}", patchStr);
-    String response = patchClusterCustomResourceReturnResponse(clusterResName, domainNamespace, patch,
-            V1Patch.PATCH_FORMAT_JSON_PATCH);
-    assertTrue(response.contains("Succeeded with response code: 200"),
-        String.format("patching cluster %s in namespace %s failed with error msg: %s",
-            clusterResName, domainNamespace, response));
+    patchClusterReplicasAndVerify(clusterResName, domainNamespace, replicaCount);
 
     // check the managed server pods are up and running
     int numClusters =
@@ -683,6 +665,22 @@ class ItValidateWebhookReplicas {
       }
       checkPodReadyAndServiceExists(serverNamePrefix + i, domainUid, domainNamespace);
     }
+  }
+
+  private void patchClusterReplicasAndVerify(String clusterResName, String namespace, Integer replicas) {
+    // Merge-patch null removes the override and is safe to repeat if an etcd timeout hides a committed write.
+    V1Patch patch = new V1Patch("{\"spec\":{\"replicas\":" + replicas + "}}");
+    testUntil(withQuickRetryPolicy, () -> {
+      String response = patchClusterCustomResourceReturnResponse(clusterResName, namespace, patch,
+          V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH);
+      boolean etcdTimeout = response.contains("Failed with response code: 500.")
+          && response.contains("etcdserver: request timed out");
+      // Unexpected admission decisions must fail immediately, including errors other than this transient timeout.
+      assertTrue(response.contains("Succeeded with response code: 200") || etcdTimeout,
+          String.format("patching cluster %s in namespace %s failed with error msg: %s",
+              clusterResName, namespace, response));
+      return Objects.equals(replicas, getClusterCustomResource(clusterResName, namespace).getSpec().getReplicas());
+    }, logger, "cluster {0} in namespace {1} to have replicas {2}", clusterResName, namespace, replicas);
   }
 
   /**
