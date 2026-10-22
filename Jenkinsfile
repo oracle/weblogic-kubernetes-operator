@@ -30,7 +30,7 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-def default_monitoring_exporter_webapp_version = '2.3.16'
+def default_monitoring_exporter_webapp_version = '2.3.17'
 
 pipeline {
     agent { label 'large-ol9u4' }
