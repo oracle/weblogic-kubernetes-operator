@@ -1113,7 +1113,7 @@ var relearn_searchindex = [
   },
   {
     "breadcrumb": "WebLogic Kubernetes Operator \u003e Manage domains \u003e Access and monitor domains",
-    "content": "The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in its domain specification. For more details, see the WebLogic Monitoring Exporter document, Use the Monitoring Exporter with WebLogic Kubernetes Operator .",
+    "content": "The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in the Domain resource’s spec.monitoringExporter.configuration field. For more details, see the WebLogic Monitoring Exporter document, Use the Monitoring Exporter with WebLogic Kubernetes Operator .",
     "description": "Use the WebLogic Monitoring Exporter to export Prometheus-compatible metrics.",
     "tags": [],
     "title": "Monitoring exporter",

@@ -741,7 +741,7 @@
     {
       "title": "Monitoring exporter",
       "permalink": "https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/monitoring-exporter/",
-      "summary": "\u003cp\u003eThe operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter\nconfiguration in its domain specification. For more details, see the WebLogic Monitoring Exporter document,\n\n\n\u003ca href=\"https://github.com/oracle/weblogic-monitoring-exporter#use-the-monitoring-exporter-with-weblogic-kubernetes-operator\"\n   \n   \ntarget=\"_blank\" rel=\"noopener noreferrer\"\n\u003e\nUse the Monitoring Exporter with WebLogic Kubernetes Operator\n\u003c/a\u003e\n.\u003c/p\u003e"
+      "summary": "\u003cp\u003eThe operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter\nconfiguration in the Domain resource\u0026rsquo;s \u003ccode\u003espec.monitoringExporter.configuration\u003c/code\u003e field.\nFor more details, see the WebLogic Monitoring Exporter document,\n\n\n\u003ca href=\"https://github.com/oracle/weblogic-monitoring-exporter#use-the-monitoring-exporter-with-weblogic-kubernetes-operator\"\n   \n   \ntarget=\"_blank\" rel=\"noopener noreferrer\"\n\u003e\nUse the Monitoring Exporter with WebLogic Kubernetes Operator\n\u003c/a\u003e\n.\u003c/p\u003e"
     }
     
     ,
