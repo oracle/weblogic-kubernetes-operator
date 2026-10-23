@@ -370,7 +370,7 @@ pipeline {
                               podman rm --force "${registry_name}"
                             fi
         
-                            podman run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
+                            podman run -d --restart=always --network bridge -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
                                 ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2.8.2
                             echo "Registry Host: ${registry_host}"
                         '''
@@ -506,6 +506,9 @@ EOF
 
                             export KUBECONFIG=${kubeconfig_file}
                             kubectl cluster-info --context "kind-${kind_name}"
+
+                            # Make the registry hostname reachable from the Kind nodes.
+                            podman network connect "${kind_network}" "${registry_name}"
 
                             # Configure local registry access on each node using hosts.toml
                             for node in $(kind get nodes --name "${kind_name}"); do
