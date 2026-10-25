@@ -311,7 +311,7 @@ public interface TestConstants {
 
   //monitoring constants
   String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.3.17");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.3.18");
   String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   String PROMETHEUS_CHART_VERSION =

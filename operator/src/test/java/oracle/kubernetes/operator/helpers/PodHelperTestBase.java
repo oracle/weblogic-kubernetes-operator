@@ -734,7 +734,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     useProductionHash();
     configureDomain()
         .withMonitoringExporterConfiguration(NOOP_EXPORTER_CONFIG)
-        .withMonitoringExporterImage("ghcr.io/oracle/weblogic-monitoring-exporter:2.3.16");
+        .withMonitoringExporterImage("ghcr.io/oracle/weblogic-monitoring-exporter:2.3.17");
     initializeExistingPod();
     markExistingPodAsCreatedByRecentOperator();
 
