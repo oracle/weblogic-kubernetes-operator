@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
@@ -407,9 +408,16 @@ class ItRetryImprovements {
         domainUid, domainNamespace),
         logger, "{0} is found in introspector log", createDomainFailedMsgRegex);
 
-    // verify that SEVERE and createDomainFailedMsgRegex message found in domain status
-    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, createDomainFailedMsgRegex, "true"),
-        logger, "{0} is found in domain status message", createDomainFailedMsgRegex);
+    // The failure message can be a WDT summary or the Job reason (for example, BackoffLimitExceeded).
+    // Verify the stable condition fields across WebLogic versions; the detailed error is checked in the logs above.
+    testUntil(() -> {
+      DomainResource failedDomain = getDomainCustomResource(domainUid, domainNamespace);
+      return failedDomain != null && failedDomain.getStatus() != null
+          && failedDomain.getStatus().getConditions() != null
+          && failedDomain.getStatus().getConditions().stream().anyMatch(condition ->
+              "Failed".equals(condition.getType()) && "True".equals(condition.getStatus())
+                  && "Introspection".equals(condition.getReason()));
+    }, logger, "Domain {0} has a Failed=True condition with reason Introspection", domainUid);
 
     Callable<Boolean> configMapExist = assertDoesNotThrow(() -> configMapExist(domainNamespace, badModelFileCm));
 
