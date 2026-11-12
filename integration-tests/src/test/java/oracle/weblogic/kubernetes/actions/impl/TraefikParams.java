@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -32,7 +32,7 @@ public class TraefikParams {
   private static final String TRAEFIK_IMAGE_REGISTRY = "image.registry";
   private static final String TRAEFIK_IMAGE_TAG = "image.tag";
   private static final String INGRESS_CLASS_NAME = "ingressClass.name";
-  private static final String TYPE = "service.type";
+  private static final String TYPE = "service.spec.type";
 
   
   public TraefikParams() {

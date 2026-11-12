@@ -223,7 +223,7 @@ public interface TestConstants {
   String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
   String TRAEFIK_REPO_NAME = "traefik";
   String TRAEFIK_CHART_NAME = "traefik";
-  String TRAEFIK_CHART_VERSION = "25.0.0";
+  String TRAEFIK_CHART_VERSION = "42.3.1";
   String TRAEFIK_INGRESS_IMAGE_NAME = TEST_IMAGES_TENANCY + "/test-images/traefik";
   String TRAEFIK_INGRESS_IMAGE_REGISTRY = TEST_IMAGES_REPO;
 
