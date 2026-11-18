@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -167,12 +167,12 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
   @Test
   @SuppressWarnings("rawtypes")
-  void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
+  void receivedEvents_areNotSentToListenersWhenWatchersPaused() throws NoSuchFieldException {
     Object object1 = createObjectWithMetaData();
     Object object2 = createObjectWithMetaData();
     StubWatchFactory.addCallResponses(createAddResponse(object1), createModifyResponse(object2));
 
-    Watcher watcher = createWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+    Watcher watcher = createWatcherWithoutStarting();
     pauseWatcher(watcher);
     assertThat(callBacks, empty());
 
@@ -180,16 +180,26 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     assertThat(callBacks, contains(List.of(addEvent(object1), modifyEvent(object2))));
   }
 
+  private Watcher<?> createWatcherWithoutStarting() throws NoSuchFieldException {
+    Memento starterMemento = NoopWatcherStarter.install();
+    try {
+      return createWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+    } finally {
+      starterMemento.revert();
+    }
+  }
+
   @SuppressWarnings("rawtypes")
   private void resumeWatcher(Watcher watcher1) {
-    watcher1.start(this);
     watcher1.resume();
+    watcher1.start(this);
     watcher1.waitForExit();
   }
 
   @SuppressWarnings("rawtypes")
   private void pauseWatcher(Watcher watcher1) {
     watcher1.pause();
+    watcher1.start(this);
     watcher1.waitForExit();
   }
 
