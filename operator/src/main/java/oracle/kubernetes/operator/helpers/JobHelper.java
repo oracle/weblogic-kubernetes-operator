@@ -107,7 +107,7 @@ public class JobHelper {
   }
 
   public static Step readIntrospectorResults(Step next) {
-    return UnitTestAdaptor.create(IntrospectorJobStepContext::readIntrospectorResults, next);
+    return UnitTestAdaptor.create(context -> context.readIntrospectorResults(null), next);
   }
 
   static class UnitTestAdaptor extends Step {
@@ -433,14 +433,15 @@ public class JobHelper {
 
     // Returns a chain of steps which read the job pod and decide how to handle it.
     private Step processExistingIntrospectorJob(Step next) {
-      return Step.chain(checkForFailedIntrospectionJob(), readIntrospectorResults(), next);
-    }
-
-    private Step checkForFailedIntrospectionJob() {
-      return new CheckForFailedIntrospectorStep();
+      // A replacement Job must resume after introspection, not re-read the original Job's results.
+      return new CheckForFailedIntrospectorStep(next);
     }
 
     private class CheckForFailedIntrospectorStep extends Step {
+
+      CheckForFailedIntrospectorStep(Step next) {
+        super(next);
+      }
 
       @Override
       public @Nonnull Result apply(Packet packet) {
@@ -455,14 +456,14 @@ public class JobHelper {
           if (isOutdated(domainIntrospectorJob)) {
             return doNext(cleanUpAndReintrospect(getNext()), packet);
           }
-          return doNext(createRemoveFailuresStep(getNext()), packet);
+          return doNext(createRemoveFailuresStep(readIntrospectorResults(getNext())), packet);
         }
-        return doNext(packet);
+        return doNext(readIntrospectorResults(getNext()), packet);
       }
     }
 
-    private Step readIntrospectorResults() {
-      return new ReadDomainIntrospectorPodStep();
+    private Step readIntrospectorResults(Step next) {
+      return Step.chain(new ReadDomainIntrospectorPodStep(), next);
     }
 
     private Step waitForJobPod() {
@@ -513,7 +514,8 @@ public class JobHelper {
         String containerName;
         V1Pod jobPod = (V1Pod) packet.get(ProcessingConstants.JOB_POD);
         V1ContainerStatus status = getJobPodContainerStatus(jobPod);
-        if (status != null && Boolean.TRUE == status.getStarted() && Boolean.TRUE == status.getReady()) {
+        if (status != null && ((Boolean.TRUE.equals(status.getStarted()) && Boolean.TRUE.equals(status.getReady()))
+            || (status.getState() != null && status.getState().getTerminated() != null))) {
           containerName = getContainerName();
         } else {
           containerName = getInitContainerName(jobPod);
@@ -912,7 +914,9 @@ public class JobHelper {
 
       private String getJobPodContainerWaitingReason(V1Pod pod) {
         return Optional.ofNullable(pod).map(V1Pod::getStatus)
-              .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
+              .map(V1PodStatus::getContainerStatuses)
+              .flatMap(statuses -> statuses.stream()
+                  .filter(status -> getJobName().equals(status.getName())).findFirst())
               .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
               .map(V1ContainerStateWaiting::getReason).orElse(null);
       }
@@ -920,11 +924,24 @@ public class JobHelper {
       private boolean initContainersHaveImagePullError(V1Pod pod) {
         return Optional.ofNullable(getInitContainerStatuses(pod))
                 .map(statuses -> statuses.stream()
+                        .filter(status -> !isRecoveringNativeSidecar(pod, status))
                         .map(V1ContainerStatus::getState).filter(Objects::nonNull)
                         .map(V1ContainerState::getWaiting).filter(Objects::nonNull)
                         .map(V1ContainerStateWaiting::getReason)
                         .anyMatch(IntrospectionStatus::isImagePullError))
                 .orElse(false);
+      }
+
+      private boolean isRecoveringNativeSidecar(V1Pod pod, V1ContainerStatus initStatus) {
+        boolean mainHasStarted = Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getContainerStatuses)
+            .orElse(Collections.emptyList()).stream()
+            .filter(status -> getJobName().equals(status.getName()))
+            .map(V1ContainerStatus::getState).filter(Objects::nonNull)
+            .anyMatch(state -> state.getRunning() != null || state.getTerminated() != null);
+        return mainHasStarted && Optional.ofNullable(pod.getSpec()).map(V1PodSpec::getInitContainers)
+            .orElse(Collections.emptyList()).stream()
+            .anyMatch(container -> initStatus.getName().equals(container.getName())
+                && PodHelper.isNativeSidecar(container));
       }
 
       private List<V1ContainerStatus> getInitContainerStatuses(V1Pod pod) {
@@ -938,7 +955,7 @@ public class JobHelper {
           List<V1ContainerStatus> statuses = getInitContainerStatuses(pod);
           if (statuses != null) {
             for (V1ContainerStatus status : statuses) {
-              if (status != null && status.getState() != null) {
+              if (status != null && status.getState() != null && !isRecoveringNativeSidecar(pod, status)) {
                 V1ContainerStateWaiting waiting = status.getState().getWaiting();
                 if (waiting != null && waiting.getReason() != null
                     && IntrospectionStatus.isImagePullError(waiting.getReason())) {

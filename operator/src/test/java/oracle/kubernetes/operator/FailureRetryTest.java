@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.watcher.JobWatcher;
+import oracle.kubernetes.operator.work.Cancellable;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -35,6 +36,7 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matchers;
@@ -51,6 +53,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.has
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -122,6 +125,259 @@ class FailureRetryTest {
     setCurrentTime(getRecordedDomain().getNextRetryTime());
 
     assertThat(domainInvalidStep.numTimesRun, equalTo(2));
+  }
+
+  @Test
+  void whenRestartedBeforeRetryTime_waitForRemainingInterval() {
+    definePersistedFailure(120);
+
+    scanDomains();
+    testSupport.setTime(479, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+
+    testSupport.setTime(480, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+    assertThat(getRecordedDomain().getStatus().getInitialFailureTime(), equalTo(testStartTime.minusSeconds(120)));
+  }
+
+  @Test
+  void whenRestartedAfterRetryTime_retryWithoutAnotherInterval() {
+    definePersistedFailure(700);
+
+    scanDomains();
+    testSupport.setTime(0, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+  }
+
+  @Test
+  void whenRepeatedScansRestoreRetry_scheduleOnlyOneAttempt() {
+    definePersistedFailure(120);
+
+    scanDomains();
+    scanDomains();
+    scanDomains();
+    testSupport.setTime(480, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+    testSupport.setTime(1080, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(2));
+  }
+
+  @Test
+  void whenRetryAlreadyScheduled_resourceScanDoesNotDuplicateIt() {
+    new DomainCommonConfigurator(domain).withFailureRetryIntervalSeconds(600);
+    domainProcessor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    scanDomains();
+    testSupport.setTime(600, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(2));
+  }
+
+  @Test
+  void whenUnchangedDomainWatchIsRejected_keepPendingFailureRetry() {
+    definePersistedFailure(120);
+    scanDomains();
+    testSupport.setTime(60, TimeUnit.SECONDS);
+
+    domainProcessor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+    assertThat(testSupport.hasItemScheduledAt(480, TimeUnit.SECONDS), equalTo(true));
+    testSupport.setTime(480, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+  }
+
+  @Test
+  void whenOrdinaryRecheckIsRejected_keepPendingFailureRetry() {
+    definePersistedFailure(120);
+    scanDomains();
+    testSupport.setTime(60, TimeUnit.SECONDS);
+
+    domainProcessor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+    assertThat(testSupport.hasItemScheduledAt(480, TimeUnit.SECONDS), equalTo(true));
+    testSupport.setTime(480, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+  }
+
+  @Test
+  void whenAcceptedReconciliationSucceeds_cancelPendingFailureRetryWithoutReplacement() {
+    definePersistedFailure(120);
+    scanDomains();
+    assertThat(testSupport.hasItemScheduledAt(480, TimeUnit.SECONDS), equalTo(true));
+    stepFactory.setSteps(new Step() {
+      @Override
+      public @Nonnull Result apply(Packet packet) {
+        domain.getStatus().removeConditionsWithType(FAILED);
+        return doNext(packet);
+      }
+    });
+
+    changeDomain(d -> d.getSpec().setIntrospectVersion("corrected"));
+    domainProcessor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
+
+    assertThat(domain.shouldRetry(), equalTo(false));
+    assertThat(delegate.cancelledRetryCount, equalTo(1));
+    testSupport.setTime(1200, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  @Test
+  void whenDomainUnregistered_cancelPendingFailureRetry() {
+    definePersistedFailure(120);
+    scanDomains();
+    assertThat(testSupport.hasItemScheduledAt(480, TimeUnit.SECONDS), equalTo(true));
+
+    domainProcessor.unregisterDomainPresenceInfo(info);
+
+    assertThat(delegate.cancelledRetryCount, equalTo(1));
+    testSupport.setTime(480, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  @Test
+  void whenRestartedWithAbortedFailure_doNotResumeRetry() {
+    definePersistedFailure(120);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED)
+        .withFailureInfo(domain.getSpec()).withMessage("retry limit reached"));
+
+    scanDomains();
+    testSupport.setTime(1200, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  @Test
+  void whenRestoredRetryFailsAfterLimit_preserveHistoryAndAbort() {
+    definePersistedFailure(700);
+    new DomainCommonConfigurator(domain).withFailureRetryLimitMinutes(10);
+
+    scanDomains();
+    testSupport.setTime(0, TimeUnit.SECONDS);
+
+    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(ABORTED));
+    testSupport.setTime(1200, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+  }
+
+  @Test
+  void whenFailureClearedBeforeRestoredRetry_doNotRunStaleRetry() {
+    definePersistedFailure(120);
+    scanDomains();
+    domain.getStatus().removeConditionsWithType(FAILED);
+
+    testSupport.setTime(480, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  @Test
+  void whenDomainRemovedBeforeRestoredRetry_doNotRecreateIt() {
+    definePersistedFailure(120);
+    scanDomains();
+    domainProcessor.getDomainPresenceInfoMap().clear();
+
+    testSupport.setTime(480, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  @Test
+  void whenDomainReplacedBeforeRestoredRetry_doNotApplyOldRetryToNewResource() {
+    definePersistedFailure(120);
+    scanDomains();
+    domain.getMetadata().setUid("replacement-domain");
+
+    testSupport.setTime(480, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  @Test
+  void whenFailureChangesBeforeRestoredRetry_useLatestRetryTime() {
+    definePersistedFailure(120);
+    scanDomains();
+    testSupport.schedule(() -> domain.getStatus().addCondition(new DomainCondition(FAILED)
+        .withReason(INTROSPECTION).withMessage("another failure")), 60, TimeUnit.SECONDS);
+
+    testSupport.setTime(480, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+
+    testSupport.setTime(660, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+    assertThat(getRecordedDomain().getStatus().getInitialFailureTime(), equalTo(testStartTime.minusSeconds(120)));
+  }
+
+  @Test
+  void whenDomainAbortedBeforeRestoredRetry_doNotRunStaleRetry() {
+    definePersistedFailure(120);
+    scanDomains();
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED)
+        .withFailureInfo(domain.getSpec()).withMessage("retry limit reached"));
+
+    testSupport.setTime(480, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  @Test
+  void whenDomainChangesBeforeRestoredRetry_replaceOldTimer() {
+    definePersistedFailure(120);
+    scanDomains();
+
+    changeDomain(d -> d.getSpec().setIntrospectVersion("updated"));
+    domainProcessor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
+    testSupport.setTime(480, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(1));
+
+    testSupport.setTime(600, TimeUnit.SECONDS);
+    assertThat(domainInvalidStep.numTimesRun, equalTo(2));
+  }
+
+  @Test
+  void whenReconciliationIsStillActive_resourceScanDoesNotScheduleAnotherRetry() {
+    definePersistedFailure(120);
+    stepFactory.setSteps(new Step() {
+      @Override
+      public @Nonnull Result apply(Packet packet) {
+        return doRequeue();
+      }
+    });
+    domainProcessor.createMakeRightOperation(info).withExplicitRecheck().retryOnFailure().execute();
+
+    scanDomains();
+
+    assertThat(testSupport.hasItemScheduledAt(480, TimeUnit.SECONDS), equalTo(false));
+  }
+
+  @Test
+  void whenNamespaceStopsBeforeRestoredRetry_doNotRunRetry() {
+    definePersistedFailure(120);
+    scanDomains();
+    delegate.setNamespaceRunning(false);
+
+    testSupport.setTime(480, TimeUnit.SECONDS);
+
+    assertThat(domainInvalidStep.numTimesRun, equalTo(0));
+  }
+
+  private void definePersistedFailure(long secondsBeforeRestart) {
+    new DomainCommonConfigurator(domain).withFailureRetryIntervalSeconds(600);
+    SystemClockTestSupport.setCurrentTime(testStartTime.minusSeconds(secondsBeforeRestart));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION)
+        .withMessage("introspector deadline exceeded before restart"));
+    domain.getStatus().setObservedGeneration(domain.getMetadata().getGeneration());
+    SystemClockTestSupport.setCurrentTime(testStartTime);
+    domainProcessor.getDomainPresenceInfoMap().clear();
+  }
+
+  private void scanDomains() {
+    Processors processors = new DomainResourcesValidation(domain.getNamespace(), domainProcessor).getProcessors();
+    processors.getDomainListProcessing().accept(new DomainList().withItems(List.of(getRecordedDomain())));
+    processors.completeProcessing(new Packet());
   }
 
   @Test
@@ -314,6 +570,7 @@ class FailureRetryTest {
     private final DomainPresenceInfo info;
     private final StepFactory stepFactory;
     private boolean explicitRecheck = false;
+    private boolean retryOnFailure = false;
     private MakeRightExecutor executor;
 
     static MakeRightStub createFor(DomainPresenceInfo info, StepFactory stepFactory) {
@@ -355,8 +612,7 @@ class FailureRetryTest {
     public MakeRightDomainOperation createRetry(@Nonnull DomainPresenceInfo info) {
       final MakeRightStub retry = createFor(info, stepFactory);
       retry.setExecutor(executor);
-      retry.explicitRecheck = true;
-      return retry;
+      return retry.withExplicitRecheck().retryOnFailure();
     }
 
     @Override
@@ -377,6 +633,7 @@ class FailureRetryTest {
 
     @Override
     public MakeRightDomainOperation retryOnFailure() {
+      retryOnFailure = true;
       return this;
     }
 
@@ -387,7 +644,7 @@ class FailureRetryTest {
 
     @Override
     public boolean isRetryOnFailure() {
-      return true;
+      return retryOnFailure;
     }
 
     @Override
@@ -406,6 +663,7 @@ class FailureRetryTest {
 
     @Override
     public Step createSteps() {
+      executor.registerDomainPresenceInfo(info);
       return stepFactory.getSteps();
     }
 
@@ -417,17 +675,38 @@ class FailureRetryTest {
   abstract static class LocalDomainProcessorDelegateStub extends DomainProcessorDelegateStub {
 
     private final MakeRightStub makeRight;
+    private int cancelledRetryCount;
 
     public LocalDomainProcessorDelegateStub(FiberTestSupport testSupport, MakeRightStub makeRight) {
       super(testSupport);
       this.makeRight = makeRight;
     }
 
+    @Override
+    public Cancellable schedule(Runnable command, long delay, TimeUnit unit) {
+      Cancellable scheduled = super.schedule(command, delay, unit);
+      // FiberTestSupport retains canceled callbacks in its queue. Record cancellation requests separately;
+      // advancing time still exercises the production callback's guard against a canceled registration.
+      return new Cancellable() {
+        @Override
+        public boolean cancel() {
+          cancelledRetryCount++;
+          return scheduled.cancel();
+        }
+
+        @Override
+        public boolean isDoneOrCancelled() {
+          return scheduled.isDoneOrCancelled();
+        }
+      };
+    }
+
     @Nonnull
     @Override
     public MakeRightStub createMakeRightOperation(MakeRightExecutor executor, DomainPresenceInfo info) {
-      makeRight.setExecutor(executor);
-      return makeRight;
+      MakeRightStub operation = MakeRightStub.createFor(info, makeRight.stepFactory);
+      operation.setExecutor(executor);
+      return operation;
     }
   }
 

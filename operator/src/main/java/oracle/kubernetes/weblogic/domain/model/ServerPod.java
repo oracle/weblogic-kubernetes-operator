@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -162,6 +163,13 @@ class ServerPod extends KubernetesResource {
       + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. "
       + "See `kubectl explain pods.spec.restartPolicy`.")
   private String restartPolicy = null;
+
+  @Range(minimum = 0)
+  @Description("Total time in seconds allowed for Pod termination, including WebLogic shutdown and sidecar cleanup. "
+      + "If omitted, defaults to shutdown.timeoutSeconds plus 10 seconds. This does not change the WebLogic shutdown "
+      + "timeout. Updating this field affects newly created Pods only and does not automatically restart "
+      + "existing Pods.")
+  private Long terminationGracePeriodSeconds;
 
   @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
       + "this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, "
@@ -600,6 +608,9 @@ class ServerPod extends KubernetesResource {
     if (restartPolicy == null) {
       restartPolicy = serverPod1.restartPolicy;
     }
+    if (terminationGracePeriodSeconds == null) {
+      terminationGracePeriodSeconds = serverPod1.terminationGracePeriodSeconds;
+    }
     if (runtimeClassName == null) {
       runtimeClassName = serverPod1.runtimeClassName;
     }
@@ -888,6 +899,14 @@ class ServerPod extends KubernetesResource {
     this.restartPolicy = restartPolicy;
   }
 
+  Long getTerminationGracePeriodSeconds() {
+    return terminationGracePeriodSeconds;
+  }
+
+  void setTerminationGracePeriodSeconds(Long terminationGracePeriodSeconds) {
+    this.terminationGracePeriodSeconds = terminationGracePeriodSeconds;
+  }
+
   String getRuntimeClassName() {
     return runtimeClassName;
   }
@@ -984,6 +1003,7 @@ class ServerPod extends KubernetesResource {
         .append("readinessGates", readinessGates)
         .append("schedulingGates", schedulingGates)
         .append("restartPolicy", restartPolicy)
+        .append("terminationGracePeriodSeconds", terminationGracePeriodSeconds)
         .append("runtimeClassName", runtimeClassName)
         .append("nodeName", nodeName)
         .append("schedulerName", schedulerName)
@@ -1035,6 +1055,7 @@ class ServerPod extends KubernetesResource {
         .append(readinessGates, that.readinessGates)
         .append(schedulingGates, that.schedulingGates)
         .append(restartPolicy, that.restartPolicy)
+        .append(terminationGracePeriodSeconds, that.terminationGracePeriodSeconds)
         .append(runtimeClassName, that.runtimeClassName)
         .append(nodeName, that.nodeName)
         .append(schedulerName, that.schedulerName)
@@ -1070,6 +1091,7 @@ class ServerPod extends KubernetesResource {
         .append(readinessGates)
         .append(schedulingGates)
         .append(restartPolicy)
+        .append(terminationGracePeriodSeconds)
         .append(runtimeClassName)
         .append(nodeName)
         .append(schedulerName)

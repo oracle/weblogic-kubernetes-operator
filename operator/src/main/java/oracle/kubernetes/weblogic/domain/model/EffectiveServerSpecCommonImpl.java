@@ -212,6 +212,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   @Override
+  public Long getTerminationGracePeriodSeconds() {
+    return server.getTerminationGracePeriodSeconds();
+  }
+
+  @Override
   public String getRuntimeClassName() {
     return server.getRuntimeClassName();
   }

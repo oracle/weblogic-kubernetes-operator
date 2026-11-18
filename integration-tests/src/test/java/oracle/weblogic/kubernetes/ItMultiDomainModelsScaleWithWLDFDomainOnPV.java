@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -15,6 +15,7 @@ import java.util.Optional;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -33,24 +34,28 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.INGRESS_CLASS_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_NODE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_HTTP_HOSTPORT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
@@ -66,8 +71,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -78,6 +81,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -87,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain
  * Also verify the sample application can be accessed via NGINX ingress controller.
  */
-@Tag("kind-parallel")
+@Tag("kind-sequential")
 @Tag("oke-gate")
 @IntegrationTest
 class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
@@ -101,8 +105,6 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String miiImageName = "mdlb-mii-image";
-  private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
   private static final String domainOnPVUid = "mdlb-domainonpv";
 
   private static String opNamespace = null;
@@ -112,13 +114,12 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
   private static int nodeportshttp = 0;
   private static LoggingFacade logger = null;
   private static String domainOnPVNamespace = null;
-  private static String miiImage = null;
   private String curlCmd = null;
   private static String hostHeader = null;
 
   /**
    * Install operator and NGINX.
-   * Create domain type: domain in image and ingress for the domain.
+   * Prepare the WebLogic image used to create the domain on a persistent volume.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -145,8 +146,7 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
 
-    // create mii image
-    miiImage = createAndPushMiiImage();
+    loadWebLogicImageForKind();
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true,
@@ -395,24 +395,50 @@ class ItMultiDomainModelsScaleWithWLDFDomainOnPV {
   }
 
   /**
-   * Create mii image and push it to the registry.
-   *
-   * @return mii image created
+   * Load the base image used by the PV ownership init container, creation job, and domain pods.
    */
-  private static String createAndPushMiiImage() {
-    // create image with model files
-    logger.info("Creating image with model file {0} and verify", wdtModelFileForMiiDomain);
-    List<String> appSrcDirList = new ArrayList<>();
-    appSrcDirList.add(MII_BASIC_APP_NAME);
-    appSrcDirList.add(WLDF_OPENSESSION_APP);
-    miiImage =
-        createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
-            appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
+  private static void loadWebLogicImageForKind() {
+    if (KIND_REPO == null) {
+      return;
+    }
 
-    // repo login and push image to registry if necessary
-    imageRepoLoginAndPushImageToRegistry(miiImage);
+    assertTrue(imageTag(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, WEBLOGIC_IMAGE_TO_USE_IN_SPEC),
+        "Failed to tag the WebLogic image for Kind");
+    Path imageArchive = assertDoesNotThrow(() -> Files.createTempFile(RESULTS_TEMPFILE_DIR, "wldf-wls-", ".tar"));
+    Map<String, String> env = new HashMap<>();
+    env.put("WLDF_IMAGE_BUILDER", WLSIMG_BUILDER);
+    env.put("WLDF_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+    env.put("WLDF_IMAGE_ARCHIVE", imageArchive.toString());
+    env.put("WLDF_KIND_CLUSTER", KIND_NODE_NAME);
+    env.put("WLDF_KUBERNETES_CLI", KUBERNETES_CLI);
+    try {
+      // A successful 'kind load docker-image' can leave the required tag unavailable to the kubelet.
+      // Import an archive explicitly, including the exact tag used by the init container and domain pods.
+      assertTrue(Command.withParams(Command.defaultCommandParams().env(env)
+          .command("\"$WLDF_IMAGE_BUILDER\" save --output \"$WLDF_IMAGE_ARCHIVE\" \"$WLDF_IMAGE\""))
+          .execute(), "Failed to save the WebLogic image archive");
+      assertTrue(Command.withParams(Command.defaultCommandParams().env(env)
+          .command("kind load image-archive \"$WLDF_IMAGE_ARCHIVE\" --name \"$WLDF_KIND_CLUSTER\""))
+          .execute(), "Failed to import the WebLogic image archive into Kind");
 
-    return miiImage;
+      // Check the nodes in the active Kubernetes context, including workers, rather than trusting
+      // the loader's exit status. This also catches loading an image into a different Kind cluster.
+      ExecResult nodes = Command.withParams(Command.defaultCommandParams().env(env)
+          .command("\"$WLDF_KUBERNETES_CLI\" get nodes -o jsonpath='{.items[*].metadata.name}'"))
+          .executeAndReturnResult();
+      assertNotNull(nodes, "Failed to list Kubernetes nodes");
+      assertEquals(0, nodes.exitValue(), "Failed to list Kubernetes nodes: " + nodes.stderr());
+      assertNotNull(nodes.stdout(), "Kubernetes returned no node names");
+      assertFalse(nodes.stdout().isBlank(), "Kubernetes returned no node names");
+      for (String node : nodes.stdout().trim().split("\\s+")) {
+        env.put("WLDF_KIND_NODE", node);
+        assertTrue(Command.withParams(Command.defaultCommandParams().env(env)
+            .command("\"$WLDF_IMAGE_BUILDER\" exec \"$WLDF_KIND_NODE\" crictl inspecti \"$WLDF_IMAGE\" > /dev/null"))
+            .execute(), "WebLogic image " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC + " is unavailable on " + node);
+      }
+    } finally {
+      assertDoesNotThrow(() -> Files.deleteIfExists(imageArchive), "Failed to remove the WebLogic image archive");
+    }
   }
 
   private static DomainResource createOrStartDomainBasedOnDomainType() {

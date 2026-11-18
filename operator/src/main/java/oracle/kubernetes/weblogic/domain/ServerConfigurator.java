@@ -121,6 +121,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withRestartPolicy(String restartPolicy);
 
+  ServerConfigurator withTerminationGracePeriodSeconds(Long seconds);
+
   ServerConfigurator withAffinity(V1Affinity affinity);
 
   ServerConfigurator withTopologySpreadConstraints(List<V1TopologySpreadConstraint> topologySpreadConstraints);

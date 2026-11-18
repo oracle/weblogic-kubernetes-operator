@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,7 +18,11 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.extended.controller.reconciler.Result;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateRunning;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -247,6 +252,39 @@ class RollingHelperTest {
         containsInfo(MANAGED_POD_REPLACED).withParams(SERVER2_NAME),
         containsInfo(MANAGED_POD_REPLACED).withParams(SERVER10_NAME)
     ));
+  }
+
+  @Test
+  void whenAllNativeSidecarsAreUnready_pauseRollingUntilTheyRecover() throws Exception {
+    consoleHandlerMemento.trackMessage(MANAGED_POD_REPLACED);
+    initializeExistingPods();
+    CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
+    getPods().forEach(pod -> {
+      setPodNotReady(pod);
+      pod.getSpec().addInitContainersItem(new V1Container().name("uploader").restartPolicy("Always"));
+      pod.getStatus().addContainerStatusesItem(new V1ContainerStatus().name("weblogic-server").ready(true)
+          .state(new V1ContainerState().running(new V1ContainerStateRunning())));
+      pod.getStatus().addInitContainerStatusesItem(new V1ContainerStatus().name("uploader").ready(false)
+          .restartCount(3));
+    });
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
+
+    Result result = org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(Duration.ofSeconds(5), () ->
+        RollingHelper.rollServers(rolling, terminalStep).apply(testSupport.getPacket()));
+
+    org.junit.jupiter.api.Assertions.assertTrue(result.isRequeue());
+    org.junit.jupiter.api.Assertions.assertFalse(terminalStep.wasRun());
+    assertThat(logRecords, not(containsInfo(MANAGED_POD_REPLACED)));
+    assertThat(getPods().size(), org.hamcrest.Matchers.equalTo(3));
+
+    getPods().forEach(pod -> pod.setStatus(createPodReadyStatus()));
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+
+    org.junit.jupiter.api.Assertions.assertTrue(terminalStep.wasRun());
+    assertThat(logRecords, containsInOrder(
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER2_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER10_NAME)));
   }
 
   private DomainConfigurator configureDomain() {

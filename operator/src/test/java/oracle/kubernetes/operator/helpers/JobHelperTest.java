@@ -1358,6 +1358,23 @@ class JobHelperTest extends DomainValidationTestBase {
     assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(0));
   }
 
+  @Test
+  void whenIntrospectorHasNativeSidecar_preserveItsResourcesAndSecurityContext() {
+    V1ResourceRequirements resources = new V1ResourceRequirements()
+        .putRequestsItem("cpu", new Quantity("25m"));
+    io.kubernetes.client.openapi.models.V1SecurityContext securityContext =
+        new io.kubernetes.client.openapi.models.V1SecurityContext().runAsUser(1234L);
+    configureDomain().configureIntrospector().getIntrospector().setInitContainers(List.of(
+        createContainer("uploader", "busybox", "sleep", "infinity").restartPolicy("Always")
+            .resources(resources).securityContext(securityContext)));
+
+    V1Container sidecar = getPodSpec(createJobSpec()).getInitContainers().getFirst();
+
+    assertThat(sidecar.getRestartPolicy(), equalTo("Always"));
+    assertThat(sidecar.getResources(), equalTo(resources));
+    assertThat(sidecar.getSecurityContext(), equalTo(securityContext));
+  }
+
   private int getNumPodSpecInitContainers(V1JobSpec jobSpec) {
     return getPodSpecListSize(jobSpec, V1PodSpec::getInitContainers);
   }

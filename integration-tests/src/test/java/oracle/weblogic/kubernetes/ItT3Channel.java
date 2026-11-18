@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -321,18 +321,14 @@ class ItT3Channel {
 
     // Since the ListenPort is not set explicitly on ServerTemplate
     // in wlst offline script wlst-create-domain-onpv.py, the default
-    // ListenPort on each manged server is set to 7100. This can be confirmed
-    // by intorospecting the corresponding cluster service port (default)
+    // ListenPort on each managed server depends on the WebLogic image version.
+    // Confirm the default port through the corresponding cluster service.
     int servicePort = assertDoesNotThrow(()
         -> getServicePort(domainNamespace,
               domainUid + "-cluster-" + clusterName, "default"),
               "Getting Cluster Service default port failed");
-    int managedServerPort;
-    if (WEBLOGIC_IMAGE_TAG.contains("12")) {
-      managedServerPort = 7100;
-    } else {
-      managedServerPort = 7001;
-    }
+    int managedServerPort = (WEBLOGIC_IMAGE_TAG.contains("12")
+        || WEBLOGIC_IMAGE_TAG.startsWith("26.")) ? 7100 : 7001;
     assertEquals(managedServerPort, servicePort, "Default Service Port is not set to " + managedServerPort);
     int napPort = assertDoesNotThrow(()
         -> getServicePort(domainNamespace,

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: c8425b0894f5c735fb96c158d9bcc01cd82908f4c13cd1d1bbb4cc5fdf5d38c3
+    weblogic.sha256: ef30589c812e21c287c59afe103f4ae7a48bdff61d4f9e8a2a53409629513b1a
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -47,9 +47,9 @@ spec:
                   appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.
                 properties:
                   image:
-                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.3.16
+                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.3.19
                     description: The WebLogic Monitoring Exporter sidecar container
-                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.16
+                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.3.19
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the WebLogic Monitoring
@@ -1232,6 +1232,15 @@ spec:
                           schedules this pod onto that node, assuming that it fits
                           the resource requirements. See `kubectl explain pods.spec.nodeName`.
                         type: string
+                      terminationGracePeriodSeconds:
+                        description: Total time in seconds allowed for Pod termination,
+                          including WebLogic shutdown and sidecar cleanup. If omitted,
+                          defaults to shutdown.timeoutSeconds plus 10 seconds. This
+                          does not change the WebLogic shutdown timeout. Updating
+                          this field affects newly created Pods only and does not
+                          automatically restart existing Pods.
+                        minimum: 0
+                        type: integer
                       readinessGates:
                         description: 'If specified, all readiness gates will be evaluated
                           for Pod readiness. A Pod is ready when all its containers
@@ -5423,6 +5432,15 @@ spec:
                       this pod onto that node, assuming that it fits the resource
                       requirements. See `kubectl explain pods.spec.nodeName`.
                     type: string
+                  terminationGracePeriodSeconds:
+                    description: Total time in seconds allowed for Pod termination,
+                      including WebLogic shutdown and sidecar cleanup. If omitted,
+                      defaults to shutdown.timeoutSeconds plus 10 seconds. This does
+                      not change the WebLogic shutdown timeout. Updating this field
+                      affects newly created Pods only and does not automatically restart
+                      existing Pods.
+                    minimum: 0
+                    type: integer
                   readinessGates:
                     description: 'If specified, all readiness gates will be evaluated
                       for Pod readiness. A Pod is ready when all its containers are
@@ -8603,6 +8621,15 @@ spec:
                             it fits the resource requirements. See `kubectl explain
                             pods.spec.nodeName`.
                           type: string
+                        terminationGracePeriodSeconds:
+                          description: Total time in seconds allowed for Pod termination,
+                            including WebLogic shutdown and sidecar cleanup. If omitted,
+                            defaults to shutdown.timeoutSeconds plus 10 seconds. This
+                            does not change the WebLogic shutdown timeout. Updating
+                            this field affects newly created Pods only and does not
+                            automatically restart existing Pods.
+                          type: integer
+                          minimum: 0
                         readinessGates:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its

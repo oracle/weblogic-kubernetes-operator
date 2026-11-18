@@ -376,6 +376,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withTerminationGracePeriodSeconds(Long seconds) {
+    getDomainSpec().setTerminationGracePeriodSeconds(seconds);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withReadinessGate(V1PodReadinessGate readinessGate) {
     getDomainSpec().addReadinessGate(readinessGate);
     return this;
@@ -810,6 +816,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withTerminationGracePeriodSeconds(Long seconds) {
+      server.setTerminationGracePeriodSeconds(seconds);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withAffinity(V1Affinity affinity) {
       server.setAffinity(affinity);
       return this;
@@ -1021,6 +1033,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withRestartPolicy(String restartPolicy) {
       clusterSpec.setRestartPolicy(restartPolicy);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withTerminationGracePeriodSeconds(Long seconds) {
+      clusterSpec.setTerminationGracePeriodSeconds(seconds);
       return this;
     }
 

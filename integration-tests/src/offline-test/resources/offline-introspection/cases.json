@@ -1,0 +1,1225 @@
+[
+  {
+    "name": "t01_dev_omitted",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t01_dev_omitted",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17101
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17101
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  },
+  {
+    "name": "t02_prod_omitted",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "prod"
+      },
+      "topology": {
+        "Name": "t02_prod_omitted",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17102
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17102
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  },
+  {
+    "name": "t03_secure_omitted",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t03_secure_omitted",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17103
+          }
+        }
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 9002,
+      "DefaultSecure": 7002
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t04_production_flag",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t04_production_flag",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17104
+          }
+        },
+        "ProductionModeEnabled": true
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 9002,
+      "DefaultSecure": 7002
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t05_prod_secure_false",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "prod"
+      },
+      "topology": {
+        "Name": "t05_prod_secure_false",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17105
+          }
+        },
+        "SecurityConfiguration": {
+          "SecureMode": {
+            "SecureModeEnabled": false
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17105
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t06_secure_admin_false",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t06_secure_admin_false",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17106
+          }
+        },
+        "AdministrationPortEnabled": false
+      }
+    },
+    "channels": {
+      "DefaultSecure": 7002
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 7002,
+        "publicPort": 7002
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t07_dev_global_ssl",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t07_dev_global_ssl",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17107
+          }
+        },
+        "ListenPortEnabled": false,
+        "SSLEnabled": true
+      }
+    },
+    "channels": {
+      "DefaultSecure": 7002
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 7002,
+        "publicPort": 7002
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t08_secure_global_both",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t08_secure_global_both",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17108
+          }
+        },
+        "ListenPortEnabled": true,
+        "SSLEnabled": true
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 9002,
+      "DefaultSecure": 7002,
+      "Default": 17108
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t09_secure_server_overrides",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t09_secure_server_overrides",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17109,
+            "ListenPortEnabled": true,
+            "SSL": {
+              "Enabled": true,
+              "ListenPort": 18109
+            }
+          }
+        },
+        "AdministrationPortEnabled": false,
+        "ListenPortEnabled": false,
+        "SSLEnabled": false
+      }
+    },
+    "channels": {
+      "Default": 17109,
+      "DefaultSecure": 18109
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t10_dev_server_overrides",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t10_dev_server_overrides",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17110,
+            "ListenPortEnabled": true,
+            "SSL": {
+              "Enabled": true,
+              "ListenPort": 18110
+            }
+          }
+        },
+        "ListenPortEnabled": false,
+        "SSLEnabled": false
+      }
+    },
+    "channels": {
+      "DefaultSecure": 18110,
+      "Default": 17110
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t11_dev_ssl_no_port",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t11_dev_ssl_no_port",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17111,
+            "SSL": {
+              "Enabled": true
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17111,
+      "DefaultSecure": 7002
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  },
+  {
+    "name": "t12_secure_ssl_false",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t12_secure_ssl_false",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17112,
+            "SSL": {
+              "Enabled": false
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 9002
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t13_secure_ssl_port_only",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t13_secure_ssl_port_only",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17113,
+            "SSL": {
+              "ListenPort": 18113
+            }
+          }
+        },
+        "AdministrationPortEnabled": false
+      }
+    },
+    "channels": {
+      "DefaultSecure": 18113
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 18113,
+        "publicPort": 18113
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t14_dev_ssl_port_only",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t14_dev_ssl_port_only",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17114,
+            "SSL": {
+              "ListenPort": 18114
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17114
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  },
+  {
+    "name": "t15_secure_server_listen_false",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t15_secure_server_listen_false",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17115,
+            "ListenPortEnabled": false
+          }
+        },
+        "ListenPortEnabled": true
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 9002,
+      "DefaultSecure": 7002
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t16_dev_nap_no_protocol",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t16_dev_nap_no_protocol",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17116,
+            "NetworkAccessPoint": {
+              "custom": {
+                "ListenPort": 19116
+              }
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "custom": 19116,
+      "Default": 17116
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  },
+  {
+    "name": "t17_secure_nap_no_protocol",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t17_secure_nap_no_protocol",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17117,
+            "NetworkAccessPoint": {
+              "custom": {
+                "ListenPort": 19117
+              }
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 9002,
+      "custom": 19117,
+      "DefaultSecure": 7002
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t18_template_omitted",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t18_template_omitted",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17118,
+            "SSL": {
+              "Enabled": false
+            }
+          }
+        },
+        "AdministrationPortEnabled": false,
+        "ServerTemplate": {
+          "tpl": {
+            "Cluster": "dyn",
+            "ListenAddress": "127.0.0.1",
+            "SSL": {
+              "Enabled": true
+            }
+          }
+        },
+        "Cluster": {
+          "dyn": {
+            "DynamicServers": {
+              "ServerTemplate": "tpl",
+              "ServerNamePrefix": "managed-",
+              "DynamicClusterSize": 1,
+              "MaxDynamicClusterSize": 1,
+              "CalculatedListenPorts": false
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17118
+    },
+    "managedChannels": {
+      "DefaultSecure": 8100,
+      "Default": 7100
+    },
+    "minimumWlsVersion": "12.2.1.4.0",
+    "expectationsBefore": [
+      {
+        "wlsVersion": "14.1.2.0.0",
+        "managedChannels": {
+          "Default": 7100,
+          "DefaultSecure": 8100
+        }
+      },
+      {
+        "wlsVersion": "26.1.0.0.0",
+        "managedChannels": {
+          "Default": 7001,
+          "DefaultSecure": 7002
+        }
+      }
+    ]
+  },
+  {
+    "name": "t19_template_default_ports",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t19_template_default_ports",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17119,
+            "SSL": {
+              "Enabled": false
+            }
+          }
+        },
+        "AdministrationPortEnabled": false,
+        "ServerTemplate": {
+          "tpl": {
+            "Cluster": "dyn",
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 7001,
+            "SSL": {
+              "Enabled": true,
+              "ListenPort": 7002
+            }
+          }
+        },
+        "Cluster": {
+          "dyn": {
+            "DynamicServers": {
+              "ServerTemplate": "tpl",
+              "ServerNamePrefix": "managed-",
+              "DynamicClusterSize": 1,
+              "MaxDynamicClusterSize": 1,
+              "CalculatedListenPorts": false
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17119
+    },
+    "managedChannels": {
+      "DefaultSecure": 8100,
+      "Default": 7001
+    },
+    "minimumWlsVersion": "12.2.1.4.0",
+    "expectationsBefore": [
+      {
+        "wlsVersion": "26.1.0.0.0",
+        "managedChannels": {
+          "Default": 7001,
+          "DefaultSecure": 7002
+        }
+      }
+    ]
+  },
+  {
+    "name": "t20_template_custom_ports",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t20_template_custom_ports",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17120,
+            "SSL": {
+              "Enabled": false
+            }
+          }
+        },
+        "AdministrationPortEnabled": false,
+        "ServerTemplate": {
+          "tpl": {
+            "Cluster": "dyn",
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17220,
+            "SSL": {
+              "Enabled": true,
+              "ListenPort": 18220
+            }
+          }
+        },
+        "Cluster": {
+          "dyn": {
+            "DynamicServers": {
+              "ServerTemplate": "tpl",
+              "ServerNamePrefix": "managed-",
+              "DynamicClusterSize": 1,
+              "MaxDynamicClusterSize": 1,
+              "CalculatedListenPorts": false
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17120
+    },
+    "managedChannels": {
+      "Default": 17220,
+      "DefaultSecure": 18220
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  },
+  {
+    "name": "t21_removed_server_admin_flag",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t21_removed_server_admin_flag",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17121,
+            "AdministrationPortEnabled": true
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17121
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t22_global_ssl_server_false",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t22_global_ssl_server_false",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17122,
+            "SSL": {
+              "Enabled": false
+            }
+          }
+        },
+        "SSLEnabled": true
+      }
+    },
+    "channels": {
+      "Default": 17122
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t23_secure_global_ssl_only",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t23_secure_global_ssl_only",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17123
+          }
+        },
+        "AdministrationPortEnabled": false,
+        "SSLEnabled": true
+      }
+    },
+    "channels": {
+      "DefaultSecure": 7002
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 7002,
+        "publicPort": 7002
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t24_dev_admin_override",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t24_dev_admin_override",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17124,
+            "AdministrationPort": 19225
+          }
+        },
+        "AdministrationPortEnabled": true,
+        "AdministrationPort": 19224
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 19225,
+      "Default": 17124
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  },
+  {
+    "name": "t25_secure_admin_override",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t25_secure_admin_override",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17125,
+            "AdministrationPort": 19226
+          }
+        },
+        "AdministrationPort": 19225
+      }
+    },
+    "channels": {
+      "DefaultAdministration": 19226,
+      "DefaultSecure": 7002
+    },
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t26_dev_global_listen_false",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t26_dev_global_listen_false",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17126
+          }
+        },
+        "ListenPortEnabled": false
+      }
+    },
+    "expectedError": "no ports available",
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t27_secure_ssl_enabled_no_port",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t27_secure_ssl_enabled_no_port",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17127,
+            "SSL": {
+              "Enabled": true
+            }
+          }
+        },
+        "AdministrationPortEnabled": false
+      }
+    },
+    "channels": {
+      "DefaultSecure": 7002
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 7002,
+        "publicPort": 7002
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t28_secure_admin_false_nap",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t28_secure_admin_false_nap",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17128,
+            "NetworkAccessPoint": {
+              "custom": {
+                "ListenPort": 19128
+              }
+            }
+          }
+        },
+        "AdministrationPortEnabled": false
+      }
+    },
+    "channels": {
+      "custom": 19128,
+      "DefaultSecure": 7002
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 7002,
+        "publicPort": 7002
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t29_secure_explicit_admin_false_nap",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "secure"
+      },
+      "topology": {
+        "Name": "t29_secure_explicit_admin_false_nap",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17129,
+            "NetworkAccessPoint": {
+              "custom": {
+                "ListenPort": 19129
+              }
+            }
+          }
+        },
+        "AdministrationPortEnabled": false,
+        "SecurityConfiguration": {
+          "SecureMode": {
+            "SecureModeEnabled": true
+          }
+        }
+      }
+    },
+    "channels": {
+      "custom": 19129,
+      "DefaultSecure": 7002
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 7002,
+        "publicPort": 7002
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t30_ssl_false_string",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@"
+      },
+      "topology": {
+        "Name": "t30_ssl_false_string",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17130,
+            "SSL": {
+              "Enabled": "false",
+              "ListenPort": 18130
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17130
+    },
+    "requiredForwardChannels": {
+      "internal-t3": {
+        "protocol": "t3",
+        "listenPort": 17130,
+        "publicPort": 17130
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-t3s"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t31_user_prod_global_ssl_four_managed",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "prod"
+      },
+      "topology": {
+        "Name": "domain1",
+        "SSLEnabled": true,
+        "AdminServerName": "adminserver",
+        "SecurityConfiguration": {
+          "CredentialEncrypted": "@@SECRET:__weblogic-credentials__:password@@"
+        },
+        "Cluster": {
+          "cluster-1": {
+            "DynamicServers": {
+              "ServerTemplate": "cluster-1-template",
+              "ServerNamePrefix": "managed-server",
+              "DynamicClusterSize": 4,
+              "MaxDynamicClusterSize": 4,
+              "CalculatedListenPorts": false
+            }
+          }
+        },
+        "Server": {
+          "adminserver": {
+            "ListenPort": 7001
+          }
+        },
+        "ServerTemplate": {
+          "cluster-1-template": {
+            "Cluster": "cluster-1",
+            "ListenPort": 8001
+          }
+        }
+      },
+      "resources": {
+        "WebAppContainer": {
+          "WeblogicPluginEnabled": true
+        }
+      }
+    },
+    "channels": {
+      "Default": 7001,
+      "DefaultSecure": 7002
+    },
+    "managedChannels": {
+      "Default": 8001,
+      "DefaultSecure": 8100
+    },
+    "managedServerNames": [
+      "managed-server1",
+      "managed-server2",
+      "managed-server3",
+      "managed-server4"
+    ],
+    "requiredForwardChannels": {
+      "internal-t3": {
+        "protocol": "t3",
+        "listenPort": 7001,
+        "publicPort": 7001
+      },
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 7002,
+        "publicPort": 7002
+      }
+    },
+    "forbiddenForwardChannels": [
+      "internal-admin"
+    ],
+    "minimumWlsVersion": "26.1.0.0.0"
+  },
+  {
+    "name": "t32_dev_admin_defaults",
+    "minimumWlsVersion": "12.2.1.4.0",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "dev"
+      },
+      "topology": {
+        "Name": "t32_dev_admin_defaults",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {}
+        }
+      }
+    },
+    "channels": {
+      "Default": 7001
+    }
+  },
+  {
+    "name": "t33_prod_admin_defaults",
+    "minimumWlsVersion": "12.2.1.4.0",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "prod"
+      },
+      "topology": {
+        "Name": "t33_prod_admin_defaults",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {}
+        }
+      }
+    },
+    "channels": {
+      "Default": 7001
+    }
+  },
+  {
+    "name": "t34_dev_ssl_only_custom",
+    "minimumWlsVersion": "12.2.1.4.0",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "dev"
+      },
+      "topology": {
+        "Name": "t34_dev_ssl_only_custom",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenPortEnabled": false,
+            "ListenPort": 17134,
+            "SSL": {
+              "Enabled": true,
+              "ListenPort": 18334
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "DefaultSecure": 18334
+    },
+    "requiredForwardChannels": {
+      "internal-t3s": {
+        "protocol": "t3s",
+        "listenPort": 18334,
+        "publicPort": 18334
+      }
+    },
+    "expectationsBefore": [
+      {
+        "wlsVersion": "14.1.2.0.0",
+        "requiredForwardChannels": {
+          "internal-t3s": {
+            "protocol": "t3s",
+            "listenPort": 18334,
+            "publicPort": 0
+          }
+        }
+      }
+    ],
+    "forbiddenForwardChannels": [
+      "internal-t3"
+    ]
+  },
+  {
+    "name": "t35_prod_explicit_ssl_cluster",
+    "model": {
+      "domainInfo": {
+        "AdminUserName": "@@SECRET:__weblogic-credentials__:username@@",
+        "AdminPassword": "@@SECRET:__weblogic-credentials__:password@@",
+        "ServerStartMode": "prod"
+      },
+      "topology": {
+        "Name": "t35_prod_explicit_ssl_cluster",
+        "AdminServerName": "AdminServer",
+        "Server": {
+          "AdminServer": {
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17135,
+            "SSL": {
+              "Enabled": true,
+              "ListenPort": 18135
+            }
+          }
+        },
+        "AdministrationPortEnabled": false,
+        "ServerTemplate": {
+          "tpl": {
+            "Cluster": "dyn",
+            "ListenAddress": "127.0.0.1",
+            "ListenPort": 17235,
+            "SSL": {
+              "Enabled": true,
+              "ListenPort": 18235
+            }
+          }
+        },
+        "Cluster": {
+          "dyn": {
+            "DynamicServers": {
+              "ServerTemplate": "tpl",
+              "ServerNamePrefix": "managed-",
+              "DynamicClusterSize": 1,
+              "MaxDynamicClusterSize": 1,
+              "CalculatedListenPorts": false
+            }
+          }
+        }
+      }
+    },
+    "channels": {
+      "Default": 17135,
+      "DefaultSecure": 18135
+    },
+    "managedChannels": {
+      "Default": 17235,
+      "DefaultSecure": 18235
+    },
+    "minimumWlsVersion": "12.2.1.4.0"
+  }
+]

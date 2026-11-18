@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -127,6 +127,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private final Map<String, DataRepository<? extends KubernetesType>> repositories = new HashMap<>();
   private final Map<Class<?>, String> dataTypes = new HashMap<>();
+  private final List<String> podLogContainers = new ArrayList<>();
   private Failure failure;
   private AfterCallAction afterCallAction;
   private long resourceVersion;
@@ -376,6 +377,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public void definePodLog(String name, String namespace, Object contents) {
     repositories.get(PODLOG).createResourceInNamespace(name, namespace,
             new RequestBuilder.StringObject(contents.toString()));
+  }
+
+  public List<String> getPodLogContainers() {
+    return List.copyOf(podLogContainers);
   }
 
   public void setVersionInfo(VersionInfo versionInfo) {
@@ -877,6 +882,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         @Override
         public KubernetesApiResponse<RequestBuilder.StringObject> logs(
                 String namespace, String name, String container) {
+          podLogContainers.add(container);
           return new CallContext<RequestBuilder.StringObject>(
                   Operation.read, PODLOG, namespace, name)
                   .execute();

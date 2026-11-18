@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -80,6 +80,19 @@ public class CrdSchemaGeneratorTest {
     Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
     assertThat(properties, hasKey("enabled"));
     assertThat(properties, not(hasKey("disabled")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(longs = {0, 120, 2147483648L})
+  void whenPodGraceIsNonnegative_schemaAcceptsIt(long seconds) throws IOException {
+    JsonNode value = new ObjectMapper().readTree("{\"terminationGracePeriodSeconds\":" + seconds + "}");
+    org.junit.jupiter.api.Assertions.assertTrue(createJsonSchema(ServerPod.class).validate(value).isEmpty());
+  }
+
+  @Test
+  void whenPodGraceIsNegative_schemaRejectsIt() throws IOException {
+    JsonNode value = new ObjectMapper().readTree("{\"terminationGracePeriodSeconds\":-1}");
+    org.junit.jupiter.api.Assertions.assertFalse(createJsonSchema(ServerPod.class).validate(value).isEmpty());
   }
 
   private static class SomeObject {

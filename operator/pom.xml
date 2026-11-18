@@ -7,7 +7,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>4.3.17-SNAPSHOT</version>
+    <version>4.3.22-SNAPSHOT</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
@@ -234,6 +234,7 @@
                   <directory>${project.basedir}/src/main/resources/scripts</directory>
                   <includes>
                     <include>model_wdt_mii_filter.py</include>
+                    <include>introspectDomain.py</include>
                     <include>utils.py</include>
                   </includes>
                 </resource>

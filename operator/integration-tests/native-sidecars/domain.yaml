@@ -1,0 +1,106 @@
+# Copyright (c) 2026, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+apiVersion: weblogic.oracle/v9
+kind: Domain
+metadata:
+  name: native-sidecars
+spec:
+  domainUID: native-sidecars
+  domainHomeSourceType: FromModel
+  image: REPLACE_WLS_IMAGE
+  imagePullPolicy: IfNotPresent
+  webLogicCredentialsSecret:
+    name: credentials
+  clusters:
+  - name: native-sidecars-cluster
+  serverPod:
+    terminationGracePeriodSeconds: 90
+    env:
+    - name: USER_MEM_ARGS
+      value: '-Xms256m -Xmx512m -XX:StartFlightRecording=name=sidecar-test,settings=default,dumponexit=true,filename=/recordings/final.jfr'
+    - name: JAVA_OPTIONS
+      value: '-Dweblogic.security.SSL.ignoreHostnameVerification=true'
+    resources:
+      requests:
+        memory: 768Mi
+        cpu: 100m
+    podSecurityContext:
+      fsGroup: 1000
+    volumes:
+    - name: recordings
+      emptyDir: {}
+    - name: archives
+      persistentVolumeClaim:
+        claimName: native-sidecars-archives
+    - name: test-scripts
+      configMap:
+        name: native-sidecars-scripts
+    - name: test-model
+      configMap:
+        name: native-sidecars-model
+    volumeMounts:
+    - name: recordings
+      mountPath: /recordings
+    - name: test-model
+      mountPath: /test-model
+    initContainers:
+    - name: jfr-uploader
+      image: REPLACE_SIDECAR_IMAGE
+      imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      command: [sh, /test-scripts/uploader.sh]
+      env:
+      - name: POD_UID
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.uid
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+      securityContext:
+        runAsUser: 1000
+      startupProbe:
+        exec:
+          command: [sh, -c, 'test -f /recordings/started']
+        periodSeconds: 1
+        failureThreshold: 30
+      readinessProbe:
+        exec:
+          command: [sh, -c, 'test ! -f /recordings/fail']
+        periodSeconds: 1
+      volumeMounts:
+      - name: recordings
+        mountPath: /recordings
+      - name: archives
+        mountPath: /archives
+      - name: test-scripts
+        mountPath: /test-scripts
+    containers:
+    - name: regular-companion
+      image: REPLACE_SIDECAR_IMAGE
+      imagePullPolicy: IfNotPresent
+      command: [sh, -c]
+      args:
+      - 'trap "echo final > /recordings/regular-final; exit 0" TERM; while :; do sleep 1 & wait $!; done'
+      volumeMounts:
+      - name: recordings
+        mountPath: /recordings
+  configuration:
+    model:
+      domainType: WLS
+      modelHome: /test-model
+      runtimeEncryptionSecret: encryption
+      auxiliaryImages:
+      - image: REPLACE_AUX_IMAGE
+        imagePullPolicy: IfNotPresent
+  introspector:
+    serverPod:
+      initContainers:
+      - name: job-companion
+        image: REPLACE_SIDECAR_IMAGE
+        imagePullPolicy: IfNotPresent
+        restartPolicy: Always
+        command: [sh, -c]
+        args:
+        - 'trap "exit 0" TERM; while :; do sleep 1 & wait $!; done'

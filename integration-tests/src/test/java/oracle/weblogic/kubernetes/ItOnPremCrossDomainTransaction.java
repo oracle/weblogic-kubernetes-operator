@@ -1,4 +1,4 @@
-// Copyright (c) 2024, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -619,11 +619,11 @@ class ItOnPremCrossDomainTransaction {
     logger.info("creating model file for on prem domain {0}", onPremDomainName);
     Path modelFile = File.createTempFile(onPremDomainName, ".yaml").toPath();
     FileUtils.copy(Path.of(RESOURCE_DIR, "/onpremcrtx/", WDT_MODEL_FILE_DOMAIN1), modelFile);
-    //modify the model file to add proper external dns entries
+    // Replace literal Kubernetes DNS names with the on-premises host address.
     FileUtils.replaceStringInFile(modelFile.toString(),
-        "@@PROP:DOMAIN_NAME@@-admin-server\\.@@PROP:NAMESPACE@@", localAddress);
+        "@@PROP:DOMAIN_NAME@@-admin-server.@@PROP:NAMESPACE@@", localAddress);
     FileUtils.replaceStringInFile(modelFile.toString(),
-        "@@PROP:DOMAIN_NAME@@-managed-server\\$\\{id\\}\\.@@PROP:NAMESPACE@@", localAddress);
+        "@@PROP:DOMAIN_NAME@@-managed-server${id}.@@PROP:NAMESPACE@@", localAddress);
     
     String modelFileList = modelFile + ","
         + RESOURCE_DIR + "/onpremcrtx/" + WDT_MODEL_FILE_JMS;

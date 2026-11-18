@@ -172,6 +172,11 @@
           "description": "NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`.",
           "type": "string"
         },
+        "terminationGracePeriodSeconds": {
+          "description": "Total time in seconds allowed for Pod termination, including WebLogic shutdown and sidecar cleanup. If omitted, defaults to shutdown.timeoutSeconds plus 10 seconds. This does not change the WebLogic shutdown timeout. Updating this field affects newly created Pods only and does not automatically restart existing Pods.",
+          "type": "integer",
+          "minimum": 0
+        },
         "readinessGates": {
           "description": "If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.",
           "type": "array",

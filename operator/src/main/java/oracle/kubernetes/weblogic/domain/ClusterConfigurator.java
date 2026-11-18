@@ -119,6 +119,8 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withRestartPolicy(String restartPolicy);
 
+  ClusterConfigurator withTerminationGracePeriodSeconds(Long seconds);
+
   ClusterConfigurator withAffinity(V1Affinity affinity);
 
   ClusterConfigurator withSchedulingGates(List<V1PodSchedulingGate> schedulingGates);

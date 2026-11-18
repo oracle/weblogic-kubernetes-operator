@@ -1,8 +1,9 @@
-// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -137,7 +138,8 @@ public class RollingHelper {
       }
 
       private boolean isServerNotReady(Map.Entry<String, StepAndPacket> rollingEntry) {
-        return !getReadyServers().contains(rollingEntry.getKey());
+        return !getReadyServers().contains(rollingEntry.getKey())
+            && !PodHelper.hasReadyWebLogicWithNativeSidecars(getInfo().getServerPod(rollingEntry.getKey()));
       }
 
       private void recordForImmediateStart(Map.Entry<String, StepAndPacket> rollingEntry) {
@@ -249,6 +251,12 @@ public class RollingHelper {
       if (!restarts.isEmpty()) {
         return doForkJoin(this, packet, restarts);
       } else if (!servers.isEmpty()) {
+        if (servers.stream().anyMatch(request ->
+            PodHelper.hasNativeSidecars(context.getInfo().getServerPod(getServerName(request))))) {
+          // Release the reconciliation executor while sidecars recover. Sleeping in this step
+          // can occupy all executor threads and prevent readiness events from being processed.
+          return new Result(true, Duration.ofSeconds(DELAY_IN_SECONDS));
+        }
         return doDelay(this, packet, DELAY_IN_SECONDS, TimeUnit.SECONDS);
       } else {
         return doNext(packet);

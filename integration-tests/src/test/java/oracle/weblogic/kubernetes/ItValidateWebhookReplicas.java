@@ -1,14 +1,21 @@
-// Copyright (c) 2022, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
+import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -30,12 +37,14 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.function.Executable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -52,6 +61,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_EXTERNAL_REST_HTTPSPORT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_TEMPFILE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -71,12 +81,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiAndReturnResult;
+import static oracle.weblogic.kubernetes.actions.impl.Cluster.getClusterCustomResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -89,6 +101,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -118,6 +131,7 @@ class ItValidateWebhookReplicas {
   private static int externalRestHttpsPort = 0;
 
   private String clusterName = "cluster-1";
+  private final List<Executable> cleanupActions = new ArrayList<>();
 
   /**
    * Perform initialization for all the tests in this class.
@@ -195,6 +209,136 @@ class ItValidateWebhookReplicas {
             domainUid2, domainNamespace2);
       }
     }
+  }
+
+  @AfterEach
+  void restoreTestResources() {
+    // Run every restoration even when a test or an earlier restoration fails.
+    try {
+      assertAll("Restore shared domain and cluster resources", cleanupActions);
+    } finally {
+      // IntegrationTest uses a single instance for all methods in this class.
+      cleanupActions.clear();
+    }
+  }
+
+  /**
+   * Exercise legacy v8 clients through API-server admission and forward conversion to v9 storage.
+   * Inline overrides must win over the Domain default, and rejected requests must not change the
+   * separate Cluster resource. Direct calls to the conversion helper cannot check that ordering.
+   */
+  @Test
+  @DisplayName("V8 apply validates submitted inline Cluster replicas and preserves state on rejection")
+  void testV8InlineClusterReplicas() throws IOException {
+    String uid = "valwebrepdomain-v8";
+    Map<String, Object> inlineCluster = new HashMap<>(Map.of(
+        "clusterName", "cluster-1", "replicas", 2, "serverStartPolicy", "IF_NEEDED"));
+    Map<String, Object> spec = new HashMap<>();
+    spec.put("domainUID", uid);
+    spec.put("domainHomeSourceType", "FromModel");
+    spec.put("image", MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    spec.put("imagePullPolicy", IMAGE_PULL_POLICY);
+    spec.put("imagePullSecrets", List.of(Map.of("name", TEST_IMAGES_REPO_SECRET_NAME)));
+    spec.put("webLogicCredentialsSecret", Map.of("name", "weblogic-credentials"));
+    spec.put("serverStartPolicy", "IF_NEEDED");
+    spec.put("configuration", Map.of("model", Map.of(
+        "domainType", "WLS", "runtimeEncryptionSecret", "encryptionsecret")));
+    spec.put("replicas", 1);
+    spec.put("maxClusterConcurrentStartup", 1);
+    spec.put("clusters", List.of(inlineCluster));
+    Map<String, Object> manifest = Map.of(
+        "apiVersion", "weblogic.oracle/v8", "kind", "Domain",
+        "metadata", Map.of("name", uid, "namespace", domainNamespace,
+            "labels", Map.of("weblogic.domainUID", uid)), "spec", spec);
+    Path file = Files.createTempFile(RESULTS_TEMPFILE_DIR, uid, ".json");
+    assertV8Apply(file, manifest, false, true);
+    checkPodReadyAndServiceExists(uid + "-" + ADMIN_SERVER_NAME_BASE, uid, domainNamespace);
+    for (int i = 1; i <= 2; i++) {
+      checkPodReadyAndServiceExists(uid + "-" + MANAGED_SERVER_NAME_BASE + i, uid, domainNamespace);
+    }
+    testUntil(() -> {
+      DomainResource domain = getDomainCustomResource(uid, domainNamespace);
+      ClusterResource cluster = getClusterCustomResource(uid + "-cluster-1", domainNamespace);
+      return domain.getStatus() != null && domain.getStatus().getClusters() != null
+          && domain.getStatus().getClusters().stream().anyMatch(c -> Integer.valueOf(5).equals(c.getMaximumReplicas()))
+          && cluster.getStatus() != null && Integer.valueOf(5).equals(cluster.getStatus().getMaximumReplicas());
+    }, logger, "Wait for introspected maximum replica counts for {0}", uid);
+
+    // Customer case: a valid inline override shields the cluster from an excessive Domain default.
+    spec.put("replicas", 10);
+    spec.put("maxClusterConcurrentStartup", 2);
+    assertV8Apply(file, manifest, true, true);
+    assertV8StoredReplicas(uid, 1, 2, 1);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 10, 2, 2);
+    spec.put("maxClusterConcurrentStartup", 3);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 10, 2, 3);
+
+    // Removing the override exposes the invalid default. Neither resource may change on rejection.
+    inlineCluster.remove("replicas");
+    assertV8Apply(file, manifest, true, false);
+    assertV8Apply(file, manifest, false, false);
+    assertV8StoredReplicas(uid, 10, 2, 3);
+
+    spec.put("replicas", 1);
+    inlineCluster.put("replicas", 2);
+    assertV8Apply(file, manifest, false, true);
+    inlineCluster.put("replicas", 3);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, 3, 3);
+    inlineCluster.put("replicas", 10);
+    assertV8Apply(file, manifest, true, false);
+    assertV8Apply(file, manifest, false, false);
+    assertV8StoredReplicas(uid, 1, 3, 3);
+
+    inlineCluster.put("replicas", 0);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, 0, 3);
+    inlineCluster.put("replicas", 2);
+    spec.remove("replicas");
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 0, 2, 3);
+    spec.put("replicas", 1);
+    inlineCluster.remove("replicas");
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, null, 3);
+    inlineCluster.put("replicas", 2);
+    assertV8Apply(file, manifest, false, true);
+    assertV8Apply(file, manifest, false, true);
+    assertV8StoredReplicas(uid, 1, 2, 3);
+  }
+
+  private void assertV8Apply(Path file, Map<String, Object> manifest, boolean dryRun, boolean allowed)
+      throws IOException {
+    Files.writeString(file, new Gson().toJson(manifest));
+    testUntil(withQuickRetryPolicy, () -> {
+      ExecResult result = Command.withParams(new CommandParams().defaults().command(
+          KUBERNETES_CLI + " apply " + (dryRun ? "--dry-run=server " : "") + "-f '" + file + "'"))
+          .executeAndReturnResult();
+      assertNotNull(result);
+      // Scaling also updates Cluster status. Retry only an optimistic-concurrency conflict from
+      // conversion's existing Cluster write; never retry an unexpected admission decision.
+      if (allowed && result.exitValue() != 0 && result.stderr().contains("the object has been modified")) {
+        logger.info("Retrying v8 apply after resourceVersion conflict: {0}", result.stderr());
+        return false;
+      }
+      assertEquals(allowed, result.exitValue() == 0, result.stdout() + result.stderr());
+      if (!allowed) {
+        assertTrue(result.stderr().contains("would exceed the cluster size '5'"), result.stderr());
+      }
+      return true;
+    }, logger, "Check v8 apply admission (dryRun={0}, allowed={1})", dryRun, allowed);
+  }
+
+  private void assertV8StoredReplicas(String uid, int domainReplicas, Integer clusterReplicas, int concurrentStartup) {
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(uid, domainNamespace));
+    ClusterResource cluster = assertDoesNotThrow(() -> getClusterCustomResource(uid + "-cluster-1", domainNamespace));
+    assertEquals("weblogic.oracle/v9", domain.getApiVersion());
+    assertEquals(uid + "-cluster-1", domain.getSpec().getClusters().get(0).getName());
+    assertEquals(domainReplicas, domain.getSpec().getReplicas());
+    assertEquals(concurrentStartup, domain.getSpec().getMaxClusterConcurrentStartup());
+    assertEquals(clusterReplicas, cluster.getSpec().getReplicas());
   }
 
   /**
@@ -282,9 +426,6 @@ class ItValidateWebhookReplicas {
     assertTrue(response.contains(expectedErrorMsg),
         String.format("Patching domain replicas did not return the expected error msg: %s, got: %s",
             expectedErrorMsg, response));
-
-    // restore the cluster resource with replicas
-    restoreClusterResourceWithReplicas("cluster-1", domainUid, domainNamespace);
   }
 
   /**
@@ -296,6 +437,13 @@ class ItValidateWebhookReplicas {
   @DisplayName("All cluster resources in a domain have replicas set, changing domain's replicas to a number that "
       + "exceeds all cluster resources' size does not fail and the clusters are not impacted.")
   void testDomainReplicasTooHighWithClusterReplicas() {
+    cleanupActions.add(() -> {
+      V1Patch restorePatch = new V1Patch("[{\"op\":\"replace\",\"path\":\"/spec/replicas\",\"value\":1}]");
+      String restoreResponse = patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, restorePatch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH);
+      assertTrue(restoreResponse.contains("Succeeded with response code: 200"), restoreResponse);
+    });
+
     // patch the domain with replicas value more than max cluster size
     String patchStr
         = "["
@@ -325,14 +473,6 @@ class ItValidateWebhookReplicas {
         String.format("domain status cluster replica is changed, expect: %s, got: %s",
             domainStatusClusterReplicas, replicaCount));
 
-    // patch the domain with original replicas value
-    patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 1}"
-        + "]";
-    patch = new V1Patch(patchStr);
-    logger.info("Patching domain resource using patch string {0} ", patchStr);
-    patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
   /**
@@ -356,6 +496,8 @@ class ItValidateWebhookReplicas {
         logger,
         "tagImageAndPushIfNeeded for image {0} to be successful",
         newImage);
+
+    cleanupActions.add(0, () -> restoreDomainImageAndReplicas(domainUid, domainNamespace, originalImage));
 
     OffsetDateTime timestamp = now();
 
@@ -389,12 +531,6 @@ class ItValidateWebhookReplicas {
     for (int i = 1; i <= DEFAULT_MAX_CLUSTER_SIZE; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    // restore the domain image and replicas
-    restoreDomainImageAndReplicas(domainUid, domainNamespace, originalImage);
-
-    // restore the cluster resource with replicas
-    restoreClusterResourceWithReplicas("cluster-1", domainUid, domainNamespace);
   }
 
   /**
@@ -460,9 +596,6 @@ class ItValidateWebhookReplicas {
             expectedErrorMsg, response));
     assertFalse(response.contains(clusterName),
         String.format("Patching domain replicas response should not contain cluster name %s", clusterName));
-
-    // restore the domain2 cluster2
-    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-2", domainUid2, domainNamespace2);
   }
 
   /**
@@ -502,27 +635,14 @@ class ItValidateWebhookReplicas {
     assertTrue(response.contains(expectedErrorMsg),
         String.format("Patching domain replicas did not return the expected error msg: %s, got: %s",
             expectedErrorMsg, response));
-
-    // restore domain2-cluster-1 and domain2-cluster-2
-    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-1", domainUid2, domainNamespace2);
-    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-2", domainUid2, domainNamespace2);
   }
 
   private void patchClusterResourceRemoveReplicas(String clusterResName,
                                                   String domainUid,
                                                   String domainNamespace,
                                                   String managedServerToDelete) {
-    String patchStr
-        = "["
-        + "{\"op\": \"remove\", \"path\": \"/spec/replicas\"}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    logger.info("Patching the cluster resource using patching string {0}", patchStr);
-    String response = patchClusterCustomResourceReturnResponse(clusterResName, domainNamespace, patch,
-            V1Patch.PATCH_FORMAT_JSON_PATCH);
-    assertTrue(response.contains("Succeeded with response code: 200"),
-        String.format("patching cluster %s in namespace %s failed with error msg: %s",
-            clusterResName, domainNamespace, response));
+    cleanupActions.add(() -> restoreClusterResourceWithReplicas(clusterResName, domainUid, domainNamespace));
+    patchClusterReplicasAndVerify(clusterResName, domainNamespace, null);
     // verify managed server 2 is deleted
     checkPodDeleted(managedServerToDelete, domainUid, domainNamespace);
   }
@@ -530,17 +650,7 @@ class ItValidateWebhookReplicas {
   private void restoreClusterResourceWithReplicas(String clusterResName,
                                                   String domainUid,
                                                   String domainNamespace) {
-    String patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/replicas\", \"value\": " + replicaCount + "}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    logger.info("Patching the cluster resource using patching string {0}", patchStr);
-    String response = patchClusterCustomResourceReturnResponse(clusterResName, domainNamespace, patch,
-            V1Patch.PATCH_FORMAT_JSON_PATCH);
-    assertTrue(response.contains("Succeeded with response code: 200"),
-        String.format("patching cluster %s in namespace %s failed with error msg: %s",
-            clusterResName, domainNamespace, response));
+    patchClusterReplicasAndVerify(clusterResName, domainNamespace, replicaCount);
 
     // check the managed server pods are up and running
     int numClusters =
@@ -555,6 +665,22 @@ class ItValidateWebhookReplicas {
       }
       checkPodReadyAndServiceExists(serverNamePrefix + i, domainUid, domainNamespace);
     }
+  }
+
+  private void patchClusterReplicasAndVerify(String clusterResName, String namespace, Integer replicas) {
+    // Merge-patch null removes the override and is safe to repeat if an etcd timeout hides a committed write.
+    V1Patch patch = new V1Patch("{\"spec\":{\"replicas\":" + replicas + "}}");
+    testUntil(withQuickRetryPolicy, () -> {
+      String response = patchClusterCustomResourceReturnResponse(clusterResName, namespace, patch,
+          V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH);
+      boolean etcdTimeout = response.contains("Failed with response code: 500.")
+          && response.contains("etcdserver: request timed out");
+      // Unexpected admission decisions must fail immediately, including errors other than this transient timeout.
+      assertTrue(response.contains("Succeeded with response code: 200") || etcdTimeout,
+          String.format("patching cluster %s in namespace %s failed with error msg: %s",
+              clusterResName, namespace, response));
+      return Objects.equals(replicas, getClusterCustomResource(clusterResName, namespace).getSpec().getReplicas());
+    }, logger, "cluster {0} in namespace {1} to have replicas {2}", clusterResName, namespace, replicas);
   }
 
   /**

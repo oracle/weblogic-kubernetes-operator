@@ -289,7 +289,7 @@ class ItIstioMiiDomain {
       hostAndPort = result.stdout();
     }
 
-    String url = "http://" + hostAndPort + "/management/tenant-monitoring/servers/";
+    String url = "http://" + hostAndPort + "/management/weblogic/latest/domainRuntime/serverRuntimes";
     checkApp(url);
 
     String wmUrl = "http://" + hostAndPort + workManagers;

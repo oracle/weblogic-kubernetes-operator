@@ -15,6 +15,11 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
@@ -44,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
@@ -58,8 +62,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
@@ -74,6 +78,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfigViaAdminPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createCustomConditionFactory;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
@@ -92,8 +97,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
-import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
@@ -179,7 +183,6 @@ class ItMiiAuxiliaryImage {
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
   private static String opNamespace = null;
-  private static String operatorPodName = null;
   private static String oldMiiAuxImageNameInDomain1 = miiAuxiliaryImage1;
   private static AppParams appParams = defaultAppParams()
       .appArchiveDir(ARCHIVE_DIR + ItMiiAuxiliaryImage.class.getSimpleName());
@@ -214,10 +217,6 @@ class ItMiiAuxiliaryImage {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace, wdtDomainNamespace);
-
-    operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Can't get operator's pod name");
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -273,6 +272,12 @@ class ItMiiAuxiliaryImage {
         encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage1,
         miiAuxiliaryImage2);
+
+    // model.jms2.yaml uses LOG_HOME for the JMS message log. Keep it writable across server restarts.
+    domainCR.spec().logHomeEnabled(true).logHome("/logs/" + domainUid1);
+    domainCR.spec().serverPod()
+        .addVolumesItem(new V1Volume().name("server-logs").emptyDir(new V1EmptyDirVolumeSource()))
+        .addVolumeMountsItem(new V1VolumeMount().name("server-logs").mountPath("/logs"));
 
     domainCR = createClusterResourceAndAddReferenceToDomain(
         domainUid1 + "-" + clusterName, clusterName, domainNamespace, domainCR, replicaCount);
@@ -376,7 +381,8 @@ class ItMiiAuxiliaryImage {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid1, domainNamespace));
 
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1,
+        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
   }
 
   /**
@@ -393,6 +399,14 @@ class ItMiiAuxiliaryImage {
             domainUid1, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    // The data-source update test is optional when this test is selected on its own.
+    // Choose the expected fixture from the configured model image before the base-image patch.
+    boolean usesUpdatedDataSource = domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages().stream()
+        .anyMatch(auxiliaryImage -> miiAuxiliaryImage3.equals(auxiliaryImage.getImage()));
+    String expectedJdbcUrl = usesUpdatedDataSource
+        ? "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"
+        : "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB";
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
@@ -448,7 +462,7 @@ class ItMiiAuxiliaryImage {
     // check configuration for JMS
     checkConfiguredJMSresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
     //check configuration for JDBC
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1, expectedJdbcUrl);
 
   }
 
@@ -527,7 +541,7 @@ class ItMiiAuxiliaryImage {
 
   /**
    * Negative test. Create a domain using auxiliary image with no installation files at specified sourceWdtInstallHome
-   * location. Verify domain events and operator log contains the expected error message.
+   * location. Verify the auxiliary init-container error and the domain failure event.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with no files at specified sourceWdtInstallHome")
@@ -572,11 +586,42 @@ class ItMiiAuxiliaryImage {
 
     String errorMessage = "Make sure the 'sourceWDTInstallHome' is correctly specified and the WDT installation "
               + "files are available in this directory  or set 'sourceWDTInstallHome' to 'None' for this image.";
-    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+    // A fast-failing introspector can be replaced before the operator copies its log,
+    // leaving only BackoffLimitExceeded in the event. Verify the specific error at its source.
+    testUntil(createCustomConditionFactory(0, 1, 15),
+        () -> introspectorLogContainsExpectedError(domainUid, domainNamespace,
+            "operator-aux-container1", errorMessage),
+        logger, "auxiliary init-container log for domain {0} to contain {1}", domainUid, errorMessage);
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED, "Warning", timestamp);
 
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-        "Warning", timestamp, errorMessage);
+    deleteDomainResource(domainNamespace, domainUid);
+  }
+
+  private static boolean introspectorLogContainsExpectedError(String domainUid, String namespace,
+                                                             String containerName, String... errorMessages)
+      throws ApiException {
+    // Read the diagnostic at its source before the failed introspector is replaced.
+    // Include all matching pods: a terminating pod can overlap with its replacement.
+    for (V1Pod pod : listPods(namespace, "weblogic.domainUID=" + domainUid).getItems()) {
+      if (pod.getMetadata() == null
+          || !pod.getMetadata().getName().startsWith(getIntrospectJobName(domainUid) + "-")) {
+        continue;
+      }
+      try {
+        // Read directly: getPodLog waits for initialization and may wait on an obsolete pod.
+        String log = new CoreV1Api().readNamespacedPodLog(pod.getMetadata().getName(), namespace,
+            containerName, false, null, null, null, false, null, null, null, false);
+        if (log != null && Arrays.stream(errorMessages).allMatch(log::contains)) {
+          return true;
+        }
+      } catch (ApiException ex) {
+        // The container may not have started, or the pod may have been deleted since listing it.
+        if (ex.getCode() != 400 && ex.getCode() != 404) {
+          throw ex;
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -667,7 +712,7 @@ class ItMiiAuxiliaryImage {
 
   /**
    * Negative test. Create a domain using auxiliary image with no model files at specified sourceModelHome
-   * location. Verify domain events and operator log contains the expected error message.
+   * location. Verify the auxiliary init-container diagnostic and a domain failure event.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with no files at specified sourceModelHome")
@@ -706,12 +751,14 @@ class ItMiiAuxiliaryImage {
     String errorMessage = "Make sure the 'sourceModelHome' is correctly specified and the WDT model "
             + "files are available in this directory  or set 'sourceModelHome' to 'None' for this image.";
 
-    // check the operator pod log contains the expected error message
-    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+    // This validation runs in the auxiliary init container, before WebLogic starts on any release.
+    testUntil(createCustomConditionFactory(0, 1, 15),
+        () -> introspectorLogContainsExpectedError(domainUid, domainNamespace,
+            "operator-aux-container1", errorMessage),
+        logger, "auxiliary init-container log for domain {0} to contain {1}", domainUid, errorMessage);
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED, "Warning", timestamp);
 
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-            "Warning", timestamp, errorMessage);
+    deleteDomainResource(domainNamespace, domainUid);
 
   }
 
@@ -768,7 +815,7 @@ class ItMiiAuxiliaryImage {
 
   /**
    * Create a domain using auxiliary image with empty configMap and no model files.
-   * Verify domain events and operator log contains the expected error message from WDT tool.
+   * Verify the introspector log contains the WDT error and the domain emits a failure event.
    * WDT Create Primordial Domain Failed.
    */
   @Test
@@ -822,12 +869,12 @@ class ItMiiAuxiliaryImage {
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Model in Image: WDT Create Primordial Domain Failed";
 
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-        "Warning", timestamp, expectedErrorMsg);
-
-    // check the operator pod log contains the expected error message
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    // A failed introspector may be replaced before its log is copied into the operator log/event.
+    testUntil(createCustomConditionFactory(0, 1, 15),
+        () -> introspectorLogContainsExpectedError(domainUid, domainNamespace,
+            getIntrospectJobName(domainUid), expectedErrorMsg),
+        logger, "introspector log for domain {0} to contain {1}", domainUid, expectedErrorMsg);
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED, "Warning", timestamp);
 
     // check there are no admin server and managed server pods and services not created
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
@@ -945,7 +992,7 @@ class ItMiiAuxiliaryImage {
 
   /**
    * Negative Test to create domain without WDT binary.
-   * Check the error message is in domain events and operator pod log.
+   * Check the introspector diagnostic and a domain failure event.
    */
   @Test
   @DisplayName("Negative Test to create domain without WDT binary")
@@ -997,20 +1044,19 @@ class ItMiiAuxiliaryImage {
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/aux/weblogic-deploy'";
 
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
-        "Warning", timestamp, expectedErrorMsg);
+    testUntil(createCustomConditionFactory(0, 1, 15),
+        () -> introspectorLogContainsExpectedError(domainUid2, errorpathDomainNamespace,
+            getIntrospectJobName(domainUid2), expectedErrorMsg),
+        logger, "introspector log for domain {0} to contain {1}", domainUid2, expectedErrorMsg);
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED, "Warning", timestamp);
 
     // check there are no admin server and managed server pods and services created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
     for (int i = 1; i <= count; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid2, domainNamespace);
-      checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid2, errorpathDomainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
-
-    // check the operator pod log contains the expected error message
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid2);
@@ -1018,7 +1064,7 @@ class ItMiiAuxiliaryImage {
 
   /**
    * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
-   * Check the error message is in domain events and operator pod log
+   * Check both WDT diagnostics in the introspector log and a domain failure event.
    */
   @Test
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
@@ -1062,17 +1108,16 @@ class ItMiiAuxiliaryImage {
         domainUid2, errorPathAuxiliaryImage2, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the introspector pod log contains the expected error message
-    String expectedErrorMsg =
-        "Model in Image: WDT Create Primordial Domain Failed";
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
-        "Warning", timestamp, expectedErrorMsg);
-
-    // check the operator pod log contains the expected error message
-    expectedErrorMsg = "createDomain did not find the required domainInfo "
+    String expectedErrorMsg = "Model in Image: WDT Create Primordial Domain Failed";
+    String expectedWdtErrorMsg = "createDomain did not find the required domainInfo "
         + "section in the model file /aux/models/model.jms2.yaml";
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    // Require both diagnostics from the same introspector before it is replaced.
+    testUntil(createCustomConditionFactory(0, 1, 15),
+        () -> introspectorLogContainsExpectedError(domainUid2, errorpathDomainNamespace,
+            getIntrospectJobName(domainUid2), expectedErrorMsg, expectedWdtErrorMsg),
+        logger, "introspector log for domain {0} to contain {1} and {2}",
+        domainUid2, expectedErrorMsg, expectedWdtErrorMsg);
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED, "Warning", timestamp);
 
     // check there are no admin server and managed server pods and services created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
@@ -1090,7 +1135,7 @@ class ItMiiAuxiliaryImage {
    * Negative Test to create domain with file , created by user tester with permission read only
    * and not accessible by oracle user in auxiliary image
    * via provided Dockerfile.
-   * Check the error message is in introspector pod log, domain events and operator pod log.
+   * Check the auxiliary init-container diagnostic and a domain failure event.
    */
   @Test
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
@@ -1142,12 +1187,11 @@ class ItMiiAuxiliaryImage {
     String expectedErrorMsg = "cp: can't open '/auxiliary/models/multi-model-one-ds.20.yaml': "
         + "Permission denied";
 
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
-        "Warning", timestamp, expectedErrorMsg);
-
-    // check the operator pod log contains the expected error message
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    testUntil(createCustomConditionFactory(0, 1, 15),
+        () -> introspectorLogContainsExpectedError(domainUid2, errorpathDomainNamespace,
+            "operator-aux-container1", expectedErrorMsg),
+        logger, "auxiliary init-container log for domain {0} to contain {1}", domainUid2, expectedErrorMsg);
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED, "Warning", timestamp);
 
     // check there are no admin server and managed server pods and services not created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
@@ -1447,10 +1491,10 @@ class ItMiiAuxiliaryImage {
         "JMSSystemResources", "TestClusterJmsModule2", "200");
   }
 
-  private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
+  private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName,
+                                        String adminSvcExtHost, String expectedUrl) {
     verifyConfiguredSystemResouceByPath(domainNamespace, adminServerPodName, adminSvcExtHost,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
+        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams", expectedUrl);
   }
 
   private DomainResource createDomainResourceWithAuxiliaryImage(

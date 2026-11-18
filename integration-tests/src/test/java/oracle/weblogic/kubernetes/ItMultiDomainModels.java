@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -189,16 +188,14 @@ class ItMultiDomainModels {
       logger.info("Validating WebLogic admin server access by REST");
       if (!TestConstants.WLSIMG_BUILDER.equals(TestConstants.WLSIMG_BUILDER_DEFAULT)) {
         hostHeader = createIngressHostRouting(domainNamespace, domainUid, adminServerName, 7001);
-        assertDoesNotThrow(()
-            -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader));
+        assertTrue(assertDoesNotThrow(()
+            -> verifyAdminServerRESTAccess("localhost", TRAEFIK_INGRESS_HTTP_HOSTPORT, false, hostHeader)),
+            "Admin Server REST endpoint is not accessible through the ingress");
       } else {
         String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-        try {
-          verifyAdminServerRESTAccessInAdminPod(adminServerPodName, "7001",
-              domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-        } catch (IOException ex) {
-          logger.severe(ex.getMessage());
-        }
+        assertTrue(assertDoesNotThrow(() -> verifyAdminServerRESTAccessInAdminPod(adminServerPodName, "7001",
+            domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT)),
+            "Admin Server REST endpoint is not accessible in the admin pod");
       }
       // shutdown domain and verify the domain is shutdown
       shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);

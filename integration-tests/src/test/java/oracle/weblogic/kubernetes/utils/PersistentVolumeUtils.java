@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -36,6 +36,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static java.nio.file.Files.createDirectories;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -458,6 +459,13 @@ public class PersistentVolumeUtils {
 
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, namespace);
     if (nameSuffix.contains("grafana") || nameSuffix.contains("prometheus")) {
+      createTestRepoSecret(namespace);
+      if (KIND_CLUSTER && !OKE_CLUSTER && !OKD) {
+        // createPVHostPathDir recreates the mounted directory with mode 0777, allowing the
+        // monitoring containers to write as UID 1000 without a WebLogic image or an ownership job.
+        logger.info("Using writable Kind hostPath directory {0} for monitoring", pvHostPath);
+        return;
+      }
       String mountPath = "/data";
       if (nameSuffix.contains("grafana")) {
         mountPath = "/var/lib/grafana";
@@ -470,7 +478,6 @@ public class PersistentVolumeUtils {
             + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";
       }
 
-      createTestRepoSecret(namespace);
       createJobToChangePermissionsOnPvHostPath("pv-test" + nameSuffix,
           "pvc-" + nameSuffix, namespace,
           mountPath, argCommand);

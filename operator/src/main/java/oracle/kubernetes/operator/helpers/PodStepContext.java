@@ -596,6 +596,10 @@ public abstract class PodStepContext extends BasePodStepContext {
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
 
     setTerminationGracePeriod(pod);
+    if (getServerSpec().getTerminationGracePeriodSeconds() != null) {
+      // Creation-only metadata: clearing the Domain setting must not erase an existing Pod's budget.
+      metadata.putAnnotationsItem(PodHelper.CUSTOM_TERMINATION_GRACE_PERIOD, "true");
+    }
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
 
     updateForOwnerReference(metadata);
@@ -615,7 +619,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private long getTerminationGracePeriodSeconds() {
-    return getShutdownSpec().getTimeoutSeconds() + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME;
+    return PodHelper.getTerminationGracePeriodSeconds(getServerSpec());
   }
 
   private void updateEnv(List<V1EnvVar> env) {
@@ -670,8 +674,14 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   // Creates a pod model containing elements which are not patchable.
   private V1Pod createPodRecipe() {
-    return new V1Pod().metadata(createMetadata()).spec(createSpec());
+    V1Pod pod = new V1Pod().metadata(createMetadata()).spec(createSpec());
+    if (PodHelper.hasNativeSidecars(pod)) {
+      pod.getMetadata().putAnnotationsItem(NATIVE_SIDECAR_RESOURCES, "true");
+    }
+    return pod;
   }
+
+  static final String NATIVE_SIDECAR_RESOURCES = "weblogic.nativeSidecarResources";
 
   protected V1ObjectMeta createMetadata() {
     final V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
@@ -747,7 +757,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
             getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
-            .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
+            .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom())
+                .resources(PodHelper.isNativeSidecar(c) ? c.getResources() : createResources()))
         .toList());
     return initContainers;
   }
@@ -1241,9 +1252,29 @@ public abstract class PodStepContext extends BasePodStepContext {
     @SuppressWarnings("SameParameterValue")
     private String adjustedHash(V1Pod currentPod, List<Pair<String, BiConsumer<V1Pod, V1Pod>>> adjustments) {
       V1Pod recipe = createPodRecipe();
+      restoreLegacyNativeSidecarResources(recipe, currentPod);
       adjustments.forEach(adjustment -> adjustment.right().accept(recipe, currentPod));
 
-      return AnnotationHelper.createHash(recipe);
+      String hash = AnnotationHelper.createHash(recipe);
+      // Preserve older compatibility recipes, and also recognize native Pods created by
+      // versions that normalize the recipe while excluding creation-only scheduling gates.
+      return PodHelper.hasNativeSidecars(recipe) && !hash.equals(AnnotationHelper.getHash(currentPod))
+          ? AnnotationHelper.createHash(withSchedulingGatesRemoved(recipe)) : hash;
+    }
+
+    private void restoreLegacyNativeSidecarResources(V1Pod recipe, V1Pod currentPod) {
+      if (PodHelper.hasNativeSidecars(recipe)
+          && !getAnnotations(currentPod).containsKey(NATIVE_SIDECAR_RESOURCES)) {
+        // Earlier operators replaced user init-container resources with the WebLogic resources.
+        // Keep those Pods on upgrade. The hashed marker distinguishes newly created Pods, so
+        // subsequent user changes to their sidecar resources still request a roll.
+        recipe.getMetadata().getAnnotations().remove(NATIVE_SIDECAR_RESOURCES);
+        if (recipe.getMetadata().getAnnotations().isEmpty()) {
+          recipe.getMetadata().setAnnotations(null);
+        }
+        recipe.getSpec().getInitContainers().stream().filter(PodHelper::isNativeSidecar)
+            .forEach(container -> container.setResources(createResources()));
+      }
     }
 
     private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
@@ -1542,10 +1573,21 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
       // A restartVersion mismatch always requires replacement and cannot be resolved by a compatibility adjustment.
-      return hasCurrentRestartVersions(currentPod)
-          && (AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
-            || (isPodFromRecentOperator(currentPod)
-              && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod))));
+      if (!hasCurrentRestartVersions(currentPod)) {
+        return false;
+      }
+      if (AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))) {
+        return true;
+      }
+      boolean compatible = isPodFromRecentOperator(currentPod)
+          && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod));
+      if (compatible && PodHelper.hasNativeSidecars(currentPod)
+          && !getAnnotations(currentPod).containsKey(NATIVE_SIDECAR_RESOURCES)) {
+        // Keep the original hash along with the original resource behavior. Metadata patches
+        // must not describe a legacy Pod as having been created with the new resource semantics.
+        sha256Hash = AnnotationHelper.getHash(currentPod);
+      }
+      return compatible;
     }
 
     private boolean hasCurrentRestartVersions(V1Pod currentPod) {

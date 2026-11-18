@@ -34,6 +34,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.Namespaces;
 import oracle.kubernetes.operator.WebhookMain;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
@@ -56,6 +57,8 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -106,6 +109,7 @@ import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.DOMAIN_NAME;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -594,6 +598,204 @@ class WebhookRestTest extends RestTestBase {
   }
 
   // test cases for validating webhook domainResource
+
+  @ParameterizedTest
+  @CsvSource(value = {
+      "2, 1, true",
+      "2, 0, true",
+      "1, 2, false",
+      "2, omitted, false",
+      "1, omitted, true",
+      "0, omitted, true",
+      "omitted, 1, true",
+      "omitted, omitted, true"
+  }, nullValues = "omitted")
+  @SuppressWarnings("unchecked")
+  void whenV8DomainUpdated_validateSubmittedClusterOverridesAndDomainDefaults(
+      Integer domainReplicas, Integer clusterReplicas, boolean allowed) {
+    ConversionReviewModel conversion = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST));
+    Map<String, Object> proposed = conversion.getRequest().getDomains().getFirst();
+    setReplicaCount((Map<String, Object>) proposed.get("spec"), domainReplicas);
+    setReplicaCount(getFirstV8Cluster(conversion), clusterReplicas);
+    proposed.put("status", Map.of("clusters", List.of(Map.of(
+        "clusterName", "cluster-1", "maximumReplicas", 1))));
+    Map<String, Object> old = readMap(writeMap(proposed));
+    ((Map<String, Object>) old.get("spec")).put("includeServerOutInPodLog", false);
+
+    domainReview.getRequest().oldObject(old).object(proposed);
+    domainReview.getRequest().setKind(Map.of("group", DOMAIN_GROUP, "version", "v8", "kind", DOMAIN));
+    domainReview.getRequest().setResource(Map.of("group", DOMAIN_GROUP, "version", "v8", "resource", DOMAIN_PLURAL));
+
+    AdmissionReview admissionResponse = sendValidatingRequestAsAdmissionReview(domainReview);
+
+    DomainResource parsed = (DomainResource) domainReview.getRequest().getProposedResource();
+    assertThat(parsed.getSpec().getClusters().getFirst().getName(), equalTo(CONVERSION_CLUSTER_NAME));
+    assertThat(parsed.getSpec().getReplicas(), equalTo(domainReplicas == null ? 0 : domainReplicas));
+    assertThat(testSupport.getResources(KubernetesTestSupport.CLUSTER).size(), equalTo(0));
+    assertThat(isAllowed(admissionResponse), equalTo(allowed));
+    if (!allowed) {
+      assertThat(getResponseStatusMessage(admissionResponse), containsString("cluster 'cluster-1'"));
+      assertThat(getResponseStatusMessage(admissionResponse), containsString("cluster size '1'"));
+    }
+  }
+
+  private void setReplicaCount(Map<String, Object> spec, Integer replicas) {
+    if (replicas == null) {
+      spec.remove("replicas");
+    } else {
+      spec.put("replicas", replicas);
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource(value = {"1, true", "0, true", "2, false", "omitted, false"}, nullValues = "omitted")
+  void whenOnlyV8InlineReplicasChange_validateProposedSettingsWithoutUpdatingLiveCluster(
+      Integer replicas, boolean allowed) {
+    AdmissionReview review = createV8AdmissionReview();
+    SchemaConversionUtils.Resources existing = new SchemaConversionUtils()
+        .convertDomainSchema(readMap(writeMap(review.getRequest().getOldObject())), null);
+    ClusterResource liveCluster = readCluster(writeMap(existing.clusters().getFirst()));
+    testSupport.defineResources(readDomain(writeMap(existing.domain())), liveCluster);
+    setReplicaCount(getInlineCluster(review.getRequest().getObject()), replicas);
+    String originalRequest = writeAdmissionReview(review);
+
+    AdmissionReview response = sendValidatingRequestAsAdmissionReview(review);
+
+    assertThat(isAllowed(response), equalTo(allowed));
+    assertThat(getConversionCluster().getSpec().getReplicas(), equalTo(1));
+    assertThat(writeAdmissionReview(review), equalTo(originalRequest));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void whenV8DryRunChangesInlineReplicas_rejectWithoutChangingResources() {
+    AdmissionReview review = createV8AdmissionReview();
+    setReplicaCount(getInlineCluster(review.getRequest().getObject()), 2);
+    Map<String, Object> body = readMap(writeAdmissionReview(review));
+    Map<String, Object> request = (Map<String, Object>) body.get("request");
+    request.put("dryRun", true);
+    request.put("operation", "UPDATE");
+
+    AdmissionReview response = readAdmissionReview(sendValidatingRequestAsString(writeMap(body)));
+
+    assertThat(isAllowed(response), equalTo(false));
+    assertThat(testSupport.getResources(KubernetesTestSupport.CLUSTER).size(), equalTo(0));
+    assertThat(testSupport.getResources(KubernetesTestSupport.DOMAIN).size(), equalTo(0));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void whenV8HasExplicitNullReplicas_useLegacyZeroDefault() {
+    AdmissionReview review = createV8AdmissionReview();
+    Map<String, Object> proposedSpec = (Map<String, Object>) review.getRequest().getObject().get("spec");
+    proposedSpec.put("replicas", null);
+    getInlineCluster(review.getRequest().getObject()).put("replicas", null);
+
+    assertThat(isAllowed(sendValidatingRequestAsAdmissionReview(review)), equalTo(true));
+    assertThat(((DomainResource) review.getRequest().getProposedResource()).getSpec().getReplicas(), equalTo(0));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void whenV8ClusterOverrideRemoved_validateDomainDefault() {
+    AdmissionReview review = createV8AdmissionReview();
+    ((Map<String, Object>) review.getRequest().getObject().get("spec")).remove("clusters");
+
+    assertThat(isAllowed(sendValidatingRequestAsAdmissionReview(review)), equalTo(false));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void whenV8ContainsMultipleClusters_rejectOnlyClusterInheritingExcessiveDefault() {
+    AdmissionReview review = createV8AdmissionReview();
+    Map<String, Object> proposed = review.getRequest().getObject();
+    Map<String, Object> spec = (Map<String, Object>) proposed.get("spec");
+    ((List<Map<String, Object>>) spec.get("clusters")).add(Map.of("clusterName", "cluster-2"));
+    proposed.put("status", Map.of("clusters", List.of(
+        Map.of("clusterName", "cluster-1", "maximumReplicas", 1),
+        Map.of("clusterName", "cluster-2", "maximumReplicas", 1))));
+
+    AdmissionReview response = sendValidatingRequestAsAdmissionReview(review);
+
+    assertThat(isAllowed(response), equalTo(false));
+    assertThat(getResponseStatusMessage(response), containsString("cluster 'cluster-2'"));
+    assertThat(getResponseStatusMessage(response), not(containsString("cluster-1")));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void whenV8IntrospectionRequested_allowInlineReplicaChangeForNewTopology() {
+    AdmissionReview review = createV8AdmissionReview();
+    setReplicaCount(getInlineCluster(review.getRequest().getObject()), 2);
+    ((Map<String, Object>) review.getRequest().getObject().get("spec")).put("introspectVersion", "new-topology");
+
+    AdmissionReview response = sendValidatingRequestAsAdmissionReview(review);
+
+    assertThat(isAllowed(response), equalTo(true));
+    assertThat(response.getResponse().getWarnings(), notNullValue());
+  }
+
+  @Test
+  void whenV8DomainCreated_validateWithoutPersistingClusters() {
+    AdmissionReview review = createV8AdmissionReview();
+    review.getRequest().oldObject(null);
+    review.getRequest().getObject().remove("status");
+
+    assertThat(isAllowed(sendValidatingRequestAsAdmissionReview(review)), equalTo(true));
+    assertThat(testSupport.getResources(KubernetesTestSupport.CLUSTER).size(), equalTo(0));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"true", "false"})
+  @SuppressWarnings("unchecked")
+  void whenV8ContainsDuplicateInlineClusters_retainFatalValidation(boolean create) {
+    AdmissionReview review = createV8AdmissionReview();
+    Map<String, Object> proposed = review.getRequest().getObject();
+    Map<String, Object> spec = (Map<String, Object>) proposed.get("spec");
+    ((List<Map<String, Object>>) spec.get("clusters")).add(readMap(writeMap(getInlineCluster(proposed))));
+    if (create) {
+      review.getRequest().oldObject(null);
+      proposed.remove("status");
+    }
+
+    assertThat(isAllowed(sendValidatingRequestAsAdmissionReview(review)), equalTo(false));
+    assertThat(testSupport.getResources(KubernetesTestSupport.CLUSTER).size(), equalTo(0));
+  }
+
+  @Test
+  void whenReadingV8AdmissionResources_doNotMutateSubmittedObjects() {
+    AdmissionRequest request = createV8AdmissionReview().getRequest();
+    String old = writeMap(request.getOldObject());
+    String proposed = writeMap(request.getObject());
+
+    DomainResource firstProposed = (DomainResource) request.getProposedResource();
+    DomainResource firstExisting = (DomainResource) request.getExistingResource();
+    assertThat(firstProposed.getSpec(), equalTo(((DomainResource) request.getProposedResource()).getSpec()));
+    assertThat(firstExisting.getSpec(), equalTo(((DomainResource) request.getExistingResource()).getSpec()));
+    assertThat(writeMap(request.getOldObject()), equalTo(old));
+    assertThat(writeMap(request.getObject()), equalTo(proposed));
+  }
+
+  @SuppressWarnings("unchecked")
+  private AdmissionReview createV8AdmissionReview() {
+    Map<String, Object> proposed = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST))
+        .getRequest().getDomains().getFirst();
+    setReplicaCount((Map<String, Object>) proposed.get("spec"), 2);
+    setReplicaCount(getInlineCluster(proposed), 1);
+    proposed.put("status", Map.of("clusters", List.of(Map.of(
+        "clusterName", "cluster-1", "maximumReplicas", 1))));
+    AdmissionRequest request = new AdmissionRequest().object(proposed).oldObject(readMap(writeMap(proposed)));
+    request.setUid(RESPONSE_UID);
+    request.setKind(Map.of("group", DOMAIN_GROUP, "version", "v8", "kind", DOMAIN));
+    request.setResource(Map.of("group", DOMAIN_GROUP, "version", "v8", "resource", DOMAIN_PLURAL));
+    return new AdmissionReview().apiVersion(ADMISSION_REVIEW_API_VERSION).kind(ADMISSION_REVIEW_KIND).request(request);
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> getInlineCluster(Map<String, Object> domain) {
+    Map<String, Object> spec = (Map<String, Object>) domain.get("spec");
+    return ((List<Map<String, Object>>) spec.get("clusters")).getFirst();
+  }
 
   @Test
   void whenGoodValidatingWebhookRequestSent_hasExpectedResponse() {

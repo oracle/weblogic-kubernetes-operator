@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -68,6 +68,9 @@ public class ServerPod {
       "Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. "
           + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy")
   private String restartPolicy;
+
+  @ApiModelProperty("Total Pod termination budget in seconds, including server shutdown and sidecar cleanup.")
+  private Long terminationGracePeriodSeconds;
 
   @ApiModelProperty(
       "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
@@ -367,6 +370,19 @@ public class ServerPod {
 
   public void setRestartPolicy(String restartPolicy) {
     this.restartPolicy = restartPolicy;
+  }
+
+  public ServerPod terminationGracePeriodSeconds(Long seconds) {
+    this.terminationGracePeriodSeconds = seconds;
+    return this;
+  }
+
+  public Long getTerminationGracePeriodSeconds() {
+    return terminationGracePeriodSeconds;
+  }
+
+  public void setTerminationGracePeriodSeconds(Long seconds) {
+    this.terminationGracePeriodSeconds = seconds;
   }
 
   public ServerPod runtimeClassName(String runtimeClassName) {
@@ -711,6 +727,7 @@ public class ServerPod {
         .append("priorityClassName", priorityClassName)
         .append("readinessGates", readinessGates)
         .append("restartPolicy", restartPolicy)
+        .append("terminationGracePeriodSeconds", terminationGracePeriodSeconds)
         .append("runtimeClassName", runtimeClassName)
         .append("nodeName", nodeName)
         .append("schedulerName", schedulerName)
@@ -740,6 +757,7 @@ public class ServerPod {
         .append(priorityClassName, rhs.priorityClassName)
         .append(readinessGates, rhs.readinessGates)
         .append(restartPolicy, rhs.restartPolicy)
+        .append(terminationGracePeriodSeconds, rhs.terminationGracePeriodSeconds)
         .append(runtimeClassName, rhs.runtimeClassName)
         .append(nodeName, rhs.nodeName)
         .append(schedulerName, rhs.schedulerName)
@@ -769,6 +787,7 @@ public class ServerPod {
         .append(priorityClassName)
         .append(readinessGates)
         .append(restartPolicy)
+        .append(terminationGracePeriodSeconds)
         .append(runtimeClassName)
         .append(nodeName)
         .append(schedulerName)

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -179,9 +179,18 @@ class NamespacedResources {
 
   private Step createServiceListStep(List<Consumer<V1ServiceList>> processing) {
     return Step.chain(getPauseWatchersStep(getServiceWatcher()),
+        new PrepareServiceListStep(),
         RequestBuilder.SERVICE.list(namespace,
             new ListOptions().labelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL + "," + getDomainUidLabel()),
             new ListResponseStep<>(processing)));
+  }
+
+  private class PrepareServiceListStep extends Step {
+    @Override
+    public @Nonnull Result apply(Packet packet) {
+      processors.forEach(Processors::prepareServiceList);
+      return doNext(packet);
+    }
   }
 
   private ServiceWatcher getServiceWatcher() {

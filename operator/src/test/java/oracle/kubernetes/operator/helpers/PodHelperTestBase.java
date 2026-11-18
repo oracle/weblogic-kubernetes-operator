@@ -734,7 +734,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     useProductionHash();
     configureDomain()
         .withMonitoringExporterConfiguration(NOOP_EXPORTER_CONFIG)
-        .withMonitoringExporterImage("ghcr.io/oracle/weblogic-monitoring-exporter:2.3.15");
+        .withMonitoringExporterImage("ghcr.io/oracle/weblogic-monitoring-exporter:2.3.18");
     initializeExistingPod();
     markExistingPodAsCreatedByRecentOperator();
 
@@ -988,6 +988,37 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         AnnotationHelper.getHash(createPodModel()),
         equalTo(AnnotationHelper.getHash(podWithoutSchedulingGates)));
+  }
+
+  @Test
+  void whenPodGraceSpecified_useItWithoutChangingWebLogicShutdownTimeout() {
+    configurator.withTerminationGracePeriodSeconds(120L);
+
+    assertThat(getCreatedPod().getSpec().getTerminationGracePeriodSeconds(), equalTo(120L));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("SHUTDOWN_TIMEOUT", "30"));
+  }
+
+  @Test
+  void whenServerOverridesDomainPodGrace_useServerValueIncludingZero() {
+    configurator.withTerminationGracePeriodSeconds(120L);
+    configureServer().withTerminationGracePeriodSeconds(0L);
+
+    assertThat(getCreatedPod().getSpec().getTerminationGracePeriodSeconds(), equalTo(0L));
+  }
+
+  @Test
+  void whenPodGraceChanged_preserveExistingPodAndHash() {
+    useProductionHash();
+    initializeExistingPod();
+    String originalHash = AnnotationHelper.getHash(domainPresenceInfo.getServerPod(getServerName()));
+    configurator.withTerminationGracePeriodSeconds(120L);
+
+    verifyPodNotReplaced();
+
+    assertThat(AnnotationHelper.getHash(domainPresenceInfo.getServerPod(getServerName())), equalTo(originalHash));
+    assertThat(AnnotationHelper.getHash(createPodModel()), equalTo(originalHash));
+    assertThat(domainPresenceInfo.getServerPod(getServerName()).getSpec().getTerminationGracePeriodSeconds(),
+        equalTo(40L));
   }
 
   // Returns the YAML for a 3.3 Mii pod with aux image.
