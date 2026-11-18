@@ -150,7 +150,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.3.18'
+               defaultValue: '2.3.19'
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
